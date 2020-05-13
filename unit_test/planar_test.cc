@@ -39,6 +39,26 @@ TEST_F(LibYUVPlanarTest, TestAttenuate) {
   align_buffer_page_end(atten2_pixels, kSize);
 
   // Test unattenuation clamps
+  orig_pixels[0 * 4 + 0] = 10u;
+  orig_pixels[0 * 4 + 1] = 20u;
+  orig_pixels[0 * 4 + 2] = 30u;
+  orig_pixels[0 * 4 + 3] = 255u;
+  orig_pixels[1 * 4 + 0] = 255u;
+  orig_pixels[1 * 4 + 1] = 128u;
+  orig_pixels[1 * 4 + 2] = 99u;
+  orig_pixels[1 * 4 + 3] = 255u;
+
+  ARGBAttenuate(orig_pixels, 0, atten_pixels, 0, 2, 1);
+  EXPECT_EQ(10u, atten_pixels[0 * 4 + 0]);
+  EXPECT_EQ(20u, atten_pixels[0 * 4 + 1]);
+  EXPECT_EQ(30u, atten_pixels[0 * 4 + 2]);
+  EXPECT_EQ(255u, atten_pixels[0 * 4 + 3]);
+  EXPECT_EQ(254u, atten_pixels[1 * 4 + 0]);
+  EXPECT_EQ(128u, atten_pixels[1 * 4 + 1]);
+  EXPECT_EQ(99u, atten_pixels[1 * 4 + 2]);
+  EXPECT_EQ(255u, atten_pixels[1 * 4 + 3]);
+
+  // Test unattenuation clamps
   orig_pixels[0 * 4 + 0] = 200u;
   orig_pixels[0 * 4 + 1] = 129u;
   orig_pixels[0 * 4 + 2] = 127u;
@@ -100,9 +120,9 @@ TEST_F(LibYUVPlanarTest, TestAttenuate) {
   EXPECT_EQ(32, atten_pixels[128 * 4 + 1]);
   EXPECT_EQ(21, atten_pixels[128 * 4 + 2]);
   EXPECT_EQ(128, atten_pixels[128 * 4 + 3]);
-  EXPECT_NEAR(255, atten_pixels[255 * 4 + 0], 1);
-  EXPECT_NEAR(127, atten_pixels[255 * 4 + 1], 1);
-  EXPECT_NEAR(85, atten_pixels[255 * 4 + 2], 1);
+  EXPECT_EQ(254, atten_pixels[255 * 4 + 0]);
+  EXPECT_EQ(127, atten_pixels[255 * 4 + 1]);
+  EXPECT_EQ(85, atten_pixels[255 * 4 + 2]);
   EXPECT_EQ(255, atten_pixels[255 * 4 + 3]);
 
   free_aligned_buffer_page_end(atten2_pixels);
@@ -1125,7 +1145,8 @@ static int TestBlend(int width,
                      int disable_cpu_flags,
                      int benchmark_cpu_info,
                      int invert,
-                     int off) {
+                     int off,
+                     int attenuate) {
   if (width < 1) {
     width = 1;
   }
@@ -1139,10 +1160,12 @@ static int TestBlend(int width,
     src_argb_a[i + off] = (fastrand() & 0xff);
     src_argb_b[i + off] = (fastrand() & 0xff);
   }
-  ARGBAttenuate(src_argb_a + off, kStride, src_argb_a + off, kStride, width,
-                height);
-  ARGBAttenuate(src_argb_b + off, kStride, src_argb_b + off, kStride, width,
-                height);
+  MemRandomize(src_argb_a, kStride * height + off);
+  MemRandomize(src_argb_b, kStride * height + off);
+  if (attenuate) {
+    ARGBAttenuate(src_argb_a + off, kStride, src_argb_a + off, kStride, width,
+                  height);
+  }
   memset(dst_argb_c, 255, kStride * height);
   memset(dst_argb_opt, 255, kStride * height);
 
@@ -1172,28 +1195,35 @@ static int TestBlend(int width,
 TEST_F(LibYUVPlanarTest, ARGBBlend_Any) {
   int max_diff =
       TestBlend(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
-                disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
+                disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 1);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Unaligned) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
-                disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
+                disable_cpu_flags_, benchmark_cpu_info_, +1, 1, 1);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Invert) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
-                disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
+                disable_cpu_flags_, benchmark_cpu_info_, -1, 0, 1);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBBlend_Unattenuated) {
+  int max_diff =
+      TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Opt) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
-                disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
+                disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 1);
   EXPECT_LE(max_diff, 1);
 }
 

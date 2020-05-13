@@ -4254,6 +4254,8 @@ __declspec(naked) void ARGBBlendRow_SSSE3(const uint8_t* src_argb0,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
+// ARGBAttenuateRow disabled on win32 due to differences (off by 1) compared
+// to C and Neon.  Use row_gcc.cc with clangcl.
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha.
 static const uvec8 kShuffleAlpha0 = {
