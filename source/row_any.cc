@@ -13,6 +13,7 @@
 #include <string.h>  // For memset.
 
 #include "libyuv/basic_types.h"
+#include "libyuv/convert_argb.h"  // For kYuvI601Constants
 
 #ifdef __cplusplus
 namespace libyuv {

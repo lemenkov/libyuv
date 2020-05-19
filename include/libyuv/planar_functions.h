@@ -372,57 +372,6 @@ void MirrorUVPlane(const uint8_t* src_uv,
                    int width,
                    int height);
 
-// Convert NV12 to RGB565.
-LIBYUV_API
-int NV12ToRGB565(const uint8_t* src_y,
-                 int src_stride_y,
-                 const uint8_t* src_uv,
-                 int src_stride_uv,
-                 uint8_t* dst_rgb565,
-                 int dst_stride_rgb565,
-                 int width,
-                 int height);
-
-// I422ToARGB is in convert_argb.h
-// Convert I422 to BGRA.
-LIBYUV_API
-int I422ToBGRA(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_bgra,
-               int dst_stride_bgra,
-               int width,
-               int height);
-
-// Convert I422 to ABGR.
-LIBYUV_API
-int I422ToABGR(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_abgr,
-               int dst_stride_abgr,
-               int width,
-               int height);
-
-// Convert I422 to RGBA.
-LIBYUV_API
-int I422ToRGBA(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_rgba,
-               int dst_stride_rgba,
-               int width,
-               int height);
-
 // Alias
 #define RGB24ToRAW RAWToRGB24
 

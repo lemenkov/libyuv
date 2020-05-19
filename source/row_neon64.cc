@@ -10,6 +10,8 @@
 
 #include "libyuv/row.h"
 
+#include "libyuv/convert_argb.h"  // For kYuvI601Constants
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -68,13 +70,13 @@ extern "C" {
   "uzp2       v3.8b, v2.8b, v2.8b            \n" \
   "ins        v1.s[1], v3.s[0]               \n"
 
-#define YUVTORGB_SETUP                           \
-  "ld1r       {v24.8h}, [%[kUVBiasBGR]], #2  \n" \
-  "ld1r       {v25.8h}, [%[kUVBiasBGR]], #2  \n" \
-  "ld1r       {v26.8h}, [%[kUVBiasBGR]]      \n" \
-  "ld1r       {v31.4s}, [%[kYToRgb]]         \n" \
-  "ld2        {v27.8h, v28.8h}, [%[kUVToRB]] \n" \
-  "ld2        {v29.8h, v30.8h}, [%[kUVToG]]  \n"
+#define YUVTORGB_SETUP                                      \
+  "ld3r       {v24.8h, v25.8h, v26.8h}, [%[kUVBiasBGR]] \n" \
+  "ld1r       {v31.4s}, [%[kYToRgb]]                    \n" \
+  "ld2        {v27.8h, v28.8h}, [%[kUVToRB]]            \n" \
+  "ld2        {v29.8h, v30.8h}, [%[kUVToG]]             \n"
+
+// clang-format off
 
 #define YUVTORGB(vR, vG, vB)                                        \
   "uxtl       v0.8h, v0.8b                   \n" /* Extract Y    */ \
@@ -89,28 +91,22 @@ extern "C" {
   "mov        v2.d[0], v1.d[1]               \n" /* Extract V */    \
   "uxtl       v2.8h, v2.8b                   \n"                    \
   "uxtl       v1.8h, v1.8b                   \n" /* Extract U */    \
-  "mul        v3.8h, v1.8h, v27.8h           \n"                    \
-  "mul        v5.8h, v1.8h, v29.8h           \n"                    \
-  "mul        v6.8h, v2.8h, v30.8h           \n"                    \
-  "mul        v7.8h, v2.8h, v28.8h           \n"                    \
+  "mul        v3.8h, v27.8h, v1.8h           \n"                    \
+  "mul        v5.8h, v29.8h, v1.8h           \n"                    \
+  "mul        v6.8h, v30.8h, v2.8h           \n"                    \
+  "mul        v7.8h, v28.8h, v2.8h           \n"                    \
   "sqadd      v6.8h, v6.8h, v5.8h            \n"                    \
-  "sqadd      " #vB                                                 \
-  ".8h, v24.8h, v0.8h      \n" /* B */                              \
-  "sqadd      " #vG                                                 \
-  ".8h, v25.8h, v0.8h      \n" /* G */                              \
-  "sqadd      " #vR                                                 \
-  ".8h, v26.8h, v0.8h      \n" /* R */                              \
-  "sqadd      " #vB ".8h, " #vB                                     \
-  ".8h, v3.8h  \n" /* B */                                          \
-  "sqsub      " #vG ".8h, " #vG                                     \
-  ".8h, v6.8h  \n" /* G */                                          \
-  "sqadd      " #vR ".8h, " #vR                                     \
-  ".8h, v7.8h  \n" /* R */                                          \
-  "sqshrun    " #vB ".8b, " #vB                                     \
-  ".8h, #6     \n" /* B */                                          \
-  "sqshrun    " #vG ".8b, " #vG                                     \
-  ".8h, #6     \n"                               /* G */            \
+  "sqadd      " #vB ".8h, v24.8h, v0.8h      \n" /* B */            \
+  "sqadd      " #vG ".8h, v25.8h, v0.8h      \n" /* G */            \
+  "sqadd      " #vR ".8h, v26.8h, v0.8h      \n" /* R */            \
+  "sqadd      " #vB ".8h, " #vB ".8h, v3.8h  \n" /* B */            \
+  "sqsub      " #vG ".8h, " #vG ".8h, v6.8h  \n" /* G */            \
+  "sqadd      " #vR ".8h, " #vR ".8h, v7.8h  \n" /* R */            \
+  "sqshrun    " #vB ".8b, " #vB ".8h, #6     \n" /* B */            \
+  "sqshrun    " #vG ".8b, " #vG ".8h, #6     \n" /* G */            \
   "sqshrun    " #vR ".8b, " #vR ".8h, #6     \n" /* R */
+
+// clang-format on
 
 void I444ToARGBRow_NEON(const uint8_t* src_y,
                         const uint8_t* src_u,

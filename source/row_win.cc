@@ -14,6 +14,8 @@
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
 
+#include "libyuv/convert_argb.h"  // For kYuvI601Constants
+
 #if defined(_M_X64)
 #include <emmintrin.h>
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
