@@ -397,7 +397,10 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
   );
 }
 
-void I400ToARGBRow_NEON(const uint8_t* src_y, uint8_t* dst_argb, int width) {
+void I400ToARGBRow_NEON(const uint8_t* src_y,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
   asm volatile (
     YUVTORGB_SETUP
     "movi       v23.8b, #255                   \n"
@@ -411,10 +414,10 @@ void I400ToARGBRow_NEON(const uint8_t* src_y, uint8_t* dst_argb, int width) {
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kYuvI601Constants.kUVToRB),
-      [kUVToG]"r"(&kYuvI601Constants.kUVToG),
-      [kUVBiasBGR]"r"(&kYuvI601Constants.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvI601Constants.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );

@@ -2900,10 +2900,12 @@ __declspec(naked) void I422ToRGBARow_SSSE3(
 }
 #endif  // HAS_I422TOARGBROW_SSSE3
 
+// I400ToARGBRow_SSE2 is disabled due to new yuvconstant parameter
 #ifdef HAS_I400TOARGBROW_SSE2
 // 8 pixels of Y converted to 8 pixels of ARGB (32 bytes).
 __declspec(naked) void I400ToARGBRow_SSE2(const uint8_t* y_buf,
                                           uint8_t* rgb_buf,
+                                          const struct YuvConstants*,
                                           int width) {
   __asm {
     mov        eax, 0x4a354a35  // 4a35 = 18997 = round(1.164 * 64 * 256)
@@ -2951,6 +2953,7 @@ __declspec(naked) void I400ToARGBRow_SSE2(const uint8_t* y_buf,
 // note: vpunpcklbw mutates and vpackuswb unmutates.
 __declspec(naked) void I400ToARGBRow_AVX2(const uint8_t* y_buf,
                                           uint8_t* rgb_buf,
+                                          const struct YuvConstants*,
                                           int width) {
   __asm {
     mov        eax, 0x4a354a35  // 4a35 = 18997 = round(1.164 * 64 * 256)

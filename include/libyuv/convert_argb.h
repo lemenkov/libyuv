@@ -1548,6 +1548,16 @@ int I420ToAR30Matrix(const uint8_t* src_y,
                      int width,
                      int height);
 
+// Convert I400 (grey) to ARGB.  Reverse of ARGBToI400.
+LIBYUV_API
+int I400ToARGBMatrix(const uint8_t* src_y,
+                     int src_stride_y,
+                     uint8_t* dst_argb,
+                     int dst_stride_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
 // Convert camera sample to ARGB with cropping, rotation and vertical flip.
 // "sample_size" is needed to parse MJPG.
 // "dst_stride_argb" number of bytes in a row of the dst_argb plane.

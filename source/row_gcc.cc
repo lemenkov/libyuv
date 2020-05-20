@@ -3089,16 +3089,14 @@ void OMITFP UYVYToARGBRow_AVX2(const uint8_t* uyvy_buf,
 #endif  // HAS_UYVYTOARGBROW_AVX2
 
 #ifdef HAS_I400TOARGBROW_SSE2
-void I400ToARGBRow_SSE2(const uint8_t* y_buf, uint8_t* dst_argb, int width) {
+void I400ToARGBRow_SSE2(const uint8_t* y_buf,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
   asm volatile(
-      "mov       $0x4a354a35,%%eax               \n"  // 4a35 = 18997 = 1.164
-      "movd      %%eax,%%xmm2                    \n"
-      "pshufd    $0x0,%%xmm2,%%xmm2              \n"
-      "mov       $0x04880488,%%eax               \n"  // 0488 = 1160 = 1.164 *
-                                                      // 16
-      "movd      %%eax,%%xmm3                    \n"
-      "pshufd    $0x0,%%xmm3,%%xmm3              \n"
-      "pcmpeqb   %%xmm4,%%xmm4                   \n"
+      "movdqa    192(%3),%%xmm2                  \n"  // yg = 18997 = 1.164
+      "movdqa    224(%3),%%xmm3                  \n"  // ygb = 1160 = 1.164 * 16
+      "pcmpeqb   %%xmm4,%%xmm4                   \n"  // 0xff000000
       "pslld     $0x18,%%xmm4                    \n"
 
       LABELALIGN
@@ -3108,8 +3106,8 @@ void I400ToARGBRow_SSE2(const uint8_t* y_buf, uint8_t* dst_argb, int width) {
       "lea       0x8(%0),%0                      \n"
       "punpcklbw %%xmm0,%%xmm0                   \n"
       "pmulhuw   %%xmm2,%%xmm0                   \n"
-      "psubusw   %%xmm3,%%xmm0                   \n"
-      "psrlw     $6, %%xmm0                      \n"
+      "paddsw    %%xmm3,%%xmm0                   \n"
+      "psraw     $6, %%xmm0                      \n"
       "packuswb  %%xmm0,%%xmm0                   \n"
 
       // Step 2: Weave into ARGB
@@ -3125,27 +3123,26 @@ void I400ToARGBRow_SSE2(const uint8_t* y_buf, uint8_t* dst_argb, int width) {
 
       "sub       $0x8,%2                         \n"
       "jg        1b                              \n"
-      : "+r"(y_buf),     // %0
-        "+r"(dst_argb),  // %1
-        "+rm"(width)     // %2
-      :
-      : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
+      : "+r"(y_buf),       // %0
+        "+r"(dst_argb),    // %1
+        "+rm"(width)       // %2
+      : "r"(yuvconstants)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
 }
 #endif  // HAS_I400TOARGBROW_SSE2
 
 #ifdef HAS_I400TOARGBROW_AVX2
 // 16 pixels of Y converted to 16 pixels of ARGB (64 bytes).
 // note: vpunpcklbw mutates and vpackuswb unmutates.
-void I400ToARGBRow_AVX2(const uint8_t* y_buf, uint8_t* dst_argb, int width) {
+void I400ToARGBRow_AVX2(const uint8_t* y_buf,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
   asm volatile(
-      "mov        $0x4a354a35,%%eax              \n"  // 0488 = 1160 = 1.164 *
+      "vmovdqa    192(%3),%%ymm2                 \n"  // yg = 18997 = 1.164
+      "vmovdqa    224(%3),%%ymm3                 \n"  // ygb = -1160 = 1.164 *
                                                       // 16
-      "vmovd      %%eax,%%xmm2                   \n"
-      "vbroadcastss %%xmm2,%%ymm2                \n"
-      "mov        $0x4880488,%%eax               \n"  // 4a35 = 18997 = 1.164
-      "vmovd      %%eax,%%xmm3                   \n"
-      "vbroadcastss %%xmm3,%%ymm3                \n"
-      "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"
+      "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"  // 0xff000000
       "vpslld     $0x18,%%ymm4,%%ymm4            \n"
 
       LABELALIGN
@@ -3156,8 +3153,8 @@ void I400ToARGBRow_AVX2(const uint8_t* y_buf, uint8_t* dst_argb, int width) {
       "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
       "vpunpcklbw %%ymm0,%%ymm0,%%ymm0           \n"
       "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
-      "vpsubusw   %%ymm3,%%ymm0,%%ymm0           \n"
-      "vpsrlw     $0x6,%%ymm0,%%ymm0             \n"
+      "vpaddsw    %%ymm3,%%ymm0,%%ymm0           \n"
+      "vpsraw     $0x6,%%ymm0,%%ymm0             \n"
       "vpackuswb  %%ymm0,%%ymm0,%%ymm0           \n"
       "vpunpcklbw %%ymm0,%%ymm0,%%ymm1           \n"
       "vpermq     $0xd8,%%ymm1,%%ymm1            \n"
@@ -3167,15 +3164,15 @@ void I400ToARGBRow_AVX2(const uint8_t* y_buf, uint8_t* dst_argb, int width) {
       "vpor       %%ymm4,%%ymm1,%%ymm1           \n"
       "vmovdqu    %%ymm0,(%1)                    \n"
       "vmovdqu    %%ymm1,0x20(%1)                \n"
-      "lea       0x40(%1),%1                     \n"
+      "lea        0x40(%1),%1                     \n"
       "sub        $0x10,%2                       \n"
       "jg        1b                              \n"
       "vzeroupper                                \n"
-      : "+r"(y_buf),     // %0
-        "+r"(dst_argb),  // %1
-        "+rm"(width)     // %2
-      :
-      : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
+      : "+r"(y_buf),       // %0
+        "+r"(dst_argb),    // %1
+        "+rm"(width)       // %2
+      : "r"(yuvconstants)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
 }
 #endif  // HAS_I400TOARGBROW_AVX2
 

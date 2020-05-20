@@ -1559,16 +1559,18 @@ int I420AlphaToABGR(const uint8_t* src_y,
       width, height, attenuate);
 }
 
-// Convert I400 to ARGB.
+// Convert I400 to ARGB with matrix.
 LIBYUV_API
-int I400ToARGB(const uint8_t* src_y,
-               int src_stride_y,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
-               int width,
-               int height) {
+int I400ToARGBMatrix(const uint8_t* src_y,
+                     int src_stride_y,
+                     uint8_t* dst_argb,
+                     int dst_stride_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height) {
   int y;
-  void (*I400ToARGBRow)(const uint8_t* y_buf, uint8_t* rgb_buf, int width) =
+  void (*I400ToARGBRow)(const uint8_t* y_buf, uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants, int width) =
       I400ToARGBRow_C;
   if (!src_y || !dst_argb || width <= 0 || height == 0) {
     return -1;
@@ -1627,11 +1629,23 @@ int I400ToARGB(const uint8_t* src_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I400ToARGBRow(src_y, dst_argb, width);
+    I400ToARGBRow(src_y, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
   }
   return 0;
+}
+
+// Convert I400 to ARGB.
+LIBYUV_API
+int I400ToARGB(const uint8_t* src_y,
+               int src_stride_y,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return I400ToARGBMatrix(src_y, src_stride_y, dst_argb, dst_stride_argb,
+                          &kYuvI601Constants, width, height);
 }
 
 // Convert J400 to ARGB.

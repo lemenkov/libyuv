@@ -2735,7 +2735,11 @@ void I444ToARGBRow_MSA(const uint8_t* src_y,
   }
 }
 
-void I400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* dst_argb, int width) {
+// TODO - respect YuvConstants
+void I400ToARGBRow_MSA(const uint8_t* src_y,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants*,
+                       int width) {
   int x;
   v16u8 src0, res0, res1, res2, res3, res4, dst0, dst1, dst2, dst3;
   v8i16 vec0, vec1;

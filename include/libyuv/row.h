@@ -98,7 +98,6 @@ extern "C" {
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
 #define HAS_HALFFLOATROW_SSE2
-#define HAS_I400TOARGBROW_SSE2
 #define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
@@ -201,7 +200,6 @@ extern "C" {
 #define HAS_H422TOARGBROW_AVX2
 #define HAS_HALFFLOATROW_AVX2
 //  #define HAS_HALFFLOATROW_F16C  // Enable to test halffloat cast
-#define HAS_I400TOARGBROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
@@ -275,6 +273,7 @@ extern "C" {
 #define HAS_HALFMERGEUVROW_SSSE3
 #define HAS_I210TOAR30ROW_SSSE3
 #define HAS_I210TOARGBROW_SSSE3
+#define HAS_I400TOARGBROW_SSE2
 #define HAS_I422TOAR30ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_MIRRORUVROW_AVX2
@@ -303,6 +302,7 @@ extern "C" {
 #define HAS_HALFMERGEUVROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
 #define HAS_I210TOARGBROW_AVX2
+#define HAS_I400TOARGBROW_AVX2
 #define HAS_I422TOAR30ROW_AVX2
 #define HAS_I422TOUYVYROW_AVX2
 #define HAS_I422TOYUY2ROW_AVX2
@@ -693,6 +693,7 @@ struct YuvConstants {
   int16_t kUVBiasG[16];
   int16_t kUVBiasR[16];
   int16_t kYToRgb[16];
+  int16_t kYBiasToRgb[16];
 };
 
 // Offsets into YuvConstants structure
@@ -703,6 +704,8 @@ struct YuvConstants {
 #define KUVBIASG 128
 #define KUVBIASR 160
 #define KYTORGB 192
+#define KYBIASTORGB 224
+
 #endif
 
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a)-1)))
@@ -2796,23 +2799,50 @@ void I422ToRGB24Row_Any_AVX2(const uint8_t* y_buf,
                              const struct YuvConstants* yuvconstants,
                              int width);
 
-void I400ToARGBRow_C(const uint8_t* src_y, uint8_t* rgb_buf, int width);
-void I400ToARGBRow_SSE2(const uint8_t* y_buf, uint8_t* dst_argb, int width);
-void I400ToARGBRow_AVX2(const uint8_t* y_buf, uint8_t* dst_argb, int width);
-void I400ToARGBRow_NEON(const uint8_t* src_y, uint8_t* dst_argb, int width);
-void I400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* dst_argb, int width);
-void I400ToARGBRow_MMI(const uint8_t* src_y, uint8_t* dst_argb, int width);
+void I400ToARGBRow_C(const uint8_t* src_y,
+                     uint8_t* rgb_buf,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+void I400ToARGBRow_SSE2(const uint8_t* y_buf,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I400ToARGBRow_AVX2(const uint8_t* y_buf,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I400ToARGBRow_NEON(const uint8_t* src_y,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I400ToARGBRow_MSA(const uint8_t* src_y,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I400ToARGBRow_MMI(const uint8_t* src_y,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I400ToARGBRow_Any_SSE2(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
                             int width);
 void I400ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
                             int width);
 void I400ToARGBRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
                             int width);
-void I400ToARGBRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
-void I400ToARGBRow_Any_MMI(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void I400ToARGBRow_Any_MSA(const uint8_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I400ToARGBRow_Any_MMI(const uint8_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 
 // ARGB preattenuated alpha blend.
 void ARGBBlendRow_SSSE3(const uint8_t* src_argb0,
