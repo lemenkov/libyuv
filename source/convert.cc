@@ -540,120 +540,8 @@ int I400ToNV21(const uint8_t* src_y,
   return 0;
 }
 
-static void CopyPlane2(const uint8_t* src,
-                       int src_stride_0,
-                       int src_stride_1,
-                       uint8_t* dst,
-                       int dst_stride,
-                       int width,
-                       int height) {
-  int y;
-  void (*CopyRow)(const uint8_t* src, uint8_t* dst, int width) = CopyRow_C;
-#if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
-  }
-#endif
-#if defined(HAS_COPYROW_AVX)
-  if (TestCpuFlag(kCpuHasAVX)) {
-    CopyRow = IS_ALIGNED(width, 64) ? CopyRow_AVX : CopyRow_Any_AVX;
-  }
-#endif
-#if defined(HAS_COPYROW_ERMS)
-  if (TestCpuFlag(kCpuHasERMS)) {
-    CopyRow = CopyRow_ERMS;
-  }
-#endif
-#if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
-  }
-#endif
-
-  // Copy plane
-  for (y = 0; y < height - 1; y += 2) {
-    CopyRow(src, dst, width);
-    CopyRow(src + src_stride_0, dst + dst_stride, width);
-    src += src_stride_0 + src_stride_1;
-    dst += dst_stride * 2;
-  }
-  if (height & 1) {
-    CopyRow(src, dst, width);
-  }
-}
-
-// Support converting from FOURCC_M420
-// Useful for bandwidth constrained transports like USB 1.0 and 2.0 and for
-// easy conversion to I420.
-// M420 format description:
-// M420 is row biplanar 420: 2 rows of Y and 1 row of UV.
-// Chroma is half width / half height. (420)
-// src_stride_m420 is row planar. Normally this will be the width in pixels.
-//   The UV plane is half width, but 2 values, so src_stride_m420 applies to
-//   this as well as the two Y planes.
-static int X420ToI420(const uint8_t* src_y,
-                      int src_stride_y0,
-                      int src_stride_y1,
-                      const uint8_t* src_uv,
-                      int src_stride_uv,
-                      uint8_t* dst_y,
-                      int dst_stride_y,
-                      uint8_t* dst_u,
-                      int dst_stride_u,
-                      uint8_t* dst_v,
-                      int dst_stride_v,
-                      int width,
-                      int height) {
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  if (!src_uv || !dst_u || !dst_v || width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    if (dst_y) {
-      dst_y = dst_y + (height - 1) * dst_stride_y;
-    }
-    dst_u = dst_u + (halfheight - 1) * dst_stride_u;
-    dst_v = dst_v + (halfheight - 1) * dst_stride_v;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
-  }
-  // Coalesce rows.
-  if (src_stride_y0 == width && src_stride_y1 == width &&
-      dst_stride_y == width) {
-    width *= height;
-    height = 1;
-    src_stride_y0 = src_stride_y1 = dst_stride_y = 0;
-  }
-  // Coalesce rows.
-  if (src_stride_uv == halfwidth * 2 && dst_stride_u == halfwidth &&
-      dst_stride_v == halfwidth) {
-    halfwidth *= halfheight;
-    halfheight = 1;
-    src_stride_uv = dst_stride_u = dst_stride_v = 0;
-  }
-
-  if (dst_y) {
-    if (src_stride_y0 == src_stride_y1) {
-      CopyPlane(src_y, src_stride_y0, dst_y, dst_stride_y, width, height);
-    } else {
-      CopyPlane2(src_y, src_stride_y0, src_stride_y1, dst_y, dst_stride_y,
-                 width, height);
-    }
-  }
-
-  // Split UV plane - NV12 / NV21
-  SplitUVPlane(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v, dst_stride_v,
-               halfwidth, halfheight);
-
-  return 0;
-}
-
 // Convert NV12 to I420.
+// TODO(fbarchard): Consider inverting destination. Faster on ARM with prfm.
 LIBYUV_API
 int NV12ToI420(const uint8_t* src_y,
                int src_stride_y,
@@ -667,9 +555,43 @@ int NV12ToI420(const uint8_t* src_y,
                int dst_stride_v,
                int width,
                int height) {
-  return X420ToI420(src_y, src_stride_y, src_stride_y, src_uv, src_stride_uv,
-                    dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v,
-                    dst_stride_v, width, height);
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (!src_uv || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_uv = src_uv + (halfheight - 1) * src_stride_uv;
+    src_stride_y = -src_stride_y;
+    src_stride_uv = -src_stride_uv;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width && dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_y = 0;
+  }
+  // Coalesce rows.
+  if (src_stride_uv == halfwidth * 2 && dst_stride_u == halfwidth &&
+      dst_stride_v == halfwidth) {
+    halfwidth *= halfheight;
+    halfheight = 1;
+    src_stride_uv = dst_stride_u = dst_stride_v = 0;
+  }
+
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+
+  // Split UV plane - NV12 / NV21
+  SplitUVPlane(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v, dst_stride_v,
+               halfwidth, halfheight);
+
+  return 0;
 }
 
 // Convert NV21 to I420.  Same as NV12 but u and v pointers swapped.
@@ -686,27 +608,11 @@ int NV21ToI420(const uint8_t* src_y,
                int dst_stride_v,
                int width,
                int height) {
-  return X420ToI420(src_y, src_stride_y, src_stride_y, src_vu, src_stride_vu,
-                    dst_y, dst_stride_y, dst_v, dst_stride_v, dst_u,
-                    dst_stride_u, width, height);
-}
-
-// Convert M420 to I420.
-LIBYUV_API
-int M420ToI420(const uint8_t* src_m420,
-               int src_stride_m420,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_u,
-               int dst_stride_u,
-               uint8_t* dst_v,
-               int dst_stride_v,
-               int width,
-               int height) {
-  return X420ToI420(src_m420, src_stride_m420, src_stride_m420 * 2,
-                    src_m420 + src_stride_m420 * 2, src_stride_m420 * 3, dst_y,
-                    dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
-                    width, height);
+  return NV12ToI420(src_y, src_stride_y,
+                    src_vu, src_stride_vu,
+                    dst_y, dst_stride_y,
+                    dst_v, dst_stride_v,
+                    dst_u, dst_stride_u, width, height);
 }
 
 // Convert YUY2 to I420.

@@ -3140,8 +3140,7 @@ void I400ToARGBRow_AVX2(const uint8_t* y_buf,
                         int width) {
   asm volatile(
       "vmovdqa    192(%3),%%ymm2                 \n"  // yg = 18997 = 1.164
-      "vmovdqa    224(%3),%%ymm3                 \n"  // ygb = -1160 = 1.164 *
-                                                      // 16
+      "vmovdqa    224(%3),%%ymm3                 \n"  // ygb = -1160 = 1.164*16
       "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"  // 0xff000000
       "vpslld     $0x18,%%ymm4,%%ymm4            \n"
 

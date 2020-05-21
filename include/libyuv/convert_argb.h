@@ -664,15 +664,6 @@ int NV21ToRAW(const uint8_t* src_y,
               int width,
               int height);
 
-// Convert M420 to ARGB.
-LIBYUV_API
-int M420ToARGB(const uint8_t* src_m420,
-               int src_stride_m420,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
-               int width,
-               int height);
-
 // Convert YUY2 to ARGB.
 LIBYUV_API
 int YUY2ToARGB(const uint8_t* src_yuy2,

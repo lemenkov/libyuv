@@ -645,7 +645,6 @@ int ConvertFromI420(const uint8_t* y,
                      height);
       break;
     }
-    // TODO(fbarchard): Add M420.
     // Triplanar formats
     case FOURCC_I420:
     case FOURCC_YV12: {

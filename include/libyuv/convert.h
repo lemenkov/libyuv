@@ -263,19 +263,6 @@ int AYUVToNV21(const uint8_t* src_ayuv,
                int width,
                int height);
 
-// Convert M420 to I420.
-LIBYUV_API
-int M420ToI420(const uint8_t* src_m420,
-               int src_stride_m420,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_u,
-               int dst_stride_u,
-               uint8_t* dst_v,
-               int dst_stride_v,
-               int width,
-               int height);
-
 // Convert Android420 to I420.
 LIBYUV_API
 int Android420ToI420(const uint8_t* src_y,

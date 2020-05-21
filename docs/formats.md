@@ -50,7 +50,7 @@ The following is extracted from video_common.h as a complete list of formats sup
                                                  // 10 bit lsb
 
       // 1 Secondary YUV format: row biplanar.
-      FOURCC_M420 = FOURCC('M', '4', '2', '0'),
+      FOURCC_M420 = FOURCC('M', '4', '2', '0'),  // deprecated.
 
       // 11 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc
       FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
