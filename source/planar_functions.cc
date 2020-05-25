@@ -1099,6 +1099,14 @@ void MirrorUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
+#if defined(HAS_MIRRORUVROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MirrorUVRow = MirrorUVRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      MirrorUVRow = MirrorUVRow_MSA;
+    }
+  }
+#endif
 
   // MirrorUV plane
   for (y = 0; y < height; ++y) {

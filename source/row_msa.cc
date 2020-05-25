@@ -302,6 +302,20 @@ void MirrorRow_MSA(const uint8_t* src, uint8_t* dst, int width) {
   }
 }
 
+void MirrorUVRow_MSA(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  int x;
+  v8u16 src, dst;
+  v8u16 shuffler = {7, 6, 5, 4, 3, 2, 1, 0};
+  src_uv += (width - 8) << 1;
+  for (x = 0; x < width; x += 8) {
+    src = LD_UH(src_uv);
+    dst = __msa_vshf_h(shuffler, src, src);
+    ST_UH(dst, dst_uv);
+    src_uv -= 16;
+    dst_uv += 16;
+  }
+}
+
 void ARGBMirrorRow_MSA(const uint8_t* src, uint8_t* dst, int width) {
   int x;
   v16u8 src0, src1, src2, src3;
