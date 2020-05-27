@@ -787,6 +787,18 @@ TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1)
   TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C, BPP_B,      \
                    benchmark_width_, _Opt, +, 0)
 
+#define kYuvJPEGConstantsVU kYvuJPEGConstants
+#define NV12ToABGRMatrix(a, b, c, d, e, f, g, h, i) \
+  NV21ToARGBMatrix(a, b, c, d, e, f, g##VU, h, i)
+#define NV21ToABGRMatrix(a, b, c, d, e, f, g, h, i) \
+  NV12ToARGBMatrix(a, b, c, d, e, f, g##VU, h, i)
+#define NV12ToRAWMatrix(a, b, c, d, e, f, g, h, i) \
+  NV21ToRGB24Matrix(a, b, c, d, e, f, g##VU, h, i)
+#define NV21ToRAWMatrix(a, b, c, d, e, f, g, h, i) \
+  NV12ToRGB24Matrix(a, b, c, d, e, f, g##VU, h, i)
+#define NV12ToRGB565Matrix(a, b, c, d, e, f, g, h, i) \
+  NV12ToRGB565Matrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
+
 #define JNV12ToARGB(a, b, c, d, e, f, g, h) \
   NV12ToARGBMatrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV21ToARGB(a, b, c, d, e, f, g, h) \
