@@ -14,7 +14,6 @@
 
 // This module is for GCC MSA
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
-#include "libyuv/convert_argb.h"  // For kYuvI601Constants
 #include "libyuv/macros_msa.h"
 
 #ifdef __cplusplus
