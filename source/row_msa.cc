@@ -205,33 +205,37 @@ extern "C" {
   }
 
 #define ARGBTOUV(argb0, argb1, argb2, argb3, const0, const1, const2, const3, \
-                 shf0, shf1, shf2, shf3, v_out, u_out)                       \
+                 shf0, shf1, shf2, shf3, shift, u_out, v_out)                \
   {                                                                          \
-    v16u8 vec0_m, vec1_m, vec2_m, vec3_m, vec4_m, vec5_m, vec6_m, vec7_m;    \
-    v8u16 reg0_m, reg1_m, reg2_m, reg3_m;                                    \
+    v8u16 vec0_m, vec1_m, vec2_m, vec3_m, vec4_m, vec5_m, vec6_m, vec7_m;    \
+    v4u32 reg0_m, reg1_m, reg2_m, reg3_m;                                    \
                                                                              \
-    vec0_m = (v16u8)__msa_vshf_b(shf0, (v16i8)argb1, (v16i8)argb0);          \
-    vec1_m = (v16u8)__msa_vshf_b(shf0, (v16i8)argb3, (v16i8)argb2);          \
-    vec2_m = (v16u8)__msa_vshf_b(shf1, (v16i8)argb1, (v16i8)argb0);          \
-    vec3_m = (v16u8)__msa_vshf_b(shf1, (v16i8)argb3, (v16i8)argb2);          \
-    vec4_m = (v16u8)__msa_vshf_b(shf2, (v16i8)argb1, (v16i8)argb0);          \
-    vec5_m = (v16u8)__msa_vshf_b(shf2, (v16i8)argb3, (v16i8)argb2);          \
-    vec6_m = (v16u8)__msa_vshf_b(shf3, (v16i8)argb1, (v16i8)argb0);          \
-    vec7_m = (v16u8)__msa_vshf_b(shf3, (v16i8)argb3, (v16i8)argb2);          \
-    reg0_m = __msa_dotp_u_h(vec0_m, const1);                                 \
-    reg1_m = __msa_dotp_u_h(vec1_m, const1);                                 \
-    reg2_m = __msa_dotp_u_h(vec4_m, const1);                                 \
-    reg3_m = __msa_dotp_u_h(vec5_m, const1);                                 \
-    reg0_m += const3;                                                        \
-    reg1_m += const3;                                                        \
-    reg2_m += const3;                                                        \
-    reg3_m += const3;                                                        \
-    reg0_m -= __msa_dotp_u_h(vec2_m, const0);                                \
-    reg1_m -= __msa_dotp_u_h(vec3_m, const0);                                \
-    reg2_m -= __msa_dotp_u_h(vec6_m, const2);                                \
-    reg3_m -= __msa_dotp_u_h(vec7_m, const2);                                \
-    v_out = (v16u8)__msa_pckod_b((v16i8)reg1_m, (v16i8)reg0_m);              \
-    u_out = (v16u8)__msa_pckod_b((v16i8)reg3_m, (v16i8)reg2_m);              \
+    vec0_m = (v8u16)__msa_vshf_h(shf0, (v16i8)argb1, (v16i8)argb0);          \
+    vec1_m = (v8u16)__msa_vshf_h(shf0, (v16i8)argb3, (v16i8)argb2);          \
+    vec2_m = (v8u16)__msa_vshf_h(shf1, (v16i8)argb1, (v16i8)argb0);          \
+    vec3_m = (v8u16)__msa_vshf_h(shf1, (v16i8)argb3, (v16i8)argb2);          \
+    vec4_m = (v8u16)__msa_vshf_h(shf2, (v16i8)argb1, (v16i8)argb0);          \
+    vec5_m = (v8u16)__msa_vshf_h(shf2, (v16i8)argb3, (v16i8)argb2);          \
+    vec6_m = (v8u16)__msa_vshf_h(shf3, (v16i8)argb1, (v16i8)argb0);          \
+    vec7_m = (v8u16)__msa_vshf_h(shf3, (v16i8)argb3, (v16i8)argb2);          \
+    reg0_m = __msa_dotp_u_w(vec0_m, const0);                                 \
+    reg1_m = __msa_dotp_u_w(vec1_m, const0);                                 \
+    reg2_m = __msa_dotp_u_w(vec4_m, const0);                                 \
+    reg3_m = __msa_dotp_u_w(vec5_m, const0);                                 \
+    reg0_m += const1;                                                        \
+    reg1_m += const1;                                                        \
+    reg2_m += const1;                                                        \
+    reg3_m += const1;                                                        \
+    reg0_m -= (v4u32)__msa_dotp_u_w(vec2_m, const2);                         \
+    reg1_m -= (v4u32)__msa_dotp_u_w(vec3_m, const2);                         \
+    reg2_m -= (v4u32)__msa_dotp_u_w(vec6_m, const3);                         \
+    reg3_m -= (v4u32)__msa_dotp_u_w(vec7_m, const3);                         \
+    reg0_m = __msa_srl_w(reg0_m, shift);                                     \
+    reg1_m = __msa_srl_w(reg1_m, shift);                                     \
+    reg2_m = __msa_srl_w(reg2_m, shift);                                     \
+    reg3_m = __msa_srl_w(reg3_m, shift);                                     \
+    u_out = (v8u16)__msa_pckev_h((v8i16)reg1_m, (v8i16)reg0_m);              \
+    v_out = (v8u16)__msa_pckev_h((v8i16)reg3_m, (v8i16)reg2_m);              \
   }
 
 // Takes ARGB input and calculates U and V.
@@ -2530,61 +2534,123 @@ void ARGBToUVJRow_MSA(const uint8_t* src_rgb0,
   int x;
   const uint8_t* s = src_rgb0;
   const uint8_t* t = src_rgb0 + src_stride_rgb;
-  v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
-  v16u8 vec0, vec1, vec2, vec3;
-  v16u8 dst0, dst1;
-  v16i8 shuffler0 = {0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29};
-  v16i8 shuffler1 = {2,  3,  6,  7,  10, 11, 14, 15,
-                     18, 19, 22, 23, 26, 27, 30, 31};
-  v16i8 shuffler2 = {0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23, 24, 27, 28, 31};
-  v16i8 shuffler3 = {1, 2, 5, 6, 9, 10, 13, 14, 17, 18, 21, 22, 25, 26, 29, 30};
-  v16u8 const_0x7F = (v16u8)__msa_fill_h(0x7F);
-  v16u8 const_0x6B14 = (v16u8)__msa_fill_h(0x6B14);
-  v16u8 const_0x2B54 = (v16u8)__msa_fill_h(0x2B54);
-  v8u16 const_0x8080 = (v8u16)__msa_fill_h(0x8080);
+  v8u16 src0, src1, src2, src3, src4, src5, src6, src7;
+  v8u16 vec0, vec1, vec2, vec3;
+  v8u16 dst0, dst1, dst2, dst3;
+  v16u8 zero = {0};
+  v8i16 shuffler0 = {0, 3, 4, 7, 8, 11, 12, 15};
+  v8i16 shuffler1 = {1, 2, 5, 6, 9, 10, 13, 14};
+  v8i16 shuffler2 = {2, 3, 6, 7, 10, 11, 14, 15};
+  v8i16 shuffler3 = {0, 1, 4, 5, 8, 9, 12, 13};
+  v8u16 const_0x0000003f = (v8u16)__msa_fill_w(0x0000003f);
+  v4u32 const_0x00008080 = (v8u16)__msa_fill_w(0x00008080);
+  v8u16 const_0x0015002a = (v8u16)__msa_fill_w(0x0015002a);
+  v8u16 const_0x0035000a = (v8u16)__msa_fill_w(0x0035000a);
+  v4i32 shift = __msa_fill_w(0x00000008);
 
   for (x = 0; x < width; x += 32) {
-    src0 = (v16u8)__msa_ld_b((void*)s, 0);
-    src1 = (v16u8)__msa_ld_b((void*)s, 16);
-    src2 = (v16u8)__msa_ld_b((void*)s, 32);
-    src3 = (v16u8)__msa_ld_b((void*)s, 48);
-    src4 = (v16u8)__msa_ld_b((void*)t, 0);
-    src5 = (v16u8)__msa_ld_b((void*)t, 16);
-    src6 = (v16u8)__msa_ld_b((void*)t, 32);
-    src7 = (v16u8)__msa_ld_b((void*)t, 48);
-    src0 = __msa_aver_u_b(src0, src4);
-    src1 = __msa_aver_u_b(src1, src5);
-    src2 = __msa_aver_u_b(src2, src6);
-    src3 = __msa_aver_u_b(src3, src7);
-    src4 = (v16u8)__msa_pckev_w((v4i32)src1, (v4i32)src0);
-    src5 = (v16u8)__msa_pckev_w((v4i32)src3, (v4i32)src2);
-    src6 = (v16u8)__msa_pckod_w((v4i32)src1, (v4i32)src0);
-    src7 = (v16u8)__msa_pckod_w((v4i32)src3, (v4i32)src2);
-    vec0 = __msa_aver_u_b(src4, src6);
-    vec1 = __msa_aver_u_b(src5, src7);
-    src0 = (v16u8)__msa_ld_b((void*)s, 64);
-    src1 = (v16u8)__msa_ld_b((void*)s, 80);
-    src2 = (v16u8)__msa_ld_b((void*)s, 96);
-    src3 = (v16u8)__msa_ld_b((void*)s, 112);
-    src4 = (v16u8)__msa_ld_b((void*)t, 64);
-    src5 = (v16u8)__msa_ld_b((void*)t, 80);
-    src6 = (v16u8)__msa_ld_b((void*)t, 96);
-    src7 = (v16u8)__msa_ld_b((void*)t, 112);
-    src0 = __msa_aver_u_b(src0, src4);
-    src1 = __msa_aver_u_b(src1, src5);
-    src2 = __msa_aver_u_b(src2, src6);
-    src3 = __msa_aver_u_b(src3, src7);
-    src4 = (v16u8)__msa_pckev_w((v4i32)src1, (v4i32)src0);
-    src5 = (v16u8)__msa_pckev_w((v4i32)src3, (v4i32)src2);
-    src6 = (v16u8)__msa_pckod_w((v4i32)src1, (v4i32)src0);
-    src7 = (v16u8)__msa_pckod_w((v4i32)src3, (v4i32)src2);
-    vec2 = __msa_aver_u_b(src4, src6);
-    vec3 = __msa_aver_u_b(src5, src7);
-    ARGBTOUV(vec0, vec1, vec2, vec3, const_0x6B14, const_0x7F, const_0x2B54,
-             const_0x8080, shuffler1, shuffler0, shuffler2, shuffler3, dst0,
-             dst1);
-    ST_UB(dst0, dst_v);
-    ST_UB(dst1, dst_u);
+    src1 = __msa_ld_b((void*)s, 0);
+    src3 = __msa_ld_b((void*)s, 16);
+    src5 = __msa_ld_b((void*)t, 0);
+    src7 = __msa_ld_b((void*)t, 16);
+    src0 = __msa_ilvr_b(zero, src1);
+    src1 = __msa_ilvl_b(zero, src1);
+    src2 = __msa_ilvr_b(zero, src3);
+    src3 = __msa_ilvl_b(zero, src3);
+    src4 = __msa_ilvr_b(zero, src5);
+    src5 = __msa_ilvl_b(zero, src5);
+    src6 = __msa_ilvr_b(zero, src7);
+    src7 = __msa_ilvl_b(zero, src7);
+    src0 += src4;
+    src1 += src5;
+    src2 += src6;
+    src3 += src7;
+    src4 = __msa_ilvev_d(src1, src0);
+    src5 = __msa_ilvod_d(src1, src0);
+    src6 = __msa_ilvev_d(src3, src2);
+    src7 = __msa_ilvod_d(src3, src2);
+    vec0 = __msa_aver_u_h(src4, src5);
+    vec1 = __msa_aver_u_h(src6, src7);
+
+    src1 = __msa_ld_b((void*)s, 32);
+    src3 = __msa_ld_b((void*)s, 48);
+    src5 = __msa_ld_b((void*)t, 32);
+    src7 = __msa_ld_b((void*)t, 48);
+    src0 = __msa_ilvr_b(zero, src1);
+    src1 = __msa_ilvl_b(zero, src1);
+    src2 = __msa_ilvr_b(zero, src3);
+    src3 = __msa_ilvl_b(zero, src3);
+    src4 = __msa_ilvr_b(zero, src5);
+    src5 = __msa_ilvl_b(zero, src5);
+    src6 = __msa_ilvr_b(zero, src7);
+    src7 = __msa_ilvl_b(zero, src7);
+    src0 += src4;
+    src1 += src5;
+    src2 += src6;
+    src3 += src7;
+    src4 = __msa_ilvev_d(src1, src0);
+    src5 = __msa_ilvod_d(src1, src0);
+    src6 = __msa_ilvev_d(src3, src2);
+    src7 = __msa_ilvod_d(src3, src2);
+    vec2 = __msa_aver_u_h(src4, src5);
+    vec3 = __msa_aver_u_h(src6, src7);
+    ARGBTOUV(vec0, vec1, vec2, vec3, const_0x0000003f, const_0x00008080,
+             const_0x0015002a, const_0x0035000a, shuffler0, shuffler1,
+             shuffler2, shuffler3, shift, dst0, dst1);
+
+    src1 = __msa_ld_b((void*)s, 64);
+    src3 = __msa_ld_b((void*)s, 80);
+    src5 = __msa_ld_b((void*)t, 64);
+    src7 = __msa_ld_b((void*)t, 80);
+    src0 = __msa_ilvr_b(zero, src1);
+    src1 = __msa_ilvl_b(zero, src1);
+    src2 = __msa_ilvr_b(zero, src3);
+    src3 = __msa_ilvl_b(zero, src3);
+    src4 = __msa_ilvr_b(zero, src5);
+    src5 = __msa_ilvl_b(zero, src5);
+    src6 = __msa_ilvr_b(zero, src7);
+    src7 = __msa_ilvl_b(zero, src7);
+    src0 += src4;
+    src1 += src5;
+    src2 += src6;
+    src3 += src7;
+    src4 = __msa_ilvev_d(src1, src0);
+    src5 = __msa_ilvod_d(src1, src0);
+    src6 = __msa_ilvev_d(src3, src2);
+    src7 = __msa_ilvod_d(src3, src2);
+    vec0 = __msa_aver_u_h(src4, src5);
+    vec1 = __msa_aver_u_h(src6, src7);
+
+    src1 = __msa_ld_b((void*)s, 96);
+    src3 = __msa_ld_b((void*)s, 112);
+    src5 = __msa_ld_b((void*)t, 96);
+    src7 = __msa_ld_b((void*)t, 112);
+    src0 = __msa_ilvr_b(zero, src1);
+    src1 = __msa_ilvl_b(zero, src1);
+    src2 = __msa_ilvr_b(zero, src3);
+    src3 = __msa_ilvl_b(zero, src3);
+    src4 = __msa_ilvr_b(zero, src5);
+    src5 = __msa_ilvl_b(zero, src5);
+    src6 = __msa_ilvr_b(zero, src7);
+    src7 = __msa_ilvl_b(zero, src7);
+    src0 += src4;
+    src1 += src5;
+    src2 += src6;
+    src3 += src7;
+    src4 = __msa_ilvev_d(src1, src0);
+    src5 = __msa_ilvod_d(src1, src0);
+    src6 = __msa_ilvev_d(src3, src2);
+    src7 = __msa_ilvod_d(src3, src2);
+    vec2 = __msa_aver_u_h(src4, src5);
+    vec3 = __msa_aver_u_h(src6, src7);
+    ARGBTOUV(vec0, vec1, vec2, vec3, const_0x0000003f, const_0x00008080,
+             const_0x0015002a, const_0x0035000a, shuffler0, shuffler1,
+             shuffler2, shuffler3, shift, dst2, dst3);
+
+    dst0 = (v8u16)__msa_pckev_b(dst2, dst0);
+    dst1 = (v8u16)__msa_pckev_b(dst3, dst1);
+    ST_UB(dst0, dst_u);
+    ST_UB(dst1, dst_v);
     s += 128;
     t += 128;
     dst_v += 16;
