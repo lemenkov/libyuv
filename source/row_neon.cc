@@ -349,9 +349,7 @@ void I400ToARGBRow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "vmov.u8    d23, #255                      \n"
-      "1:                                        \n"
-      READYUV400
-      YUVTORGB
+      "1:                                        \n" READYUV400 YUVTORGB
       "subs       %2, %2, #8                     \n"
       "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
       "bgt        1b                             \n"

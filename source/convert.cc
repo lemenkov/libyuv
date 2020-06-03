@@ -608,11 +608,9 @@ int NV21ToI420(const uint8_t* src_y,
                int dst_stride_v,
                int width,
                int height) {
-  return NV12ToI420(src_y, src_stride_y,
-                    src_vu, src_stride_vu,
-                    dst_y, dst_stride_y,
-                    dst_v, dst_stride_v,
-                    dst_u, dst_stride_u, width, height);
+  return NV12ToI420(src_y, src_stride_y, src_vu, src_stride_vu, dst_y,
+                    dst_stride_y, dst_v, dst_stride_v, dst_u, dst_stride_u,
+                    width, height);
 }
 
 // Convert YUY2 to I420.
@@ -1167,6 +1165,16 @@ int ABGRToI420(const uint8_t* src_abgr,
     if (IS_ALIGNED(width, 16)) {
       ABGRToUVRow = ABGRToUVRow_SSSE3;
       ABGRToYRow = ABGRToYRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ABGRTOYROW_AVX2) && defined(HAS_ABGRTOUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ABGRToUVRow = ABGRToUVRow_Any_AVX2;
+    ABGRToYRow = ABGRToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ABGRToUVRow = ABGRToUVRow_AVX2;
+      ABGRToYRow = ABGRToYRow_AVX2;
     }
   }
 #endif
