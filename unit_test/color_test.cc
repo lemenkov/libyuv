@@ -187,6 +187,52 @@ static void YUVJToRGB(int y, int u, int v, int* r, int* g, int* b) {
   *r = orig_pixels[2];
 }
 
+static void YUVHToRGB(int y, int u, int v, int* r, int* g, int* b) {
+  const int kWidth = 16;
+  const int kHeight = 1;
+  const int kPixels = kWidth * kHeight;
+  const int kHalfPixels = ((kWidth + 1) / 2) * ((kHeight + 1) / 2);
+
+  SIMD_ALIGNED(uint8_t orig_y[16]);
+  SIMD_ALIGNED(uint8_t orig_u[8]);
+  SIMD_ALIGNED(uint8_t orig_v[8]);
+  SIMD_ALIGNED(uint8_t orig_pixels[16 * 4]);
+  memset(orig_y, y, kPixels);
+  memset(orig_u, u, kHalfPixels);
+  memset(orig_v, v, kHalfPixels);
+
+  /* YUV converted to ARGB. */
+  H422ToARGB(orig_y, kWidth, orig_u, (kWidth + 1) / 2, orig_v, (kWidth + 1) / 2,
+             orig_pixels, kWidth * 4, kWidth, kHeight);
+
+  *b = orig_pixels[0];
+  *g = orig_pixels[1];
+  *r = orig_pixels[2];
+}
+
+static void YUVRec2020ToRGB(int y, int u, int v, int* r, int* g, int* b) {
+  const int kWidth = 16;
+  const int kHeight = 1;
+  const int kPixels = kWidth * kHeight;
+  const int kHalfPixels = ((kWidth + 1) / 2) * ((kHeight + 1) / 2);
+
+  SIMD_ALIGNED(uint8_t orig_y[16]);
+  SIMD_ALIGNED(uint8_t orig_u[8]);
+  SIMD_ALIGNED(uint8_t orig_v[8]);
+  SIMD_ALIGNED(uint8_t orig_pixels[16 * 4]);
+  memset(orig_y, y, kPixels);
+  memset(orig_u, u, kHalfPixels);
+  memset(orig_v, v, kHalfPixels);
+
+  /* YUV converted to ARGB. */
+  U422ToARGB(orig_y, kWidth, orig_u, (kWidth + 1) / 2, orig_v, (kWidth + 1) / 2,
+             orig_pixels, kWidth * 4, kWidth, kHeight);
+
+  *b = orig_pixels[0];
+  *g = orig_pixels[1];
+  *r = orig_pixels[2];
+}
+
 static void YToRGB(int y, int* r, int* g, int* b) {
   const int kWidth = 16;
   const int kHeight = 1;
@@ -335,16 +381,35 @@ TEST_F(LibYUVColorTest, TestRoundToByte) {
   EXPECT_LE(allb, 255);
 }
 
+// BT.601 YUV to RGB reference
 static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
   *r = RoundToByte((y - 16) * 1.164 - (v - 128) * -1.596);
   *g = RoundToByte((y - 16) * 1.164 - (u - 128) * 0.391 - (v - 128) * 0.813);
   *b = RoundToByte((y - 16) * 1.164 - (u - 128) * -2.018);
 }
 
+// JPEG YUV to RGB reference
 static void YUVJToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
   *r = RoundToByte(y - (v - 128) * -1.40200);
   *g = RoundToByte(y - (u - 128) * 0.34414 - (v - 128) * 0.71414);
   *b = RoundToByte(y - (u - 128) * -1.77200);
+}
+
+// BT.709 YUV to RGB reference
+// See also http://www.equasys.de/colorconversion.html
+static void YUVHToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
+  *r = RoundToByte((y - 16) * 1.164 - (v - 128) * -1.793);
+  *g = RoundToByte((y - 16) * 1.164 - (u - 128) * 0.213 - (v - 128) * 0.533);
+  *b = RoundToByte((y - 16) * 1.164 - (u - 128) * -2.112);
+}
+
+// BT.2020 YUV to RGB reference
+static void YUVRec2020ToRGBReference(int y, int u, int v, int* r, int* g,
+                                     int* b) {
+  *r = RoundToByte((y - 16) * 1.164384 - (v - 128) * -1.67867);
+  *g = RoundToByte((y - 16) * 1.164384 - (u - 128) * 0.187326 -
+                   (v - 128) * 0.65042);
+  *b = RoundToByte((y - 16) * 1.164384 - (u - 128) * -2.14177);
 }
 
 TEST_F(LibYUVColorTest, TestYUV) {
@@ -473,7 +538,11 @@ static void PrintHistogram(int rh[256], int gh[256], int bh[256]) {
 
 // Step by 5 on inner loop goes from 0 to 255 inclusive.
 // Set to 1 for better converage.  3, 5 or 17 for faster testing.
+#ifdef ENABLE_SLOW_TESTS
+#define FASTSTEP 1
+#else
 #define FASTSTEP 5
+#endif
 TEST_F(LibYUVColorTest, TestFullYUV) {
   int rh[256] = {
       0,
@@ -523,6 +592,66 @@ TEST_F(LibYUVColorTest, TestFullYUVJ) {
         EXPECT_NEAR(r0, r1, 1);
         EXPECT_NEAR(g0, g1, 1);
         EXPECT_NEAR(b0, b1, 1);
+        ++rh[r1 - r0 + 128];
+        ++gh[g1 - g0 + 128];
+        ++bh[b1 - b0 + 128];
+      }
+    }
+  }
+  PrintHistogram(rh, gh, bh);
+}
+
+TEST_F(LibYUVColorTest, TestFullYUVH) {
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
+  for (int u = 0; u < 256; ++u) {
+    for (int v = 0; v < 256; ++v) {
+      for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
+        int r0, g0, b0, r1, g1, b1;
+        int y = RANDOM256(y2);
+        YUVHToRGBReference(y, u, v, &r0, &g0, &b0);
+        YUVHToRGB(y, u, v, &r1, &g1, &b1);
+        EXPECT_NEAR(r0, r1, ERROR_R);
+        EXPECT_NEAR(g0, g1, ERROR_G);
+        // TODO(crbug.com/libyuv/862): Reduce the errors in the B channel.
+        EXPECT_NEAR(b0, b1, 15);
+        ++rh[r1 - r0 + 128];
+        ++gh[g1 - g0 + 128];
+        ++bh[b1 - b0 + 128];
+      }
+    }
+  }
+  PrintHistogram(rh, gh, bh);
+}
+
+TEST_F(LibYUVColorTest, TestFullYUVRec2020) {
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
+  for (int u = 0; u < 256; ++u) {
+    for (int v = 0; v < 256; ++v) {
+      for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
+        int r0, g0, b0, r1, g1, b1;
+        int y = RANDOM256(y2);
+        YUVRec2020ToRGBReference(y, u, v, &r0, &g0, &b0);
+        YUVRec2020ToRGB(y, u, v, &r1, &g1, &b1);
+        EXPECT_NEAR(r0, r1, ERROR_R);
+        EXPECT_NEAR(g0, g1, ERROR_G);
+        // TODO(crbug.com/libyuv/863): Reduce the errors in the B channel.
+        EXPECT_NEAR(b0, b1, 18);
         ++rh[r1 - r0 + 128];
         ++gh[g1 - g0 + 128];
         ++bh[b1 - b0 + 128];

@@ -1586,7 +1586,7 @@ const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
 
 // BT.2020 YUV to RGB reference
 //  R = (Y - 16) * 1.164384                - V * -1.67867
-//  G = (Y - 16) * 1.164384 - U * 0.187326 - V * -0.65042
+//  G = (Y - 16) * 1.164384 - U * 0.187326 - V *  0.65042
 //  B = (Y - 16) * 1.164384 - U * -2.14177
 
 // Y contribution to R,G,B.  Scale and bias.
@@ -1594,6 +1594,7 @@ const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
 #define YGB -1160 /* 1.164384 * 64 * -16 + 64 / 2 */
 
 // TODO(fbarchard): Improve accuracy; the B channel is off by 7%.
+// U and V contributions to R,G,B.
 #define UB -128 /* max(-128, round(-2.142 * 64)) */
 #define UG 12   /* round(0.187326 * 64) */
 #define VG 42   /* round(0.65042 * 64) */

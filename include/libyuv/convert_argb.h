@@ -47,6 +47,8 @@ LIBYUV_API extern const struct YuvConstants kYvu2020Constants;  // BT.2020
   NV21ToRGB24Matrix(a, b, c, d, e, f, g##VU, h, i)
 #define NV21ToRAWMatrix(a, b, c, d, e, f, g, h, i) \
   NV12ToRGB24Matrix(a, b, c, d, e, f, g##VU, h, i)
+#define I420AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, k, l, m, n) \
+  I420AlphaToARGBMatrix(a, b, e, f, c, d, g, h, i, j, k##VU, l, m, n)
 
 // Alias.
 #define ARGBToARGB ARGBCopy
