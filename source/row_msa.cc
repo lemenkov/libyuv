@@ -2611,13 +2611,13 @@ void BGRAToUVRow_MSA(const uint8_t* src_rgb0,
   v8u16 const_0x000038 = (v8u16)__msa_fill_w(0x0038);
   v8u16 const_0x250013 = (v8u16)__msa_fill_w(0x250013);
   v4u32 const_0x008080 = (v4u32)__msa_fill_w(0x8080);
-  v8u16 const_0x0001   = (v8u16)__msa_fill_h(0x0001);
+  v8u16 const_0x0001 = (v8u16)__msa_fill_h(0x0001);
 
   for (x = 0; x < width; x += 16) {
     READ_ARGB(s, t, src0, src1, src2, src3, const_0x0001);
     ARGBTOUV_H(src0, src1, src2, src3, const_0x09002f, const_0x000038,
-               const_0x250013, const_0x008080, shuffler0, shuffler1,
-               shuffler2, shuffler3, dst0, dst1);
+               const_0x250013, const_0x008080, shuffler0, shuffler1, shuffler2,
+               shuffler3, dst0, dst1);
     *((uint64_t*)dst_v) = __msa_copy_u_d((v2i64)dst0, 0);
     *((uint64_t*)dst_u) = __msa_copy_u_d((v2i64)dst1, 0);
     s += 64;
@@ -2646,13 +2646,13 @@ void ABGRToUVRow_MSA(const uint8_t* src_rgb0,
   v8u16 const_0x000038 = (v8u16)__msa_fill_w(0x0038);
   v8u16 const_0x250013 = (v8u16)__msa_fill_w(0x250013);
   v4u32 const_0x008080 = (v4u32)__msa_fill_w(0x8080);
-  v8u16 const_0x0001   = (v8u16)__msa_fill_h(0x0001);
+  v8u16 const_0x0001 = (v8u16)__msa_fill_h(0x0001);
 
   for (x = 0; x < width; x += 16) {
     READ_ARGB(s, t, src0, src1, src2, src3, const_0x0001);
     ARGBTOUV_H(src0, src1, src2, src3, const_0x09002f, const_0x000038,
-               const_0x250013, const_0x008080, shuffler0, shuffler1,
-               shuffler2, shuffler3, dst0, dst1);
+               const_0x250013, const_0x008080, shuffler0, shuffler1, shuffler2,
+               shuffler3, dst0, dst1);
     *((uint64_t*)dst_v) = __msa_copy_u_d((v2i64)dst0, 0);
     *((uint64_t*)dst_u) = __msa_copy_u_d((v2i64)dst1, 0);
     s += 64;
@@ -2681,13 +2681,13 @@ void RGBAToUVRow_MSA(const uint8_t* src_rgb0,
   v8u16 const_0x000038 = (v8u16)__msa_fill_w(0x0038);
   v8u16 const_0x250013 = (v8u16)__msa_fill_w(0x250013);
   v4u32 const_0x008080 = (v4u32)__msa_fill_w(0x8080);
-  v8u16 const_0x0001   = (v8u16)__msa_fill_h(0x0001);
+  v8u16 const_0x0001 = (v8u16)__msa_fill_h(0x0001);
 
   for (x = 0; x < width; x += 16) {
     READ_ARGB(s, t, src0, src1, src2, src3, const_0x0001);
     ARGBTOUV_H(src0, src1, src2, src3, const_0x09002f, const_0x000038,
-               const_0x250013, const_0x008080, shuffler0, shuffler1,
-               shuffler2, shuffler3, dst0, dst1);
+               const_0x250013, const_0x008080, shuffler0, shuffler1, shuffler2,
+               shuffler3, dst0, dst1);
     *((uint64_t*)dst_v) = __msa_copy_u_d((v2i64)dst0, 0);
     *((uint64_t*)dst_u) = __msa_copy_u_d((v2i64)dst1, 0);
     s += 64;

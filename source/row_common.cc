@@ -39,19 +39,19 @@ extern "C" {
 #define USE_BRANCHLESS 1
 #if USE_BRANCHLESS
 static __inline int32_t clamp0(int32_t v) {
-  return ((-(v) >> 31) & (v));
+  return -(v >= 0) & v;
 }
-
+// TODO(fbarchard): make clamp255 preserve negative values.
 static __inline int32_t clamp255(int32_t v) {
-  return (((255 - (v)) >> 31) | (v)) & 255;
+  return (-(v >= 255) | v) & 255;
 }
 
 static __inline int32_t clamp1023(int32_t v) {
-  return (((1023 - (v)) >> 31) | (v)) & 1023;
+  return (-(v >= 1023) | v) & 1023;
 }
 
 static __inline uint32_t Abs(int32_t v) {
-  int m = v >> 31;
+  int m = -(v < 0);
   return (v + m) ^ m;
 }
 #else   // USE_BRANCHLESS
