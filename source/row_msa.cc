@@ -2834,14 +2834,21 @@ void I444ToARGBRow_MSA(const uint8_t* src_y,
 // TODO - respect YuvConstants
 void I400ToARGBRow_MSA(const uint8_t* src_y,
                        uint8_t* dst_argb,
-                       const struct YuvConstants*,
+                       const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
+#if defined(__aarch64__) || defined(__arm__)
+  int ygb = yuvconstants->kUVBiasBGR[3];
+  int yg = yuvconstants->kYToRgb[1];
+#else
+  int ygb = yuvconstants->kYBiasToRgb[0];
+  int yg = yuvconstants->kYToRgb[0];
+#endif
   v16u8 src0, res0, res1, res2, res3, res4, dst0, dst1, dst2, dst3;
   v8i16 vec0, vec1;
   v4i32 reg0, reg1, reg2, reg3;
-  v4i32 vec_yg = __msa_fill_w(0x4A35);
-  v8i16 vec_ygb = __msa_fill_h(0xFB78);
+  v4i32 vec_yg = __msa_fill_w(yg);
+  v8i16 vec_ygb = __msa_fill_h(ygb);
   v16u8 alpha = (v16u8)__msa_ldi_b(ALPHA_VAL);
   v8i16 max = __msa_ldi_h(0xFF);
   v8i16 zero = {0};
@@ -3107,7 +3114,7 @@ void ARGBBlendRow_MSA(const uint8_t* src_argb0,
                       uint8_t* dst_argb,
                       int width) {
   int x;
-  v16u8 src0, src1, src2, src3, dst0, dst1;
+  v16u8 src0, src1, src2, src3, dst0, dst1, dst2, dst3;
   v8u16 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7;
   v8u16 vec8, vec9, vec10, vec11, vec12, vec13;
   v8u16 const_256 = (v8u16)__msa_ldi_h(256);
@@ -3152,12 +3159,12 @@ void ARGBBlendRow_MSA(const uint8_t* src_argb0,
     vec9 = (v8u16)__msa_srai_h((v8i16)vec9, 8);
     vec10 = (v8u16)__msa_srai_h((v8i16)vec10, 8);
     vec11 = (v8u16)__msa_srai_h((v8i16)vec11, 8);
-    vec0 += vec8;
-    vec1 += vec9;
-    vec2 += vec10;
-    vec3 += vec11;
     dst0 = (v16u8)__msa_pckev_b((v16i8)vec1, (v16i8)vec0);
     dst1 = (v16u8)__msa_pckev_b((v16i8)vec3, (v16i8)vec2);
+    dst2 = (v16u8)__msa_pckev_b((v16i8)vec9, (v16i8)vec8);
+    dst3 = (v16u8)__msa_pckev_b((v16i8)vec11, (v16i8)vec10);
+    dst0 = (v16u8)__msa_adds_u_b(dst0,dst2);
+    dst1 = (v16u8)__msa_adds_u_b(dst1,dst3);
     dst0 = __msa_bmnz_v(dst0, const_255, mask);
     dst1 = __msa_bmnz_v(dst1, const_255, mask);
     ST_UB2(dst0, dst1, dst_argb, 16);
