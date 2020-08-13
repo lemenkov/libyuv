@@ -3190,7 +3190,7 @@ void ARGBQuantizeRow_MSA(uint8_t* dst_argb,
   v16i8 mask = {0, 1, 2, 19, 4, 5, 6, 23, 8, 9, 10, 27, 12, 13, 14, 31};
   v16i8 zero = {0};
 
-  for (x = 0; x < width; x += 8) {
+  for (x = 0; x < width; x += 16) {
     src0 = (v16u8)__msa_ld_b((void*)dst_argb, 0);
     src1 = (v16u8)__msa_ld_b((void*)dst_argb, 16);
     src2 = (v16u8)__msa_ld_b((void*)dst_argb, 32);
