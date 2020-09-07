@@ -44,3 +44,13 @@ if (host_os == "mac") {
              "hermetic toolchain if the minimum OS version is not met.")
   use_system_xcode = _result == 0
 }
+
+declare_args() {
+  # Tracing support requires //third_party/perfetto.
+  enable_base_tracing = false
+  use_perfetto_client_library = false
+
+  # Allows googletest to pretty-print various absl types.
+  # Defined here rather than in gtest.gni to match chromium.
+  gtest_enable_absl_printers = true
+}

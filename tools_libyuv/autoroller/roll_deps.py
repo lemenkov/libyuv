@@ -37,7 +37,7 @@ CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
 
 COMMIT_POSITION_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
-CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION = \'([0-9a-z]+)\'$')
+CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION = \'([0-9a-z-]+)\'$')
 ROLL_BRANCH_NAME = 'roll_chromium_revision'
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -69,6 +69,7 @@ def ParseDepsDict(deps_content):
   local_scope = {}
   global_scope = {
     'Var': VarLookup(local_scope),
+    'Str': lambda s: s,
     'deps_os': {},
   }
   exec(deps_content, global_scope, local_scope)
@@ -274,7 +275,7 @@ def CalculateChangedClang(new_cr_rev):
       match = CLANG_REVISION_RE.match(line)
       if match:
         return match.group(1)
-    raise RollError('Could not parse Clang revision!')
+    raise RollError('Could not parse Clang revision from:\n' + '\n'.join('  ' + l for l in lines))
 
   with open(CLANG_UPDATE_SCRIPT_LOCAL_PATH, 'rb') as f:
     current_lines = f.readlines()
