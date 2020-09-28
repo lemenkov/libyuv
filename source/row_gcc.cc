@@ -7064,7 +7064,6 @@ void HalfMergeUVRow_SSSE3(const uint8_t* src_u,
       "psrlw      $0xf,%%xmm4                    \n"
       "packuswb   %%xmm4,%%xmm4                  \n"
       "pxor       %%xmm5,%%xmm5                  \n"
-      "1:                                        \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -7111,7 +7110,6 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
       "vpsrlw      $0xf,%%ymm4,%%ymm4            \n"
       "vpackuswb   %%ymm4,%%ymm4,%%ymm4          \n"
       "vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
-      "1:                                        \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -7146,6 +7144,29 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
       : "r"((intptr_t)(src_stride_u)),  // %4
         "r"((intptr_t)(src_stride_v))   // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+}
+
+void ClampFloatToZero_SSE2(const float* src_x,
+                           float * dst_y,
+                           int width) {
+
+    asm volatile(
+      "pxor      %%xmm1,%%xmm1                   \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movd       (%0),%%xmm0                    \n"  // load float
+      "maxss      %%xmm1, %%xmm0                 \n"  // clamp to zero
+      "add        4, %0                          \n"
+      "movd       %%xmm0, (%1)                   \n"  // store float
+      "add        4, %1                          \n"
+      "sub        $0x4,%2                        \n"  // 1 float per loop
+      "jg         1b                             \n"
+      : "+r"(src_x),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      :
+      : "memory", "cc", "xmm0", "xmm1");
 }
 
 #endif  // defined(__x86_64__) || defined(__i386__)
