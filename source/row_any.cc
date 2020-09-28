@@ -1253,6 +1253,7 @@ ANY11M(RGB24MirrorRow_Any_NEON, RGB24MirrorRow_NEON, 3, 15)
 #define ANY1(NAMEANY, ANY_SIMD, T, BPP, MASK)        \
   void NAMEANY(uint8_t* dst_ptr, T v32, int width) { \
     SIMD_ALIGNED(uint8_t temp[64]);                  \
+    memset(temp, 0, 64); /* for msan */              \
     int r = width & MASK;                            \
     int n = width & ~MASK;                           \
     if (n > 0) {                                     \
