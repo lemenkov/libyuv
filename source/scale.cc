@@ -17,6 +17,7 @@
 #include "libyuv/planar_functions.h"  // For CopyPlane
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h"
+#include "libyuv/scale_uv.h"  // For UVScale
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -1872,63 +1873,34 @@ int I444Scale_16(const uint16_t* src_y,
 // Scale an NV12 image.
 // This function in turn calls a scaling function for each plane.
 
-// TODO(https://bugs.chromium.org/p/libyuv/issues/detail?id=838): Remove
-// this once libyuv implements NV12Scale and use the libyuv::NV12Scale().
-// This is copy-pasted from
-// webrtc/common_video/libyuv/include/webrtc_libyuv.h
+LIBYUV_API
 int NV12Scale(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_uv,
-               int src_stride_uv,
-               int src_width,
-               int src_height,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
-               int dst_width,
-               int dst_height,
-               enum FilterMode filtering) {
-  const int src_chroma_width = (src_width + 1) / 2;
-  const int src_chroma_height = (src_height + 1) / 2;
-
-  if (src_width == dst_width && src_height == dst_height) {
-    // No scaling.
-    libyuv::CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, src_width,
-                      src_height);
-    libyuv::CopyPlane(src_uv, src_stride_uv, dst_uv, dst_stride_uv,
-                      src_chroma_width * 2, src_chroma_height);
-    return 0;
+              int src_stride_y,
+              const uint8_t* src_uv,
+              int src_stride_uv,
+              int src_width,
+              int src_height,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_uv,
+              int dst_stride_uv,
+              int dst_width,
+              int dst_height,
+              enum FilterMode filtering) {
+  int src_halfwidth = SUBSAMPLE(src_width, 1, 1);
+  int src_halfheight = SUBSAMPLE(src_height, 1, 1);
+  int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
+  int dst_halfheight = SUBSAMPLE(dst_height, 1, 1);
+  if (!src_y || !src_uv || src_width == 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 || !dst_y || !dst_uv ||
+      dst_width <= 0 || dst_height <= 0) {
+    return -1;
   }
 
-  // Scaling.
-  // Allocate temporary memory for spitting UV planes and scaling them.
-  const int dst_chroma_width = (dst_width + 1) / 2;
-  const int dst_chroma_height = (dst_height + 1) / 2;
-
-  align_buffer_64(tmp_buffer,
-  	              src_chroma_width * src_chroma_height * 2 +
-  	              dst_chroma_width * dst_chroma_height * 2);
-
-  uint8_t* const src_u = tmp_buffer;
-  uint8_t* const src_v = src_u + src_chroma_width * src_chroma_height;
-  uint8_t* const dst_u = src_v + src_chroma_width * src_chroma_height;
-  uint8_t* const dst_v = dst_u + dst_chroma_width * dst_chroma_height;
-
-  // Split source UV plane into separate U and V plane using the temporary data.
-  libyuv::SplitUVPlane(src_uv, src_stride_uv, src_u, src_chroma_width, src_v,
-                       src_chroma_width, src_chroma_width, src_chroma_height);
-
-  // Scale the planes.
-  libyuv::I420Scale(
-      src_y, src_stride_y, src_u, src_chroma_width, src_v, src_chroma_width,
-      src_width, src_height, dst_y, dst_stride_y, dst_u, dst_chroma_width,
-      dst_v, dst_chroma_width, dst_width, dst_height, filtering);
-
-  // Merge the UV planes into the destination.
-  libyuv::MergeUVPlane(dst_u, dst_chroma_width, dst_v, dst_chroma_width, dst_uv,
-                       dst_stride_uv, dst_chroma_width, dst_chroma_height);
-  free_aligned_buffer_64(tmp_buffer);
+  ScalePlane(src_y, src_stride_y, src_width, src_height, dst_y, dst_stride_y,
+             dst_width, dst_height, filtering);
+  UVScale(src_uv, src_stride_uv, src_halfwidth, src_halfheight, dst_uv,
+          dst_stride_uv, dst_halfwidth, dst_halfheight, filtering);
   return 0;
 }
 

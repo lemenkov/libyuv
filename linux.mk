@@ -49,6 +49,7 @@ LOCAL_OBJ_FILES := \
 	source/row_win.o           \
 	source/scale_any.o         \
 	source/scale_argb.o        \
+	source/scale_uv.o          \
 	source/scale.o             \
 	source/scale_common.o      \
 	source/scale_gcc.o         \

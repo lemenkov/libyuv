@@ -700,6 +700,12 @@ TEST_FACTOR(3, 1, 3, 0)
         benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);      \
     EXPECT_LE(diff, max_diff);                                                \
   }                                                                           \
+  TEST_F(LibYUVScaleTest, NV12##name##To##width##x##height##_##filter) {      \
+    int diff = NV12TestFilter(benchmark_width_, benchmark_height_, width,     \
+                              height, kFilter##filter, benchmark_iterations_, \
+                              disable_cpu_flags_, benchmark_cpu_info_);       \
+    EXPECT_LE(diff, max_diff);                                                \
+  }                                                                           \
   TEST_F(LibYUVScaleTest, I420##name##From##width##x##height##_##filter) {    \
     int diff = I420TestFilter(width, height, Abs(benchmark_width_),           \
                               Abs(benchmark_height_), kFilter##filter,        \
@@ -730,10 +736,11 @@ TEST_FACTOR(3, 1, 3, 0)
                                  benchmark_cpu_info_);                        \
     EXPECT_LE(diff, max_diff);                                                \
   }                                                                           \
-  TEST_F(LibYUVScaleTest, NV12##name##To##width##x##height##_##filter) {      \
-    int diff = NV12TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
+  TEST_F(LibYUVScaleTest, NV12##name##From##width##x##height##_##filter) {    \
+    int diff = NV12TestFilter(width, height, Abs(benchmark_width_),           \
+                              Abs(benchmark_height_), kFilter##filter,        \
+                              benchmark_iterations_, disable_cpu_flags_,      \
+                              benchmark_cpu_info_);                           \
     EXPECT_LE(diff, max_diff);                                                \
   }
 
