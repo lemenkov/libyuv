@@ -512,7 +512,7 @@ static int NV12TestFilter(int src_width,
   int src_height_uv = (Abs(src_height) + 1) >> 1;
 
   int64_t src_y_plane_size = (Abs(src_width)) * (Abs(src_height));
-  int64_t src_uv_plane_size = (src_width_uv) * (src_height_uv) * 2;
+  int64_t src_uv_plane_size = (src_width_uv) * (src_height_uv)*2;
 
   int src_stride_y = Abs(src_width);
   int src_stride_uv = src_width_uv * 2;
@@ -530,7 +530,7 @@ static int NV12TestFilter(int src_width,
   int dst_height_uv = (dst_height + 1) >> 1;
 
   int64_t dst_y_plane_size = (dst_width) * (dst_height);
-  int64_t dst_uv_plane_size = (dst_width_uv) * (dst_height_uv) * 2;
+  int64_t dst_uv_plane_size = (dst_width_uv) * (dst_height_uv)*2;
 
   int dst_stride_y = dst_width;
   int dst_stride_uv = dst_width_uv * 2;
@@ -546,17 +546,17 @@ static int NV12TestFilter(int src_width,
 
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   double c_time = get_time();
-  NV12Scale(src_y, src_stride_y, src_uv, src_stride_uv,
-            src_width, src_height, dst_y_c, dst_stride_y, dst_uv_c,
-            dst_stride_uv, dst_width, dst_height, f);
+  NV12Scale(src_y, src_stride_y, src_uv, src_stride_uv, src_width, src_height,
+            dst_y_c, dst_stride_y, dst_uv_c, dst_stride_uv, dst_width,
+            dst_height, f);
   c_time = (get_time() - c_time);
 
   MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
   double opt_time = get_time();
   for (i = 0; i < benchmark_iterations; ++i) {
-    NV12Scale(src_y, src_stride_y, src_uv, src_stride_uv,
-              src_width, src_height, dst_y_opt, dst_stride_y, dst_uv_opt,
-              dst_stride_uv, dst_width, dst_height, f);
+    NV12Scale(src_y, src_stride_y, src_uv, src_stride_uv, src_width, src_height,
+              dst_y_opt, dst_stride_y, dst_uv_opt, dst_stride_uv, dst_width,
+              dst_height, f);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
   // Report performance of C vs OPT.

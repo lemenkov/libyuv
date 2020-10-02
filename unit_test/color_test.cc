@@ -402,7 +402,11 @@ static void YUVHToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
 }
 
 // BT.2020 YUV to RGB reference
-static void YUVRec2020ToRGBReference(int y, int u, int v, int* r, int* g,
+static void YUVRec2020ToRGBReference(int y,
+                                     int u,
+                                     int v,
+                                     int* r,
+                                     int* g,
                                      int* b) {
   *r = RoundToByte((y - 16) * 1.164384 - (v - 128) * -1.67867);
   *g = RoundToByte((y - 16) * 1.164384 - (u - 128) * 0.187326 -

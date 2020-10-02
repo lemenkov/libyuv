@@ -132,6 +132,35 @@ int I420ToUYVY(const uint8_t* src_y,
                int width,
                int height);
 
+// The following are from convert_argb.h
+// DEPRECATED: The prototypes will be removed in future.  Use convert_argb.h
+
+// Convert I420 to ARGB.
+LIBYUV_API
+int I420ToARGB(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert I420 to ABGR.
+LIBYUV_API
+int I420ToABGR(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
 // Convert I420 to specified format.
 // "dst_sample_stride" is bytes in a row for the destination. Pass 0 if the
 //    buffer has contiguous rows. Can be negative. A multiple of 16 is optimal.

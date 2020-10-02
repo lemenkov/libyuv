@@ -7146,11 +7146,8 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 
-void ClampFloatToZero_SSE2(const float* src_x,
-                           float * dst_y,
-                           int width) {
-
-    asm volatile(
+void ClampFloatToZero_SSE2(const float* src_x, float* dst_y, int width) {
+  asm volatile(
       "pxor      %%xmm1,%%xmm1                   \n"
 
       LABELALIGN

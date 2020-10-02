@@ -3163,8 +3163,8 @@ void ARGBBlendRow_MSA(const uint8_t* src_argb0,
     dst1 = (v16u8)__msa_pckev_b((v16i8)vec3, (v16i8)vec2);
     dst2 = (v16u8)__msa_pckev_b((v16i8)vec9, (v16i8)vec8);
     dst3 = (v16u8)__msa_pckev_b((v16i8)vec11, (v16i8)vec10);
-    dst0 = (v16u8)__msa_adds_u_b(dst0,dst2);
-    dst1 = (v16u8)__msa_adds_u_b(dst1,dst3);
+    dst0 = (v16u8)__msa_adds_u_b(dst0, dst2);
+    dst1 = (v16u8)__msa_adds_u_b(dst1, dst3);
     dst0 = __msa_bmnz_v(dst0, const_255, mask);
     dst1 = __msa_bmnz_v(dst1, const_255, mask);
     ST_UB2(dst0, dst1, dst_argb, 16);
