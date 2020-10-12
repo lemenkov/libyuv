@@ -77,6 +77,10 @@ int ARGBToAR30(const uint8_t* src_argb,
                int width,
                int height);
 
+// Aliases
+#define ABGRToRGB24 ARGBToRAW
+#define ABGRToRAW   ARGBToRGB24
+
 // Convert ARGB To RGB24.
 LIBYUV_API
 int ARGBToRGB24(const uint8_t* src_argb,

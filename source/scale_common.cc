@@ -1063,11 +1063,9 @@ void ScaleUVRowDown2Box_C(const uint8_t* src_uv,
   int x;
   for (x = 0; x < dst_width; ++x) {
     dst_uv[0] = (src_uv[0] + src_uv[2] + src_uv[src_stride] +
-                 src_uv[src_stride + 2] + 2) >>
-                2;
+                 src_uv[src_stride + 2] + 2) >> 2;
     dst_uv[1] = (src_uv[1] + src_uv[3] + src_uv[src_stride + 1] +
-                 src_uv[src_stride + 3] + 2) >>
-                2;
+                 src_uv[src_stride + 3] + 2) >> 2;
     src_uv += 4;
     dst_uv += 2;
   }

@@ -1086,6 +1086,35 @@ void ScaleRowUp2_16_NEON(const uint16_t* src_ptr,
   );
 }
 
+void ScaleUVRowDown2Box_NEON(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst,
+                             int dst_width) {
+  asm volatile(
+      // change the stride to row 2 pointer
+      "add        %1, %1, %0                     \n"
+      "1:                                        \n"
+      "ld2        {v0.16b,v1.16b}, [%0], #32     \n"  // load 16 UV
+      "subs       %w3, %w3, #8                   \n"  // 8 processed per loop.
+      "uaddlp     v0.8h, v0.16b                  \n"  // U 16 bytes -> 8 shorts.
+      "uaddlp     v1.8h, v1.16b                  \n"  // V 16 bytes -> 8 shorts.
+      "ld2        {v16.16b,v17.16b}, [%1], #32   \n"  // load 16
+      "uadalp     v0.8h, v16.16b                 \n"  // U 16 bytes -> 8 shorts.
+      "uadalp     v1.8h, v17.16b                 \n"  // V 16 bytes -> 8 shorts.
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "rshrn      v0.8b, v0.8h, #2               \n"  // round and pack
+      "prfm       pldl1keep, [%1, 448]           \n"
+      "rshrn      v1.8b, v1.8h, #2               \n"
+      "st2        {v0.8b,v1.8b}, [%2], #16       \n"
+      "b.gt       1b                             \n"
+      : "+r"(src_ptr),     // %0
+        "+r"(src_stride),  // %1
+        "+r"(dst),         // %2
+        "+r"(dst_width)    // %3
+      :
+      : "memory", "cc", "v0", "v1", "v16", "v17");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

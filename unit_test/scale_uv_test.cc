@@ -14,7 +14,6 @@
 #include "../unit_test/unit_test.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale_uv.h"
-#include "libyuv/video_common.h"
 
 namespace libyuv {
 
@@ -23,13 +22,13 @@ namespace libyuv {
 
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int UVTestFilter(int src_width,
-                        int src_height,
-                        int dst_width,
-                        int dst_height,
-                        FilterMode f,
-                        int benchmark_iterations,
-                        int disable_cpu_flags,
-                        int benchmark_cpu_info) {
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
   if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
     return 0;
   }
@@ -47,7 +46,8 @@ static int UVTestFilter(int src_width,
   }
   MemRandomize(src_uv, src_uv_plane_size);
 
-  int64_t dst_uv_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 2LL;
+  int64_t dst_uv_plane_size =
+      (dst_width + b * 2) * (dst_height + b * 2) * 2LL;
   int dst_stride_uv = (b * 2 + dst_width) * 2;
 
   align_buffer_page_end(dst_uv_c, dst_uv_plane_size);
@@ -61,28 +61,29 @@ static int UVTestFilter(int src_width,
 
   // Warm up both versions for consistent benchmarks.
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
-  UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv, src_width,
-          src_height, dst_uv_c + (dst_stride_uv * b) + b * 2, dst_stride_uv,
-          dst_width, dst_height, f);
+  UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv,
+            src_width, src_height, dst_uv_c + (dst_stride_uv * b) + b * 2,
+            dst_stride_uv, dst_width, dst_height, f);
   MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
-  UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv, src_width,
-          src_height, dst_uv_opt + (dst_stride_uv * b) + b * 2, dst_stride_uv,
-          dst_width, dst_height, f);
+  UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv,
+            src_width, src_height, dst_uv_opt + (dst_stride_uv * b) + b * 2,
+            dst_stride_uv, dst_width, dst_height, f);
 
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   double c_time = get_time();
-  UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv, src_width,
-          src_height, dst_uv_c + (dst_stride_uv * b) + b * 2, dst_stride_uv,
-          dst_width, dst_height, f);
+  UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv,
+            src_width, src_height, dst_uv_c + (dst_stride_uv * b) + b * 2,
+            dst_stride_uv, dst_width, dst_height, f);
 
   c_time = (get_time() - c_time);
 
   MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
   double opt_time = get_time();
   for (i = 0; i < benchmark_iterations; ++i) {
-    UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv, src_width,
-            src_height, dst_uv_opt + (dst_stride_uv * b) + b * 2, dst_stride_uv,
-            dst_width, dst_height, f);
+    UVScale(src_uv + (src_stride_uv * b) + b * 2, src_stride_uv,
+              src_width, src_height,
+              dst_uv_opt + (dst_stride_uv * b) + b * 2, dst_stride_uv,
+              dst_width, dst_height, f);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
 
@@ -111,22 +112,56 @@ static int UVTestFilter(int src_width,
   return max_diff;
 }
 
-#define TEST_SCALETO1(name, width, height, filter, max_diff)                \
-  TEST_F(LibYUVScaleTest, name##To##width##x##height##_##filter) {          \
-    int diff = UVTestFilter(benchmark_width_, benchmark_height_, width,     \
-                            height, kFilter##filter, benchmark_iterations_, \
-                            disable_cpu_flags_, benchmark_cpu_info_);       \
-    EXPECT_LE(diff, max_diff);                                              \
-  }                                                                         \
-  TEST_F(LibYUVScaleTest, name##From##width##x##height##_##filter) {        \
-    int diff = UVTestFilter(width, height, Abs(benchmark_width_),           \
-                            Abs(benchmark_height_), kFilter##filter,        \
-                            benchmark_iterations_, disable_cpu_flags_,      \
-                            benchmark_cpu_info_);                           \
-    EXPECT_LE(diff, max_diff);                                              \
+// The following adjustments in dimensions ensure the scale factor will be
+// exactly achieved.
+#define DX(x, nom, denom) static_cast<int>((Abs(x) / nom) * nom)
+#define SX(x, nom, denom) static_cast<int>((x / nom) * denom)
+
+#define TEST_FACTOR1(name, filter, nom, denom, max_diff)                     \
+  TEST_F(LibYUVScaleTest, UVScaleDownBy##name##_##filter) {                \
+    int diff = UVTestFilter(                                               \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,          \
+        benchmark_cpu_info_);                                                \
+    EXPECT_LE(diff, max_diff);                                               \
   }
 
-/// Test scale to a specified size with all 3 filters.
+// Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
+// filtering is different fixed point implementations for SSSE3, Neon and C.
+#define TEST_FACTOR(name, nom, denom)         \
+  TEST_FACTOR1(name, None, nom, denom, 0)     \
+  TEST_FACTOR1(name, Linear, nom, denom, 3)   \
+  TEST_FACTOR1(name, Bilinear, nom, denom, 3) \
+  TEST_FACTOR1(name, Box, nom, denom, 3)
+
+TEST_FACTOR(2, 1, 2)
+TEST_FACTOR(4, 1, 4)
+// TEST_FACTOR(8, 1, 8)  Disable for benchmark performance.
+TEST_FACTOR(3by4, 3, 4)
+TEST_FACTOR(3by8, 3, 8)
+TEST_FACTOR(3, 1, 3)
+#undef TEST_FACTOR1
+#undef TEST_FACTOR
+#undef SX
+#undef DX
+
+#define TEST_SCALETO1(name, width, height, filter, max_diff)                   \
+  TEST_F(LibYUVScaleTest, name##To##width##x##height##_##filter) {             \
+    int diff = UVTestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    EXPECT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, name##From##width##x##height##_##filter) {           \
+    int diff = UVTestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    EXPECT_LE(diff, max_diff);                                                 \
+  }
+
+/// Test scale to a specified size with all 4 filters.
 #define TEST_SCALETO(name, width, height)       \
   TEST_SCALETO1(name, width, height, None, 0)   \
   TEST_SCALETO1(name, width, height, Linear, 3) \
