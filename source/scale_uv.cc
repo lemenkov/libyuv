@@ -96,6 +96,14 @@ static void ScaleUVDown2(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEUVROWDOWN2BOX_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && filtering) {
+    ScaleUVRowDown2 = ScaleUVRowDown2Box_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleUVRowDown2 = ScaleUVRowDown2Box_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_SCALEUVROWDOWN2BOX_NEON)
   if (TestCpuFlag(kCpuHasNEON) && filtering) {
     ScaleUVRowDown2 = ScaleUVRowDown2Box_Any_NEON;
@@ -220,6 +228,14 @@ static void ScaleUVDown4Box(int src_width,
     ScaleUVRowDown2 = ScaleUVRowDown2Box_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 4)) {
       ScaleUVRowDown2 = ScaleUVRowDown2Box_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2BOX_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleUVRowDown2 = ScaleUVRowDown2Box_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleUVRowDown2 = ScaleUVRowDown2Box_AVX2;
     }
   }
 #endif

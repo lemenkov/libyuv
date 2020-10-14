@@ -78,6 +78,14 @@ SDANY(ScaleUVRowDown2Box_Any_SSSE3,
       2,
       4)
 #endif
+#ifdef HAS_SCALEUVROWDOWN2BOX_AVX2
+SDANY(ScaleUVRowDown2Box_Any_AVX2,
+      ScaleUVRowDown2Box_AVX2,
+      ScaleUVRowDown2Box_C,
+      2,
+      2,
+      8)
+#endif
 #ifdef HAS_SCALEROWDOWN2_AVX2
 SDANY(ScaleRowDown2_Any_AVX2, ScaleRowDown2_AVX2, ScaleRowDown2_C, 2, 1, 31)
 SDANY(ScaleRowDown2Linear_Any_AVX2,

@@ -79,6 +79,15 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2BOX_SSSE3
 #endif
 
+// The following are available for gcc/clang x86 platforms, but
+// require clang 3.4 or gcc 4.7.
+// TODO(fbarchard): Port to Visual C
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(__x86_64__) || defined(__i386__)) && !defined(_MSC_VER) && \
+    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
+#define HAS_SCALEUVROWDOWN2BOX_AVX2
+#endif
+
 // The following are available on all x86 platforms, but
 // require VS2012, clang 3.4 or gcc 4.7.
 // The code supports NaCL but requires a new compiler and validator.
@@ -103,10 +112,6 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_NEON
 #define HAS_SCALEROWDOWN38_NEON
 #define HAS_SCALEROWDOWN4_NEON
-#endif
-
-// The following are available on 64 bit Neon platforms:
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_SCALEUVROWDOWN2BOX_NEON
 #endif
 
@@ -854,6 +859,10 @@ void ScaleUVRowDown2Box_SSSE3(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              uint8_t* dst_uv,
                              int dst_width);
+void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_uv,
+                             int dst_width);
 void ScaleUVRowDown2_NEON(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst,
@@ -902,6 +911,10 @@ void ScaleUVRowDown2Box_Any_SSSE3(const uint8_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint8_t* dst_ptr,
                                   int dst_width);
+void ScaleUVRowDown2Box_Any_AVX2(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_ptr,
+                                 int dst_width);
 void ScaleUVRowDown2_Any_NEON(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
