@@ -15,13 +15,13 @@ LOCAL_OBJ_FILES := \
 	source/compare_gcc.o       \
 	source/compare_mmi.o       \
 	source/compare_msa.o       \
-	source/compare_neon64.o    \
 	source/compare_neon.o      \
+	source/compare_neon64.o    \
 	source/compare_win.o       \
-	source/convert_argb.o      \
 	source/convert.o           \
-	source/convert_from_argb.o \
+	source/convert_argb.o      \
 	source/convert_from.o      \
+	source/convert_from_argb.o \
 	source/convert_jpeg.o      \
 	source/convert_to_argb.o   \
 	source/convert_to_i420.o   \
@@ -29,34 +29,34 @@ LOCAL_OBJ_FILES := \
 	source/mjpeg_decoder.o     \
 	source/mjpeg_validate.o    \
 	source/planar_functions.o  \
+	source/rotate.o            \
 	source/rotate_any.o        \
 	source/rotate_argb.o       \
-	source/rotate.o            \
 	source/rotate_common.o     \
 	source/rotate_gcc.o        \
 	source/rotate_mmi.o        \
 	source/rotate_msa.o        \
-	source/rotate_neon64.o     \
 	source/rotate_neon.o       \
+	source/rotate_neon64.o     \
 	source/rotate_win.o        \
 	source/row_any.o           \
 	source/row_common.o        \
 	source/row_gcc.o           \
 	source/row_mmi.o           \
 	source/row_msa.o           \
-	source/row_neon64.o        \
 	source/row_neon.o          \
+	source/row_neon64.o        \
 	source/row_win.o           \
+	source/scale.o             \
 	source/scale_any.o         \
 	source/scale_argb.o        \
-	source/scale_uv.o          \
-	source/scale.o             \
 	source/scale_common.o      \
 	source/scale_gcc.o         \
 	source/scale_mmi.o         \
 	source/scale_msa.o         \
-	source/scale_neon64.o      \
 	source/scale_neon.o        \
+	source/scale_neon64.o      \
+	source/scale_uv.o          \
 	source/scale_win.o         \
 	source/video_common.o
 

@@ -458,6 +458,12 @@ int MJPGToNV21(const uint8_t* sample,
                int dst_width,
                int dst_height);
 
+// JPEG to NV12
+LIBYUV_API
+int MJPGToNV12(const uint8_t* sample, size_t sample_size, uint8_t* dst_y,
+               int dst_stride_y, uint8_t* dst_uv, int dst_stride_uv,
+               int src_width, int src_height, int dst_width, int dst_height);
+
 // Query size of MJPG in pixels.
 LIBYUV_API
 int MJPGSize(const uint8_t* sample,

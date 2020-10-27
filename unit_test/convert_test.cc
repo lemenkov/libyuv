@@ -1810,6 +1810,65 @@ TEST_F(LibYUVConvertTest, TestMJPGToI420_NV21) {
   free_aligned_buffer_page_end(dst_vu);
 }
 
+TEST_F(LibYUVConvertTest, TestMJPGToI420_NV12) {
+  int width = 0;
+  int height = 0;
+  int ret = MJPGSize(kTest2Jpg, kTest2JpgLen, &width, &height);
+  EXPECT_EQ(0, ret);
+
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
+                             benchmark_height_ / (width * height);
+
+  // Convert to NV12
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, half_width * half_height * 2);
+
+  for (int times = 0; times < benchmark_iterations; ++times) {
+    ret = MJPGToNV12(kTest2Jpg, kTest2JpgLen, dst_y, width, dst_uv,
+                     half_width * 2, width, height, width, height);
+  }
+  // Expect sucesss
+  EXPECT_EQ(0, ret);
+
+  // Convert to I420
+  align_buffer_page_end(dst2_y, width * height);
+  align_buffer_page_end(dst2_u, half_width * half_height);
+  align_buffer_page_end(dst2_v, half_width * half_height);
+  for (int times = 0; times < benchmark_iterations; ++times) {
+    ret = MJPGToI420(kTest2Jpg, kTest2JpgLen, dst2_y, width, dst2_u, half_width,
+                     dst2_v, half_width, width, height, width, height);
+  }
+  // Expect sucesss
+  EXPECT_EQ(0, ret);
+
+  // Convert I420 to NV12
+  align_buffer_page_end(dst3_y, width * height);
+  align_buffer_page_end(dst3_uv, half_width * half_height * 2);
+
+  I420ToNV12(dst2_y, width, dst2_u, half_width, dst2_v, half_width, dst3_y,
+             width, dst3_uv, half_width * 2, width, height);
+
+  for (int i = 0; i < width * height; ++i) {
+    EXPECT_EQ(dst_y[i], dst3_y[i]);
+  }
+  for (int i = 0; i < half_width * half_height * 2; ++i) {
+    EXPECT_EQ(dst_uv[i], dst3_uv[i]);
+    EXPECT_EQ(dst_uv[i], dst3_uv[i]);
+  }
+
+  free_aligned_buffer_page_end(dst3_y);
+  free_aligned_buffer_page_end(dst3_uv);
+
+  free_aligned_buffer_page_end(dst2_y);
+  free_aligned_buffer_page_end(dst2_u);
+  free_aligned_buffer_page_end(dst2_v);
+
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+}
+
 TEST_F(LibYUVConvertTest, TestMJPGToNV21_420) {
   int width = 0;
   int height = 0;
@@ -1838,6 +1897,40 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_420) {
 
   free_aligned_buffer_page_end(dst_y);
   free_aligned_buffer_page_end(dst_uv);
+}
+
+TEST_F(LibYUVConvertTest, TestMJPGToNV12_420) {
+  int width = 0;
+  int height = 0;
+  int ret = MJPGSize(kTest2Jpg, kTest2JpgLen, &width, &height);
+  EXPECT_EQ(0, ret);
+
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
+                             benchmark_height_ / (width * height);
+
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, half_width * half_height * 2);
+  for (int times = 0; times < benchmark_iterations; ++times) {
+    ret = MJPGToNV12(kTest2Jpg, kTest2JpgLen, dst_y, width, dst_uv,
+                     half_width * 2, width, height, width, height);
+  }
+  // Expect sucesss
+  EXPECT_EQ(0, ret);
+
+  // Test result matches known hash value. Hashes are for VU so flip the plane.
+  uint32_t dst_y_hash = HashDjb2(dst_y, width * height, 5381);
+  align_buffer_page_end(dst_vu, half_width * half_height * 2);
+  SwapUVPlane(dst_uv, half_width * 2, dst_vu, half_width * 2, half_width,
+              half_height);
+  uint32_t dst_vu_hash = HashDjb2(dst_vu, half_width * half_height * 2, 5381);
+  EXPECT_EQ(dst_y_hash, 2682851208u);
+  EXPECT_EQ(dst_vu_hash, 1069662856u);
+
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(dst_vu);
 }
 
 TEST_F(LibYUVConvertTest, TestMJPGToNV21_422) {
@@ -1870,6 +1963,40 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_422) {
   free_aligned_buffer_page_end(dst_uv);
 }
 
+TEST_F(LibYUVConvertTest, TestMJPGToNV12_422) {
+  int width = 0;
+  int height = 0;
+  int ret = MJPGSize(kTest3Jpg, kTest3JpgLen, &width, &height);
+  EXPECT_EQ(0, ret);
+
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
+                             benchmark_height_ / (width * height);
+
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, half_width * half_height * 2);
+  for (int times = 0; times < benchmark_iterations; ++times) {
+    ret = MJPGToNV12(kTest3Jpg, kTest3JpgLen, dst_y, width, dst_uv,
+                     half_width * 2, width, height, width, height);
+  }
+  // Expect sucesss
+  EXPECT_EQ(0, ret);
+
+  // Test result matches known hash value. Hashes are for VU so flip the plane.
+  uint32_t dst_y_hash = HashDjb2(dst_y, width * height, 5381);
+  align_buffer_page_end(dst_vu, half_width * half_height * 2);
+  SwapUVPlane(dst_uv, half_width * 2, dst_vu, half_width * 2, half_width,
+              half_height);
+  uint32_t dst_vu_hash = HashDjb2(dst_vu, half_width * half_height * 2, 5381);
+  EXPECT_EQ(dst_y_hash, 2682851208u);
+  EXPECT_EQ(dst_vu_hash, 3543430771u);
+
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(dst_vu);
+}
+
 TEST_F(LibYUVConvertTest, TestMJPGToNV21_400) {
   int width = 0;
   int height = 0;
@@ -1900,6 +2027,40 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_400) {
   free_aligned_buffer_page_end(dst_uv);
 }
 
+TEST_F(LibYUVConvertTest, TestMJPGToNV12_400) {
+  int width = 0;
+  int height = 0;
+  int ret = MJPGSize(kTest0Jpg, kTest0JpgLen, &width, &height);
+  EXPECT_EQ(0, ret);
+
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
+                             benchmark_height_ / (width * height);
+
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, half_width * half_height * 2);
+  for (int times = 0; times < benchmark_iterations; ++times) {
+    ret = MJPGToNV12(kTest0Jpg, kTest0JpgLen, dst_y, width, dst_uv,
+                     half_width * 2, width, height, width, height);
+  }
+  // Expect sucesss
+  EXPECT_EQ(0, ret);
+
+  // Test result matches known hash value. Hashes are for VU so flip the plane.
+  uint32_t dst_y_hash = HashDjb2(dst_y, width * height, 5381);
+  align_buffer_page_end(dst_vu, half_width * half_height * 2);
+  SwapUVPlane(dst_uv, half_width * 2, dst_vu, half_width * 2, half_width,
+              half_height);
+  uint32_t dst_vu_hash = HashDjb2(dst_vu, half_width * half_height * 2, 5381);
+  EXPECT_EQ(dst_y_hash, 330644005u);
+  EXPECT_EQ(dst_vu_hash, 135214341u);
+
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(dst_vu);
+}
+
 TEST_F(LibYUVConvertTest, TestMJPGToNV21_444) {
   int width = 0;
   int height = 0;
@@ -1928,6 +2089,40 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_444) {
 
   free_aligned_buffer_page_end(dst_y);
   free_aligned_buffer_page_end(dst_uv);
+}
+
+TEST_F(LibYUVConvertTest, TestMJPGToNV12_444) {
+  int width = 0;
+  int height = 0;
+  int ret = MJPGSize(kTest1Jpg, kTest1JpgLen, &width, &height);
+  EXPECT_EQ(0, ret);
+
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
+                             benchmark_height_ / (width * height);
+
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, half_width * half_height * 2);
+  for (int times = 0; times < benchmark_iterations; ++times) {
+    ret = MJPGToNV12(kTest1Jpg, kTest1JpgLen, dst_y, width, dst_uv,
+                     half_width * 2, width, height, width, height);
+  }
+  // Expect sucesss
+  EXPECT_EQ(0, ret);
+
+  // Test result matches known hash value. Hashes are for VU so flip the plane.
+  uint32_t dst_y_hash = HashDjb2(dst_y, width * height, 5381);
+  align_buffer_page_end(dst_vu, half_width * half_height * 2);
+  SwapUVPlane(dst_uv, half_width * 2, dst_vu, half_width * 2, half_width,
+              half_height);
+  uint32_t dst_vu_hash = HashDjb2(dst_vu, half_width * half_height * 2, 5381);
+  EXPECT_EQ(dst_y_hash, 2682851208u);
+  EXPECT_EQ(dst_vu_hash, 506143297u);
+
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(dst_vu);
 }
 
 TEST_F(LibYUVConvertTest, TestMJPGToARGB) {
