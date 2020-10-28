@@ -328,8 +328,10 @@ int MJPGToNV21(const uint8_t* src_mjpg,
   return ret ? 0 : 1;
 }
 
-static void JpegI420ToNV12(void* opaque, const uint8_t* const* data,
-                           const int* strides, int rows) {
+static void JpegI420ToNV12(void* opaque,
+                           const uint8_t* const* data,
+                           const int* strides,
+                           int rows) {
   NV21Buffers* dest = (NV21Buffers*)(opaque);
   // Use NV21 with VU swapped.
   I420ToNV21(data[0], strides[0], data[2], strides[2], data[1], strides[1],
@@ -339,8 +341,10 @@ static void JpegI420ToNV12(void* opaque, const uint8_t* const* data,
   dest->h -= rows;
 }
 
-static void JpegI422ToNV12(void* opaque, const uint8_t* const* data,
-                           const int* strides, int rows) {
+static void JpegI422ToNV12(void* opaque,
+                           const uint8_t* const* data,
+                           const int* strides,
+                           int rows) {
   NV21Buffers* dest = (NV21Buffers*)(opaque);
   // Use NV21 with VU swapped.
   I422ToNV21(data[0], strides[0], data[2], strides[2], data[1], strides[1],
@@ -350,8 +354,10 @@ static void JpegI422ToNV12(void* opaque, const uint8_t* const* data,
   dest->h -= rows;
 }
 
-static void JpegI444ToNV12(void* opaque, const uint8_t* const* data,
-                           const int* strides, int rows) {
+static void JpegI444ToNV12(void* opaque,
+                           const uint8_t* const* data,
+                           const int* strides,
+                           int rows) {
   NV21Buffers* dest = (NV21Buffers*)(opaque);
   // Use NV21 with VU swapped.
   I444ToNV21(data[0], strides[0], data[2], strides[2], data[1], strides[1],
@@ -361,8 +367,10 @@ static void JpegI444ToNV12(void* opaque, const uint8_t* const* data,
   dest->h -= rows;
 }
 
-static void JpegI400ToNV12(void* opaque, const uint8_t* const* data,
-                           const int* strides, int rows) {
+static void JpegI400ToNV12(void* opaque,
+                           const uint8_t* const* data,
+                           const int* strides,
+                           int rows) {
   NV21Buffers* dest = (NV21Buffers*)(opaque);
   // Use NV21 since there is no UV plane.
   I400ToNV21(data[0], strides[0], dest->y, dest->y_stride, dest->vu,
@@ -374,9 +382,16 @@ static void JpegI400ToNV12(void* opaque, const uint8_t* const* data,
 
 // MJPG (Motion JPEG) to NV12.
 LIBYUV_API
-int MJPGToNV12(const uint8_t* sample, size_t sample_size, uint8_t* dst_y,
-               int dst_stride_y, uint8_t* dst_uv, int dst_stride_uv,
-               int src_width, int src_height, int dst_width, int dst_height) {
+int MJPGToNV12(const uint8_t* sample,
+               size_t sample_size,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int src_width,
+               int src_height,
+               int dst_width,
+               int dst_height) {
   if (sample_size == kUnknownDataSize) {
     // ERROR: MJPEG frame size unknown
     return -1;

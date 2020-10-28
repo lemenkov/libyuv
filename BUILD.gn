@@ -376,7 +376,9 @@ if (libyuv_include_tests) {
       # sources
       "util/i444tonv12_eg.cc",
     ]
-    deps = [ ":libyuv" ]
+    deps = [
+      ":libyuv",
+    ]
   }
 
   executable("cpuid") {

@@ -82,7 +82,7 @@ extern "C" {
 // The following are available for gcc/clang x86 platforms, but
 // require clang 3.4 or gcc 4.7.
 // TODO(fbarchard): Port to Visual C
-#if !defined(LIBYUV_DISABLE_X86) && \
+#if !defined(LIBYUV_DISABLE_X86) &&                                     \
     (defined(__x86_64__) || defined(__i386__)) && !defined(_MSC_VER) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_SCALEUVROWDOWN2BOX_AVX2
@@ -848,17 +848,17 @@ void ScaleARGBRowDownEvenBox_Any_MMI(const uint8_t* src_ptr,
 
 // UV Row functions
 void ScaleUVRowDown2_SSSE3(const uint8_t* src_ptr,
-                          ptrdiff_t src_stride,
-                          uint8_t* dst_uv,
-                          int dst_width);
+                           ptrdiff_t src_stride,
+                           uint8_t* dst_uv,
+                           int dst_width);
 void ScaleUVRowDown2Linear_SSSE3(const uint8_t* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8_t* dst_uv,
-                                int dst_width);
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_uv,
+                                 int dst_width);
 void ScaleUVRowDown2Box_SSSE3(const uint8_t* src_ptr,
-                             ptrdiff_t src_stride,
-                             uint8_t* dst_uv,
-                             int dst_width);
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_uv,
+                              int dst_width);
 void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              uint8_t* dst_uv,
@@ -952,15 +952,15 @@ void ScaleUVRowDown2Box_Any_MMI(const uint8_t* src_ptr,
                                 uint8_t* dst_ptr,
                                 int dst_width);
 void ScaleUVRowDownEven_SSSE3(const uint8_t* src_ptr,
-                             ptrdiff_t src_stride,
-                             int src_stepx,
-                             uint8_t* dst_uv,
-                             int dst_width);
+                              ptrdiff_t src_stride,
+                              int src_stepx,
+                              uint8_t* dst_uv,
+                              int dst_width);
 void ScaleUVRowDownEvenBox_SSSE3(const uint8_t* src_ptr,
-                                ptrdiff_t src_stride,
-                                int src_stepx,
-                                uint8_t* dst_uv,
-                                int dst_width);
+                                 ptrdiff_t src_stride,
+                                 int src_stepx,
+                                 uint8_t* dst_uv,
+                                 int dst_width);
 void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              int src_stepx,
@@ -992,15 +992,15 @@ void ScaleUVRowDownEvenBox_MMI(const uint8_t* src_ptr,
                                uint8_t* dst_uv,
                                int dst_width);
 void ScaleUVRowDownEven_Any_SSSE3(const uint8_t* src_ptr,
-                                 ptrdiff_t src_stride,
-                                 int src_stepx,
-                                 uint8_t* dst_ptr,
-                                 int dst_width);
+                                  ptrdiff_t src_stride,
+                                  int src_stepx,
+                                  uint8_t* dst_ptr,
+                                  int dst_width);
 void ScaleUVRowDownEvenBox_Any_SSSE3(const uint8_t* src_ptr,
-                                    ptrdiff_t src_stride,
-                                    int src_stepx,
-                                    uint8_t* dst_ptr,
-                                    int dst_width);
+                                     ptrdiff_t src_stride,
+                                     int src_stepx,
+                                     uint8_t* dst_ptr,
+                                     int dst_width);
 void ScaleUVRowDownEven_Any_NEON(const uint8_t* src_ptr,
                                  ptrdiff_t src_stride,
                                  int src_stepx,

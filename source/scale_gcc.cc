@@ -1370,8 +1370,9 @@ int FixedDiv1_X86(int num, int div) {
 // Shuffle table for splitting UV into upper and lower part of register.
 static const uvec8 kShuffleSplitUV = {0u, 2u, 4u, 6u, 8u, 10u, 12u, 14u,
                                       1u, 3u, 5u, 7u, 9u, 11u, 13u, 15u};
-static const uvec8 kShuffleMergeUV = {0u, 8u, 2u, 10u, 4u, 12u, 6u, 14u,
-  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
+static const uvec8 kShuffleMergeUV = {0u,   8u,   2u,   10u,  4u,   12u,
+                                      6u,   14u,  0x80, 0x80, 0x80, 0x80,
+                                      0x80, 0x80, 0x80, 0x80};
 
 void ScaleUVRowDown2Box_SSSE3(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
@@ -1402,15 +1403,15 @@ void ScaleUVRowDown2Box_SSSE3(const uint8_t* src_ptr,
       "lea        0x8(%1),%1                     \n"  // 4 UV
       "sub        $0x4,%2                        \n"
       "jg         1b                             \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride)), // %3
-        "m"(kShuffleSplitUV),        // %4
-        "m"(kShuffleMergeUV)         // %5
+      : "+r"(src_ptr),                // %0
+        "+r"(dst_ptr),                // %1
+        "+r"(dst_width)               // %2
+      : "r"((intptr_t)(src_stride)),  // %3
+        "m"(kShuffleSplitUV),         // %4
+        "m"(kShuffleMergeUV)          // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
-#endif // HAS_SCALEUVROWDOWN2BOX_SSSE3
+#endif  // HAS_SCALEUVROWDOWN2BOX_SSSE3
 
 #ifdef HAS_SCALEUVROWDOWN2BOX_AVX2
 void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
@@ -1444,15 +1445,15 @@ void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
       "sub        $0x8,%2                        \n"
       "jg         1b                             \n"
       "vzeroupper                                \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride)), // %3
-        "m"(kShuffleSplitUV),        // %4
-        "m"(kShuffleMergeUV)         // %5
+      : "+r"(src_ptr),                // %0
+        "+r"(dst_ptr),                // %1
+        "+r"(dst_width)               // %2
+      : "r"((intptr_t)(src_stride)),  // %3
+        "m"(kShuffleSplitUV),         // %4
+        "m"(kShuffleMergeUV)          // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
-#endif // HAS_SCALEUVROWDOWN2BOX_AVX2
+#endif  // HAS_SCALEUVROWDOWN2BOX_AVX2
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 
