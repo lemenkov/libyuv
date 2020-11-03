@@ -490,6 +490,13 @@ SDAANY(ScaleARGBRowDownEvenBox_Any_MMI,
        4,
        1)
 #endif
+#ifdef HAS_SCALEUVROWDOWNEVEN_NEON
+SDAANY(ScaleUVRowDownEven_Any_NEON,
+       ScaleUVRowDownEven_NEON,
+       ScaleUVRowDownEven_C,
+       2,
+       3)
+#endif
 
 #ifdef SASIMDONLY
 // This also works and uses memcpy and SIMD instead of C, but is slower on ARM

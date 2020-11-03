@@ -75,9 +75,9 @@ void CpuId(int info_eax, int info_ecx, int* cpu_info) {
   asm volatile(
 #if defined(__i386__) && defined(__PIC__)
       // Preserve ebx for fpic 32 bit.
-      "mov %%ebx, %%edi                          \n"
+      "mov         %%ebx, %%edi                  \n"
       "cpuid                                     \n"
-      "xchg %%edi, %%ebx                         \n"
+      "xchg        %%edi, %%ebx                  \n"
       : "=D"(info_ebx),
 #else
       "cpuid                                     \n"

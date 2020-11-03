@@ -299,6 +299,14 @@ static void ScaleUVDownEven(int src_width,
   }
 #endif
 #if defined(HAS_SCALEUVROWDOWNEVEN_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && !filtering) {
+    ScaleUVRowDownEven = ScaleUVRowDownEven_Any_NEON;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleUVRowDownEven = ScaleUVRowDownEven_NEON;
+    }
+  }
+#endif// TODO(fbarchard): Enable Box filter
+#if defined(HAS_SCALEUVROWDOWNEVENBOX_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleUVRowDownEven = filtering ? ScaleUVRowDownEvenBox_Any_NEON
                                    : ScaleUVRowDownEven_Any_NEON;

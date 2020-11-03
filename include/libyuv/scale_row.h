@@ -113,6 +113,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN38_NEON
 #define HAS_SCALEROWDOWN4_NEON
 #define HAS_SCALEUVROWDOWN2BOX_NEON
+#define HAS_SCALEUVROWDOWNEVEN_NEON
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
