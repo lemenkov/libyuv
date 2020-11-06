@@ -684,6 +684,13 @@ extern "C" {
 #define HAS_YUY2TOYROW_MMI
 #endif
 
+
+#if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_asx)
+#define HAS_I422TOARGBROW_LASX
+#define HAS_I422TORGBAROW_LASX
+#define HAS_I422ALPHATOARGBROW_LASX
+#endif
+
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
 #if defined(VISUALC_HAS_AVX2)
 #define SIMD_ALIGNED(var) __declspec(align(32)) var
@@ -954,12 +961,24 @@ void I422ToARGBRow_MSA(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I422ToARGBRow_LASX(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void I422ToRGBARow_MSA(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I422ToRGBARow_LASX(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void I422ToARGBRow_MMI(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
@@ -973,6 +992,13 @@ void I422AlphaToARGBRow_MSA(const uint8_t* src_y,
                             uint8_t* dst_argb,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I422AlphaToARGBRow_LASX(const uint8_t* src_y,
+                             const uint8_t* src_u,
+                             const uint8_t* src_v,
+                             const uint8_t* src_a,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void I422ToRGB24Row_MSA(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -4221,6 +4247,12 @@ void I422ToARGBRow_Any_MSA(const uint8_t* y_buf,
                            uint8_t* dst_ptr,
                            const struct YuvConstants* yuvconstants,
                            int width);
+void I422ToARGBRow_Any_LASX(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I422ToARGBRow_Any_MMI(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
@@ -4233,6 +4265,12 @@ void I422ToRGBARow_Any_MSA(const uint8_t* y_buf,
                            uint8_t* dst_ptr,
                            const struct YuvConstants* yuvconstants,
                            int width);
+void I422ToRGBARow_Any_LASX(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I422AlphaToARGBRow_Any_MSA(const uint8_t* y_buf,
                                 const uint8_t* u_buf,
                                 const uint8_t* v_buf,
@@ -4240,6 +4278,13 @@ void I422AlphaToARGBRow_Any_MSA(const uint8_t* y_buf,
                                 uint8_t* dst_ptr,
                                 const struct YuvConstants* yuvconstants,
                                 int width);
+void I422AlphaToARGBRow_Any_LASX(const uint8_t* y_buf,
+                                 const uint8_t* u_buf,
+                                 const uint8_t* v_buf,
+                                 const uint8_t* a_buf,
+                                 uint8_t* dst_ptr,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
 void I422ToRGB24Row_Any_MSA(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,

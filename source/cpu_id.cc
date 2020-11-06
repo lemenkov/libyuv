@@ -197,6 +197,31 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
   return flag;
 }
 
+// TODO(fbarchard): Consider read_loongarch_ir().
+#define LOONGARCH_CFG2 0x2
+#define LOONGARCH_CFG2_LSX    (1 << 6)
+#define LOONGARCH_CFG2_LASX   (1 << 7)
+
+#if defined(__loongarch__) && defined(__linux__)
+LIBYUV_API SAFEBUFFERS int LoongarchCpuCaps(void) {
+  int flag = 0x0;
+  uint32_t cfg2 = 0;
+
+  __asm__ volatile(
+  "cpucfg %0, %1 \n\t"
+  : "+&r"(cfg2)
+  : "r"(LOONGARCH_CFG2)
+  );
+
+  if (cfg2 & LOONGARCH_CFG2_LSX)
+      flag |= kCpuHasLSX;
+
+  if (cfg2 & LOONGARCH_CFG2_LASX)
+      flag |= kCpuHasLASX;
+  return flag;
+}
+#endif
+
 static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info = 0;
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \
@@ -239,6 +264,10 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 #if defined(__mips__) && defined(__linux__)
   cpu_info = MipsCpuCaps("/proc/cpuinfo");
   cpu_info |= kCpuHasMIPS;
+#endif
+#if defined(__loongarch__) && defined(__linux__)
+  cpu_info = LoongarchCpuCaps();
+  cpu_info |= kCpuHasLOONGARCH;
 #endif
 #if defined(__arm__) || defined(__aarch64__)
 // gcc -mfpu=neon defines __ARM_NEON__

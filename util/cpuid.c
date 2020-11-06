@@ -23,6 +23,7 @@ int main(int argc, const char* argv[]) {
   int has_arm = TestCpuFlag(kCpuHasARM);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
   int has_x86 = TestCpuFlag(kCpuHasX86);
+  int has_loongarch = TestCpuFlag(kCpuHasLOONGARCH);
   (void)argc;
   (void)argv;
 
@@ -65,6 +66,7 @@ int main(int argc, const char* argv[]) {
   printf("Has ARM %x\n", has_arm);
   printf("Has MIPS %x\n", has_mips);
   printf("Has X86 %x\n", has_x86);
+  printf("Has LOONGARCH %x\n", has_loongarch);
   if (has_arm) {
     int has_neon = TestCpuFlag(kCpuHasNEON);
     printf("Has NEON %x\n", has_neon);
@@ -74,6 +76,12 @@ int main(int argc, const char* argv[]) {
     printf("Has MSA %x\n", has_msa);
     int has_mmi = TestCpuFlag(kCpuHasMMI);
     printf("Has MMI %x\n", has_mmi);
+  }
+  if (has_loongarch) {
+    int has_lsx  = TestCpuFlag(kCpuHasLSX);
+    printf("Has LSX %x\n", has_lsx);
+    int has_lasx = TestCpuFlag(kCpuHasLASX);
+    printf("Has LASX %x\n", has_lasx);
   }
   if (has_x86) {
     int has_sse2 = TestCpuFlag(kCpuHasSSE2);

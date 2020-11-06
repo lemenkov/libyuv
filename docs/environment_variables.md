@@ -37,6 +37,10 @@ By default the cpu is detected and the most advanced form of SIMD is used.  But 
     LIBYUV_DISABLE_MSA
     LIBYUV_DISABLE_MMI
 
+## LOONGARCH CPUs
+    LIBYUV_DISABLE_LSX
+    LIBYUV_DISABLE_LASX
+
 # Test Width/Height/Repeat
 
 The unittests default to a small image (128x72) to run fast.  This can be set by environment variable to test a specific resolutions.
