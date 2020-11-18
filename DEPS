@@ -1,13 +1,7 @@
-gclient_gn_args_file = 'src/build/config/gclient_args.gni'
-gclient_gn_args = [
-  'mac_xcode_version',
-]
-
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '64c8c30faaf969c15c028131dfcd0819208039c1',
   'gn_version': 'git_revision:6f13aaac55a977e1948910942675c69f2b4f7a94',
-  'mac_xcode_version': 'default',
 }
 
 deps = {
