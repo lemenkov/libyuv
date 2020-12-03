@@ -349,6 +349,39 @@ int I420ToI400(const uint8_t* src_y,
   return 0;
 }
 
+// Copy NV12. Supports inverting.
+int NV12Copy(const uint8_t* src_y, int src_stride_y, const uint8_t* src_uv,
+             int src_stride_uv, uint8_t* dst_y, int dst_stride_y,
+             uint8_t* dst_uv, int dst_stride_uv, int width, int height) {
+  if (!src_y || !dst_y || !src_uv || !dst_uv || width <= 0 || height == 0) {
+    return -1;
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_uv = src_uv + (halfheight - 1) * src_stride_uv;
+    src_stride_y = -src_stride_y;
+    src_stride_uv = -src_stride_uv;
+  }
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  CopyPlane(src_uv, src_stride_uv, dst_uv, dst_stride_uv, halfwidth * 2,
+            halfheight);
+  return 0;
+}
+
+// Copy NV21. Supports inverting.
+int NV21Copy(const uint8_t* src_y, int src_stride_y, const uint8_t* src_vu,
+             int src_stride_vu, uint8_t* dst_y, int dst_stride_y,
+             uint8_t* dst_vu, int dst_stride_vu, int width, int height) {
+  return NV12Copy(src_y, src_stride_y, src_vu, src_stride_vu, dst_y,
+                  dst_stride_y, dst_vu, dst_stride_vu, width, height);
+}
+
 // Support function for NV12 etc UV channels.
 // Width and height are plane sizes (typically half pixel width).
 LIBYUV_API

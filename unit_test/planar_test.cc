@@ -3562,4 +3562,68 @@ TEST_F(LibYUVPlanarTest, HalfMergeUVPlane_Opt) {
   free_aligned_buffer_page_end(dst_pixels_uv_c);
 }
 
+TEST_F(LibYUVPlanarTest, NV12Copy) {
+  const int halfwidth = (benchmark_width_ + 1) >> 1;
+  const int halfheight = (benchmark_height_ + 1) >> 1;
+  align_buffer_page_end(src_y, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(src_uv, halfwidth * 2 * halfheight);
+  align_buffer_page_end(dst_y, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(dst_uv, halfwidth * 2 * halfheight);
+
+  MemRandomize(src_y, benchmark_width_ * benchmark_height_);
+  MemRandomize(src_uv, halfwidth * 2 * halfheight);
+  MemRandomize(dst_y, benchmark_width_ * benchmark_height_);
+  MemRandomize(dst_uv, halfwidth * 2 * halfheight);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    NV12Copy(src_y, benchmark_width_, src_uv, halfwidth * 2, dst_y,
+             benchmark_width_, dst_uv, halfwidth * 2, benchmark_width_,
+             benchmark_height_);
+  }
+
+  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
+    EXPECT_EQ(src_y[i], dst_y[i]);
+  }
+  for (int i = 0; i < halfwidth * 2 * halfheight; ++i) {
+    EXPECT_EQ(src_uv[i], dst_uv[i]);
+  }
+
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_uv);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+}
+
+TEST_F(LibYUVPlanarTest, NV21Copy) {
+  const int halfwidth = (benchmark_width_ + 1) >> 1;
+  const int halfheight = (benchmark_height_ + 1) >> 1;
+  align_buffer_page_end(src_y, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(src_vu, halfwidth * 2 * halfheight);
+  align_buffer_page_end(dst_y, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(dst_vu, halfwidth * 2 * halfheight);
+
+  MemRandomize(src_y, benchmark_width_ * benchmark_height_);
+  MemRandomize(src_vu, halfwidth * 2 * halfheight);
+  MemRandomize(dst_y, benchmark_width_ * benchmark_height_);
+  MemRandomize(dst_vu, halfwidth * 2 * halfheight);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    NV21Copy(src_y, benchmark_width_, src_vu, halfwidth * 2, dst_y,
+             benchmark_width_, dst_vu, halfwidth * 2, benchmark_width_,
+             benchmark_height_);
+  }
+
+  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
+    EXPECT_EQ(src_y[i], dst_y[i]);
+  }
+  for (int i = 0; i < halfwidth * 2 * halfheight; ++i) {
+    EXPECT_EQ(src_vu[i], dst_vu[i]);
+  }
+
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_vu);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_vu);
+}
+
 }  // namespace libyuv

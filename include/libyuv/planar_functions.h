@@ -200,6 +200,16 @@ int I444Copy(const uint8_t* src_y,
              int width,
              int height);
 
+// Copy NV12. Supports inverting.
+int NV12Copy(const uint8_t* src_y, int src_stride_y, const uint8_t* src_uv,
+             int src_stride_uv, uint8_t* dst_y, int dst_stride_y,
+             uint8_t* dst_uv, int dst_stride_uv, int width, int height);
+
+// Copy NV21. Supports inverting.
+int NV21Copy(const uint8_t* src_y, int src_stride_y, const uint8_t* src_vu,
+             int src_stride_vu, uint8_t* dst_y, int dst_stride_y,
+             uint8_t* dst_vu, int dst_stride_vu, int width, int height);
+
 // Convert YUY2 to I422.
 LIBYUV_API
 int YUY2ToI422(const uint8_t* src_yuy2,
