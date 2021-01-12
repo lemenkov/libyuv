@@ -771,6 +771,58 @@ TEST_SCALETO(Scale, 1920, 1080)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
+#define TEST_SCALESWAPXY1(DISABLED_, name, filter, max_diff)               \
+  TEST_F(LibYUVScaleTest, I420##name##SwapXY_##filter) {                   \
+    int diff = I420TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    EXPECT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, I444##name##SwapXY_##filter) {                   \
+    int diff = I444TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    EXPECT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, DISABLED_##I420##name##SwapXY_##filter##_16) {   \
+    int diff = I420TestFilter_16(benchmark_width_, benchmark_height_,      \
+                                 benchmark_height_, benchmark_width_,      \
+                                 kFilter##filter, benchmark_iterations_,   \
+                                 disable_cpu_flags_, benchmark_cpu_info_); \
+    EXPECT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, DISABLED_##I444##name##SwapXY_##filter##_16) {   \
+    int diff = I444TestFilter_16(benchmark_width_, benchmark_height_,      \
+                                 benchmark_height_, benchmark_width_,      \
+                                 kFilter##filter, benchmark_iterations_,   \
+                                 disable_cpu_flags_, benchmark_cpu_info_); \
+    EXPECT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, NV12##name##SwapXY_##filter) {                   \
+    int diff = NV12TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    EXPECT_LE(diff, max_diff);                                             \
+  }
+
+// Test scale to a specified size with all 4 filters.
+#ifdef ENABLE_SLOW_TESTS
+TEST_SCALESWAPXY1(, Scale, None, 0)
+TEST_SCALESWAPXY1(, Scale, Linear, 3)
+TEST_SCALESWAPXY1(, Scale, Bilinear, 3)
+TEST_SCALESWAPXY1(, Scale, Box, 3)
+#else
+TEST_SCALESWAPXY1(DISABLED_, Scale, None, 0)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Linear, 3)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 3)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 3)
+#endif
+
+#undef TEST_SCALESWAPXY1
+
 #ifdef ENABLE_ROW_TESTS
 #ifdef HAS_SCALEROWDOWN2_SSSE3
 TEST_F(LibYUVScaleTest, TestScaleRowDown2Box_Odd_SSSE3) {
@@ -1119,22 +1171,16 @@ TEST_F(LibYUVScaleTest, PlaneTestRotate_None) {
   align_buffer_page_end(dest_opt_pixels, kSize);
   align_buffer_page_end(dest_c_pixels, kSize);
 
-
   MaskCpuFlags(disable_cpu_flags_);  // Disable all CPU optimization.
-  ScalePlane(orig_pixels, benchmark_width_,
-             benchmark_width_, benchmark_height_,
-             dest_c_pixels, benchmark_height_,
-             benchmark_height_, benchmark_width_,
-             kFilterNone);
+  ScalePlane(orig_pixels, benchmark_width_, benchmark_width_, benchmark_height_,
+             dest_c_pixels, benchmark_height_, benchmark_height_,
+             benchmark_width_, kFilterNone);
   MaskCpuFlags(benchmark_cpu_info_);  // Enable all CPU optimization.
 
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    ScalePlane(orig_pixels, benchmark_width_,
-               benchmark_width_, benchmark_height_,
-               dest_opt_pixels, benchmark_height_,
-               benchmark_height_, benchmark_width_,
-               kFilterNone);
+    ScalePlane(orig_pixels, benchmark_width_, benchmark_width_,
+               benchmark_height_, dest_opt_pixels, benchmark_height_,
+               benchmark_height_, benchmark_width_, kFilterNone);
   }
 
   for (int i = 0; i < kSize; ++i) {
@@ -1155,22 +1201,16 @@ TEST_F(LibYUVScaleTest, PlaneTestRotate_Bilinear) {
   align_buffer_page_end(dest_opt_pixels, kSize);
   align_buffer_page_end(dest_c_pixels, kSize);
 
-
   MaskCpuFlags(disable_cpu_flags_);  // Disable all CPU optimization.
-  ScalePlane(orig_pixels, benchmark_width_,
-             benchmark_width_, benchmark_height_,
-             dest_c_pixels, benchmark_height_,
-             benchmark_height_, benchmark_width_,
-             kFilterBilinear);
+  ScalePlane(orig_pixels, benchmark_width_, benchmark_width_, benchmark_height_,
+             dest_c_pixels, benchmark_height_, benchmark_height_,
+             benchmark_width_, kFilterBilinear);
   MaskCpuFlags(benchmark_cpu_info_);  // Enable all CPU optimization.
 
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    ScalePlane(orig_pixels, benchmark_width_,
-               benchmark_width_, benchmark_height_,
-               dest_opt_pixels, benchmark_height_,
-               benchmark_height_, benchmark_width_,
-               kFilterBilinear);
+    ScalePlane(orig_pixels, benchmark_width_, benchmark_width_,
+               benchmark_height_, dest_opt_pixels, benchmark_height_,
+               benchmark_height_, benchmark_width_, kFilterBilinear);
   }
 
   for (int i = 0; i < kSize; ++i) {
@@ -1192,22 +1232,16 @@ TEST_F(LibYUVScaleTest, PlaneTestRotate_Box) {
   align_buffer_page_end(dest_opt_pixels, kSize);
   align_buffer_page_end(dest_c_pixels, kSize);
 
-
   MaskCpuFlags(disable_cpu_flags_);  // Disable all CPU optimization.
-  ScalePlane(orig_pixels, benchmark_width_,
-             benchmark_width_, benchmark_height_,
-             dest_c_pixels, benchmark_height_,
-             benchmark_height_, benchmark_width_,
-             kFilterBox);
+  ScalePlane(orig_pixels, benchmark_width_, benchmark_width_, benchmark_height_,
+             dest_c_pixels, benchmark_height_, benchmark_height_,
+             benchmark_width_, kFilterBox);
   MaskCpuFlags(benchmark_cpu_info_);  // Enable all CPU optimization.
 
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    ScalePlane(orig_pixels, benchmark_width_,
-               benchmark_width_, benchmark_height_,
-               dest_opt_pixels, benchmark_height_,
-               benchmark_height_, benchmark_width_,
-               kFilterBox);
+    ScalePlane(orig_pixels, benchmark_width_, benchmark_width_,
+               benchmark_height_, dest_opt_pixels, benchmark_height_,
+               benchmark_height_, benchmark_width_, kFilterBox);
   }
 
   for (int i = 0; i < kSize; ++i) {

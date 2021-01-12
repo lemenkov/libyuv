@@ -312,6 +312,21 @@ TEST_SCALETO(ARGBScale, 1920, 1080)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
+#define TEST_SCALESWAPXY1(name, filter, max_diff)                       \
+  TEST_F(LibYUVScaleTest, name##SwapXY_##filter) {                      \
+    int diff = ARGBTestFilter(benchmark_width_, benchmark_height_,      \
+                              benchmark_height_, benchmark_width_,      \
+                              kFilter##filter, benchmark_iterations_,   \
+                              disable_cpu_flags_, benchmark_cpu_info_); \
+    EXPECT_LE(diff, max_diff);                                          \
+  }
+
+// Test scale with swapped width and height with all 3 filters.
+TEST_SCALESWAPXY1(ARGBScale, None, 0)
+TEST_SCALESWAPXY1(ARGBScale, Linear, 0)
+TEST_SCALESWAPXY1(ARGBScale, Bilinear, 0)
+#undef TEST_SCALESWAPXY1
+
 // Scale with YUV conversion to ARGB and clipping.
 // TODO(fbarchard): Add fourcc support.  All 4 ARGB formats is easy to support.
 LIBYUV_API
