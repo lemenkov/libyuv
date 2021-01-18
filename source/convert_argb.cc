@@ -1516,6 +1516,264 @@ int I420AlphaToARGBMatrix(const uint8_t* src_y,
   return 0;
 }
 
+// Convert I422 with Alpha to preattenuated ARGB with matrix.
+LIBYUV_API
+int I422AlphaToARGBMatrix(const uint8_t* src_y,
+                          int src_stride_y,
+                          const uint8_t* src_u,
+                          int src_stride_u,
+                          const uint8_t* src_v,
+                          int src_stride_v,
+                          const uint8_t* src_a,
+                          int src_stride_a,
+                          uint8_t* dst_argb,
+                          int dst_stride_argb,
+                          const struct YuvConstants* yuvconstants,
+                          int width,
+                          int height,
+                          int attenuate) {
+  int y;
+  void (*I422AlphaToARGBRow)(const uint8_t* y_buf, const uint8_t* u_buf,
+                             const uint8_t* v_buf, const uint8_t* a_buf,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width) = I422AlphaToARGBRow_C;
+  void (*ARGBAttenuateRow)(const uint8_t* src_argb, uint8_t* dst_argb,
+                           int width) = ARGBAttenuateRow_C;
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+#if defined(HAS_I422ALPHATOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422AlphaToARGBRow = I422AlphaToARGBRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I422ALPHATOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422AlphaToARGBRow = I422AlphaToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422ALPHATOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I422AlphaToARGBRow = I422AlphaToARGBRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_I422ALPHATOARGBROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422AlphaToARGBRow = I422AlphaToARGBRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_I422ALPHATOARGBROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      I422AlphaToARGBRow = I422AlphaToARGBRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_MMI;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_MSA;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, yuvconstants,
+                       width);
+    if (attenuate) {
+      ARGBAttenuateRow(dst_argb, dst_argb, width);
+    }
+    dst_argb += dst_stride_argb;
+    src_a += src_stride_a;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+  return 0;
+}
+
+// Convert I444 with Alpha to preattenuated ARGB with matrix.
+LIBYUV_API
+int I444AlphaToARGBMatrix(const uint8_t* src_y,
+                          int src_stride_y,
+                          const uint8_t* src_u,
+                          int src_stride_u,
+                          const uint8_t* src_v,
+                          int src_stride_v,
+                          const uint8_t* src_a,
+                          int src_stride_a,
+                          uint8_t* dst_argb,
+                          int dst_stride_argb,
+                          const struct YuvConstants* yuvconstants,
+                          int width,
+                          int height,
+                          int attenuate) {
+  int y;
+  void (*I444AlphaToARGBRow)(const uint8_t* y_buf, const uint8_t* u_buf,
+                             const uint8_t* v_buf, const uint8_t* a_buf,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width) = I444AlphaToARGBRow_C;
+  void (*ARGBAttenuateRow)(const uint8_t* src_argb, uint8_t* dst_argb,
+                           int width) = ARGBAttenuateRow_C;
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+#if defined(HAS_I444ALPHATOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I444AlphaToARGBRow = I444AlphaToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I444AlphaToARGBRow = I444AlphaToARGBRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I444ALPHATOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I444AlphaToARGBRow = I444AlphaToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I444AlphaToARGBRow = I444AlphaToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I444ALPHATOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I444AlphaToARGBRow = I444AlphaToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I444AlphaToARGBRow = I444AlphaToARGBRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_I444ALPHATOARGBROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I444AlphaToARGBRow = I444AlphaToARGBRow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I444AlphaToARGBRow = I444AlphaToARGBRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_I444ALPHATOARGBROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    I444AlphaToARGBRow = I444AlphaToARGBRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      I444AlphaToARGBRow = I444AlphaToARGBRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_MMI;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_MSA;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    I444AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, yuvconstants,
+                       width);
+    if (attenuate) {
+      ARGBAttenuateRow(dst_argb, dst_argb, width);
+    }
+    dst_argb += dst_stride_argb;
+    src_a += src_stride_a;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+  return 0;
+}
+
 // Convert I420 with Alpha to ARGB.
 LIBYUV_API
 int I420AlphaToARGB(const uint8_t* src_y,
@@ -1553,6 +1811,92 @@ int I420AlphaToABGR(const uint8_t* src_y,
                     int height,
                     int attenuate) {
   return I420AlphaToARGBMatrix(
+      src_y, src_stride_y, src_v, src_stride_v,  // Swap U and V
+      src_u, src_stride_u, src_a, src_stride_a, dst_abgr, dst_stride_abgr,
+      &kYvuI601Constants,  // Use Yvu matrix
+      width, height, attenuate);
+}
+
+// Convert I422 with Alpha to ARGB.
+LIBYUV_API
+int I422AlphaToARGB(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_argb,
+                    int dst_stride_argb,
+                    int width,
+                    int height,
+                    int attenuate) {
+  return I422AlphaToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                               src_stride_v, src_a, src_stride_a, dst_argb,
+                               dst_stride_argb, &kYuvI601Constants, width,
+                               height, attenuate);
+}
+
+// Convert I422 with Alpha to ABGR.
+LIBYUV_API
+int I422AlphaToABGR(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_abgr,
+                    int dst_stride_abgr,
+                    int width,
+                    int height,
+                    int attenuate) {
+  return I422AlphaToARGBMatrix(
+      src_y, src_stride_y, src_v, src_stride_v,  // Swap U and V
+      src_u, src_stride_u, src_a, src_stride_a, dst_abgr, dst_stride_abgr,
+      &kYvuI601Constants,  // Use Yvu matrix
+      width, height, attenuate);
+}
+
+// Convert I444 with Alpha to ARGB.
+LIBYUV_API
+int I444AlphaToARGB(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_argb,
+                    int dst_stride_argb,
+                    int width,
+                    int height,
+                    int attenuate) {
+  return I444AlphaToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                               src_stride_v, src_a, src_stride_a, dst_argb,
+                               dst_stride_argb, &kYuvI601Constants, width,
+                               height, attenuate);
+}
+
+// Convert I444 with Alpha to ABGR.
+LIBYUV_API
+int I444AlphaToABGR(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_abgr,
+                    int dst_stride_abgr,
+                    int width,
+                    int height,
+                    int attenuate) {
+  return I444AlphaToARGBMatrix(
       src_y, src_stride_y, src_v, src_stride_v,  // Swap U and V
       src_u, src_stride_u, src_a, src_stride_a, dst_abgr, dst_stride_abgr,
       &kYvuI601Constants,  // Use Yvu matrix

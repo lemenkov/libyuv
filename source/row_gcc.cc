@@ -1964,6 +1964,18 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba0,
   "movq       (%[a_buf]),%%xmm5                               \n" \
   "lea        0x8(%[a_buf]),%[a_buf]                          \n"
 
+// Read 8 UV from 444.  With 8 Alpha.
+#define READYUVA444                                               \
+  "movq       (%[u_buf]),%%xmm0                               \n" \
+  "movq       0x00(%[u_buf],%[v_buf],1),%%xmm1                \n" \
+  "lea        0x8(%[u_buf]),%[u_buf]                          \n" \
+  "punpcklbw  %%xmm1,%%xmm0                                   \n" \
+  "movq       (%[y_buf]),%%xmm4                               \n" \
+  "punpcklbw  %%xmm4,%%xmm4                                   \n" \
+  "lea        0x8(%[y_buf]),%[y_buf]                          \n" \
+  "movq       (%[a_buf]),%%xmm5                               \n" \
+  "lea        0x8(%[a_buf]),%[a_buf]                          \n"
+
 // Read 4 UV from NV12, upsample to 8 UV
 #define READNV12                                                  \
   "movq       (%[uv_buf]),%%xmm0                              \n" \
@@ -2137,6 +2149,44 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8_t* y_buf,
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
+
+#ifdef HAS_I444ALPHATOARGBROW_SSSE3
+void OMITFP I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
+                                     const uint8_t* u_buf,
+                                     const uint8_t* v_buf,
+                                     const uint8_t* a_buf,
+                                     uint8_t* dst_argb,
+                                     const struct YuvConstants* yuvconstants,
+                                     int width) {
+  // clang-format off
+  asm volatile (
+  YUVTORGB_SETUP(yuvconstants)
+  "sub         %[u_buf],%[v_buf]             \n"
+
+  LABELALIGN
+  "1:                                        \n"
+  READYUVA444
+  YUVTORGB(yuvconstants)
+  STOREARGB
+  "subl        $0x8,%[width]                 \n"
+  "jg          1b                            \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [a_buf]"+r"(a_buf),    // %[a_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+#if defined(__i386__)
+    [width]"+m"(width)     // %[width]
+#else
+    [width]"+rm"(width)    // %[width]
+#endif
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS
+      "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+  // clang-format on
+}
+#endif  // HAS_I444ALPHATOARGBROW_SSSE3
 
 void OMITFP I422ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  const uint8_t* u_buf,
@@ -2537,6 +2587,22 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpsllw     $0x6,%%ymm4,%%ymm4                               \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
+// Read 16 UV from 444.  With 16 Alpha.
+#define READYUVA444_AVX2                                              \
+  "vmovdqu    (%[u_buf]),%%xmm0                                   \n" \
+  "vmovdqu    0x00(%[u_buf],%[v_buf],1),%%xmm1                    \n" \
+  "lea        0x10(%[u_buf]),%[u_buf]                             \n" \
+  "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n" \
+  "vpermq     $0xd8,%%ymm1,%%ymm1                                 \n" \
+  "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n" \
+  "vmovdqu    (%[y_buf]),%%xmm4                                   \n" \
+  "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n" \
+  "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n" \
+  "lea        0x10(%[y_buf]),%[y_buf]                             \n" \
+  "vmovdqu    (%[a_buf]),%%xmm5                                   \n" \
+  "vpermq     $0xd8,%%ymm5,%%ymm5                                 \n" \
+  "lea        0x10(%[a_buf]),%[a_buf]                             \n"
+
 // Read 8 UV from 422, upsample to 16 UV.  With 16 Alpha.
 #define READYUVA422_AVX2                                              \
   "vmovq      (%[u_buf]),%%xmm0                                   \n" \
@@ -2867,6 +2933,47 @@ void OMITFP I210ToAR30Row_AVX2(const uint16_t* y_buf,
   );
 }
 #endif  // HAS_I210TOAR30ROW_AVX2
+
+#if defined(HAS_I444ALPHATOARGBROW_AVX2)
+// 16 pixels
+// 16 UV values with 16 Y and 16 A producing 16 ARGB.
+void OMITFP I444AlphaToARGBRow_AVX2(const uint8_t* y_buf,
+                                    const uint8_t* u_buf,
+                                    const uint8_t* v_buf,
+                                    const uint8_t* a_buf,
+                                    uint8_t* dst_argb,
+                                    const struct YuvConstants* yuvconstants,
+                                    int width) {
+  // clang-format off
+  asm volatile (
+  YUVTORGB_SETUP_AVX2(yuvconstants)
+  "sub         %[u_buf],%[v_buf]             \n"
+
+  LABELALIGN
+  "1:                                        \n"
+  READYUVA444_AVX2
+  YUVTORGB_AVX2(yuvconstants)
+  STOREARGB_AVX2
+  "subl        $0x10,%[width]                \n"
+  "jg          1b                            \n"
+  "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [a_buf]"+r"(a_buf),    // %[a_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+#if defined(__i386__)
+    [width]"+m"(width)     // %[width]
+#else
+    [width]"+rm"(width)    // %[width]
+#endif
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS_AVX2
+      "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+  // clang-format on
+}
+#endif  // HAS_I444ALPHATOARGBROW_AVX2
 
 #if defined(HAS_I422ALPHATOARGBROW_AVX2)
 // 16 pixels

@@ -27,6 +27,28 @@ extern "C" {
 // 64 bit
 #if defined(_M_X64)
 
+// Read 8 UV from 444
+#define READYUV444                                        \
+  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);                \
+  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset));     \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
+  u_buf += 8;                                             \
+  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
+  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
+  y_buf += 8;
+
+// Read 8 UV from 444, With 8 Alpha.
+#define READYUVA444                                       \
+  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);                \
+  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset));     \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
+  u_buf += 8;                                             \
+  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
+  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
+  y_buf += 8;                                             \
+  xmm5 = _mm_loadl_epi64((__m128i*)a_buf);                \
+  a_buf += 8;
+
 // Read 4 UV from 422, upsample to 8 UV.
 #define READYUV422                                        \
   xmm0 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
@@ -114,6 +136,44 @@ void I422AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
   const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
     READYUVA422
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    width -= 8;
+  }
+}
+#endif
+
+#if defined(HAS_I444TOARGBROW_SSSE3)
+void I444ToARGBRow_SSSE3(const uint8_t* y_buf,
+                         const uint8_t* u_buf,
+                         const uint8_t* v_buf,
+                         uint8_t* dst_argb,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
+  __m128i xmm0, xmm1, xmm2, xmm4;
+  const __m128i xmm5 = _mm_set1_epi8(-1);
+  const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
+  while (width > 0) {
+    READYUV444
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    width -= 8;
+  }
+}
+#endif
+
+#if defined(HAS_I444ALPHATOARGBROW_SSSE3)
+void I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
+                              const uint8_t* u_buf,
+                              const uint8_t* v_buf,
+                              const uint8_t* a_buf,
+                              uint8_t* dst_argb,
+                              const struct YuvConstants* yuvconstants,
+                              int width) {
+  __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
+  const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
+  while (width > 0) {
+    READYUVA444
     YUVTORGB(yuvconstants)
     STOREARGB
     width -= 8;
@@ -1938,6 +1998,23 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb0,
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
     __asm lea        eax, [eax + 16]}
 
+// Read 16 UV from 444.  With 16 Alpha.
+#define READYUVA444_AVX2 \
+  __asm {                                                                      \
+    __asm vmovdqu    xmm0, [esi] /* U */                                       \
+    __asm vmovdqu    xmm1, [esi + edi] /* V */                                 \
+    __asm lea        esi,  [esi + 16]                                          \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpermq     ymm1, ymm1, 0xd8                                          \
+    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                                 \
+    __asm vmovdqu    xmm4, [eax] /* Y */                                       \
+    __asm vpermq     ymm4, ymm4, 0xd8                                          \
+    __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
+    __asm lea        eax, [eax + 16]                                           \
+    __asm vmovdqu    xmm5, [ebp] /* A */                                       \
+    __asm vpermq     ymm5, ymm5, 0xd8                                          \
+    __asm lea        ebp, [ebp + 16]}
+
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 \
   __asm {                                                \
@@ -2183,6 +2260,48 @@ __declspec(naked) void I444ToARGBRow_AVX2(
 }
 #endif  // HAS_I444TOARGBROW_AVX2
 
+#ifdef HAS_I444ALPHATOARGBROW_AVX2
+// 16 pixels
+// 16 UV values with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked) void I444AlphaToARGBRow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    const uint8_t* a_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
+  __asm {
+  push       esi
+  push       edi
+  push       ebx
+  push       ebp
+  mov        eax, [esp + 16 + 4]  // Y
+  mov        esi, [esp + 16 + 8]  // U
+  mov        edi, [esp + 16 + 12]  // V
+  mov        ebp, [esp + 16 + 16]  // A
+  mov        edx, [esp + 16 + 20]  // argb
+  mov        ebx, [esp + 16 + 24]  // yuvconstants
+  mov        ecx, [esp + 16 + 28]  // width
+  sub        edi, esi
+  convertloop:
+  READYUVA444_AVX2
+  YUVTORGB_AVX2(ebx)
+  STOREARGB_AVX2
+
+  sub        ecx, 16
+  jg         convertloop
+
+  pop        ebp
+  pop        ebx
+  pop        edi
+  pop        esi
+  vzeroupper
+  ret
+  }
+}
+#endif  // HAS_I444AlphaTOARGBROW_AVX2
+
 #ifdef HAS_NV12TOARGBROW_AVX2
 // 16 pixels.
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
@@ -2369,6 +2488,19 @@ __declspec(naked) void I422ToRGBARow_AVX2(
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]}
+
+// Read 4 UV from 444.  With 8 Alpha.
+#define READYUVA444 \
+  __asm {                                                                      \
+    __asm movq       xmm0, qword ptr [esi] /* U */                             \
+    __asm movq       xmm1, qword ptr [esi + edi] /* V */                       \
+    __asm lea        esi,  [esi + 8]                                           \
+    __asm punpcklbw  xmm0, xmm1 /* UV */                                       \
+    __asm movq       xmm4, qword ptr [eax]                                     \
+    __asm punpcklbw  xmm4, xmm4                                                \
+    __asm lea        eax, [eax + 8]                                            \
+    __asm movq       xmm5, qword ptr [ebp] /* A */                             \
+    __asm lea        ebp, [ebp + 8]}
 
 // Read 4 UV from 422, upsample to 8 UV.
 #define READYUV422 \
@@ -2578,6 +2710,46 @@ __declspec(naked) void I444ToARGBRow_SSSE3(
     sub        ecx, 8
     jg         convertloop
 
+    pop        ebx
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels.
+// 8 UV values, mixed with 8 Y and 8A producing 8 ARGB (32 bytes).
+__declspec(naked) void I444AlphaToARGBRow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    const uint8_t* a_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
+  __asm {
+    push       esi
+    push       edi
+    push       ebx
+    push       ebp
+    mov        eax, [esp + 16 + 4]  // Y
+    mov        esi, [esp + 16 + 8]  // U
+    mov        edi, [esp + 16 + 12]  // V
+    mov        ebp, [esp + 16 + 16]  // A
+    mov        edx, [esp + 16 + 20]  // argb
+    mov        ebx, [esp + 16 + 24]  // yuvconstants
+    mov        ecx, [esp + 16 + 28]  // width
+    sub        edi, esi
+
+ convertloop:
+    READYUVA444
+    YUVTORGB(ebx)
+    STOREARGB
+
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        ebp
     pop        ebx
     pop        edi
     pop        esi

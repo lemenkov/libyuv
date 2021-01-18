@@ -49,6 +49,10 @@ LIBYUV_API extern const struct YuvConstants kYvu2020Constants;  // BT.2020
   NV12ToRGB24Matrix(a, b, c, d, e, f, g##VU, h, i)
 #define I420AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, k, l, m, n) \
   I420AlphaToARGBMatrix(a, b, e, f, c, d, g, h, i, j, k##VU, l, m, n)
+#define I422AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, k, l, m, n) \
+  I422AlphaToARGBMatrix(a, b, e, f, c, d, g, h, i, j, k##VU, l, m, n)
+#define I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, k, l, m, n) \
+  I444AlphaToARGBMatrix(a, b, e, f, c, d, g, h, i, j, k##VU, l, m, n)
 
 // Alias.
 #define ARGBToARGB ARGBCopy
@@ -549,6 +553,70 @@ int I420AlphaToARGB(const uint8_t* src_y,
 // Convert I420 with Alpha to preattenuated ABGR.
 LIBYUV_API
 int I420AlphaToABGR(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_abgr,
+                    int dst_stride_abgr,
+                    int width,
+                    int height,
+                    int attenuate);
+
+// Convert I422 with Alpha to preattenuated ARGB.
+LIBYUV_API
+int I422AlphaToARGB(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_argb,
+                    int dst_stride_argb,
+                    int width,
+                    int height,
+                    int attenuate);
+
+// Convert I422 with Alpha to preattenuated ABGR.
+LIBYUV_API
+int I422AlphaToABGR(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_abgr,
+                    int dst_stride_abgr,
+                    int width,
+                    int height,
+                    int attenuate);
+
+// Convert I444 with Alpha to preattenuated ARGB.
+LIBYUV_API
+int I444AlphaToARGB(const uint8_t* src_y,
+                    int src_stride_y,
+                    const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_argb,
+                    int dst_stride_argb,
+                    int width,
+                    int height,
+                    int attenuate);
+
+// Convert I444 with Alpha to preattenuated ABGR.
+LIBYUV_API
+int I444AlphaToABGR(const uint8_t* src_y,
                     int src_stride_y,
                     const uint8_t* src_u,
                     int src_stride_u,
@@ -1398,6 +1466,40 @@ int I210ToARGBMatrix(const uint16_t* src_y,
 // Convert I420 with Alpha to preattenuated ARGB with matrix.
 LIBYUV_API
 int I420AlphaToARGBMatrix(const uint8_t* src_y,
+                          int src_stride_y,
+                          const uint8_t* src_u,
+                          int src_stride_u,
+                          const uint8_t* src_v,
+                          int src_stride_v,
+                          const uint8_t* src_a,
+                          int src_stride_a,
+                          uint8_t* dst_argb,
+                          int dst_stride_argb,
+                          const struct YuvConstants* yuvconstants,
+                          int width,
+                          int height,
+                          int attenuate);
+
+// Convert I422 with Alpha to preattenuated ARGB with matrix.
+LIBYUV_API
+int I422AlphaToARGBMatrix(const uint8_t* src_y,
+                          int src_stride_y,
+                          const uint8_t* src_u,
+                          int src_stride_u,
+                          const uint8_t* src_v,
+                          int src_stride_v,
+                          const uint8_t* src_a,
+                          int src_stride_a,
+                          uint8_t* dst_argb,
+                          int dst_stride_argb,
+                          const struct YuvConstants* yuvconstants,
+                          int width,
+                          int height,
+                          int attenuate);
+
+// Convert I444 with Alpha to preattenuated ARGB with matrix.
+LIBYUV_API
+int I444AlphaToARGBMatrix(const uint8_t* src_y,
                           int src_stride_y,
                           const uint8_t* src_u,
                           int src_stride_u,

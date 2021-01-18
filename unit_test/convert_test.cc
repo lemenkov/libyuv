@@ -738,6 +738,42 @@ TESTPLANARTOB(H420, 2, 2, AR30, 4, 4, 1)
 #define U420AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
   I420AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
                         l, m)
+#define J422AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I422AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvJPEGConstants, k, \
+                        l, m)
+#define J422AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I422AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvJPEGConstants, k, \
+                        l, m)
+#define H422AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I422AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvH709Constants, k, \
+                        l, m)
+#define H422AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I422AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvH709Constants, k, \
+                        l, m)
+#define U422AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I422AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
+                        l, m)
+#define U422AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I422AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
+                        l, m)
+#define J444AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I444AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvJPEGConstants, k, \
+                        l, m)
+#define J444AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvJPEGConstants, k, \
+                        l, m)
+#define H444AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I444AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvH709Constants, k, \
+                        l, m)
+#define H444AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvH709Constants, k, \
+                        l, m)
+#define U444AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I444AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
+                        l, m)
+#define U444AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+  I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
+                        l, m)
 
 TESTQPLANARTOB(I420Alpha, 2, 2, ARGB, 4, 4, 1)
 TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1)
@@ -747,6 +783,22 @@ TESTQPLANARTOB(H420Alpha, 2, 2, ARGB, 4, 4, 1)
 TESTQPLANARTOB(H420Alpha, 2, 2, ABGR, 4, 4, 1)
 TESTQPLANARTOB(U420Alpha, 2, 2, ARGB, 4, 4, 1)
 TESTQPLANARTOB(U420Alpha, 2, 2, ABGR, 4, 4, 1)
+TESTQPLANARTOB(I422Alpha, 2, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(I422Alpha, 2, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(J422Alpha, 2, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(J422Alpha, 2, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(H422Alpha, 2, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(H422Alpha, 2, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(U422Alpha, 2, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(U422Alpha, 2, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(I444Alpha, 1, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(I444Alpha, 1, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(J444Alpha, 1, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(J444Alpha, 1, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(H444Alpha, 1, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(H444Alpha, 1, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(U444Alpha, 1, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(U444Alpha, 1, 1, ABGR, 4, 4, 1)
 
 #define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C,       \
                          BPP_B, W1280, N, NEG, OFF)                            \
@@ -2762,6 +2814,22 @@ TESTQPLANARTOE(H420Alpha, 2, 2, ARGB, 1, 4, ABGR, 4)
 TESTQPLANARTOE(H420Alpha, 2, 2, ABGR, 1, 4, ARGB, 4)
 TESTQPLANARTOE(U420Alpha, 2, 2, ARGB, 1, 4, ABGR, 4)
 TESTQPLANARTOE(U420Alpha, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(I422Alpha, 2, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(I422Alpha, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(J422Alpha, 2, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(J422Alpha, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(H422Alpha, 2, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(H422Alpha, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(U422Alpha, 2, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(U422Alpha, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(I444Alpha, 1, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(I444Alpha, 1, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(J444Alpha, 1, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(J444Alpha, 1, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(H444Alpha, 1, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(H444Alpha, 1, 1, ABGR, 1, 4, ARGB, 4)
+TESTQPLANARTOE(U444Alpha, 1, 1, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(U444Alpha, 1, 1, ABGR, 1, 4, ARGB, 4)
 
 #define TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, W1280, N, NEG, \
                       OFF, FMT_C, BPP_C)                                       \

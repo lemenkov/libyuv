@@ -171,6 +171,41 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
   );
 }
 
+void I444AlphaToARGBRow_NEON(const uint8_t* src_y,
+                             const uint8_t* src_u,
+                             const uint8_t* src_v,
+                             const uint8_t* src_a,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width) {
+  asm volatile (
+    YUVTORGB_SETUP
+      "1:                                        \n"
+    READYUV444
+      "prfm        pldl1keep, [%0, 448]          \n"
+    YUVTORGB(v22, v21, v20)
+      "ld1         {v23.8b}, [%3], #8            \n"
+      "prfm        pldl1keep, [%1, 128]          \n"
+      "prfm        pldl1keep, [%2, 128]          \n"
+      "prfm        pldl1keep, [%3, 448]          \n"
+      "subs        %w5, %w5, #8                  \n"
+      "st4         {v20.8b,v21.8b,v22.8b,v23.8b}, [%4], #32 \n"
+      "b.gt        1b                            \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_u),     // %1
+      "+r"(src_v),     // %2
+      "+r"(src_a),     // %3
+      "+r"(dst_argb),  // %4
+      "+r"(width)      // %5
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
+  );
+}
+
 void I422AlphaToARGBRow_NEON(const uint8_t* src_y,
                              const uint8_t* src_u,
                              const uint8_t* src_v,

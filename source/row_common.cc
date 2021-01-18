@@ -2016,6 +2016,26 @@ void I422ToAR30Row_C(const uint8_t* src_y,
   }
 }
 
+void I444AlphaToARGBRow_C(const uint8_t* src_y,
+                          const uint8_t* src_u,
+                          const uint8_t* src_v,
+                          const uint8_t* src_a,
+                          uint8_t* rgb_buf,
+                          const struct YuvConstants* yuvconstants,
+                          int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, rgb_buf + 1,
+             rgb_buf + 2, yuvconstants);
+    rgb_buf[3] = src_a[0];
+    src_y += 1;
+    src_u += 1;
+    src_v += 1;
+    src_a += 1;
+    rgb_buf += 4;  // Advance 1 pixel.
+  }
+}
+
 void I422AlphaToARGBRow_C(const uint8_t* src_y,
                           const uint8_t* src_u,
                           const uint8_t* src_v,
