@@ -94,16 +94,21 @@ enum FourCC {
       FOURCC('J', '4', '4', '4'),  // jpeg (bt.601 full), unofficial fourcc
   FOURCC_J400 =
       FOURCC('J', '4', '0', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_F420 = FOURCC('F', '4', '2', '0'),  // bt.709 full, unofficial fourcc
+  FOURCC_F422 = FOURCC('F', '4', '2', '2'),  // bt.709 full, unofficial fourcc
+  FOURCC_F444 = FOURCC('F', '4', '4', '4'),  // bt.709 full, unofficial fourcc
   FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // bt.709, unofficial fourcc
   FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // bt.709, unofficial fourcc
   FOURCC_H444 = FOURCC('H', '4', '4', '4'),  // bt.709, unofficial fourcc
   FOURCC_U420 = FOURCC('U', '4', '2', '0'),  // bt.2020, unofficial fourcc
   FOURCC_U422 = FOURCC('U', '4', '2', '2'),  // bt.2020, unofficial fourcc
   FOURCC_U444 = FOURCC('U', '4', '4', '4'),  // bt.2020, unofficial fourcc
+  FOURCC_F010 = FOURCC('F', '0', '1', '0'),  // bt.709 full range 10 bit 420
   FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // bt.709 10 bit 420
   FOURCC_U010 = FOURCC('U', '0', '1', '0'),  // bt.2020 10 bit 420
-  FOURCC_H210 = FOURCC('H', '0', '1', '0'),  // bt.709 10 bit 422
-  FOURCC_U210 = FOURCC('U', '0', '1', '0'),  // bt.2020 10 bit 422
+  FOURCC_F210 = FOURCC('F', '2', '1', '0'),  // bt.709 full range 10 bit 422
+  FOURCC_H210 = FOURCC('H', '2', '1', '0'),  // bt.709 10 bit 422
+  FOURCC_U210 = FOURCC('U', '2', '1', '0'),  // bt.2020 10 bit 422
 
   // 14 Auxiliary aliases.  CanonicalFourCC() maps these to canonical fourcc.
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.

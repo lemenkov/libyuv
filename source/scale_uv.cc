@@ -305,7 +305,7 @@ static void ScaleUVDownEven(int src_width,
       ScaleUVRowDownEven = ScaleUVRowDownEven_NEON;
     }
   }
-#endif// TODO(fbarchard): Enable Box filter
+#endif  // TODO(fbarchard): Enable Box filter
 #if defined(HAS_SCALEUVROWDOWNEVENBOX_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleUVRowDownEven = filtering ? ScaleUVRowDownEvenBox_Any_NEON

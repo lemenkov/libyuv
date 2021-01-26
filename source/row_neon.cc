@@ -168,8 +168,8 @@ void I444AlphaToARGBRow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "1:                                        \n" READYUV444 YUVTORGB
-      "subs        %5, %5, #8                    \n"
       "vld1.8      {d23}, [%3]!                  \n"
+      "subs        %5, %5, #8                    \n"
       "vst4.8      {d20, d21, d22, d23}, [%4]!   \n"
       "bgt         1b                            \n"
       : "+r"(src_y),     // %0
@@ -415,11 +415,11 @@ void NV12ToARGBRow_NEON(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile(YUVTORGB_SETUP
-               "vmov.u8     d23, #255                     \n"
-               "1:                                        \n" READNV12 YUVTORGB
-               "subs        %3, %3, #8                    \n"
-               "vst4.8      {d20, d21, d22, d23}, [%2]!   \n"
-               "bgt         1b                            \n"
+      "vmov.u8     d23, #255                     \n"
+      "1:                                        \n" READNV12 YUVTORGB
+      "subs        %3, %3, #8                    \n"
+      "vst4.8      {d20, d21, d22, d23}, [%2]!   \n"
+      "bgt         1b                            \n"
                : "+r"(src_y),     // %0
                  "+r"(src_uv),    // %1
                  "+r"(dst_argb),  // %2
@@ -438,11 +438,11 @@ void NV21ToARGBRow_NEON(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile(YUVTORGB_SETUP
-               "vmov.u8     d23, #255                     \n"
-               "1:                                        \n" READNV21 YUVTORGB
-               "subs        %3, %3, #8                    \n"
-               "vst4.8      {d20, d21, d22, d23}, [%2]!   \n"
-               "bgt         1b                            \n"
+      "vmov.u8     d23, #255                     \n"
+      "1:                                        \n" READNV21 YUVTORGB
+      "subs        %3, %3, #8                    \n"
+      "vst4.8      {d20, d21, d22, d23}, [%2]!   \n"
+      "bgt         1b                            \n"
                : "+r"(src_y),     // %0
                  "+r"(src_vu),    // %1
                  "+r"(dst_argb),  // %2
@@ -537,11 +537,11 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile(YUVTORGB_SETUP
-               "vmov.u8     d23, #255                     \n"
-               "1:                                        \n" READYUY2 YUVTORGB
-               "subs        %2, %2, #8                    \n"
-               "vst4.8      {d20, d21, d22, d23}, [%1]!   \n"
-               "bgt         1b                            \n"
+      "vmov.u8     d23, #255                     \n"
+      "1:                                        \n" READYUY2 YUVTORGB
+      "subs        %2, %2, #8                    \n"
+      "vst4.8      {d20, d21, d22, d23}, [%1]!   \n"
+      "bgt         1b                            \n"
                : "+r"(src_yuy2),  // %0
                  "+r"(dst_argb),  // %1
                  "+r"(width)      // %2
@@ -558,11 +558,11 @@ void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile(YUVTORGB_SETUP
-               "vmov.u8     d23, #255                     \n"
-               "1:                                        \n" READUYVY YUVTORGB
-               "subs        %2, %2, #8                    \n"
-               "vst4.8      {d20, d21, d22, d23}, [%1]!   \n"
-               "bgt         1b                            \n"
+      "vmov.u8     d23, #255                     \n"
+      "1:                                        \n" READUYVY YUVTORGB
+      "subs        %2, %2, #8                    \n"
+      "vst4.8      {d20, d21, d22, d23}, [%1]!   \n"
+      "bgt         1b                            \n"
                : "+r"(src_uyvy),  // %0
                  "+r"(dst_argb),  // %1
                  "+r"(width)      // %2

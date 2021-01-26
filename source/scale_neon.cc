@@ -991,20 +991,20 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:                                        \n"
-      "vld1.16    {d0[0]}, [%0], %6              \n"
-      "vld1.16    {d0[1]}, [%1], %6              \n"
-      "vld1.16    {d0[2]}, [%2], %6              \n"
-      "vld1.16    {d0[3]}, [%3], %6              \n"
-      "subs       %5, %5, #4                     \n"  // 4 pixels per loop.
-      "vst1.8     {d0}, [%4]!                    \n"
-      "bgt        1b                             \n"
-      : "+r"(src_ptr),                 // %0
-        "+r"(src1_ptr),                // %1
-        "+r"(src2_ptr),                // %2
-        "+r"(src3_ptr),                // %3
-        "+r"(dst_ptr),                 // %4
-        "+r"(dst_width)                // %5
-      : "r"(src_stepx * 8)             // %6
+      "vld1.16     {d0[0]}, [%0], %6             \n"
+      "vld1.16     {d0[1]}, [%1], %6             \n"
+      "vld1.16     {d0[2]}, [%2], %6             \n"
+      "vld1.16     {d0[3]}, [%3], %6             \n"
+      "subs        %5, %5, #4                    \n"  // 4 pixels per loop.
+      "vst1.8      {d0}, [%4]!                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),      // %0
+        "+r"(src1_ptr),     // %1
+        "+r"(src2_ptr),     // %2
+        "+r"(src3_ptr),     // %3
+        "+r"(dst_ptr),      // %4
+        "+r"(dst_width)     // %5
+      : "r"(src_stepx * 8)  // %6
       : "memory", "cc", "d0");
 }
 

@@ -23,12 +23,14 @@ extern "C" {
 // Conversion matrix for YUV to RGB
 LIBYUV_API extern const struct YuvConstants kYuvI601Constants;  // BT.601
 LIBYUV_API extern const struct YuvConstants kYuvJPEGConstants;  // JPeg
+LIBYUV_API extern const struct YuvConstants kYuvF709Constants;  // BT.709 full
 LIBYUV_API extern const struct YuvConstants kYuvH709Constants;  // BT.709
 LIBYUV_API extern const struct YuvConstants kYuv2020Constants;  // BT.2020
 
 // Conversion matrix for YVU to BGR
 LIBYUV_API extern const struct YuvConstants kYvuI601Constants;  // BT.601
 LIBYUV_API extern const struct YuvConstants kYvuJPEGConstants;  // JPeg
+LIBYUV_API extern const struct YuvConstants kYvuF709Constants;  // BT.709 full
 LIBYUV_API extern const struct YuvConstants kYvuH709Constants;  // BT.709
 LIBYUV_API extern const struct YuvConstants kYvu2020Constants;  // BT.2020
 
@@ -37,6 +39,7 @@ LIBYUV_API extern const struct YuvConstants kYvu2020Constants;  // BT.2020
 // TODO(fbarchard): Add macro for each Matrix function.
 #define kYuvI601ConstantsVU kYvuI601Constants
 #define kYuvJPEGConstantsVU kYvuJPEGConstants
+#define kYuvF709ConstantsVU kYvuF709Constants
 #define kYuvH709ConstantsVU kYvuH709Constants
 #define kYuv2020ConstantsVU kYvu2020Constants
 #define NV12ToABGRMatrix(a, b, c, d, e, f, g, h, i) \
@@ -108,6 +111,32 @@ int J420ToARGB(const uint8_t* src_y,
 // Convert J420 to ABGR.
 LIBYUV_API
 int J420ToABGR(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
+// Convert F420 to ARGB. BT.709 full range
+LIBYUV_API
+int F420ToARGB(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert F420 to ABGR. BT.709 full range
+LIBYUV_API
+int F420ToABGR(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_u,
                int src_stride_u,

@@ -28,25 +28,25 @@ extern "C" {
 #if defined(_M_X64)
 
 // Read 8 UV from 444
-#define READYUV444                                        \
-  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);                \
-  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset));     \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
-  u_buf += 8;                                             \
-  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
-  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
+#define READYUV444                                    \
+  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);            \
+  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset)); \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);               \
+  u_buf += 8;                                         \
+  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);            \
+  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);               \
   y_buf += 8;
 
 // Read 8 UV from 444, With 8 Alpha.
-#define READYUVA444                                       \
-  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);                \
-  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset));     \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
-  u_buf += 8;                                             \
-  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
-  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
-  y_buf += 8;                                             \
-  xmm5 = _mm_loadl_epi64((__m128i*)a_buf);                \
+#define READYUVA444                                   \
+  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);            \
+  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset)); \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);               \
+  u_buf += 8;                                         \
+  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);            \
+  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);               \
+  y_buf += 8;                                         \
+  xmm5 = _mm_loadl_epi64((__m128i*)a_buf);            \
   a_buf += 8;
 
 // Read 4 UV from 422, upsample to 8 UV.

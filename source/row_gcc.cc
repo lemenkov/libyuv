@@ -1278,7 +1278,7 @@ void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
       "vmovdqu     %5,%%ymm6                     \n"
 
       LABELALIGN RGBTOY_AVX2(
-          ymm5) "vzeroupper                                \n"
+      ymm5) "vzeroupper                                \n"
       : "+r"(src_rgba),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -2161,15 +2161,15 @@ void OMITFP I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
   // clang-format off
   asm volatile (
   YUVTORGB_SETUP(yuvconstants)
-  "sub         %[u_buf],%[v_buf]             \n"
+      "sub         %[u_buf],%[v_buf]             \n"
 
   LABELALIGN
-  "1:                                        \n"
+      "1:                                        \n"
   READYUVA444
   YUVTORGB(yuvconstants)
   STOREARGB
-  "subl        $0x8,%[width]                 \n"
-  "jg          1b                            \n"
+      "subl        $0x8,%[width]                 \n"
+      "jg          1b                            \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
@@ -2947,16 +2947,16 @@ void OMITFP I444AlphaToARGBRow_AVX2(const uint8_t* y_buf,
   // clang-format off
   asm volatile (
   YUVTORGB_SETUP_AVX2(yuvconstants)
-  "sub         %[u_buf],%[v_buf]             \n"
+      "sub         %[u_buf],%[v_buf]             \n"
 
   LABELALIGN
-  "1:                                        \n"
+      "1:                                        \n"
   READYUVA444_AVX2
   YUVTORGB_AVX2(yuvconstants)
   STOREARGB_AVX2
-  "subl        $0x10,%[width]                \n"
-  "jg          1b                            \n"
-  "vzeroupper                                \n"
+      "subl        $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]

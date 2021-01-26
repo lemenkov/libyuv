@@ -595,7 +595,7 @@ void NV12ToRGB565Row_NEON(const uint8_t* src_y,
                           int width) {
   asm volatile(
       YUVTORGB_SETUP "1:                                        \n" READNV12
-                     "prfm        pldl1keep, [%0, 448]          \n" YUVTORGB(
+      "prfm        pldl1keep, [%0, 448]          \n" YUVTORGB(
                          v22, v21, v20) ARGBTORGB565
       "prfm        pldl1keep, [%1, 256]          \n"
       "subs        %w3, %w3, #8                  \n"
