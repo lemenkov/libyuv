@@ -153,6 +153,38 @@ void MergeRGBPlane(const uint8_t* src_r,
                    int width,
                    int height);
 
+// Split interleaved ARGB plane into separate R, G, B and A planes.
+// dst_a can be NULL to discard alpha plane.
+LIBYUV_API
+void SplitARGBPlane(const uint8_t* src_argb,
+                    int src_stride_argb,
+                    uint8_t* dst_r,
+                    int dst_stride_r,
+                    uint8_t* dst_g,
+                    int dst_stride_g,
+                    uint8_t* dst_b,
+                    int dst_stride_b,
+                    uint8_t* dst_a,
+                    int dst_stride_a,
+                    int width,
+                    int height);
+
+// Merge separate R, G, B and A planes into one interleaved ARGB plane.
+// src_a can be NULL to fill opaque value to alpha.
+LIBYUV_API
+void MergeARGBPlane(const uint8_t* src_r,
+                    int src_stride_r,
+                    const uint8_t* src_g,
+                    int src_stride_g,
+                    const uint8_t* src_b,
+                    int src_stride_b,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_argb,
+                    int dst_stride_argb,
+                    int width,
+                    int height);
+
 // Copy I400.  Supports inverting.
 LIBYUV_API
 int I400ToI400(const uint8_t* src_y,

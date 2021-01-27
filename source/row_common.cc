@@ -2476,6 +2476,67 @@ void MergeRGBRow_C(const uint8_t* src_r,
   }
 }
 
+void SplitARGBRow_C(const uint8_t* src_argb,
+                    uint8_t* dst_r,
+                    uint8_t* dst_g,
+                    uint8_t* dst_b,
+                    uint8_t* dst_a,
+                    int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_b[x] = src_argb[0];
+    dst_g[x] = src_argb[1];
+    dst_r[x] = src_argb[2];
+    dst_a[x] = src_argb[3];
+    src_argb += 4;
+  }
+}
+
+void MergeARGBRow_C(const uint8_t* src_r,
+                    const uint8_t* src_g,
+                    const uint8_t* src_b,
+                    const uint8_t* src_a,
+                    uint8_t* dst_argb,
+                    int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_argb[0] = src_b[x];
+    dst_argb[1] = src_g[x];
+    dst_argb[2] = src_r[x];
+    dst_argb[3] = src_a[x];
+    dst_argb += 4;
+  }
+}
+
+void SplitXRGBRow_C(const uint8_t* src_argb,
+                    uint8_t* dst_r,
+                    uint8_t* dst_g,
+                    uint8_t* dst_b,
+                    int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_b[x] = src_argb[0];
+    dst_g[x] = src_argb[1];
+    dst_r[x] = src_argb[2];
+    src_argb += 4;
+  }
+}
+
+void MergeXRGBRow_C(const uint8_t* src_r,
+                    const uint8_t* src_g,
+                    const uint8_t* src_b,
+                    uint8_t* dst_argb,
+                    int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_argb[0] = src_b[x];
+    dst_argb[1] = src_g[x];
+    dst_argb[2] = src_r[x];
+    dst_argb[3] = 255;
+    dst_argb += 4;
+  }
+}
+
 // Use scale to convert lsb formats to msb, depending how many bits there are:
 // 128 = 9 bits
 // 64 = 10 bits

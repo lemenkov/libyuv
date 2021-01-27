@@ -30,6 +30,37 @@ extern "C" {
 // Subsampled source needs to be increase by 1 of not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
+// Any 4 planes to 1
+#define ANY41(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)               \
+  void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,                   \
+               const uint8_t* v_buf, const uint8_t* a_buf, uint8_t* dst_ptr, \
+               int width) {                                                  \
+    SIMD_ALIGNED(uint8_t temp[64 * 5]);                                      \
+    memset(temp, 0, 64 * 4); /* for msan */                                  \
+    int r = width & MASK;                                                    \
+    int n = width & ~MASK;                                                   \
+    if (n > 0) {                                                             \
+      ANY_SIMD(y_buf, u_buf, v_buf, a_buf, dst_ptr, n);                      \
+    }                                                                        \
+    memcpy(temp, y_buf + n, r);                                              \
+    memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));               \
+    memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
+    memcpy(temp + 192, a_buf + n, r);                                        \
+    ANY_SIMD(temp, temp + 64, temp + 128, temp + 192, temp + 256, MASK + 1); \
+    memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, temp + 256,                      \
+           SS(r, DUVSHIFT) * BPP);                                           \
+  }
+
+#ifdef HAS_MERGEARGBROW_SSE2
+ANY41(MergeARGBRow_Any_SSE2, MergeARGBRow_SSE2, 0, 0, 4, 7)
+#endif
+#ifdef HAS_MERGEARGBROW_AVX2
+ANY41(MergeARGBRow_Any_AVX2, MergeARGBRow_AVX2, 0, 0, 4, 15)
+#endif
+#ifdef HAS_MERGEARGBROW_NEON
+ANY41(MergeARGBRow_Any_NEON, MergeARGBRow_NEON, 0, 0, 4, 15)
+#endif
+
 // Any 4 planes to 1 with yuvconstants
 #define ANY41C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)              \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,                   \
@@ -112,6 +143,15 @@ ANY31(MergeRGBRow_Any_NEON, MergeRGBRow_NEON, 0, 0, 3, 15)
 #endif
 #ifdef HAS_MERGERGBROW_MMI
 ANY31(MergeRGBRow_Any_MMI, MergeRGBRow_MMI, 0, 0, 3, 7)
+#endif
+#ifdef HAS_MERGEARGBROW_SSE2
+ANY31(MergeXRGBRow_Any_SSE2, MergeXRGBRow_SSE2, 0, 0, 4, 7)
+#endif
+#ifdef HAS_MERGEARGBROW_AVX2
+ANY31(MergeXRGBRow_Any_AVX2, MergeXRGBRow_AVX2, 0, 0, 4, 15)
+#endif
+#ifdef HAS_MERGEARGBROW_NEON
+ANY31(MergeXRGBRow_Any_NEON, MergeXRGBRow_NEON, 0, 0, 4, 15)
 #endif
 #ifdef HAS_I422TOYUY2ROW_SSE2
 ANY31(I422ToYUY2Row_Any_SSE2, I422ToYUY2Row_SSE2, 1, 1, 4, 15)
@@ -1381,6 +1421,51 @@ ANY13(SplitRGBRow_Any_NEON, SplitRGBRow_NEON, 3, 15)
 #endif
 #ifdef HAS_SPLITRGBROW_MMI
 ANY13(SplitRGBRow_Any_MMI, SplitRGBRow_MMI, 3, 3)
+#endif
+#ifdef HAS_SPLITARGBROW_SSE2
+ANY13(SplitXRGBRow_Any_SSE2, SplitXRGBRow_SSE2, 4, 7)
+#endif
+#ifdef HAS_SPLITARGBROW_SSSE3
+ANY13(SplitXRGBRow_Any_SSSE3, SplitXRGBRow_SSSE3, 4, 7)
+#endif
+#ifdef HAS_SPLITARGBROW_AVX2
+ANY13(SplitXRGBRow_Any_AVX2, SplitXRGBRow_AVX2, 4, 15)
+#endif
+#ifdef HAS_SPLITARGBROW_NEON
+ANY13(SplitXRGBRow_Any_NEON, SplitXRGBRow_NEON, 4, 15)
+#endif
+
+// Any 1 to 4.  Outputs ARGB planes.
+#define ANY14(NAMEANY, ANY_SIMD, BPP, MASK)                                    \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g,         \
+               uint8_t* dst_b, uint8_t* dst_a, int width) {                    \
+    SIMD_ALIGNED(uint8_t temp[16 * 8]);                                        \
+    memset(temp, 0, 16 * 4); /* for msan */                                    \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, dst_a, n);                        \
+    }                                                                          \
+    memcpy(temp, src_ptr + n * BPP, r * BPP);                                  \
+    ANY_SIMD(temp, temp + 16 * 4, temp + 16 * 5, temp + 16 * 6, temp + 16 * 7, \
+             MASK + 1);                                                        \
+    memcpy(dst_r + n, temp + 16 * 4, r);                                       \
+    memcpy(dst_g + n, temp + 16 * 5, r);                                       \
+    memcpy(dst_b + n, temp + 16 * 6, r);                                       \
+    memcpy(dst_a + n, temp + 16 * 7, r);                                       \
+  }
+
+#ifdef HAS_SPLITARGBROW_SSE2
+ANY14(SplitARGBRow_Any_SSE2, SplitARGBRow_SSE2, 4, 7)
+#endif
+#ifdef HAS_SPLITARGBROW_SSSE3
+ANY14(SplitARGBRow_Any_SSSE3, SplitARGBRow_SSSE3, 4, 7)
+#endif
+#ifdef HAS_SPLITARGBROW_AVX2
+ANY14(SplitARGBRow_Any_AVX2, SplitARGBRow_AVX2, 4, 15)
+#endif
+#ifdef HAS_SPLITARGBROW_NEON
+ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
 #endif
 
 // Any 1 to 2 with source stride (2 rows of source).  Outputs UV planes.
