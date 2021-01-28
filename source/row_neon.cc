@@ -683,7 +683,7 @@ void SplitARGBRow_NEON(const uint8_t* src_argb,
       "vst1.8      {q2}, [%1]!                   \n"  // store R
       "vst1.8      {q3}, [%4]!                   \n"  // store A
       "bgt         1b                            \n"
-      : "+r"(src_rgba),                         // %0
+      : "+r"(src_argb),                         // %0
         "+r"(dst_r),                            // %1
         "+r"(dst_g),                            // %2
         "+r"(dst_b),                            // %3
@@ -708,8 +708,8 @@ void MergeARGBRow_NEON(const uint8_t* src_r,
       "vld1.8      {q0}, [%2]!                   \n"  // load B
       "vld1.8      {q3}, [%3]!                   \n"  // load A
       "subs        %5, %5, #16                   \n"  // 16 processed per loop
-      "vst4.8      {d0, d2, d4, d6}, [%4]!           \n"  // store 8 ARGB
-      "vst4.8      {d1, d3, d5, d7}, [%4]!           \n"  // next 8 ARGB
+      "vst4.8      {d0, d2, d4, d6}, [%4]!       \n"  // store 8 ARGB
+      "vst4.8      {d1, d3, d5, d7}, [%4]!       \n"  // next 8 ARGB
       "bgt         1b                            \n"
       : "+r"(src_r),                            // %0
         "+r"(src_g),                            // %1
@@ -737,7 +737,7 @@ void SplitXRGBRow_NEON(const uint8_t* src_argb,
       "vst1.8      {q1}, [%2]!                   \n"  // store G
       "vst1.8      {q2}, [%1]!                   \n"  // store R
       "bgt         1b                            \n"
-      : "+r"(src_rgba),                         // %0
+      : "+r"(src_argb),                         // %0
         "+r"(dst_r),                            // %1
         "+r"(dst_g),                            // %2
         "+r"(dst_b),                            // %3
@@ -760,8 +760,8 @@ void MergeXRGBRow_NEON(const uint8_t* src_r,
       "vld1.8      {q1}, [%1]!                   \n"  // load G
       "vld1.8      {q0}, [%2]!                   \n"  // load B
       "subs        %4, %4, #16                   \n"  // 16 processed per loop
-      "vst4.8      {d0, d2, d4, d6}, [%4]!           \n"  // store 8 ARGB
-      "vst4.8      {d1, d3, d5, d7}, [%4]!           \n"  // next 8 ARGB
+      "vst4.8      {d0, d2, d4, d6}, [%4]!       \n"  // store 8 ARGB
+      "vst4.8      {d1, d3, d5, d7}, [%4]!       \n"  // next 8 ARGB
       "bgt         1b                            \n"
       : "+r"(src_r),                            // %0
         "+r"(src_g),                            // %1

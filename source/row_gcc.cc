@@ -4235,7 +4235,7 @@ void MergeXRGBRow_AVX2(const uint8_t* src_r,
         "+r"(src_g),     // %1
         "+r"(src_b),     // %2
         "+r"(dst_argb),  // %3
-        "+r"(width)      // %4
+        "+rm"(width)     // %4
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
@@ -4250,9 +4250,9 @@ void SplitARGBRow_SSE2(const uint8_t* src_argb,
                        int width) {
   asm volatile(
 
-      "subq        %1,%2                         \n"
-      "subq        %1,%3                         \n"
-      "subq        %1,%4                         \n"
+      "sub         %1,%2                         \n"
+      "sub         %1,%3                         \n"
+      "sub         %1,%4                         \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -4288,7 +4288,7 @@ void SplitARGBRow_SSE2(const uint8_t* src_argb,
         "+r"(dst_g),     // %2
         "+r"(dst_b),     // %3
         "+r"(dst_a),     // %4
-        "+r"(width)      // %5
+        "+rm"(width)     // %5
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
@@ -4334,7 +4334,7 @@ void SplitXRGBRow_SSE2(const uint8_t* src_argb,
         "+r"(dst_r),     // %1
         "+r"(dst_g),     // %2
         "+r"(dst_b),     // %3
-        "+r"(width)      // %4
+        "+rm"(width)     // %4
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
@@ -4351,9 +4351,9 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
                         int width) {
   asm volatile(
 
-      "subq        %1,%2                         \n"
-      "subq        %1,%3                         \n"
-      "subq        %1,%4                         \n"
+      "sub         %1,%2                         \n"
+      "sub         %1,%3                         \n"
+      "sub         %1,%4                         \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -4372,14 +4372,18 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
 
       "lea         32(%0),%0                     \n"
       "lea         8(%1),%1                      \n"
-      "sub         $0x8,%5                       \n"
+      "subl        $0x8,%5                       \n"
       "jg          1b                            \n"
       : "+r"(src_argb),             // %0
         "+r"(dst_r),                // %1
         "+r"(dst_g),                // %2
         "+r"(dst_b),                // %3
         "+r"(dst_a),                // %4
-        "+r"(width)                 // %5
+#if defined(__i386__)
+        "+m"(width)                 // %5
+#else
+        "+rm"(width)                // %5
+#endif
       : "m"(kShuffleMaskARGBSplit)  // %6
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
@@ -4435,40 +4439,42 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
                        int width) {
   asm volatile(
 
-      "subq         %1,%2                        \n"
-      "subq         %1,%3                        \n"
-      "subq         %1,%4                        \n"
-
-      "vmovdqu      %7,%%ymm3                    \n"
+      "sub         %1,%2                         \n"
+      "sub         %1,%3                         \n"
+      "sub         %1,%4                         \n"
+      "vmovdqu     %7,%%ymm3                     \n"
 
       LABELALIGN
       "1:                                        \n"
 
-      "vmovdqu      (%0),%%xmm0                  \n"  // 00-0F
-      "vmovdqu      16(%0),%%xmm1                \n"  // 10-1F
-      "vinserti128  $1,32(%0),%%ymm0,%%ymm0      \n"  // 00-0F 20-2F
-      "vinserti128  $1,48(%0),%%ymm1,%%ymm1      \n"  // 10-1F 30-3F
-      "vpshufb      %6,%%ymm0,%%ymm0             \n"
-      "vpshufb      %6,%%ymm1,%%ymm1             \n"
-      "vpermd       %%ymm0,%%ymm3,%%ymm0         \n"
-      "vpermd       %%ymm1,%%ymm3,%%ymm1         \n"
-      "vpunpckhdq   %%ymm1,%%ymm0,%%ymm2         \n"  // GA
-      "vpunpckldq   %%ymm1,%%ymm0,%%ymm0         \n"  // BR
-      "vmovdqu      %%xmm0,(%1,%3)               \n"  // B
+      "vmovdqu     (%0),%%xmm0                   \n"  // 00-0F
+      "vmovdqu     16(%0),%%xmm1                 \n"  // 10-1F
+      "vinserti128 $1,32(%0),%%ymm0,%%ymm0       \n"  // 00-0F 20-2F
+      "vinserti128 $1,48(%0),%%ymm1,%%ymm1       \n"  // 10-1F 30-3F
+      "vpshufb     %6,%%ymm0,%%ymm0              \n"
+      "vpshufb     %6,%%ymm1,%%ymm1              \n"
+      "vpermd      %%ymm0,%%ymm3,%%ymm0          \n"
+      "vpermd      %%ymm1,%%ymm3,%%ymm1          \n"
+      "vpunpckhdq  %%ymm1,%%ymm0,%%ymm2          \n"  // GA
+      "vpunpckldq  %%ymm1,%%ymm0,%%ymm0          \n"  // BR
+      "vmovdqu     %%xmm0,(%1,%3)                \n"  // B
       "vextracti128 $1,%%ymm0,(%1)               \n"  // R
-      "vmovdqu      %%xmm2,(%1,%2)               \n"  // G
+      "vmovdqu     %%xmm2,(%1,%2)                \n"  // G
       "vextracti128 $1,%%ymm2,(%1,%4)            \n"  // A
-
-      "lea          64(%0),%0                    \n"
-      "lea          16(%1),%1                    \n"
-      "sub          $0x10,%5                     \n"
-      "jg           1b                           \n"
+      "lea         64(%0),%0                     \n"
+      "lea         16(%1),%1                     \n"
+      "subl        $0x10,%5                      \n"
+      "jg          1b                            \n"
       : "+r"(src_argb),                    // %0
         "+r"(dst_r),                       // %1
         "+r"(dst_g),                       // %2
         "+r"(dst_b),                       // %3
         "+r"(dst_a),                       // %4
-        "+r"(width)                        // %5
+#if defined(__i386__)
+        "+m"(width)                        // %5
+#else
+        "+rm"(width)                       // %5
+#endif
       : "m"(kShuffleMaskARGBSplit_AVX2),   // %6
         "m"(kShuffleMaskARGBPermute_AVX2)  // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
@@ -4481,22 +4487,22 @@ void SplitXRGBRow_AVX2(const uint8_t* src_argb,
                        int width) {
   asm volatile(
 
-      "vmovdqu      %6,%%ymm3                    \n" LABELALIGN
+      "vmovdqu     %6,%%ymm3                     \n" LABELALIGN
       "1:                                        \n"
 
-      "vmovdqu      (%0),%%xmm0                  \n"  // 00-0F
-      "vmovdqu      16(%0),%%xmm1                \n"  // 10-1F
-      "vinserti128  $1,32(%0),%%ymm0,%%ymm0      \n"  // 00-0F 20-2F
-      "vinserti128  $1,48(%0),%%ymm1,%%ymm1      \n"  // 10-1F 30-3F
-      "vpshufb      %5,%%ymm0,%%ymm0             \n"
-      "vpshufb      %5,%%ymm1,%%ymm1             \n"
-      "vpermd       %%ymm0,%%ymm3,%%ymm0         \n"
-      "vpermd       %%ymm1,%%ymm3,%%ymm1         \n"
-      "vpunpckhdq   %%ymm1,%%ymm0,%%ymm2         \n"  // GA
-      "vpunpckldq   %%ymm1,%%ymm0,%%ymm0         \n"  // BR
-      "vmovdqu      %%xmm0,(%3)                  \n"  // B
+      "vmovdqu     (%0),%%xmm0                   \n"  // 00-0F
+      "vmovdqu     16(%0),%%xmm1                 \n"  // 10-1F
+      "vinserti128 $1,32(%0),%%ymm0,%%ymm0       \n"  // 00-0F 20-2F
+      "vinserti128 $1,48(%0),%%ymm1,%%ymm1       \n"  // 10-1F 30-3F
+      "vpshufb     %5,%%ymm0,%%ymm0              \n"
+      "vpshufb     %5,%%ymm1,%%ymm1              \n"
+      "vpermd      %%ymm0,%%ymm3,%%ymm0          \n"
+      "vpermd      %%ymm1,%%ymm3,%%ymm1          \n"
+      "vpunpckhdq  %%ymm1,%%ymm0,%%ymm2          \n"  // GA
+      "vpunpckldq  %%ymm1,%%ymm0,%%ymm0          \n"  // BR
+      "vmovdqu     %%xmm0,(%3)                   \n"  // B
       "vextracti128 $1,%%ymm0,(%1)               \n"  // R
-      "vmovdqu      %%xmm2,(%2)                  \n"  // G
+      "vmovdqu     %%xmm2,(%2)                   \n"  // G
 
       "lea         64(%0),%0                     \n"
       "lea         16(%1),%1                     \n"
@@ -5986,7 +5992,7 @@ void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
       :
       : "memory", "cc"
 #if defined(__AVX2__)
-        ,
+
         "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );

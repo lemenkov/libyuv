@@ -1837,11 +1837,11 @@ void MergeARGBRow_C(const uint8_t* src_r,
                     uint8_t* dst_argb,
                     int width);
 void MergeARGBRow_SSE2(const uint8_t* src_r,
-                        const uint8_t* src_g,
-                        const uint8_t* src_b,
-                        const uint8_t* src_a,
-                        uint8_t* dst_argb,
-                        int width);
+                       const uint8_t* src_g,
+                       const uint8_t* src_b,
+                       const uint8_t* src_a,
+                       uint8_t* dst_argb,
+                       int width);
 void MergeARGBRow_AVX2(const uint8_t* src_r,
                        const uint8_t* src_g,
                        const uint8_t* src_b,
@@ -1855,11 +1855,11 @@ void MergeARGBRow_NEON(const uint8_t* src_r,
                        uint8_t* dst_argb,
                        int width);
 void MergeARGBRow_Any_SSE2(const uint8_t* src_r,
-                            const uint8_t* src_g,
-                            const uint8_t* src_b,
-                            const uint8_t* src_a,
-                            uint8_t* dst_argb,
-                            int width);
+                           const uint8_t* src_g,
+                           const uint8_t* src_b,
+                           const uint8_t* src_a,
+                           uint8_t* dst_argb,
+                           int width);
 void MergeARGBRow_Any_AVX2(const uint8_t* src_r,
                            const uint8_t* src_g,
                            const uint8_t* src_b,
