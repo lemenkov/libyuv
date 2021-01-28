@@ -1,3 +1,5 @@
+gclient_gn_args_file = 'src/build/config/gclient_args.gni'
+
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '64c8c30faaf969c15c028131dfcd0819208039c1',
