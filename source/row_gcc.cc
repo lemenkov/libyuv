@@ -5990,12 +5990,7 @@ void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3
       :
-      : "memory", "cc"
-#if defined(__AVX2__)
-
-        "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
-  );
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
 }
 #endif  // HAS_ARGBMULTIPLYROW_AVX2
 
