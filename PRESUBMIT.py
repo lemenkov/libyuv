@@ -25,7 +25,7 @@ def _RunPythonTests(input_api, output_api):
           input_api,
           output_api,
           directory,
-          whitelist=[r'.+_test\.py$']))
+          allowlist=[r'.+_test\.py$']))
   return input_api.RunTests(tests, parallel=True)
 
 
@@ -33,17 +33,17 @@ def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
-      black_list=(r'^base[\\\/].*\.py$',
-                  r'^build[\\\/].*\.py$',
-                  r'^buildtools[\\\/].*\.py$',
-                  r'^ios[\\\/].*\.py$',
-                  r'^out.*[\\\/].*\.py$',
-                  r'^testing[\\\/].*\.py$',
-                  r'^third_party[\\\/].*\.py$',
-                  r'^tools[\\\/].*\.py$',
-                  # TODO(kjellander): should arguably be checked.
-                  r'^tools_libyuv[\\\/]valgrind[\\\/].*\.py$',
-                  r'^xcodebuild.*[\\\/].*\.py$',),
+      files_to_skip=(r'^base[\\\/].*\.py$',
+                     r'^build[\\\/].*\.py$',
+                     r'^buildtools[\\\/].*\.py$',
+                     r'^ios[\\\/].*\.py$',
+                     r'^out.*[\\\/].*\.py$',
+                     r'^testing[\\\/].*\.py$',
+                     r'^third_party[\\\/].*\.py$',
+                     r'^tools[\\\/].*\.py$',
+                     # TODO(kjellander): should arguably be checked.
+                     r'^tools_libyuv[\\\/]valgrind[\\\/].*\.py$',
+                     r'^xcodebuild.*[\\\/].*\.py$',),
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x
                          'W0232',  # Class has no __init__ method
