@@ -400,6 +400,95 @@ void ScaleRowDown34_1_Box_16_C(const uint16_t* src_ptr,
   }
 }
 
+// sample position: (O is src sample position, X is dst sample position)
+//
+//      v dst_ptr at here           v stop at here
+//  X O X   X O X   X O X   X O X   X O X
+//    ^ src_ptr at here
+void ScaleRowUp2_Linear_C(const uint8_t* src_ptr,
+                          uint8_t* dst_ptr,
+                          int dst_width) {
+  int src_width = dst_width >> 1;
+  int x;
+  assert((dst_width % 2 == 0) && (dst_width >= 0));
+  for (x = 0; x < src_width; ++x) {
+    dst_ptr[2 * x + 0] = (src_ptr[x + 0] * 3 + src_ptr[x + 1] * 1 + 2) >> 2;
+    dst_ptr[2 * x + 1] = (src_ptr[x + 0] * 1 + src_ptr[x + 1] * 3 + 2) >> 2;
+  }
+}
+
+// sample position: (O is src sample position, X is dst sample position)
+//
+//    src_ptr at here
+//  X v X   X   X   X   X   X   X   X   X
+//    O       O       O       O       O
+//  X   X   X   X   X   X   X   X   X   X
+//      ^ dst_ptr at here           ^ stop at here
+//  X   X   X   X   X   X   X   X   X   X
+//    O       O       O       O       O
+//  X   X   X   X   X   X   X   X   X   X
+void ScaleRowUp2_Bilinear_C(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            ptrdiff_t dst_stride,
+                            int dst_width) {
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  int src_width = dst_width >> 1;
+  int x;
+  assert((dst_width % 2 == 0) && (dst_width >= 0));
+  for (x = 0; x < src_width; ++x) {
+    d[2 * x + 0] =
+        (s[x + 0] * 9 + s[x + 1] * 3 + t[x + 0] * 3 + t[x + 1] * 1 + 8) >> 4;
+    d[2 * x + 1] =
+        (s[x + 0] * 3 + s[x + 1] * 9 + t[x + 0] * 1 + t[x + 1] * 3 + 8) >> 4;
+    e[2 * x + 0] =
+        (s[x + 0] * 3 + s[x + 1] * 1 + t[x + 0] * 9 + t[x + 1] * 3 + 8) >> 4;
+    e[2 * x + 1] =
+        (s[x + 0] * 1 + s[x + 1] * 3 + t[x + 0] * 3 + t[x + 1] * 9 + 8) >> 4;
+  }
+}
+
+// only suitable for at most 14bit range.
+void ScaleRowUp2_Linear_16_C(const uint16_t* src_ptr,
+                             uint16_t* dst_ptr,
+                             int dst_width) {
+  int src_width = dst_width >> 1;
+  int x;
+  assert((dst_width % 2 == 0) && (dst_width >= 0));
+  for (x = 0; x < src_width; ++x) {
+    dst_ptr[2 * x + 0] = (src_ptr[x + 0] * 3 + src_ptr[x + 1] * 1 + 2) >> 2;
+    dst_ptr[2 * x + 1] = (src_ptr[x + 0] * 1 + src_ptr[x + 1] * 3 + 2) >> 2;
+  }
+}
+
+// Only suitable for at most 12bit range.
+void ScaleRowUp2_Bilinear_16_C(const uint16_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint16_t* dst_ptr,
+                               ptrdiff_t dst_stride,
+                               int dst_width) {
+  const uint16_t* s = src_ptr;
+  const uint16_t* t = src_ptr + src_stride;
+  uint16_t* d = dst_ptr;
+  uint16_t* e = dst_ptr + dst_stride;
+  int src_width = dst_width >> 1;
+  int x;
+  assert((dst_width % 2 == 0) && (dst_width >= 0));
+  for (x = 0; x < src_width; ++x) {
+    d[2 * x + 0] =
+        (s[x + 0] * 9 + s[x + 1] * 3 + t[x + 0] * 3 + t[x + 1] * 1 + 8) >> 4;
+    d[2 * x + 1] =
+        (s[x + 0] * 3 + s[x + 1] * 9 + t[x + 0] * 1 + t[x + 1] * 3 + 8) >> 4;
+    e[2 * x + 0] =
+        (s[x + 0] * 3 + s[x + 1] * 1 + t[x + 0] * 9 + t[x + 1] * 3 + 8) >> 4;
+    e[2 * x + 1] =
+        (s[x + 0] * 1 + s[x + 1] * 3 + t[x + 0] * 3 + t[x + 1] * 9 + 8) >> 4;
+  }
+}
+
 // Scales a single row of pixels using point sampling.
 void ScaleCols_C(uint8_t* dst_ptr,
                  const uint8_t* src_ptr,

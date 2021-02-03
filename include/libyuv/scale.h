@@ -49,6 +49,18 @@ void ScalePlane_16(const uint16_t* src,
                    int dst_height,
                    enum FilterMode filtering);
 
+// Sample is expected to be in the low 12 bits.
+LIBYUV_API
+void ScalePlane_12(const uint16_t* src,
+                   int src_stride,
+                   int src_width,
+                   int src_height,
+                   uint16_t* dst,
+                   int dst_stride,
+                   int dst_width,
+                   int dst_height,
+                   enum FilterMode filtering);
+
 // Scales a YUV 4:2:0 image from the src width and height to the
 // dst width and height.
 // If filtering is kFilterNone, a simple nearest-neighbor algorithm is

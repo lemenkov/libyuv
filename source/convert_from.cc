@@ -159,6 +159,102 @@ int I420ToI444(const uint8_t* src_y,
                     dst_uv_height);
 }
 
+// 420 chroma to 444 chroma, 10/12 bit version
+LIBYUV_API
+int I010ToI410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  if (width == 0 || height == 0) {
+    return -1;
+  }
+
+  if (dst_y) {
+    ScalePlane_12(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
+                  Abs(width), Abs(height), kFilterBilinear);
+  }
+  ScalePlane_12(src_u, src_stride_u, SUBSAMPLE(width, 1, 1),
+                SUBSAMPLE(height, 1, 1), dst_u, dst_stride_u, Abs(width),
+                Abs(height), kFilterBilinear);
+  ScalePlane_12(src_v, src_stride_v, SUBSAMPLE(width, 1, 1),
+                SUBSAMPLE(height, 1, 1), dst_v, dst_stride_v, Abs(width),
+                Abs(height), kFilterBilinear);
+  return 0;
+}
+
+// 422 chroma to 444 chroma, 10/12 bit version
+LIBYUV_API
+int I210ToI410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  if (width == 0 || height == 0) {
+    return -1;
+  }
+
+  if (dst_y) {
+    ScalePlane_12(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
+                  Abs(width), Abs(height), kFilterBilinear);
+  }
+  ScalePlane_12(src_u, src_stride_u, SUBSAMPLE(width, 1, 1), height, dst_u,
+                dst_stride_u, Abs(width), Abs(height), kFilterBilinear);
+  ScalePlane_12(src_v, src_stride_v, SUBSAMPLE(width, 1, 1), height, dst_v,
+                dst_stride_v, Abs(width), Abs(height), kFilterBilinear);
+  return 0;
+}
+
+// 422 chroma is 1/2 width, 1x height
+// 444 chroma is 1x width, 1x height
+LIBYUV_API
+int I422ToI444(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  if (width == 0 || height == 0) {
+    return -1;
+  }
+
+  if (dst_y) {
+    ScalePlane(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
+               Abs(width), Abs(height), kFilterBilinear);
+  }
+  ScalePlane(src_u, src_stride_u, SUBSAMPLE(width, 1, 1), height, dst_u,
+             dst_stride_u, Abs(width), Abs(height), kFilterBilinear);
+  ScalePlane(src_v, src_stride_v, SUBSAMPLE(width, 1, 1), height, dst_v,
+             dst_stride_v, Abs(width), Abs(height), kFilterBilinear);
+  return 0;
+}
+
 // Copy to I400. Source can be I420,422,444,400,NV12,NV21
 LIBYUV_API
 int I400Copy(const uint8_t* src_y,

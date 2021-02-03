@@ -535,6 +535,196 @@ void ScaleRowDown38_2_Box_NEON(const uint8_t* src_ptr,
         "v19", "v30", "v31", "memory", "cc");
 }
 
+void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int dst_width) {
+  const uint8_t* src_temp = src_ptr + 1;
+  asm volatile(
+
+      "movi        v31.8b, #3                    \n"
+
+      "1:                                        \n"
+      "ldr         d0, [%0], #8                  \n"  // 01234567
+      "ldr         d1, [%1], #8                  \n"  // 12345678
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+
+      "ushll       v2.8h, v0.8b, #0              \n"  // 01234567 (16b)
+      "ushll       v3.8h, v1.8b, #0              \n"  // 12345678 (16b)
+
+      "umlal       v2.8h, v1.8b, v31.8b          \n"  // 3*near+far (odd)
+      "umlal       v3.8h, v0.8b, v31.8b          \n"  // 3*near+far (even)
+
+      "rshrn       v2.8b, v2.8h, #2              \n"  // 3/4*near+1/4*far (odd)
+      "rshrn       v1.8b, v3.8h, #2              \n"  // 3/4*near+1/4*far (even)
+
+      "st2         {v1.8b, v2.8b}, [%2], #16     \n"  // store
+      "subs        %w3, %w3, #16                 \n"  // 8 sample -> 16 sample
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_temp),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(dst_width)  // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v31"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               ptrdiff_t dst_stride,
+                               int dst_width) {
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  uint8_t* dst_ptr1 = dst_ptr + dst_stride;
+  const uint8_t* src_temp = src_ptr + 1;
+  const uint8_t* src_temp1 = src_ptr1 + 1;
+
+  asm volatile(
+
+      "movi        v31.8b, #3                    \n"
+      "movi        v30.8h, #3                    \n"
+
+      "1:                                        \n"
+      "ldr         d0, [%0], #8                  \n"  // 01234567
+      "ldr         d1, [%2], #8                  \n"  // 12345678
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+
+      "ushll       v2.8h, v0.8b, #0              \n"  // 01234567 (16b)
+      "ushll       v3.8h, v1.8b, #0              \n"  // 12345678 (16b)
+      "umlal       v2.8h, v1.8b, v31.8b          \n"  // 3*near+far (1, odd)
+      "umlal       v3.8h, v0.8b, v31.8b          \n"  // 3*near+far (1, even)
+
+      "ldr         d0, [%1], #8                  \n"
+      "ldr         d1, [%3], #8                  \n"
+      "prfm        pldl1keep, [%1, 448]          \n"  // prefetch 7 lines ahead
+
+      "ushll       v4.8h, v0.8b, #0              \n"  // 01234567 (16b)
+      "ushll       v5.8h, v1.8b, #0              \n"  // 12345678 (16b)
+      "umlal       v4.8h, v1.8b, v31.8b          \n"  // 3*near+far (2, odd)
+      "umlal       v5.8h, v0.8b, v31.8b          \n"  // 3*near+far (2, even)
+
+      "mov         v0.8h, v4.8h                  \n"
+      "mov         v1.8h, v5.8h                  \n"
+      "mla         v4.8h, v2.8h, v30.8h          \n"  // 9 3 3 1 (1, odd)
+      "mla         v5.8h, v3.8h, v30.8h          \n"  // 9 3 3 1 (1, even)
+      "mla         v2.8h, v0.8h, v30.8h          \n"  // 9 3 3 1 (2, odd)
+      "mla         v3.8h, v1.8h, v30.8h          \n"  // 9 3 3 1 (2, even)
+
+      "rshrn       v2.8b, v2.8h, #4              \n"  // 2, odd
+      "rshrn       v1.8b, v3.8h, #4              \n"  // 2, even
+      "rshrn       v4.8b, v4.8h, #4              \n"  // 1, odd
+      "rshrn       v3.8b, v5.8h, #4              \n"  // 1, even
+
+      "st2         {v1.8b, v2.8b}, [%5], #16     \n"  // store 1
+      "st2         {v3.8b, v4.8b}, [%4], #16     \n"  // store 2
+      "subs        %w6, %w6, #16                 \n"  // 8 sample -> 16 sample
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),    // %0
+        "+r"(src_ptr1),   // %1
+        "+r"(src_temp),   // %2
+        "+r"(src_temp1),  // %3
+        "+r"(dst_ptr),    // %4
+        "+r"(dst_ptr1),   // %5
+        "+r"(dst_width)   // %6
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v30",
+        "v31"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
+                                uint16_t* dst_ptr,
+                                int dst_width) {
+  const uint16_t* src_temp = src_ptr + 1;
+  asm volatile(
+
+      "movi        v31.8h, #3                    \n"
+
+      "1:                                        \n"
+      "ld1         {v0.8h}, [%0], #16            \n"  // 01234567 (16b)
+      "ld1         {v1.8h}, [%1], #16            \n"  // 12345678 (16b)
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+
+      "mov         v2.8h, v0.8h                  \n"
+      "mla         v0.8h, v1.8h, v31.8h          \n"  // 3*near+far (odd)
+      "mla         v1.8h, v2.8h, v31.8h          \n"  // 3*near+far (even)
+
+      "urshr       v2.8h, v0.8h, #2              \n"  // 3/4*near+1/4*far (odd)
+      "urshr       v1.8h, v1.8h, #2              \n"  // 3/4*near+1/4*far (even)
+
+      "st2         {v1.8h, v2.8h}, [%2], #32     \n"  // store
+      "subs        %w3, %w3, #16                 \n"  // 8 sample -> 16 sample
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_temp),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(dst_width)  // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v31"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint16_t* dst_ptr,
+                                  ptrdiff_t dst_stride,
+                                  int dst_width) {
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  uint16_t* dst_ptr1 = dst_ptr + dst_stride;
+  const uint16_t* src_temp = src_ptr + 1;
+  const uint16_t* src_temp1 = src_ptr1 + 1;
+
+  asm volatile(
+
+      "movi        v31.8h, #3                    \n"
+
+      "1:                                        \n"
+      "ld1         {v2.8h}, [%0], #16            \n"  // 01234567 (16b)
+      "ld1         {v3.8h}, [%2], #16            \n"  // 12345678 (16b)
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+
+      "mov         v0.8h, v2.8h                  \n"
+      "mla         v2.8h, v3.8h, v31.8h          \n"  // 3*near+far (odd)
+      "mla         v3.8h, v0.8h, v31.8h          \n"  // 3*near+far (even)
+
+      "ld1         {v4.8h}, [%1], #16            \n"  // 01234567 (16b)
+      "ld1         {v5.8h}, [%3], #16            \n"  // 12345678 (16b)
+      "prfm        pldl1keep, [%1, 448]          \n"  // prefetch 7 lines ahead
+
+      "mov         v0.8h, v4.8h                  \n"
+      "mla         v4.8h, v5.8h, v31.8h          \n"  // 3*near+far (odd)
+      "mla         v5.8h, v0.8h, v31.8h          \n"  // 3*near+far (even)
+
+      "mov         v0.8h, v4.8h                  \n"
+      "mov         v1.8h, v5.8h                  \n"
+      "mla         v4.8h, v2.8h, v31.8h          \n"  // 9 3 3 1 (1, odd)
+      "mla         v5.8h, v3.8h, v31.8h          \n"  // 9 3 3 1 (1, even)
+      "mla         v2.8h, v0.8h, v31.8h          \n"  // 9 3 3 1 (2, odd)
+      "mla         v3.8h, v1.8h, v31.8h          \n"  // 9 3 3 1 (2, even)
+
+      "urshr       v2.8h, v2.8h, #4              \n"  // 2, odd
+      "urshr       v1.8h, v3.8h, #4              \n"  // 2, even
+      "urshr       v4.8h, v4.8h, #4              \n"  // 1, odd
+      "urshr       v3.8h, v5.8h, #4              \n"  // 1, even
+
+      "st2         {v3.8h, v4.8h}, [%4], #32     \n"  // store 1
+      "st2         {v1.8h, v2.8h}, [%5], #32     \n"  // store 2
+
+      "subs        %w6, %w6, #16                 \n"  // 8 sample -> 16 sample
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),    // %0
+        "+r"(src_ptr1),   // %1
+        "+r"(src_temp),   // %2
+        "+r"(src_temp1),  // %3
+        "+r"(dst_ptr),    // %4
+        "+r"(dst_ptr1),   // %5
+        "+r"(dst_width)   // %6
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v31"  // Clobber List
+  );
+}
+
 // Add a row of bytes to a row of shorts.  Used for box filter.
 // Reads 16 bytes and accumulates to 16 shorts at a time.
 void ScaleAddRow_NEON(const uint8_t* src_ptr,
