@@ -8,5 +8,3 @@ per-file .gitignore=*
 per-file AUTHORS=*
 per-file DEPS=*
 per-file PRESUBMIT.py=mbonadei@chromium.org
-
-# COMPONENT: Internals>Images>Codecs
