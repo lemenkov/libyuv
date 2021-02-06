@@ -625,7 +625,7 @@ CANY(ScaleARGBFilterCols_Any_MSA,
     dst_ptr[dst_width - 1] = src_ptr[(dst_width / 2) - 1];         \
   }
 
-// Even the C version need to be wrapped, because boundary pixels have to
+// Even the C versions need to be wrapped, because boundary pixels have to
 // be handled differently
 
 SUH2LANY(ScaleRowUp2_Linear_Any_C,

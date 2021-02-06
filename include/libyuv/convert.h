@@ -213,7 +213,7 @@ int I010ToI410(const uint16_t* src_y,
 // Convert I012 to I412
 #define I012ToI412 I010ToI410
 
-// Convert I212 to I412
+// Convert I210 to I410
 LIBYUV_API
 int I210ToI410(const uint16_t* src_y,
                int src_stride_y,

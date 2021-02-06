@@ -1336,7 +1336,7 @@ void ScalePlaneBilinearUp(int src_width,
   }
 }
 
-// Scale plane, horizontally 2 times, vertically any time.
+// Scale plane, horizontally up by 2 times.
 // Uses linear filter horizontally, nearest vertically.
 // This is an optimized version for scaling up a plane to 2 times of
 // its original width, using linear interpolation.
@@ -1356,7 +1356,7 @@ void ScalePlaneUp2_Linear(int src_width,
   int dy;
 
   // This function can only scale up by 2 times horizontally.
-  assert(src_width * 2 == dst_width || src_width * 2 == dst_width + 1);
+  assert(src_width == ((dst_width + 1) / 2));
 
 #ifdef HAS_SCALEROWUP2LINEAR_SSE2
   if (TestCpuFlag(kCpuHasSSE2)) {
@@ -1396,7 +1396,7 @@ void ScalePlaneUp2_Linear(int src_width,
   }
 }
 
-// Scale plane, 2 times.
+// Scale plane, up by 2 times.
 // This is an optimized version for scaling up a plane to 2 times of
 // its original size, using bilinear interpolation.
 // This is used to scale U and V planes of I420 to I444.
@@ -1414,7 +1414,7 @@ void ScalePlaneUp2_Bilinear(int src_width,
   int x;
 
   // This function can only scale up by 2 times.
-  assert(src_width * 2 == dst_width || src_width * 2 == dst_width + 1);
+  assert(src_width == ((dst_width + 1) / 2));
   assert(src_height * 2 == dst_height || src_height * 2 == dst_height + 1);
 
 #ifdef HAS_SCALEROWUP2LINEAR_SSE2
@@ -1449,7 +1449,7 @@ void ScalePlaneUp2_Bilinear(int src_width,
     for (x = 0; x < src_height - 1; ++x) {
       Scale2RowUp(src_ptr, src_stride, dst_ptr, dst_stride, dst_width);
       src_ptr += src_stride;
-      // TODO test performance of writing one row of destination at a time
+      // TODO: Test performance of writing one row of destination at a time.
       dst_ptr += 2 * dst_stride;
     }
     if (!(dst_height & 1)) {
@@ -1458,7 +1458,7 @@ void ScalePlaneUp2_Bilinear(int src_width,
   }
 }
 
-// Scale at most 14bit plane, horizontally 2 times.
+// Scale at most 14 bit plane, horizontally up by 2 times.
 // This is an optimized version for scaling up a plane to 2 times of
 // its original width, using linear interpolation.
 // stride is in count of uint16_t.
@@ -1478,7 +1478,7 @@ void ScalePlaneUp2_16_Linear(int src_width,
   int dy;
 
   // This function can only scale up by 2 times horizontally.
-  assert(src_width * 2 == dst_width || src_width * 2 == dst_width + 1);
+  assert(src_width == ((dst_width + 1) / 2));
 
 #ifdef HAS_SCALEROWUP2LINEAR_SSE2
   if (TestCpuFlag(kCpuHasSSE2)) {
@@ -1512,7 +1512,7 @@ void ScalePlaneUp2_16_Linear(int src_width,
   }
 }
 
-// Scale at most 12bit plane, up 2 times.
+// Scale at most 12 bit plane, up by 2 times.
 // This is an optimized version for scaling up a plane to 2 times of
 // its original size, using bilinear interpolation.
 // stride is in count of uint16_t.
@@ -1531,7 +1531,7 @@ void ScalePlaneUp2_16_Bilinear(int src_width,
   int x;
 
   // This function can only scale up by 2 times.
-  assert(src_width * 2 == dst_width || src_width * 2 == dst_width + 1);
+  assert(src_width == ((dst_width + 1) / 2));
   assert(src_height * 2 == dst_height || src_height * 2 == dst_height + 1);
 
 #ifdef HAS_SCALEROWUP2LINEAR_SSE2

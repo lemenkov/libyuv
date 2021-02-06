@@ -21,18 +21,20 @@ extern "C" {
 #endif
 
 // Conversion matrix for YUV to RGB
-LIBYUV_API extern const struct YuvConstants kYuvI601Constants;  // BT.601
-LIBYUV_API extern const struct YuvConstants kYuvJPEGConstants;  // JPeg
-LIBYUV_API extern const struct YuvConstants kYuvF709Constants;  // BT.709 full
-LIBYUV_API extern const struct YuvConstants kYuvH709Constants;  // BT.709
-LIBYUV_API extern const struct YuvConstants kYuv2020Constants;  // BT.2020
+LIBYUV_API extern const struct YuvConstants kYuvI601Constants;   // BT.601
+LIBYUV_API extern const struct YuvConstants kYuvJPEGConstants;   // JPeg
+LIBYUV_API extern const struct YuvConstants kYuvF709Constants;   // BT.709 full
+LIBYUV_API extern const struct YuvConstants kYuvH709Constants;   // BT.709
+LIBYUV_API extern const struct YuvConstants kYuv2020Constants;   // BT.2020
+LIBYUV_API extern const struct YuvConstants kYuvV2020Constants;  // BT.2020 full
 
 // Conversion matrix for YVU to BGR
-LIBYUV_API extern const struct YuvConstants kYvuI601Constants;  // BT.601
-LIBYUV_API extern const struct YuvConstants kYvuJPEGConstants;  // JPeg
-LIBYUV_API extern const struct YuvConstants kYvuF709Constants;  // BT.709 full
-LIBYUV_API extern const struct YuvConstants kYvuH709Constants;  // BT.709
-LIBYUV_API extern const struct YuvConstants kYvu2020Constants;  // BT.2020
+LIBYUV_API extern const struct YuvConstants kYvuI601Constants;   // BT.601
+LIBYUV_API extern const struct YuvConstants kYvuJPEGConstants;   // JPeg
+LIBYUV_API extern const struct YuvConstants kYvuF709Constants;   // BT.709 full
+LIBYUV_API extern const struct YuvConstants kYvuH709Constants;   // BT.709
+LIBYUV_API extern const struct YuvConstants kYvu2020Constants;   // BT.2020
+LIBYUV_API extern const struct YuvConstants kYvuV2020Constants;  // BT.2020 full
 
 // Macros for end swapped destination Matrix conversions.
 // Swap UV and pass mirrored kYvuJPEGConstants matrix.
@@ -42,6 +44,8 @@ LIBYUV_API extern const struct YuvConstants kYvu2020Constants;  // BT.2020
 #define kYuvF709ConstantsVU kYvuF709Constants
 #define kYuvH709ConstantsVU kYvuH709Constants
 #define kYuv2020ConstantsVU kYvu2020Constants
+#define kYuvV2020ConstantsVU kYvuV2020Constants
+
 #define NV12ToABGRMatrix(a, b, c, d, e, f, g, h, i) \
   NV21ToARGBMatrix(a, b, c, d, e, f, g##VU, h, i)
 #define NV21ToABGRMatrix(a, b, c, d, e, f, g, h, i) \

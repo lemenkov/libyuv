@@ -30,6 +30,8 @@ static __inline int Abs(int v) {
 }
 
 // I420 To any I4xx YUV format with mirroring.
+// TODO(fbarchard): Consider kFilterNone for Y, or CopyPlane
+
 static int I420ToI4xx(const uint8_t* src_y,
                       int src_stride_y,
                       const uint8_t* src_u,

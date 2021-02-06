@@ -540,7 +540,6 @@ void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
                              int dst_width) {
   const uint8_t* src_temp = src_ptr + 1;
   asm volatile(
-
       "movi        v31.8b, #3                    \n"
 
       "1:                                        \n"
@@ -580,7 +579,6 @@ void ScaleRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
   const uint8_t* src_temp1 = src_ptr1 + 1;
 
   asm volatile(
-
       "movi        v31.8b, #3                    \n"
       "movi        v30.8h, #3                    \n"
 
@@ -637,7 +635,6 @@ void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
                                 int dst_width) {
   const uint16_t* src_temp = src_ptr + 1;
   asm volatile(
-
       "movi        v31.8h, #3                    \n"
 
       "1:                                        \n"
@@ -675,7 +672,6 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
   const uint16_t* src_temp1 = src_ptr1 + 1;
 
   asm volatile(
-
       "movi        v31.8h, #3                    \n"
 
       "1:                                        \n"
@@ -1317,13 +1313,13 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:                                        \n"
-      "ld1        {v0.h}[0], [%0], %6            \n"
-      "ld1        {v1.h}[0], [%1], %6            \n"
-      "ld1        {v2.h}[0], [%2], %6            \n"
-      "ld1        {v3.h}[0], [%3], %6            \n"
-      "subs       %w5, %w5, #4                   \n"  // 4 pixels per loop.
-      "st4        {v0.h, v1.h, v2.h, v3.h}[0], [%4], #8 \n"
-      "b.gt       1b                             \n"
+      "ld1         {v0.h}[0], [%0], %6           \n"
+      "ld1         {v1.h}[0], [%1], %6           \n"
+      "ld1         {v2.h}[0], [%2], %6           \n"
+      "ld1         {v3.h}[0], [%3], %6           \n"
+      "subs        %w5, %w5, #4                  \n"  // 4 pixels per loop.
+      "st4         {v0.h, v1.h, v2.h, v3.h}[0], [%4], #8 \n"
+      "b.gt        1b                            \n"
       : "+r"(src_ptr),                 // %0
         "+r"(src1_ptr),                // %1
         "+r"(src2_ptr),                // %2

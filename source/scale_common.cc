@@ -400,7 +400,7 @@ void ScaleRowDown34_1_Box_16_C(const uint16_t* src_ptr,
   }
 }
 
-// sample position: (O is src sample position, X is dst sample position)
+// Sample position: (O is src sample position, X is dst sample position)
 //
 //      v dst_ptr at here           v stop at here
 //  X O X   X O X   X O X   X O X   X O X
@@ -417,7 +417,7 @@ void ScaleRowUp2_Linear_C(const uint8_t* src_ptr,
   }
 }
 
-// sample position: (O is src sample position, X is dst sample position)
+// Sample position: (O is src sample position, X is dst sample position)
 //
 //    src_ptr at here
 //  X v X   X   X   X   X   X   X   X   X
@@ -451,7 +451,7 @@ void ScaleRowUp2_Bilinear_C(const uint8_t* src_ptr,
   }
 }
 
-// only suitable for at most 14bit range.
+// Only suitable for at most 14 bit range.
 void ScaleRowUp2_Linear_16_C(const uint16_t* src_ptr,
                              uint16_t* dst_ptr,
                              int dst_width) {

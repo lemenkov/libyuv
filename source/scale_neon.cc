@@ -509,7 +509,6 @@ void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
                              int dst_width) {
   const uint8_t* src_temp = src_ptr + 1;
   asm volatile(
-
       "vmov.u16    q15, #3                       \n"
 
       "1:                                        \n"
@@ -527,7 +526,7 @@ void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
 
       "vst2.8      {d0, d1}, [%1]!               \n"  // store
       "subs        %2, %2, #16                   \n"  // 8 sample -> 16 sample
-      "bgt        1b                             \n"
+      "bgt         1b                            \n"
       : "+r"(src_ptr),    // %0
         "+r"(dst_ptr),    // %1
         "+r"(dst_width),  // %2
@@ -548,7 +547,6 @@ void ScaleRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
   const uint8_t* src_temp1 = src_ptr1 + 1;
 
   asm volatile(
-
       "vmov.u16    q15, #3                       \n"
 
       "1:                                        \n"
@@ -612,7 +610,6 @@ void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
                                 int dst_width) {
   const uint16_t* src_temp = src_ptr + 1;
   asm volatile(
-
       "vmov.u16    q15, #3                       \n"
 
       "1:                                        \n"
@@ -649,7 +646,6 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
   const uint16_t* src_temp1 = src_ptr1 + 1;
 
   asm volatile(
-
       "vmov.u16    q15, #3                       \n"
 
       "1:                                        \n"
