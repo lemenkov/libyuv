@@ -640,7 +640,7 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_C,
          0,
          uint16_t)
 
-#ifdef HAS_SCALECOLUP2LINEAR_SSE2
+#ifdef HAS_SCALEROWUP2LINEAR_SSE2
 SUH2LANY(ScaleRowUp2_Linear_Any_SSE2,
          ScaleRowUp2_Linear_SSE2,
          ScaleRowUp2_Linear_C,
@@ -648,7 +648,7 @@ SUH2LANY(ScaleRowUp2_Linear_Any_SSE2,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_SSSE3
+#ifdef HAS_SCALEROWUP2LINEAR_SSSE3
 SUH2LANY(ScaleRowUp2_Linear_Any_SSSE3,
          ScaleRowUp2_Linear_SSSE3,
          ScaleRowUp2_Linear_C,
@@ -656,7 +656,7 @@ SUH2LANY(ScaleRowUp2_Linear_Any_SSSE3,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_16_SSE2
+#ifdef HAS_SCALEROWUP2LINEAR_16_SSE2
 SUH2LANY(ScaleRowUp2_Linear_16_Any_SSE2,
          ScaleRowUp2_Linear_16_SSE2,
          ScaleRowUp2_Linear_16_C,
@@ -664,7 +664,7 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_SSE2,
          uint16_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_AVX2
+#ifdef HAS_SCALEROWUP2LINEAR_AVX2
 SUH2LANY(ScaleRowUp2_Linear_Any_AVX2,
          ScaleRowUp2_Linear_AVX2,
          ScaleRowUp2_Linear_C,
@@ -672,7 +672,7 @@ SUH2LANY(ScaleRowUp2_Linear_Any_AVX2,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_16_AVX2
+#ifdef HAS_SCALEROWUP2LINEAR_16_AVX2
 SUH2LANY(ScaleRowUp2_Linear_16_Any_AVX2,
          ScaleRowUp2_Linear_16_AVX2,
          ScaleRowUp2_Linear_16_C,
@@ -680,7 +680,7 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_AVX2,
          uint16_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_NEON
+#ifdef HAS_SCALEROWUP2LINEAR_NEON
 SUH2LANY(ScaleRowUp2_Linear_Any_NEON,
          ScaleRowUp2_Linear_NEON,
          ScaleRowUp2_Linear_C,
@@ -688,7 +688,7 @@ SUH2LANY(ScaleRowUp2_Linear_Any_NEON,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_16_NEON
+#ifdef HAS_SCALEROWUP2LINEAR_16_NEON
 SUH2LANY(ScaleRowUp2_Linear_16_Any_NEON,
          ScaleRowUp2_Linear_16_NEON,
          ScaleRowUp2_Linear_16_C,
@@ -699,7 +699,7 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_NEON,
 #undef SUH2LANY
 
 // Scale up 2 times using bilinear filter.
-// This function produces 2 rows at a time
+// This function produces 2 rows at a time.
 #define SU2BLANY(NAME, SIMD, C, MASK, PTYPE)                            \
   void NAME(const PTYPE* src_ptr, ptrdiff_t src_stride, PTYPE* dst_ptr, \
             ptrdiff_t dst_stride, int dst_width) {                      \
@@ -736,7 +736,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_16_Any_C,
          0,
          uint16_t)
 
-#ifdef HAS_SCALEROWUP2LINEAR_SSE2
+#ifdef HAS_SCALEROWUP2BILINEAR_SSE2
 SU2BLANY(ScaleRowUp2_Bilinear_Any_SSE2,
          ScaleRowUp2_Bilinear_SSE2,
          ScaleRowUp2_Bilinear_C,
@@ -744,7 +744,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_Any_SSE2,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_16_SSE2
+#ifdef HAS_SCALEROWUP2BILINEAR_16_SSE2
 SU2BLANY(ScaleRowUp2_Bilinear_16_Any_SSE2,
          ScaleRowUp2_Bilinear_16_SSE2,
          ScaleRowUp2_Bilinear_16_C,
@@ -752,7 +752,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_16_Any_SSE2,
          uint16_t)
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_SSSE3
+#ifdef HAS_SCALEROWUP2BILINEAR_SSSE3
 SU2BLANY(ScaleRowUp2_Bilinear_Any_SSSE3,
          ScaleRowUp2_Bilinear_SSSE3,
          ScaleRowUp2_Bilinear_C,
@@ -760,7 +760,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_Any_SSSE3,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_AVX2
+#ifdef HAS_SCALEROWUP2BILINEAR_AVX2
 SU2BLANY(ScaleRowUp2_Bilinear_Any_AVX2,
          ScaleRowUp2_Bilinear_AVX2,
          ScaleRowUp2_Bilinear_C,
@@ -768,7 +768,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_Any_AVX2,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_16_AVX2
+#ifdef HAS_SCALEROWUP2BILINEAR_16_AVX2
 SU2BLANY(ScaleRowUp2_Bilinear_16_Any_AVX2,
          ScaleRowUp2_Bilinear_16_AVX2,
          ScaleRowUp2_Bilinear_16_C,
@@ -776,7 +776,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_16_Any_AVX2,
          uint16_t)
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_NEON
+#ifdef HAS_SCALEROWUP2BILINEAR_NEON
 SU2BLANY(ScaleRowUp2_Bilinear_Any_NEON,
          ScaleRowUp2_Bilinear_NEON,
          ScaleRowUp2_Bilinear_C,
@@ -784,7 +784,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_Any_NEON,
          uint8_t)
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_16_NEON
+#ifdef HAS_SCALEROWUP2BILINEAR_16_NEON
 SU2BLANY(ScaleRowUp2_Bilinear_16_Any_NEON,
          ScaleRowUp2_Bilinear_16_NEON,
          ScaleRowUp2_Bilinear_16_C,
@@ -793,6 +793,120 @@ SU2BLANY(ScaleRowUp2_Bilinear_16_Any_NEON,
 #endif
 
 #undef SU2BLANY
+
+// Scale bi-planar plane up horizontally 2 times using linear filter.
+#define SBUH2LANY(NAME, SIMD, C, MASK, PTYPE)                         \
+  void NAME(const PTYPE* src_ptr, PTYPE* dst_ptr, int dst_width) {    \
+    int work_width = (dst_width - 1) & ~1;                            \
+    int r = work_width & MASK;                                        \
+    int n = work_width & ~MASK;                                       \
+    dst_ptr[0] = src_ptr[0];                                          \
+    dst_ptr[1] = src_ptr[1];                                          \
+    if (work_width > 0) {                                             \
+      if (n != 0) {                                                   \
+        SIMD(src_ptr, dst_ptr + 2, n);                                \
+      }                                                               \
+      C(src_ptr + n, dst_ptr + 2 * n + 2, r);                         \
+    }                                                                 \
+    dst_ptr[2 * dst_width - 2] = src_ptr[((dst_width + 1) & ~1) - 2]; \
+    dst_ptr[2 * dst_width - 1] = src_ptr[((dst_width + 1) & ~1) - 1]; \
+  }
+
+SBUH2LANY(ScaleUVRowUp2_Linear_Any_C,
+          ScaleUVRowUp2_Linear_C,
+          ScaleUVRowUp2_Linear_C,
+          0,
+          uint8_t)
+
+#ifdef HAS_SCALEUVROWUP2LINEAR_SSSE3
+SBUH2LANY(ScaleUVRowUp2_Linear_Any_SSSE3,
+          ScaleUVRowUp2_Linear_SSSE3,
+          ScaleUVRowUp2_Linear_C,
+          7,
+          uint8_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2LINEAR_AVX2
+SBUH2LANY(ScaleUVRowUp2_Linear_Any_AVX2,
+          ScaleUVRowUp2_Linear_AVX2,
+          ScaleUVRowUp2_Linear_C,
+          15,
+          uint8_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2LINEAR_NEON
+SBUH2LANY(ScaleUVRowUp2_Linear_Any_NEON,
+          ScaleUVRowUp2_Linear_NEON,
+          ScaleUVRowUp2_Linear_C,
+          7,
+          uint8_t)
+#endif
+
+#undef SBUH2LANY
+
+// Scale bi-planar plane up 2 times using bilinear filter.
+// This function produces 2 rows at a time.
+#define SBU2BLANY(NAME, SIMD, C, MASK, PTYPE)                           \
+  void NAME(const PTYPE* src_ptr, ptrdiff_t src_stride, PTYPE* dst_ptr, \
+            ptrdiff_t dst_stride, int dst_width) {                      \
+    int work_width = (dst_width - 1) & ~1;                              \
+    int r = work_width & MASK;                                          \
+    int n = work_width & ~MASK;                                         \
+    const PTYPE* sa = src_ptr;                                          \
+    const PTYPE* sb = src_ptr + src_stride;                             \
+    PTYPE* da = dst_ptr;                                                \
+    PTYPE* db = dst_ptr + dst_stride;                                   \
+    da[0] = (3 * sa[0] + sb[0]) >> 2;                                   \
+    db[0] = (sa[0] + 3 * sb[0]) >> 2;                                   \
+    da[1] = (3 * sa[1] + sb[1]) >> 2;                                   \
+    db[1] = (sa[1] + 3 * sb[1]) >> 2;                                   \
+    if (work_width > 0) {                                               \
+      if (n != 0) {                                                     \
+        SIMD(sa, sb - sa, da + 2, db - da, n);                          \
+      }                                                                 \
+      C(sa + n, sb - sa, da + 2 * n + 2, db - da, r);                   \
+    }                                                                   \
+    da[2 * dst_width - 2] = (3 * sa[((dst_width + 1) & ~1) - 2] +       \
+                             sb[((dst_width + 1) & ~1) - 2]) >> 2;      \
+    db[2 * dst_width - 2] = (sa[((dst_width + 1) & ~1) - 2] +           \
+                             3 * sb[((dst_width + 1) & ~1) - 2]) >> 2;  \
+    da[2 * dst_width - 1] = (3 * sa[((dst_width + 1) & ~1) - 1] +       \
+                             sb[((dst_width + 1) & ~1) - 1]) >> 2;      \
+    db[2 * dst_width - 1] = (sa[((dst_width + 1) & ~1) - 1] +           \
+                             3 * sb[((dst_width + 1) & ~1) - 1]) >> 2;  \
+  }
+
+SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_C,
+          ScaleUVRowUp2_Bilinear_C,
+          ScaleUVRowUp2_Bilinear_C,
+          0,
+          uint8_t)
+
+#ifdef HAS_SCALEUVROWUP2BILINEAR_SSSE3
+SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_SSSE3,
+          ScaleUVRowUp2_Bilinear_SSSE3,
+          ScaleUVRowUp2_Bilinear_C,
+          7,
+          uint8_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2BILINEAR_AVX2
+SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_AVX2,
+          ScaleUVRowUp2_Bilinear_AVX2,
+          ScaleUVRowUp2_Bilinear_C,
+          15,
+          uint8_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2BILINEAR_NEON
+SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_NEON,
+          ScaleUVRowUp2_Bilinear_NEON,
+          ScaleUVRowUp2_Bilinear_C,
+          7,
+          uint8_t)
+#endif
+
+#undef SBU2BLANY
 
 #ifdef __cplusplus
 }  // extern "C"

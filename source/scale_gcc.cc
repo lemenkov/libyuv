@@ -779,7 +779,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
         "xmm7");
 }
 
-#ifdef HAS_SCALECOLUP2LINEAR_SSE2
+#ifdef HAS_SCALEROWUP2LINEAR_SSE2
 void ScaleRowUp2_Linear_SSE2(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int dst_width) {
@@ -833,7 +833,7 @@ void ScaleRowUp2_Linear_SSE2(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_SSE2
+#ifdef HAS_SCALEROWUP2BILINEAR_SSE2
 void ScaleRowUp2_Bilinear_SSE2(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
@@ -949,7 +949,7 @@ void ScaleRowUp2_Bilinear_SSE2(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_16_SSE2
+#ifdef HAS_SCALEROWUP2LINEAR_16_SSE2
 void ScaleRowUp2_Linear_16_SSE2(const uint16_t* src_ptr,
                                 uint16_t* dst_ptr,
                                 int dst_width) {
@@ -999,7 +999,7 @@ void ScaleRowUp2_Linear_16_SSE2(const uint16_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_16_SSE2
+#ifdef HAS_SCALEROWUP2BILINEAR_16_SSE2
 void ScaleRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint16_t* dst_ptr,
@@ -1106,7 +1106,7 @@ void ScaleRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_SSSE3
+#ifdef HAS_SCALEROWUP2LINEAR_SSSE3
 static const uvec8 kLinearMadd31_SSSE3 = {3, 1, 1, 3, 3, 1, 1, 3,
                                           3, 1, 1, 3, 3, 1, 1, 3};
 
@@ -1149,7 +1149,7 @@ void ScaleRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_SSSE3
+#ifdef HAS_SCALEROWUP2BILINEAR_SSSE3
 void ScaleRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
                                 ptrdiff_t src_stride,
                                 uint8_t* dst_ptr,
@@ -1236,7 +1236,7 @@ void ScaleRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_AVX2
+#ifdef HAS_SCALEROWUP2LINEAR_AVX2
 static const lvec8 kLinearMadd31_AVX2 = {3, 1, 1, 3, 3, 1, 1, 3, 3, 1, 1,
                                          3, 3, 1, 1, 3, 3, 1, 1, 3, 3, 1,
                                          1, 3, 3, 1, 1, 3, 3, 1, 1, 3};
@@ -1281,7 +1281,7 @@ void ScaleRowUp2_Linear_AVX2(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_AVX2
+#ifdef HAS_SCALEROWUP2BILINEAR_AVX2
 void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
@@ -1364,7 +1364,7 @@ void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALECOLUP2LINEAR_16_AVX2
+#ifdef HAS_SCALEROWUP2LINEAR_16_AVX2
 static const lvec16 kLinearMadd31_16_AVX2 = {3, 1, 1, 3, 3, 1, 1, 3,
                                              3, 1, 1, 3, 3, 1, 1, 3};
 
@@ -1450,7 +1450,7 @@ void ScaleRowUp2_Linear_16_AVX2_Full(const uint16_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEROWUP2LINEAR_16_AVX2
+#ifdef HAS_SCALEROWUP2BILINEAR_16_AVX2
 void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint16_t* dst_ptr,
@@ -2260,6 +2260,257 @@ void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 #endif  // HAS_SCALEUVROWDOWN2BOX_AVX2
+
+#ifdef HAS_SCALEUVROWUP2LINEAR_SSSE3
+static const uvec8 kUVLinearMadd31_SSSE3 = {3, 1, 3, 1, 1, 3, 1, 3,
+                                            3, 1, 3, 1, 1, 3, 1, 3};
+void ScaleUVRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
+                                uint8_t* dst_ptr,
+                                int dst_width) {
+  asm volatile(
+      "pcmpeqw     %%xmm4,%%xmm4                 \n"
+      "psrlw       $15,%%xmm4                    \n"
+      "psllw       $1,%%xmm4                     \n"  // all 2
+      "movdqu      %3,%%xmm3                     \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movq        (%0),%%xmm0                   \n"  // 00112233 (1u1v)
+      "movq        2(%0),%%xmm1                  \n"  // 11223344 (1u1v)
+      "punpcklbw   %%xmm1,%%xmm0                 \n"  // 0101121223233434 (2u2v)
+      "movdqa      %%xmm0,%%xmm2                 \n"
+      "punpckhdq   %%xmm0,%%xmm2                 \n"  // 2323232334343434 (2u2v)
+      "punpckldq   %%xmm0,%%xmm0                 \n"  // 0101010112121212 (2u2v)
+      "pmaddubsw   %%xmm3,%%xmm2                 \n"  // 3*near+far (1u1v16, hi)
+      "pmaddubsw   %%xmm3,%%xmm0                 \n"  // 3*near+far (1u1v16, lo)
+      "paddw       %%xmm4,%%xmm0                 \n"  // 3*near+far+2 (lo)
+      "paddw       %%xmm4,%%xmm2                 \n"  // 3*near+far+2 (hi)
+      "psrlw       $2,%%xmm0                     \n"  // 3/4*near+1/4*far (lo)
+      "psrlw       $2,%%xmm2                     \n"  // 3/4*near+1/4*far (hi)
+      "vpackuswb   %%xmm2,%%xmm0,%%xmm0          \n"
+      "vmovdqu     %%xmm0,(%1)                   \n"
+
+      "lea         0x8(%0),%0                    \n"
+      "lea         0x10(%1),%1                   \n"  // 4 uv to 8 uv
+      "sub         $0x8,%2                       \n"
+      "jg          1b                            \n"
+      : "+r"(src_ptr),              // %0
+        "+r"(dst_ptr),              // %1
+        "+r"(dst_width)             // %2
+      : "m"(kUVLinearMadd31_SSSE3)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+}
+#endif
+
+#ifdef HAS_SCALEUVROWUP2BILINEAR_SSSE3
+void ScaleUVRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_ptr,
+                                  ptrdiff_t dst_stride,
+                                  int dst_width) {
+  asm volatile(
+      "pcmpeqw     %%xmm6,%%xmm6                 \n"
+      "psrlw       $15,%%xmm6                    \n"
+      "psllw       $3,%%xmm6                     \n"  // all 8
+      "movdqu      %5,%%xmm7                     \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movq        (%0),%%xmm0                   \n"  // 00112233 (1u1v)
+      "movq        2(%0),%%xmm1                  \n"  // 11223344 (1u1v)
+      "punpcklbw   %%xmm1,%%xmm0                 \n"  // 0101121223233434 (2u2v)
+      "movdqa      %%xmm0,%%xmm2                 \n"
+      "punpckhdq   %%xmm0,%%xmm2                 \n"  // 2323232334343434 (2u2v)
+      "punpckldq   %%xmm0,%%xmm0                 \n"  // 0101010112121212 (2u2v)
+      "pmaddubsw   %%xmm7,%%xmm2                 \n"  // 3*near+far (1u1v16, hi)
+      "pmaddubsw   %%xmm7,%%xmm0                 \n"  // 3*near+far (1u1v16, lo)
+
+      "movq        (%0,%3),%%xmm1                \n"
+      "movq        2(%0,%3),%%xmm4               \n"
+      "punpcklbw   %%xmm4,%%xmm1                 \n"
+      "movdqa      %%xmm1,%%xmm3                 \n"
+      "punpckhdq   %%xmm1,%%xmm3                 \n"
+      "punpckldq   %%xmm1,%%xmm1                 \n"
+      "pmaddubsw   %%xmm7,%%xmm3                 \n"  // 3*near+far (2, hi)
+      "pmaddubsw   %%xmm7,%%xmm1                 \n"  // 3*near+far (2, lo)
+
+      // xmm0 xmm2
+      // xmm1 xmm3
+
+      "movdqa      %%xmm0,%%xmm4                 \n"
+      "movdqa      %%xmm1,%%xmm5                 \n"
+      "paddw       %%xmm0,%%xmm4                 \n"  // 6*near+2*far (1, lo)
+      "paddw       %%xmm6,%%xmm5                 \n"  // 3*near+far+8 (2, lo)
+      "paddw       %%xmm0,%%xmm4                 \n"  // 9*near+3*far (1, lo)
+      "paddw       %%xmm5,%%xmm4                 \n"  // 9 3 3 1 + 8 (1, lo)
+      "psrlw       $4,%%xmm4                     \n"  // ^ div by 16 (1, lo)
+
+      "movdqa      %%xmm1,%%xmm5                 \n"
+      "paddw       %%xmm1,%%xmm5                 \n"  // 6*near+2*far (2, lo)
+      "paddw       %%xmm6,%%xmm0                 \n"  // 3*near+far+8 (1, lo)
+      "paddw       %%xmm1,%%xmm5                 \n"  // 9*near+3*far (2, lo)
+      "paddw       %%xmm0,%%xmm5                 \n"  // 9 3 3 1 + 8 (2, lo)
+      "psrlw       $4,%%xmm5                     \n"  // ^ div by 16 (2, lo)
+
+      "movdqa      %%xmm2,%%xmm0                 \n"
+      "movdqa      %%xmm3,%%xmm1                 \n"
+      "paddw       %%xmm2,%%xmm0                 \n"  // 6*near+2*far (1, hi)
+      "paddw       %%xmm6,%%xmm1                 \n"  // 3*near+far+8 (2, hi)
+      "paddw       %%xmm2,%%xmm0                 \n"  // 9*near+3*far (1, hi)
+      "paddw       %%xmm1,%%xmm0                 \n"  // 9 3 3 1 + 8 (1, hi)
+      "psrlw       $4,%%xmm0                     \n"  // ^ div by 16 (1, hi)
+
+      "movdqa      %%xmm3,%%xmm1                 \n"
+      "paddw       %%xmm3,%%xmm1                 \n"  // 6*near+2*far (2, hi)
+      "paddw       %%xmm6,%%xmm2                 \n"  // 3*near+far+8 (1, hi)
+      "paddw       %%xmm3,%%xmm1                 \n"  // 9*near+3*far (2, hi)
+      "paddw       %%xmm2,%%xmm1                 \n"  // 9 3 3 1 + 8 (2, hi)
+      "psrlw       $4,%%xmm1                     \n"  // ^ div by 16 (2, hi)
+
+      "packuswb    %%xmm0,%%xmm4                 \n"
+      "movdqu      %%xmm4,(%1)                   \n"  // store above
+      "packuswb    %%xmm1,%%xmm5                 \n"
+      "movdqu      %%xmm5,(%1,%4)                \n"  // store below
+
+      "lea         0x8(%0),%0                    \n"
+      "lea         0x10(%1),%1                   \n"  // 4 uv to 8 uv
+      "sub         $0x8,%2                       \n"
+      "jg          1b                            \n"
+      : "+r"(src_ptr),                // %0
+        "+r"(dst_ptr),                // %1
+        "+r"(dst_width)               // %2
+      : "r"((intptr_t)(src_stride)),  // %3
+        "r"((intptr_t)(dst_stride)),  // %4
+        "m"(kUVLinearMadd31_SSSE3)      // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif
+
+#ifdef HAS_SCALEUVROWUP2LINEAR_AVX2
+static const lvec8 kUVLinearMadd31_AVX2 = {3, 1, 3, 1, 1, 3, 1, 3, 3, 1, 3,
+                                           1, 1, 3, 1, 3, 3, 1, 3, 1, 1, 3,
+                                           1, 3, 3, 1, 3, 1, 1, 3, 1, 3};
+
+void ScaleUVRowUp2_Linear_AVX2(const uint8_t* src_ptr,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  asm volatile(
+      "vpcmpeqw    %%ymm4,%%ymm4,%%ymm4          \n"
+      "vpsrlw      $15,%%ymm4,%%ymm4             \n"
+      "vpsllw      $1,%%ymm4,%%ymm4              \n"  // all 2
+      "vmovdqu     %3,%%ymm3                     \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu     (%0),%%xmm0                   \n"
+      "vmovdqu     2(%0),%%xmm1                  \n"
+      "vpermq      $0b11011000,%%ymm0,%%ymm0     \n"
+      "vpermq      $0b11011000,%%ymm1,%%ymm1     \n"
+      "vpunpcklbw  %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpunpckhdq  %%ymm0,%%ymm0,%%ymm2          \n"
+      "vpunpckldq  %%ymm0,%%ymm0,%%ymm0          \n"
+      "vpmaddubsw  %%ymm3,%%ymm2,%%ymm1          \n"  // 3*near+far (hi)
+      "vpmaddubsw  %%ymm3,%%ymm0,%%ymm0          \n"  // 3*near+far (lo)
+      "vpaddw      %%ymm4,%%ymm0,%%ymm0          \n"  // 3*near+far+2 (lo)
+      "vpaddw      %%ymm4,%%ymm1,%%ymm1          \n"  // 3*near+far+2 (hi)
+      "vpsrlw      $2,%%ymm0,%%ymm0              \n"  // 3/4*near+1/4*far (lo)
+      "vpsrlw      $2,%%ymm1,%%ymm1              \n"  // 3/4*near+1/4*far (hi)
+      "vpackuswb   %%ymm1,%%ymm0,%%ymm0          \n"
+      "vmovdqu     %%ymm0,(%1)                   \n"
+
+      "lea         0x10(%0),%0                   \n"
+      "lea         0x20(%1),%1                   \n"  // 8 uv to 16 uv
+      "sub         $0x10,%2                      \n"
+      "jg          1b                            \n"
+      : "+r"(src_ptr),             // %0
+        "+r"(dst_ptr),             // %1
+        "+r"(dst_width)            // %2
+      : "m"(kUVLinearMadd31_AVX2)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
+}
+#endif
+
+#ifdef HAS_SCALEUVROWUP2BILINEAR_AVX2
+void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_ptr,
+                                 ptrdiff_t dst_stride,
+                                 int dst_width) {
+  asm volatile(
+      "vpcmpeqw    %%ymm6,%%ymm6,%%ymm6          \n"
+      "vpsrlw      $15,%%ymm6,%%ymm6             \n"
+      "vpsllw      $3,%%ymm6,%%ymm6              \n"  // all 8
+      "vmovdqu     %5,%%ymm7                     \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu     (%0),%%xmm0                   \n"
+      "vmovdqu     2(%0),%%xmm1                  \n"
+      "vpermq      $0b11011000,%%ymm0,%%ymm0     \n"
+      "vpermq      $0b11011000,%%ymm1,%%ymm1     \n"
+      "vpunpcklbw  %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpunpckhdq  %%ymm0,%%ymm0,%%ymm2          \n"
+      "vpunpckldq  %%ymm0,%%ymm0,%%ymm0          \n"
+      "vpmaddubsw  %%ymm7,%%ymm2,%%ymm1          \n"  // 3*near+far (1, hi)
+      "vpmaddubsw  %%ymm7,%%ymm0,%%ymm0          \n"  // 3*near+far (1, lo)
+
+      "vmovdqu     (%0,%3),%%xmm2                \n"  // 0123456789ABCDEF
+      "vmovdqu     2(%0,%3),%%xmm3               \n"  // 123456789ABCDEF0
+      "vpermq      $0b11011000,%%ymm2,%%ymm2     \n"
+      "vpermq      $0b11011000,%%ymm3,%%ymm3     \n"
+      "vpunpcklbw  %%ymm3,%%ymm2,%%ymm2          \n"
+      "vpunpckhdq  %%ymm2,%%ymm2,%%ymm4          \n"
+      "vpunpckldq  %%ymm2,%%ymm2,%%ymm2          \n"
+      "vpmaddubsw  %%ymm7,%%ymm4,%%ymm3          \n"  // 3*near+far (2, hi)
+      "vpmaddubsw  %%ymm7,%%ymm2,%%ymm2          \n"  // 3*near+far (2, lo)
+
+      // ymm0 ymm1
+      // ymm2 ymm3
+
+      "vpaddw      %%ymm0,%%ymm0,%%ymm4          \n"  // 6*near+2*far (1, lo)
+      "vpaddw      %%ymm6,%%ymm2,%%ymm5          \n"  // 3*near+far+8 (2, lo)
+      "vpaddw      %%ymm4,%%ymm0,%%ymm4          \n"  // 9*near+3*far (1, lo)
+      "vpaddw      %%ymm4,%%ymm5,%%ymm4          \n"  // 9 3 3 1 + 8 (1, lo)
+      "vpsrlw      $4,%%ymm4,%%ymm4              \n"  // ^ div by 16 (1, lo)
+
+      "vpaddw      %%ymm2,%%ymm2,%%ymm5          \n"  // 6*near+2*far (2, lo)
+      "vpaddw      %%ymm6,%%ymm0,%%ymm0          \n"  // 3*near+far+8 (1, lo)
+      "vpaddw      %%ymm5,%%ymm2,%%ymm5          \n"  // 9*near+3*far (2, lo)
+      "vpaddw      %%ymm5,%%ymm0,%%ymm5          \n"  // 9 3 3 1 + 8 (2, lo)
+      "vpsrlw      $4,%%ymm5,%%ymm5              \n"  // ^ div by 16 (2, lo)
+
+      "vpaddw      %%ymm1,%%ymm1,%%ymm0          \n"  // 6*near+2*far (1, hi)
+      "vpaddw      %%ymm6,%%ymm3,%%ymm2          \n"  // 3*near+far+8 (2, hi)
+      "vpaddw      %%ymm0,%%ymm1,%%ymm0          \n"  // 9*near+3*far (1, hi)
+      "vpaddw      %%ymm0,%%ymm2,%%ymm0          \n"  // 9 3 3 1 + 8 (1, hi)
+      "vpsrlw      $4,%%ymm0,%%ymm0              \n"  // ^ div by 16 (1, hi)
+
+      "vpaddw      %%ymm3,%%ymm3,%%ymm2          \n"  // 6*near+2*far (2, hi)
+      "vpaddw      %%ymm6,%%ymm1,%%ymm1          \n"  // 3*near+far+8 (1, hi)
+      "vpaddw      %%ymm2,%%ymm3,%%ymm2          \n"  // 9*near+3*far (2, hi)
+      "vpaddw      %%ymm2,%%ymm1,%%ymm2          \n"  // 9 3 3 1 + 8 (2, hi)
+      "vpsrlw      $4,%%ymm2,%%ymm2              \n"  // ^ div by 16 (2, hi)
+
+      "vpackuswb   %%ymm0,%%ymm4,%%ymm4          \n"
+      "vmovdqu     %%ymm4,(%1)                   \n"  // store above
+      "vpackuswb   %%ymm2,%%ymm5,%%ymm5          \n"
+      "vmovdqu     %%ymm5,(%1,%4)                \n"  // store below
+
+      "lea         0x10(%0),%0                   \n"
+      "lea         0x20(%1),%1                   \n"  // 8 uv to 16 uv
+      "sub         $0x10,%2                      \n"
+      "jg          1b                            \n"
+      : "+r"(src_ptr),                // %0
+        "+r"(dst_ptr),                // %1
+        "+r"(dst_width)               // %2
+      : "r"((intptr_t)(src_stride)),  // %3
+        "r"((intptr_t)(dst_stride)),  // %4
+        "m"(kUVLinearMadd31_AVX2)     // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 
