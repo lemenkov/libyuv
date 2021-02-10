@@ -690,8 +690,7 @@ void ScaleUVLinearUp2(int src_width,
 #endif
 
   if (dst_height == 1) {
-    ScaleRowUp(src_uv + ((src_height - 1) / 2) * src_stride, dst_uv,
-               dst_width);
+    ScaleRowUp(src_uv + ((src_height - 1) / 2) * src_stride, dst_uv, dst_width);
   } else {
     dy = FixedDiv(src_height - 1, dst_height - 1);
     y = (1 << 15) - 1;

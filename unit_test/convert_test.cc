@@ -794,10 +794,10 @@ TESTPLANARTOB(H420, 2, 2, AR30, 4, 4, 1)
 #define U420AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
   I420AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
                         l, m)
-#define V420AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+#define V420AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I420AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
-#define V420AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+#define V420AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I420AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
 #define J422AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
@@ -824,10 +824,10 @@ TESTPLANARTOB(H420, 2, 2, AR30, 4, 4, 1)
 #define U422AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
   I422AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
                         l, m)
-#define V422AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+#define V422AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I422AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
-#define V422AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+#define V422AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I422AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
 #define J444AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
@@ -854,10 +854,10 @@ TESTPLANARTOB(H420, 2, 2, AR30, 4, 4, 1)
 #define U444AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
   I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuv2020Constants, k, \
                         l, m)
-#define V444AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+#define V444AlphaToARGB(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I444AlphaToARGBMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
-#define V444AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)               \
+#define V444AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
 

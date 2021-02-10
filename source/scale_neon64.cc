@@ -201,22 +201,22 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "umlal       v19.8h, v3.8b, v20.8b         \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
 
-      // (3 * line_0 + line_1) >> 2
+      // (3 * line_0 + line_1 + 2) >> 2
       "uqrshrn     v0.8b, v16.8h, #2             \n"
       "uqrshrn     v1.8b, v17.8h, #2             \n"
       "uqrshrn     v2.8b, v18.8h, #2             \n"
       "uqrshrn     v3.8b, v19.8h, #2             \n"
       "prfm        pldl1keep, [%3, 448]          \n"
 
-      // a0 = (src[0] * 3 + s[1] * 1) >> 2
+      // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "ushll       v16.8h, v1.8b, #0             \n"
       "umlal       v16.8h, v0.8b, v20.8b         \n"
       "uqrshrn     v0.8b, v16.8h, #2             \n"
 
-      // a1 = (src[1] * 1 + s[2] * 1) >> 1
+      // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
       "urhadd      v1.8b, v1.8b, v2.8b           \n"
 
-      // a2 = (src[2] * 1 + s[3] * 3) >> 2
+      // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
       "ushll       v16.8h, v2.8b, #0             \n"
       "umlal       v16.8h, v3.8b, v20.8b         \n"
       "uqrshrn     v2.8b, v16.8h, #2             \n"
@@ -251,16 +251,16 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
       "urhadd      v3.8b, v3.8b, v7.8b           \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
 
-      // a0 = (src[0] * 3 + s[1] * 1) >> 2
+      // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "ushll       v4.8h, v1.8b, #0              \n"
       "umlal       v4.8h, v0.8b, v20.8b          \n"
       "uqrshrn     v0.8b, v4.8h, #2              \n"
       "prfm        pldl1keep, [%3, 448]          \n"
 
-      // a1 = (src[1] * 1 + s[2] * 1) >> 1
+      // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
       "urhadd      v1.8b, v1.8b, v2.8b           \n"
 
-      // a2 = (src[2] * 1 + s[3] * 3) >> 2
+      // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
       "ushll       v4.8h, v2.8b, #0              \n"
       "umlal       v4.8h, v3.8b, v20.8b          \n"
       "uqrshrn     v2.8b, v4.8h, #2              \n"

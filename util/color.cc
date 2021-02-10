@@ -18,11 +18,15 @@
 
 // For those MCs that can be represented as kr and kb:
 // Full range
-// float M[3][3] {{1,0,2*(1-kr)},{1,-((2*kb)/((2-kb)*(1-kb-kr))),-((2*kr)/((2-kr)*(1-kb-kr)))},{1,2*(1-kb),0}};
-// float B[3] {1+(256*(1-kr))/255,1-(256*kb)/(255*(2-kb)*(1-kb-kr))-(256*kr)/(255*(2-kr)*(1-kb-kr)),1+(256*(1-kb))/255};
+// float M[3][3]
+// {{1,0,2*(1-kr)},{1,-((2*kb)/((2-kb)*(1-kb-kr))),-((2*kr)/((2-kr)*(1-kb-kr)))},{1,2*(1-kb),0}};
+// float B[3]
+// {1+(256*(1-kr))/255,1-(256*kb)/(255*(2-kb)*(1-kb-kr))-(256*kr)/(255*(2-kr)*(1-kb-kr)),1+(256*(1-kb))/255};
 // Limited range
-// float M[3][3] {{85/73,0,255/112-(255*kr)/112},{85/73,-((255*kb)/(112*(2-kb)*(1-kb-kr))),-((255*kr)/(112*(2-kr)*(1-kb-kr)))},{85/73,255/112-(255*kb)/112,0}};
-// float B[3] {77662/43435-(1537*kr)/1785,203/219-(1537*kb)/(1785*(2-kb)*(1-kb-kr))-(1537*kr)/(1785*(2-kr)*(1-kb-kr)),77662/43435-(1537*kb)/1785};
+// float M[3][3]
+// {{85/73,0,255/112-(255*kr)/112},{85/73,-((255*kb)/(112*(2-kb)*(1-kb-kr))),-((255*kr)/(112*(2-kr)*(1-kb-kr)))},{85/73,255/112-(255*kb)/112,0}};
+// float B[3]
+// {77662/43435-(1537*kr)/1785,203/219-(1537*kb)/(1785*(2-kb)*(1-kb-kr))-(1537*kr)/(1785*(2-kr)*(1-kb-kr)),77662/43435-(1537*kb)/1785};
 
 // mc bt
 // 1 bt.709      KR = 0.2126; KB = 0.0722
@@ -56,11 +60,10 @@
 // #define BR (-VR * 128 + YB)
 
 int round(float v) {
-    return (int) (v + 0.5);
+  return (int)(v + 0.5);
 }
 
 int main(int argc, const char* argv[]) {
-
   if (argc < 2) {
     printf("color kr kb\n");
     return -1;
@@ -81,11 +84,11 @@ int main(int argc, const char* argv[]) {
 
   printf("KR = %4f; ", kr);
   printf("KB = %4f\n", kb);
-//  printf("KG = %4f\n", kg);
-// #define YG 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
-// #define YB 32    /* 64 / 2 */
-//
-// // U and V contributions to R,G,B.
+  //  printf("KG = %4f\n", kg);
+  // #define YG 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
+  // #define YB 32    /* 64 / 2 */
+  //
+  // // U and V contributions to R,G,B.
 
   printf("UB %-3d /* round(%f * 64) */\n", round(ub * 64), ub);
   printf("UG %-3d /* round(%f * 64) */\n", round(ug * 64), ug);
@@ -102,11 +105,11 @@ int main(int argc, const char* argv[]) {
   printf("G = (Y - 16) * 1.164 - U * %6f - V * %6f\n", ug, vg);
   printf("B = (Y - 16) * 1.164 + U * %5f\n", ub);
 
-//  printf("KG = %4f\n", kg);
-// #define YG 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
-// #define YB 32    /* 64 / 2 */
-//
-// // U and V contributions to R,G,B.
+  //  printf("KG = %4f\n", kg);
+  // #define YG 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
+  // #define YB 32    /* 64 / 2 */
+  //
+  // // U and V contributions to R,G,B.
 
   printf("UB %-3d /* round(%f * 64) */\n", round(ub * 64), ub);
   printf("UG %-3d /* round(%f * 64) */\n", round(ug * 64), ug);
@@ -115,4 +118,3 @@ int main(int argc, const char* argv[]) {
 
   return 0;
 }
-

@@ -15,8 +15,8 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/row.h"
-#include "libyuv/scale.h"  // For ScalePlane()
-#include "libyuv/scale_uv.h" // For UVScale()
+#include "libyuv/scale.h"     // For ScalePlane()
+#include "libyuv/scale_uv.h"  // For UVScale()
 
 #ifdef __cplusplus
 namespace libyuv {

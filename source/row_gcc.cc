@@ -4374,15 +4374,15 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
       "lea         8(%1),%1                      \n"
       "subl        $0x8,%5                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),             // %0
-        "+r"(dst_r),                // %1
-        "+r"(dst_g),                // %2
-        "+r"(dst_b),                // %3
-        "+r"(dst_a),                // %4
+      : "+r"(src_argb),  // %0
+        "+r"(dst_r),     // %1
+        "+r"(dst_g),     // %2
+        "+r"(dst_b),     // %3
+        "+r"(dst_a),     // %4
 #if defined(__i386__)
-        "+m"(width)                 // %5
+        "+m"(width)  // %5
 #else
-        "+rm"(width)                // %5
+        "+rm"(width)  // %5
 #endif
       : "m"(kShuffleMaskARGBSplit)  // %6
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
@@ -4465,15 +4465,15 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
       "lea         16(%1),%1                     \n"
       "subl        $0x10,%5                      \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),                    // %0
-        "+r"(dst_r),                       // %1
-        "+r"(dst_g),                       // %2
-        "+r"(dst_b),                       // %3
-        "+r"(dst_a),                       // %4
+      : "+r"(src_argb),  // %0
+        "+r"(dst_r),     // %1
+        "+r"(dst_g),     // %2
+        "+r"(dst_b),     // %3
+        "+r"(dst_a),     // %4
 #if defined(__i386__)
-        "+m"(width)                        // %5
+        "+m"(width)  // %5
 #else
-        "+rm"(width)                       // %5
+        "+rm"(width)  // %5
 #endif
       : "m"(kShuffleMaskARGBSplit_AVX2),   // %6
         "m"(kShuffleMaskARGBPermute_AVX2)  // %7
@@ -7186,7 +7186,7 @@ void HalfFloatRow_AVX2(const uint16_t* src,
 #if defined(__x86_64__)
       : "x"(scale)  // %3
 #else
-      : "m"(scale)  // %3
+      : "m"(scale)    // %3
 #endif
       : "memory", "cc", "xmm2", "xmm3", "xmm4", "xmm5");
 }
@@ -7224,7 +7224,7 @@ void HalfFloatRow_F16C(const uint16_t* src,
 #if defined(__x86_64__)
       : "x"(scale)  // %3
 #else
-      : "m"(scale)  // %3
+      : "m"(scale)    // %3
 #endif
       : "memory", "cc", "xmm2", "xmm3", "xmm4");
 }

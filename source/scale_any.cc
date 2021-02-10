@@ -700,28 +700,28 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_NEON,
 
 // Scale up 2 times using bilinear filter.
 // This function produces 2 rows at a time.
-#define SU2BLANY(NAME, SIMD, C, MASK, PTYPE)                            \
-  void NAME(const PTYPE* src_ptr, ptrdiff_t src_stride, PTYPE* dst_ptr, \
-            ptrdiff_t dst_stride, int dst_width) {                      \
-    int work_width = (dst_width - 1) & ~1;                              \
-    int r = work_width & MASK;                                          \
-    int n = work_width & ~MASK;                                         \
-    const PTYPE* sa = src_ptr;                                          \
-    const PTYPE* sb = src_ptr + src_stride;                             \
-    PTYPE* da = dst_ptr;                                                \
-    PTYPE* db = dst_ptr + dst_stride;                                   \
-    da[0] = (3 * sa[0] + sb[0]) >> 2;                                   \
-    db[0] = (sa[0] + 3 * sb[0]) >> 2;                                   \
-    if (work_width > 0) {                                               \
-      if (n != 0) {                                                     \
-        SIMD(sa, sb - sa, da + 1, db - da, n);                          \
-      }                                                                 \
-      C(sa + (n / 2), sb - sa, da + n + 1, db - da, r);                 \
-    }                                                                   \
-    da[dst_width - 1] =                                                 \
-        (3 * sa[(dst_width - 1) / 2] + sb[(dst_width - 1) / 2]) >> 2;   \
-    db[dst_width - 1] =                                                 \
-        (sa[(dst_width - 1) / 2] + 3 * sb[(dst_width - 1) / 2]) >> 2;   \
+#define SU2BLANY(NAME, SIMD, C, MASK, PTYPE)                              \
+  void NAME(const PTYPE* src_ptr, ptrdiff_t src_stride, PTYPE* dst_ptr,   \
+            ptrdiff_t dst_stride, int dst_width) {                        \
+    int work_width = (dst_width - 1) & ~1;                                \
+    int r = work_width & MASK;                                            \
+    int n = work_width & ~MASK;                                           \
+    const PTYPE* sa = src_ptr;                                            \
+    const PTYPE* sb = src_ptr + src_stride;                               \
+    PTYPE* da = dst_ptr;                                                  \
+    PTYPE* db = dst_ptr + dst_stride;                                     \
+    da[0] = (3 * sa[0] + sb[0] + 2) >> 2;                                 \
+    db[0] = (sa[0] + 3 * sb[0] + 2) >> 2;                                 \
+    if (work_width > 0) {                                                 \
+      if (n != 0) {                                                       \
+        SIMD(sa, sb - sa, da + 1, db - da, n);                            \
+      }                                                                   \
+      C(sa + (n / 2), sb - sa, da + n + 1, db - da, r);                   \
+    }                                                                     \
+    da[dst_width - 1] =                                                   \
+        (3 * sa[(dst_width - 1) / 2] + sb[(dst_width - 1) / 2] + 2) >> 2; \
+    db[dst_width - 1] =                                                   \
+        (sa[(dst_width - 1) / 2] + 3 * sb[(dst_width - 1) / 2] + 2) >> 2; \
   }
 
 SU2BLANY(ScaleRowUp2_Bilinear_Any_C,
@@ -856,10 +856,10 @@ SBUH2LANY(ScaleUVRowUp2_Linear_Any_NEON,
     const PTYPE* sb = src_ptr + src_stride;                             \
     PTYPE* da = dst_ptr;                                                \
     PTYPE* db = dst_ptr + dst_stride;                                   \
-    da[0] = (3 * sa[0] + sb[0]) >> 2;                                   \
-    db[0] = (sa[0] + 3 * sb[0]) >> 2;                                   \
-    da[1] = (3 * sa[1] + sb[1]) >> 2;                                   \
-    db[1] = (sa[1] + 3 * sb[1]) >> 2;                                   \
+    da[0] = (3 * sa[0] + sb[0] + 2) >> 2;                               \
+    db[0] = (sa[0] + 3 * sb[0] + 2) >> 2;                               \
+    da[1] = (3 * sa[1] + sb[1] + 2) >> 2;                               \
+    db[1] = (sa[1] + 3 * sb[1] + 2) >> 2;                               \
     if (work_width > 0) {                                               \
       if (n != 0) {                                                     \
         SIMD(sa, sb - sa, da + 2, db - da, n);                          \
@@ -867,13 +867,17 @@ SBUH2LANY(ScaleUVRowUp2_Linear_Any_NEON,
       C(sa + n, sb - sa, da + 2 * n + 2, db - da, r);                   \
     }                                                                   \
     da[2 * dst_width - 2] = (3 * sa[((dst_width + 1) & ~1) - 2] +       \
-                             sb[((dst_width + 1) & ~1) - 2]) >> 2;      \
+                             sb[((dst_width + 1) & ~1) - 2] + 2) >>     \
+                            2;                                          \
     db[2 * dst_width - 2] = (sa[((dst_width + 1) & ~1) - 2] +           \
-                             3 * sb[((dst_width + 1) & ~1) - 2]) >> 2;  \
+                             3 * sb[((dst_width + 1) & ~1) - 2] + 2) >> \
+                            2;                                          \
     da[2 * dst_width - 1] = (3 * sa[((dst_width + 1) & ~1) - 1] +       \
-                             sb[((dst_width + 1) & ~1) - 1]) >> 2;      \
+                             sb[((dst_width + 1) & ~1) - 1] + 2) >>     \
+                            2;                                          \
     db[2 * dst_width - 1] = (sa[((dst_width + 1) & ~1) - 1] +           \
-                             3 * sb[((dst_width + 1) & ~1) - 1]) >> 2;  \
+                             3 * sb[((dst_width + 1) & ~1) - 1] + 2) >> \
+                            2;                                          \
   }
 
 SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_C,

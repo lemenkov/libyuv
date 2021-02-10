@@ -194,21 +194,21 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "vmlal.u8    q10, d2, d24                  \n"
       "vmlal.u8    q11, d3, d24                  \n"
 
-      // (3 * line_0 + line_1) >> 2
+      // (3 * line_0 + line_1 + 2) >> 2
       "vqrshrn.u16 d0, q8, #2                    \n"
       "vqrshrn.u16 d1, q9, #2                    \n"
       "vqrshrn.u16 d2, q10, #2                   \n"
       "vqrshrn.u16 d3, q11, #2                   \n"
 
-      // a0 = (src[0] * 3 + s[1] * 1) >> 2
+      // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "vmovl.u8    q8, d1                        \n"
       "vmlal.u8    q8, d0, d24                   \n"
       "vqrshrn.u16 d0, q8, #2                    \n"
 
-      // a1 = (src[1] * 1 + s[2] * 1) >> 1
+      // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
       "vrhadd.u8   d1, d1, d2                    \n"
 
-      // a2 = (src[2] * 1 + s[3] * 3) >> 2
+      // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
       "vmovl.u8    q8, d2                        \n"
       "vmlal.u8    q8, d3, d24                   \n"
       "vqrshrn.u16 d2, q8, #2                    \n"
@@ -240,15 +240,15 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
       "vrhadd.u8   q0, q0, q2                    \n"
       "vrhadd.u8   q1, q1, q3                    \n"
 
-      // a0 = (src[0] * 3 + s[1] * 1) >> 2
+      // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "vmovl.u8    q3, d1                        \n"
       "vmlal.u8    q3, d0, d24                   \n"
       "vqrshrn.u16 d0, q3, #2                    \n"
 
-      // a1 = (src[1] * 1 + s[2] * 1) >> 1
+      // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
       "vrhadd.u8   d1, d1, d2                    \n"
 
-      // a2 = (src[2] * 1 + s[3] * 3) >> 2
+      // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
       "vmovl.u8    q3, d2                        \n"
       "vmlal.u8    q3, d3, d24                   \n"
       "vqrshrn.u16 d2, q3, #2                    \n"

@@ -470,7 +470,7 @@ static void YUVUToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
 
 // BT.2020 full range YUV to RGB reference
 static void YUVVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
-  *r = RoundToByte(y                        + (v - 128) * 1.474600);
+  *r = RoundToByte(y + (v - 128) * 1.474600);
   *g = RoundToByte(y - (u - 128) * 0.164553 - (v - 128) * 0.571353);
   *b = RoundToByte(y + (u - 128) * 1.881400);
 }
@@ -609,9 +609,15 @@ static void PrintHistogram(int rh[256], int gh[256], int bh[256]) {
 
 // BT.601 limited range.
 TEST_F(LibYUVColorTest, TestFullYUV) {
-  int rh[256] = { 0, };
-  int gh[256] = { 0, };
-  int bh[256] = { 0, };
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
       for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
@@ -633,9 +639,15 @@ TEST_F(LibYUVColorTest, TestFullYUV) {
 
 // BT.601 full range.
 TEST_F(LibYUVColorTest, TestFullYUVJ) {
-  int rh[256] = { 0, };
-  int gh[256] = { 0, };
-  int bh[256] = { 0, };
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
       for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
@@ -657,9 +669,15 @@ TEST_F(LibYUVColorTest, TestFullYUVJ) {
 
 // BT.709 limited range.
 TEST_F(LibYUVColorTest, TestFullYUVH) {
-  int rh[256] = { 0, };
-  int gh[256] = { 0, };
-  int bh[256] = { 0, };
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
       for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
@@ -682,9 +700,15 @@ TEST_F(LibYUVColorTest, TestFullYUVH) {
 
 // BT.709 full range.
 TEST_F(LibYUVColorTest, TestFullYUVF) {
-  int rh[256] = { 0, };
-  int gh[256] = { 0, };
-  int bh[256] = { 0, };
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
       for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
@@ -706,9 +730,15 @@ TEST_F(LibYUVColorTest, TestFullYUVF) {
 
 // BT.2020 limited range.
 TEST_F(LibYUVColorTest, TestFullYUVU) {
-  int rh[256] = { 0, };
-  int gh[256] = { 0, };
-  int bh[256] = { 0, };
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
       for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
@@ -731,9 +761,15 @@ TEST_F(LibYUVColorTest, TestFullYUVU) {
 
 // BT.2020 full range.
 TEST_F(LibYUVColorTest, TestFullYUVV) {
-  int rh[256] = { 0, };
-  int gh[256] = { 0, };
-  int bh[256] = { 0, };
+  int rh[256] = {
+      0,
+  };
+  int gh[256] = {
+      0,
+  };
+  int bh[256] = {
+      0,
+  };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
       for (int y2 = 0; y2 < 256; y2 += FASTSTEP) {
