@@ -4190,6 +4190,7 @@ void MergeARGBRow_AVX2(const uint8_t* src_r,
       "lea         64(%4),%4                     \n"
       "sub         $0x10,%5                      \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_r),     // %0
         "+r"(src_g),     // %1
         "+r"(src_b),     // %2
@@ -4231,6 +4232,7 @@ void MergeXRGBRow_AVX2(const uint8_t* src_r,
       "lea         64(%3),%3                     \n"
       "sub         $0x10,%4                      \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_r),     // %0
         "+r"(src_g),     // %1
         "+r"(src_b),     // %2
@@ -4340,9 +4342,9 @@ void SplitXRGBRow_SSE2(const uint8_t* src_argb,
 }
 #endif
 
+static const uvec8 kShuffleMaskARGBSplit = {0, 4, 8,  12, 1, 5, 9,  13,
+                                            2, 6, 10, 14, 3, 7, 11, 15};
 #ifdef HAS_SPLITARGBROW_SSSE3
-static const uvec8 kShuffleMaskARGBSplit = {0u, 4u, 8u,  12u, 1u, 5u, 9u,  13u,
-                                            2u, 6u, 10u, 14u, 3u, 7u, 11u, 15u};
 void SplitARGBRow_SSSE3(const uint8_t* src_argb,
                         uint8_t* dst_r,
                         uint8_t* dst_g,
@@ -4351,6 +4353,7 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
                         int width) {
   asm volatile(
 
+      "movdqa      %6,%%xmm3                     \n"
       "sub         %1,%2                         \n"
       "sub         %1,%3                         \n"
       "sub         %1,%4                         \n"
@@ -4360,8 +4363,8 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
 
       "movdqu      (%0),%%xmm0                   \n"  // 00-0F
       "movdqu      16(%0),%%xmm1                 \n"  // 10-1F
-      "pshufb      %6,%%xmm0                     \n"  // 048C159D26AE37BF (lo)
-      "pshufb      %6,%%xmm1                     \n"  // 048C159D26AE37BF (hi)
+      "pshufb      %%xmm3,%%xmm0                 \n"  // 048C159D26AE37BF (lo)
+      "pshufb      %%xmm3,%%xmm1                 \n"  // 048C159D26AE37BF (hi)
       "movdqa      %%xmm0,%%xmm2                 \n"
       "punpckldq   %%xmm1,%%xmm0                 \n"  // 048C048C159D159D (BG)
       "punpckhdq   %%xmm1,%%xmm2                 \n"  // 26AE26AE37BF37BF (RA)
@@ -4385,7 +4388,7 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
         "+rm"(width)  // %5
 #endif
       : "m"(kShuffleMaskARGBSplit)  // %6
-      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 
 void SplitXRGBRow_SSSE3(const uint8_t* src_argb,
@@ -4395,13 +4398,15 @@ void SplitXRGBRow_SSSE3(const uint8_t* src_argb,
                         int width) {
   asm volatile(
 
+      "movdqa      %5,%%xmm3                     \n"
+
       LABELALIGN
       "1:                                        \n"
 
       "movdqu      (%0),%%xmm0                   \n"  // 00-0F
       "movdqu      16(%0),%%xmm1                 \n"  // 10-1F
-      "pshufb      %5,%%xmm0                     \n"  // 048C159D26AE37BF (lo)
-      "pshufb      %5,%%xmm1                     \n"  // 048C159D26AE37BF (hi)
+      "pshufb      %%xmm3,%%xmm0                 \n"  // 048C159D26AE37BF (lo)
+      "pshufb      %%xmm3,%%xmm1                 \n"  // 048C159D26AE37BF (hi)
       "movdqa      %%xmm0,%%xmm2                 \n"
       "punpckldq   %%xmm1,%%xmm0                 \n"  // 048C048C159D159D (BG)
       "punpckhdq   %%xmm1,%%xmm2                 \n"  // 26AE26AE37BF37BF (RA)
@@ -4421,16 +4426,12 @@ void SplitXRGBRow_SSSE3(const uint8_t* src_argb,
         "+r"(dst_b),                // %3
         "+r"(width)                 // %4
       : "m"(kShuffleMaskARGBSplit)  // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 #endif
 
 #ifdef HAS_SPLITARGBROW_AVX2
-static const lvec8 kShuffleMaskARGBSplit_AVX2 = {
-    0u, 4u, 8u, 12u, 1u, 5u, 9u, 13u, 2u, 6u, 10u, 14u, 3u, 7u, 11u, 15u,
-    0u, 4u, 8u, 12u, 1u, 5u, 9u, 13u, 2u, 6u, 10u, 14u, 3u, 7u, 11u, 15u};
-static const ulvec32 kShuffleMaskARGBPermute_AVX2 = {0u, 4u, 1u, 5u,
-                                                     2u, 6u, 3u, 7u};
+static const ulvec32 kShuffleMaskARGBPermute = {0, 4, 1, 5, 2, 6, 3, 7};
 void SplitARGBRow_AVX2(const uint8_t* src_argb,
                        uint8_t* dst_r,
                        uint8_t* dst_g,
@@ -4442,7 +4443,8 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
       "sub         %1,%2                         \n"
       "sub         %1,%3                         \n"
       "sub         %1,%4                         \n"
-      "vmovdqu     %7,%%ymm3                     \n"
+      "vmovdqa     %7,%%ymm3                     \n"
+      "vbroadcastf128 %6,%%ymm4                     \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -4451,8 +4453,8 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
       "vmovdqu     16(%0),%%xmm1                 \n"  // 10-1F
       "vinserti128 $1,32(%0),%%ymm0,%%ymm0       \n"  // 00-0F 20-2F
       "vinserti128 $1,48(%0),%%ymm1,%%ymm1       \n"  // 10-1F 30-3F
-      "vpshufb     %6,%%ymm0,%%ymm0              \n"
-      "vpshufb     %6,%%ymm1,%%ymm1              \n"
+      "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"
+      "vpshufb     %%ymm4,%%ymm1,%%ymm1          \n"
       "vpermd      %%ymm0,%%ymm3,%%ymm0          \n"
       "vpermd      %%ymm1,%%ymm3,%%ymm1          \n"
       "vpunpckhdq  %%ymm1,%%ymm0,%%ymm2          \n"  // GA
@@ -4465,6 +4467,7 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
       "lea         16(%1),%1                     \n"
       "subl        $0x10,%5                      \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_r),     // %1
         "+r"(dst_g),     // %2
@@ -4475,9 +4478,9 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
 #else
         "+rm"(width)  // %5
 #endif
-      : "m"(kShuffleMaskARGBSplit_AVX2),   // %6
-        "m"(kShuffleMaskARGBPermute_AVX2)  // %7
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+      : "m"(kShuffleMaskARGBSplit),   // %6
+        "m"(kShuffleMaskARGBPermute)  // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
 }
 
 void SplitXRGBRow_AVX2(const uint8_t* src_argb,
@@ -4487,15 +4490,18 @@ void SplitXRGBRow_AVX2(const uint8_t* src_argb,
                        int width) {
   asm volatile(
 
-      "vmovdqu     %6,%%ymm3                     \n" LABELALIGN
+      "vmovdqa     %6,%%ymm3                     \n"
+      "vbroadcastf128 %5,%%ymm4                     \n"
+
+      LABELALIGN
       "1:                                        \n"
 
       "vmovdqu     (%0),%%xmm0                   \n"  // 00-0F
       "vmovdqu     16(%0),%%xmm1                 \n"  // 10-1F
       "vinserti128 $1,32(%0),%%ymm0,%%ymm0       \n"  // 00-0F 20-2F
       "vinserti128 $1,48(%0),%%ymm1,%%ymm1       \n"  // 10-1F 30-3F
-      "vpshufb     %5,%%ymm0,%%ymm0              \n"
-      "vpshufb     %5,%%ymm1,%%ymm1              \n"
+      "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"
+      "vpshufb     %%ymm4,%%ymm1,%%ymm1          \n"
       "vpermd      %%ymm0,%%ymm3,%%ymm0          \n"
       "vpermd      %%ymm1,%%ymm3,%%ymm1          \n"
       "vpunpckhdq  %%ymm1,%%ymm0,%%ymm2          \n"  // GA
@@ -4510,13 +4516,14 @@ void SplitXRGBRow_AVX2(const uint8_t* src_argb,
       "lea         16(%3),%3                     \n"
       "sub         $0x10,%4                      \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),                    // %0
-        "+r"(dst_r),                       // %1
-        "+r"(dst_g),                       // %2
-        "+r"(dst_b),                       // %3
-        "+r"(width)                        // %4
-      : "m"(kShuffleMaskARGBSplit_AVX2),   // %5
-        "m"(kShuffleMaskARGBPermute_AVX2)  // %6
+      "vzeroupper                                \n"
+      : "+r"(src_argb),               // %0
+        "+r"(dst_r),                  // %1
+        "+r"(dst_g),                  // %2
+        "+r"(dst_b),                  // %3
+        "+r"(width)                   // %4
+      : "m"(kShuffleMaskARGBSplit),   // %5
+        "m"(kShuffleMaskARGBPermute)  // %6
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 #endif

@@ -1258,6 +1258,64 @@ void ScaleUVRowUp2_Bilinear_C(const uint8_t* src_ptr,
   }
 }
 
+void ScaleUVRowUp2_Linear_16_C(const uint16_t* src_ptr,
+                               uint16_t* dst_ptr,
+                               int dst_width) {
+  int src_width = dst_width >> 1;
+  int x;
+  assert((dst_width % 2 == 0) && (dst_width >= 0));
+  for (x = 0; x < src_width; ++x) {
+    dst_ptr[4 * x + 0] =
+        (src_ptr[2 * x + 0] * 3 + src_ptr[2 * x + 2] * 1 + 2) >> 2;
+    dst_ptr[4 * x + 1] =
+        (src_ptr[2 * x + 1] * 3 + src_ptr[2 * x + 3] * 1 + 2) >> 2;
+    dst_ptr[4 * x + 2] =
+        (src_ptr[2 * x + 0] * 1 + src_ptr[2 * x + 2] * 3 + 2) >> 2;
+    dst_ptr[4 * x + 3] =
+        (src_ptr[2 * x + 1] * 1 + src_ptr[2 * x + 3] * 3 + 2) >> 2;
+  }
+}
+
+void ScaleUVRowUp2_Bilinear_16_C(const uint16_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint16_t* dst_ptr,
+                                 ptrdiff_t dst_stride,
+                                 int dst_width) {
+  const uint16_t* s = src_ptr;
+  const uint16_t* t = src_ptr + src_stride;
+  uint16_t* d = dst_ptr;
+  uint16_t* e = dst_ptr + dst_stride;
+  int src_width = dst_width >> 1;
+  int x;
+  assert((dst_width % 2 == 0) && (dst_width >= 0));
+  for (x = 0; x < src_width; ++x) {
+    d[4 * x + 0] = (s[2 * x + 0] * 9 + s[2 * x + 2] * 3 + t[2 * x + 0] * 3 +
+                    t[2 * x + 2] * 1 + 8) >>
+                   4;
+    d[4 * x + 1] = (s[2 * x + 1] * 9 + s[2 * x + 3] * 3 + t[2 * x + 1] * 3 +
+                    t[2 * x + 3] * 1 + 8) >>
+                   4;
+    d[4 * x + 2] = (s[2 * x + 0] * 3 + s[2 * x + 2] * 9 + t[2 * x + 0] * 1 +
+                    t[2 * x + 2] * 3 + 8) >>
+                   4;
+    d[4 * x + 3] = (s[2 * x + 1] * 3 + s[2 * x + 3] * 9 + t[2 * x + 1] * 1 +
+                    t[2 * x + 3] * 3 + 8) >>
+                   4;
+    e[4 * x + 0] = (s[2 * x + 0] * 3 + s[2 * x + 2] * 1 + t[2 * x + 0] * 9 +
+                    t[2 * x + 2] * 3 + 8) >>
+                   4;
+    e[4 * x + 1] = (s[2 * x + 1] * 3 + s[2 * x + 3] * 1 + t[2 * x + 1] * 9 +
+                    t[2 * x + 3] * 3 + 8) >>
+                   4;
+    e[4 * x + 2] = (s[2 * x + 0] * 1 + s[2 * x + 2] * 3 + t[2 * x + 0] * 3 +
+                    t[2 * x + 2] * 9 + 8) >>
+                   4;
+    e[4 * x + 3] = (s[2 * x + 1] * 1 + s[2 * x + 3] * 3 + t[2 * x + 1] * 3 +
+                    t[2 * x + 3] * 9 + 8) >>
+                   4;
+  }
+}
+
 // Scales a single row of pixels using point sampling.
 void ScaleUVCols_C(uint8_t* dst_uv,
                    const uint8_t* src_uv,
