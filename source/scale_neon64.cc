@@ -852,7 +852,8 @@ void ScaleUVRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
         "+r"(dst_ptr),   // %2
         "+r"(dst_width)  // %3
       :
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v31"  // Clobber List
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v31"  // Clobber List
   );
 }
 

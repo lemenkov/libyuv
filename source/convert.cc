@@ -49,7 +49,7 @@ static int I4xxToI420(const uint8_t* src_y,
   const int dst_y_height = Abs(src_y_height);
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
-  if (src_uv_width == 0 || src_uv_height == 0) {
+  if (src_uv_width <= 0 || src_uv_height == 0) {
     return -1;
   }
   if (dst_y) {
@@ -625,7 +625,7 @@ int NV12ToNV24(const uint8_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  if (width == 0 || height == 0) {
+  if (width <= 0 || height == 0) {
     return -1;
   }
 
@@ -650,7 +650,7 @@ int NV16ToNV24(const uint8_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  if (width == 0 || height == 0) {
+  if (width <= 0 || height == 0) {
     return -1;
   }
 
@@ -674,7 +674,7 @@ int P010ToP410(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  if (width == 0 || height == 0) {
+  if (width <= 0 || height == 0) {
     return -1;
   }
 
@@ -699,7 +699,7 @@ int P210ToP410(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  if (width == 0 || height == 0) {
+  if (width <= 0 || height == 0) {
     return -1;
   }
 

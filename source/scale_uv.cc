@@ -934,9 +934,9 @@ static void ScaleUVSimple(int src_width,
 // Copy UV with optional flipping
 #if HAS_UVCOPY
 static int UVCopy(const uint8_t* src_UV,
-                  int src_stride_UV,
+                  int src_stride_uv,
                   uint8_t* dst_UV,
-                  int dst_stride_UV,
+                  int dst_stride_uv,
                   int width,
                   int height) {
   if (!src_UV || !dst_UV || width <= 0 || height == 0) {
@@ -945,18 +945,18 @@ static int UVCopy(const uint8_t* src_UV,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_UV = src_UV + (height - 1) * src_stride_UV;
-    src_stride_UV = -src_stride_UV;
+    src_UV = src_UV + (height - 1) * src_stride_uv;
+    src_stride_uv = -src_stride_uv;
   }
 
-  CopyPlane(src_UV, src_stride_UV, dst_UV, dst_stride_UV, width * 2, height);
+  CopyPlane(src_UV, src_stride_uv, dst_UV, dst_stride_uv, width * 2, height);
   return 0;
 }
 
 static int UVCopy_16(const uint16_t* src_UV,
-                     int src_stride_UV,
+                     int src_stride_uv,
                      uint16_t* dst_UV,
-                     int dst_stride_UV,
+                     int dst_stride_uv,
                      int width,
                      int height) {
   if (!src_UV || !dst_UV || width <= 0 || height == 0) {
@@ -965,11 +965,11 @@ static int UVCopy_16(const uint16_t* src_UV,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_UV = src_UV + (height - 1) * src_stride_UV;
-    src_stride_UV = -src_stride_UV;
+    src_UV = src_UV + (height - 1) * src_stride_uv;
+    src_stride_uv = -src_stride_uv;
   }
 
-  CopyPlane_16(src_UV, src_stride_UV, dst_UV, dst_stride_UV, width * 2, height);
+  CopyPlane_16(src_UV, src_stride_uv, dst_UV, dst_stride_uv, width * 2, height);
   return 0;
 }
 #endif  // HAS_UVCOPY
@@ -1117,7 +1117,7 @@ int UVScale(const uint8_t* src_uv,
             int dst_width,
             int dst_height,
             enum FilterMode filtering) {
-  if (!src_uv || src_width == 0 || src_height == 0 || src_width > 32768 ||
+  if (!src_uv || src_width <= 0 || src_height == 0 || src_width > 32768 ||
       src_height > 32768 || !dst_uv || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
@@ -1126,7 +1126,7 @@ int UVScale(const uint8_t* src_uv,
   return 0;
 }
 
-// Scale an 16 bit UV image.
+// Scale a 16 bit UV image.
 // This function is currently incomplete, it can't handle all cases.
 LIBYUV_API
 int UVScale_16(const uint16_t* src_uv,
@@ -1140,7 +1140,7 @@ int UVScale_16(const uint16_t* src_uv,
                enum FilterMode filtering) {
   int dy = 0;
 
-  if (!src_uv || src_width == 0 || src_height == 0 || src_width > 32768 ||
+  if (!src_uv || src_width <= 0 || src_height == 0 || src_width > 32768 ||
       src_height > 32768 || !dst_uv || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }

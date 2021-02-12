@@ -1234,7 +1234,7 @@ void ScaleRowUp2_Linear_AVX2(const uint8_t* src_ptr,
       "vpcmpeqw    %%ymm4,%%ymm4,%%ymm4          \n"
       "vpsrlw      $15,%%ymm4,%%ymm4             \n"
       "vpsllw      $1,%%ymm4,%%ymm4              \n"  // all 2
-      "vbroadcastf128 %3,%%ymm3                     \n"
+      "vbroadcastf128 %3,%%ymm3                  \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -1278,7 +1278,7 @@ void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "vpcmpeqw    %%ymm6,%%ymm6,%%ymm6          \n"
       "vpsrlw      $15,%%ymm6,%%ymm6             \n"
       "vpsllw      $3,%%ymm6,%%ymm6              \n"  // all 8
-      "vbroadcastf128 %5,%%ymm7                     \n"
+      "vbroadcastf128 %5,%%ymm7                  \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -1357,7 +1357,7 @@ void ScaleRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
                                 uint16_t* dst_ptr,
                                 int dst_width) {
   asm volatile(
-      "vbroadcastf128 %3,%%ymm5                     \n"
+      "vbroadcastf128 %3,%%ymm5                  \n"
       "vpcmpeqw    %%ymm4,%%ymm4,%%ymm4          \n"
       "vpsrlw      $15,%%ymm4,%%ymm4             \n"
       "vpsllw      $1,%%ymm4,%%ymm4              \n"  // all 2
@@ -1409,7 +1409,7 @@ void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
                                   ptrdiff_t dst_stride,
                                   int dst_width) {
   asm volatile(
-      "vbroadcastf128 %5,%%ymm5                     \n"
+      "vbroadcastf128 %5,%%ymm5                  \n"
       "vpcmpeqw    %%ymm4,%%ymm4,%%ymm4          \n"
       "vpsrlw      $15,%%ymm4,%%ymm4             \n"
       "vpsllw      $3,%%ymm4,%%ymm4              \n"  // all 8
@@ -2123,8 +2123,8 @@ void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
 }
 #endif  // HAS_SCALEUVROWDOWN2BOX_AVX2
 
-static const uvec8 kUVLinearMadd31 = {3, 1, 3, 1, 1, 3, 1, 3, 3, 1, 3,
-                                      1, 1, 3, 1, 3};
+static const uvec8 kUVLinearMadd31 = {3, 1, 3, 1, 1, 3, 1, 3,
+                                      3, 1, 3, 1, 1, 3, 1, 3};
 
 #ifdef HAS_SCALEUVROWUP2LINEAR_SSSE3
 void ScaleUVRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
@@ -2259,7 +2259,7 @@ void ScaleUVRowUp2_Linear_AVX2(const uint8_t* src_ptr,
       "vpcmpeqw    %%ymm4,%%ymm4,%%ymm4          \n"
       "vpsrlw      $15,%%ymm4,%%ymm4             \n"
       "vpsllw      $1,%%ymm4,%%ymm4              \n"  // all 2
-      "vbroadcastf128 %3,%%ymm3                     \n"
+      "vbroadcastf128 %3,%%ymm3                  \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -2302,7 +2302,7 @@ void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "vpcmpeqw    %%ymm6,%%ymm6,%%ymm6          \n"
       "vpsrlw      $15,%%ymm6,%%ymm6             \n"
       "vpsllw      $3,%%ymm6,%%ymm6              \n"  // all 8
-      "vbroadcastf128 %5,%%ymm7                     \n"
+      "vbroadcastf128 %5,%%ymm7                  \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -2416,7 +2416,6 @@ void ScaleUVRowUp2_Linear_16_SSE2(const uint16_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 2 uv to 4 uv
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2

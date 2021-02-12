@@ -145,3 +145,12 @@ cc_test {
     static_libs: ["libyuv"],
     shared_libs: ["libjpeg"],
 }
+
+cc_test {
+    name: "yuvconstants",
+    gtest: false,
+    srcs: [
+        "util/yuvconstants.cc",
+    ],
+    static_libs: ["libyuv"],
+}

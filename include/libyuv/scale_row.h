@@ -612,13 +612,13 @@ void ScaleRowUp2_Bilinear_SSE2(const uint8_t* src_ptr,
                                ptrdiff_t dst_stride,
                                int dst_width);
 void ScaleRowUp2_Linear_16_SSSE3(const uint16_t* src_ptr,
-                                uint16_t* dst_ptr,
-                                int dst_width);
+                                 uint16_t* dst_ptr,
+                                 int dst_width);
 void ScaleRowUp2_Bilinear_16_SSSE3(const uint16_t* src_ptr,
-                                  ptrdiff_t src_stride,
-                                  uint16_t* dst_ptr,
-                                  ptrdiff_t dst_stride,
-                                  int dst_width);
+                                   ptrdiff_t src_stride,
+                                   uint16_t* dst_ptr,
+                                   ptrdiff_t dst_stride,
+                                   int dst_width);
 void ScaleRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
                               int dst_width);
@@ -652,13 +652,13 @@ void ScaleRowUp2_Bilinear_Any_SSE2(const uint8_t* src_ptr,
                                    ptrdiff_t dst_stride,
                                    int dst_width);
 void ScaleRowUp2_Linear_16_Any_SSSE3(const uint16_t* src_ptr,
-                                    uint16_t* dst_ptr,
-                                    int dst_width);
+                                     uint16_t* dst_ptr,
+                                     int dst_width);
 void ScaleRowUp2_Bilinear_16_Any_SSSE3(const uint16_t* src_ptr,
-                                      ptrdiff_t src_stride,
-                                      uint16_t* dst_ptr,
-                                      ptrdiff_t dst_stride,
-                                      int dst_width);
+                                       ptrdiff_t src_stride,
+                                       uint16_t* dst_ptr,
+                                       ptrdiff_t dst_stride,
+                                       int dst_width);
 void ScaleRowUp2_Linear_Any_SSSE3(const uint8_t* src_ptr,
                                   uint8_t* dst_ptr,
                                   int dst_width);

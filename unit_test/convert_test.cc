@@ -55,13 +55,13 @@ namespace libyuv {
     static_assert(SRC_BPC == 1 || SRC_BPC == 2, "SRC BPC unsupported");       \
     static_assert(DST_BPC == 1 || DST_BPC == 2, "DST BPC unsupported");       \
     static_assert(SRC_SUBSAMP_X == 1 || SRC_SUBSAMP_X == 2,                   \
-                  "DST SRC_SUBSAMP_X unsupported");                           \
+                  "SRC_SUBSAMP_X unsupported");                           \
     static_assert(SRC_SUBSAMP_Y == 1 || SRC_SUBSAMP_Y == 2,                   \
-                  "DST SRC_SUBSAMP_Y unsupported");                           \
+                  "SRC_SUBSAMP_Y unsupported");                           \
     static_assert(DST_SUBSAMP_X == 1 || DST_SUBSAMP_X == 2,                   \
-                  "DST DST_SUBSAMP_X unsupported");                           \
+                  "DST_SUBSAMP_X unsupported");                           \
     static_assert(DST_SUBSAMP_Y == 1 || DST_SUBSAMP_Y == 2,                   \
-                  "DST DST_SUBSAMP_Y unsupported");                           \
+                  "DST_SUBSAMP_Y unsupported");                           \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                           \
     const int kHeight = benchmark_height_;                                    \
     const int kSrcHalfWidth = SUBSAMPLE(kWidth, SRC_SUBSAMP_X);               \
@@ -385,13 +385,13 @@ TESTPLANARTOBP(I400, 2, 2, NV21, 2, 2)
     static_assert(SRC_BPC == 1 || SRC_BPC == 2, "SRC BPC unsupported");        \
     static_assert(DST_BPC == 1 || DST_BPC == 2, "DST BPC unsupported");        \
     static_assert(SRC_SUBSAMP_X == 1 || SRC_SUBSAMP_X == 2,                    \
-                  "DST SRC_SUBSAMP_X unsupported");                            \
+                  "SRC_SUBSAMP_X unsupported");                            \
     static_assert(SRC_SUBSAMP_Y == 1 || SRC_SUBSAMP_Y == 2,                    \
-                  "DST SRC_SUBSAMP_Y unsupported");                            \
+                  "SRC_SUBSAMP_Y unsupported");                            \
     static_assert(DST_SUBSAMP_X == 1 || DST_SUBSAMP_X == 2,                    \
-                  "DST DST_SUBSAMP_X unsupported");                            \
+                  "DST_SUBSAMP_X unsupported");                            \
     static_assert(DST_SUBSAMP_Y == 1 || DST_SUBSAMP_Y == 2,                    \
-                  "DST DST_SUBSAMP_Y unsupported");                            \
+                  "DST_SUBSAMP_Y unsupported");                            \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                            \
     const int kHeight = benchmark_height_;                                     \
     const int kSrcHalfWidth = SUBSAMPLE(kWidth, SRC_SUBSAMP_X);                \
@@ -423,17 +423,17 @@ TESTPLANARTOBP(I400, 2, 2, NV21, 2, 2)
     memset(dst_uv_opt, 102, 2 * kDstHalfWidth * kDstHalfHeight * DST_BPC);     \
     MaskCpuFlags(disable_cpu_flags_);                                          \
     SRC_FMT_PLANAR##To##FMT_PLANAR(                                            \
-        src_y_p, kWidth, src_uv_p, 2 * kSrcHalfWidth,                \
+        src_y_p, kWidth, src_uv_p, 2 * kSrcHalfWidth,                          \
         DOY ? reinterpret_cast<DST_T*>(dst_y_c) : NULL, kWidth,                \
-        reinterpret_cast<DST_T*>(dst_uv_c), 2 * kDstHalfWidth,       \
-        kWidth, NEG kHeight);                                                  \
+        reinterpret_cast<DST_T*>(dst_uv_c), 2 * kDstHalfWidth, kWidth,         \
+        NEG kHeight);                                                          \
     MaskCpuFlags(benchmark_cpu_info_);                                         \
     for (int i = 0; i < benchmark_iterations_; ++i) {                          \
       SRC_FMT_PLANAR##To##FMT_PLANAR(                                          \
-          src_y_p, kWidth, src_uv_p, 2 * kSrcHalfWidth,              \
+          src_y_p, kWidth, src_uv_p, 2 * kSrcHalfWidth,                        \
           DOY ? reinterpret_cast<DST_T*>(dst_y_opt) : NULL, kWidth,            \
-          reinterpret_cast<DST_T*>(dst_uv_opt), 2 * kDstHalfWidth,   \
-          kWidth, NEG kHeight);                                                \
+          reinterpret_cast<DST_T*>(dst_uv_opt), 2 * kDstHalfWidth, kWidth,     \
+          NEG kHeight);                                                        \
     }                                                                          \
     if (DOY) {                                                                 \
       for (int i = 0; i < kHeight; ++i) {                                      \
@@ -483,7 +483,7 @@ TESTBIPLANARTOBP(NV21, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8)
 TESTBIPLANARTOBP(NV12, uint8_t, 1, 2, 2, NV12Mirror, uint8_t, 1, 2, 2, 8)
 TESTBIPLANARTOBP(NV12, uint8_t, 1, 2, 2, NV24, uint8_t, 1, 1, 1, 8)
 TESTBIPLANARTOBP(NV16, uint8_t, 1, 2, 1, NV24, uint8_t, 1, 1, 1, 8)
-// These formats put data at high bits, so test on full 16bit range.
+// These formats put data in high bits, so test on full 16bit range.
 TESTBIPLANARTOBP(P010, uint16_t, 2, 2, 2, P410, uint16_t, 2, 1, 1, 16)
 TESTBIPLANARTOBP(P210, uint16_t, 2, 2, 1, P410, uint16_t, 2, 1, 1, 16)
 TESTBIPLANARTOBP(P012, uint16_t, 2, 2, 2, P412, uint16_t, 2, 1, 1, 16)

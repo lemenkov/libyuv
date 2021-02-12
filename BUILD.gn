@@ -41,6 +41,7 @@ group("default") {
       ":libyuv_unittest",
       ":psnr",
       ":yuvconvert",
+      ":yuvconstants",
     ]
   }
 }
@@ -350,6 +351,17 @@ if (libyuv_include_tests) {
     sources = [
       # sources
       "util/yuvconvert.cc",
+    ]
+    deps = [ ":libyuv" ]
+    if (is_linux || is_chromeos) {
+      cflags = [ "-fexceptions" ]
+    }
+  }
+
+  executable("yuvconstants") {
+    sources = [
+      # sources
+      "util/yuvconstants.cc",
     ]
     deps = [ ":libyuv" ]
     if (is_linux || is_chromeos) {

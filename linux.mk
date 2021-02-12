@@ -66,7 +66,7 @@ LOCAL_OBJ_FILES := \
 .c.o:
 	$(CC) -c $(CFLAGS) $*.c -o $*.o
 
-all: libyuv.a i444tonv12_eg yuvconvert cpuid psnr
+all: libyuv.a i444tonv12_eg yuvconvert yuvconstants cpuid psnr
 
 libyuv.a: $(LOCAL_OBJ_FILES)
 	$(AR) $(ARFLAGS) $@ $(LOCAL_OBJ_FILES)
@@ -74,6 +74,10 @@ libyuv.a: $(LOCAL_OBJ_FILES)
 # A C++ test utility that uses libyuv conversion.
 yuvconvert: util/yuvconvert.cc libyuv.a
 	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/yuvconvert.cc libyuv.a
+
+# A C++ test utility that generates yuvconstants for yuv to rgb.
+yuvconstants: util/yuvconstants.cc libyuv.a
+	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/yuvconstants.cc libyuv.a
 
 # A standalone test utility
 psnr: util/psnr.cc
@@ -90,4 +94,4 @@ cpuid: util/cpuid.c libyuv.a
 	$(CC) $(CFLAGS) -o $@ util/cpuid.c libyuv.a
 
 clean:
-	/bin/rm -f source/*.o *.ii *.s libyuv.a i444tonv12_eg yuvconvert cpuid psnr
+	/bin/rm -f source/*.o *.ii *.s libyuv.a i444tonv12_eg yuvconvert yuvconstants cpuid psnr

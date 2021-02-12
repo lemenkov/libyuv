@@ -22,17 +22,17 @@ extern "C" {
 
 // Conversion matrix for YUV to RGB
 LIBYUV_API extern const struct YuvConstants kYuvI601Constants;   // BT.601
-LIBYUV_API extern const struct YuvConstants kYuvJPEGConstants;   // JPeg
-LIBYUV_API extern const struct YuvConstants kYuvF709Constants;   // BT.709 full
+LIBYUV_API extern const struct YuvConstants kYuvJPEGConstants;   // BT.601 full
 LIBYUV_API extern const struct YuvConstants kYuvH709Constants;   // BT.709
+LIBYUV_API extern const struct YuvConstants kYuvF709Constants;   // BT.709 full
 LIBYUV_API extern const struct YuvConstants kYuv2020Constants;   // BT.2020
 LIBYUV_API extern const struct YuvConstants kYuvV2020Constants;  // BT.2020 full
 
 // Conversion matrix for YVU to BGR
 LIBYUV_API extern const struct YuvConstants kYvuI601Constants;   // BT.601
-LIBYUV_API extern const struct YuvConstants kYvuJPEGConstants;   // JPeg
-LIBYUV_API extern const struct YuvConstants kYvuF709Constants;   // BT.709 full
+LIBYUV_API extern const struct YuvConstants kYvuJPEGConstants;   // BT.601 full
 LIBYUV_API extern const struct YuvConstants kYvuH709Constants;   // BT.709
+LIBYUV_API extern const struct YuvConstants kYvuF709Constants;   // BT.709 full
 LIBYUV_API extern const struct YuvConstants kYvu2020Constants;   // BT.2020
 LIBYUV_API extern const struct YuvConstants kYvuV2020Constants;  // BT.2020 full
 
@@ -41,8 +41,8 @@ LIBYUV_API extern const struct YuvConstants kYvuV2020Constants;  // BT.2020 full
 // TODO(fbarchard): Add macro for each Matrix function.
 #define kYuvI601ConstantsVU kYvuI601Constants
 #define kYuvJPEGConstantsVU kYvuJPEGConstants
-#define kYuvF709ConstantsVU kYvuF709Constants
 #define kYuvH709ConstantsVU kYvuH709Constants
+#define kYuvF709ConstantsVU kYvuF709Constants
 #define kYuv2020ConstantsVU kYvu2020Constants
 #define kYuvV2020ConstantsVU kYvuV2020Constants
 

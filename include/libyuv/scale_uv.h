@@ -30,7 +30,7 @@ int UVScale(const uint8_t* src_uv,
             int dst_height,
             enum FilterMode filtering);
 
-// Scale an 16 bit UV image.
+// Scale a 16 bit UV image.
 // This function is currently incomplete, it can't handle all cases.
 LIBYUV_API
 int UVScale_16(const uint16_t* src_uv,

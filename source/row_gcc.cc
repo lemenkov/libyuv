@@ -4444,7 +4444,7 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
       "sub         %1,%3                         \n"
       "sub         %1,%4                         \n"
       "vmovdqa     %7,%%ymm3                     \n"
-      "vbroadcastf128 %6,%%ymm4                     \n"
+      "vbroadcastf128 %6,%%ymm4                  \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -4491,7 +4491,7 @@ void SplitXRGBRow_AVX2(const uint8_t* src_argb,
   asm volatile(
 
       "vmovdqa     %6,%%ymm3                     \n"
-      "vbroadcastf128 %5,%%ymm4                     \n"
+      "vbroadcastf128 %5,%%ymm4                  \n"
 
       LABELALIGN
       "1:                                        \n"
