@@ -80,10 +80,6 @@ deps = {
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' + 'd46ea7635f2911208268170512cb611412488fd8',
 
   # libyuv-only dependencies (not present in Chromium).
-  'src/third_party/gflags':
-    Var('chromium_git') + '/external/webrtc/deps/third_party/gflags' + '@' + '892576179b45861b53e04a112996a738309cf364',
-  'src/third_party/gflags/src':
-    Var('chromium_git') + '/external/github.com/gflags/gflags' + '@' + '03bebcb065c83beff83d50ae025a55a4bf94dfca',
   'src/third_party/gtest-parallel':
     Var('chromium_git') + '/external/webrtc/deps/third_party/gtest-parallel' + '@' + '1dad0e9f6d82ff994130b529d7d814b40eb32b0e',
 
@@ -2944,9 +2940,6 @@ deps = {
 
   # === ANDROID_DEPS Generated Code End ===
 }
-
-# Define rules for which include paths are allowed in our source.
-include_rules = [ '+gflags' ]
 
 pre_deps_hooks = [
   {
