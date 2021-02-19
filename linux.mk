@@ -75,9 +75,9 @@ libyuv.a: $(LOCAL_OBJ_FILES)
 yuvconvert: util/yuvconvert.cc libyuv.a
 	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/yuvconvert.cc libyuv.a
 
-# A C++ test utility that generates yuvconstants for yuv to rgb.
-yuvconstants: util/yuvconstants.cc libyuv.a
-	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/yuvconstants.cc libyuv.a
+# A C test utility that generates yuvconstants for yuv to rgb.
+yuvconstants: util/yuvconstants.c libyuv.a
+	$(CXX) $(CXXFLAGS) -Iutil/ -lm -o $@ util/yuvconstants.c libyuv.a
 
 # A standalone test utility
 psnr: util/psnr.cc
@@ -85,7 +85,7 @@ psnr: util/psnr.cc
 
 # A simple conversion example.
 i444tonv12_eg: util/i444tonv12_eg.cc libyuv.a
-	$(CC) $(CFLAGS) -o $@ util/i444tonv12_eg.cc libyuv.a
+	$(CXX) $(CXXFLAGS) -o $@ util/i444tonv12_eg.cc libyuv.a
 
 # A C test utility that uses libyuv conversion from C.
 # gcc 4.4 and older require -fno-exceptions to avoid link error on __gxx_personality_v0

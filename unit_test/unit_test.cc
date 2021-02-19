@@ -18,9 +18,6 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #endif
-#ifdef LIBYUV_USE_BASE_FLAGS
-#include "base/commandlineflags.h"
-#endif
 #include "libyuv/cpu_id.h"
 
 unsigned int fastrand_seed = 0xfb;

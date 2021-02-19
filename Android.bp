@@ -150,7 +150,7 @@ cc_test {
     name: "yuvconstants",
     gtest: false,
     srcs: [
-        "util/yuvconstants.cc",
+        "util/yuvconstants.c",
     ],
     static_libs: ["libyuv"],
 }

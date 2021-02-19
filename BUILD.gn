@@ -40,8 +40,8 @@ group("default") {
       ":i444tonv12_eg",
       ":libyuv_unittest",
       ":psnr",
-      ":yuvconvert",
       ":yuvconstants",
+      ":yuvconvert",
     ]
   }
 }
@@ -364,7 +364,7 @@ if (libyuv_include_tests) {
   executable("yuvconstants") {
     sources = [
       # sources
-      "util/yuvconstants.cc",
+      "util/yuvconstants.c",
     ]
     deps = [ ":libyuv" ]
     if (is_linux || is_chromeos) {
@@ -391,9 +391,7 @@ if (libyuv_include_tests) {
       # sources
       "util/i444tonv12_eg.cc",
     ]
-    deps = [
-      ":libyuv",
-    ]
+    deps = [ ":libyuv" ]
   }
 
   executable("cpuid") {

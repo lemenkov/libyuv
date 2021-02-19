@@ -109,6 +109,25 @@ int I420Scale_16(const uint16_t* src_y,
                  int dst_height,
                  enum FilterMode filtering);
 
+LIBYUV_API
+int I420Scale_12(const uint16_t* src_y,
+                 int src_stride_y,
+                 const uint16_t* src_u,
+                 int src_stride_u,
+                 const uint16_t* src_v,
+                 int src_stride_v,
+                 int src_width,
+                 int src_height,
+                 uint16_t* dst_y,
+                 int dst_stride_y,
+                 uint16_t* dst_u,
+                 int dst_stride_u,
+                 uint16_t* dst_v,
+                 int dst_stride_v,
+                 int dst_width,
+                 int dst_height,
+                 enum FilterMode filtering);
+
 // Scales a YUV 4:4:4 image from the src width and height to the
 // dst width and height.
 // If filtering is kFilterNone, a simple nearest-neighbor algorithm is
@@ -140,6 +159,25 @@ int I444Scale(const uint8_t* src_y,
 
 LIBYUV_API
 int I444Scale_16(const uint16_t* src_y,
+                 int src_stride_y,
+                 const uint16_t* src_u,
+                 int src_stride_u,
+                 const uint16_t* src_v,
+                 int src_stride_v,
+                 int src_width,
+                 int src_height,
+                 uint16_t* dst_y,
+                 int dst_stride_y,
+                 uint16_t* dst_u,
+                 int dst_stride_u,
+                 uint16_t* dst_v,
+                 int dst_stride_v,
+                 int dst_width,
+                 int dst_height,
+                 enum FilterMode filtering);
+
+LIBYUV_API
+int I444Scale_12(const uint16_t* src_y,
                  int src_stride_y,
                  const uint16_t* src_u,
                  int src_stride_u,
