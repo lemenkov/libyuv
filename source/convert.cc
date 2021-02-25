@@ -149,6 +149,52 @@ int I010Copy(const uint16_t* src_y,
   return 0;
 }
 
+static int Planar16bitTo8bit(const uint16_t* src_y,
+                             int src_stride_y,
+                             const uint16_t* src_u,
+                             int src_stride_u,
+                             const uint16_t* src_v,
+                             int src_stride_v,
+                             uint8_t* dst_y,
+                             int dst_stride_y,
+                             uint8_t* dst_u,
+                             int dst_stride_u,
+                             uint8_t* dst_v,
+                             int dst_stride_v,
+                             int width,
+                             int height,
+                             int subsample_x,
+                             int subsample_y,
+                             int depth) {
+  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  int scale = 1 << (24 - depth);
+  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    uv_height = -uv_height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (uv_height - 1) * src_stride_u;
+    src_v = src_v + (uv_height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  // Convert Y plane.
+  Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
+                    height);
+  // Convert UV planes.
+  Convert16To8Plane(src_u, src_stride_u, dst_u, dst_stride_u, scale, uv_width,
+                    uv_height);
+  Convert16To8Plane(src_v, src_stride_v, dst_v, dst_stride_v, scale, uv_width,
+                    uv_height);
+  return 0;
+}
+
 // Convert 10 bit YUV to 8 bit.
 LIBYUV_API
 int I010ToI420(const uint16_t* src_y,
@@ -165,32 +211,293 @@ int I010ToI420(const uint16_t* src_y,
                int dst_stride_v,
                int width,
                int height) {
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  return Planar16bitTo8bit(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_y, dst_stride_y, dst_u,
+                           dst_stride_u, dst_v, dst_stride_v, width, height, 1,
+                           1, 10);
+}
+
+LIBYUV_API
+int I210ToI422(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Planar16bitTo8bit(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_y, dst_stride_y, dst_u,
+                           dst_stride_u, dst_v, dst_stride_v, width, height, 1,
+                           0, 10);
+}
+
+LIBYUV_API
+int I410ToI444(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Planar16bitTo8bit(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_y, dst_stride_y, dst_u,
+                           dst_stride_u, dst_v, dst_stride_v, width, height, 0,
+                           0, 10);
+}
+
+LIBYUV_API
+int I012ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Planar16bitTo8bit(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_y, dst_stride_y, dst_u,
+                           dst_stride_u, dst_v, dst_stride_v, width, height, 1,
+                           1, 12);
+}
+
+LIBYUV_API
+int I212ToI422(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Planar16bitTo8bit(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_y, dst_stride_y, dst_u,
+                           dst_stride_u, dst_v, dst_stride_v, width, height, 1,
+                           0, 12);
+}
+
+LIBYUV_API
+int I412ToI444(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Planar16bitTo8bit(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_y, dst_stride_y, dst_u,
+                           dst_stride_u, dst_v, dst_stride_v, width, height, 0,
+                           0, 12);
+}
+
+// Any Ix10 To I010 format with mirroring.
+static int Ix10ToI010(const uint16_t* src_y,
+                      int src_stride_y,
+                      const uint16_t* src_u,
+                      int src_stride_u,
+                      const uint16_t* src_v,
+                      int src_stride_v,
+                      uint16_t* dst_y,
+                      int dst_stride_y,
+                      uint16_t* dst_u,
+                      int dst_stride_u,
+                      uint16_t* dst_v,
+                      int dst_stride_v,
+                      int width,
+                      int height,
+                      int subsample_x,
+                      int subsample_y) {
+  const int dst_y_width = Abs(width);
+  const int dst_y_height = Abs(height);
+  const int src_uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  const int src_uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
+  const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
+  if (width <= 0 || height == 0) {
     return -1;
   }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (halfheight - 1) * src_stride_u;
-    src_v = src_v + (halfheight - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
+  if (dst_y) {
+    ScalePlane_12(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
+                  dst_y_width, dst_y_height, kFilterBilinear);
+  }
+  ScalePlane_12(src_u, src_stride_u, src_uv_width, src_uv_height, dst_u,
+                dst_stride_u, dst_uv_width, dst_uv_height, kFilterBilinear);
+  ScalePlane_12(src_v, src_stride_v, src_uv_width, src_uv_height, dst_v,
+                dst_stride_v, dst_uv_width, dst_uv_height, kFilterBilinear);
+  return 0;
+}
+
+LIBYUV_API
+int I410ToI010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Ix10ToI010(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                    src_stride_v, dst_y, dst_stride_y, dst_u, dst_stride_u,
+                    dst_v, dst_stride_v, width, height, 0, 0);
+}
+
+LIBYUV_API
+int I210ToI010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return Ix10ToI010(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                    src_stride_v, dst_y, dst_stride_y, dst_u, dst_stride_u,
+                    dst_v, dst_stride_v, width, height, 1, 0);
+}
+
+// Any I[420]1[02] to P[420]1[02] format with mirroring.
+static int Ix1xToPx1x(const uint16_t* src_y,
+                      int src_stride_y,
+                      const uint16_t* src_u,
+                      int src_stride_u,
+                      const uint16_t* src_v,
+                      int src_stride_v,
+                      uint16_t* dst_y,
+                      int dst_stride_y,
+                      uint16_t* dst_uv,
+                      int dst_stride_uv,
+                      int width,
+                      int height,
+                      int subsample_x,
+                      int subsample_y,
+                      int depth) {
+  const int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  const int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  if (width <= 0 || height == 0) {
+    return -1;
   }
 
-  // Convert Y plane.
-  Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, 16384, width,
-                    height);
-  // Convert UV planes.
-  Convert16To8Plane(src_u, src_stride_u, dst_u, dst_stride_u, 16384, halfwidth,
-                    halfheight);
-  Convert16To8Plane(src_v, src_stride_v, dst_v, dst_stride_v, 16384, halfwidth,
-                    halfheight);
+  ConvertToMSBPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height,
+                       depth);
+  MergeUVPlane_16(src_u, src_stride_u, src_v, src_stride_v, dst_uv,
+                  dst_stride_uv, uv_width, uv_height, depth);
   return 0;
+}
+
+LIBYUV_API
+int I010ToP010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                    src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
+                    width, height, 1, 1, 10);
+}
+
+LIBYUV_API
+int I210ToP210(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                    src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
+                    width, height, 1, 0, 10);
+}
+
+LIBYUV_API
+int I012ToP012(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                    src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
+                    width, height, 1, 1, 12);
+}
+
+LIBYUV_API
+int I212ToP212(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                    src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
+                    width, height, 1, 0, 12);
 }
 
 // 422 chroma is 1/2 width, 1x height

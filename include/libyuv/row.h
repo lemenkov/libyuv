@@ -305,6 +305,7 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
+#define HAS_DIVIDEROW_16_AVX2
 #define HAS_HALFMERGEUVROW_AVX2
 #define HAS_MERGEARGBROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
@@ -318,6 +319,7 @@ extern "C" {
 #define HAS_MULTIPLYROW_16_AVX2
 #define HAS_RGBATOYJROW_AVX2
 #define HAS_SPLITARGBROW_AVX2
+#define HAS_SPLITUVROW_16_AVX2
 #define HAS_SWAPUVROW_AVX2
 // TODO(fbarchard): Fix AVX2 version of YUV24
 // #define HAS_NV21TOYUV24ROW_AVX2
@@ -363,6 +365,7 @@ extern "C" {
 #define HAS_BGRATOYROW_NEON
 #define HAS_BYTETOFLOATROW_NEON
 #define HAS_COPYROW_NEON
+#define HAS_DIVIDEROW_16_NEON
 #define HAS_HALFFLOATROW_NEON
 #define HAS_HALFMERGEUVROW_NEON
 #define HAS_I400TOARGBROW_NEON
@@ -380,9 +383,11 @@ extern "C" {
 #define HAS_J400TOARGBROW_NEON
 #define HAS_MERGEARGBROW_NEON
 #define HAS_MERGEUVROW_NEON
+#define HAS_MERGEUVROW_16_NEON
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORUVROW_NEON
 #define HAS_MIRRORSPLITUVROW_NEON
+#define HAS_MULTIPLYROW_16_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV12TORGB24ROW_NEON
 #define HAS_NV12TORGB565ROW_NEON
@@ -409,6 +414,7 @@ extern "C" {
 #define HAS_SPLITARGBROW_NEON
 #define HAS_SPLITRGBROW_NEON
 #define HAS_SPLITUVROW_NEON
+#define HAS_SPLITUVROW_16_NEON
 #define HAS_SWAPUVROW_NEON
 #define HAS_UYVYTOARGBROW_NEON
 #define HAS_UYVYTOUV422ROW_NEON
@@ -2010,22 +2016,96 @@ void SplitXRGBRow_Any_NEON(const uint8_t* src_argb,
 void MergeUVRow_16_C(const uint16_t* src_u,
                      const uint16_t* src_v,
                      uint16_t* dst_uv,
-                     int scale, /* 64 for 10 bit */
+                     int depth,
                      int width);
 void MergeUVRow_16_AVX2(const uint16_t* src_u,
                         const uint16_t* src_v,
                         uint16_t* dst_uv,
-                        int scale,
+                        int depth,
                         int width);
+void MergeUVRow_16_Any_AVX2(const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint16_t* dst_uv,
+                        int depth,
+                        int width);
+void MergeUVRow_16_NEON(const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint16_t* dst_uv,
+                        int depth,
+                        int width);
+void MergeUVRow_16_Any_NEON(const uint16_t* src_u,
+                            const uint16_t* src_v,
+                            uint16_t* dst_uv,
+                            int depth,
+                            int width);
 
-void MultiplyRow_16_AVX2(const uint16_t* src_y,
-                         uint16_t* dst_y,
-                         int scale,
-                         int width);
+void SplitUVRow_16_C(const uint16_t* src_uv,
+                     uint16_t* dst_u,
+                     uint16_t* dst_v,
+                     int depth,
+                     int width);
+void SplitUVRow_16_AVX2(const uint16_t* src_uv,
+                        uint16_t* dst_u,
+                        uint16_t* dst_v,
+                        int depth,
+                        int width);
+void SplitUVRow_16_Any_AVX2(const uint16_t* src_uv,
+                            uint16_t* dst_u,
+                            uint16_t* dst_v,
+                            int depth,
+                            int width);
+void SplitUVRow_16_NEON(const uint16_t* src_uv,
+                        uint16_t* dst_u,
+                        uint16_t* dst_v,
+                        int depth,
+                        int width);
+void SplitUVRow_16_Any_NEON(const uint16_t* src_uv,
+                            uint16_t* dst_u,
+                            uint16_t* dst_v,
+                            int depth,
+                            int width);
+
 void MultiplyRow_16_C(const uint16_t* src_y,
                       uint16_t* dst_y,
                       int scale,
                       int width);
+void MultiplyRow_16_AVX2(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width);
+void MultiplyRow_16_Any_AVX2(const uint16_t* src_y,
+                             uint16_t* dst_y,
+                             int scale,
+                             int width);
+void MultiplyRow_16_NEON(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width);
+void MultiplyRow_16_Any_NEON(const uint16_t* src_y,
+                             uint16_t* dst_y,
+                             int scale,
+                             int width);
+
+void DivideRow_16_C(const uint16_t* src_y,
+                    uint16_t* dst_y,
+                    int scale,
+                    int width);
+void DivideRow_16_AVX2(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width);
+void DivideRow_16_Any_AVX2(const uint16_t* src_y,
+                           uint16_t* dst_y,
+                           int scale,
+                           int width);
+void DivideRow_16_NEON(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width);
+void DivideRow_16_Any_NEON(const uint16_t* src_y,
+                           uint16_t* dst_y,
+                           int scale,
+                           int width);
 
 void Convert8To16Row_C(const uint8_t* src_y,
                        uint16_t* dst_y,

@@ -3166,6 +3166,121 @@ void HalfMergeUVRow_NEON(const uint8_t* src_u,
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
+void SplitUVRow_16_NEON(const uint16_t* src_uv,
+                        uint16_t* dst_u,
+                        uint16_t* dst_v,
+                        int depth,
+                        int width) {
+  asm volatile(
+      "vdup.32     q0, %3                        \n"
+      "1:                                        \n"
+      "vld2.16     {q1, q2}, [%0]!               \n"  // load 8 UV
+      "vmovl.u16   q3, d2                        \n"
+      "vmovl.u16   q4, d3                        \n"
+      "vshl.u32    q3, q3, q0                    \n"
+      "vshl.u32    q4, q4, q0                    \n"
+      "vmovn.u32   d2, q3                        \n"
+      "vmovn.u32   d3, q4                        \n"
+      "vmovl.u16   q3, d4                        \n"
+      "vmovl.u16   q4, d5                        \n"
+      "vshl.u32    q3, q3, q0                    \n"
+      "vshl.u32    q4, q4, q0                    \n"
+      "vmovn.u32   d4, q3                        \n"
+      "vmovn.u32   d5, q4                        \n"
+      "subs        %4, %4, #8                    \n"  // 8 src pixels per loop
+      "vst1.16     {q1}, [%1]!                   \n"  // store 8 U pixels
+      "vst1.16     {q2}, [%2]!                   \n"  // store 8 V pixels
+      "bgt         1b                            \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_u),   // %1
+        "+r"(dst_v),   // %2
+        "+r"(depth),   // %3
+        "+r"(width)    // %4
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
+}
+
+void MergeUVRow_16_NEON(const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint16_t* dst_uv,
+                        int depth,
+                        int width) {
+  int shift = 16 - depth;
+  asm volatile(
+      "vdup.16     q2, %3                        \n"
+      "1:                                        \n"
+      "vld1.16     {q0}, [%0]!                   \n"  // load 8 U
+      "vld1.16     {q1}, [%1]!                   \n"  // load 8 V
+      "vshl.u16    q0, q0, q2                    \n"
+      "vshl.u16    q1, q1, q2                    \n"
+      "subs        %4, %4, #8                    \n"  // 8 src pixels per loop
+      "vst2.16     {q0, q1}, [%2]!               \n"  // store 8 UV pixels
+      "bgt         1b                            \n"
+      : "+r"(src_u),   // %0
+        "+r"(src_v),   // %1
+        "+r"(dst_uv),  // %2
+        "+r"(shift),   // %3
+        "+r"(width)    // %4
+      :
+      : "cc", "memory", "q0", "q1", "q2");
+}
+
+void MultiplyRow_16_NEON(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width) {
+  asm volatile(
+      "vdup.16     q2, %2                        \n"
+      "1:                                        \n"
+      "vld1.16     {q0}, [%0]!                   \n"
+      "vld1.16     {q1}, [%0]!                   \n"
+      "vmul.u16    q0, q0, q2                    \n"
+      "vmul.u16    q1, q1, q2                    \n"
+      "vst1.16     {q0}, [%1]!                   \n"
+      "vst1.16     {q1}, [%1]!                   \n"
+      "subs        %3, %3, #16                   \n"  // 16 src pixels per loop
+      "bgt         1b                            \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(scale),  // %2
+        "+r"(width)   // %3
+      :
+      : "cc", "memory", "q0", "q1", "q2");
+}
+
+void DivideRow_16_NEON(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width) {
+  asm volatile(
+      "vdup.16     q0, %2                        \n"
+      "1:                                        \n"
+      "vld1.16     {q1}, [%0]!                   \n"
+      "vld1.16     {q2}, [%0]!                   \n"
+      "vmovl.u16   q3, d2                        \n"
+      "vmovl.u16   q1, d3                        \n"
+      "vmovl.u16   q4, d4                        \n"
+      "vmovl.u16   q2, d5                        \n"
+      "vshl.u32    q3, q3, q0                    \n"
+      "vshl.u32    q4, q4, q0                    \n"
+      "vshl.u32    q1, q1, q0                    \n"
+      "vshl.u32    q2, q2, q0                    \n"
+      "vmovn.u32   d2, q3                        \n"
+      "vmovn.u32   d3, q1                        \n"
+      "vmovn.u32   d4, q4                        \n"
+      "vmovn.u32   d5, q2                        \n"
+      "vst1.16     {q1}, [%1]!                   \n"
+      "vst1.16     {q2}, [%1]!                   \n"
+      "subs        %3, %3, #16                   \n"  // 16 src pixels per loop
+      "bgt         1b                            \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(scale),  // %2
+        "+r"(width)   // %3
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..
 
 #ifdef __cplusplus

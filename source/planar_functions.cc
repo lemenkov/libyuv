@@ -550,6 +550,216 @@ void MergeUVPlane(const uint8_t* src_u,
   }
 }
 
+// Support function for P010 etc UV channels.
+// Width and height are plane sizes (typically half pixel width).
+LIBYUV_API
+void SplitUVPlane_16(const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint16_t* dst_u,
+                     int dst_stride_u,
+                     uint16_t* dst_v,
+                     int dst_stride_v,
+                     int width,
+                     int height,
+                     int depth) {
+  int y;
+  int scale = 1 << depth;
+  void (*SplitUVRow)(const uint16_t* src_uv, uint16_t* dst_u, uint16_t* dst_v,
+                     int scale, int width) = SplitUVRow_16_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+  // Coalesce rows.
+  if (src_stride_uv == width * 2 && dst_stride_u == width &&
+      dst_stride_v == width) {
+    width *= height;
+    height = 1;
+    src_stride_uv = dst_stride_u = dst_stride_v = 0;
+  }
+#if defined(HAS_SPLITUVROW_16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SplitUVRow = SplitUVRow_16_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      SplitUVRow = SplitUVRow_16_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_16_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SplitUVRow = SplitUVRow_16_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      SplitUVRow = SplitUVRow_16_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    // Copy a row of UV.
+    SplitUVRow(src_uv, dst_u, dst_v, scale, width);
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+    src_uv += src_stride_uv;
+  }
+}
+
+LIBYUV_API
+void MergeUVPlane_16(const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     int width,
+                     int height,
+                     int depth) {
+  int y;
+  int scale = 1 << (16 - depth);
+  void (*MergeUVRow)(const uint16_t* src_u, const uint16_t* src_v,
+                     uint16_t* dst_uv, int scale, int width) = MergeUVRow_16_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_uv = dst_uv + (height - 1) * dst_stride_uv;
+    dst_stride_uv = -dst_stride_uv;
+  }
+  // Coalesce rows.
+  if (src_stride_u == width && src_stride_v == width &&
+      dst_stride_uv == width * 2) {
+    width *= height;
+    height = 1;
+    src_stride_u = src_stride_v = dst_stride_uv = 0;
+  }
+#if defined(HAS_MERGEUVROW_16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    MergeUVRow = MergeUVRow_16_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      MergeUVRow = MergeUVRow_16_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_16_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MergeUVRow = MergeUVRow_16_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      MergeUVRow = MergeUVRow_16_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    // Merge a row of U and V into a row of UV.
+    MergeUVRow(src_u, src_v, dst_uv, scale, width);
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+    dst_uv += dst_stride_uv;
+  }
+}
+
+// Convert plane from lsb to msb
+LIBYUV_API
+void ConvertToMSBPlane_16(const uint16_t* src_y,
+                          int src_stride_y,
+                          uint16_t* dst_y,
+                          int dst_stride_y,
+                          int width,
+                          int height,
+                          int depth) {
+  int y;
+  int scale = 1 << (16 - depth);
+  void (*MultiplyRow)(const uint16_t* src_y, uint16_t* dst_y, int scale,
+                      int width) = MultiplyRow_16_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_stride_y = -dst_stride_y;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width && dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_y = 0;
+  }
+
+#if defined(HAS_MULTIPLYROW_16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    MultiplyRow = MultiplyRow_16_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      MultiplyRow = MultiplyRow_16_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MULTIPLYROW_16_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MultiplyRow = MultiplyRow_16_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      MultiplyRow = MultiplyRow_16_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    MultiplyRow(src_y, dst_y, scale, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
+}
+
+// Convert plane from msb to lsb
+LIBYUV_API
+void ConvertToLSBPlane_16(const uint16_t* src_y,
+                          int src_stride_y,
+                          uint16_t* dst_y,
+                          int dst_stride_y,
+                          int width,
+                          int height,
+                          int depth) {
+  int y;
+  int scale = 1 << depth;
+  void (*DivideRow)(const uint16_t* src_y, uint16_t* dst_y, int scale,
+                    int width) = DivideRow_16_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_stride_y = -dst_stride_y;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width && dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_y = 0;
+  }
+
+#if defined(HAS_DIVIDEROW_16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    DivideRow = DivideRow_16_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      DivideRow = DivideRow_16_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_DIVIDEROW_16_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    DivideRow = DivideRow_16_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      DivideRow = DivideRow_16_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    DivideRow(src_y, dst_y, scale, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
+}
+
 // Swap U and V channels in interleaved UV plane.
 LIBYUV_API
 void SwapUVPlane(const uint8_t* src_uv,

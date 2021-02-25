@@ -3526,6 +3526,126 @@ void HalfMergeUVRow_NEON(const uint8_t* src_u,
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
+void SplitUVRow_16_NEON(const uint16_t* src_uv,
+                        uint16_t* dst_u,
+                        uint16_t* dst_v,
+                        int depth,
+                        int width) {
+  asm volatile(
+      "dup         v0.4s, %w3                    \n"
+      "1:                                        \n"
+      "ld2         {v1.8h, v2.8h}, [%0], #32     \n"  // load 8 UV
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "ushll       v3.4s, v1.4h, #0              \n"
+      "ushll2      v4.4s, v1.8h, #0              \n"
+      "ushl        v3.4s, v3.4s, v0.4s           \n"
+      "ushl        v4.4s, v4.4s, v0.4s           \n"
+      "xtn         v1.4h, v3.4s                  \n"
+      "xtn2        v1.8h, v4.4s                  \n"
+      "ushll       v3.4s, v2.4h, #0              \n"
+      "ushll2      v4.4s, v2.8h, #0              \n"
+      "ushl        v3.4s, v3.4s, v0.4s           \n"
+      "ushl        v4.4s, v4.4s, v0.4s           \n"
+      "xtn         v2.4h, v3.4s                  \n"
+      "xtn2        v2.8h, v4.4s                  \n"
+      "subs        %w4, %w4, #8                  \n"  // 8 src pixels per loop
+      "st1         {v1.8h}, [%1], #16            \n"  // store 8 U pixels
+      "st1         {v2.8h}, [%2], #16            \n"  // store 8 V pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_u),   // %1
+        "+r"(dst_v),   // %2
+        "+r"(depth),   // %3
+        "+r"(width)    // %4
+      :
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
+}
+
+void MergeUVRow_16_NEON(const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint16_t* dst_uv,
+                        int depth,
+                        int width) {
+  int shift = 16 - depth;
+  asm volatile(
+      "dup         v2.8h, %w3                    \n"
+      "1:                                        \n"
+      "ld1         {v0.8h}, [%0], #16            \n"  // load 8 U
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "ld1         {v1.8h}, [%1], #16            \n"  // load 8 V
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "ushl        v0.8h, v0.8h, v2.8h           \n"
+      "ushl        v1.8h, v1.8h, v2.8h           \n"
+      "subs        %w4, %w4, #8                  \n"  // 8 src pixels per loop
+      "st2         {v0.8h, v1.8h}, [%2], #32     \n"  // store 8 UV pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_u),   // %0
+        "+r"(src_v),   // %1
+        "+r"(dst_uv),  // %2
+        "+r"(shift),   // %3
+        "+r"(width)    // %4
+      :
+      : "cc", "memory", "v0", "v1", "v2");
+}
+
+void MultiplyRow_16_NEON(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width) {
+  asm volatile(
+      "dup         v2.8h, %w2                    \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0]                  \n"
+      "add         %0, %0, #32                   \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "mul         v0.8h, v0.8h, v2.8h           \n"
+      "mul         v1.8h, v1.8h, v2.8h           \n"
+      "stp         q0, q1, [%1]                  \n"  // store 16 pixels
+      "add         %1, %1, #32                   \n"
+      "subs        %w3, %w3, #16                 \n"  // 16 src pixels per loop
+      "b.gt        1b                            \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(scale),  // %2
+        "+r"(width)   // %3
+      :
+      : "cc", "memory", "v0", "v1", "v2");
+}
+
+void DivideRow_16_NEON(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width) {
+  asm volatile(
+      "dup         v0.8h, %w2                    \n"
+      "1:                                        \n"
+      "ldp         q1, q2, [%0]                  \n"
+      "add         %0, %0, #32                   \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "ushll       v3.4s, v1.4h, #0              \n"
+      "ushll       v4.4s, v2.4h, #0              \n"
+      "ushll2      v1.4s, v1.8h, #0              \n"
+      "ushll2      v2.4s, v2.8h, #0              \n"
+      "mul         v3.4s, v0.4s, v3.4s           \n"
+      "mul         v4.4s, v0.4s, v4.4s           \n"
+      "mul         v1.4s, v0.4s, v1.4s           \n"
+      "mul         v2.4s, v0.4s, v2.4s           \n"
+      "shrn        v3.4h, v3.4s, #16             \n"
+      "shrn        v4.4h, v4.4s, #16             \n"
+      "shrn2       v3.8h, v1.4s, #16             \n"
+      "shrn2       v4.8h, v2.4s, #16             \n"
+      "stp         q3, q3, [%1]                  \n"  // store 16 pixels
+      "add         %1, %1, #32                   \n"
+      "subs        %w3, %w3, #16                 \n"  // 16 src pixels per loop
+      "b.gt        1b                            \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(scale),  // %2
+        "+r"(width)   // %3
+      :
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

@@ -105,6 +105,50 @@ void MergeUVPlane(const uint8_t* src_u,
                   int width,
                   int height);
 
+// Split interleaved msb UV plane into separate lsb U and V planes.
+LIBYUV_API
+void SplitUVPlane_16(const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint16_t* dst_u,
+                     int dst_stride_u,
+                     uint16_t* dst_v,
+                     int dst_stride_v,
+                     int width,
+                     int height,
+                     int depth);
+
+// Merge separate lsb U and V planes into one interleaved msb UV plane.
+LIBYUV_API
+void MergeUVPlane_16(const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     int width,
+                     int height,
+                     int depth);
+
+// Convert lsb plane to msb plane
+LIBYUV_API
+void ConvertToMSBPlane_16(const uint16_t* src_y,
+                          int src_stride_y,
+                          uint16_t* dst_y,
+                          int dst_stride_y,
+                          int width,
+                          int height,
+                          int depth);
+
+// Convert msb plane to lsb plane
+LIBYUV_API
+void ConvertToLSBPlane_16(const uint16_t* src_y,
+                          int src_stride_y,
+                          uint16_t* dst_y,
+                          int dst_stride_y,
+                          int width,
+                          int height,
+                          int depth);
+
 // Scale U and V to half width and height and merge into interleaved UV plane.
 // width and height are source size, allowing odd sizes.
 // Use for converting I444 or I422 to NV12.

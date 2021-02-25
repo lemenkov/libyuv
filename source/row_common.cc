@@ -2521,27 +2521,33 @@ void MergeXRGBRow_C(const uint8_t* src_r,
   }
 }
 
-// Use scale to convert lsb formats to msb, depending how many bits there are:
-// 128 = 9 bits
-// 64 = 10 bits
-// 16 = 12 bits
-// 1 = 16 bits
+// Convert lsb formats to msb, depending on sample depth.
 void MergeUVRow_16_C(const uint16_t* src_u,
                      const uint16_t* src_v,
                      uint16_t* dst_uv,
-                     int scale,
+                     int depth,
                      int width) {
+  int shift = 16 - depth;
   int x;
-  for (x = 0; x < width - 1; x += 2) {
-    dst_uv[0] = src_u[x] * scale;
-    dst_uv[1] = src_v[x] * scale;
-    dst_uv[2] = src_u[x + 1] * scale;
-    dst_uv[3] = src_v[x + 1] * scale;
-    dst_uv += 4;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] = src_u[x] << shift;
+    dst_uv[1] = src_v[x] << shift;
+    dst_uv += 2;
   }
-  if (width & 1) {
-    dst_uv[0] = src_u[width - 1] * scale;
-    dst_uv[1] = src_v[width - 1] * scale;
+}
+
+// Convert msb formats to lsb, depending on sample depth.
+void SplitUVRow_16_C(const uint16_t* src_uv,
+                     uint16_t* dst_u,
+                     uint16_t* dst_v,
+                     int depth,
+                     int width) {
+  int shift = 16 - depth;
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_u[x] = src_uv[0] >> shift;
+    dst_v[x] = src_uv[1] >> shift;
+    src_uv += 2;
   }
 }
 
@@ -2552,6 +2558,16 @@ void MultiplyRow_16_C(const uint16_t* src_y,
   int x;
   for (x = 0; x < width; ++x) {
     dst_y[x] = src_y[x] * scale;
+  }
+}
+
+void DivideRow_16_C(const uint16_t* src_y,
+                    uint16_t* dst_y,
+                    int scale,
+                    int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_y[x] = (src_y[x] * scale) >> 16;
   }
 }
 

@@ -546,6 +546,32 @@ ANY21C(NV12ToRGB565Row_Any_MMI, NV12ToRGB565Row_MMI, 1, 1, 2, 2, 7)
 #endif
 #undef ANY21C
 
+// Any 2 16 bit planes with parameter to 1
+#define ANY21PT(NAMEANY, ANY_SIMD, T, BPP, MASK)                     \
+  void NAMEANY(const T* src_u, const T* src_v, T* dst_uv, int depth, \
+               int width) {                                          \
+    SIMD_ALIGNED(T temp[16 * 4]);                                    \
+    memset(temp, 0, 16 * 4); /* for msan */                          \
+    int r = width & MASK;                                            \
+    int n = width & ~MASK;                                           \
+    if (n > 0) {                                                     \
+      ANY_SIMD(src_u, src_v, dst_uv, depth, n);                      \
+    }                                                                \
+    memcpy(temp, src_u + n, r * BPP);                                \
+    memcpy(temp + 16, src_v + n, r * BPP);                           \
+    ANY_SIMD(temp, temp + 16, temp + 32, depth, MASK + 1);           \
+    memcpy(dst_uv + n * 2, temp + 32, r * BPP * 2);                  \
+  }
+
+#ifdef HAS_MERGEUVROW_16_AVX2
+ANY21PT(MergeUVRow_16_Any_AVX2, MergeUVRow_16_AVX2, uint16_t, 2, 15)
+#endif
+#ifdef HAS_MERGEUVROW_16_NEON
+ANY21PT(MergeUVRow_16_Any_NEON, MergeUVRow_16_NEON, uint16_t, 2, 7)
+#endif
+
+#undef ANY21CT
+
 // Any 1 to 1.
 #define ANY11(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {     \
@@ -1126,6 +1152,30 @@ ANY11C(Convert8To16Row_Any_AVX2,
        uint16_t,
        31)
 #endif
+#ifdef HAS_MULTIPLYROW_16_AVX2
+ANY11C(MultiplyRow_16_Any_AVX2,
+       MultiplyRow_16_AVX2,
+       2,
+       2,
+       uint16_t,
+       uint16_t,
+       31)
+#endif
+#ifdef HAS_MULTIPLYROW_16_NEON
+ANY11C(MultiplyRow_16_Any_NEON,
+       MultiplyRow_16_NEON,
+       2,
+       2,
+       uint16_t,
+       uint16_t,
+       15)
+#endif
+#ifdef HAS_DIVIDEROW_16_AVX2
+ANY11C(DivideRow_16_Any_AVX2, DivideRow_16_AVX2, 2, 2, uint16_t, uint16_t, 31)
+#endif
+#ifdef HAS_DIVIDEROW_16_NEON
+ANY11C(DivideRow_16_Any_NEON, DivideRow_16_NEON, 2, 2, uint16_t, uint16_t, 15)
+#endif
 #undef ANY11C
 
 // Any 1 to 1 with parameter and shorts to byte.  BPP measures in shorts.
@@ -1404,6 +1454,32 @@ ANY12(UYVYToUV422Row_Any_MMI, UYVYToUV422Row_MMI, 1, 4, 1, 15)
 ANY12(YUY2ToUV422Row_Any_MMI, YUY2ToUV422Row_MMI, 1, 4, 1, 15)
 #endif
 #undef ANY12
+
+// Any 2 16 bit planes with parameter to 1
+#define ANY12PT(NAMEANY, ANY_SIMD, T, BPP, MASK)                            \
+  void NAMEANY(const T* src_uv, T* dst_u, T* dst_v, int depth, int width) { \
+    SIMD_ALIGNED(T temp[16 * 4]);                                           \
+    memset(temp, 0, 16 * 4 * BPP); /* for msan */                           \
+    int r = width & MASK;                                                   \
+    int n = width & ~MASK;                                                  \
+    if (n > 0) {                                                            \
+      ANY_SIMD(src_uv, dst_u, dst_v, depth, n);                             \
+    }                                                                       \
+    memcpy(temp, src_uv + n * 2, r * BPP * 2);                              \
+    ANY_SIMD(temp, temp + 32, temp + 48, depth, MASK + 1);                  \
+    memcpy(dst_u + n, temp + 32, r * BPP);                                  \
+    memcpy(dst_v + n, temp + 48, r * BPP);                                  \
+  }
+
+#ifdef HAS_SPLITUVROW_16_AVX2
+ANY12PT(SplitUVRow_16_Any_AVX2, SplitUVRow_16_AVX2, uint16_t, 2, 15)
+#endif
+
+#ifdef HAS_SPLITUVROW_16_NEON
+ANY12PT(SplitUVRow_16_Any_NEON, SplitUVRow_16_NEON, uint16_t, 2, 7)
+#endif
+
+#undef ANY21CT
 
 // Any 1 to 3.  Outputs RGB planes.
 #define ANY13(NAMEANY, ANY_SIMD, BPP, MASK)                                \

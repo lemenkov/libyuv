@@ -111,6 +111,50 @@ int I420ToI010(const uint8_t* src_y,
   return 0;
 }
 
+// Convert 8 bit YUV to 12 bit.
+LIBYUV_API
+int I420ToI012(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  // Convert Y plane.
+  Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 4096, width,
+                    height);
+  // Convert UV planes.
+  Convert8To16Plane(src_u, src_stride_u, dst_u, dst_stride_u, 4096, halfwidth,
+                    halfheight);
+  Convert8To16Plane(src_v, src_stride_v, dst_v, dst_stride_v, 4096, halfwidth,
+                    halfheight);
+  return 0;
+}
+
 // 420 chroma is 1/2 width, 1/2 height
 // 422 chroma is 1/2 width, 1x height
 LIBYUV_API
