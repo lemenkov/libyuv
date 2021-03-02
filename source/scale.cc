@@ -1459,6 +1459,107 @@ void ScalePlaneUp2_Bilinear(int src_width,
 // its original width, using linear interpolation.
 // stride is in count of uint16_t.
 // This is used to scale U and V planes of I210 to I410 and I212 to I412.
+void ScalePlaneUp2_12_Linear(int src_width,
+                             int src_height,
+                             int dst_width,
+                             int dst_height,
+                             int src_stride,
+                             int dst_stride,
+                             const uint16_t* src_ptr,
+                             uint16_t* dst_ptr) {
+  void (*ScaleRowUp)(const uint16_t* src_ptr, uint16_t* dst_ptr,
+                     int dst_width) = ScaleRowUp2_Linear_16_Any_C;
+  int i;
+  int y;
+  int dy;
+
+  // This function can only scale up by 2 times horizontally.
+  assert(src_width == ((dst_width + 1) / 2));
+
+#ifdef HAS_SCALEROWUP2LINEAR_12_SSSE3
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleRowUp = ScaleRowUp2_Linear_12_Any_SSSE3;
+  }
+#endif
+
+#ifdef HAS_SCALEROWUP2LINEAR_12_AVX2
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleRowUp = ScaleRowUp2_Linear_12_Any_AVX2;
+  }
+#endif
+
+#ifdef HAS_SCALEROWUP2LINEAR_12_NEON
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleRowUp = ScaleRowUp2_Linear_12_Any_NEON;
+  }
+#endif
+
+  if (dst_height == 1) {
+    ScaleRowUp(src_ptr + ((src_height - 1) / 2) * src_stride, dst_ptr,
+               dst_width);
+  } else {
+    dy = FixedDiv(src_height - 1, dst_height - 1);
+    y = (1 << 15) - 1;
+    for (i = 0; i < dst_height; ++i) {
+      ScaleRowUp(src_ptr + (y >> 16) * src_stride, dst_ptr, dst_width);
+      dst_ptr += dst_stride;
+      y += dy;
+    }
+  }
+}
+
+// Scale at most 12 bit plane, up by 2 times.
+// This is an optimized version for scaling up a plane to 2 times of
+// its original size, using bilinear interpolation.
+// stride is in count of uint16_t.
+// This is used to scale U and V planes of I010 to I410 and I012 to I412.
+void ScalePlaneUp2_12_Bilinear(int src_width,
+                               int src_height,
+                               int dst_width,
+                               int dst_height,
+                               int src_stride,
+                               int dst_stride,
+                               const uint16_t* src_ptr,
+                               uint16_t* dst_ptr) {
+  void (*Scale2RowUp)(const uint16_t* src_ptr, ptrdiff_t src_stride,
+                      uint16_t* dst_ptr, ptrdiff_t dst_stride, int dst_width) =
+      ScaleRowUp2_Bilinear_16_Any_C;
+  int x;
+
+  // This function can only scale up by 2 times.
+  assert(src_width == ((dst_width + 1) / 2));
+  assert(src_height == ((dst_height + 1) / 2));
+
+#ifdef HAS_SCALEROWUP2BILINEAR_12_SSSE3
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_12_Any_SSSE3;
+  }
+#endif
+
+#ifdef HAS_SCALEROWUP2BILINEAR_12_AVX2
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_12_Any_AVX2;
+  }
+#endif
+
+#ifdef HAS_SCALEROWUP2BILINEAR_12_NEON
+  if (TestCpuFlag(kCpuHasNEON)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_12_Any_NEON;
+  }
+#endif
+
+  Scale2RowUp(src_ptr, 0, dst_ptr, 0, dst_width);
+  dst_ptr += dst_stride;
+  for (x = 0; x < src_height - 1; ++x) {
+    Scale2RowUp(src_ptr, src_stride, dst_ptr, dst_stride, dst_width);
+    src_ptr += src_stride;
+    dst_ptr += 2 * dst_stride;
+  }
+  if (!(dst_height & 1)) {
+    Scale2RowUp(src_ptr, 0, dst_ptr, 0, dst_width);
+  }
+}
+
 void ScalePlaneUp2_16_Linear(int src_width,
                              int src_height,
                              int dst_width,
@@ -1476,9 +1577,9 @@ void ScalePlaneUp2_16_Linear(int src_width,
   // This function can only scale up by 2 times horizontally.
   assert(src_width == ((dst_width + 1) / 2));
 
-#ifdef HAS_SCALEROWUP2LINEAR_16_SSSE3
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ScaleRowUp = ScaleRowUp2_Linear_16_Any_SSSE3;
+#ifdef HAS_SCALEROWUP2LINEAR_16_SSE2
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleRowUp = ScaleRowUp2_Linear_16_Any_SSE2;
   }
 #endif
 
@@ -1508,11 +1609,6 @@ void ScalePlaneUp2_16_Linear(int src_width,
   }
 }
 
-// Scale at most 12 bit plane, up by 2 times.
-// This is an optimized version for scaling up a plane to 2 times of
-// its original size, using bilinear interpolation.
-// stride is in count of uint16_t.
-// This is used to scale U and V planes of I010 to I410 and I012 to I412.
 void ScalePlaneUp2_16_Bilinear(int src_width,
                                int src_height,
                                int dst_width,
@@ -1523,14 +1619,14 @@ void ScalePlaneUp2_16_Bilinear(int src_width,
                                uint16_t* dst_ptr) {
   void (*Scale2RowUp)(const uint16_t* src_ptr, ptrdiff_t src_stride,
                       uint16_t* dst_ptr, ptrdiff_t dst_stride, int dst_width) =
-      ScaleRowUp2_Bilinear_16_Any_C;
+  ScaleRowUp2_Bilinear_16_Any_C;
   int x;
 
   // This function can only scale up by 2 times.
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
 
-#ifdef HAS_SCALEROWUP2BILINEAR_16_SSSE3
+#ifdef HAS_SCALEROWUP2BILINEAR_16_SSE2
   if (TestCpuFlag(kCpuHasSSSE3)) {
     Scale2RowUp = ScaleRowUp2_Bilinear_16_Any_SSSE3;
   }
@@ -1945,6 +2041,17 @@ void ScalePlane_16(const uint16_t* src,
                      dst_stride, src, dst);
     return;
   }
+  if ((dst_width + 1) / 2 == src_width && filtering == kFilterLinear) {
+    ScalePlaneUp2_16_Linear(src_width, src_height, dst_width, dst_height,
+                            src_stride, dst_stride, src, dst);
+    return;
+  }
+  if ((dst_height + 1) / 2 == src_height && (dst_width + 1) / 2 == src_width &&
+      (filtering == kFilterBilinear || filtering == kFilterBox)) {
+    ScalePlaneUp2_16_Bilinear(src_width, src_height, dst_width, dst_height,
+                              src_stride, dst_stride, src, dst);
+    return;
+  }
   if (filtering && dst_height > src_height) {
     ScalePlaneBilinearUp_16(src_width, src_height, dst_width, dst_height,
                             src_stride, dst_stride, src, dst, filtering);
@@ -1981,13 +2088,13 @@ void ScalePlane_12(const uint16_t* src,
   }
 
   if ((dst_width + 1) / 2 == src_width && filtering == kFilterLinear) {
-    ScalePlaneUp2_16_Linear(src_width, src_height, dst_width, dst_height,
+    ScalePlaneUp2_12_Linear(src_width, src_height, dst_width, dst_height,
                             src_stride, dst_stride, src, dst);
     return;
   }
   if ((dst_height + 1) / 2 == src_height && (dst_width + 1) / 2 == src_width &&
       (filtering == kFilterBilinear || filtering == kFilterBox)) {
-    ScalePlaneUp2_16_Bilinear(src_width, src_height, dst_width, dst_height,
+    ScalePlaneUp2_12_Bilinear(src_width, src_height, dst_width, dst_height,
                               src_stride, dst_stride, src, dst);
     return;
   }

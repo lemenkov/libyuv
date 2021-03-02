@@ -630,7 +630,7 @@ void ScaleRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
   );
 }
 
-void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
+void ScaleRowUp2_Linear_12_NEON(const uint16_t* src_ptr,
                                 uint16_t* dst_ptr,
                                 int dst_width) {
   const uint16_t* src_temp = src_ptr + 1;
@@ -661,7 +661,7 @@ void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
   );
 }
 
-void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
+void ScaleRowUp2_Bilinear_12_NEON(const uint16_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint16_t* dst_ptr,
                                   ptrdiff_t dst_stride,
@@ -717,6 +717,106 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
         "+r"(dst_width)   // %6
       :
       : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v31"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
+                                uint16_t* dst_ptr,
+                                int dst_width) {
+  const uint16_t* src_temp = src_ptr + 1;
+  asm volatile(
+      "movi        v31.8h, #3                    \n"
+
+      "1:                                        \n"
+      "ld1         {v0.8h}, [%0], #16            \n"  // 01234567 (16b)
+      "ld1         {v1.8h}, [%1], #16            \n"  // 12345678 (16b)
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+
+      "ushll       v2.4s, v0.4h, #0              \n"  // 0123 (32b)
+      "ushll2      v3.4s, v0.8h, #0              \n"  // 4567 (32b)
+      "ushll       v4.4s, v1.4h, #0              \n"  // 1234 (32b)
+      "ushll2      v5.4s, v1.8h, #0              \n"  // 5678 (32b)
+
+      "umlal       v2.4s, v1.4h, v31.4h          \n"  // 3*near+far (1, odd)
+      "umlal2      v3.4s, v1.8h, v31.8h          \n"  // 3*near+far (2, odd)
+      "umlal       v4.4s, v0.4h, v31.4h          \n"  // 3*near+far (1, even)
+      "umlal2      v5.4s, v0.8h, v31.8h          \n"  // 3*near+far (2, even)
+
+      "rshrn       v0.4h, v4.4s, #2              \n"  // 3/4*near+1/4*far
+      "rshrn2      v0.8h, v5.4s, #2              \n"  // 3/4*near+1/4*far (even)
+      "rshrn       v1.4h, v2.4s, #2              \n"  // 3/4*near+1/4*far
+      "rshrn2      v1.8h, v3.4s, #2              \n"  // 3/4*near+1/4*far (odd)
+
+      "st2         {v0.8h, v1.8h}, [%2], #32     \n"  // store
+      "subs        %w3, %w3, #16                 \n"  // 8 sample -> 16 sample
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_temp),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(dst_width)  // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v31"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint16_t* dst_ptr,
+                                  ptrdiff_t dst_stride,
+                                  int dst_width) {
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  uint16_t* dst_ptr1 = dst_ptr + dst_stride;
+  const uint16_t* src_temp = src_ptr + 1;
+  const uint16_t* src_temp1 = src_ptr1 + 1;
+
+  asm volatile(
+      "movi        v31.4h, #3                    \n"
+      "movi        v30.4s, #3                    \n"
+
+      "1:                                        \n"
+      "ldr         d0, [%0], #8                  \n"  // 0123 (16b)
+      "ldr         d1, [%2], #8                  \n"  // 1234 (16b)
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+      "ushll       v2.4s, v0.4h, #0              \n"  // 0123 (32b)
+      "ushll       v3.4s, v1.4h, #0              \n"  // 1234 (32b)
+      "umlal       v2.4s, v1.4h, v31.4h          \n"  // 3*near+far (1, odd)
+      "umlal       v3.4s, v0.4h, v31.4h          \n"  // 3*near+far (1, even)
+
+      "ldr         d0, [%1], #8                  \n"  // 0123 (16b)
+      "ldr         d1, [%3], #8                  \n"  // 1234 (16b)
+      "prfm        pldl1keep, [%1, 448]          \n"  // prefetch 7 lines ahead
+      "ushll       v4.4s, v0.4h, #0              \n"  // 0123 (32b)
+      "ushll       v5.4s, v1.4h, #0              \n"  // 1234 (32b)
+      "umlal       v4.4s, v1.4h, v31.4h          \n"  // 3*near+far (2, odd)
+      "umlal       v5.4s, v0.4h, v31.4h          \n"  // 3*near+far (2, even)
+
+      "mov         v0.4s, v4.4s                  \n"
+      "mov         v1.4s, v5.4s                  \n"
+      "mla         v4.4s, v2.4s, v30.4s          \n"  // 9 3 3 1 (1, odd)
+      "mla         v5.4s, v3.4s, v30.4s          \n"  // 9 3 3 1 (1, even)
+      "mla         v2.4s, v0.4s, v30.4s          \n"  // 9 3 3 1 (2, odd)
+      "mla         v3.4s, v1.4s, v30.4s          \n"  // 9 3 3 1 (2, even)
+
+      "rshrn       v1.4h, v4.4s, #4              \n"  // 3/4*near+1/4*far
+      "rshrn       v0.4h, v5.4s, #4              \n"  // 3/4*near+1/4*far
+      "rshrn       v5.4h, v2.4s, #4              \n"  // 3/4*near+1/4*far
+      "rshrn       v4.4h, v3.4s, #4              \n"  // 3/4*near+1/4*far
+
+      "st2         {v0.4h, v1.4h}, [%4], #16     \n"  // store 1
+      "st2         {v4.4h, v5.4h}, [%5], #16     \n"  // store 2
+
+      "subs        %w6, %w6, #8                  \n"  // 4 sample -> 8 sample
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),    // %0
+        "+r"(src_ptr1),   // %1
+        "+r"(src_temp),   // %2
+        "+r"(src_temp1),  // %3
+        "+r"(dst_ptr),    // %4
+        "+r"(dst_ptr1),   // %5
+        "+r"(dst_width)   // %6
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v30",
         "v31"  // Clobber List
   );
 }

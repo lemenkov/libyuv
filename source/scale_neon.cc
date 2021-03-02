@@ -603,7 +603,7 @@ void ScaleRowUp2_Bilinear_NEON(const uint8_t* src_ptr,
   );
 }
 
-void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
+void ScaleRowUp2_Linear_12_NEON(const uint16_t* src_ptr,
                                 uint16_t* dst_ptr,
                                 int dst_width) {
   const uint16_t* src_temp = src_ptr + 1;
@@ -633,7 +633,7 @@ void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
   );
 }
 
-void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
+void ScaleRowUp2_Bilinear_12_NEON(const uint16_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint16_t* dst_ptr,
                                   ptrdiff_t dst_stride,
@@ -647,7 +647,6 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       "vmov.u16    q15, #3                       \n"
 
       "1:                                        \n"
-      "add         %5, %0, #2                    \n"
       "vld1.16     {q0}, [%0]!                   \n"  // 01234567 (16b)
       "vld1.16     {q1}, [%5]!                   \n"  // 12345678 (16b)
 
@@ -655,7 +654,6 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       "vmla.u16    q0, q1, q15                   \n"  // 3*near+far (odd)
       "vmla.u16    q1, q2, q15                   \n"  // 3*near+far (even)
 
-      "add         %5, %1, #2                    \n"
       "vld1.16     {q2}, [%1]!                   \n"  // 01234567 (16b)
       "vld1.16     {q3}, [%6]!                   \n"  // 12345678 (16b)
 
@@ -689,6 +687,102 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       :
       : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5",
         "q15"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Linear_16_NEON(const uint16_t* src_ptr,
+                                uint16_t* dst_ptr,
+                                int dst_width) {
+  const uint16_t* src_temp = src_ptr + 1;
+  asm volatile(
+      "vmov.u16    d31, #3                       \n"
+
+      "1:                                        \n"
+      "vld1.16     {q0}, [%0]!                   \n"  // 01234567 (16b)
+      "vld1.16     {q1}, [%3]!                   \n"  // 12345678 (16b)
+
+      "vmovl.u16   q2, d0                        \n"  // 0123 (32b)
+      "vmovl.u16   q3, d1                        \n"  // 4567 (32b)
+      "vmovl.u16   q4, d2                        \n"  // 1234 (32b)
+      "vmovl.u16   q5, d3                        \n"  // 5678 (32b)
+
+      "vmlal.u16   q2, d2, d31                   \n"
+      "vmlal.u16   q3, d3, d31                   \n"
+      "vmlal.u16   q4, d0, d31                   \n"
+      "vmlal.u16   q5, d1, d31                   \n"
+
+      "vrshrn.u32  d0, q4, #2                    \n"
+      "vrshrn.u32  d1, q5, #2                    \n"
+      "vrshrn.u32  d2, q2, #2                    \n"
+      "vrshrn.u32  d3, q3, #2                    \n"
+
+      "vst2.16     {q0, q1}, [%1]!               \n"  // store
+      "subs        %2, %2, #16                   \n"  // 8 sample -> 16 sample
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width),  // %2
+        "+r"(src_temp)    // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q15"  // Clobber List
+  );
+}
+
+void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint16_t* dst_ptr,
+                                  ptrdiff_t dst_stride,
+                                  int dst_width) {
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  uint16_t* dst_ptr1 = dst_ptr + dst_stride;
+  const uint16_t* src_temp = src_ptr + 1;
+  const uint16_t* src_temp1 = src_ptr1 + 1;
+
+  asm volatile(
+      "vmov.u16    d31, #3                       \n"
+      "vmov.u32    q14, #3                       \n"
+
+      "1:                                        \n"
+      "vld1.16     {d0}, [%0]!                   \n"  // 0123 (16b)
+      "vld1.16     {d1}, [%5]!                   \n"  // 1234 (16b)
+      "vmovl.u16   q2, d0                        \n"  // 0123 (32b)
+      "vmovl.u16   q3, d1                        \n"  // 1234 (32b)
+      "vmlal.u16   q2, d1, d31                   \n"
+      "vmlal.u16   q3, d0, d31                   \n"
+
+      "vld1.16     {d0}, [%1]!                   \n"  // 0123 (16b)
+      "vld1.16     {d1}, [%6]!                   \n"  // 1234 (16b)
+      "vmovl.u16   q4, d0                        \n"  // 0123 (32b)
+      "vmovl.u16   q5, d1                        \n"  // 1234 (32b)
+      "vmlal.u16   q4, d1, d31                   \n"
+      "vmlal.u16   q5, d0, d31                   \n"
+
+      "vmovq       q0, q4                        \n"
+      "vmovq       q1, q5                        \n"
+      "vmla.u32    q4, q2, q14                   \n"
+      "vmla.u32    q5, q3, q14                   \n"
+      "vmla.u32    q2, q0, q14                   \n"
+      "vmla.u32    q3, q1, q14                   \n"
+
+      "vrshrn.u32  d1, q4, #4                    \n"
+      "vrshrn.u32  d0, q5, #4                    \n"
+      "vrshrn.u32  d3, q2, #4                    \n"
+      "vrshrn.u32  d2, q3, #4                    \n"
+
+      "vst2.16     {d0, d1}, [%2]!               \n"  // store
+      "vst2.16     {d2, d3}, [%3]!               \n"  // store
+      "subs        %4, %4, #8                    \n"  // 4 sample -> 8 sample
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),    // %0
+        "+r"(src_ptr1),   // %1
+        "+r"(dst_ptr),    // %2
+        "+r"(dst_ptr1),   // %3
+        "+r"(dst_width),  // %4
+        "+r"(src_temp),   // %5
+        "+r"(src_temp1)   // %6
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q14",
+        "d31"  // Clobber List
   );
 }
 
