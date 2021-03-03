@@ -175,8 +175,10 @@ extern "C" {
     defined(_MSC_VER)
 // TODO(fbarchard): fix build error on android_full_debug=1
 // https://code.google.com/p/libyuv/issues/detail?id=517
-#define HAS_I444ALPHATOARGBROW_SSSE3
+#define HAS_I210ALPHATOARGBROW_SSSE3
+#define HAS_I410ALPHATOARGBROW_SSSE3
 #define HAS_I422ALPHATOARGBROW_SSSE3
+#define HAS_I444ALPHATOARGBROW_SSSE3
 #endif
 #endif
 
@@ -240,8 +242,10 @@ extern "C" {
     defined(_MSC_VER)
 // TODO(fbarchard): fix build error on android_full_debug=1
 // https://code.google.com/p/libyuv/issues/detail?id=517
-#define HAS_I444ALPHATOARGBROW_AVX2
+#define HAS_I210ALPHATOARGBROW_AVX2
+#define HAS_I410ALPHATOARGBROW_AVX2
 #define HAS_I422ALPHATOARGBROW_AVX2
+#define HAS_I444ALPHATOARGBROW_AVX2
 #endif
 #endif
 
@@ -280,9 +284,15 @@ extern "C" {
 #define HAS_I210TOARGBROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I422TOAR30ROW_SSSE3
+#define HAS_I410TOAR30ROW_SSSE3
+#define HAS_I410TOARGBROW_SSSE3
 #define HAS_MERGEARGBROW_SSE2
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_MIRRORUVROW_SSSE3
+#define HAS_P210TOAR30ROW_SSSE3
+#define HAS_P210TOARGBROW_SSSE3
+#define HAS_P410TOAR30ROW_SSSE3
+#define HAS_P410TOARGBROW_SSSE3
 #define HAS_RAWTORGBAROW_SSSE3
 #define HAS_RGB24MIRRORROW_SSSE3
 #define HAS_RGBATOYJROW_SSSE3
@@ -311,6 +321,12 @@ extern "C" {
 #define HAS_I210TOAR30ROW_AVX2
 #define HAS_I210TOARGBROW_AVX2
 #define HAS_I400TOARGBROW_AVX2
+#define HAS_I410TOAR30ROW_AVX2
+#define HAS_I410TOARGBROW_AVX2
+#define HAS_P210TOAR30ROW_AVX2
+#define HAS_P210TOARGBROW_AVX2
+#define HAS_P410TOAR30ROW_AVX2
+#define HAS_P410TOARGBROW_AVX2
 #define HAS_I422TOAR30ROW_AVX2
 #define HAS_I422TOUYVYROW_AVX2
 #define HAS_I422TOYUY2ROW_AVX2
@@ -2575,6 +2591,33 @@ void I210ToARGBRow_C(const uint16_t* src_y,
                      uint8_t* rgb_buf,
                      const struct YuvConstants* yuvconstants,
                      int width);
+void I410ToAR30Row_C(const uint16_t* src_y,
+                     const uint16_t* src_u,
+                     const uint16_t* src_v,
+                     uint8_t* rgb_buf,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+void I410ToARGBRow_C(const uint16_t* src_y,
+                     const uint16_t* src_u,
+                     const uint16_t* src_v,
+                     uint8_t* rgb_buf,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+void I210AlphaToARGBRow_C(const uint16_t* src_y,
+                          const uint16_t* src_u,
+                          const uint16_t* src_v,
+                          const uint16_t* src_a,
+                          uint8_t* rgb_buf,
+                          const struct YuvConstants* yuvconstants,
+                          int width);
+void I410AlphaToARGBRow_C(const uint16_t* src_y,
+                          const uint16_t* src_u,
+                          const uint16_t* src_v,
+                          const uint16_t* src_a,
+                          uint8_t* rgb_buf,
+                          const struct YuvConstants* yuvconstants,
+                          int width);
+
 void I444AlphaToARGBRow_C(const uint8_t* src_y,
                           const uint8_t* src_u,
                           const uint8_t* src_v,
@@ -2626,6 +2669,27 @@ void UYVYToARGBRow_C(const uint8_t* src_uyvy,
                      uint8_t* rgb_buf,
                      const struct YuvConstants* yuvconstants,
                      int width);
+void P210ToARGBRow_C(const uint16_t* y_buf,
+                     const uint16_t* uv_buf,
+                     uint8_t* dst_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+void P410ToARGBRow_C(const uint16_t* y_buf,
+                     const uint16_t* uv_buf,
+                     uint8_t* dst_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+void P210ToAR30Row_C(const uint16_t* y_buf,
+                     const uint16_t* uv_buf,
+                     uint8_t* dst_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+void P410ToAR30Row_C(const uint16_t* y_buf,
+                     const uint16_t* uv_buf,
+                     uint8_t* dst_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
+
 void I422ToRGBARow_C(const uint8_t* src_y,
                      const uint8_t* src_u,
                      const uint8_t* src_v,
@@ -2705,6 +2769,32 @@ void I210ToARGBRow_SSSE3(const uint16_t* y_buf,
                          uint8_t* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width);
+void I410ToAR30Row_SSSE3(const uint16_t* src_y,
+                         const uint16_t* src_u,
+                         const uint16_t* src_v,
+                         uint8_t* rgb_buf,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void I410ToARGBRow_SSSE3(const uint16_t* src_y,
+                         const uint16_t* src_u,
+                         const uint16_t* src_v,
+                         uint8_t* rgb_buf,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void I210AlphaToARGBRow_SSSE3(const uint16_t* src_y,
+                              const uint16_t* src_u,
+                              const uint16_t* src_v,
+                              const uint16_t* src_a,
+                              uint8_t* rgb_buf,
+                              const struct YuvConstants* yuvconstants,
+                              int width);
+void I410AlphaToARGBRow_SSSE3(const uint16_t* src_y,
+                              const uint16_t* src_u,
+                              const uint16_t* src_v,
+                              const uint16_t* src_a,
+                              uint8_t* rgb_buf,
+                              const struct YuvConstants* yuvconstants,
+                              int width);
 void I422ToAR30Row_AVX2(const uint8_t* y_buf,
                         const uint8_t* u_buf,
                         const uint8_t* v_buf,
@@ -2723,6 +2813,32 @@ void I210ToAR30Row_AVX2(const uint16_t* y_buf,
                         uint8_t* dst_ar30,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I410ToAR30Row_AVX2(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I410ToARGBRow_AVX2(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I210AlphaToARGBRow_AVX2(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             const uint16_t* src_a,
+                             uint8_t* rgb_buf,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I410AlphaToARGBRow_AVX2(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             const uint16_t* src_a,
+                             uint8_t* rgb_buf,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
                               const uint8_t* u_buf,
                               const uint8_t* v_buf,
@@ -2821,6 +2937,48 @@ void UYVYToARGBRow_AVX2(const uint8_t* uyvy_buf,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+
+void P210ToARGBRow_SSSE3(const uint16_t* y_buf,
+                         const uint16_t* uv_buf,
+                         uint8_t* dst_argb,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void P410ToARGBRow_SSSE3(const uint16_t* y_buf,
+                         const uint16_t* uv_buf,
+                         uint8_t* dst_argb,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void P210ToAR30Row_SSSE3(const uint16_t* y_buf,
+                         const uint16_t* uv_buf,
+                         uint8_t* dst_ar30,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void P410ToAR30Row_SSSE3(const uint16_t* y_buf,
+                         const uint16_t* uv_buf,
+                         uint8_t* dst_ar30,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void P210ToARGBRow_AVX2(const uint16_t* y_buf,
+                        const uint16_t* uv_buf,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void P410ToARGBRow_AVX2(const uint16_t* y_buf,
+                        const uint16_t* uv_buf,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void P210ToAR30Row_AVX2(const uint16_t* y_buf,
+                        const uint16_t* uv_buf,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void P410ToAR30Row_AVX2(const uint16_t* y_buf,
+                        const uint16_t* uv_buf,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+
 void I422ToRGBARow_SSSE3(const uint8_t* y_buf,
                          const uint8_t* u_buf,
                          const uint8_t* v_buf,
@@ -2923,6 +3081,32 @@ void I210ToARGBRow_Any_SSSE3(const uint16_t* y_buf,
                              uint8_t* dst_ptr,
                              const struct YuvConstants* yuvconstants,
                              int width);
+void I410ToAR30Row_Any_SSSE3(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             uint8_t* rgb_buf,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I410ToARGBRow_Any_SSSE3(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             uint8_t* rgb_buf,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I210AlphaToARGBRow_Any_SSSE3(const uint16_t* src_y,
+                                  const uint16_t* src_u,
+                                  const uint16_t* src_v,
+                                  const uint16_t* src_a,
+                                  uint8_t* rgb_buf,
+                                  const struct YuvConstants* yuvconstants,
+                                  int width);
+void I410AlphaToARGBRow_Any_SSSE3(const uint16_t* src_y,
+                                  const uint16_t* src_u,
+                                  const uint16_t* src_v,
+                                  const uint16_t* src_a,
+                                  uint8_t* rgb_buf,
+                                  const struct YuvConstants* yuvconstants,
+                                  int width);
 void I422ToAR30Row_Any_AVX2(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,
@@ -2941,6 +3125,32 @@ void I210ToAR30Row_Any_AVX2(const uint16_t* y_buf,
                             uint8_t* dst_ptr,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I410ToAR30Row_Any_AVX2(const uint16_t* src_y,
+                            const uint16_t* src_u,
+                            const uint16_t* src_v,
+                            uint8_t* rgb_buf,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void I410ToARGBRow_Any_AVX2(const uint16_t* src_y,
+                            const uint16_t* src_u,
+                            const uint16_t* src_v,
+                            uint8_t* rgb_buf,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void I210AlphaToARGBRow_Any_AVX2(const uint16_t* src_y,
+                                 const uint16_t* src_u,
+                                 const uint16_t* src_v,
+                                 const uint16_t* src_a,
+                                 uint8_t* rgb_buf,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
+void I410AlphaToARGBRow_Any_AVX2(const uint16_t* src_y,
+                                 const uint16_t* src_u,
+                                 const uint16_t* src_v,
+                                 const uint16_t* src_a,
+                                 uint8_t* rgb_buf,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
 void I444AlphaToARGBRow_Any_SSSE3(const uint8_t* y_buf,
                                   const uint8_t* u_buf,
                                   const uint8_t* v_buf,
@@ -3037,6 +3247,46 @@ void YUY2ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
                             int width);
 void UYVYToARGBRow_Any_AVX2(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P210ToARGBRow_Any_SSSE3(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P410ToARGBRow_Any_SSSE3(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P210ToAR30Row_Any_SSSE3(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_ar30,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P410ToAR30Row_Any_SSSE3(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_ar30,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P210ToARGBRow_Any_AVX2(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P410ToARGBRow_Any_AVX2(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P210ToAR30Row_Any_AVX2(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_ar30,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P410ToAR30Row_Any_AVX2(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_ar30,
                             const struct YuvConstants* yuvconstants,
                             int width);
 void I422ToRGBARow_Any_SSSE3(const uint8_t* y_buf,
@@ -3535,6 +3785,46 @@ void YUY2ToARGBRow_Any_NEON(const uint8_t* src_ptr,
                             int width);
 void UYVYToARGBRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P210ToARGBRow_NEON(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P410ToARGBRow_NEON(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P210ToAR30Row_NEON(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_ar30,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P410ToAR30Row_NEON(const uint16_t* y_buf,
+                             const uint16_t* uv_buf,
+                             uint8_t* dst_ar30,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void P210ToARGBRow_Any_NEON(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P410ToARGBRow_Any_NEON(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P210ToAR30Row_Any_NEON(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_ar30,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void P410ToAR30Row_Any_NEON(const uint16_t* y_buf,
+                            const uint16_t* uv_buf,
+                            uint8_t* dst_ar30,
                             const struct YuvConstants* yuvconstants,
                             int width);
 void I444ToARGBRow_Any_MSA(const uint8_t* y_buf,

@@ -115,6 +115,46 @@ ANY41C(I422AlphaToARGBRow_Any_MMI, I422AlphaToARGBRow_MMI, 1, 0, 4, 7)
 #endif
 #undef ANY41C
 
+// Any 4 planes to 1 plane of 8 bit with yuvconstants
+#define ANY41CT(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, T, SBPP, BPP, MASK)      \
+  void NAMEANY(const T* y_buf, const T* u_buf, const T* v_buf, const T* a_buf, \
+               uint8_t* dst_ptr, const struct YuvConstants* yuvconstants,      \
+               int width) {                                                    \
+    SIMD_ALIGNED(T temp[16 * 4]);                                              \
+    SIMD_ALIGNED(uint8_t out[64]);                                             \
+    memset(temp, 0, 16 * 4 * SBPP); /* for YUY2 and msan */                    \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(y_buf, u_buf, v_buf, a_buf, dst_ptr, yuvconstants, n);          \
+    }                                                                          \
+    memcpy(temp, y_buf + n, r * SBPP);                                         \
+    memcpy(temp + 16, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP);          \
+    memcpy(temp + 32, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP);          \
+    memcpy(temp + 48, a_buf + n, r * SBPP);                                    \
+    ANY_SIMD(temp, temp + 16, temp + 32, temp + 48, out, yuvconstants,         \
+             MASK + 1);                                                        \
+    memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, out, SS(r, DUVSHIFT) * BPP);       \
+  }
+
+#ifdef HAS_I210ALPHATOARGBROW_SSSE3
+ANY41CT(I210AlphaToARGBRow_Any_SSSE3, I210AlphaToARGBRow_SSSE3, 1, 0, uint16_t, 2, 4, 7)
+#endif
+
+#ifdef HAS_I210ALPHATOARGBROW_AVX2
+ANY41CT(I210AlphaToARGBRow_Any_AVX2, I210AlphaToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
+#endif
+
+#ifdef HAS_I410ALPHATOARGBROW_SSSE3
+ANY41CT(I410AlphaToARGBRow_Any_SSSE3, I410AlphaToARGBRow_SSSE3, 0, 0, uint16_t, 2, 4, 7)
+#endif
+
+#ifdef HAS_I410ALPHATOARGBROW_AVX2
+ANY41CT(I410AlphaToARGBRow_Any_AVX2, I410AlphaToARGBRow_AVX2, 0, 0, uint16_t, 2, 4, 15)
+#endif
+
+#undef ANY41CT
+
 // Any 3 planes to 1.
 #define ANY31(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)      \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,          \
@@ -326,6 +366,18 @@ ANY31CT(I210ToARGBRow_Any_AVX2, I210ToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
 #endif
 #ifdef HAS_I210TOAR30ROW_AVX2
 ANY31CT(I210ToAR30Row_Any_AVX2, I210ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
+#endif
+#ifdef HAS_I410TOAR30ROW_SSSE3
+ANY31CT(I410ToAR30Row_Any_SSSE3, I410ToAR30Row_SSSE3, 0, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I410TOARGBROW_SSSE3
+ANY31CT(I410ToARGBRow_Any_SSSE3, I410ToARGBRow_SSSE3, 0, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I410TOARGBROW_AVX2
+ANY31CT(I410ToARGBRow_Any_AVX2, I410ToARGBRow_AVX2, 0, 0, uint16_t, 2, 4, 15)
+#endif
+#ifdef HAS_I410TOAR30ROW_AVX2
+ANY31CT(I410ToAR30Row_Any_AVX2, I410ToAR30Row_AVX2, 0, 0, uint16_t, 2, 4, 15)
 #endif
 #ifdef HAS_I210TOARGBROW_MMI
 ANY31CT(I210ToARGBRow_Any_MMI, I210ToARGBRow_MMI, 1, 0, uint16_t, 2, 4, 7)
@@ -546,12 +598,57 @@ ANY21C(NV12ToRGB565Row_Any_MMI, NV12ToRGB565Row_MMI, 1, 1, 2, 2, 7)
 #endif
 #undef ANY21C
 
+// Any 2 planes of 16 bit to 1 with yuvconstants
+#define ANY21CT(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, T, SBPP, BPP, MASK)      \
+  void NAMEANY(const T* y_buf, const T* uv_buf, uint8_t* dst_ptr,              \
+               const struct YuvConstants* yuvconstants, int width) {           \
+    SIMD_ALIGNED(T temp[16 * 3]);                                              \
+    SIMD_ALIGNED(uint8_t out[64]);                                             \
+    memset(temp, 0, 16 * 3 * SBPP); /* for YUY2 and msan */                    \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(y_buf, uv_buf, dst_ptr, yuvconstants, n);                       \
+    }                                                                          \
+    memcpy(temp, y_buf + n, r * SBPP);                                         \
+    memcpy(temp + 16, uv_buf + 2 * (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP * 2); \
+    ANY_SIMD(temp, temp + 16, out, yuvconstants, MASK + 1);                    \
+    memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, out, SS(r, DUVSHIFT) * BPP);       \
+  }
+
+#ifdef HAS_P210TOAR30ROW_SSSE3
+ANY21CT(P210ToAR30Row_Any_SSSE3, P210ToAR30Row_SSSE3, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_P210TOARGBROW_SSSE3
+ANY21CT(P210ToARGBRow_Any_SSSE3, P210ToARGBRow_SSSE3, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_P210TOARGBROW_AVX2
+ANY21CT(P210ToARGBRow_Any_AVX2, P210ToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
+#endif
+#ifdef HAS_P210TOAR30ROW_AVX2
+ANY21CT(P210ToAR30Row_Any_AVX2, P210ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
+#endif
+#ifdef HAS_P410TOAR30ROW_SSSE3
+ANY21CT(P410ToAR30Row_Any_SSSE3, P410ToAR30Row_SSSE3, 0, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_P410TOARGBROW_SSSE3
+ANY21CT(P410ToARGBRow_Any_SSSE3, P410ToARGBRow_SSSE3, 0, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_P410TOARGBROW_AVX2
+ANY21CT(P410ToARGBRow_Any_AVX2, P410ToARGBRow_AVX2, 0, 0, uint16_t, 2, 4, 15)
+#endif
+#ifdef HAS_P410TOAR30ROW_AVX2
+ANY21CT(P410ToAR30Row_Any_AVX2, P410ToAR30Row_AVX2, 0, 0, uint16_t, 2, 4, 15)
+#endif
+
+#undef ANY21CT
+
 // Any 2 16 bit planes with parameter to 1
 #define ANY21PT(NAMEANY, ANY_SIMD, T, BPP, MASK)                     \
   void NAMEANY(const T* src_u, const T* src_v, T* dst_uv, int depth, \
                int width) {                                          \
     SIMD_ALIGNED(T temp[16 * 4]);                                    \
-    memset(temp, 0, 16 * 4); /* for msan */                          \
+    memset(temp, 0, 16 * 4 * BPP); /* for msan */                    \
     int r = width & MASK;                                            \
     int n = width & ~MASK;                                           \
     if (n > 0) {                                                     \
