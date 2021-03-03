@@ -708,7 +708,7 @@ SUH2LANY(ScaleRowUp2_Linear_Any_NEON,
 SUH2LANY(ScaleRowUp2_Linear_12_Any_NEON,
          ScaleRowUp2_Linear_12_NEON,
          ScaleRowUp2_Linear_16_C,
-         7,
+         15,
          uint16_t)
 #endif
 
@@ -716,7 +716,7 @@ SUH2LANY(ScaleRowUp2_Linear_12_Any_NEON,
 SUH2LANY(ScaleRowUp2_Linear_16_Any_NEON,
          ScaleRowUp2_Linear_16_NEON,
          ScaleRowUp2_Linear_16_C,
-         7,
+         15,
          uint16_t)
 #endif
 
