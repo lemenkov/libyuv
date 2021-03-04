@@ -1488,6 +1488,34 @@ int I010ToARGBMatrix(const uint16_t* src_y,
                      int width,
                      int height);
 
+// multiply 12 bit yuv into high bits to allow any number of bits.
+LIBYUV_API
+int I012ToAR30Matrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint8_t* dst_ar30,
+                     int dst_stride_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
+// Convert 12 bit YUV to ARGB with matrix.
+LIBYUV_API
+int I012ToARGBMatrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint8_t* dst_argb,
+                     int dst_stride_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
 // Convert 10 bit 422 YUV to ARGB with matrix.
 LIBYUV_API
 int I210ToARGBMatrix(const uint16_t* src_y,

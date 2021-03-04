@@ -1619,7 +1619,7 @@ void ScalePlaneUp2_16_Bilinear(int src_width,
                                uint16_t* dst_ptr) {
   void (*Scale2RowUp)(const uint16_t* src_ptr, ptrdiff_t src_stride,
                       uint16_t* dst_ptr, ptrdiff_t dst_stride, int dst_width) =
-  ScaleRowUp2_Bilinear_16_Any_C;
+      ScaleRowUp2_Bilinear_16_Any_C;
   int x;
 
   // This function can only scale up by 2 times.

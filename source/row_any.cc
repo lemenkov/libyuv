@@ -138,19 +138,47 @@ ANY41C(I422AlphaToARGBRow_Any_MMI, I422AlphaToARGBRow_MMI, 1, 0, 4, 7)
   }
 
 #ifdef HAS_I210ALPHATOARGBROW_SSSE3
-ANY41CT(I210AlphaToARGBRow_Any_SSSE3, I210AlphaToARGBRow_SSSE3, 1, 0, uint16_t, 2, 4, 7)
+ANY41CT(I210AlphaToARGBRow_Any_SSSE3,
+        I210AlphaToARGBRow_SSSE3,
+        1,
+        0,
+        uint16_t,
+        2,
+        4,
+        7)
 #endif
 
 #ifdef HAS_I210ALPHATOARGBROW_AVX2
-ANY41CT(I210AlphaToARGBRow_Any_AVX2, I210AlphaToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
+ANY41CT(I210AlphaToARGBRow_Any_AVX2,
+        I210AlphaToARGBRow_AVX2,
+        1,
+        0,
+        uint16_t,
+        2,
+        4,
+        15)
 #endif
 
 #ifdef HAS_I410ALPHATOARGBROW_SSSE3
-ANY41CT(I410AlphaToARGBRow_Any_SSSE3, I410AlphaToARGBRow_SSSE3, 0, 0, uint16_t, 2, 4, 7)
+ANY41CT(I410AlphaToARGBRow_Any_SSSE3,
+        I410AlphaToARGBRow_SSSE3,
+        0,
+        0,
+        uint16_t,
+        2,
+        4,
+        7)
 #endif
 
 #ifdef HAS_I410ALPHATOARGBROW_AVX2
-ANY41CT(I410AlphaToARGBRow_Any_AVX2, I410AlphaToARGBRow_AVX2, 0, 0, uint16_t, 2, 4, 15)
+ANY41CT(I410AlphaToARGBRow_Any_AVX2,
+        I410AlphaToARGBRow_AVX2,
+        0,
+        0,
+        uint16_t,
+        2,
+        4,
+        15)
 #endif
 
 #undef ANY41CT
@@ -381,6 +409,18 @@ ANY31CT(I410ToAR30Row_Any_AVX2, I410ToAR30Row_AVX2, 0, 0, uint16_t, 2, 4, 15)
 #endif
 #ifdef HAS_I210TOARGBROW_MMI
 ANY31CT(I210ToARGBRow_Any_MMI, I210ToARGBRow_MMI, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I212TOAR30ROW_SSSE3
+ANY31CT(I212ToAR30Row_Any_SSSE3, I212ToAR30Row_SSSE3, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I212TOARGBROW_SSSE3
+ANY31CT(I212ToARGBRow_Any_SSSE3, I212ToARGBRow_SSSE3, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I212TOARGBROW_AVX2
+ANY31CT(I212ToARGBRow_Any_AVX2, I212ToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
+#endif
+#ifdef HAS_I212TOAR30ROW_AVX2
+ANY31CT(I212ToAR30Row_Any_AVX2, I212ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
 #endif
 #undef ANY31CT
 

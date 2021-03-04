@@ -2001,6 +2001,19 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba0,
   "packuswb   %%xmm5,%%xmm5                                   \n" \
   "lea        0x10(%[a_buf]),%[a_buf]                         \n"
 
+// Read 4 UV from 422 12 bit, upsample to 8 UV
+#define READYUV212                                                \
+  "movq       (%[u_buf]),%%xmm0                               \n" \
+  "movq       0x00(%[u_buf],%[v_buf],1),%%xmm1                \n" \
+  "lea        0x8(%[u_buf]),%[u_buf]                          \n" \
+  "punpcklwd  %%xmm1,%%xmm0                                   \n" \
+  "psraw      $0x4,%%xmm0                                     \n" \
+  "packuswb   %%xmm0,%%xmm0                                   \n" \
+  "punpcklwd  %%xmm0,%%xmm0                                   \n" \
+  "movdqu     (%[y_buf]),%%xmm4                               \n" \
+  "psllw      $0x4,%%xmm4                                     \n" \
+  "lea        0x10(%[y_buf]),%[y_buf]                         \n"
+
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
 #define READYUVA422                                               \
   "movd       (%[u_buf]),%%xmm0                               \n" \
@@ -2398,6 +2411,36 @@ void OMITFP I210ToARGBRow_SSSE3(const uint16_t* y_buf,
   );
 }
 
+// 12 bit YUV to ARGB
+void OMITFP I212ToARGBRow_SSSE3(const uint16_t* y_buf,
+                                const uint16_t* u_buf,
+                                const uint16_t* v_buf,
+                                uint8_t* dst_argb,
+                                const struct YuvConstants* yuvconstants,
+                                int width) {
+  asm volatile (
+    YUVTORGB_SETUP(yuvconstants)
+      "sub         %[u_buf],%[v_buf]             \n"
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+
+    LABELALIGN
+      "1:                                        \n"
+    READYUV212
+    YUVTORGB(yuvconstants)
+    STOREARGB
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
 // 10 bit YUV to AR30
 void OMITFP I210ToAR30Row_SSSE3(const uint16_t* y_buf,
                                 const uint16_t* u_buf,
@@ -2433,6 +2476,41 @@ void OMITFP I210ToAR30Row_SSSE3(const uint16_t* y_buf,
   );
 }
 
+// 12 bit YUV to AR30
+void OMITFP I212ToAR30Row_SSSE3(const uint16_t* y_buf,
+                                const uint16_t* u_buf,
+                                const uint16_t* v_buf,
+                                uint8_t* dst_ar30,
+                                const struct YuvConstants* yuvconstants,
+                                int width) {
+  asm volatile (
+    YUVTORGB_SETUP(yuvconstants)
+      "sub         %[u_buf],%[v_buf]             \n"
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "psrlw       $14,%%xmm5                    \n"
+      "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
+      "pxor        %%xmm6,%%xmm6                 \n"
+      "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
+      "psrlw       $6,%%xmm7                     \n"  // 1023 for max
+
+    LABELALIGN
+      "1:                                        \n"
+    READYUV212
+    YUVTORGB16(yuvconstants)
+    STOREAR30
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_ar30]"+r"(dst_ar30),  // %[dst_ar30]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+  );
+}
+
 // 10 bit YUV to ARGB
 void OMITFP I410ToARGBRow_SSSE3(const uint16_t* y_buf,
                                 const uint16_t* u_buf,
@@ -2443,16 +2521,16 @@ void OMITFP I410ToARGBRow_SSSE3(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
-    "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "sub         %[u_buf],%[v_buf]             \n"
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READYUV410
     YUVTORGB(yuvconstants)
     STOREARGB
-    "sub         $0x8,%[width]                 \n"
-    "jg          1b                            \n"
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
@@ -2474,29 +2552,26 @@ void OMITFP I210AlphaToARGBRow_SSSE3(const uint16_t* y_buf,
                                      int width) {
   asm volatile(
 
-    YUVTORGB_SETUP(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
+      YUVTORGB_SETUP(
+      yuvconstants) "sub         %[u_buf],%[v_buf]             \n"
 
-    LABELALIGN
-    "1:                                        \n"
-    READYUVA210
-    YUVTORGB(yuvconstants)
-    STOREARGB
-    "subl        $0x8,%[width]                 \n"
-    "jg          1b                            \n"
-  : [y_buf] "+r"(y_buf),  // %[y_buf]
-    [u_buf] "+r"(u_buf),  // %[u_buf]
-    [v_buf] "+r"(v_buf),  // %[v_buf]
-    [a_buf] "+r"(a_buf),
-    [dst_argb] "+r"(dst_argb),         // %[dst_argb]
+      LABELALIGN "1:                                        \n" READYUVA210
+          YUVTORGB(yuvconstants) STOREARGB
+      "subl        $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+      : [y_buf] "+r"(y_buf),  // %[y_buf]
+        [u_buf] "+r"(u_buf),  // %[u_buf]
+        [v_buf] "+r"(v_buf),  // %[v_buf]
+        [a_buf] "+r"(a_buf),
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
 #if defined(__i386__)
-    [width]"+m"(width)     // %[width]
+        [width] "+m"(width)  // %[width]
 #else
-    [width]"+rm"(width)    // %[width]
+        [width] "+rm"(width)  // %[width]
 #endif
-  : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
+      : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
+      : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+        "xmm5");
 }
 #endif
 
@@ -2511,29 +2586,26 @@ void OMITFP I410AlphaToARGBRow_SSSE3(const uint16_t* y_buf,
                                      int width) {
   asm volatile(
 
-    YUVTORGB_SETUP(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
+      YUVTORGB_SETUP(
+      yuvconstants) "sub         %[u_buf],%[v_buf]             \n"
 
-    LABELALIGN
-    "1:                                        \n"
-    READYUVA410
-    YUVTORGB(yuvconstants)
-    STOREARGB
-    "subl        $0x8,%[width]                 \n"
-    "jg          1b                            \n"
-  : [y_buf] "+r"(y_buf),  // %[y_buf]
-    [u_buf] "+r"(u_buf),  // %[u_buf]
-    [v_buf] "+r"(v_buf),  // %[v_buf]
-    [a_buf] "+r"(a_buf),
-    [dst_argb] "+r"(dst_argb),         // %[dst_argb]
+      LABELALIGN "1:                                        \n" READYUVA410
+          YUVTORGB(yuvconstants) STOREARGB
+      "subl        $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+      : [y_buf] "+r"(y_buf),  // %[y_buf]
+        [u_buf] "+r"(u_buf),  // %[u_buf]
+        [v_buf] "+r"(v_buf),  // %[v_buf]
+        [a_buf] "+r"(a_buf),
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
 #if defined(__i386__)
-    [width]"+m"(width)     // %[width]
+        [width] "+m"(width)  // %[width]
 #else
-    [width]"+rm"(width)    // %[width]
+        [width] "+rm"(width)  // %[width]
 #endif
-  : [yuvconstants] "r"(yuvconstants)   // %[yuvconstants]
-  : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
+      : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
+      : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+        "xmm5");
 }
 #endif
 
@@ -2547,21 +2619,21 @@ void OMITFP I410ToAR30Row_SSSE3(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
-    "pcmpeqb     %%xmm5,%%xmm5                 \n"
-    "psrlw       $14,%%xmm5                    \n"
-    "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
-    "pxor        %%xmm6,%%xmm6                 \n"
-    "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
-    "psrlw       $6,%%xmm7                     \n"  // 1023 for max
+      "sub         %[u_buf],%[v_buf]             \n"
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "psrlw       $14,%%xmm5                    \n"
+      "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
+      "pxor        %%xmm6,%%xmm6                 \n"
+      "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
+      "psrlw       $6,%%xmm7                     \n"  // 1023 for max
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READYUV410
     YUVTORGB16(yuvconstants)
     STOREAR30
-    "sub         $0x8,%[width]                 \n"
-    "jg          1b                            \n"
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
@@ -2729,26 +2801,22 @@ void OMITFP P210ToARGBRow_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm volatile (
+  asm volatile(
 
-    YUVTORGB_SETUP(yuvconstants)
-    "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      YUVTORGB_SETUP(
+      yuvconstants) "pcmpeqb     %%xmm5,%%xmm5                 \n"
 
-    LABELALIGN
-    "1:                                        \n"
-    READP210
-    YUVTORGB(yuvconstants)
-    STOREARGB
-    "sub         $0x8,%[width]                 \n"
-    "jg          1b                            \n"
-    : [y_buf] "+r"(y_buf),              // %[y_buf]
-      [uv_buf] "+r"(uv_buf),            // %[u_buf]
-      [dst_argb] "+r"(dst_argb),        // %[dst_argb]
-      [width] "+rm"(width)              // %[width]
-    : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
-    : "memory", "cc", YUVTORGB_REGS
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
+      LABELALIGN "1:                                        \n" READP210
+          YUVTORGB(yuvconstants) STOREARGB
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+      : [y_buf] "+r"(y_buf),              // %[y_buf]
+        [uv_buf] "+r"(uv_buf),            // %[u_buf]
+        [dst_argb] "+r"(dst_argb),        // %[dst_argb]
+        [width] "+rm"(width)              // %[width]
+      : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
+      : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+        "xmm5");
 }
 
 void OMITFP P410ToARGBRow_SSSE3(const uint16_t* y_buf,
@@ -2756,25 +2824,22 @@ void OMITFP P410ToARGBRow_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm volatile (
+  asm volatile(
 
-    YUVTORGB_SETUP(yuvconstants)
-    "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      YUVTORGB_SETUP(
+      yuvconstants) "pcmpeqb     %%xmm5,%%xmm5                 \n"
 
-    LABELALIGN
-    "1:                                        \n"
-    READP410
-    YUVTORGB(yuvconstants)
-    STOREARGB
-    "sub         $0x8,%[width]                 \n"
-    "jg          1b                            \n"
-    : [y_buf] "+r"(y_buf),              // %[y_buf]
-      [uv_buf] "+r"(uv_buf),            // %[u_buf]
-      [dst_argb] "+r"(dst_argb),        // %[dst_argb]
-      [width] "+rm"(width)              // %[width]
-    : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
-    : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
-      "xmm5");
+      LABELALIGN "1:                                        \n" READP410
+          YUVTORGB(yuvconstants) STOREARGB
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+      : [y_buf] "+r"(y_buf),              // %[y_buf]
+        [uv_buf] "+r"(uv_buf),            // %[u_buf]
+        [dst_argb] "+r"(dst_argb),        // %[dst_argb]
+        [width] "+rm"(width)              // %[width]
+      : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
+      : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+        "xmm5");
 }
 
 void OMITFP P210ToAR30Row_SSSE3(const uint16_t* y_buf,
@@ -2785,20 +2850,20 @@ void OMITFP P210ToAR30Row_SSSE3(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP(yuvconstants)
-    "pcmpeqb     %%xmm5,%%xmm5                 \n"
-    "psrlw       $14,%%xmm5                    \n"
-    "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
-    "pxor        %%xmm6,%%xmm6                 \n"
-    "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
-    "psrlw       $6,%%xmm7                     \n"  // 1023 for max
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "psrlw       $14,%%xmm5                    \n"
+      "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
+      "pxor        %%xmm6,%%xmm6                 \n"
+      "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
+      "psrlw       $6,%%xmm7                     \n"  // 1023 for max
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READP210
     YUVTORGB16(yuvconstants)
     STOREAR30
-    "sub         $0x8,%[width]                 \n"
-    "jg          1b                            \n"
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
   : [y_buf]"+r"(y_buf),              // %[y_buf]
     [uv_buf]"+r"(uv_buf),            // %[uv_buf]
     [dst_ar30]"+r"(dst_ar30),        // %[dst_ar30]
@@ -2817,20 +2882,20 @@ void OMITFP P410ToAR30Row_SSSE3(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP(yuvconstants)
-    "pcmpeqb     %%xmm5,%%xmm5                 \n"
-    "psrlw       $14,%%xmm5                    \n"
-    "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
-    "pxor        %%xmm6,%%xmm6                 \n"
-    "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
-    "psrlw       $6,%%xmm7                     \n"  // 1023 for max
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "psrlw       $14,%%xmm5                    \n"
+      "psllw       $4,%%xmm5                     \n"  // 2 alpha bits
+      "pxor        %%xmm6,%%xmm6                 \n"
+      "pcmpeqb     %%xmm7,%%xmm7                 \n"  // 0 for min
+      "psrlw       $6,%%xmm7                     \n"  // 1023 for max
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READP410
     YUVTORGB16(yuvconstants)
     STOREAR30
-    "sub         $0x8,%[width]                 \n"
-    "jg          1b                            \n"
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
   : [y_buf]"+r"(y_buf),              // %[y_buf]
     [uv_buf]"+r"(uv_buf),            // %[uv_buf]
     [dst_ar30]"+r"(dst_ar30),        // %[dst_ar30]
@@ -2946,6 +3011,21 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb  %%ymm1,%%ymm0,%%ymm0                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
   "vpsllw     $6,%%ymm4,%%ymm4                                 \n" \
+  "lea        0x20(%[y_buf]),%[y_buf]                          \n"
+
+// Read 8 UV from 212 12 bit, upsample to 16 UV
+#define READYUV212_AVX2                                            \
+  "vmovdqu    (%[u_buf]),%%xmm0                                \n" \
+  "vmovdqu    0x00(%[u_buf],%[v_buf],1),%%xmm1                 \n" \
+  "lea        0x10(%[u_buf]),%[u_buf]                          \n" \
+  "vpermq     $0xd8,%%ymm0,%%ymm0                              \n" \
+  "vpermq     $0xd8,%%ymm1,%%ymm1                              \n" \
+  "vpunpcklwd %%ymm1,%%ymm0,%%ymm0                             \n" \
+  "vpsraw     $0x4,%%ymm0,%%ymm0                               \n" \
+  "vpackuswb  %%ymm0,%%ymm0,%%ymm0                             \n" \
+  "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                             \n" \
+  "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
+  "vpsllw     $0x4,%%ymm4,%%ymm4                               \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
 // Read 16 UV from 410. With 16 Alpha.
@@ -3295,6 +3375,41 @@ void OMITFP I210ToARGBRow_AVX2(const uint16_t* y_buf,
 }
 #endif  // HAS_I210TOARGBROW_AVX2
 
+#if defined(HAS_I212TOARGBROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+void OMITFP I212ToARGBRow_AVX2(const uint16_t* y_buf,
+                               const uint16_t* u_buf,
+                               const uint16_t* v_buf,
+                               uint8_t* dst_argb,
+                               const struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    YUVTORGB_SETUP_AVX2(yuvconstants)
+      "sub         %[u_buf],%[v_buf]             \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
+
+    LABELALIGN
+      "1:                                        \n"
+    READYUV212_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+
+      "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS_AVX2
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I212TOARGBROW_AVX2
+
 #if defined(HAS_I210TOAR30ROW_AVX2)
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 AR30 (64 bytes).
@@ -3335,6 +3450,46 @@ void OMITFP I210ToAR30Row_AVX2(const uint16_t* y_buf,
 }
 #endif  // HAS_I210TOAR30ROW_AVX2
 
+#if defined(HAS_I212TOAR30ROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 AR30 (64 bytes).
+void OMITFP I212ToAR30Row_AVX2(const uint16_t* y_buf,
+                               const uint16_t* u_buf,
+                               const uint16_t* v_buf,
+                               uint8_t* dst_ar30,
+                               const struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    YUVTORGB_SETUP_AVX2(yuvconstants)
+      "sub         %[u_buf],%[v_buf]             \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
+      "vpsrlw      $14,%%ymm5,%%ymm5             \n"
+      "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
+      "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
+      "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
+      "vpsrlw      $6,%%ymm7,%%ymm7              \n"
+
+    LABELALIGN
+      "1:                                        \n"
+    READYUV212_AVX2
+    YUVTORGB16_AVX2(yuvconstants)
+    STOREAR30_AVX2
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+
+      "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_ar30]"+r"(dst_ar30),  // %[dst_ar30]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS_AVX2
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I212TOAR30ROW_AVX2
+
 #if defined(HAS_I410TOARGBROW_AVX2)
 // 16 pixels
 // 16 UV values with 16 Y producing 16 ARGB (64 bytes).
@@ -3347,17 +3502,17 @@ void OMITFP I410ToARGBRow_AVX2(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP_AVX2(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
-    "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
+      "sub         %[u_buf],%[v_buf]             \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READYUV410_AVX2
     YUVTORGB_AVX2(yuvconstants)
     STOREARGB_AVX2
-    "sub         $0x10,%[width]                \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
 
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
@@ -3383,32 +3538,28 @@ void OMITFP I210AlphaToARGBRow_AVX2(const uint16_t* y_buf,
                                     int width) {
   asm volatile(
 
-    YUVTORGB_SETUP_AVX2(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
+      YUVTORGB_SETUP_AVX2(
+      yuvconstants) "sub         %[u_buf],%[v_buf]             \n"
 
-    LABELALIGN
-    "1:                                        \n"
-    READYUVA210_AVX2
-    YUVTORGB_AVX2(yuvconstants)
-    STOREARGB_AVX2
-    "subl        $0x10,%[width]                \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      LABELALIGN "1:                                        \n" READYUVA210_AVX2
+          YUVTORGB_AVX2(yuvconstants) STOREARGB_AVX2
+      "subl        $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
 
-  : [y_buf] "+r"(y_buf),               // %[y_buf]
-    [u_buf] "+r"(u_buf),               // %[u_buf]
-    [v_buf] "+r"(v_buf),               // %[v_buf]
-    [a_buf] "+r"(a_buf),               // %[a_buf]
-    [dst_argb] "+r"(dst_argb),         // %[dst_argb]
+      : [y_buf] "+r"(y_buf),        // %[y_buf]
+        [u_buf] "+r"(u_buf),        // %[u_buf]
+        [v_buf] "+r"(v_buf),        // %[v_buf]
+        [a_buf] "+r"(a_buf),        // %[a_buf]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
 #if defined(__i386__)
-    [width]"+m"(width)     // %[width]
+        [width] "+m"(width)  // %[width]
 #else
-    [width]"+rm"(width)    // %[width]
+        [width] "+rm"(width)  // %[width]
 #endif
-  : [yuvconstants] "r"(yuvconstants)   // %[yuvconstants]
-  : "memory", "cc", YUVTORGB_REGS_AVX2 "xmm0", "xmm1", "xmm2", "xmm3",
-      "xmm4", "xmm5"
-  );
+      : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
+      : "memory", "cc", YUVTORGB_REGS_AVX2 "xmm0", "xmm1", "xmm2", "xmm3",
+        "xmm4", "xmm5");
 }
 #endif  // HAS_I210TOARGBROW_AVX2
 
@@ -3424,32 +3575,28 @@ void OMITFP I410AlphaToARGBRow_AVX2(const uint16_t* y_buf,
                                     int width) {
   asm volatile(
 
-    YUVTORGB_SETUP_AVX2(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
+      YUVTORGB_SETUP_AVX2(
+      yuvconstants) "sub         %[u_buf],%[v_buf]             \n"
 
-    LABELALIGN
-    "1:                                        \n"
-    READYUVA410_AVX2
-    YUVTORGB_AVX2(yuvconstants)
-    STOREARGB_AVX2
-    "subl        $0x10,%[width]                \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      LABELALIGN "1:                                        \n" READYUVA410_AVX2
+          YUVTORGB_AVX2(yuvconstants) STOREARGB_AVX2
+      "subl        $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
 
-  : [y_buf] "+r"(y_buf),               // %[y_buf]
-    [u_buf] "+r"(u_buf),               // %[u_buf]
-    [v_buf] "+r"(v_buf),               // %[v_buf]
-    [a_buf] "+r"(a_buf),               // %[a_buf]
-    [dst_argb] "+r"(dst_argb),         // %[dst_argb]
+      : [y_buf] "+r"(y_buf),        // %[y_buf]
+        [u_buf] "+r"(u_buf),        // %[u_buf]
+        [v_buf] "+r"(v_buf),        // %[v_buf]
+        [a_buf] "+r"(a_buf),        // %[a_buf]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
 #if defined(__i386__)
-    [width]"+m"(width)     // %[width]
+        [width] "+m"(width)  // %[width]
 #else
-    [width]"+rm"(width)    // %[width]
+        [width] "+rm"(width)  // %[width]
 #endif
-  : [yuvconstants] "r"(yuvconstants)   // %[yuvconstants]
-  : "memory", "cc", YUVTORGB_REGS_AVX2 "xmm0", "xmm1", "xmm2", "xmm3",
-    "xmm4", "xmm5"
-  );
+      : [yuvconstants] "r"(yuvconstants)  // %[yuvconstants]
+      : "memory", "cc", YUVTORGB_REGS_AVX2 "xmm0", "xmm1", "xmm2", "xmm3",
+        "xmm4", "xmm5");
 }
 #endif  // HAS_I410TOARGBROW_AVX2
 
@@ -3465,23 +3612,23 @@ void OMITFP I410ToAR30Row_AVX2(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP_AVX2(yuvconstants)
-    "sub         %[u_buf],%[v_buf]             \n"
-    "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
-    "vpsrlw      $14,%%ymm5,%%ymm5             \n"
-    "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
-    "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
-    "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
-    "vpsrlw      $6,%%ymm7,%%ymm7              \n"
+      "sub         %[u_buf],%[v_buf]             \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
+      "vpsrlw      $14,%%ymm5,%%ymm5             \n"
+      "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
+      "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
+      "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
+      "vpsrlw      $6,%%ymm7,%%ymm7              \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READYUV410_AVX2
     YUVTORGB16_AVX2(yuvconstants)
     STOREAR30_AVX2
-    "sub         $0x10,%[width]                \n"
-    "jg          1b                            \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
 
-    "vzeroupper                                \n"
+      "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
@@ -3764,16 +3911,16 @@ void OMITFP P210ToARGBRow_AVX2(const uint16_t* y_buf,
   // clang-format off
   asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
-    "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READP210_AVX2
     YUVTORGB_AVX2(yuvconstants)
     STOREARGB_AVX2
-    "sub         $0x10,%[width]                \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
@@ -3797,16 +3944,16 @@ void OMITFP P410ToARGBRow_AVX2(const uint16_t* y_buf,
   // clang-format off
   asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
-    "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READP410_AVX2
     YUVTORGB_AVX2(yuvconstants)
     STOREARGB_AVX2
-    "sub         $0x10,%[width]                \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
@@ -3830,22 +3977,22 @@ void OMITFP P210ToAR30Row_AVX2(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP_AVX2(yuvconstants)
-    "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
-    "vpsrlw      $14,%%ymm5,%%ymm5             \n"
-    "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
-    "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
-    "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
-    "vpsrlw      $6,%%ymm7,%%ymm7              \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
+      "vpsrlw      $14,%%ymm5,%%ymm5             \n"
+      "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
+      "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
+      "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
+      "vpsrlw      $6,%%ymm7,%%ymm7              \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READP210_AVX2
     YUVTORGB16_AVX2(yuvconstants)
     STOREAR30_AVX2
-    "sub         $0x10,%[width]                \n"
-    "jg          1b                            \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
 
-    "vzeroupper                                \n"
+      "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
     [dst_ar30]"+r"(dst_ar30),  // %[dst_ar30]
@@ -3868,22 +4015,22 @@ void OMITFP P410ToAR30Row_AVX2(const uint16_t* y_buf,
   asm volatile (
 
     YUVTORGB_SETUP_AVX2(yuvconstants)
-    "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
-    "vpsrlw      $14,%%ymm5,%%ymm5             \n"
-    "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
-    "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
-    "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
-    "vpsrlw      $6,%%ymm7,%%ymm7              \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
+      "vpsrlw      $14,%%ymm5,%%ymm5             \n"
+      "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
+      "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"  // 0 for min
+      "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"  // 1023 for max
+      "vpsrlw      $6,%%ymm7,%%ymm7              \n"
 
     LABELALIGN
-    "1:                                        \n"
+      "1:                                        \n"
     READP410_AVX2
     YUVTORGB16_AVX2(yuvconstants)
     STOREAR30_AVX2
-    "sub         $0x10,%[width]                \n"
-    "jg          1b                            \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
 
-    "vzeroupper                                \n"
+      "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
     [dst_ar30]"+r"(dst_ar30),  // %[dst_ar30]
@@ -4409,33 +4556,33 @@ void SplitUVRow_16_AVX2(const uint16_t* src_uv,
   depth = 16 - depth;
   // clang-format off
   asm volatile (
-    "vmovd       %4,%%xmm3                     \n"
-    "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
-    "vbroadcastss %%xmm3,%%xmm3                \n"
-    "vbroadcastf128 %5,%%ymm4                  \n"
-    "sub         %1,%2                         \n"
+      "vmovd       %4,%%xmm3                     \n"
+      "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
+      "vbroadcastss %%xmm3,%%xmm3                \n"
+      "vbroadcastf128 %5,%%ymm4                  \n"
+      "sub         %1,%2                         \n"
 
     // 16 pixels per loop.
     LABELALIGN
-    "1:                                        \n"
-    "vmovdqu     (%0),%%ymm0                   \n"
-    "vmovdqu     0x20(%0),%%ymm1               \n"
-    "add         $0x40,%0                      \n"
+      "1:                                        \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vmovdqu     0x20(%0),%%ymm1               \n"
+      "add         $0x40,%0                      \n"
 
-    "vpsrlw      %%xmm3,%%ymm0,%%ymm0          \n"
-    "vpsrlw      %%xmm3,%%ymm1,%%ymm1          \n"
-    "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"
-    "vpshufb     %%ymm4,%%ymm1,%%ymm1          \n"
-    "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
-    "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
-    "vextractf128 $0x0,%%ymm0,(%1)             \n"
-    "vextractf128 $0x0,%%ymm1,0x10(%1)         \n"
-    "vextractf128 $0x1,%%ymm0,(%1,%2)          \n"
-    "vextractf128 $0x1,%%ymm1,0x10(%1,%2)      \n"
-    "add         $0x20,%1                      \n"
-    "sub         $0x10,%3                      \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      "vpsrlw      %%xmm3,%%ymm0,%%ymm0          \n"
+      "vpsrlw      %%xmm3,%%ymm1,%%ymm1          \n"
+      "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"
+      "vpshufb     %%ymm4,%%ymm1,%%ymm1          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
+      "vextractf128 $0x0,%%ymm0,(%1)             \n"
+      "vextractf128 $0x0,%%ymm1,0x10(%1)         \n"
+      "vextractf128 $0x1,%%ymm0,(%1,%2)          \n"
+      "vextractf128 $0x1,%%ymm1,0x10(%1,%2)      \n"
+      "add         $0x20,%1                      \n"
+      "sub         $0x10,%3                      \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
   : "+r"(src_uv),   // %0
     "+r"(dst_u),   // %1
     "+r"(dst_v),  // %2
@@ -4499,24 +4646,24 @@ void DivideRow_16_AVX2(const uint16_t* src_y,
                        int width) {
   // clang-format off
   asm volatile (
-    "vmovd       %3,%%xmm3                     \n"
-    "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
-    "vbroadcastss %%xmm3,%%ymm3                \n"
-    "sub         %0,%1                         \n"
+      "vmovd       %3,%%xmm3                     \n"
+      "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
+      "vbroadcastss %%xmm3,%%ymm3                \n"
+      "sub         %0,%1                         \n"
 
     // 32 pixels per loop.
     LABELALIGN
-    "1:                                        \n"
-    "vmovdqu     (%0),%%ymm0                   \n"
-    "vmovdqu     0x20(%0),%%ymm1               \n"
-    "vpmulhuw    %%ymm3,%%ymm0,%%ymm0          \n"
-    "vpmulhuw    %%ymm3,%%ymm1,%%ymm1          \n"
-    "vmovdqu     %%ymm0,(%0,%1)                \n"
-    "vmovdqu     %%ymm1,0x20(%0,%1)            \n"
-    "add         $0x40,%0                      \n"
-    "sub         $0x20,%2                      \n"
-    "jg          1b                            \n"
-    "vzeroupper                                \n"
+      "1:                                        \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vmovdqu     0x20(%0),%%ymm1               \n"
+      "vpmulhuw    %%ymm3,%%ymm0,%%ymm0          \n"
+      "vpmulhuw    %%ymm3,%%ymm1,%%ymm1          \n"
+      "vmovdqu     %%ymm0,(%0,%1)                \n"
+      "vmovdqu     %%ymm1,0x20(%0,%1)            \n"
+      "add         $0x40,%0                      \n"
+      "sub         $0x20,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
   : "+r"(src_y),   // %0
     "+r"(dst_y),   // %1
     "+r"(width),    // %2
@@ -5173,7 +5320,7 @@ void SplitARGBRow_SSSE3(const uint8_t* src_argb,
 #if defined(__i386__)
         "+m"(width)  // %5
 #else
-        "+rm"(width)  // %5
+        "+rm"(width)          // %5
 #endif
       : "m"(kShuffleMaskARGBSplit)  // %6
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
@@ -5264,7 +5411,7 @@ void SplitARGBRow_AVX2(const uint8_t* src_argb,
 #if defined(__i386__)
         "+m"(width)  // %5
 #else
-        "+rm"(width)  // %5
+        "+rm"(width)          // %5
 #endif
       : "m"(kShuffleMaskARGBSplit),   // %6
         "m"(kShuffleMaskARGBPermute)  // %7
@@ -7981,7 +8128,7 @@ void HalfFloatRow_AVX2(const uint16_t* src,
 #if defined(__x86_64__)
       : "x"(scale)  // %3
 #else
-      : "m"(scale)    // %3
+      : "m"(scale)            // %3
 #endif
       : "memory", "cc", "xmm2", "xmm3", "xmm4", "xmm5");
 }
@@ -8019,7 +8166,7 @@ void HalfFloatRow_F16C(const uint16_t* src,
 #if defined(__x86_64__)
       : "x"(scale)  // %3
 #else
-      : "m"(scale)    // %3
+      : "m"(scale)            // %3
 #endif
       : "memory", "cc", "xmm2", "xmm3", "xmm4");
 }

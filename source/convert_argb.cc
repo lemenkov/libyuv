@@ -888,6 +888,63 @@ int U010ToAB30(const uint16_t* src_y,
                           &kYuv2020Constants, width, height);
 }
 
+// Convert 12 bit YUV to ARGB with matrix.
+// TODO(fbarchard): Consider passing scale multiplier to I212ToARGB to
+// multiply 12 bit yuv into high bits to allow any number of bits.
+LIBYUV_API
+int I012ToAR30Matrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint8_t* dst_ar30,
+                     int dst_stride_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height) {
+  int y;
+  void (*I212ToAR30Row)(const uint16_t* y_buf, const uint16_t* u_buf,
+                        const uint16_t* v_buf, uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants, int width) =
+      I212ToAR30Row_C;
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_stride_ar30 = -dst_stride_ar30;
+  }
+#if defined(HAS_I212TOAR30ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I212ToAR30Row = I212ToAR30Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I212ToAR30Row = I212ToAR30Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I212TOAR30ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I212ToAR30Row = I212ToAR30Row_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I212ToAR30Row = I212ToAR30Row_AVX2;
+    }
+  }
+#endif
+  for (y = 0; y < height; ++y) {
+    I212ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
+    dst_ar30 += dst_stride_ar30;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+
 // Convert 10 bit YUV to ARGB with matrix.
 // TODO(fbarchard): Consider passing scale multiplier to I210ToARGB to
 // multiply 10 bit yuv into high bits to allow any number of bits.
@@ -1061,7 +1118,7 @@ int I410ToAR30Matrix(const uint16_t* src_y,
   void (*I410ToAR30Row)(const uint16_t* y_buf, const uint16_t* u_buf,
                         const uint16_t* v_buf, uint8_t* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
-  I410ToAR30Row_C;
+      I410ToAR30Row_C;
   if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
     return -1;
   }
@@ -1260,6 +1317,61 @@ int U010ToABGR(const uint16_t* src_y,
                           width, height);
 }
 
+// Convert 12 bit YUV to ARGB with matrix.
+LIBYUV_API
+int I012ToARGBMatrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint8_t* dst_argb,
+                     int dst_stride_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height) {
+  int y;
+  void (*I212ToARGBRow)(const uint16_t* y_buf, const uint16_t* u_buf,
+                        const uint16_t* v_buf, uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants, int width) =
+      I212ToARGBRow_C;
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+#if defined(HAS_I212TOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I212ToARGBRow = I212ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I212ToARGBRow = I212ToARGBRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I212TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I212ToARGBRow = I212ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I212ToARGBRow = I212ToARGBRow_AVX2;
+    }
+  }
+#endif
+  for (y = 0; y < height; ++y) {
+    I212ToARGBRow(src_y, src_u, src_v, dst_argb, yuvconstants, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+
 // Convert 10 bit 422 YUV to ARGB with matrix.
 LIBYUV_API
 int I210ToARGBMatrix(const uint16_t* src_y,
@@ -1437,7 +1549,7 @@ int I410ToARGBMatrix(const uint16_t* src_y,
   void (*I410ToARGBRow)(const uint16_t* y_buf, const uint16_t* u_buf,
                         const uint16_t* v_buf, uint8_t* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
-  I410ToARGBRow_C;
+      I410ToARGBRow_C;
   if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1484,9 +1596,9 @@ int P010ToARGBMatrix(const uint16_t* src_y,
                      int width,
                      int height) {
   int y;
-  void (*P210ToARGBRow)(const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
-                        const struct YuvConstants* yuvconstants, int width) =
-  P210ToARGBRow_C;
+  void (*P210ToARGBRow)(
+      const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
+      const struct YuvConstants* yuvconstants, int width) = P210ToARGBRow_C;
   if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1534,9 +1646,9 @@ int P210ToARGBMatrix(const uint16_t* src_y,
                      int width,
                      int height) {
   int y;
-  void (*P210ToARGBRow)(const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
-                        const struct YuvConstants* yuvconstants, int width) =
-  P210ToARGBRow_C;
+  void (*P210ToARGBRow)(
+      const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
+      const struct YuvConstants* yuvconstants, int width) = P210ToARGBRow_C;
   if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1582,9 +1694,9 @@ int P010ToAR30Matrix(const uint16_t* src_y,
                      int width,
                      int height) {
   int y;
-  void (*P210ToAR30Row)(const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
-                        const struct YuvConstants* yuvconstants, int width) =
-  P210ToAR30Row_C;
+  void (*P210ToAR30Row)(
+      const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
+      const struct YuvConstants* yuvconstants, int width) = P210ToAR30Row_C;
   if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0) {
     return -1;
   }
@@ -1632,9 +1744,9 @@ int P210ToAR30Matrix(const uint16_t* src_y,
                      int width,
                      int height) {
   int y;
-  void (*P210ToAR30Row)(const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
-                        const struct YuvConstants* yuvconstants, int width) =
-  P210ToAR30Row_C;
+  void (*P210ToAR30Row)(
+      const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
+      const struct YuvConstants* yuvconstants, int width) = P210ToAR30Row_C;
   if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0) {
     return -1;
   }

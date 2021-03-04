@@ -3167,67 +3167,11 @@ TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
 }
 #endif  // HAS_ABGRTOAR30ROW_AVX2
 
-// TODO(fbarchard): Fix clamping issue affected by U channel.
-#define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,    \
-                         ALIGN, YALIGN, W1280, N, NEG, SOFF, DOFF, S_DEPTH) \
-  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                     \
-    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
-    const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                \
-    const int kStrideB = ALIGNINT(kWidth * BPP_B, ALIGN);                   \
-    const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                     \
-    const int kSizeUV = kStrideUV * SUBSAMPLE(kHeight, SUBSAMP_Y);          \
-    const int kBpc = 2;                                                     \
-    align_buffer_page_end(src_y, kWidth* kHeight* kBpc + SOFF);             \
-    align_buffer_page_end(src_u, kSizeUV* kBpc + SOFF);                     \
-    align_buffer_page_end(src_v, kSizeUV* kBpc + SOFF);                     \
-    align_buffer_page_end(dst_argb_c, kStrideB* kHeight + DOFF);            \
-    align_buffer_page_end(dst_argb_opt, kStrideB* kHeight + DOFF);          \
-    for (int i = 0; i < kWidth * kHeight; ++i) {                            \
-      reinterpret_cast<uint16_t*>(src_y + SOFF)[i] =                        \
-          (fastrand() & ((1 << S_DEPTH) - 1));                              \
-    }                                                                       \
-    for (int i = 0; i < kSizeUV; ++i) {                                     \
-      reinterpret_cast<uint16_t*>(src_u + SOFF)[i] =                        \
-          (fastrand() & ((1 << S_DEPTH) - 1));                              \
-      reinterpret_cast<uint16_t*>(src_v + SOFF)[i] =                        \
-          (fastrand() & ((1 << S_DEPTH) - 1));                              \
-    }                                                                       \
-    memset(dst_argb_c + DOFF, 1, kStrideB * kHeight);                       \
-    memset(dst_argb_opt + DOFF, 101, kStrideB * kHeight);                   \
-    MaskCpuFlags(disable_cpu_flags_);                                       \
-    FMT_PLANAR##To##FMT_B(                                                  \
-        reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                  \
-        reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,               \
-        reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,               \
-        dst_argb_c + DOFF, kStrideB, kWidth, NEG kHeight);                  \
-    MaskCpuFlags(benchmark_cpu_info_);                                      \
-    for (int i = 0; i < benchmark_iterations_; ++i) {                       \
-      FMT_PLANAR##To##FMT_B(                                                \
-          reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                \
-          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,             \
-          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,             \
-          dst_argb_opt + DOFF, kStrideB, kWidth, NEG kHeight);              \
-    }                                                                       \
-    for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                    \
-      EXPECT_EQ(dst_argb_c[i + DOFF], dst_argb_opt[i + DOFF]);              \
-    }                                                                       \
-    free_aligned_buffer_page_end(src_y);                                    \
-    free_aligned_buffer_page_end(src_u);                                    \
-    free_aligned_buffer_page_end(src_v);                                    \
-    free_aligned_buffer_page_end(dst_argb_c);                               \
-    free_aligned_buffer_page_end(dst_argb_opt);                             \
-  }
-
-#define TESTPLANAR16TOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
-                        YALIGN, S_DEPTH)                                       \
-  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_ - 4, _Any, +, 0, 0, S_DEPTH)       \
-  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_, _Unaligned, +, 1, 1, S_DEPTH)     \
-  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_, _Invert, -, 0, 0, S_DEPTH)        \
-  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_, _Opt, +, 0, 0, S_DEPTH)
+// Provide matrix wrappers for 12 bit YUV
+#define I012ToARGB(a, b, c, d, e, f, g, h, i, j) \
+  I012ToARGBMatrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
+#define I012ToAR30(a, b, c, d, e, f, g, h, i, j) \
+  I012ToAR30Matrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
 
 #define I410ToARGB(a, b, c, d, e, f, g, h, i, j) \
   I410ToARGBMatrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
@@ -3254,43 +3198,105 @@ TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
 #define U410ToAB30(a, b, c, d, e, f, g, h, i, j) \
   I410ToAB30Matrix(a, b, c, d, e, f, g, h, &kYuv2020Constants, i, j)
 
-TESTPLANAR16TOB(I010, 2, 2, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(I010, 2, 2, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(H010, 2, 2, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(H010, 2, 2, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(U010, 2, 2, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(U010, 2, 2, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(I210, 2, 1, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(I210, 2, 1, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(H210, 2, 1, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(H210, 2, 1, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(U210, 2, 1, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(U210, 2, 1, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(I410, 1, 1, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(I410, 1, 1, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(H410, 1, 1, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(H410, 1, 1, ABGR, 4, 4, 1, 10)
-TESTPLANAR16TOB(U410, 1, 1, ARGB, 4, 4, 1, 10)
-TESTPLANAR16TOB(U410, 1, 1, ABGR, 4, 4, 1, 10)
+// TODO(fbarchard): Fix clamping issue affected by U channel.
+#define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B,   \
+                         BPP_B, ALIGN, YALIGN, W1280, N, NEG, SOFF, DOFF)     \
+  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                       \
+    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                           \
+    const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                  \
+    const int kStrideB = ALIGNINT(kWidth * BPP_B, ALIGN);                     \
+    const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                       \
+    const int kSizeUV = kStrideUV * SUBSAMPLE(kHeight, SUBSAMP_Y);            \
+    const int kBpc = 2;                                                       \
+    align_buffer_page_end(src_y, kWidth* kHeight* kBpc + SOFF);               \
+    align_buffer_page_end(src_u, kSizeUV* kBpc + SOFF);                       \
+    align_buffer_page_end(src_v, kSizeUV* kBpc + SOFF);                       \
+    align_buffer_page_end(dst_argb_c, kStrideB* kHeight + DOFF);              \
+    align_buffer_page_end(dst_argb_opt, kStrideB* kHeight + DOFF);            \
+    for (int i = 0; i < kWidth * kHeight; ++i) {                              \
+      reinterpret_cast<uint16_t*>(src_y + SOFF)[i] = (fastrand() & FMT_MASK); \
+    }                                                                         \
+    for (int i = 0; i < kSizeUV; ++i) {                                       \
+      reinterpret_cast<uint16_t*>(src_u + SOFF)[i] = (fastrand() & FMT_MASK); \
+      reinterpret_cast<uint16_t*>(src_v + SOFF)[i] = (fastrand() & FMT_MASK); \
+    }                                                                         \
+    memset(dst_argb_c + DOFF, 1, kStrideB * kHeight);                         \
+    memset(dst_argb_opt + DOFF, 101, kStrideB * kHeight);                     \
+    MaskCpuFlags(disable_cpu_flags_);                                         \
+    FMT_PLANAR##To##FMT_B(                                                    \
+        reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                    \
+        reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,                 \
+        reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,                 \
+        dst_argb_c + DOFF, kStrideB, kWidth, NEG kHeight);                    \
+    MaskCpuFlags(benchmark_cpu_info_);                                        \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                         \
+      FMT_PLANAR##To##FMT_B(                                                  \
+          reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                  \
+          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,               \
+          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,               \
+          dst_argb_opt + DOFF, kStrideB, kWidth, NEG kHeight);                \
+    }                                                                         \
+    for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                      \
+      EXPECT_EQ(dst_argb_c[i + DOFF], dst_argb_opt[i + DOFF]);                \
+    }                                                                         \
+    free_aligned_buffer_page_end(src_y);                                      \
+    free_aligned_buffer_page_end(src_u);                                      \
+    free_aligned_buffer_page_end(src_v);                                      \
+    free_aligned_buffer_page_end(dst_argb_c);                                 \
+    free_aligned_buffer_page_end(dst_argb_opt);                               \
+  }
+
+#define TESTPLANAR16TOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B,   \
+                        BPP_B, ALIGN, YALIGN)                                \
+  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B, BPP_B, \
+                   ALIGN, YALIGN, benchmark_width_ - 4, _Any, +, 0, 0)       \
+  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B, BPP_B, \
+                   ALIGN, YALIGN, benchmark_width_, _Unaligned, +, 1, 1)     \
+  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B, BPP_B, \
+                   ALIGN, YALIGN, benchmark_width_, _Invert, -, 0, 0)        \
+  TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B, BPP_B, \
+                   ALIGN, YALIGN, benchmark_width_, _Opt, +, 0, 0)
+
+TESTPLANAR16TOB(I010, 2, 2, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(I010, 2, 2, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(H010, 2, 2, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(H010, 2, 2, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(U010, 2, 2, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(U010, 2, 2, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(I210, 2, 1, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(I210, 2, 1, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(H210, 2, 1, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(H210, 2, 1, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(U210, 2, 1, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(U210, 2, 1, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(I410, 1, 1, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(I410, 1, 1, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(H410, 1, 1, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(H410, 1, 1, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(U410, 1, 1, 0x3ff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(U410, 1, 1, 0x3ff, ABGR, 4, 4, 1)
+TESTPLANAR16TOB(I012, 2, 2, 0xfff, ARGB, 4, 4, 1)
+
 #ifdef LITTLE_ENDIAN_ONLY_TEST
-TESTPLANAR16TOB(I010, 2, 2, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(I010, 2, 2, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(H010, 2, 2, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(H010, 2, 2, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(U010, 2, 2, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(U010, 2, 2, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(I210, 2, 1, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(I210, 2, 1, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(H210, 2, 1, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(H210, 2, 1, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(U210, 2, 1, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(U210, 2, 1, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(I410, 1, 1, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(I410, 1, 1, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(H410, 1, 1, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(H410, 1, 1, AB30, 4, 4, 1, 10)
-TESTPLANAR16TOB(U410, 1, 1, AR30, 4, 4, 1, 10)
-TESTPLANAR16TOB(U410, 1, 1, AB30, 4, 4, 1, 10)
+TESTPLANAR16TOB(I010, 2, 2, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(I010, 2, 2, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(H010, 2, 2, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(H010, 2, 2, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(U010, 2, 2, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(U010, 2, 2, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(I210, 2, 1, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(I210, 2, 1, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(H210, 2, 1, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(H210, 2, 1, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(U210, 2, 1, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(U210, 2, 1, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(I410, 1, 1, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(I410, 1, 1, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(H410, 1, 1, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(H410, 1, 1, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AB30, 4, 4, 1)
+TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
 #endif
 
 #define TESTQPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,      \

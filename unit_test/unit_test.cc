@@ -26,9 +26,13 @@ unsigned int fastrand_seed = 0xfb;
 ABSL_FLAG(int32_t, libyuv_width, 0, "width of test image.");
 ABSL_FLAG(int32_t, libyuv_height, 0, "height of test image.");
 ABSL_FLAG(int32_t, libyuv_repeat, 0, "number of times to repeat test.");
-ABSL_FLAG(int32_t, libyuv_flags, 0,
+ABSL_FLAG(int32_t,
+          libyuv_flags,
+          0,
           "cpu flags for reference code. 1 = C, -1 = SIMD");
-ABSL_FLAG(int32_t, libyuv_cpu_info, 0,
+ABSL_FLAG(int32_t,
+          libyuv_cpu_info,
+          0,
           "cpu flags for benchmark code. 1 = C, -1 = SIMD");
 #else
 // Disable command line parameters if absl/flags disabled.
