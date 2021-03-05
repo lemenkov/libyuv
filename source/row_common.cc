@@ -2221,47 +2221,47 @@ void I410ToAR30Row_C(const uint16_t* src_y,
 // P210 has 10 bits in msb of 16 bit NV12 style layout.
 void P210ToARGBRow_C(const uint16_t* src_y,
                      const uint16_t* src_uv,
-                     uint8_t* rgb_buf,
+                     uint8_t* dst_argb,
                      const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel16_8(src_y[0], src_uv[0], src_uv[1], rgb_buf + 0, rgb_buf + 1,
-                 rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
-    YuvPixel16_8(src_y[1], src_uv[0], src_uv[1], rgb_buf + 4, rgb_buf + 5,
-                 rgb_buf + 6, yuvconstants);
-    rgb_buf[7] = 255;
+    YuvPixel16_8(src_y[0], src_uv[0], src_uv[1], dst_argb + 0, dst_argb + 1,
+                 dst_argb + 2, yuvconstants);
+    dst_argb[3] = 255;
+    YuvPixel16_8(src_y[1], src_uv[0], src_uv[1], dst_argb + 4, dst_argb + 5,
+                 dst_argb + 6, yuvconstants);
+    dst_argb[7] = 255;
     src_y += 2;
     src_uv += 2;
-    rgb_buf += 8;  // Advance 2 pixels.
+    dst_argb += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel16_8(src_y[0], src_uv[0], src_uv[1], rgb_buf + 0, rgb_buf + 1,
-                 rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
+    YuvPixel16_8(src_y[0], src_uv[0], src_uv[1], dst_argb + 0, dst_argb + 1,
+                 dst_argb + 2, yuvconstants);
+    dst_argb[3] = 255;
   }
 }
 
 void P410ToARGBRow_C(const uint16_t* src_y,
                      const uint16_t* src_uv,
-                     uint8_t* rgb_buf,
+                     uint8_t* dst_argb,
                      const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    YuvPixel16_8(src_y[0], src_uv[0], src_uv[1], rgb_buf + 0, rgb_buf + 1,
-                 rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
+    YuvPixel16_8(src_y[0], src_uv[0], src_uv[1], dst_argb + 0, dst_argb + 1,
+                 dst_argb + 2, yuvconstants);
+    dst_argb[3] = 255;
     src_y += 1;
     src_uv += 2;
-    rgb_buf += 4;  // Advance 1 pixels.
+    dst_argb += 4;  // Advance 1 pixels.
   }
 }
 
 void P210ToAR30Row_C(const uint16_t* src_y,
                      const uint16_t* src_uv,
-                     uint8_t* rgb_buf,
+                     uint8_t* dst_ar30,
                      const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
@@ -2270,22 +2270,22 @@ void P210ToAR30Row_C(const uint16_t* src_y,
   int r;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel16_16(src_y[0], src_uv[0], src_uv[1], &b, &g, &r, yuvconstants);
-    StoreAR30(rgb_buf, b, g, r);
+    StoreAR30(dst_ar30, b, g, r);
     YuvPixel16_16(src_y[1], src_uv[0], src_uv[1], &b, &g, &r, yuvconstants);
-    StoreAR30(rgb_buf + 4, b, g, r);
+    StoreAR30(dst_ar30 + 4, b, g, r);
     src_y += 2;
     src_uv += 2;
-    rgb_buf += 8;  // Advance 2 pixels.
+    dst_ar30 += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
     YuvPixel16_16(src_y[0], src_uv[0], src_uv[1], &b, &g, &r, yuvconstants);
-    StoreAR30(rgb_buf, b, g, r);
+    StoreAR30(dst_ar30, b, g, r);
   }
 }
 
 void P410ToAR30Row_C(const uint16_t* src_y,
                      const uint16_t* src_uv,
-                     uint8_t* rgb_buf,
+                     uint8_t* dst_ar30,
                      const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
@@ -2294,10 +2294,10 @@ void P410ToAR30Row_C(const uint16_t* src_y,
   int r;
   for (x = 0; x < width; ++x) {
     YuvPixel16_16(src_y[0], src_uv[0], src_uv[1], &b, &g, &r, yuvconstants);
-    StoreAR30(rgb_buf, b, g, r);
+    StoreAR30(dst_ar30, b, g, r);
     src_y += 1;
     src_uv += 2;
-    rgb_buf += 4;  // Advance 1 pixel.
+    dst_ar30 += 4;  // Advance 1 pixel.
   }
 }
 
