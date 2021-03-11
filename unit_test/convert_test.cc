@@ -3257,6 +3257,8 @@ TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
   TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B, BPP_B, \
                    ALIGN, YALIGN, benchmark_width_, _Opt, +, 0, 0)
 
+// These conversions are only optimized for x86
+#if defined(ENABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
 TESTPLANAR16TOB(I010, 2, 2, 0x3ff, ARGB, 4, 4, 1)
 TESTPLANAR16TOB(I010, 2, 2, 0x3ff, ABGR, 4, 4, 1)
 TESTPLANAR16TOB(H010, 2, 2, 0x3ff, ARGB, 4, 4, 1)
@@ -3297,7 +3299,8 @@ TESTPLANAR16TOB(H410, 1, 1, 0x3ff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AR30, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
-#endif
+#endif  // LITTLE_ENDIAN_ONLY_TEST
+#endif  // ENABLE_SLOW_TESTS
 
 #define TESTQPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,      \
                           ALIGN, YALIGN, W1280, N, NEG, OFF, ATTEN, S_DEPTH)   \
@@ -3477,6 +3480,8 @@ TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
   I410AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
 
+// These conversions are only optimized for x86
+#if defined(ENABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
 TESTQPLANAR16TOB(I010Alpha, 2, 2, ARGB, 4, 4, 1, 10)
 TESTQPLANAR16TOB(I010Alpha, 2, 2, ABGR, 4, 4, 1, 10)
 TESTQPLANAR16TOB(J010Alpha, 2, 2, ARGB, 4, 4, 1, 10)
@@ -3513,6 +3518,7 @@ TESTQPLANAR16TOB(U410Alpha, 1, 1, ARGB, 4, 4, 1, 10)
 TESTQPLANAR16TOB(U410Alpha, 1, 1, ABGR, 4, 4, 1, 10)
 TESTQPLANAR16TOB(V410Alpha, 1, 1, ARGB, 4, 4, 1, 10)
 TESTQPLANAR16TOB(V410Alpha, 1, 1, ABGR, 4, 4, 1, 10)
+#endif  // ENABLE_SLOW_TESTS
 
 #define TESTBIPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,     \
                            ALIGN, YALIGN, W1280, N, NEG, SOFF, DOFF, S_DEPTH)  \
@@ -3596,6 +3602,7 @@ TESTQPLANAR16TOB(V410Alpha, 1, 1, ABGR, 4, 4, 1, 10)
 #define P216ToAR30(a, b, c, d, e, f, g, h) \
   P216ToAR30Matrix(a, b, c, d, e, f, &kYuvH709Constants, g, h)
 
+#if defined(ENABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
 TESTBIPLANAR16TOB(P010, 2, 2, ARGB, 4, 4, 1, 10)
 TESTBIPLANAR16TOB(P210, 2, 1, ARGB, 4, 4, 1, 10)
 TESTBIPLANAR16TOB(P012, 2, 2, ARGB, 4, 4, 1, 12)
@@ -3609,7 +3616,8 @@ TESTBIPLANAR16TOB(P012, 2, 2, AR30, 4, 4, 1, 12)
 TESTBIPLANAR16TOB(P212, 2, 1, AR30, 4, 4, 1, 12)
 TESTBIPLANAR16TOB(P016, 2, 2, AR30, 4, 4, 1, 16)
 TESTBIPLANAR16TOB(P216, 2, 1, AR30, 4, 4, 1, 16)
-#endif
+#endif  // LITTLE_ENDIAN_ONLY_TEST
+#endif  // defined(ENABLE_SLOW_TESTS)
 
 static int Clamp(int y) {
   if (y < 0) {
