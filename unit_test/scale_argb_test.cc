@@ -114,8 +114,8 @@ static int ARGBTestFilter(int src_width,
   return max_diff;
 }
 
-static const int kTileX = 8;
-static const int kTileY = 8;
+static const int kTileX = 64;
+static const int kTileY = 64;
 
 static int TileARGBScale(const uint8_t* src_argb,
                          int src_stride_argb,
@@ -232,7 +232,7 @@ static int ARGBClipTestFilter(int src_width,
 #define DX(x, nom, denom) static_cast<int>((Abs(x) / nom) * nom)
 #define SX(x, nom, denom) static_cast<int>((x / nom) * denom)
 
-#define TEST_FACTOR1(name, filter, nom, denom, max_diff)                     \
+#define TEST_FACTOR1(DISABLED_, name, filter, nom, denom, max_diff)          \
   TEST_F(LibYUVScaleTest, ARGBScaleDownBy##name##_##filter) {                \
     int diff = ARGBTestFilter(                                               \
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
@@ -241,7 +241,7 @@ static int ARGBClipTestFilter(int src_width,
         benchmark_cpu_info_);                                                \
     EXPECT_LE(diff, max_diff);                                               \
   }                                                                          \
-  TEST_F(LibYUVScaleTest, ARGBScaleDownClipBy##name##_##filter) {            \
+  TEST_F(LibYUVScaleTest, DISABLED_##ARGBScaleDownClipBy##name##_##filter) { \
     int diff = ARGBClipTestFilter(                                           \
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
         DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
@@ -251,11 +251,19 @@ static int ARGBClipTestFilter(int src_width,
 
 // Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
 // filtering is different fixed point implementations for SSSE3, Neon and C.
+#ifdef ENABLE_SLOW_TESTS
 #define TEST_FACTOR(name, nom, denom)         \
-  TEST_FACTOR1(name, None, nom, denom, 0)     \
-  TEST_FACTOR1(name, Linear, nom, denom, 3)   \
-  TEST_FACTOR1(name, Bilinear, nom, denom, 3) \
-  TEST_FACTOR1(name, Box, nom, denom, 3)
+  TEST_FACTOR1(, name, None, nom, denom, 0)     \
+  TEST_FACTOR1(, name, Linear, nom, denom, 3)   \
+  TEST_FACTOR1(, name, Bilinear, nom, denom, 3) \
+  TEST_FACTOR1(, name, Box, nom, denom, 3)
+#else
+#define TEST_FACTOR(name, nom, denom)         \
+  TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0)     \
+  TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, 3)   \
+  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
+  TEST_FACTOR1(DISABLED_, name, Box, nom, denom, 3)
+#endif
 
 TEST_FACTOR(2, 1, 2)
 TEST_FACTOR(4, 1, 4)
@@ -268,7 +276,7 @@ TEST_FACTOR(3, 1, 3)
 #undef SX
 #undef DX
 
-#define TEST_SCALETO1(name, width, height, filter, max_diff)                   \
+#define TEST_SCALETO1(DISABLED_, name, width, height, filter, max_diff)        \
   TEST_F(LibYUVScaleTest, name##To##width##x##height##_##filter) {             \
     int diff = ARGBTestFilter(benchmark_width_, benchmark_height_, width,      \
                               height, kFilter##filter, benchmark_iterations_,  \
@@ -282,13 +290,13 @@ TEST_FACTOR(3, 1, 3)
                               benchmark_cpu_info_);                            \
     EXPECT_LE(diff, max_diff);                                                 \
   }                                                                            \
-  TEST_F(LibYUVScaleTest, name##ClipTo##width##x##height##_##filter) {         \
+  TEST_F(LibYUVScaleTest, DISABLED_##name##ClipTo##width##x##height##_##filter) { \
     int diff =                                                                 \
         ARGBClipTestFilter(benchmark_width_, benchmark_height_, width, height, \
                            kFilter##filter, benchmark_iterations_);            \
     EXPECT_LE(diff, max_diff);                                                 \
   }                                                                            \
-  TEST_F(LibYUVScaleTest, name##ClipFrom##width##x##height##_##filter) {       \
+  TEST_F(LibYUVScaleTest, DISABLED_##name##ClipFrom##width##x##height##_##filter) { \
     int diff = ARGBClipTestFilter(width, height, Abs(benchmark_width_),        \
                                   Abs(benchmark_height_), kFilter##filter,     \
                                   benchmark_iterations_);                      \
@@ -296,10 +304,17 @@ TEST_FACTOR(3, 1, 3)
   }
 
 /// Test scale to a specified size with all 4 filters.
+#ifdef ENABLE_SLOW_TESTS
 #define TEST_SCALETO(name, width, height)       \
-  TEST_SCALETO1(name, width, height, None, 0)   \
-  TEST_SCALETO1(name, width, height, Linear, 3) \
-  TEST_SCALETO1(name, width, height, Bilinear, 3)
+  TEST_SCALETO1(, name, width, height, None, 0)   \
+  TEST_SCALETO1(, name, width, height, Linear, 3) \
+  TEST_SCALETO1(, name, width, height, Bilinear, 3)
+#else
+#define TEST_SCALETO(name, width, height)       \
+  TEST_SCALETO1(DISABLED_, name, width, height, None, 0)   \
+  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3) \
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3)
+#endif
 
 TEST_SCALETO(ARGBScale, 1, 1)
 TEST_SCALETO(ARGBScale, 256, 144) /* 128x72 * 2 */
