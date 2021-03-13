@@ -54,12 +54,14 @@ The following is extracted from video_common.h as a complete list of formats sup
       // 1 Secondary YUV format: row biplanar.
       FOURCC_M420 = FOURCC('M', '4', '2', '0'),  // deprecated.
 
-      // 11 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc
+      // 13 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc, 2 64 bpp
       FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
       FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
       FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
       FOURCC_AR30 = FOURCC('A', 'R', '3', '0'),  // 10 bit per channel. 2101010.
       FOURCC_AB30 = FOURCC('A', 'B', '3', '0'),  // ABGR version of 10 bit
+      FOURCC_AR64 = FOURCC('A', 'R', '6', '4'),  // 16 bit per channel.
+      FOURCC_AB64 = FOURCC('A', 'B', '6', '4'),  // ABGR version of 16 bit
       FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
       FOURCC_RAW = FOURCC('r', 'a', 'w', ' '),
       FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
@@ -179,6 +181,14 @@ The 2 bit alpha has 4 values.  Here are the comparable 8 bit alpha values.
 3 - 100%. 11111111b = 0xff = 255
 The 10 bit RGB values range from 0 to 1023.
 XR30 is the same as AR30 but with no alpha channel.
+
+# AB64 and AR64
+
+AB64 is similar to ABGR, with 16 bit (2 bytes) per channel. Each channel stores an unsigned short.
+In memory R is the lowest and A is the highest.
+Each channel has value ranges from 0 to 65535.
+AR64 is similar to ARGB.
+
 
 # NV12 and NV21
 

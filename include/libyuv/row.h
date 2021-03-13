@@ -273,6 +273,10 @@ extern "C" {
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
 #define HAS_ABGRTOAR30ROW_SSSE3
 #define HAS_ARGBTOAR30ROW_SSSE3
+#define HAS_ARGBTOAR64ROW_SSSE3
+#define HAS_ARGBTOAB64ROW_SSSE3
+#define HAS_AR64TOARGBROW_SSSE3
+#define HAS_AB64TOARGBROW_SSSE3
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
 #define HAS_HALFMERGEUVROW_SSSE3
@@ -318,6 +322,10 @@ extern "C" {
 #define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_ARGBTORAWROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
+#define HAS_ARGBTOAR64ROW_AVX2
+#define HAS_ARGBTOAB64ROW_AVX2
+#define HAS_AR64TOARGBROW_AVX2
+#define HAS_AB64TOARGBROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_DIVIDEROW_16_AVX2
@@ -383,6 +391,10 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_NEON
 #define HAS_ARGBTORGB565DITHERROW_NEON
 #define HAS_ARGBTORGB565ROW_NEON
+#define HAS_ARGBTOAR64ROW_NEON
+#define HAS_ARGBTOAB64ROW_NEON
+#define HAS_AR64TOARGBROW_NEON
+#define HAS_AB64TOARGBROW_NEON
 #define HAS_ARGBTOUV444ROW_NEON
 #define HAS_ARGBTOUVJROW_NEON
 #define HAS_ARGBTOUVROW_NEON
@@ -2562,6 +2574,71 @@ void ARGBToARGB1555Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToARGB4444Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ABGRToAR30Row_C(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
 void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
+
+void ARGBToAR64Row_C(const uint8_t* src_argb, uint16_t* dst_ar64, int width);
+void ARGBToAB64Row_C(const uint8_t* src_argb, uint16_t* dst_ab64, int width);
+void AR64ToARGBRow_C(const uint16_t* src_ar64, uint8_t* dst_argb, int width);
+void AB64ToARGBRow_C(const uint16_t* src_ab64, uint8_t* dst_argb, int width);
+void AR64ShuffleRow_C(const uint8_t* src_ar64,
+                      uint8_t* dst_ar64,
+                      const uint8_t* shuffler,
+                      int width);
+void ARGBToAR64Row_SSSE3(const uint8_t* src_argb,
+                         uint16_t* dst_ar64,
+                         int width);
+void ARGBToAB64Row_SSSE3(const uint8_t* src_argb,
+                         uint16_t* dst_ab64,
+                         int width);
+void AR64ToARGBRow_SSSE3(const uint16_t* src_ar64,
+                         uint8_t* dst_argb,
+                         int width);
+void AB64ToARGBRow_SSSE3(const uint16_t* src_ab64,
+                         uint8_t* dst_argb,
+                         int width);
+void ARGBToAR64Row_AVX2(const uint8_t* src_argb, uint16_t* dst_ar64, int width);
+void ARGBToAB64Row_AVX2(const uint8_t* src_argb, uint16_t* dst_ab64, int width);
+void AR64ToARGBRow_AVX2(const uint16_t* src_ar64, uint8_t* dst_argb, int width);
+void AB64ToARGBRow_AVX2(const uint16_t* src_ab64, uint8_t* dst_argb, int width);
+void ARGBToAR64Row_NEON(const uint8_t* src_argb, uint16_t* dst_ar64, int width);
+void ARGBToAB64Row_NEON(const uint8_t* src_argb, uint16_t* dst_ab64, int width);
+void AR64ToARGBRow_NEON(const uint16_t* src_ar64, uint8_t* dst_argb, int width);
+void AB64ToARGBRow_NEON(const uint16_t* src_ab64, uint8_t* dst_argb, int width);
+void ARGBToAR64Row_Any_SSSE3(const uint8_t* src_ptr,
+                             uint16_t* dst_ptr,
+                             int width);
+void ARGBToAB64Row_Any_SSSE3(const uint8_t* src_ptr,
+                             uint16_t* dst_ptr,
+                             int width);
+void AR64ToARGBRow_Any_SSSE3(const uint16_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int width);
+void AB64ToARGBRow_Any_SSSE3(const uint16_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int width);
+void ARGBToAR64Row_Any_AVX2(const uint8_t* src_ptr,
+                            uint16_t* dst_ptr,
+                            int width);
+void ARGBToAB64Row_Any_AVX2(const uint8_t* src_ptr,
+                            uint16_t* dst_ptr,
+                            int width);
+void AR64ToARGBRow_Any_AVX2(const uint16_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void AB64ToARGBRow_Any_AVX2(const uint16_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void ARGBToAR64Row_Any_NEON(const uint8_t* src_ptr,
+                            uint16_t* dst_ptr,
+                            int width);
+void ARGBToAB64Row_Any_NEON(const uint8_t* src_ptr,
+                            uint16_t* dst_ptr,
+                            int width);
+void AR64ToARGBRow_Any_NEON(const uint16_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void AB64ToARGBRow_Any_NEON(const uint16_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
 
 void J400ToARGBRow_SSE2(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_AVX2(const uint8_t* src_y, uint8_t* dst_argb, int width);

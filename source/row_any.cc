@@ -1237,6 +1237,72 @@ ANY11P(ARGBShuffleRow_Any_MMI, ARGBShuffleRow_MMI, const uint8_t*, 4, 4, 1)
 #undef ANY11P
 #undef ANY11P
 
+// Any 1 to 1 with type
+#define ANY11T(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)  \
+  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int width) { \
+    SIMD_ALIGNED(uint8_t temp[(MASK + 1) * SBPP]);                \
+    SIMD_ALIGNED(uint8_t out[(MASK + 1) * BPP]);                  \
+    memset(temp, 0, (MASK + 1) * SBPP); /* for msan */            \
+    int r = width & MASK;                                         \
+    int n = width & ~MASK;                                        \
+    if (n > 0) {                                                  \
+      ANY_SIMD(src_ptr, dst_ptr, n);                              \
+    }                                                             \
+    memcpy(temp, (uint8_t*)(src_ptr) + n * SBPP, r * SBPP);       \
+    ANY_SIMD((STYPE*)temp, (DTYPE*)out, MASK + 1);                \
+    memcpy((uint8_t*)(dst_ptr) + n * BPP, out, r * BPP);          \
+  }
+
+#ifdef HAS_ARGBTOAR64ROW_SSSE3
+ANY11T(ARGBToAR64Row_Any_SSSE3, ARGBToAR64Row_SSSE3, 4, 8, uint8_t, uint16_t, 3)
+#endif
+
+#ifdef HAS_ARGBTOAB64ROW_SSSE3
+ANY11T(ARGBToAB64Row_Any_SSSE3, ARGBToAB64Row_SSSE3, 4, 8, uint8_t, uint16_t, 3)
+#endif
+
+#ifdef HAS_AR64TOARGBROW_SSSE3
+ANY11T(AR64ToARGBRow_Any_SSSE3, AR64ToARGBRow_SSSE3, 8, 4, uint16_t, uint8_t, 3)
+#endif
+
+#ifdef HAS_ARGBTOAR64ROW_SSSE3
+ANY11T(AB64ToARGBRow_Any_SSSE3, AB64ToARGBRow_SSSE3, 8, 4, uint16_t, uint8_t, 3)
+#endif
+
+#ifdef HAS_ARGBTOAR64ROW_AVX2
+ANY11T(ARGBToAR64Row_Any_AVX2, ARGBToAR64Row_AVX2, 4, 8, uint8_t, uint16_t, 7)
+#endif
+
+#ifdef HAS_ARGBTOAB64ROW_AVX2
+ANY11T(ARGBToAB64Row_Any_AVX2, ARGBToAB64Row_AVX2, 4, 8, uint8_t, uint16_t, 7)
+#endif
+
+#ifdef HAS_AR64TOARGBROW_AVX2
+ANY11T(AR64ToARGBRow_Any_AVX2, AR64ToARGBRow_AVX2, 8, 4, uint16_t, uint8_t, 7)
+#endif
+
+#ifdef HAS_ARGBTOAR64ROW_AVX2
+ANY11T(AB64ToARGBRow_Any_AVX2, AB64ToARGBRow_AVX2, 8, 4, uint16_t, uint8_t, 7)
+#endif
+
+#ifdef HAS_ARGBTOAR64ROW_NEON
+ANY11T(ARGBToAR64Row_Any_NEON, ARGBToAR64Row_NEON, 4, 8, uint8_t, uint16_t, 7)
+#endif
+
+#ifdef HAS_ARGBTOAB64ROW_NEON
+ANY11T(ARGBToAB64Row_Any_NEON, ARGBToAB64Row_NEON, 4, 8, uint8_t, uint16_t, 7)
+#endif
+
+#ifdef HAS_AR64TOARGBROW_NEON
+ANY11T(AR64ToARGBRow_Any_NEON, AR64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
+#endif
+
+#ifdef HAS_ARGBTOAR64ROW_NEON
+ANY11T(AB64ToARGBRow_Any_NEON, AB64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
+#endif
+
+#undef ANY11T
+
 // Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
 #define ANY11C(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)             \
   void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int width) { \
@@ -1403,7 +1469,7 @@ ANY11C(UYVYToARGBRow_Any_MMI, UYVYToARGBRow_MMI, 1, 4, 4, 7)
 #undef ANY11C
 
 // Any 1 to 1 interpolate.  Takes 2 rows of source via stride.
-#define ANY11T(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                           \
+#define ANY11I(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                           \
   void NAMEANY(uint8_t* dst_ptr, const uint8_t* src_ptr,                     \
                ptrdiff_t src_stride_ptr, int width, int source_y_fraction) { \
     SIMD_ALIGNED(uint8_t temp[64 * 3]);                                      \
@@ -1420,21 +1486,21 @@ ANY11C(UYVYToARGBRow_Any_MMI, UYVYToARGBRow_MMI, 1, 4, 4, 7)
   }
 
 #ifdef HAS_INTERPOLATEROW_AVX2
-ANY11T(InterpolateRow_Any_AVX2, InterpolateRow_AVX2, 1, 1, 31)
+ANY11I(InterpolateRow_Any_AVX2, InterpolateRow_AVX2, 1, 1, 31)
 #endif
 #ifdef HAS_INTERPOLATEROW_SSSE3
-ANY11T(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3, 1, 1, 15)
+ANY11I(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_NEON
-ANY11T(InterpolateRow_Any_NEON, InterpolateRow_NEON, 1, 1, 15)
+ANY11I(InterpolateRow_Any_NEON, InterpolateRow_NEON, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_MSA
-ANY11T(InterpolateRow_Any_MSA, InterpolateRow_MSA, 1, 1, 31)
+ANY11I(InterpolateRow_Any_MSA, InterpolateRow_MSA, 1, 1, 31)
 #endif
 #ifdef HAS_INTERPOLATEROW_MMI
-ANY11T(InterpolateRow_Any_MMI, InterpolateRow_MMI, 1, 1, 7)
+ANY11I(InterpolateRow_Any_MMI, InterpolateRow_MMI, 1, 1, 7)
 #endif
-#undef ANY11T
+#undef ANY11I
 
 // Any 1 to 1 mirror.
 #define ANY11M(NAMEANY, ANY_SIMD, BPP, MASK)                              \

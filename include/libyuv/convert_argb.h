@@ -1065,6 +1065,42 @@ int AR30ToAB30(const uint8_t* src_ar30,
                int width,
                int height);
 
+// Convert AR64 to ARGB.
+LIBYUV_API
+int AR64ToARGB(const uint16_t* src_ar64,
+               int src_stride_ar64,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert AB64 to ABGR.
+#define AB64ToABGR AR64ToARGB
+
+// Convert AB64 to ARGB.
+LIBYUV_API
+int AB64ToARGB(const uint16_t* src_ab64,
+               int src_stride_ab64,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert AR64 to ABGR.
+#define AR64ToABGR AB64ToARGB
+
+// Convert AR64 To AB64.
+LIBYUV_API
+int AR64ToAB64(const uint16_t* src_ar64,
+               int src_stride_ar64,
+               uint16_t* dst_ab64,
+               int dst_stride_ab64,
+               int width,
+               int height);
+
+// Convert AB64 To AR64.
+#define AB64ToAR64 AR64ToAB64
+
 // src_width/height provided by capture
 // dst_width/height for clipping determine final size.
 LIBYUV_API

@@ -945,12 +945,23 @@ void ARGBAffineRow_SSE2(const uint8_t* src_argb,
                         int width);
 
 // Shuffle ARGB channel order.  e.g. BGRA to ARGB.
-// shuffler is 16 bytes and must be aligned.
+// shuffler is 16 bytes.
 LIBYUV_API
 int ARGBShuffle(const uint8_t* src_bgra,
                 int src_stride_bgra,
                 uint8_t* dst_argb,
                 int dst_stride_argb,
+                const uint8_t* shuffler,
+                int width,
+                int height);
+
+// Shuffle AR64 channel order.  e.g. AR64 to AB64.
+// shuffler is 16 bytes.
+LIBYUV_API
+int AR64Shuffle(const uint16_t* src_ar64,
+                int src_stride_ar64,
+                uint16_t* dst_ar64,
+                int dst_stride_ar64,
                 const uint8_t* shuffler,
                 int width,
                 int height);

@@ -3527,6 +3527,76 @@ int ARGBShuffle(const uint8_t* src_bgra,
   return 0;
 }
 
+// Shuffle AR64 channel order.  e.g. AR64 to AB64.
+LIBYUV_API
+int AR64Shuffle(const uint16_t* src_ar64,
+                int src_stride_ar64,
+                uint16_t* dst_ar64,
+                int dst_stride_ar64,
+                const uint8_t* shuffler,
+                int width,
+                int height) {
+  int y;
+  void (*AR64ShuffleRow)(const uint8_t* src_ar64, uint8_t* dst_ar64,
+                         const uint8_t* shuffler, int width) = AR64ShuffleRow_C;
+  if (!src_ar64 || !dst_ar64 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ar64 = src_ar64 + (height - 1) * src_stride_ar64;
+    src_stride_ar64 = -src_stride_ar64;
+  }
+  // Coalesce rows.
+  if (src_stride_ar64 == width * 4 && dst_stride_ar64 == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_ar64 = dst_stride_ar64 = 0;
+  }
+  // Assembly versions can be reused if it's implemented with shuffle.
+#if defined(HAS_ARGBSHUFFLEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      AR64ShuffleRow = ARGBShuffleRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      AR64ShuffleRow = ARGBShuffleRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      AR64ShuffleRow = ARGBShuffleRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_MMI;
+    if (IS_ALIGNED(width, 2)) {
+      AR64ShuffleRow = ARGBShuffleRow_MMI;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    AR64ShuffleRow((uint8_t*)(src_ar64), (uint8_t*)(dst_ar64), shuffler,
+                   width * 2);
+    src_ar64 += src_stride_ar64;
+    dst_ar64 += dst_stride_ar64;
+  }
+  return 0;
+}
+
 // Gauss blur a float plane using Gaussian 5x5 filter with
 // coefficients of 1, 4, 6, 4, 1.
 // Each destination pixel is a blur of the 5x5

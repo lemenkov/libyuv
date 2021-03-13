@@ -29,7 +29,7 @@ static bool TestValidFourCC(uint32_t fourcc, int bpp) {
       !TestValidChar((fourcc >> 24) & 0xff)) {
     return false;
   }
-  if (bpp < 0 || bpp > 32) {
+  if (bpp < 0 || bpp > 64) {
     return false;
   }
   return true;
@@ -72,6 +72,8 @@ TEST_F(LibYUVBaseTest, TestFourCC) {
   EXPECT_TRUE(TestValidFourCC(FOURCC_ABGR, FOURCC_BPP_ABGR));
   EXPECT_TRUE(TestValidFourCC(FOURCC_AR30, FOURCC_BPP_AR30));
   EXPECT_TRUE(TestValidFourCC(FOURCC_AB30, FOURCC_BPP_AB30));
+  EXPECT_TRUE(TestValidFourCC(FOURCC_AR64, FOURCC_BPP_AR64));
+  EXPECT_TRUE(TestValidFourCC(FOURCC_AB64, FOURCC_BPP_AB64));
   EXPECT_TRUE(TestValidFourCC(FOURCC_24BG, FOURCC_BPP_24BG));
   EXPECT_TRUE(TestValidFourCC(FOURCC_RAW, FOURCC_BPP_RAW));
   EXPECT_TRUE(TestValidFourCC(FOURCC_RGBA, FOURCC_BPP_RGBA));

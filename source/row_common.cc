@@ -418,6 +418,82 @@ void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_ar30, int width) {
   }
 }
 
+void ARGBToAR64Row_C(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_ar64[0] = src_argb[0] * 0x0101;
+    dst_ar64[1] = src_argb[1] * 0x0101;
+    dst_ar64[2] = src_argb[2] * 0x0101;
+    dst_ar64[3] = src_argb[3] * 0x0101;
+    dst_ar64 += 4;
+    src_argb += 4;
+  }
+}
+
+void ARGBToAB64Row_C(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_ab64[0] = src_argb[2] * 0x0101;
+    dst_ab64[1] = src_argb[1] * 0x0101;
+    dst_ab64[2] = src_argb[0] * 0x0101;
+    dst_ab64[3] = src_argb[3] * 0x0101;
+    dst_ab64 += 4;
+    src_argb += 4;
+  }
+}
+
+void AR64ToARGBRow_C(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_argb[0] = src_ar64[0] >> 8;
+    dst_argb[1] = src_ar64[1] >> 8;
+    dst_argb[2] = src_ar64[2] >> 8;
+    dst_argb[3] = src_ar64[3] >> 8;
+    dst_argb += 4;
+    src_ar64 += 4;
+  }
+}
+
+void AB64ToARGBRow_C(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_argb[0] = src_ab64[2] >> 8;
+    dst_argb[1] = src_ab64[1] >> 8;
+    dst_argb[2] = src_ab64[0] >> 8;
+    dst_argb[3] = src_ab64[3] >> 8;
+    dst_argb += 4;
+    src_ab64 += 4;
+  }
+}
+
+// TODO(fbarchard): Make shuffle compatible with SIMD versions
+void AR64ShuffleRow_C(const uint8_t* src_ar64,
+                      uint8_t* dst_ar64,
+                      const uint8_t* shuffler,
+                      int width) {
+  const uint16_t* src_ar64_16 = (const uint16_t*)src_ar64;
+  uint16_t* dst_ar64_16 = (uint16_t*)dst_ar64;
+  int index0 = shuffler[0] / 2;
+  int index1 = shuffler[2] / 2;
+  int index2 = shuffler[4] / 2;
+  int index3 = shuffler[6] / 2;
+  // Shuffle a row of AR64.
+  int x;
+  for (x = 0; x < width / 2; ++x) {
+    // To support in-place conversion.
+    uint16_t b = src_ar64_16[index0];
+    uint16_t g = src_ar64_16[index1];
+    uint16_t r = src_ar64_16[index2];
+    uint16_t a = src_ar64_16[index3];
+    dst_ar64_16[0] = b;
+    dst_ar64_16[1] = g;
+    dst_ar64_16[2] = r;
+    dst_ar64_16[3] = a;
+    src_ar64_16 += 4;
+    dst_ar64_16 += 4;
+  }
+}
+
 #ifdef LIBYUV_RGB7
 // Old 7 bit math for compatibility on unsupported platforms.
 static __inline int RGBToY(uint8_t r, uint8_t g, uint8_t b) {
