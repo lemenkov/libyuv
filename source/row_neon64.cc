@@ -874,6 +874,240 @@ void MergeXRGBRow_NEON(const uint8_t* src_r,
   );
 }
 
+void MergeXR30Row_NEON(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint8_t* dst_ar30,
+                       int depth,
+                       int width) {
+  int shift = 10 - depth;
+  asm volatile(
+      "movi        v30.16b, #255                 \n"
+      "ushr        v30.4s, v30.4s, #22           \n"  // 1023
+      "dup         v31.4s, %w5                   \n"
+      "1:                                        \n"
+      "ldr         d2, [%2], #8                  \n"  // B
+      "ldr         d1, [%1], #8                  \n"  // G
+      "ldr         d0, [%0], #8                  \n"  // R
+      "ushll       v2.4s, v2.4h, #0              \n"  // B
+      "ushll       v1.4s, v1.4h, #0              \n"  // G
+      "ushll       v0.4s, v0.4h, #0              \n"  // R
+      "ushl        v2.4s, v2.4s, v31.4s          \n"  // 000B
+      "ushl        v1.4s, v1.4s, v31.4s          \n"  // G
+      "ushl        v0.4s, v0.4s, v31.4s          \n"  // R
+      "umin        v2.4s, v2.4s, v30.4s          \n"
+      "umin        v1.4s, v1.4s, v30.4s          \n"
+      "umin        v0.4s, v0.4s, v30.4s          \n"
+      "sli         v2.4s, v1.4s, #10             \n"  // 00GB
+      "sli         v2.4s, v0.4s, #20             \n"  // 0RGB
+      "orr         v2.4s, #0xc0, lsl #24         \n"  // ARGB (AR30)
+      "subs        %w4, %w4, #4                  \n"
+      "str         q2, [%3], #16                 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_r),     // %0
+        "+r"(src_g),     // %1
+        "+r"(src_b),     // %2
+        "+r"(dst_ar30),  // %3
+        "+r"(width)      // %4
+      : "r"(shift)  // %5
+      : "memory", "cc", "v0", "v1", "v2", "v30", "v31");
+}
+
+void MergeXR30Row_10_NEON(const uint16_t* src_r,
+                          const uint16_t* src_g,
+                          const uint16_t* src_b,
+                          uint8_t* dst_ar30,
+                          int /* depth */,
+                          int width) {
+  asm volatile(
+      "movi        v30.16b, #255                 \n"
+      "ushr        v30.4s, v30.4s, #22           \n"  // 1023
+      "1:                                        \n"
+      "ldr         d2, [%2], #8                  \n"  // B
+      "ldr         d1, [%1], #8                  \n"  // G
+      "ldr         d0, [%0], #8                  \n"  // R
+      "ushll       v2.4s, v2.4h, #0              \n"  // 000B
+      "ushll       v1.4s, v1.4h, #0              \n"  // G
+      "ushll       v0.4s, v0.4h, #0              \n"  // R
+      "umin        v2.4s, v2.4s, v30.4s          \n"
+      "umin        v1.4s, v1.4s, v30.4s          \n"
+      "umin        v0.4s, v0.4s, v30.4s          \n"
+      "sli         v2.4s, v1.4s, #10             \n"  // 00GB
+      "sli         v2.4s, v0.4s, #20             \n"  // 0RGB
+      "orr         v2.4s, #0xc0, lsl #24         \n"  // ARGB (AR30)
+      "subs        %w4, %w4, #4                  \n"
+      "str         q2, [%3], #16                 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_r),     // %0
+        "+r"(src_g),     // %1
+        "+r"(src_b),     // %2
+        "+r"(dst_ar30),  // %3
+        "+r"(width)      // %4
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v30");
+}
+
+void MergeAR64Row_NEON(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       const uint16_t* src_a,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width) {
+  int shift = 16 - depth;
+  int mask = (1 << depth) - 1;
+  asm volatile(
+
+      "dup         v30.8h, %w7                   \n"
+      "dup         v31.8h, %w6                   \n"
+      "1:                                        \n"
+      "ldr         q2, [%0], #16                 \n"  // R
+      "ldr         q1, [%1], #16                 \n"  // G
+      "ldr         q0, [%2], #16                 \n"  // B
+      "ldr         q3, [%3], #16                 \n"  // A
+      "umin        v2.8h, v2.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "umin        v1.8h, v1.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "umin        v0.8h, v0.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "umin        v3.8h, v3.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%3, 448]          \n"
+      "ushl        v2.8h, v2.8h, v31.8h          \n"
+      "ushl        v1.8h, v1.8h, v31.8h          \n"
+      "ushl        v0.8h, v0.8h, v31.8h          \n"
+      "ushl        v3.8h, v3.8h, v31.8h          \n"
+      "subs        %w5, %w5, #8                  \n"
+      "st4         {v0.8h, v1.8h, v2.8h, v3.8h}, [%4], #64 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_r),     // %0
+        "+r"(src_g),     // %1
+        "+r"(src_b),     // %2
+        "+r"(src_a),     // %3
+        "+r"(dst_ar64),  // %4
+        "+r"(width)      // %5
+      : "r"(shift),      // %6
+        "r"(mask)        // %7
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v31");
+}
+
+void MergeXR64Row_NEON(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width) {
+  int shift = 16 - depth;
+  int mask = (1 << depth) - 1;
+  asm volatile(
+
+      "movi        v3.16b, #0xff                 \n"  // A (0xffff)
+      "dup         v30.8h, %w6                   \n"
+      "dup         v31.8h, %w5                   \n"
+
+      "1:                                        \n"
+      "ldr         q2, [%0], #16                 \n"  // R
+      "ldr         q1, [%1], #16                 \n"  // G
+      "ldr         q0, [%2], #16                 \n"  // B
+      "umin        v2.8h, v2.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "umin        v1.8h, v1.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "umin        v0.8h, v0.8h, v30.8h          \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "ushl        v2.8h, v2.8h, v31.8h          \n"
+      "ushl        v1.8h, v1.8h, v31.8h          \n"
+      "ushl        v0.8h, v0.8h, v31.8h          \n"
+      "subs        %w4, %w4, #8                  \n"
+      "st4         {v0.8h, v1.8h, v2.8h, v3.8h}, [%3], #64 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_r),     // %0
+        "+r"(src_g),     // %1
+        "+r"(src_b),     // %2
+        "+r"(dst_ar64),  // %3
+        "+r"(width)      // %4
+      : "r"(shift),      // %5
+        "r"(mask)        // %6
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v31");
+}
+
+void MergeARGB16To8Row_NEON(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            const uint16_t* src_a,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width) {
+  int shift = 8 - depth;
+  asm volatile(
+
+      "dup         v31.8h, %w6                   \n"
+      "1:                                        \n"
+      "ldr         q2, [%0], #16                 \n"  // R
+      "ldr         q1, [%1], #16                 \n"  // G
+      "ldr         q0, [%2], #16                 \n"  // B
+      "ldr         q3, [%3], #16                 \n"  // A
+      "ushl        v2.8h, v2.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "ushl        v1.8h, v1.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "ushl        v0.8h, v0.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "ushl        v3.8h, v3.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%3, 448]          \n"
+      "uqxtn       v2.8b, v2.8h                  \n"
+      "uqxtn       v1.8b, v1.8h                  \n"
+      "uqxtn       v0.8b, v0.8h                  \n"
+      "uqxtn       v3.8b, v3.8h                  \n"
+      "subs        %w5, %w5, #8                  \n"
+      "st4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%4], #32 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_r),     // %0
+        "+r"(src_g),     // %1
+        "+r"(src_b),     // %2
+        "+r"(src_a),     // %3
+        "+r"(dst_argb),  // %4
+        "+r"(width)      // %5
+      : "r"(shift)       // %6
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v31");
+}
+
+void MergeXRGB16To8Row_NEON(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width) {
+  int shift = 8 - depth;
+  asm volatile(
+
+      "dup         v31.8h, %w5                   \n"
+      "movi        v3.8b, #0xff                  \n"  // A (0xff)
+      "1:                                        \n"
+      "ldr         q2, [%0], #16                 \n"  // R
+      "ldr         q1, [%1], #16                 \n"  // G
+      "ldr         q0, [%2], #16                 \n"  // B
+      "ushl        v2.8h, v2.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "ushl        v1.8h, v1.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "ushl        v0.8h, v0.8h, v31.8h          \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "uqxtn       v2.8b, v2.8h                  \n"
+      "uqxtn       v1.8b, v1.8h                  \n"
+      "uqxtn       v0.8b, v0.8h                  \n"
+      "subs        %w4, %w4, #8                  \n"
+      "st4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%3], #32 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_r),     // %0
+        "+r"(src_g),     // %1
+        "+r"(src_b),     // %2
+        "+r"(dst_argb),  // %3
+        "+r"(width)      // %4
+      : "r"(shift)       // %5
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v31");
+}
+
 // Copy multiple of 32.
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(

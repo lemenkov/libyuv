@@ -183,6 +183,44 @@ ANY41CT(I410AlphaToARGBRow_Any_AVX2,
 
 #undef ANY41CT
 
+// Any 4 planes to 1 plane with parameter
+#define ANY41PT(NAMEANY, ANY_SIMD, STYPE, SBPP, DTYPE, BPP, MASK)          \
+  void NAMEANY(const STYPE* r_buf, const STYPE* g_buf, const STYPE* b_buf, \
+               const STYPE* a_buf, DTYPE* dst_ptr, int depth, int width) { \
+    SIMD_ALIGNED(STYPE temp[16 * 4]);                                      \
+    SIMD_ALIGNED(DTYPE out[64]);                                           \
+    memset(temp, 0, 16 * 4 * SBPP); /* for YUY2 and msan */                \
+    int r = width & MASK;                                                  \
+    int n = width & ~MASK;                                                 \
+    if (n > 0) {                                                           \
+      ANY_SIMD(r_buf, g_buf, b_buf, a_buf, dst_ptr, depth, n);             \
+    }                                                                      \
+    memcpy(temp, r_buf + n, r * SBPP);                                     \
+    memcpy(temp + 16, g_buf + n, r * SBPP);                                \
+    memcpy(temp + 32, b_buf + n, r * SBPP);                                \
+    memcpy(temp + 48, a_buf + n, r * SBPP);                                \
+    ANY_SIMD(temp, temp + 16, temp + 32, temp + 48, out, depth, MASK + 1); \
+    memcpy(dst_ptr + n * BPP, out, r * BPP);                               \
+  }
+
+#ifdef HAS_MERGEAR64ROW_AVX2
+ANY41PT(MergeAR64Row_Any_AVX2, MergeAR64Row_AVX2, uint16_t, 2, uint16_t, 4, 15)
+#endif
+
+#ifdef HAS_MERGEAR64ROW_NEON
+ANY41PT(MergeAR64Row_Any_NEON, MergeAR64Row_NEON, uint16_t, 2, uint16_t, 4, 7)
+#endif
+
+#ifdef HAS_MERGEARGB16TO8ROW_AVX2
+ANY41PT(MergeARGB16To8Row_Any_AVX2, MergeARGB16To8Row_AVX2, uint16_t, 2, uint8_t, 4, 15)
+#endif
+
+#ifdef HAS_MERGEARGB16TO8ROW_NEON
+ANY41PT(MergeARGB16To8Row_Any_NEON, MergeARGB16To8Row_NEON, uint16_t, 2, uint8_t, 4, 7)
+#endif
+
+#undef ANY41PT
+
 // Any 3 planes to 1.
 #define ANY31(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)      \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,          \
@@ -212,13 +250,13 @@ ANY31(MergeRGBRow_Any_NEON, MergeRGBRow_NEON, 0, 0, 3, 15)
 #ifdef HAS_MERGERGBROW_MMI
 ANY31(MergeRGBRow_Any_MMI, MergeRGBRow_MMI, 0, 0, 3, 7)
 #endif
-#ifdef HAS_MERGEARGBROW_SSE2
+#ifdef HAS_MERGEXRGBROW_SSE2
 ANY31(MergeXRGBRow_Any_SSE2, MergeXRGBRow_SSE2, 0, 0, 4, 7)
 #endif
-#ifdef HAS_MERGEARGBROW_AVX2
+#ifdef HAS_MERGEXRGBROW_AVX2
 ANY31(MergeXRGBRow_Any_AVX2, MergeXRGBRow_AVX2, 0, 0, 4, 15)
 #endif
-#ifdef HAS_MERGEARGBROW_NEON
+#ifdef HAS_MERGEXRGBROW_NEON
 ANY31(MergeXRGBRow_Any_NEON, MergeXRGBRow_NEON, 0, 0, 4, 15)
 #endif
 #ifdef HAS_I422TOYUY2ROW_SSE2
@@ -423,6 +461,52 @@ ANY31CT(I212ToARGBRow_Any_AVX2, I212ToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
 ANY31CT(I212ToAR30Row_Any_AVX2, I212ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
 #endif
 #undef ANY31CT
+
+// Any 3 planes to 1 plane with parameter
+#define ANY31PT(NAMEANY, ANY_SIMD, STYPE, SBPP, DTYPE, BPP, MASK)          \
+  void NAMEANY(const STYPE* r_buf, const STYPE* g_buf, const STYPE* b_buf, \
+               DTYPE* dst_ptr, int depth, int width) {                     \
+    SIMD_ALIGNED(STYPE temp[16 * 3]);                                      \
+    SIMD_ALIGNED(DTYPE out[64]);                                           \
+    memset(temp, 0, 16 * 3 * SBPP); /* for YUY2 and msan */                \
+    int r = width & MASK;                                                  \
+    int n = width & ~MASK;                                                 \
+    if (n > 0) {                                                           \
+      ANY_SIMD(r_buf, g_buf, b_buf, dst_ptr, depth, n);                    \
+    }                                                                      \
+    memcpy(temp, r_buf + n, r * SBPP);                                     \
+    memcpy(temp + 16, g_buf + n, r * SBPP);                                \
+    memcpy(temp + 32, b_buf + n, r * SBPP);                                \
+    ANY_SIMD(temp, temp + 16, temp + 32, out, depth, MASK + 1);            \
+    memcpy(dst_ptr + n * BPP, out, r * BPP);                               \
+  }
+
+#ifdef HAS_MERGEXR30ROW_AVX2
+ANY31PT(MergeXR30Row_Any_AVX2, MergeXR30Row_AVX2, uint16_t, 2, uint8_t, 4, 15)
+#endif
+
+#ifdef HAS_MERGEXR30ROW_NEON
+ANY31PT(MergeXR30Row_Any_NEON, MergeXR30Row_NEON, uint16_t, 2, uint8_t, 4, 3)
+ANY31PT(MergeXR30Row_10_Any_NEON, MergeXR30Row_10_NEON, uint16_t, 2, uint8_t, 4, 3)
+#endif
+
+#ifdef HAS_MERGEXR64ROW_AVX2
+ANY31PT(MergeXR64Row_Any_AVX2, MergeXR64Row_AVX2, uint16_t, 2, uint16_t, 4, 15)
+#endif
+
+#ifdef HAS_MERGEXR64ROW_NEON
+ANY31PT(MergeXR64Row_Any_NEON, MergeXR64Row_NEON, uint16_t, 2, uint16_t, 4, 7)
+#endif
+
+#ifdef HAS_MERGEXRGB16TO8ROW_AVX2
+ANY31PT(MergeXRGB16To8Row_Any_AVX2, MergeXRGB16To8Row_AVX2, uint16_t, 2, uint8_t, 4, 15)
+#endif
+
+#ifdef HAS_MERGEXRGB16TO8ROW_NEON
+ANY31PT(MergeXRGB16To8Row_Any_NEON, MergeXRGB16To8Row_NEON, uint16_t, 2, uint8_t, 4, 7)
+#endif
+
+#undef ANY31PT
 
 // Any 2 planes to 1.
 #define ANY21(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)             \
@@ -1711,16 +1795,16 @@ ANY13(SplitRGBRow_Any_NEON, SplitRGBRow_NEON, 3, 15)
 #ifdef HAS_SPLITRGBROW_MMI
 ANY13(SplitRGBRow_Any_MMI, SplitRGBRow_MMI, 3, 3)
 #endif
-#ifdef HAS_SPLITARGBROW_SSE2
+#ifdef HAS_SPLITXRGBROW_SSE2
 ANY13(SplitXRGBRow_Any_SSE2, SplitXRGBRow_SSE2, 4, 7)
 #endif
-#ifdef HAS_SPLITARGBROW_SSSE3
+#ifdef HAS_SPLITXRGBROW_SSSE3
 ANY13(SplitXRGBRow_Any_SSSE3, SplitXRGBRow_SSSE3, 4, 7)
 #endif
-#ifdef HAS_SPLITARGBROW_AVX2
+#ifdef HAS_SPLITXRGBROW_AVX2
 ANY13(SplitXRGBRow_Any_AVX2, SplitXRGBRow_AVX2, 4, 15)
 #endif
-#ifdef HAS_SPLITARGBROW_NEON
+#ifdef HAS_SPLITXRGBROW_NEON
 ANY13(SplitXRGBRow_Any_NEON, SplitXRGBRow_NEON, 4, 15)
 #endif
 

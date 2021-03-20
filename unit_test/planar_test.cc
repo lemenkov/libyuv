@@ -3091,6 +3091,164 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
   free_aligned_buffer_page_end(dst_pixels_c);
 }
 
+#define TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)      \
+  TEST_F(LibYUVPlanarTest, FUNC##Plane_##DEPTH##N) {                        \
+    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
+    const int kPixels = (kWidth * benchmark_height_ + 15) & ~15;            \
+    align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_a, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(dst_memory_c, kPixels * 4 * sizeof(DTYPE));       \
+    align_buffer_page_end(dst_memory_opt, kPixels * 4 * sizeof(DTYPE));     \
+    STYPE* src_pixels_r = reinterpret_cast<STYPE*>(src_memory_r + OFF);     \
+    STYPE* src_pixels_g = reinterpret_cast<STYPE*>(src_memory_g + OFF);     \
+    STYPE* src_pixels_b = reinterpret_cast<STYPE*>(src_memory_b + OFF);     \
+    STYPE* src_pixels_a = reinterpret_cast<STYPE*>(src_memory_a + OFF);     \
+    DTYPE* dst_pixels_c = reinterpret_cast<DTYPE*>(dst_memory_c);           \
+    DTYPE* dst_pixels_opt = reinterpret_cast<DTYPE*>(dst_memory_opt);       \
+    for (int i = 0; i < kPixels; ++i) {                                     \
+      src_pixels_r[i] = fastrand() & 65535;                                 \
+      src_pixels_g[i] = fastrand() & 65535;                                 \
+      src_pixels_b[i] = fastrand() & 65535;                                 \
+      src_pixels_a[i] = fastrand() & 65535;                                 \
+    }                                                                       \
+    memset(dst_pixels_c, 1, kPixels * 4 * sizeof(DTYPE));                   \
+    memset(dst_pixels_opt, 2, kPixels * 4 * sizeof(DTYPE));                 \
+    MaskCpuFlags(disable_cpu_flags_);                                       \
+    FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b,   \
+                kWidth, src_pixels_a, kWidth, dst_pixels_c, kWidth * 4,     \
+                kWidth, NEG benchmark_height_, DEPTH);                      \
+    MaskCpuFlags(benchmark_cpu_info_);                                      \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                       \
+      FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b, \
+                  kWidth, src_pixels_a, kWidth, dst_pixels_opt, kWidth * 4, \
+                  kWidth, NEG benchmark_height_, DEPTH);                    \
+    }                                                                       \
+    for (int i = 0; i < kPixels * 4; ++i) {                                 \
+      EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);                        \
+    }                                                                       \
+    free_aligned_buffer_page_end(src_memory_r);                             \
+    free_aligned_buffer_page_end(src_memory_g);                             \
+    free_aligned_buffer_page_end(src_memory_b);                             \
+    free_aligned_buffer_page_end(src_memory_a);                             \
+    free_aligned_buffer_page_end(dst_memory_c);                             \
+    free_aligned_buffer_page_end(dst_memory_opt);                           \
+  }
+
+#define TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)     \
+  TEST_F(LibYUVPlanarTest, FUNC##Plane_Opaque_##DEPTH##N) {                 \
+    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
+    const int kPixels = (kWidth * benchmark_height_ + 15) & ~15;            \
+    align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(dst_memory_c, kPixels * 4 * sizeof(DTYPE));       \
+    align_buffer_page_end(dst_memory_opt, kPixels * 4 * sizeof(DTYPE));     \
+    STYPE* src_pixels_r = reinterpret_cast<STYPE*>(src_memory_r + OFF);     \
+    STYPE* src_pixels_g = reinterpret_cast<STYPE*>(src_memory_g + OFF);     \
+    STYPE* src_pixels_b = reinterpret_cast<STYPE*>(src_memory_b + OFF);     \
+    DTYPE* dst_pixels_c = reinterpret_cast<DTYPE*>(dst_memory_c);           \
+    DTYPE* dst_pixels_opt = reinterpret_cast<DTYPE*>(dst_memory_opt);       \
+    for (int i = 0; i < kPixels; ++i) {                                     \
+      src_pixels_r[i] = fastrand() & 65535;                                 \
+      src_pixels_g[i] = fastrand() & 65535;                                 \
+      src_pixels_b[i] = fastrand() & 65535;                                 \
+    }                                                                       \
+    memset(dst_pixels_c, 1, kPixels * 4 * sizeof(DTYPE));                   \
+    memset(dst_pixels_opt, 2, kPixels * 4 * sizeof(DTYPE));                 \
+    MaskCpuFlags(disable_cpu_flags_);                                       \
+    FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b,   \
+                kWidth, NULL, 0, dst_pixels_c, kWidth * 4, kWidth,          \
+                NEG benchmark_height_, DEPTH);                              \
+    MaskCpuFlags(benchmark_cpu_info_);                                      \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                       \
+      FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b, \
+                  kWidth, NULL, 0, dst_pixels_opt, kWidth * 4, kWidth,      \
+                  NEG benchmark_height_, DEPTH);                            \
+    }                                                                       \
+    for (int i = 0; i < kPixels * 4; ++i) {                                 \
+      EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);                        \
+    }                                                                       \
+    free_aligned_buffer_page_end(src_memory_r);                             \
+    free_aligned_buffer_page_end(src_memory_g);                             \
+    free_aligned_buffer_page_end(src_memory_b);                             \
+    free_aligned_buffer_page_end(dst_memory_c);                             \
+    free_aligned_buffer_page_end(dst_memory_opt);                           \
+  }
+
+#define TESTQPLANARTOP(FUNC, STYPE, DTYPE, DEPTH)                              \
+  TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +, 0) \
+  TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +,  \
+                  1)                                                           \
+  TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Invert, -, 0)  \
+  TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Opt, +, 0)     \
+  TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +,   \
+                   0)                                                          \
+  TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +, \
+                   1)                                                          \
+  TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Invert, -, 0) \
+  TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Opt, +, 0)
+
+TESTQPLANARTOP(MergeAR64, uint16_t, uint16_t, 10)
+TESTQPLANARTOP(MergeAR64, uint16_t, uint16_t, 12)
+TESTQPLANARTOP(MergeAR64, uint16_t, uint16_t, 16)
+TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 10)
+TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 12)
+TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 16)
+
+#define TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)      \
+  TEST_F(LibYUVPlanarTest, FUNC##Plane_##DEPTH##N) {                        \
+    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
+    const int kPixels = (kWidth * benchmark_height_ + 15) & ~15;            \
+    align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
+    align_buffer_page_end(dst_memory_c, kPixels * 4 * sizeof(DTYPE));       \
+    align_buffer_page_end(dst_memory_opt, kPixels * 4 * sizeof(DTYPE));     \
+    STYPE* src_pixels_r = reinterpret_cast<STYPE*>(src_memory_r + OFF);     \
+    STYPE* src_pixels_g = reinterpret_cast<STYPE*>(src_memory_g + OFF);     \
+    STYPE* src_pixels_b = reinterpret_cast<STYPE*>(src_memory_b + OFF);     \
+    DTYPE* dst_pixels_c = reinterpret_cast<DTYPE*>(dst_memory_c);           \
+    DTYPE* dst_pixels_opt = reinterpret_cast<DTYPE*>(dst_memory_opt);       \
+    for (int i = 0; i < kPixels; ++i) {                                     \
+      src_pixels_r[i] = fastrand() & 65535;                                 \
+      src_pixels_g[i] = fastrand() & 65535;                                 \
+      src_pixels_b[i] = fastrand() & 65535;                                 \
+    }                                                                       \
+    memset(dst_pixels_c, 1, kPixels * 4 * sizeof(DTYPE));                   \
+    memset(dst_pixels_opt, 2, kPixels * 4 * sizeof(DTYPE));                 \
+    MaskCpuFlags(disable_cpu_flags_);                                       \
+    FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b,   \
+                kWidth, dst_pixels_c, kWidth * 4, kWidth,                   \
+                NEG benchmark_height_, DEPTH);                              \
+    MaskCpuFlags(benchmark_cpu_info_);                                      \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                       \
+      FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b, \
+                  kWidth, dst_pixels_opt, kWidth * 4, kWidth,               \
+                  NEG benchmark_height_, DEPTH);                            \
+    }                                                                       \
+    for (int i = 0; i < kPixels * 4; ++i) {                                 \
+      EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);                        \
+    }                                                                       \
+    free_aligned_buffer_page_end(src_memory_r);                             \
+    free_aligned_buffer_page_end(src_memory_g);                             \
+    free_aligned_buffer_page_end(src_memory_b);                             \
+    free_aligned_buffer_page_end(dst_memory_c);                             \
+    free_aligned_buffer_page_end(dst_memory_opt);                           \
+  }
+
+#define TESTTPLANARTOP(FUNC, STYPE, DTYPE, DEPTH)                              \
+  TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +, 0) \
+  TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +,  \
+                  1)                                                           \
+  TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Invert, -, 0)  \
+  TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Opt, +, 0)
+
+TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 10)
+TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 12)
+TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 16)
+
 // TODO(fbarchard): improve test for platforms and cpu detect
 #ifdef HAS_MERGEUVROW_16_AVX2
 TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {

@@ -229,6 +229,60 @@ void MergeARGBPlane(const uint8_t* src_r,
                     int width,
                     int height);
 
+// Merge separate 'depth' bit R, G and B planes stored in lsb
+// into one interleaved XR30 plane.
+// depth should in range [10, 16]
+LIBYUV_API
+void MergeXR30Plane(const uint16_t* src_r,
+                    int src_stride_r,
+                    const uint16_t* src_g,
+                    int src_stride_g,
+                    const uint16_t* src_b,
+                    int src_stride_b,
+                    uint8_t* dst_ar30,
+                    int dst_stride_ar30,
+                    int width,
+                    int height,
+                    int depth);
+
+// Merge separate 'depth' bit R, G, B and A planes stored in lsb
+// into one interleaved AR64 plane.
+// src_a can be NULL to fill opaque value to alpha.
+// depth should in range [1, 16]
+LIBYUV_API
+void MergeAR64Plane(const uint16_t* src_r,
+                    int src_stride_r,
+                    const uint16_t* src_g,
+                    int src_stride_g,
+                    const uint16_t* src_b,
+                    int src_stride_b,
+                    const uint16_t* src_a,
+                    int src_stride_a,
+                    uint16_t* dst_ar64,
+                    int dst_stride_ar64,
+                    int width,
+                    int height,
+                    int depth);
+
+// Merge separate 'depth' bit R, G, B and A planes stored in lsb
+// into one interleaved ARGB plane.
+// src_a can be NULL to fill opaque value to alpha.
+// depth should in range [8, 16]
+LIBYUV_API
+void MergeARGB16To8Plane(const uint16_t* src_r,
+                         int src_stride_r,
+                         const uint16_t* src_g,
+                         int src_stride_g,
+                         const uint16_t* src_b,
+                         int src_stride_b,
+                         const uint16_t* src_a,
+                         int src_stride_a,
+                         uint8_t* dst_argb,
+                         int dst_stride_argb,
+                         int width,
+                         int height,
+                         int depth);
+
 // Copy I400.  Supports inverting.
 LIBYUV_API
 int I400ToI400(const uint8_t* src_y,

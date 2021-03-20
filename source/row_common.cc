@@ -56,6 +56,11 @@ static __inline int32_t clamp1023(int32_t v) {
   return (-(v >= 1023) | v) & 1023;
 }
 
+// clamp to 2^n - 1
+static __inline int32_t clamp2nm1(int32_t v, int32_t max) {
+  return (-(v >= max) | v) & max;
+}
+
 static __inline uint32_t Abs(int32_t v) {
   int m = -(v < 0);
   return (v + m) ^ m;
@@ -71,6 +76,10 @@ static __inline int32_t clamp255(int32_t v) {
 
 static __inline int32_t clamp1023(int32_t v) {
   return (v > 1023) ? 1023 : v;
+}
+
+static __inline int32_t clamp2nm1(int32_t v, int32_t max) {
+  return (v > max) ? max : v;
 }
 
 static __inline uint32_t Abs(int32_t v) {
@@ -3006,6 +3015,105 @@ void MergeARGBRow_C(const uint8_t* src_r,
     dst_argb[1] = src_g[x];
     dst_argb[2] = src_r[x];
     dst_argb[3] = src_a[x];
+    dst_argb += 4;
+  }
+}
+
+void MergeXR30Row_C(const uint16_t* src_r,
+                    const uint16_t* src_g,
+                    const uint16_t* src_b,
+                    uint8_t* dst_ar30,
+                    int depth,
+                    int width) {
+  assert(depth >= 10);
+  assert(depth <= 16);
+  int x;
+  int shift = depth - 10;
+  uint32_t* dst_ar30_32 = (uint32_t*)dst_ar30;
+  for (x = 0; x < width; ++x) {
+    uint32_t r = clamp1023(src_r[x] >> shift);
+    uint32_t g = clamp1023(src_g[x] >> shift);
+    uint32_t b = clamp1023(src_b[x] >> shift);
+    dst_ar30_32[x] = b | (g << 10) | (r << 20) | 0xc0000000;
+  }
+}
+
+void MergeAR64Row_C(const uint16_t* src_r,
+                    const uint16_t* src_g,
+                    const uint16_t* src_b,
+                    const uint16_t* src_a,
+                    uint16_t* dst_ar64,
+                    int depth,
+                    int width) {
+  assert(depth >= 1);
+  assert(depth <= 16);
+  int x;
+  int shift = 16 - depth;
+  int max = (1 << depth) - 1;
+  for (x = 0; x < width; ++x) {
+    dst_ar64[0] = clamp2nm1(src_b[x], max) << shift;
+    dst_ar64[1] = clamp2nm1(src_g[x], max) << shift;
+    dst_ar64[2] = clamp2nm1(src_r[x], max) << shift;
+    dst_ar64[3] = clamp2nm1(src_a[x], max) << shift;
+    dst_ar64 += 4;
+  }
+}
+
+void MergeARGB16To8Row_C(const uint16_t* src_r,
+                         const uint16_t* src_g,
+                         const uint16_t* src_b,
+                         const uint16_t* src_a,
+                         uint8_t* dst_argb,
+                         int depth,
+                         int width) {
+  assert(depth >= 8);
+  assert(depth <= 16);
+  int x;
+  int shift = depth - 8;
+  for (x = 0; x < width; ++x) {
+    dst_argb[0] = clamp255(src_b[x] >> shift);
+    dst_argb[1] = clamp255(src_g[x] >> shift);
+    dst_argb[2] = clamp255(src_r[x] >> shift);
+    dst_argb[3] = clamp255(src_a[x] >> shift);
+    dst_argb += 4;
+  }
+}
+
+void MergeXR64Row_C(const uint16_t* src_r,
+                    const uint16_t* src_g,
+                    const uint16_t* src_b,
+                    uint16_t* dst_ar64,
+                    int depth,
+                    int width) {
+  assert(depth >= 1);
+  assert(depth <= 16);
+  int x;
+  int shift = 16 - depth;
+  int max = (1 << depth) - 1;
+  for (x = 0; x < width; ++x) {
+    dst_ar64[0] = clamp2nm1(src_b[x], max) << shift;
+    dst_ar64[1] = clamp2nm1(src_g[x], max) << shift;
+    dst_ar64[2] = clamp2nm1(src_r[x], max) << shift;
+    dst_ar64[3] = 0xffff;
+    dst_ar64 += 4;
+  }
+}
+
+void MergeXRGB16To8Row_C(const uint16_t* src_r,
+                         const uint16_t* src_g,
+                         const uint16_t* src_b,
+                         uint8_t* dst_argb,
+                         int depth,
+                         int width) {
+  assert(depth >= 8);
+  assert(depth <= 16);
+  int x;
+  int shift = depth - 8;
+  for (x = 0; x < width; ++x) {
+    dst_argb[0] = clamp255(src_b[x] >> shift);
+    dst_argb[1] = clamp255(src_g[x] >> shift);
+    dst_argb[2] = clamp255(src_r[x] >> shift);
+    dst_argb[3] = 0xff;
     dst_argb += 4;
   }
 }

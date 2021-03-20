@@ -289,6 +289,7 @@ extern "C" {
 #define HAS_I410TOAR30ROW_SSSE3
 #define HAS_I410TOARGBROW_SSSE3
 #define HAS_MERGEARGBROW_SSE2
+#define HAS_MERGEXRGBROW_SSE2
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_MIRRORUVROW_SSSE3
 #define HAS_P210TOAR30ROW_SSSE3
@@ -300,6 +301,8 @@ extern "C" {
 #define HAS_RGBATOYJROW_SSSE3
 #define HAS_SPLITARGBROW_SSE2
 #define HAS_SPLITARGBROW_SSSE3
+#define HAS_SPLITXRGBROW_SSE2
+#define HAS_SPLITXRGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #define HAS_SWAPUVROW_SSSE3
 
@@ -330,7 +333,13 @@ extern "C" {
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_DIVIDEROW_16_AVX2
 #define HAS_HALFMERGEUVROW_AVX2
+#define HAS_MERGEAR64ROW_AVX2
+#define HAS_MERGEARGB16TO8ROW_AVX2
 #define HAS_MERGEARGBROW_AVX2
+#define HAS_MERGEXR30ROW_AVX2
+#define HAS_MERGEXR64ROW_AVX2
+#define HAS_MERGEXRGB16TO8ROW_AVX2
+#define HAS_MERGEXRGBROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
 #define HAS_I210TOARGBROW_AVX2
 #define HAS_I212TOAR30ROW_AVX2
@@ -350,6 +359,7 @@ extern "C" {
 #define HAS_MULTIPLYROW_16_AVX2
 #define HAS_RGBATOYJROW_AVX2
 #define HAS_SPLITARGBROW_AVX2
+#define HAS_SPLITXRGBROW_AVX2
 #define HAS_SPLITUVROW_16_AVX2
 #define HAS_SWAPUVROW_AVX2
 // TODO(fbarchard): Fix AVX2 version of YUV24
@@ -423,7 +433,13 @@ extern "C" {
 #define HAS_I422TOYUY2ROW_NEON
 #define HAS_I444TOARGBROW_NEON
 #define HAS_J400TOARGBROW_NEON
+#define HAS_MERGEAR64ROW_NEON
+#define HAS_MERGEARGB16TO8ROW_NEON
 #define HAS_MERGEARGBROW_NEON
+#define HAS_MERGEXR30ROW_NEON
+#define HAS_MERGEXR64ROW_NEON
+#define HAS_MERGEXRGB16TO8ROW_NEON
+#define HAS_MERGEXRGBROW_NEON
 #define HAS_MERGEUVROW_NEON
 #define HAS_MERGEUVROW_16_NEON
 #define HAS_MIRRORROW_NEON
@@ -454,6 +470,7 @@ extern "C" {
 #define HAS_RGBATOYROW_NEON
 #define HAS_SETROW_NEON
 #define HAS_SPLITARGBROW_NEON
+#define HAS_SPLITXRGBROW_NEON
 #define HAS_SPLITRGBROW_NEON
 #define HAS_SPLITUVROW_NEON
 #define HAS_SPLITUVROW_16_NEON
@@ -676,6 +693,7 @@ extern "C" {
 #else
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 #endif
+#define LIBYUV_NOINLINE __declspec(noinline)
 typedef __declspec(align(16)) int16_t vec16[8];
 typedef __declspec(align(16)) int32_t vec32[4];
 typedef __declspec(align(16)) float vecf32[4];
@@ -696,6 +714,7 @@ typedef __declspec(align(32)) uint8_t ulvec8[32];
 #else
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 #endif
+#define LIBYUV_NOINLINE __attribute__((noinline))
 typedef int16_t __attribute__((vector_size(16))) vec16;
 typedef int32_t __attribute__((vector_size(16))) vec32;
 typedef float __attribute__((vector_size(16))) vecf32;
@@ -711,6 +730,7 @@ typedef uint32_t __attribute__((vector_size(32))) ulvec32;
 typedef uint8_t __attribute__((vector_size(32))) ulvec8;
 #else
 #define SIMD_ALIGNED(var) var
+#define LIBYUV_NOINLINE
 typedef int16_t vec16[8];
 typedef int32_t vec32[4];
 typedef float vecf32[4];
@@ -2060,6 +2080,179 @@ void SplitXRGBRow_Any_NEON(const uint8_t* src_argb,
                            uint8_t* dst_g,
                            uint8_t* dst_b,
                            int width);
+
+void MergeXR30Row_C(const uint16_t* src_r,
+                    const uint16_t* src_g,
+                    const uint16_t* src_b,
+                    uint8_t* dst_ar30,
+                    int depth,
+                    int width);
+void MergeAR64Row_C(const uint16_t* src_r,
+                    const uint16_t* src_g,
+                    const uint16_t* src_b,
+                    const uint16_t* src_a,
+                    uint16_t* dst_ar64,
+                    int depth,
+                    int width);
+void MergeARGB16To8Row_C(const uint16_t* src_r,
+                         const uint16_t* src_g,
+                         const uint16_t* src_b,
+                         const uint16_t* src_a,
+                         uint8_t* dst_argb,
+                         int depth,
+                         int width);
+void MergeXR64Row_C(const uint16_t* src_r,
+                    const uint16_t* src_g,
+                    const uint16_t* src_b,
+                    uint16_t* dst_ar64,
+                    int depth,
+                    int width);
+void MergeXRGB16To8Row_C(const uint16_t* src_r,
+                         const uint16_t* src_g,
+                         const uint16_t* src_b,
+                         uint8_t* dst_argb,
+                         int depth,
+                         int width);
+void MergeXR30Row_AVX2(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint8_t* dst_ar30,
+                       int depth,
+                       int width);
+void MergeAR64Row_AVX2(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       const uint16_t* src_a,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width);
+void MergeARGB16To8Row_AVX2(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            const uint16_t* src_a,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width);
+void MergeXR64Row_AVX2(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width);
+void MergeXRGB16To8Row_AVX2(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width);
+void MergeXR30Row_NEON(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint8_t* dst_ar30,
+                       int depth,
+                       int width);
+void MergeXR30Row_10_NEON(const uint16_t* src_r,
+                          const uint16_t* src_g,
+                          const uint16_t* src_b,
+                          uint8_t* dst_ar30,
+                          int /* depth */,
+                          int width);
+void MergeAR64Row_NEON(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       const uint16_t* src_a,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width);
+void MergeARGB16To8Row_NEON(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            const uint16_t* src_a,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width);
+void MergeXR64Row_NEON(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width);
+void MergeXRGB16To8Row_NEON(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width);
+void MergeXR30Row_Any_AVX2(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint8_t* dst_ar30,
+                           int depth,
+                           int width);
+void MergeAR64Row_Any_AVX2(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           const uint16_t* src_a,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width);
+void MergeXR64Row_Any_AVX2(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width);
+void MergeARGB16To8Row_Any_AVX2(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                const uint16_t* src_a,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width);
+void MergeXRGB16To8Row_Any_AVX2(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width);
+void MergeXR30Row_Any_NEON(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint8_t* dst_ar30,
+                           int depth,
+                           int width);
+void MergeXR30Row_10_Any_NEON(const uint16_t* src_r,
+                              const uint16_t* src_g,
+                              const uint16_t* src_b,
+                              uint8_t* dst_ar30,
+                              int depth,
+                              int width);
+void MergeAR64Row_Any_NEON(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           const uint16_t* src_a,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width);
+void MergeARGB16To8Row_Any_NEON(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                const uint16_t* src_a,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width);
+void MergeXR64Row_Any_NEON(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width);
+void MergeXRGB16To8Row_Any_NEON(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width);
 
 void MergeUVRow_16_C(const uint16_t* src_u,
                      const uint16_t* src_v,
