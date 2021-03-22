@@ -791,8 +791,8 @@ void ScaleRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       "umlal       v4.4s, v1.4h, v31.4h          \n"  // 3*near+far (2, odd)
       "umlal       v5.4s, v0.4h, v31.4h          \n"  // 3*near+far (2, even)
 
-      "mov         v0.4s, v4.4s                  \n"
-      "mov         v1.4s, v5.4s                  \n"
+      "mov         v0.16b, v4.16b                \n"
+      "mov         v1.16b, v5.16b                \n"
       "mla         v4.4s, v2.4s, v30.4s          \n"  // 9 3 3 1 (1, odd)
       "mla         v5.4s, v3.4s, v30.4s          \n"  // 9 3 3 1 (1, even)
       "mla         v2.4s, v0.4s, v30.4s          \n"  // 9 3 3 1 (2, odd)
@@ -988,8 +988,8 @@ void ScaleUVRowUp2_Bilinear_16_NEON(const uint16_t* src_ptr,
       "umlal       v4.4s, v1.4h, v31.4h          \n"  // 3*near+far (2, odd)
       "umlal       v5.4s, v0.4h, v31.4h          \n"  // 3*near+far (2, even)
 
-      "mov         v0.4s, v4.4s                  \n"
-      "mov         v1.4s, v5.4s                  \n"
+      "mov         v0.16b, v4.16b                \n"
+      "mov         v1.16b, v5.16b                \n"
       "mla         v4.4s, v2.4s, v30.4s          \n"  // 9 3 3 1 (1, odd)
       "mla         v5.4s, v3.4s, v30.4s          \n"  // 9 3 3 1 (1, even)
       "mla         v2.4s, v0.4s, v30.4s          \n"  // 9 3 3 1 (2, odd)
