@@ -1628,10 +1628,10 @@ void AR64ToARGBRow_NEON(const uint16_t* src_ar64,
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
       "stp         q0, q2, [%1], #32             \n"  // store 8 pixels
       "b.gt        1b                            \n"
-      : "+r"(src_ar64),  // %0
-        "+r"(dst_argb),  // %1
-        "+r"(width)      // %2
-      : "m"(kShuffleAR64ToARGB) // %3
+      : "+r"(src_ar64),          // %0
+        "+r"(dst_argb),          // %1
+        "+r"(width)              // %2
+      : "m"(kShuffleAR64ToARGB)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
@@ -2506,9 +2506,9 @@ void RAWToYJRow_NEON(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
       "ld3         {v0.8b,v1.8b,v2.8b}, [%0], #24 \n"  // load 8 pixels.
       "prfm        pldl1keep, [%0, 448]          \n"
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
-      "umull       v0.8h, v0.8b, v4.8b           \n"  // B
+      "umull       v0.8h, v0.8b, v4.8b           \n"  // R
       "umlal       v0.8h, v1.8b, v5.8b           \n"  // G
-      "umlal       v0.8h, v2.8b, v6.8b           \n"  // R
+      "umlal       v0.8h, v2.8b, v6.8b           \n"  // B
       "uqrshrn     v0.8b, v0.8h, #8              \n"  // 16 bit to 8 bit Y
       "st1         {v0.8b}, [%1], #8             \n"  // store 8 pixels Y.
       "b.gt        1b                            \n"

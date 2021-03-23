@@ -3376,14 +3376,14 @@ int AR30ToAB30(const uint8_t* src_ar30,
 // Convert AR64 to ARGB.
 LIBYUV_API
 int AR64ToARGB(const uint16_t* src_ar64,
-                 int src_stride_ar64,
-                 uint8_t* dst_argb,
-                 int dst_stride_argb,
-                 int width,
-                 int height) {
+               int src_stride_ar64,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
   int y;
   void (*AR64ToARGBRow)(const uint16_t* src_ar64, uint8_t* dst_argb,
-                          int width) = AR64ToARGBRow_C;
+                        int width) = AR64ToARGBRow_C;
   if (!src_ar64 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }

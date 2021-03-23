@@ -1116,8 +1116,7 @@ void ARGBToAB64Row_SSSE3(const uint8_t* src_argb,
   asm volatile(
 
       "movdqa      %3,%%xmm2                     \n"
-      "movdqa      %4,%%xmm3                     \n"
-      LABELALIGN
+      "movdqa      %4,%%xmm3                     \n" LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqa      %%xmm0,%%xmm1                 \n"
@@ -1129,11 +1128,11 @@ void ARGBToAB64Row_SSSE3(const uint8_t* src_argb,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),          // %0
-        "+r"(dst_ab64),          // %1
-        "+r"(width)              // %2
-      : "m"(kShuffleARGBToAB64Lo), // %3
-        "m"(kShuffleARGBToAB64Hi)  // %4
+      : "+r"(src_argb),             // %0
+        "+r"(dst_ab64),             // %1
+        "+r"(width)                 // %2
+      : "m"(kShuffleARGBToAB64Lo),  // %3
+        "m"(kShuffleARGBToAB64Hi)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 
@@ -1166,8 +1165,7 @@ void AB64ToARGBRow_SSSE3(const uint16_t* src_ar64,
                          int width) {
   asm volatile(
 
-      "movdqa      %3,%%xmm2                     \n"
-      LABELALIGN
+      "movdqa      %3,%%xmm2                     \n" LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -1220,8 +1218,7 @@ void ARGBToAB64Row_AVX2(const uint8_t* src_argb,
   asm volatile(
 
       "vbroadcastf128 %3,%%ymm2                  \n"
-      "vbroadcastf128 %4,%%ymm3                  \n"
-      LABELALIGN
+      "vbroadcastf128 %4,%%ymm3                  \n" LABELALIGN
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
@@ -1233,11 +1230,11 @@ void ARGBToAB64Row_AVX2(const uint8_t* src_argb,
       "lea         0x40(%1),%1                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),          // %0
-        "+r"(dst_ab64),          // %1
-        "+r"(width)              // %2
+      : "+r"(src_argb),             // %0
+        "+r"(dst_ab64),             // %1
+        "+r"(width)                 // %2
       : "m"(kShuffleARGBToAB64Lo),  // %3
-        "m"(kShuffleARGBToAB64Hi)  // %3
+        "m"(kShuffleARGBToAB64Hi)   // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif
@@ -1275,8 +1272,7 @@ void AB64ToARGBRow_AVX2(const uint16_t* src_ar64,
                         int width) {
   asm volatile(
 
-      "vbroadcastf128 %3,%%ymm2                  \n"
-      LABELALIGN
+      "vbroadcastf128 %3,%%ymm2                  \n" LABELALIGN
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"

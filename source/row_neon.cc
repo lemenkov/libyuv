@@ -2191,7 +2191,7 @@ void AR64ToARGBRow_NEON(const uint16_t* src_ar64,
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
-static const uvec8 kShuffleAB64ToARGB = {5,  3,  1,  7,  13, 11, 9,  15};
+static const uvec8 kShuffleAB64ToARGB = {5, 3, 1, 7, 13, 11, 9, 15};
 
 void AB64ToARGBRow_NEON(const uint16_t* src_ab64,
                         uint8_t* dst_argb,
@@ -2362,9 +2362,9 @@ void RAWToYJRow_NEON(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
       "1:                                        \n"
       "vld3.8      {d0, d1, d2}, [%0]!           \n"  // load 8 pixels of RAW.
       "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q4, d0, d4                    \n"  // B
+      "vmull.u8    q4, d0, d4                    \n"  // R
       "vmlal.u8    q4, d1, d5                    \n"  // G
-      "vmlal.u8    q4, d2, d6                    \n"  // R
+      "vmlal.u8    q4, d2, d6                    \n"  // B
       "vqrshrn.u16 d0, q4, #8                    \n"  // 16 bit to 8 bit Y
       "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
       "bgt         1b                            \n"
