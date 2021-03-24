@@ -10,6 +10,7 @@
 
 #include "libyuv/row.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>  // For memcpy and memset.
 
@@ -3045,6 +3046,8 @@ void MergeUVRow_16_C(const uint16_t* src_u,
                      int depth,
                      int width) {
   int shift = 16 - depth;
+  assert(depth >= 8);
+  assert(depth <= 16);
   int x;
   for (x = 0; x < width; ++x) {
     dst_uv[0] = src_u[x] << shift;
@@ -3061,6 +3064,8 @@ void SplitUVRow_16_C(const uint16_t* src_uv,
                      int width) {
   int shift = 16 - depth;
   int x;
+  assert(depth >= 8);
+  assert(depth <= 16);
   for (x = 0; x < width; ++x) {
     dst_u[x] = src_uv[0] >> shift;
     dst_v[x] = src_uv[1] >> shift;
@@ -3098,6 +3103,9 @@ void Convert16To8Row_C(const uint16_t* src_y,
                        int scale,
                        int width) {
   int x;
+  assert(scale >= 256);
+  assert(scale <= 32768);
+
   for (x = 0; x < width; ++x) {
     dst_y[x] = clamp255((src_y[x] * scale) >> 16);
   }

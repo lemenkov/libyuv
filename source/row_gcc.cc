@@ -4728,8 +4728,6 @@ void MergeUVRow_16_AVX2(const uint16_t* src_u,
   // clang-format off
   asm volatile (
       "vmovd       %4,%%xmm3                     \n"
-      "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
-      "vbroadcastss %%xmm3,%%xmm3                \n"
       "sub         %0,%1                         \n"
 
     // 16 pixels per loop.
@@ -4761,7 +4759,7 @@ void MergeUVRow_16_AVX2(const uint16_t* src_u,
 }
 #endif  // HAS_MERGEUVROW_AVX2
 
-#ifdef HAS_MERGEUVROW_16_AVX2
+#ifdef HAS_SPLITUVROW_16_AVX2
 const uvec8 kSplitUVShuffle16 = {0, 1, 4, 5, 8,  9,  12, 13,
                                  2, 3, 6, 7, 10, 11, 14, 15};
 void SplitUVRow_16_AVX2(const uint16_t* src_uv,
@@ -4773,8 +4771,6 @@ void SplitUVRow_16_AVX2(const uint16_t* src_uv,
   // clang-format off
   asm volatile (
       "vmovd       %4,%%xmm3                     \n"
-      "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
-      "vbroadcastss %%xmm3,%%xmm3                \n"
       "vbroadcastf128 %5,%%ymm4                  \n"
       "sub         %1,%2                         \n"
 
@@ -4800,16 +4796,15 @@ void SplitUVRow_16_AVX2(const uint16_t* src_uv,
       "jg          1b                            \n"
       "vzeroupper                                \n"
   : "+r"(src_uv),   // %0
-    "+r"(dst_u),   // %1
-    "+r"(dst_v),  // %2
-    "+r"(width),    // %3
-    "+r"(depth)     // %4
-  :
+    "+r"(dst_u),    // %1
+    "+r"(dst_v),    // %2
+    "+r"(width)     // %3
+  : "r"(depth),     // %4
     "m"(kSplitUVShuffle16) // %5
   : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
   // clang-format on
 }
-#endif  // HAS_MERGEUVROW_AVX2
+#endif  // HAS_SPLITUVROW_16_AVX2
 
 // Use scale to convert lsb formats to msb, depending how many bits there are:
 // 128 = 9 bits

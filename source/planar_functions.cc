@@ -10,6 +10,7 @@
 
 #include "libyuv/planar_functions.h"
 
+#include <assert.h>
 #include <string.h>  // for memset()
 
 #include "libyuv/cpu_id.h"
@@ -563,9 +564,9 @@ void SplitUVPlane_16(const uint16_t* src_uv,
                      int height,
                      int depth) {
   int y;
-  int scale = 1 << depth;
-  void (*SplitUVRow)(const uint16_t* src_uv, uint16_t* dst_u, uint16_t* dst_v,
-                     int scale, int width) = SplitUVRow_16_C;
+  void (*SplitUVRow_16)(const uint16_t* src_uv, uint16_t* dst_u,
+                        uint16_t* dst_v, int depth, int width) =
+      SplitUVRow_16_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -583,24 +584,24 @@ void SplitUVPlane_16(const uint16_t* src_uv,
   }
 #if defined(HAS_SPLITUVROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    SplitUVRow = SplitUVRow_16_Any_AVX2;
+    SplitUVRow_16 = SplitUVRow_16_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_16_AVX2;
+      SplitUVRow_16 = SplitUVRow_16_AVX2;
     }
   }
 #endif
 #if defined(HAS_SPLITUVROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    SplitUVRow = SplitUVRow_16_Any_NEON;
+    SplitUVRow_16 = SplitUVRow_16_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      SplitUVRow = SplitUVRow_16_NEON;
+      SplitUVRow_16 = SplitUVRow_16_NEON;
     }
   }
 #endif
 
   for (y = 0; y < height; ++y) {
     // Copy a row of UV.
-    SplitUVRow(src_uv, dst_u, dst_v, scale, width);
+    SplitUVRow_16(src_uv, dst_u, dst_v, depth, width);
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
     src_uv += src_stride_uv;
@@ -618,9 +619,11 @@ void MergeUVPlane_16(const uint16_t* src_u,
                      int height,
                      int depth) {
   int y;
-  int scale = 1 << (16 - depth);
-  void (*MergeUVRow)(const uint16_t* src_u, const uint16_t* src_v,
-                     uint16_t* dst_uv, int scale, int width) = MergeUVRow_16_C;
+  void (*MergeUVRow_16)(const uint16_t* src_u, const uint16_t* src_v,
+                        uint16_t* dst_uv, int depth, int width) =
+      MergeUVRow_16_C;
+  assert(depth >= 8);
+  assert(depth <= 16);
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -636,24 +639,24 @@ void MergeUVPlane_16(const uint16_t* src_u,
   }
 #if defined(HAS_MERGEUVROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    MergeUVRow = MergeUVRow_16_Any_AVX2;
+    MergeUVRow_16 = MergeUVRow_16_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      MergeUVRow = MergeUVRow_16_AVX2;
+      MergeUVRow_16 = MergeUVRow_16_AVX2;
     }
   }
 #endif
 #if defined(HAS_MERGEUVROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    MergeUVRow = MergeUVRow_16_Any_NEON;
+    MergeUVRow_16 = MergeUVRow_16_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      MergeUVRow = MergeUVRow_16_NEON;
+      MergeUVRow_16 = MergeUVRow_16_NEON;
     }
   }
 #endif
 
   for (y = 0; y < height; ++y) {
     // Merge a row of U and V into a row of UV.
-    MergeUVRow(src_u, src_v, dst_uv, scale, width);
+    MergeUVRow_16(src_u, src_v, dst_uv, depth, width);
     src_u += src_stride_u;
     src_v += src_stride_v;
     dst_uv += dst_stride_uv;
@@ -671,8 +674,8 @@ void ConvertToMSBPlane_16(const uint16_t* src_y,
                           int depth) {
   int y;
   int scale = 1 << (16 - depth);
-  void (*MultiplyRow)(const uint16_t* src_y, uint16_t* dst_y, int scale,
-                      int width) = MultiplyRow_16_C;
+  void (*MultiplyRow_16)(const uint16_t* src_y, uint16_t* dst_y, int scale,
+                         int width) = MultiplyRow_16_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -688,23 +691,23 @@ void ConvertToMSBPlane_16(const uint16_t* src_y,
 
 #if defined(HAS_MULTIPLYROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    MultiplyRow = MultiplyRow_16_Any_AVX2;
+    MultiplyRow_16 = MultiplyRow_16_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
-      MultiplyRow = MultiplyRow_16_AVX2;
+      MultiplyRow_16 = MultiplyRow_16_AVX2;
     }
   }
 #endif
 #if defined(HAS_MULTIPLYROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    MultiplyRow = MultiplyRow_16_Any_NEON;
+    MultiplyRow_16 = MultiplyRow_16_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
-      MultiplyRow = MultiplyRow_16_NEON;
+      MultiplyRow_16 = MultiplyRow_16_NEON;
     }
   }
 #endif
 
   for (y = 0; y < height; ++y) {
-    MultiplyRow(src_y, dst_y, scale, width);
+    MultiplyRow_16(src_y, dst_y, scale, width);
     src_y += src_stride_y;
     dst_y += dst_stride_y;
   }

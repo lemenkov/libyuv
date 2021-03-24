@@ -3270,32 +3270,22 @@ void SplitUVRow_16_NEON(const uint16_t* src_uv,
                         uint16_t* dst_v,
                         int depth,
                         int width) {
+  int shift = depth - 16;  // Negative for right shift.
   asm volatile(
-      "vdup.32     q0, %3                        \n"
+      "vdup.16     q2, %4                        \n"
       "1:                                        \n"
-      "vld2.16     {q1, q2}, [%0]!               \n"  // load 8 UV
-      "vmovl.u16   q3, d2                        \n"
-      "vmovl.u16   q4, d3                        \n"
-      "vshl.u32    q3, q3, q0                    \n"
-      "vshl.u32    q4, q4, q0                    \n"
-      "vmovn.u32   d2, q3                        \n"
-      "vmovn.u32   d3, q4                        \n"
-      "vmovl.u16   q3, d4                        \n"
-      "vmovl.u16   q4, d5                        \n"
-      "vshl.u32    q3, q3, q0                    \n"
-      "vshl.u32    q4, q4, q0                    \n"
-      "vmovn.u32   d4, q3                        \n"
-      "vmovn.u32   d5, q4                        \n"
-      "subs        %4, %4, #8                    \n"  // 8 src pixels per loop
-      "vst1.16     {q1}, [%1]!                   \n"  // store 8 U pixels
-      "vst1.16     {q2}, [%2]!                   \n"  // store 8 V pixels
+      "vld2.16     {q0, q1}, [%0]!               \n"  // load 8 UV
+      "vshl.u16    q0, q0, q2                    \n"
+      "vshl.u16    q1, q1, q2                    \n"
+      "subs        %3, %3, #8                    \n"  // 8 src pixels per loop
+      "vst1.16     {q0}, [%1]!                   \n"  // store 8 U pixels
+      "vst1.16     {q1}, [%2]!                   \n"  // store 8 V pixels
       "bgt         1b                            \n"
       : "+r"(src_uv),  // %0
         "+r"(dst_u),   // %1
         "+r"(dst_v),   // %2
-        "+r"(depth),   // %3
-        "+r"(width)    // %4
-      :
+        "+r"(width)    // %3
+      : "r"(shift)     // %4
       : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
 }
 
@@ -3306,21 +3296,20 @@ void MergeUVRow_16_NEON(const uint16_t* src_u,
                         int width) {
   int shift = 16 - depth;
   asm volatile(
-      "vdup.16     q2, %3                        \n"
+      "vdup.16     q2, %4                        \n"
       "1:                                        \n"
       "vld1.16     {q0}, [%0]!                   \n"  // load 8 U
       "vld1.16     {q1}, [%1]!                   \n"  // load 8 V
       "vshl.u16    q0, q0, q2                    \n"
       "vshl.u16    q1, q1, q2                    \n"
-      "subs        %4, %4, #8                    \n"  // 8 src pixels per loop
+      "subs        %3, %3, #8                    \n"  // 8 src pixels per loop
       "vst2.16     {q0, q1}, [%2]!               \n"  // store 8 UV pixels
       "bgt         1b                            \n"
       : "+r"(src_u),   // %0
         "+r"(src_v),   // %1
         "+r"(dst_uv),  // %2
-        "+r"(shift),   // %3
-        "+r"(width)    // %4
-      :
+        "+r"(width)    // %3
+      : "r"(shift)     // %4
       : "cc", "memory", "q0", "q1", "q2");
 }
 

@@ -2605,6 +2605,64 @@ TEST_F(LibYUVPlanarTest, MergeUVPlane_Opt) {
   free_aligned_buffer_page_end(dst_pixels_c);
 }
 
+// 16 bit channel split and merge
+TEST_F(LibYUVPlanarTest, MergeUVPlane_16_Opt) {
+  // Round count up to multiple of 16
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  align_buffer_page_end(src_pixels, kPixels * 2 * 2);
+  align_buffer_page_end(tmp_pixels_u_c, kPixels * 2);
+  align_buffer_page_end(tmp_pixels_v_c, kPixels * 2);
+  align_buffer_page_end(tmp_pixels_u_opt, kPixels * 2);
+  align_buffer_page_end(tmp_pixels_v_opt, kPixels * 2);
+  align_buffer_page_end(dst_pixels_opt, kPixels * 2 * 2);
+  align_buffer_page_end(dst_pixels_c, kPixels * 2 * 2);
+  MemRandomize(src_pixels, kPixels * 2 * 2);
+  MemRandomize(tmp_pixels_u_c, kPixels * 2);
+  MemRandomize(tmp_pixels_v_c, kPixels * 2);
+  MemRandomize(tmp_pixels_u_opt, kPixels * 2);
+  MemRandomize(tmp_pixels_v_opt, kPixels * 2);
+  MemRandomize(dst_pixels_opt, kPixels * 2 * 2);
+  MemRandomize(dst_pixels_c, kPixels * 2 * 2);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  SplitUVPlane_16((const uint16_t*)src_pixels, benchmark_width_ * 2,
+                  (uint16_t*)tmp_pixels_u_c, benchmark_width_,
+                  (uint16_t*)tmp_pixels_v_c, benchmark_width_, benchmark_width_,
+                  benchmark_height_, 12);
+  MergeUVPlane_16((const uint16_t*)tmp_pixels_u_c, benchmark_width_,
+                  (const uint16_t*)tmp_pixels_v_c, benchmark_width_,
+                  (uint16_t*)dst_pixels_c, benchmark_width_ * 2,
+                  benchmark_width_, benchmark_height_, 12);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  SplitUVPlane_16((const uint16_t*)src_pixels, benchmark_width_ * 2,
+                  (uint16_t*)tmp_pixels_u_opt, benchmark_width_,
+                  (uint16_t*)tmp_pixels_v_opt, benchmark_width_,
+                  benchmark_width_, benchmark_height_, 12);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    MergeUVPlane_16((const uint16_t*)tmp_pixels_u_opt, benchmark_width_,
+                    (const uint16_t*)tmp_pixels_v_opt, benchmark_width_,
+                    (uint16_t*)dst_pixels_opt, benchmark_width_ * 2,
+                    benchmark_width_, benchmark_height_, 12);
+  }
+
+  for (int i = 0; i < kPixels * 2; ++i) {
+    EXPECT_EQ(tmp_pixels_u_c[i], tmp_pixels_u_opt[i]);
+    EXPECT_EQ(tmp_pixels_v_c[i], tmp_pixels_v_opt[i]);
+  }
+  for (int i = 0; i < kPixels * 2 * 2; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(tmp_pixels_u_c);
+  free_aligned_buffer_page_end(tmp_pixels_v_c);
+  free_aligned_buffer_page_end(tmp_pixels_u_opt);
+  free_aligned_buffer_page_end(tmp_pixels_v_opt);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+  free_aligned_buffer_page_end(dst_pixels_c);
+}
+
 TEST_F(LibYUVPlanarTest, SplitUVPlane_Opt) {
   // Round count up to multiple of 16
   const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
@@ -2647,6 +2705,46 @@ TEST_F(LibYUVPlanarTest, SplitUVPlane_Opt) {
   free_aligned_buffer_page_end(tmp_pixels_v);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(dst_pixels_c);
+}
+
+// 16 bit channel split
+TEST_F(LibYUVPlanarTest, SplitUVPlane_16_Opt) {
+  // Round count up to multiple of 16
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  align_buffer_page_end(src_pixels, kPixels * 2 * 2);
+  align_buffer_page_end(dst_pixels_u_c, kPixels * 2);
+  align_buffer_page_end(dst_pixels_v_c, kPixels * 2);
+  align_buffer_page_end(dst_pixels_u_opt, kPixels * 2);
+  align_buffer_page_end(dst_pixels_v_opt, kPixels * 2);
+  MemRandomize(src_pixels, kPixels * 2 * 2);
+  MemRandomize(dst_pixels_u_c, kPixels * 2);
+  MemRandomize(dst_pixels_v_c, kPixels * 2);
+  MemRandomize(dst_pixels_u_opt, kPixels * 2);
+  MemRandomize(dst_pixels_v_opt, kPixels * 2);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  SplitUVPlane_16((const uint16_t*)src_pixels, benchmark_width_ * 2,
+                  (uint16_t*)dst_pixels_u_c, benchmark_width_,
+                  (uint16_t*)dst_pixels_v_c, benchmark_width_, benchmark_width_,
+                  benchmark_height_, 10);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    SplitUVPlane_16((const uint16_t*)src_pixels, benchmark_width_ * 2,
+                    (uint16_t*)dst_pixels_u_opt, benchmark_width_,
+                    (uint16_t*)dst_pixels_v_opt, benchmark_width_,
+                    benchmark_width_, benchmark_height_, 10);
+  }
+
+  for (int i = 0; i < kPixels * 2; ++i) {
+    EXPECT_EQ(dst_pixels_u_c[i], dst_pixels_u_opt[i]);
+    EXPECT_EQ(dst_pixels_v_c[i], dst_pixels_v_opt[i]);
+  }
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(dst_pixels_u_c);
+  free_aligned_buffer_page_end(dst_pixels_v_c);
+  free_aligned_buffer_page_end(dst_pixels_u_opt);
+  free_aligned_buffer_page_end(dst_pixels_v_opt);
 }
 
 TEST_F(LibYUVPlanarTest, SwapUVPlane_Opt) {

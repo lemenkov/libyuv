@@ -400,7 +400,7 @@ int I210ToI010(const uint16_t* src_y,
 }
 
 // Any I[420]1[02] to P[420]1[02] format with mirroring.
-static int Ix1xToPx1x(const uint16_t* src_y,
+static int IxxxToPxxx(const uint16_t* src_y,
                       int src_stride_y,
                       const uint16_t* src_u,
                       int src_stride_u,
@@ -441,7 +441,7 @@ int I010ToP010(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+  return IxxxToPxxx(src_y, src_stride_y, src_u, src_stride_u, src_v,
                     src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
                     width, height, 1, 1, 10);
 }
@@ -459,7 +459,7 @@ int I210ToP210(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+  return IxxxToPxxx(src_y, src_stride_y, src_u, src_stride_u, src_v,
                     src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
                     width, height, 1, 0, 10);
 }
@@ -477,7 +477,7 @@ int I012ToP012(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+  return IxxxToPxxx(src_y, src_stride_y, src_u, src_stride_u, src_v,
                     src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
                     width, height, 1, 1, 12);
 }
@@ -495,7 +495,7 @@ int I212ToP212(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  return Ix1xToPx1x(src_y, src_stride_y, src_u, src_stride_u, src_v,
+  return IxxxToPxxx(src_y, src_stride_y, src_u, src_stride_u, src_v,
                     src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
                     width, height, 1, 0, 12);
 }
@@ -2246,20 +2246,20 @@ int RAWToI420(const uint8_t* src_raw,
 // Convert RAW to J420.
 LIBYUV_API
 int RAWToJ420(const uint8_t* src_raw,
-                int src_stride_raw,
-                uint8_t* dst_y,
-                int dst_stride_y,
-                uint8_t* dst_u,
-                int dst_stride_u,
-                uint8_t* dst_v,
-                int dst_stride_v,
-                int width,
-                int height) {
+              int src_stride_raw,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_u,
+              int dst_stride_u,
+              uint8_t* dst_v,
+              int dst_stride_v,
+              int width,
+              int height) {
   int y;
 #if (defined(HAS_RAWTOYJROW_NEON) && defined(HAS_RAWTOUVJROW_NEON)) || \
     defined(HAS_RAWTOYJROW_MSA) || defined(HAS_RAWTOYJROW_MMI)
   void (*RAWToUVJRow)(const uint8_t* src_raw, int src_stride_raw,
-                        uint8_t* dst_u, uint8_t* dst_v, int width) =
+                      uint8_t* dst_u, uint8_t* dst_v, int width) =
       RAWToUVJRow_C;
   void (*RAWToYJRow)(const uint8_t* src_raw, uint8_t* dst_y, int width) =
       RAWToYJRow_C;
