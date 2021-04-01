@@ -1486,7 +1486,7 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 // KR = 0.299; KB = 0.114
 
 // U and V contributions to R,G,B.
-#if LIBYUV_UNLIMITED_DATA
+#if defined(LIBYUV_UNLIMITED_DATA)
 #define UB 129 /* round(2.018 * 64) */
 #else
 #define UB 128 /* max(128, round(2.018 * 64)) */
@@ -1540,7 +1540,7 @@ MAKEYUVCONSTANTS(JPEG, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 //  KR = 0.2126, KB = 0.0722
 
 // U and V contributions to R,G,B.
-#if LIBYUV_UNLIMITED_DATA
+#if defined(LIBYUV_UNLIMITED_DATA)
 #define UB 135 /* round(2.112 * 64) */
 #else
 #define UB 128 /* max(128, round(2.112 * 64)) */
@@ -1594,7 +1594,7 @@ MAKEYUVCONSTANTS(F709, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 // KR = 0.2627; KB = 0.0593
 
 // U and V contributions to R,G,B.
-#if LIBYUV_UNLIMITED_DATA
+#if defined(LIBYUV_UNLIMITED_DATA)
 #define UB 137 /* round(2.142 * 64) */
 #else
 #define UB 128 /* max(128, round(2.142 * 64)) */
@@ -1646,7 +1646,7 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 
 #undef MAKEYUVCONSTANTS
 
-#if LIBYUV_UNLIMITED_DATA
+#if defined(LIBYUV_UNLIMITED_DATA)
 
 // C reference code that mimics the YUV assembly.
 // Reads 8 bit YUV and leaves result as 16 bit.
