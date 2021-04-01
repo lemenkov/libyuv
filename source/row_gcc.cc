@@ -1160,7 +1160,7 @@ void AR64ToARGBRow_SSSE3(const uint16_t* src_ar64,
       : "memory", "cc", "xmm0", "xmm1");
 }
 
-void AB64ToARGBRow_SSSE3(const uint16_t* src_ar64,
+void AB64ToARGBRow_SSSE3(const uint16_t* src_ab64,
                          uint8_t* dst_argb,
                          int width) {
   asm volatile(
@@ -1178,7 +1178,7 @@ void AB64ToARGBRow_SSSE3(const uint16_t* src_ar64,
       "lea         0x10(%1),%1                   \n"
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ar64),          // %0
+      : "+r"(src_ab64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
       : "m"(kShuffleARGBToABGR)  // %3
@@ -1267,7 +1267,7 @@ void AR64ToARGBRow_AVX2(const uint16_t* src_ar64,
 #endif
 
 #ifdef HAS_AB64TOARGBROW_AVX2
-void AB64ToARGBRow_AVX2(const uint16_t* src_ar64,
+void AB64ToARGBRow_AVX2(const uint16_t* src_ab64,
                         uint8_t* dst_argb,
                         int width) {
   asm volatile(
@@ -1286,7 +1286,7 @@ void AB64ToARGBRow_AVX2(const uint16_t* src_ar64,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ar64),          // %0
+      : "+r"(src_ab64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
       : "m"(kShuffleARGBToABGR)  // %3
@@ -1506,7 +1506,7 @@ void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
 #endif  // HAS_RGBATOYJROW_AVX2
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
-void ARGBToUVRow_SSSE3(const uint8_t* src_argb0,
+void ARGBToUVRow_SSSE3(const uint8_t* src_argb,
                        int src_stride_argb,
                        uint8_t* dst_u,
                        uint8_t* dst_v,
@@ -1558,7 +1558,7 @@ void ARGBToUVRow_SSSE3(const uint8_t* src_argb0,
       "lea         0x8(%1),%1                    \n"
       "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
-      : "+r"(src_argb0),                   // %0
+      : "+r"(src_argb),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -1575,7 +1575,7 @@ void ARGBToUVRow_SSSE3(const uint8_t* src_argb0,
 static const lvec8 kShufARGBToUV_AVX = {
     0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
     0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15};
-void ARGBToUVRow_AVX2(const uint8_t* src_argb0,
+void ARGBToUVRow_AVX2(const uint8_t* src_argb,
                       int src_stride_argb,
                       uint8_t* dst_u,
                       uint8_t* dst_v,
@@ -1623,7 +1623,7 @@ void ARGBToUVRow_AVX2(const uint8_t* src_argb0,
       "sub         $0x20,%3                      \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_argb0),                   // %0
+      : "+r"(src_argb),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -1638,7 +1638,7 @@ void ARGBToUVRow_AVX2(const uint8_t* src_argb0,
 #endif  // HAS_ARGBTOUVROW_AVX2
 
 #ifdef HAS_ABGRTOUVROW_AVX2
-void ABGRToUVRow_AVX2(const uint8_t* src_abgr0,
+void ABGRToUVRow_AVX2(const uint8_t* src_abgr,
                       int src_stride_abgr,
                       uint8_t* dst_u,
                       uint8_t* dst_v,
@@ -1686,7 +1686,7 @@ void ABGRToUVRow_AVX2(const uint8_t* src_abgr0,
       "sub         $0x20,%3                      \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_abgr0),                   // %0
+      : "+r"(src_abgr),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -1701,7 +1701,7 @@ void ABGRToUVRow_AVX2(const uint8_t* src_abgr0,
 #endif  // HAS_ABGRTOUVROW_AVX2
 
 #ifdef HAS_ARGBTOUVJROW_AVX2
-void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
+void ARGBToUVJRow_AVX2(const uint8_t* src_argb,
                        int src_stride_argb,
                        uint8_t* dst_u,
                        uint8_t* dst_v,
@@ -1750,7 +1750,7 @@ void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
       "sub         $0x20,%3                      \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_argb0),                   // %0
+      : "+r"(src_argb),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -1765,7 +1765,7 @@ void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
 #endif  // HAS_ARGBTOUVJROW_AVX2
 
 #ifdef HAS_ARGBTOUVJROW_SSSE3
-void ARGBToUVJRow_SSSE3(const uint8_t* src_argb0,
+void ARGBToUVJRow_SSSE3(const uint8_t* src_argb,
                         int src_stride_argb,
                         uint8_t* dst_u,
                         uint8_t* dst_v,
@@ -1818,7 +1818,7 @@ void ARGBToUVJRow_SSSE3(const uint8_t* src_argb0,
       "lea         0x8(%1),%1                    \n"
       "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
-      : "+r"(src_argb0),                   // %0
+      : "+r"(src_argb),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -1905,7 +1905,7 @@ void BGRAToYRow_SSSE3(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
         "xmm7");
 }
 
-void BGRAToUVRow_SSSE3(const uint8_t* src_bgra0,
+void BGRAToUVRow_SSSE3(const uint8_t* src_bgra,
                        int src_stride_bgra,
                        uint8_t* dst_u,
                        uint8_t* dst_v,
@@ -1957,7 +1957,7 @@ void BGRAToUVRow_SSSE3(const uint8_t* src_bgra0,
       "lea         0x8(%1),%1                    \n"
       "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
-      : "+r"(src_bgra0),                   // %0
+      : "+r"(src_bgra),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -2002,7 +2002,7 @@ void RGBAToYRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
         "xmm7");
 }
 
-void ABGRToUVRow_SSSE3(const uint8_t* src_abgr0,
+void ABGRToUVRow_SSSE3(const uint8_t* src_abgr,
                        int src_stride_abgr,
                        uint8_t* dst_u,
                        uint8_t* dst_v,
@@ -2054,7 +2054,7 @@ void ABGRToUVRow_SSSE3(const uint8_t* src_abgr0,
       "lea         0x8(%1),%1                    \n"
       "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
-      : "+r"(src_abgr0),                   // %0
+      : "+r"(src_abgr),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -2065,7 +2065,7 @@ void ABGRToUVRow_SSSE3(const uint8_t* src_abgr0,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm6", "xmm7");
 }
 
-void RGBAToUVRow_SSSE3(const uint8_t* src_rgba0,
+void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
                        int src_stride_rgba,
                        uint8_t* dst_u,
                        uint8_t* dst_v,
@@ -2117,7 +2117,7 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba0,
       "lea         0x8(%1),%1                    \n"
       "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
-      : "+r"(src_rgba0),                   // %0
+      : "+r"(src_rgba),                    // %0
         "+r"(dst_u),                       // %1
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
@@ -5741,7 +5741,7 @@ void MergeXR30Row_AVX2(const uint16_t* src_r,
 #if defined(__i386__)
       : "m"(shift)  // %5
 #else
-      : "rm"(shift)  // %5
+      : "rm"(shift)           // %5
 #endif
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
@@ -5813,9 +5813,9 @@ void MergeAR64Row_AVX2(const uint16_t* src_r,
       : "m"(shift),  // %6
         "m"(mask),   // %7
 #else
-        "+rm"(width)  // %5
-      : "rm"(shift),  // %6
-        "rm"(mask),   // %7
+        "+rm"(width)          // %5
+      : "rm"(shift),          // %6
+        "rm"(mask),           // %7
 #endif
         "m"(MergeAR64Permute)  // %8
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
@@ -5882,8 +5882,8 @@ void MergeXR64Row_AVX2(const uint16_t* src_r,
       : "m"(shift),  // %5
         "m"(mask),   // %6
 #else
-      : "rm"(shift),  // %5
-        "rm"(mask),   // %6
+      : "rm"(shift),          // %5
+        "rm"(mask),           // %6
 #endif
         "m"(MergeAR64Permute)  // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
@@ -5944,8 +5944,8 @@ void MergeARGB16To8Row_AVX2(const uint16_t* src_r,
         "+m"(width)  // %5
       : "m"(shift),  // %6
 #else
-        "+rm"(width)  // %5
-      : "rm"(shift),  // %6
+        "+rm"(width)          // %5
+      : "rm"(shift),          // %6
 #endif
         "m"(MergeARGB16To8Shuffle)  // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
@@ -6000,7 +6000,7 @@ void MergeXRGB16To8Row_AVX2(const uint16_t* src_r,
 #if defined(__i386__)
       : "m"(shift),  // %5
 #else
-      : "rm"(shift),  // %5
+      : "rm"(shift),          // %5
 #endif
         "m"(MergeARGB16To8Shuffle)  // %6
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
@@ -6732,7 +6732,7 @@ static const uvec8 kShuffleAlpha = {3u,  0x80, 3u,  0x80, 7u,  0x80, 7u,  0x80,
                                     11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80};
 
 // Blend 8 pixels at a time
-void ARGBBlendRow_SSSE3(const uint8_t* src_argb0,
+void ARGBBlendRow_SSSE3(const uint8_t* src_argb,
                         const uint8_t* src_argb1,
                         uint8_t* dst_argb,
                         int width) {
@@ -6803,7 +6803,7 @@ void ARGBBlendRow_SSSE3(const uint8_t* src_argb0,
       "sub         $0x1,%3                       \n"
       "jge         91b                           \n"
       "99:                                       \n"
-      : "+r"(src_argb0),    // %0
+      : "+r"(src_argb),     // %0
         "+r"(src_argb1),    // %1
         "+r"(dst_argb),     // %2
         "+r"(width)         // %3
@@ -7405,7 +7405,7 @@ void ARGBShadeRow_SSE2(const uint8_t* src_argb,
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 // Multiply 2 rows of ARGB pixels together, 4 pixels at a time.
-void ARGBMultiplyRow_SSE2(const uint8_t* src_argb0,
+void ARGBMultiplyRow_SSE2(const uint8_t* src_argb,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width) {
@@ -7433,7 +7433,7 @@ void ARGBMultiplyRow_SSE2(const uint8_t* src_argb0,
       "lea         0x10(%2),%2                   \n"
       "sub         $0x4,%3                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb0),  // %0
+      : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3
@@ -7444,7 +7444,7 @@ void ARGBMultiplyRow_SSE2(const uint8_t* src_argb0,
 
 #ifdef HAS_ARGBMULTIPLYROW_AVX2
 // Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
-void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
+void ARGBMultiplyRow_AVX2(const uint8_t* src_argb,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width) {
@@ -7471,7 +7471,7 @@ void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
       "sub         $0x8,%3                       \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_argb0),  // %0
+      : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3
@@ -7482,7 +7482,7 @@ void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
 
 #ifdef HAS_ARGBADDROW_SSE2
 // Add 2 rows of ARGB pixels together, 4 pixels at a time.
-void ARGBAddRow_SSE2(const uint8_t* src_argb0,
+void ARGBAddRow_SSE2(const uint8_t* src_argb,
                      const uint8_t* src_argb1,
                      uint8_t* dst_argb,
                      int width) {
@@ -7499,7 +7499,7 @@ void ARGBAddRow_SSE2(const uint8_t* src_argb0,
       "lea         0x10(%2),%2                   \n"
       "sub         $0x4,%3                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb0),  // %0
+      : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3
@@ -7510,7 +7510,7 @@ void ARGBAddRow_SSE2(const uint8_t* src_argb0,
 
 #ifdef HAS_ARGBADDROW_AVX2
 // Add 2 rows of ARGB pixels together, 4 pixels at a time.
-void ARGBAddRow_AVX2(const uint8_t* src_argb0,
+void ARGBAddRow_AVX2(const uint8_t* src_argb,
                      const uint8_t* src_argb1,
                      uint8_t* dst_argb,
                      int width) {
@@ -7527,7 +7527,7 @@ void ARGBAddRow_AVX2(const uint8_t* src_argb0,
       "sub         $0x8,%3                       \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_argb0),  // %0
+      : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3
@@ -7538,7 +7538,7 @@ void ARGBAddRow_AVX2(const uint8_t* src_argb0,
 
 #ifdef HAS_ARGBSUBTRACTROW_SSE2
 // Subtract 2 rows of ARGB pixels, 4 pixels at a time.
-void ARGBSubtractRow_SSE2(const uint8_t* src_argb0,
+void ARGBSubtractRow_SSE2(const uint8_t* src_argb,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width) {
@@ -7555,7 +7555,7 @@ void ARGBSubtractRow_SSE2(const uint8_t* src_argb0,
       "lea         0x10(%2),%2                   \n"
       "sub         $0x4,%3                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb0),  // %0
+      : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3
@@ -7566,7 +7566,7 @@ void ARGBSubtractRow_SSE2(const uint8_t* src_argb0,
 
 #ifdef HAS_ARGBSUBTRACTROW_AVX2
 // Subtract 2 rows of ARGB pixels, 8 pixels at a time.
-void ARGBSubtractRow_AVX2(const uint8_t* src_argb0,
+void ARGBSubtractRow_AVX2(const uint8_t* src_argb,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width) {
@@ -7583,7 +7583,7 @@ void ARGBSubtractRow_AVX2(const uint8_t* src_argb0,
       "sub         $0x8,%3                       \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_argb0),  // %0
+      : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
         "+r"(dst_argb),   // %2
         "+r"(width)       // %3

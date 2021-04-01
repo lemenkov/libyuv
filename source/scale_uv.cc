@@ -746,7 +746,8 @@ void ScaleUVBilinearUp2(int src_width,
   for (x = 0; x < src_height - 1; ++x) {
     Scale2RowUp(src_ptr, src_stride, dst_ptr, dst_stride, dst_width);
     src_ptr += src_stride;
-    // TODO: Test performance of writing one row of destination at a time.
+    // TODO(fbarchard): Test performance of writing one row of destination at a
+    // time.
     dst_ptr += 2 * dst_stride;
   }
   if (!(dst_height & 1)) {
@@ -851,7 +852,8 @@ void ScaleUVBilinearUp2_16(int src_width,
   for (x = 0; x < src_height - 1; ++x) {
     Scale2RowUp(src_ptr, src_stride, dst_ptr, dst_stride, dst_width);
     src_ptr += src_stride;
-    // TODO: Test performance of writing one row of destination at a time.
+    // TODO(fbarchard): Test performance of writing one row of destination at a
+    // time.
     dst_ptr += 2 * dst_stride;
   }
   if (!(dst_height & 1)) {

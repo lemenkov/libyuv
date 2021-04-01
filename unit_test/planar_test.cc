@@ -2404,8 +2404,7 @@ TEST_F(LibYUVPlanarTest, TestARGBCopyAlpha) {
 }
 
 TEST_F(LibYUVPlanarTest, TestARGBExtractAlpha) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(dst_pixels_opt, kPixels);
   align_buffer_page_end(dst_pixels_c, kPixels);
@@ -2433,8 +2432,7 @@ TEST_F(LibYUVPlanarTest, TestARGBExtractAlpha) {
 }
 
 TEST_F(LibYUVPlanarTest, TestARGBCopyYToAlpha) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(orig_pixels, kPixels);
   align_buffer_page_end(dst_pixels_opt, kPixels * 4);
   align_buffer_page_end(dst_pixels_c, kPixels * 4);
@@ -2567,35 +2565,25 @@ TEST_F(LibYUVPlanarTest, SetPlane_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, MergeUVPlane_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
-  align_buffer_page_end(src_pixels, kPixels * 2);
-  align_buffer_page_end(tmp_pixels_u, kPixels);
-  align_buffer_page_end(tmp_pixels_v, kPixels);
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_u, kPixels);
+  align_buffer_page_end(src_pixels_v, kPixels);
   align_buffer_page_end(dst_pixels_opt, kPixels * 2);
   align_buffer_page_end(dst_pixels_c, kPixels * 2);
 
-  MemRandomize(src_pixels, kPixels * 2);
-  MemRandomize(tmp_pixels_u, kPixels);
-  MemRandomize(tmp_pixels_v, kPixels);
+  MemRandomize(src_pixels_u, kPixels);
+  MemRandomize(src_pixels_v, kPixels);
   MemRandomize(dst_pixels_opt, kPixels * 2);
   MemRandomize(dst_pixels_c, kPixels * 2);
 
   MaskCpuFlags(disable_cpu_flags_);
-  SplitUVPlane(src_pixels, benchmark_width_ * 2, tmp_pixels_u, benchmark_width_,
-               tmp_pixels_v, benchmark_width_, benchmark_width_,
-               benchmark_height_);
-  MergeUVPlane(tmp_pixels_u, benchmark_width_, tmp_pixels_v, benchmark_width_,
+  MergeUVPlane(src_pixels_u, benchmark_width_, src_pixels_v, benchmark_width_,
                dst_pixels_c, benchmark_width_ * 2, benchmark_width_,
                benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
-  SplitUVPlane(src_pixels, benchmark_width_ * 2, tmp_pixels_u, benchmark_width_,
-               tmp_pixels_v, benchmark_width_, benchmark_width_,
-               benchmark_height_);
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    MergeUVPlane(tmp_pixels_u, benchmark_width_, tmp_pixels_v, benchmark_width_,
+    MergeUVPlane(src_pixels_u, benchmark_width_, src_pixels_v, benchmark_width_,
                  dst_pixels_opt, benchmark_width_ * 2, benchmark_width_,
                  benchmark_height_);
   }
@@ -2604,119 +2592,88 @@ TEST_F(LibYUVPlanarTest, MergeUVPlane_Opt) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
 
-  free_aligned_buffer_page_end(src_pixels);
-  free_aligned_buffer_page_end(tmp_pixels_u);
-  free_aligned_buffer_page_end(tmp_pixels_v);
+  free_aligned_buffer_page_end(src_pixels_u);
+  free_aligned_buffer_page_end(src_pixels_v);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(dst_pixels_c);
 }
 
 // 16 bit channel split and merge
 TEST_F(LibYUVPlanarTest, MergeUVPlane_16_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
-  align_buffer_page_end(src_pixels, kPixels * 2 * 2);
-  align_buffer_page_end(tmp_pixels_u_c, kPixels * 2);
-  align_buffer_page_end(tmp_pixels_v_c, kPixels * 2);
-  align_buffer_page_end(tmp_pixels_u_opt, kPixels * 2);
-  align_buffer_page_end(tmp_pixels_v_opt, kPixels * 2);
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_u, kPixels * 2);
+  align_buffer_page_end(src_pixels_v, kPixels * 2);
   align_buffer_page_end(dst_pixels_opt, kPixels * 2 * 2);
   align_buffer_page_end(dst_pixels_c, kPixels * 2 * 2);
-  MemRandomize(src_pixels, kPixels * 2 * 2);
-  MemRandomize(tmp_pixels_u_c, kPixels * 2);
-  MemRandomize(tmp_pixels_v_c, kPixels * 2);
-  MemRandomize(tmp_pixels_u_opt, kPixels * 2);
-  MemRandomize(tmp_pixels_v_opt, kPixels * 2);
+  MemRandomize(src_pixels_u, kPixels * 2);
+  MemRandomize(src_pixels_v, kPixels * 2);
   MemRandomize(dst_pixels_opt, kPixels * 2 * 2);
   MemRandomize(dst_pixels_c, kPixels * 2 * 2);
 
   MaskCpuFlags(disable_cpu_flags_);
-  SplitUVPlane_16((const uint16_t*)src_pixels, benchmark_width_ * 2,
-                  (uint16_t*)tmp_pixels_u_c, benchmark_width_,
-                  (uint16_t*)tmp_pixels_v_c, benchmark_width_, benchmark_width_,
-                  benchmark_height_, 12);
-  MergeUVPlane_16((const uint16_t*)tmp_pixels_u_c, benchmark_width_,
-                  (const uint16_t*)tmp_pixels_v_c, benchmark_width_,
+  MergeUVPlane_16((const uint16_t*)src_pixels_u, benchmark_width_,
+                  (const uint16_t*)src_pixels_v, benchmark_width_,
                   (uint16_t*)dst_pixels_c, benchmark_width_ * 2,
                   benchmark_width_, benchmark_height_, 12);
   MaskCpuFlags(benchmark_cpu_info_);
 
-  SplitUVPlane_16((const uint16_t*)src_pixels, benchmark_width_ * 2,
-                  (uint16_t*)tmp_pixels_u_opt, benchmark_width_,
-                  (uint16_t*)tmp_pixels_v_opt, benchmark_width_,
-                  benchmark_width_, benchmark_height_, 12);
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    MergeUVPlane_16((const uint16_t*)tmp_pixels_u_opt, benchmark_width_,
-                    (const uint16_t*)tmp_pixels_v_opt, benchmark_width_,
+    MergeUVPlane_16((const uint16_t*)src_pixels_u, benchmark_width_,
+                    (const uint16_t*)src_pixels_v, benchmark_width_,
                     (uint16_t*)dst_pixels_opt, benchmark_width_ * 2,
                     benchmark_width_, benchmark_height_, 12);
   }
 
-  for (int i = 0; i < kPixels * 2; ++i) {
-    EXPECT_EQ(tmp_pixels_u_c[i], tmp_pixels_u_opt[i]);
-    EXPECT_EQ(tmp_pixels_v_c[i], tmp_pixels_v_opt[i]);
-  }
   for (int i = 0; i < kPixels * 2 * 2; ++i) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
-  free_aligned_buffer_page_end(src_pixels);
-  free_aligned_buffer_page_end(tmp_pixels_u_c);
-  free_aligned_buffer_page_end(tmp_pixels_v_c);
-  free_aligned_buffer_page_end(tmp_pixels_u_opt);
-  free_aligned_buffer_page_end(tmp_pixels_v_opt);
+  free_aligned_buffer_page_end(src_pixels_u);
+  free_aligned_buffer_page_end(src_pixels_v);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(dst_pixels_c);
 }
 
 TEST_F(LibYUVPlanarTest, SplitUVPlane_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 2);
-  align_buffer_page_end(tmp_pixels_u, kPixels);
-  align_buffer_page_end(tmp_pixels_v, kPixels);
-  align_buffer_page_end(dst_pixels_opt, kPixels * 2);
-  align_buffer_page_end(dst_pixels_c, kPixels * 2);
+  align_buffer_page_end(dst_pixels_u_c, kPixels);
+  align_buffer_page_end(dst_pixels_v_c, kPixels);
+  align_buffer_page_end(dst_pixels_u_opt, kPixels);
+  align_buffer_page_end(dst_pixels_v_opt, kPixels);
 
   MemRandomize(src_pixels, kPixels * 2);
-  MemRandomize(tmp_pixels_u, kPixels);
-  MemRandomize(tmp_pixels_v, kPixels);
-  MemRandomize(dst_pixels_opt, kPixels * 2);
-  MemRandomize(dst_pixels_c, kPixels * 2);
+  MemRandomize(dst_pixels_u_c, kPixels);
+  MemRandomize(dst_pixels_v_c, kPixels);
+  MemRandomize(dst_pixels_u_opt, kPixels);
+  MemRandomize(dst_pixels_v_opt, kPixels);
 
   MaskCpuFlags(disable_cpu_flags_);
-  SplitUVPlane(src_pixels, benchmark_width_ * 2, tmp_pixels_u, benchmark_width_,
-               tmp_pixels_v, benchmark_width_, benchmark_width_,
-               benchmark_height_);
-  MergeUVPlane(tmp_pixels_u, benchmark_width_, tmp_pixels_v, benchmark_width_,
-               dst_pixels_c, benchmark_width_ * 2, benchmark_width_,
-               benchmark_height_);
+  SplitUVPlane(src_pixels, benchmark_width_ * 2, dst_pixels_u_c,
+               benchmark_width_, dst_pixels_v_c, benchmark_width_,
+               benchmark_width_, benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    SplitUVPlane(src_pixels, benchmark_width_ * 2, tmp_pixels_u,
-                 benchmark_width_, tmp_pixels_v, benchmark_width_,
+    SplitUVPlane(src_pixels, benchmark_width_ * 2, dst_pixels_u_opt,
+                 benchmark_width_, dst_pixels_v_opt, benchmark_width_,
                  benchmark_width_, benchmark_height_);
   }
-  MergeUVPlane(tmp_pixels_u, benchmark_width_, tmp_pixels_v, benchmark_width_,
-               dst_pixels_opt, benchmark_width_ * 2, benchmark_width_,
-               benchmark_height_);
 
-  for (int i = 0; i < kPixels * 2; ++i) {
-    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_pixels_u_c[i], dst_pixels_u_opt[i]);
+    EXPECT_EQ(dst_pixels_v_c[i], dst_pixels_v_opt[i]);
   }
 
   free_aligned_buffer_page_end(src_pixels);
-  free_aligned_buffer_page_end(tmp_pixels_u);
-  free_aligned_buffer_page_end(tmp_pixels_v);
-  free_aligned_buffer_page_end(dst_pixels_opt);
-  free_aligned_buffer_page_end(dst_pixels_c);
+  free_aligned_buffer_page_end(dst_pixels_u_c);
+  free_aligned_buffer_page_end(dst_pixels_v_c);
+  free_aligned_buffer_page_end(dst_pixels_u_opt);
+  free_aligned_buffer_page_end(dst_pixels_v_opt);
 }
 
 // 16 bit channel split
 TEST_F(LibYUVPlanarTest, SplitUVPlane_16_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 2 * 2);
   align_buffer_page_end(dst_pixels_u_c, kPixels * 2);
   align_buffer_page_end(dst_pixels_v_c, kPixels * 2);
@@ -2755,7 +2712,7 @@ TEST_F(LibYUVPlanarTest, SplitUVPlane_16_Opt) {
 
 TEST_F(LibYUVPlanarTest, SwapUVPlane_Opt) {
   // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 2);
   align_buffer_page_end(dst_pixels_opt, kPixels * 2);
   align_buffer_page_end(dst_pixels_c, kPixels * 2);
@@ -2785,7 +2742,7 @@ TEST_F(LibYUVPlanarTest, SwapUVPlane_Opt) {
 
 TEST_F(LibYUVPlanarTest, MergeRGBPlane_Opt) {
   // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 3);
   align_buffer_page_end(tmp_pixels_r, kPixels);
   align_buffer_page_end(tmp_pixels_g, kPixels);
@@ -2834,7 +2791,7 @@ TEST_F(LibYUVPlanarTest, MergeRGBPlane_Opt) {
 
 TEST_F(LibYUVPlanarTest, SplitRGBPlane_Opt) {
   // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 3);
   align_buffer_page_end(tmp_pixels_r, kPixels);
   align_buffer_page_end(tmp_pixels_g, kPixels);
@@ -2881,8 +2838,7 @@ TEST_F(LibYUVPlanarTest, SplitRGBPlane_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, MergeARGBPlane_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(tmp_pixels_r, kPixels);
   align_buffer_page_end(tmp_pixels_g, kPixels);
@@ -2936,8 +2892,7 @@ TEST_F(LibYUVPlanarTest, MergeARGBPlane_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, SplitARGBPlane_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(tmp_pixels_r, kPixels);
   align_buffer_page_end(tmp_pixels_g, kPixels);
@@ -2991,8 +2946,7 @@ TEST_F(LibYUVPlanarTest, SplitARGBPlane_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, MergeXRGBPlane_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(tmp_pixels_r, kPixels);
   align_buffer_page_end(tmp_pixels_g, kPixels);
@@ -3042,8 +2996,7 @@ TEST_F(LibYUVPlanarTest, MergeXRGBPlane_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(tmp_pixels_r, kPixels);
   align_buffer_page_end(tmp_pixels_g, kPixels);
@@ -3091,30 +3044,29 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
   free_aligned_buffer_page_end(dst_pixels_c);
 }
 
+// Merge 4 channels
 #define TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)      \
   TEST_F(LibYUVPlanarTest, FUNC##Plane_##DEPTH##N) {                        \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
-    const int kPixels = (kWidth * benchmark_height_ + 15) & ~15;            \
+    const int kPixels = kWidth * benchmark_height_;                         \
     align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_a, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(dst_memory_c, kPixels * 4 * sizeof(DTYPE));       \
     align_buffer_page_end(dst_memory_opt, kPixels * 4 * sizeof(DTYPE));     \
+    MemRandomize(src_memory_r, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_g, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_b, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_a, kPixels * sizeof(STYPE) + OFF);              \
+    memset(dst_memory_c, 0, kPixels * 4 * sizeof(DTYPE));                   \
+    memset(dst_memory_opt, 0, kPixels * 4 * sizeof(DTYPE));                 \
     STYPE* src_pixels_r = reinterpret_cast<STYPE*>(src_memory_r + OFF);     \
     STYPE* src_pixels_g = reinterpret_cast<STYPE*>(src_memory_g + OFF);     \
     STYPE* src_pixels_b = reinterpret_cast<STYPE*>(src_memory_b + OFF);     \
     STYPE* src_pixels_a = reinterpret_cast<STYPE*>(src_memory_a + OFF);     \
     DTYPE* dst_pixels_c = reinterpret_cast<DTYPE*>(dst_memory_c);           \
     DTYPE* dst_pixels_opt = reinterpret_cast<DTYPE*>(dst_memory_opt);       \
-    for (int i = 0; i < kPixels; ++i) {                                     \
-      src_pixels_r[i] = fastrand() & 65535;                                 \
-      src_pixels_g[i] = fastrand() & 65535;                                 \
-      src_pixels_b[i] = fastrand() & 65535;                                 \
-      src_pixels_a[i] = fastrand() & 65535;                                 \
-    }                                                                       \
-    memset(dst_pixels_c, 1, kPixels * 4 * sizeof(DTYPE));                   \
-    memset(dst_pixels_opt, 2, kPixels * 4 * sizeof(DTYPE));                 \
     MaskCpuFlags(disable_cpu_flags_);                                       \
     FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b,   \
                 kWidth, src_pixels_a, kWidth, dst_pixels_c, kWidth * 4,     \
@@ -3136,27 +3088,26 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
     free_aligned_buffer_page_end(dst_memory_opt);                           \
   }
 
+// Merge 3 channel RGB into 4 channel XRGB with opaque alpha
 #define TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)     \
   TEST_F(LibYUVPlanarTest, FUNC##Plane_Opaque_##DEPTH##N) {                 \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
-    const int kPixels = (kWidth * benchmark_height_ + 15) & ~15;            \
+    const int kPixels = kWidth * benchmark_height_;                         \
     align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(dst_memory_c, kPixels * 4 * sizeof(DTYPE));       \
     align_buffer_page_end(dst_memory_opt, kPixels * 4 * sizeof(DTYPE));     \
+    MemRandomize(src_memory_r, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_g, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_b, kPixels * sizeof(STYPE) + OFF);              \
+    memset(dst_memory_c, 0, kPixels * 4 * sizeof(DTYPE));                   \
+    memset(dst_memory_opt, 0, kPixels * 4 * sizeof(DTYPE));                 \
     STYPE* src_pixels_r = reinterpret_cast<STYPE*>(src_memory_r + OFF);     \
     STYPE* src_pixels_g = reinterpret_cast<STYPE*>(src_memory_g + OFF);     \
     STYPE* src_pixels_b = reinterpret_cast<STYPE*>(src_memory_b + OFF);     \
     DTYPE* dst_pixels_c = reinterpret_cast<DTYPE*>(dst_memory_c);           \
     DTYPE* dst_pixels_opt = reinterpret_cast<DTYPE*>(dst_memory_opt);       \
-    for (int i = 0; i < kPixels; ++i) {                                     \
-      src_pixels_r[i] = fastrand() & 65535;                                 \
-      src_pixels_g[i] = fastrand() & 65535;                                 \
-      src_pixels_b[i] = fastrand() & 65535;                                 \
-    }                                                                       \
-    memset(dst_pixels_c, 1, kPixels * 4 * sizeof(DTYPE));                   \
-    memset(dst_pixels_opt, 2, kPixels * 4 * sizeof(DTYPE));                 \
     MaskCpuFlags(disable_cpu_flags_);                                       \
     FUNC##Plane(src_pixels_r, kWidth, src_pixels_g, kWidth, src_pixels_b,   \
                 kWidth, NULL, 0, dst_pixels_c, kWidth * 4, kWidth,          \
@@ -3177,6 +3128,7 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
     free_aligned_buffer_page_end(dst_memory_opt);                           \
   }
 
+// TODO(fbarchard): fix bug and change to benchmark_width - 1
 #define TESTQPLANARTOP(FUNC, STYPE, DTYPE, DEPTH)                              \
   TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +, 0) \
   TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +,  \
@@ -3206,16 +3158,14 @@ TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 16)
     align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(dst_memory_c, kPixels * 4 * sizeof(DTYPE));       \
     align_buffer_page_end(dst_memory_opt, kPixels * 4 * sizeof(DTYPE));     \
+    MemRandomize(src_memory_r, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_g, kPixels * sizeof(STYPE) + OFF);              \
+    MemRandomize(src_memory_b, kPixels * sizeof(STYPE) + OFF);              \
     STYPE* src_pixels_r = reinterpret_cast<STYPE*>(src_memory_r + OFF);     \
     STYPE* src_pixels_g = reinterpret_cast<STYPE*>(src_memory_g + OFF);     \
     STYPE* src_pixels_b = reinterpret_cast<STYPE*>(src_memory_b + OFF);     \
     DTYPE* dst_pixels_c = reinterpret_cast<DTYPE*>(dst_memory_c);           \
     DTYPE* dst_pixels_opt = reinterpret_cast<DTYPE*>(dst_memory_opt);       \
-    for (int i = 0; i < kPixels; ++i) {                                     \
-      src_pixels_r[i] = fastrand() & 65535;                                 \
-      src_pixels_g[i] = fastrand() & 65535;                                 \
-      src_pixels_b[i] = fastrand() & 65535;                                 \
-    }                                                                       \
     memset(dst_pixels_c, 1, kPixels * 4 * sizeof(DTYPE));                   \
     memset(dst_pixels_opt, 2, kPixels * 4 * sizeof(DTYPE));                 \
     MaskCpuFlags(disable_cpu_flags_);                                       \
@@ -3238,13 +3188,13 @@ TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 16)
     free_aligned_buffer_page_end(dst_memory_opt);                           \
   }
 
+// TODO(fbarchard): Fix MergeXR30 and change _any to width - 1
 #define TESTTPLANARTOP(FUNC, STYPE, DTYPE, DEPTH)                              \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +, 0) \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +,  \
                   1)                                                           \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Invert, -, 0)  \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Opt, +, 0)
-
 TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 10)
 TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 12)
 TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 16)
@@ -3254,6 +3204,7 @@ TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 16)
 TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
   // Round count up to multiple of 16
   const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+
   align_buffer_page_end(src_pixels_u, kPixels * 2);
   align_buffer_page_end(src_pixels_v, kPixels * 2);
   align_buffer_page_end(dst_pixels_uv_opt, kPixels * 2 * 2);
@@ -3299,6 +3250,7 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
   // Round count up to multiple of 16
   const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+
   align_buffer_page_end(src_pixels_y, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
@@ -3334,8 +3286,7 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
 #endif  // HAS_MULTIPLYROW_16_AVX2
 
 TEST_F(LibYUVPlanarTest, Convert16To8Plane) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels_y, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_opt, kPixels);
   align_buffer_page_end(dst_pixels_y_c, kPixels);
@@ -3414,8 +3365,7 @@ TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
 #endif  // ENABLE_ROW_TESTS
 
 TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels_y, kPixels);
   align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
