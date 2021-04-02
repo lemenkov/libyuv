@@ -46,7 +46,7 @@ CHECKOUT_SRC_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, os.pardir,
 CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(CHECKOUT_SRC_DIR, os.pardir))
 
 sys.path.append(os.path.join(CHECKOUT_SRC_DIR, 'build'))
-import find_depot_tools
+import find_depot_tools  # pylint: disable=wrong-import-position
 find_depot_tools.add_depot_tools_to_path()
 
 CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.py'
