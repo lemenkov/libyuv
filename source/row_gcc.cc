@@ -5809,14 +5809,12 @@ void MergeAR64Row_AVX2(const uint16_t* src_r,
         "+r"(src_a),     // %3
         "+r"(dst_ar64),  // %4
 #if defined(__i386__)
-        "+m"(width)  // %5
-      : "m"(shift),  // %6
-        "m"(mask),   // %7
+        "+m"(width)      // %5
 #else
-        "+rm"(width)          // %5
-      : "rm"(shift),          // %6
-        "rm"(mask),           // %7
+        "+rm"(width)     // %5
 #endif
+      : "m"(shift),      // %6
+        "m"(mask),       // %7
         "m"(MergeAR64Permute)  // %8
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
@@ -5878,13 +5876,8 @@ void MergeXR64Row_AVX2(const uint16_t* src_r,
         "+r"(src_b),     // %2
         "+r"(dst_ar64),  // %3
         "+r"(width)      // %4
-#if defined(__i386__)
-      : "m"(shift),  // %5
-        "m"(mask),   // %6
-#else
-      : "rm"(shift),          // %5
-        "rm"(mask),           // %6
-#endif
+      : "m"(shift),      // %5
+        "m"(mask),       // %6
         "m"(MergeAR64Permute)  // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
@@ -5941,12 +5934,11 @@ void MergeARGB16To8Row_AVX2(const uint16_t* src_r,
         "+r"(src_a),     // %3
         "+r"(dst_argb),  // %4
 #if defined(__i386__)
-        "+m"(width)  // %5
-      : "m"(shift),  // %6
+        "+m"(width)      // %5
 #else
-        "+rm"(width)          // %5
-      : "rm"(shift),          // %6
+        "+rm"(width)     // %5
 #endif
+      : "m"(shift),      // %6
         "m"(MergeARGB16To8Shuffle)  // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
@@ -5997,11 +5989,7 @@ void MergeXRGB16To8Row_AVX2(const uint16_t* src_r,
         "+r"(src_b),     // %2
         "+r"(dst_argb),  // %3
         "+r"(width)      // %4
-#if defined(__i386__)
       : "m"(shift),  // %5
-#else
-      : "rm"(shift),          // %5
-#endif
         "m"(MergeARGB16To8Shuffle)  // %6
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
