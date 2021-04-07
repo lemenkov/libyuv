@@ -200,15 +200,15 @@ ANY41CT(I410AlphaToARGBRow_Any_AVX2,
     memcpy(temp + 32, b_buf + n, r * SBPP);                                \
     memcpy(temp + 48, a_buf + n, r * SBPP);                                \
     ANY_SIMD(temp, temp + 16, temp + 32, temp + 48, out, depth, MASK + 1); \
-    memcpy(dst_ptr + n * BPP, out, r * BPP);                               \
+    memcpy((uint8_t *)dst_ptr + n * BPP, out, r * BPP);                    \
   }
 
 #ifdef HAS_MERGEAR64ROW_AVX2
-ANY41PT(MergeAR64Row_Any_AVX2, MergeAR64Row_AVX2, uint16_t, 2, uint16_t, 4, 15)
+ANY41PT(MergeAR64Row_Any_AVX2, MergeAR64Row_AVX2, uint16_t, 2, uint16_t, 8, 15)
 #endif
 
 #ifdef HAS_MERGEAR64ROW_NEON
-ANY41PT(MergeAR64Row_Any_NEON, MergeAR64Row_NEON, uint16_t, 2, uint16_t, 4, 7)
+ANY41PT(MergeAR64Row_Any_NEON, MergeAR64Row_NEON, uint16_t, 2, uint16_t, 8, 7)
 #endif
 
 #ifdef HAS_MERGEARGB16TO8ROW_AVX2
@@ -490,7 +490,7 @@ ANY31CT(I212ToAR30Row_Any_AVX2, I212ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
     memcpy(temp + 16, g_buf + n, r * SBPP);                                \
     memcpy(temp + 32, b_buf + n, r * SBPP);                                \
     ANY_SIMD(temp, temp + 16, temp + 32, out, depth, MASK + 1);            \
-    memcpy(dst_ptr + n * BPP, out, r * BPP);                               \
+    memcpy((uint8_t *)dst_ptr + n * BPP, out, r * BPP);                    \
   }
 
 #ifdef HAS_MERGEXR30ROW_AVX2
@@ -509,11 +509,11 @@ ANY31PT(MergeXR30Row_10_Any_NEON,
 #endif
 
 #ifdef HAS_MERGEXR64ROW_AVX2
-ANY31PT(MergeXR64Row_Any_AVX2, MergeXR64Row_AVX2, uint16_t, 2, uint16_t, 4, 15)
+ANY31PT(MergeXR64Row_Any_AVX2, MergeXR64Row_AVX2, uint16_t, 2, uint16_t, 8, 15)
 #endif
 
 #ifdef HAS_MERGEXR64ROW_NEON
-ANY31PT(MergeXR64Row_Any_NEON, MergeXR64Row_NEON, uint16_t, 2, uint16_t, 4, 7)
+ANY31PT(MergeXR64Row_Any_NEON, MergeXR64Row_NEON, uint16_t, 2, uint16_t, 8, 7)
 #endif
 
 #ifdef HAS_MERGEXRGB16TO8ROW_AVX2

@@ -3152,7 +3152,7 @@ TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 16)
 #define TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)      \
   TEST_F(LibYUVPlanarTest, FUNC##Plane_##DEPTH##N) {                        \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
-    const int kPixels = (kWidth * benchmark_height_ + 15) & ~15;            \
+    const int kPixels = kWidth * benchmark_height_;                         \
     align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_b, kPixels * sizeof(STYPE) + OFF);     \
