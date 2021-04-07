@@ -3248,8 +3248,8 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 // TODO(fbarchard): Improve test for more platforms.
 #ifdef HAS_MULTIPLYROW_16_AVX2
 TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  // Round count up to multiple of 32
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 31) & ~31;
 
   align_buffer_page_end(src_pixels_y, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
