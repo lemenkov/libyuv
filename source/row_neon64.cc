@@ -3713,6 +3713,7 @@ void NV21ToYUV24Row_NEON(const uint8_t* src_y,
       : "cc", "memory", "v0", "v1", "v2");
 }
 
+// AYUV is YVUA in memory.  UV for NV12 is UV order in memory.
 void AYUVToUVRow_NEON(const uint8_t* src_ayuv,
                       int src_stride_ayuv,
                       uint8_t* dst_uv,

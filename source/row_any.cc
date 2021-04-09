@@ -61,6 +61,8 @@ ANY41(MergeARGBRow_Any_AVX2, MergeARGBRow_AVX2, 0, 0, 4, 15)
 ANY41(MergeARGBRow_Any_NEON, MergeARGBRow_NEON, 0, 0, 4, 15)
 #endif
 
+// Note that odd width replication includes 444 due to implementation
+// on arm that subsamples 444 to 422 internally.
 // Any 4 planes to 1 with yuvconstants
 #define ANY41C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)              \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,                   \
@@ -77,6 +79,10 @@ ANY41(MergeARGBRow_Any_NEON, MergeARGBRow_NEON, 0, 0, 4, 15)
     memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));               \
     memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
     memcpy(temp + 192, a_buf + n, r);                                        \
+    if (width & 1) {                                                         \
+      temp[64 + SS(r, UVSHIFT)] = temp[64 + SS(r, UVSHIFT) - 1];             \
+      temp[128 + SS(r, UVSHIFT)] = temp[128 + SS(r, UVSHIFT) - 1];           \
+    }                                                                        \
     ANY_SIMD(temp, temp + 64, temp + 128, temp + 192, temp + 256,            \
              yuvconstants, MASK + 1);                                        \
     memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, temp + 256,                      \
@@ -200,7 +206,7 @@ ANY41CT(I410AlphaToARGBRow_Any_AVX2,
     memcpy(temp + 32, b_buf + n, r * SBPP);                                \
     memcpy(temp + 48, a_buf + n, r * SBPP);                                \
     ANY_SIMD(temp, temp + 16, temp + 32, temp + 48, out, depth, MASK + 1); \
-    memcpy((uint8_t *)dst_ptr + n * BPP, out, r * BPP);                    \
+    memcpy((uint8_t*)dst_ptr + n * BPP, out, r * BPP);                     \
   }
 
 #ifdef HAS_MERGEAR64ROW_AVX2
@@ -490,7 +496,7 @@ ANY31CT(I212ToAR30Row_Any_AVX2, I212ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
     memcpy(temp + 16, g_buf + n, r * SBPP);                                \
     memcpy(temp + 32, b_buf + n, r * SBPP);                                \
     ANY_SIMD(temp, temp + 16, temp + 32, out, depth, MASK + 1);            \
-    memcpy((uint8_t *)dst_ptr + n * BPP, out, r * BPP);                    \
+    memcpy((uint8_t*)dst_ptr + n * BPP, out, r * BPP);                     \
   }
 
 #ifdef HAS_MERGEXR30ROW_AVX2

@@ -155,7 +155,7 @@ static int TestAttenuateI(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBAttenuate_Any) {
-  int max_diff = TestAttenuateI(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestAttenuateI(benchmark_width_ + 1, benchmark_height_,
                                 benchmark_iterations_, disable_cpu_flags_,
                                 benchmark_cpu_info_, +1, 0);
   EXPECT_LE(max_diff, 2);
@@ -228,7 +228,7 @@ static int TestUnattenuateI(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBUnattenuate_Any) {
-  int max_diff = TestUnattenuateI(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestUnattenuateI(benchmark_width_ + 1, benchmark_height_,
                                   benchmark_iterations_, disable_cpu_flags_,
                                   benchmark_cpu_info_, +1, 0);
   EXPECT_LE(max_diff, 2);
@@ -1076,7 +1076,7 @@ TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
 #define TESTTERP(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, STRIDE_B, W1280, TERP, \
                  N, NEG, OFF)                                                 \
   TEST_F(LibYUVPlanarTest, ARGBInterpolate##TERP##N) {                        \
-    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                           \
+    const int kWidth = W1280;                                                 \
     const int kHeight = benchmark_height_;                                    \
     const int kStrideA =                                                      \
         (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;                \
@@ -1108,7 +1108,7 @@ TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
   }
 
 #define TESTINTERPOLATE(TERP)                                                \
-  TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_ - 1, TERP, _Any, +, 0)   \
+  TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_ + 1, TERP, _Any, +, 0)   \
   TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_, TERP, _Unaligned, +, 1) \
   TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_, TERP, _Invert, -, 0)    \
   TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_, TERP, _Opt, +, 0)
@@ -1174,7 +1174,7 @@ static int TestBlend(int width,
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Any) {
   int max_diff =
-      TestBlend(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
+      TestBlend(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 1);
   EXPECT_LE(max_diff, 1);
 }
@@ -1280,7 +1280,7 @@ TEST_F(LibYUVPlanarTest, BlendPlane_Unaligned) {
                  disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
 }
 TEST_F(LibYUVPlanarTest, BlendPlane_Any) {
-  TestBlendPlane(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
+  TestBlendPlane(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
 }
 TEST_F(LibYUVPlanarTest, BlendPlane_Invert) {
@@ -1375,7 +1375,7 @@ TEST_F(LibYUVPlanarTest, I420Blend_Unaligned) {
 
 // TODO(fbarchard): DISABLED because _Any uses C.  Avoid C and re-enable.
 TEST_F(LibYUVPlanarTest, DISABLED_I420Blend_Any) {
-  TestI420Blend(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
+  TestI420Blend(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
 }
 TEST_F(LibYUVPlanarTest, I420Blend_Invert) {
@@ -1524,7 +1524,7 @@ static int TestMultiply(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBMultiply_Any) {
-  int max_diff = TestMultiply(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestMultiply(benchmark_width_ + 1, benchmark_height_,
                               benchmark_iterations_, disable_cpu_flags_,
                               benchmark_cpu_info_, +1, 0);
   EXPECT_LE(max_diff, 1);
@@ -1599,7 +1599,7 @@ static int TestAdd(int width,
 
 TEST_F(LibYUVPlanarTest, ARGBAdd_Any) {
   int max_diff =
-      TestAdd(benchmark_width_ - 1, benchmark_height_, benchmark_iterations_,
+      TestAdd(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
               disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
@@ -1672,7 +1672,7 @@ static int TestSubtract(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBSubtract_Any) {
-  int max_diff = TestSubtract(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestSubtract(benchmark_width_ + 1, benchmark_height_,
                               benchmark_iterations_, disable_cpu_flags_,
                               benchmark_cpu_info_, +1, 0);
   EXPECT_LE(max_diff, 1);
@@ -1745,7 +1745,7 @@ static int TestSobel(int width,
 
 TEST_F(LibYUVPlanarTest, ARGBSobel_Any) {
   int max_diff =
-      TestSobel(benchmark_width_ - 1, benchmark_height_, benchmark_iterations_,
+      TestSobel(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
@@ -1818,7 +1818,7 @@ static int TestSobelToPlane(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBSobelToPlane_Any) {
-  int max_diff = TestSobelToPlane(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestSobelToPlane(benchmark_width_ + 1, benchmark_height_,
                                   benchmark_iterations_, disable_cpu_flags_,
                                   benchmark_cpu_info_, +1, 0);
   EXPECT_EQ(0, max_diff);
@@ -1890,7 +1890,7 @@ static int TestSobelXY(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBSobelXY_Any) {
-  int max_diff = TestSobelXY(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestSobelXY(benchmark_width_ + 1, benchmark_height_,
                              benchmark_iterations_, disable_cpu_flags_,
                              benchmark_cpu_info_, +1, 0);
   EXPECT_EQ(0, max_diff);
@@ -1975,7 +1975,7 @@ static int TestBlur(int width,
 static const int kBlurSize = 55;
 TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlur_Any)) {
   int max_diff =
-      TestBlur(benchmark_width_ - 1, benchmark_height_, benchmark_iterations_,
+      TestBlur(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                disable_cpu_flags_, benchmark_cpu_info_, +1, 0, kBlurSize);
   EXPECT_LE(max_diff, 1);
 }
@@ -2004,7 +2004,7 @@ TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlur_Opt)) {
 static const int kBlurSmallSize = 5;
 TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlurSmall_Any)) {
   int max_diff =
-      TestBlur(benchmark_width_ - 1, benchmark_height_, benchmark_iterations_,
+      TestBlur(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                disable_cpu_flags_, benchmark_cpu_info_, +1, 0, kBlurSmallSize);
   EXPECT_LE(max_diff, 1);
 }
@@ -2509,7 +2509,7 @@ static int TestARGBRect(int width,
 }
 
 TEST_F(LibYUVPlanarTest, ARGBRect_Any) {
-  int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestARGBRect(benchmark_width_ + 1, benchmark_height_,
                               benchmark_iterations_, disable_cpu_flags_,
                               benchmark_cpu_info_, +1, 0, 4);
   EXPECT_EQ(0, max_diff);
@@ -2537,7 +2537,7 @@ TEST_F(LibYUVPlanarTest, ARGBRect_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, SetPlane_Any) {
-  int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
+  int max_diff = TestARGBRect(benchmark_width_ + 1, benchmark_height_,
                               benchmark_iterations_, disable_cpu_flags_,
                               benchmark_cpu_info_, +1, 0, 1);
   EXPECT_EQ(0, max_diff);
@@ -3047,7 +3047,7 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
 // Merge 4 channels
 #define TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)      \
   TEST_F(LibYUVPlanarTest, FUNC##Plane_##DEPTH##N) {                        \
-    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
+    const int kWidth = W1280;                                               \
     const int kPixels = kWidth * benchmark_height_;                         \
     align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
@@ -3091,7 +3091,7 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
 // Merge 3 channel RGB into 4 channel XRGB with opaque alpha
 #define TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)     \
   TEST_F(LibYUVPlanarTest, FUNC##Plane_Opaque_##DEPTH##N) {                 \
-    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
+    const int kWidth = W1280;                                               \
     const int kPixels = kWidth * benchmark_height_;                         \
     align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
@@ -3128,14 +3128,13 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
     free_aligned_buffer_page_end(dst_memory_opt);                           \
   }
 
-// TODO(fbarchard): fix bug and change to benchmark_width - 1
 #define TESTQPLANARTOP(FUNC, STYPE, DTYPE, DEPTH)                              \
-  TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +, 0) \
+  TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ + 1, _Any, +, 0) \
   TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +,  \
                   1)                                                           \
   TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Invert, -, 0)  \
   TESTQPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Opt, +, 0)     \
-  TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +,   \
+  TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ + 1, _Any, +,   \
                    0)                                                          \
   TESTQPLANAROTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +, \
                    1)                                                          \
@@ -3151,7 +3150,7 @@ TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 16)
 
 #define TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, W1280, N, NEG, OFF)      \
   TEST_F(LibYUVPlanarTest, FUNC##Plane_##DEPTH##N) {                        \
-    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                         \
+    const int kWidth = W1280;                                               \
     const int kPixels = kWidth * benchmark_height_;                         \
     align_buffer_page_end(src_memory_r, kPixels * sizeof(STYPE) + OFF);     \
     align_buffer_page_end(src_memory_g, kPixels * sizeof(STYPE) + OFF);     \
@@ -3188,13 +3187,13 @@ TESTQPLANARTOP(MergeARGB16To8, uint16_t, uint8_t, 16)
     free_aligned_buffer_page_end(dst_memory_opt);                           \
   }
 
-// TODO(fbarchard): Fix MergeXR30 and change _any to width - 1
 #define TESTTPLANARTOP(FUNC, STYPE, DTYPE, DEPTH)                              \
-  TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ - 4, _Any, +, 0) \
+  TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_ + 1, _Any, +, 0) \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Unaligned, +,  \
                   1)                                                           \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Invert, -, 0)  \
   TESTTPLANARTOPI(FUNC, STYPE, DTYPE, DEPTH, benchmark_width_, _Opt, +, 0)
+
 TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 10)
 TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 12)
 TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 16)

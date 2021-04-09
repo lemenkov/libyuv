@@ -1003,6 +1003,8 @@ void SplitARGBPlaneAlpha(const uint8_t* src_argb,
                        uint8_t* dst_b, uint8_t* dst_a, int width) =
       SplitARGBRow_C;
 
+  assert(height > 0);
+
   if (src_stride_argb == width * 4 && dst_stride_r == width &&
       dst_stride_g == width && dst_stride_b == width && dst_stride_a == width) {
     width *= height;
@@ -1068,6 +1070,7 @@ void SplitARGBPlaneOpaque(const uint8_t* src_argb,
   int y;
   void (*SplitXRGBRow)(const uint8_t* src_rgb, uint8_t* dst_r, uint8_t* dst_g,
                        uint8_t* dst_b, int width) = SplitXRGBRow_C;
+  assert(height > 0);
 
   if (src_stride_argb == width * 4 && dst_stride_r == width &&
       dst_stride_g == width && dst_stride_b == width) {
@@ -1131,6 +1134,7 @@ void SplitARGBPlane(const uint8_t* src_argb,
                     int dst_stride_a,
                     int width,
                     int height) {
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     dst_r = dst_r + (height - 1) * dst_stride_r;
@@ -1170,6 +1174,8 @@ void MergeARGBPlaneAlpha(const uint8_t* src_r,
   void (*MergeARGBRow)(const uint8_t* src_r, const uint8_t* src_g,
                        const uint8_t* src_b, const uint8_t* src_a,
                        uint8_t* dst_argb, int width) = MergeARGBRow_C;
+
+  assert(height > 0);
 
   if (src_stride_r == width && src_stride_g == width && src_stride_b == width &&
       src_stride_a == width && dst_stride_argb == width * 4) {
@@ -1228,6 +1234,8 @@ void MergeARGBPlaneOpaque(const uint8_t* src_r,
   void (*MergeXRGBRow)(const uint8_t* src_r, const uint8_t* src_g,
                        const uint8_t* src_b, uint8_t* dst_argb, int width) =
       MergeXRGBRow_C;
+
+  assert(height > 0);
 
   if (src_stride_r == width && src_stride_g == width && src_stride_b == width &&
       dst_stride_argb == width * 4) {

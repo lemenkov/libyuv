@@ -4380,13 +4380,14 @@ void NV21ToYUV24Row_C(const uint8_t* src_y,
 }
 
 // Filter 2 rows of AYUV UV's (444) into UV (420).
+// AYUV is VUYA in memory.  UV for NV12 is UV order in memory.
 void AYUVToUVRow_C(const uint8_t* src_ayuv,
                    int src_stride_ayuv,
                    uint8_t* dst_uv,
                    int width) {
   // Output a row of UV values, filtering 2x2 rows of AYUV.
   int x;
-  for (x = 0; x < width; x += 2) {
+  for (x = 0; x < width - 1; x += 2) {
     dst_uv[0] = (src_ayuv[1] + src_ayuv[5] + src_ayuv[src_stride_ayuv + 1] +
                  src_ayuv[src_stride_ayuv + 5] + 2) >>
                 2;
@@ -4397,12 +4398,8 @@ void AYUVToUVRow_C(const uint8_t* src_ayuv,
     dst_uv += 2;
   }
   if (width & 1) {
-    dst_uv[0] = (src_ayuv[0] + src_ayuv[0] + src_ayuv[src_stride_ayuv + 0] +
-                 src_ayuv[src_stride_ayuv + 0] + 2) >>
-                2;
-    dst_uv[1] = (src_ayuv[1] + src_ayuv[1] + src_ayuv[src_stride_ayuv + 1] +
-                 src_ayuv[src_stride_ayuv + 1] + 2) >>
-                2;
+    dst_uv[0] = (src_ayuv[1] + src_ayuv[src_stride_ayuv + 1] + 1) >> 1;
+    dst_uv[1] = (src_ayuv[0] + src_ayuv[src_stride_ayuv + 0] + 1) >> 1;
   }
 }
 
@@ -4413,7 +4410,7 @@ void AYUVToVURow_C(const uint8_t* src_ayuv,
                    int width) {
   // Output a row of VU values, filtering 2x2 rows of AYUV.
   int x;
-  for (x = 0; x < width; x += 2) {
+  for (x = 0; x < width - 1; x += 2) {
     dst_vu[0] = (src_ayuv[0] + src_ayuv[4] + src_ayuv[src_stride_ayuv + 0] +
                  src_ayuv[src_stride_ayuv + 4] + 2) >>
                 2;
@@ -4424,12 +4421,8 @@ void AYUVToVURow_C(const uint8_t* src_ayuv,
     dst_vu += 2;
   }
   if (width & 1) {
-    dst_vu[0] = (src_ayuv[0] + src_ayuv[0] + src_ayuv[src_stride_ayuv + 0] +
-                 src_ayuv[src_stride_ayuv + 0] + 2) >>
-                2;
-    dst_vu[1] = (src_ayuv[1] + src_ayuv[1] + src_ayuv[src_stride_ayuv + 1] +
-                 src_ayuv[src_stride_ayuv + 1] + 2) >>
-                2;
+    dst_vu[0] = (src_ayuv[0] + src_ayuv[src_stride_ayuv + 0] + 1) >> 1;
+    dst_vu[1] = (src_ayuv[1] + src_ayuv[src_stride_ayuv + 1] + 1) >> 1;
   }
 }
 
