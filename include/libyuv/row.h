@@ -746,23 +746,11 @@ typedef uint32_t ulvec32[8];
 typedef uint8_t ulvec8[32];
 #endif
 
-#if defined(__aarch64__)
-// This struct is for Arm64 color conversion.
+#if defined(__aarch64__) || defined(__arm__)
+// This struct is for ARM color conversion.
 struct YuvConstants {
-  uvec16 kUVToRB;
-  uvec16 kUVToRB2;
-  uvec16 kUVToG;
-  uvec16 kUVToG2;
-  vec16 kUVBiasBGR;
-  vec32 kYToRgb;
-};
-#elif defined(__arm__)
-// This struct is for ArmV7 color conversion.
-struct YuvConstants {
-  uvec8 kUVToRB;
-  uvec8 kUVToG;
-  vec16 kUVBiasBGR;
-  vec32 kYToRgb;
+  uvec8 kUVCoeff;
+  vec16 kRGBCoeffBias;
 };
 #else
 // This struct is for Intel color conversion.
