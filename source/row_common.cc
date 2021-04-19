@@ -1427,18 +1427,24 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
   {{UB, VR, UG, VG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},     \
    {YG, BB, BG, BR, YB, 0, 0, 0}}
 #else
+#define UVMASK(C) ((C) > 127 ? 0xff : 0)
+
 #define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR, BB, BG, BR)         \
-  {{-UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0,  \
-    -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0, -UB, 0}, \
+  {{UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,          \
+    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0},         \
    {UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,  \
     UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG}, \
-   {0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR,  \
-    0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0, -VR}, \
+   {0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,          \
+    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR},         \
    {BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB}, \
    {BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG}, \
    {BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR}, \
    {YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG}, \
-   {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}}
+   {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}, \
+   {0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB),      \
+    0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB),      \
+    0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR),      \
+    0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR)}}
 #endif
 
 // clang-format on
@@ -1453,15 +1459,9 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 
 // Bias values to round, and subtract 128 from U and V.
 // For B and R this is negative. For G this is positive.
-#ifdef LIBYUV_UNLIMITED_DATA
 #define BB (UB * 128 - YB)
 #define BG (UG * 128 + VG * 128 + YB)
 #define BR (VR * 128 - YB)
-#else
-#define BB (-UB * 128 + YB)
-#define BG (UG * 128 + VG * 128 + YB)
-#define BR (-VR * 128 + YB)
-#endif
 
 // BT.601 limited range YUV to RGB reference
 //  R = (Y - 16) * 1.164             + V * 1.596
@@ -1631,7 +1631,6 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #undef MAKEYUVCONSTANTS
 
 #if defined(__aarch64__) || defined(__arm__)
-#ifdef LIBYUV_UNLIMITED_DATA
 #define LOAD_YUV_CONSTANTS                  \
   int ub = -yuvconstants->kUVCoeff[0];      \
   int vr = -yuvconstants->kUVCoeff[1];      \
@@ -1642,25 +1641,14 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
   int bg = yuvconstants->kRGBCoeffBias[2];  \
   int br = -yuvconstants->kRGBCoeffBias[3]
 #else
-#define LOAD_YUV_CONSTANTS                 \
-  int ub = -yuvconstants->kUVCoeff[0];     \
-  int vr = -yuvconstants->kUVCoeff[1];     \
-  int ug = yuvconstants->kUVCoeff[2];      \
-  int vg = yuvconstants->kUVCoeff[3];      \
-  int yg = yuvconstants->kRGBCoeffBias[0]; \
-  int bb = yuvconstants->kRGBCoeffBias[1]; \
-  int bg = yuvconstants->kRGBCoeffBias[2]; \
-  int br = yuvconstants->kRGBCoeffBias[3]
-#endif
-#else
-#define LOAD_YUV_CONSTANTS            \
-  int ub = yuvconstants->kUVToB[0];   \
-  int ug = yuvconstants->kUVToG[0];   \
-  int vg = yuvconstants->kUVToG[1];   \
-  int vr = yuvconstants->kUVToR[1];   \
-  int bb = yuvconstants->kUVBiasB[0]; \
-  int bg = yuvconstants->kUVBiasG[0]; \
-  int br = yuvconstants->kUVBiasR[0]; \
+#define LOAD_YUV_CONSTANTS             \
+  int ub = -yuvconstants->kUVToB[0];   \
+  int ug = yuvconstants->kUVToG[0];    \
+  int vg = yuvconstants->kUVToG[1];    \
+  int vr = -yuvconstants->kUVToR[1];   \
+  int bb = -yuvconstants->kUVBiasB[0]; \
+  int bg = yuvconstants->kUVBiasG[0];  \
+  int br = -yuvconstants->kUVBiasR[0]; \
   int yg = yuvconstants->kYToRgb[0]
 #endif
 

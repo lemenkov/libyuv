@@ -99,7 +99,6 @@ extern "C" {
 // q1: G uint16x8_t
 // q2: R uint16x8_t
 
-#ifdef LIBYUV_UNLIMITED_DATA
 // Convert from YUV to 2.14 fixed point RGB
 #define YUVTORGB                                           \
   "vmull.u16  q2, d1, d31                    \n"           \
@@ -122,28 +121,6 @@ extern "C" {
   "vqshrn.u16 d4, q2, #6                     \n" /* R */ \
   "vqshrn.u16 d2, q1, #6                     \n" /* G */ \
   "vqshrn.u16 d0, q0, #6                     \n" /* B */
-#else
-#define YUVTORGB                                          \
-  "vmull.u16  q2, d1, d31                    \n"          \
-  "vmull.u8   q8, d3, d29                    \n"          \
-  "vmull.u16  q0, d0, d31                    \n"          \
-  "vmlal.u8   q8, d2, d28                    \n" /* DG */ \
-  "vqshrun.s32 d0, q0, #16                   \n"          \
-  "vqshrun.s32 d1, q2, #16                   \n" /* Y */  \
-  "vmull.u8   q9, d2, d26                    \n" /* DB */ \
-  "vmull.u8   q1, d3, d27                    \n" /* DR */ \
-  "vqadd.s16  q2, q0, q12                    \n"          \
-  "vqadd.s16  q4, q0, q11                    \n"          \
-  "vqadd.s16  q0, q0, q10                    \n"          \
-  "vqadd.s16  q2, q2, q1                     \n" /* R */  \
-  "vqsub.s16  q1, q4, q8                     \n" /* G */  \
-  "vqadd.s16  q0, q0, q9                     \n" /* B */
-
-#define RGBTORGB8                                        \
-  "vqshrun.s16 d4, q2, #6                    \n" /* R */ \
-  "vqshrun.s16 d2, q1, #6                    \n" /* G */ \
-  "vqshrun.s16 d0, q0, #6                    \n" /* B */
-#endif
 
 #define YUVTORGB_REGS \
   "q0", "q1", "q2", "q4", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "d31"

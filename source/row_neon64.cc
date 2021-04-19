@@ -87,7 +87,6 @@ static const uvec8 kNV21Table = {1, 1, 3, 3, 5, 5, 7, 7,
 // v17.8h: G
 // v18.8h: R
 
-#ifdef LIBYUV_UNLIMITED_DATA
 // Convert from YUV to 2.14 fixed point RGB
 #define YUVTORGB                                          \
   "umull2     v3.4s, v0.8h, v24.8h           \n"          \
@@ -110,28 +109,6 @@ static const uvec8 kNV21Table = {1, 1, 3, 3, 5, 5, 7, 7,
   "uqshrn     v17.8b, v17.8h, #6             \n" \
   "uqshrn     v16.8b, v16.8h, #6             \n" \
   "uqshrn     v18.8b, v18.8h, #6             \n"
-#else
-#define YUVTORGB                                          \
-  "umull2     v3.4s, v0.8h, v24.8h           \n"          \
-  "umull      v6.8h, v1.8b, v30.8b           \n"          \
-  "umull      v0.4s, v0.4h, v24.4h           \n"          \
-  "umlal2     v6.8h, v1.16b, v31.16b         \n" /* DG */ \
-  "sqshrun    v0.4h, v0.4s, #16              \n"          \
-  "sqshrun2   v0.8h, v3.4s, #16              \n" /* Y */  \
-  "umull      v4.8h, v1.8b, v28.8b           \n" /* DB */ \
-  "umull2     v5.8h, v1.16b, v29.16b         \n" /* DR */ \
-  "sqadd      v17.8h, v0.8h, v26.8h          \n"          \
-  "sqadd      v16.8h, v0.8h, v25.8h          \n"          \
-  "sqadd      v18.8h, v0.8h, v27.8h          \n"          \
-  "sqsub      v17.8h, v17.8h, v6.8h          \n" /* G */  \
-  "sqadd      v16.8h, v16.8h, v4.8h          \n" /* B */  \
-  "sqadd      v18.8h, v18.8h, v5.8h          \n" /* R */
-
-#define RGBTORGB8                                \
-  "sqshrun    v17.8b, v17.8h, #6             \n" \
-  "sqshrun    v16.8b, v16.8h, #6             \n" \
-  "sqshrun    v18.8b, v18.8h, #6             \n"
-#endif
 
 #define YUVTORGB_REGS                                                          \
   "v0", "v1", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18", "v24", "v25", \

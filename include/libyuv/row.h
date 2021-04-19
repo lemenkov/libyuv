@@ -755,20 +755,15 @@ struct YuvConstants {
 #else
 // This struct is for Intel color conversion.
 struct YuvConstants {
-#if defined(LIBYUV_UNLIMITED_DATA)
   uint8_t kUVToB[32];
   uint8_t kUVToG[32];
   uint8_t kUVToR[32];
-#else
-  int8_t kUVToB[32];
-  int8_t kUVToG[32];
-  int8_t kUVToR[32];
-#endif
   int16_t kUVBiasB[16];
   int16_t kUVBiasG[16];
   int16_t kUVBiasR[16];
   int16_t kYToRgb[16];
   int16_t kYBiasToRgb[16];
+  uint8_t kUVMaskBR[32];
 };
 
 // Offsets into YuvConstants structure
@@ -780,6 +775,8 @@ struct YuvConstants {
 #define KUVBIASR 160
 #define KYTORGB 192
 #define KYBIASTORGB 224
+#define KUMASKB 256
+#define KVMASKR 288
 
 #endif
 
