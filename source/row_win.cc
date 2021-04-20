@@ -29,9 +29,9 @@ extern "C" {
 
 // Read 8 UV from 444
 #define READYUV444                                    \
-  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);            \
+  xmm3 = _mm_loadl_epi64((__m128i*)u_buf);            \
   xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset)); \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);               \
+  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);               \
   u_buf += 8;                                         \
   xmm4 = _mm_loadl_epi64((__m128i*)y_buf);            \
   xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);               \
@@ -39,9 +39,9 @@ extern "C" {
 
 // Read 8 UV from 444, With 8 Alpha.
 #define READYUVA444                                   \
-  xmm0 = _mm_loadl_epi64((__m128i*)u_buf);            \
+  xmm3 = _mm_loadl_epi64((__m128i*)u_buf);            \
   xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset)); \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);               \
+  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);               \
   u_buf += 8;                                         \
   xmm4 = _mm_loadl_epi64((__m128i*)y_buf);            \
   xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);               \
@@ -51,10 +51,10 @@ extern "C" {
 
 // Read 4 UV from 422, upsample to 8 UV.
 #define READYUV422                                        \
-  xmm0 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
+  xmm3 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
   xmm1 = _mm_cvtsi32_si128(*(uint32_t*)(u_buf + offset)); \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
-  xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                  \
+  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);                   \
+  xmm3 = _mm_unpacklo_epi16(xmm3, xmm3);                  \
   u_buf += 4;                                             \
   xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
   xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
@@ -62,10 +62,10 @@ extern "C" {
 
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
 #define READYUVA422                                       \
-  xmm0 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
+  xmm3 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
   xmm1 = _mm_cvtsi32_si128(*(uint32_t*)(u_buf + offset)); \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
-  xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                  \
+  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);                   \
+  xmm3 = _mm_unpacklo_epi16(xmm3, xmm3);                  \
   u_buf += 4;                                             \
   xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
   xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
@@ -74,24 +74,31 @@ extern "C" {
   a_buf += 8;
 
 // Convert 8 pixels: 8 UV and 8 Y.
-#define YUVTORGB(yuvconstants)                                     \
-  xmm1 = _mm_loadu_si128(&xmm0);                                   \
-  xmm2 = _mm_loadu_si128(&xmm0);                                   \
-  xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)yuvconstants->kUVToB); \
-  xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)yuvconstants->kUVToG); \
-  xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)yuvconstants->kUVToR); \
-  xmm0 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasB, xmm0);   \
-  xmm1 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasG, xmm1);   \
-  xmm2 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasR, xmm2);   \
-  xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);  \
-  xmm0 = _mm_adds_epi16(xmm0, xmm4);                               \
-  xmm1 = _mm_adds_epi16(xmm1, xmm4);                               \
-  xmm2 = _mm_adds_epi16(xmm2, xmm4);                               \
-  xmm0 = _mm_srai_epi16(xmm0, 6);                                  \
-  xmm1 = _mm_srai_epi16(xmm1, 6);                                  \
-  xmm2 = _mm_srai_epi16(xmm2, 6);                                  \
-  xmm0 = _mm_packus_epi16(xmm0, xmm0);                             \
-  xmm1 = _mm_packus_epi16(xmm1, xmm1);                             \
+#define YUVTORGB(yuvconstants)                                            \
+  xmm0 = _mm_loadu_si128(&xmm3);                                          \
+  xmm1 = _mm_loadu_si128(&xmm3);                                          \
+  xmm2 = _mm_loadu_si128(&xmm3);                                          \
+  xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)yuvconstants->kUVToB);        \
+  xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)yuvconstants->kUVToR);        \
+  xmm1 = _mm_slli_epi16(xmm1, 8);                                         \
+  xmm1 = _mm_and_si128(xmm1, *(__m128i*)yuvconstants->kUVMaskBR);         \
+  xmm0 = _mm_add_epi16(xmm0, xmm1);                                       \
+  xmm1 = _mm_loadu_si128(&xmm3);                                          \
+  xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)yuvconstants->kUVToG);        \
+  xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);         \
+  xmm3 = _mm_and_si128(xmm3, *((__m128i*)(yuvconstants->kUVMaskBR) + 1)); \
+  xmm2 = _mm_add_epi16(xmm2, xmm3);                                       \
+  xmm0 = _mm_add_epi16(xmm0, xmm4);                                       \
+  xmm2 = _mm_add_epi16(xmm2, xmm4);                                       \
+  xmm4 = _mm_add_epi16(xmm4, *(__m128i*)yuvconstants->kUVBiasG);          \
+  xmm0 = _mm_subs_epu16(xmm0, *(__m128i*)yuvconstants->kUVBiasB);         \
+  xmm1 = _mm_subs_epu16(xmm4, xmm1);                                      \
+  xmm2 = _mm_subs_epu16(xmm2, *(__m128i*)yuvconstants->kUVBiasR);         \
+  xmm0 = _mm_srli_epi16(xmm0, 6);                                         \
+  xmm1 = _mm_srli_epi16(xmm1, 6);                                         \
+  xmm2 = _mm_srli_epi16(xmm2, 6);                                         \
+  xmm0 = _mm_packus_epi16(xmm0, xmm0);                                    \
+  xmm1 = _mm_packus_epi16(xmm1, xmm1);                                    \
   xmm2 = _mm_packus_epi16(xmm2, xmm2);
 
 // Store 8 ARGB values.
@@ -112,7 +119,7 @@ void I422ToARGBRow_SSSE3(const uint8_t* y_buf,
                          uint8_t* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width) {
-  __m128i xmm0, xmm1, xmm2, xmm4;
+  __m128i xmm0, xmm1, xmm2, xmm3, xmm4;
   const __m128i xmm5 = _mm_set1_epi8(-1);
   const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
@@ -132,7 +139,7 @@ void I422AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
                               uint8_t* dst_argb,
                               const struct YuvConstants* yuvconstants,
                               int width) {
-  __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
+  __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5;
   const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
     READYUVA422
@@ -150,7 +157,7 @@ void I444ToARGBRow_SSSE3(const uint8_t* y_buf,
                          uint8_t* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width) {
-  __m128i xmm0, xmm1, xmm2, xmm4;
+  __m128i xmm0, xmm1, xmm2, xmm3, xmm4;
   const __m128i xmm5 = _mm_set1_epi8(-1);
   const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
@@ -170,7 +177,7 @@ void I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
                               uint8_t* dst_argb,
                               const struct YuvConstants* yuvconstants,
                               int width) {
-  __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
+  __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5;
   const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
     READYUVA444
@@ -1987,12 +1994,12 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 // Read 16 UV from 444
 #define READYUV444_AVX2 \
   __asm {                                                \
-    __asm vmovdqu    xmm0, [esi] /* U */                      \
+    __asm vmovdqu    xmm3, [esi] /* U */                      \
     __asm vmovdqu    xmm1, [esi + edi] /* V */                      \
     __asm lea        esi,  [esi + 16]                                          \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
     __asm vpermq     ymm1, ymm1, 0xd8                                          \
-    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                     \
+    __asm vpunpcklbw ymm3, ymm3, ymm1 /* UV */                     \
     __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
@@ -2001,12 +2008,12 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 // Read 16 UV from 444.  With 16 Alpha.
 #define READYUVA444_AVX2 \
   __asm {                                                                      \
-    __asm vmovdqu    xmm0, [esi] /* U */                                       \
+    __asm vmovdqu    xmm3, [esi] /* U */                                       \
     __asm vmovdqu    xmm1, [esi + edi] /* V */                                 \
     __asm lea        esi,  [esi + 16]                                          \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
     __asm vpermq     ymm1, ymm1, 0xd8                                          \
-    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                                 \
+    __asm vpunpcklbw ymm3, ymm3, ymm1 /* UV */                                 \
     __asm vmovdqu    xmm4, [eax] /* Y */                                       \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
@@ -2018,12 +2025,12 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 \
   __asm {                                                \
-    __asm vmovq      xmm0, qword ptr [esi] /* U */                      \
+    __asm vmovq      xmm3, qword ptr [esi] /* U */                      \
     __asm vmovq      xmm1, qword ptr [esi + edi] /* V */                      \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                     \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm0, ymm0 /* UVUV (upsample) */        \
+    __asm vpunpcklbw ymm3, ymm3, ymm1 /* UV */                     \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
+    __asm vpunpcklwd ymm3, ymm3, ymm3 /* UVUV (upsample) */        \
     __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
@@ -2032,12 +2039,12 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 // Read 8 UV from 422, upsample to 16 UV.  With 16 Alpha.
 #define READYUVA422_AVX2 \
   __asm {                                               \
-    __asm vmovq      xmm0, qword ptr [esi] /* U */                      \
+    __asm vmovq      xmm3, qword ptr [esi] /* U */                      \
     __asm vmovq      xmm1, qword ptr [esi + edi] /* V */                      \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                     \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm0, ymm0 /* UVUV (upsample) */        \
+    __asm vpunpcklbw ymm3, ymm3, ymm1 /* UV */                     \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
+    __asm vpunpcklwd ymm3, ymm3, ymm3 /* UVUV (upsample) */        \
     __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
@@ -2049,10 +2056,10 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 // Read 8 UV from NV12, upsample to 16 UV.
 #define READNV12_AVX2 \
   __asm {                                                  \
-    __asm vmovdqu    xmm0, [esi] /* UV */                     \
+    __asm vmovdqu    xmm3, [esi] /* UV */                     \
     __asm lea        esi,  [esi + 16]                                          \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm0, ymm0 /* UVUV (upsample) */        \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
+    __asm vpunpcklwd ymm3, ymm3, ymm3 /* UVUV (upsample) */        \
     __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
@@ -2061,10 +2068,10 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 // Read 8 UV from NV21, upsample to 16 UV.
 #define READNV21_AVX2 \
   __asm {                                                  \
-    __asm vmovdqu    xmm0, [esi] /* UV */                     \
+    __asm vmovdqu    xmm3, [esi] /* UV */                     \
     __asm lea        esi,  [esi + 16]                                          \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleNV21                      \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
+    __asm vpshufb    ymm3, ymm3, ymmword ptr kShuffleNV21                      \
     __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
@@ -2075,8 +2082,8 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
   __asm {                                                  \
     __asm vmovdqu    ymm4, [eax] /* YUY2 */                           \
     __asm vpshufb    ymm4, ymm4, ymmword ptr kShuffleYUY2Y                     \
-    __asm vmovdqu    ymm0, [eax] /* UV */                             \
-    __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleYUY2UV                    \
+    __asm vmovdqu    ymm3, [eax] /* UV */                             \
+    __asm vpshufb    ymm3, ymm3, ymmword ptr kShuffleYUY2UV                    \
     __asm lea        eax, [eax + 32]}
 
 // Read 8 UYVY with 16 Y and upsample 8 UV to 16 UV.
@@ -2084,32 +2091,39 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
   __asm {                                                  \
     __asm vmovdqu    ymm4, [eax] /* UYVY */                           \
     __asm vpshufb    ymm4, ymm4, ymmword ptr kShuffleUYVYY                     \
-    __asm vmovdqu    ymm0, [eax] /* UV */                             \
-    __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleUYVYUV                    \
+    __asm vmovdqu    ymm3, [eax] /* UV */                             \
+    __asm vpshufb    ymm3, ymm3, ymmword ptr kShuffleUYVYUV                    \
     __asm lea        eax, [eax + 32]}
 
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants) \
   __asm {                                    \
-    __asm vpmaddubsw ymm2, ymm0, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
-    __asm vpmaddubsw ymm1, ymm0, ymmword ptr [YuvConstants + KUVTOG] /* G UV */\
-    __asm vpmaddubsw ymm0, ymm0, ymmword ptr [YuvConstants + KUVTOB] /* B UV */\
-    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASR]               \
-    __asm vpsubw     ymm2, ymm3, ymm2                                          \
-    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASG]               \
-    __asm vpsubw     ymm1, ymm3, ymm1                                          \
-    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASB]               \
-    __asm vpsubw     ymm0, ymm3, ymm0 /* Step 2: Find Y contribution to 16 R,G,B values */                       \
+    __asm vpmaddubsw ymm0, ymm3, ymmword ptr [YuvConstants + KUVTOB] /* B UV */\
+    __asm vpmaddubsw ymm2, ymm3, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
+    __asm vpsllw     ymm1, ymm3, 8                                             \
+    __asm vbroadcastf128 ymm6, xmmword ptr [YuvConstants + KUMASKB]            \
+    __asm vpand      ymm1, ymm1, ymm6                                          \
+    __asm vpaddw     ymm0, ymm0, ymm1                                          \
+    __asm vpmaddubsw ymm1, ymm3, ymmword ptr [YuvConstants + KUVTOG] /* B UV */\
     __asm vpmulhuw   ymm4, ymm4, ymmword ptr [YuvConstants + KYTORGB]          \
-    __asm vpaddsw    ymm0, ymm0, ymm4 /* B += Y */                   \
-    __asm vpaddsw    ymm1, ymm1, ymm4 /* G += Y */                   \
-    __asm vpaddsw    ymm2, ymm2, ymm4 /* R += Y */                   \
-    __asm vpsraw     ymm0, ymm0, 6                                             \
-    __asm vpsraw     ymm1, ymm1, 6                                             \
-    __asm vpsraw     ymm2, ymm2, 6                                             \
-    __asm vpackuswb  ymm0, ymm0, ymm0 /* B */                        \
-    __asm vpackuswb  ymm1, ymm1, ymm1 /* G */                        \
-    __asm vpackuswb  ymm2, ymm2, ymm2 /* R */                  \
+    __asm vbroadcastf128 ymm6, xmmword ptr [YuvConstants + KVMASKR]            \
+    __asm vpand      ymm3, ymm3, ymm6                                          \
+    __asm vpaddw     ymm2, ymm2, ymm3                                          \
+    __asm vpaddw     ymm0, ymm0, ymm4                                          \
+    __asm vmovdqu    ymm6, ymmword ptr [YuvConstants + KUVBIASG]               \
+    __asm vpaddw     ymm3, ymm4, ymm6                                          \
+    __asm vpaddw     ymm2, ymm2, ymm4                                          \
+    __asm vmovdqu    ymm6, ymmword ptr [YuvConstants + KUVBIASB]               \
+    __asm vpsubusw   ymm0, ymm0, ymm6                                          \
+    __asm vpsubusw   ymm1, ymm3, ymm1                                          \
+    __asm vmovdqu    ymm6, ymmword ptr [YuvConstants + KUVBIASR]               \
+    __asm vpsubusw   ymm2, ymm2, ymm6                                          \
+    __asm vpsrlw     ymm0, ymm0, 6                                             \
+    __asm vpsrlw     ymm1, ymm1, 6                                             \
+    __asm vpsrlw     ymm2, ymm2, 6                                             \
+    __asm vpackuswb  ymm0, ymm0, ymm0 /* B */                                  \
+    __asm vpackuswb  ymm1, ymm1, ymm1 /* G */                                  \
+    __asm vpackuswb  ymm2, ymm2, ymm2 /* R */                                  \
   }
 
 // Store 16 ARGB values.
@@ -2481,10 +2495,10 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 // Read 8 UV from 444.
 #define READYUV444 \
   __asm {                                                     \
-    __asm movq       xmm0, qword ptr [esi] /* U */                             \
+    __asm movq       xmm3, qword ptr [esi] /* U */                             \
     __asm movq       xmm1, qword ptr [esi + edi] /* V */                       \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm punpcklbw  xmm0, xmm1 /* UV */                             \
+    __asm punpcklbw  xmm3, xmm1 /* UV */                             \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]}
@@ -2492,10 +2506,10 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 // Read 4 UV from 444.  With 8 Alpha.
 #define READYUVA444 \
   __asm {                                                                      \
-    __asm movq       xmm0, qword ptr [esi] /* U */                             \
+    __asm movq       xmm3, qword ptr [esi] /* U */                             \
     __asm movq       xmm1, qword ptr [esi + edi] /* V */                       \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm punpcklbw  xmm0, xmm1 /* UV */                                       \
+    __asm punpcklbw  xmm3, xmm1 /* UV */                                       \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]                                            \
@@ -2505,11 +2519,11 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 // Read 4 UV from 422, upsample to 8 UV.
 #define READYUV422 \
   __asm {                                                     \
-    __asm movd       xmm0, [esi] /* U */                              \
+    __asm movd       xmm3, [esi] /* U */                              \
     __asm movd       xmm1, [esi + edi] /* V */                              \
     __asm lea        esi,  [esi + 4]                                           \
-    __asm punpcklbw  xmm0, xmm1 /* UV */                             \
-    __asm punpcklwd  xmm0, xmm0 /* UVUV (upsample) */                \
+    __asm punpcklbw  xmm3, xmm1 /* UV */                             \
+    __asm punpcklwd  xmm3, xmm3 /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]}
@@ -2517,11 +2531,11 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
 #define READYUVA422 \
   __asm {                                                    \
-    __asm movd       xmm0, [esi] /* U */                              \
+    __asm movd       xmm3, [esi] /* U */                              \
     __asm movd       xmm1, [esi + edi] /* V */                              \
     __asm lea        esi,  [esi + 4]                                           \
-    __asm punpcklbw  xmm0, xmm1 /* UV */                             \
-    __asm punpcklwd  xmm0, xmm0 /* UVUV (upsample) */                \
+    __asm punpcklbw  xmm3, xmm1 /* UV */                             \
+    __asm punpcklwd  xmm3, xmm3 /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax] /* Y */                           \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]                                            \
@@ -2531,9 +2545,9 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 // Read 4 UV from NV12, upsample to 8 UV.
 #define READNV12 \
   __asm {                                                       \
-    __asm movq       xmm0, qword ptr [esi] /* UV */                            \
+    __asm movq       xmm3, qword ptr [esi] /* UV */                            \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm punpcklwd  xmm0, xmm0 /* UVUV (upsample) */                \
+    __asm punpcklwd  xmm3, xmm3 /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]}
@@ -2541,9 +2555,9 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 // Read 4 VU from NV21, upsample to 8 UV.
 #define READNV21 \
   __asm {                                                       \
-    __asm movq       xmm0, qword ptr [esi] /* UV */                            \
+    __asm movq       xmm3, qword ptr [esi] /* UV */                            \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm pshufb     xmm0, xmmword ptr kShuffleNV21                            \
+    __asm pshufb     xmm3, xmmword ptr kShuffleNV21                            \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]}
@@ -2553,8 +2567,8 @@ __declspec(naked) void I422ToRGBARow_AVX2(
   __asm {                                                       \
     __asm movdqu     xmm4, [eax] /* YUY2 */                           \
     __asm pshufb     xmm4, xmmword ptr kShuffleYUY2Y                           \
-    __asm movdqu     xmm0, [eax] /* UV */                             \
-    __asm pshufb     xmm0, xmmword ptr kShuffleYUY2UV                          \
+    __asm movdqu     xmm3, [eax] /* UV */                             \
+    __asm pshufb     xmm3, xmmword ptr kShuffleYUY2UV                          \
     __asm lea        eax, [eax + 16]}
 
 // Read 4 UYVY with 8 Y and upsample 4 UV to 8 UV.
@@ -2562,32 +2576,37 @@ __declspec(naked) void I422ToRGBARow_AVX2(
   __asm {                                                       \
     __asm movdqu     xmm4, [eax] /* UYVY */                           \
     __asm pshufb     xmm4, xmmword ptr kShuffleUYVYY                           \
-    __asm movdqu     xmm0, [eax] /* UV */                             \
-    __asm pshufb     xmm0, xmmword ptr kShuffleUYVYUV                          \
+    __asm movdqu     xmm3, [eax] /* UV */                             \
+    __asm pshufb     xmm3, xmmword ptr kShuffleUYVYUV                          \
     __asm lea        eax, [eax + 16]}
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(YuvConstants) \
   __asm {                                         \
-    __asm movdqa     xmm1, xmm0                                                \
-    __asm movdqa     xmm2, xmm0                                                \
-    __asm movdqa     xmm3, xmm0                                                \
-    __asm movdqa     xmm0, xmmword ptr [YuvConstants + KUVBIASB]               \
-    __asm pmaddubsw  xmm1, xmmword ptr [YuvConstants + KUVTOB]                 \
-    __asm psubw      xmm0, xmm1                                                \
-    __asm movdqa     xmm1, xmmword ptr [YuvConstants + KUVBIASG]               \
-    __asm pmaddubsw  xmm2, xmmword ptr [YuvConstants + KUVTOG]                 \
-    __asm psubw      xmm1, xmm2                                                \
-    __asm movdqa     xmm2, xmmword ptr [YuvConstants + KUVBIASR]               \
-    __asm pmaddubsw  xmm3, xmmword ptr [YuvConstants + KUVTOR]                 \
-    __asm psubw      xmm2, xmm3                                                \
+    __asm movdqa     xmm0, xmm3                                                \
+    __asm movdqa     xmm1, xmm3                                                \
+    __asm movdqa     xmm2, xmm3                                                \
+    __asm pmaddubsw  xmm0, xmmword ptr [YuvConstants + KUVTOB]                 \
+    __asm pmaddubsw  xmm2, xmmword ptr [YuvConstants + KUVTOR]                 \
+    __asm psllw      xmm1, 8                                                   \
+    __asm pand       xmm1, xmmword ptr [YuvConstants + KUMASKB]                \
+    __asm paddw      xmm0, xmm1                                                \
+    __asm pmaddubsw  xmm1, xmmword ptr [YuvConstants + KUVTOG]                 \
     __asm pmulhuw    xmm4, xmmword ptr [YuvConstants + KYTORGB]                \
-    __asm paddsw     xmm0, xmm4 /* B += Y */                         \
-    __asm paddsw     xmm1, xmm4 /* G += Y */                         \
-    __asm paddsw     xmm2, xmm4 /* R += Y */                         \
-    __asm psraw      xmm0, 6                                                   \
-    __asm psraw      xmm1, 6                                                   \
-    __asm psraw      xmm2, 6                                                   \
+    __asm pand       xmm3, xmmword ptr [YuvConstants + KVMASKR]                \
+    __asm paddw      xmm0, xmm4                                                \
+    __asm movdqa     xmm6, xmmword ptr [YuvConstants + KUVBIASG]               \
+    __asm paddw      xmm2, xmm4                                                \
+    __asm paddw      xmm4, xmm6                                                \
+    __asm movdqa     xmm6, xmmword ptr [YuvConstants + KUVBIASG]               \
+    __asm psubusw    xmm0, xmm6                                                \
+    __asm psubusw    xmm4, xmm1                                                \
+    __asm movdqa     xmm6, xmmword ptr [YuvConstants + KUVBIASG]               \
+    __asm psubusw    xmm2, xmm6                                                \
+    __asm movdqa     xmm1, xmm4                                                \
+    __asm psrlw      xmm0, 6                                                   \
+    __asm psrlw      xmm1, 6                                                   \
+    __asm psrlw      xmm2, 6                                                   \
     __asm packuswb   xmm0, xmm0 /* B */                              \
     __asm packuswb   xmm1, xmm1 /* G */                              \
     __asm packuswb   xmm2, xmm2 /* R */             \
