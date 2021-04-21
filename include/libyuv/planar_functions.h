@@ -23,7 +23,9 @@ extern "C" {
 #endif
 
 // TODO(fbarchard): Move cpu macros to row.h
-#if defined(__pnacl__) || defined(__CLR_VER) ||            \
+// TODO: Fix Win32 build
+// https://bugs.chromium.org/p/libyuv/issues/detail?id=900
+#if defined(__pnacl__) || defined(__CLR_VER) || defined(_M_IX86) || \
     (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86

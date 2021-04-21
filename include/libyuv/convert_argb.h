@@ -806,19 +806,6 @@ int I010ToAR30(const uint16_t* src_y,
                int width,
                int height);
 
-// Convert I010 to AB30.
-LIBYUV_API
-int I010ToAB30(const uint16_t* src_y,
-               int src_stride_y,
-               const uint16_t* src_u,
-               int src_stride_u,
-               const uint16_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_ab30,
-               int dst_stride_ab30,
-               int width,
-               int height);
-
 // Convert H010 to AR30.
 LIBYUV_API
 int H010ToAR30(const uint16_t* src_y,
@@ -829,6 +816,19 @@ int H010ToAR30(const uint16_t* src_y,
                int src_stride_v,
                uint8_t* dst_ar30,
                int dst_stride_ar30,
+               int width,
+               int height);
+
+// Convert I010 to AB30.
+LIBYUV_API
+int I010ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
                int width,
                int height);
 
@@ -1413,6 +1413,19 @@ int I420ToAR30(const uint8_t* src_y,
                int width,
                int height);
 
+// Convert I420 to AB30.
+LIBYUV_API
+int I420ToAB30(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height);
+
 // Convert H420 to AR30.
 LIBYUV_API
 int H420ToAR30(const uint8_t* src_y,
@@ -1423,6 +1436,19 @@ int H420ToAR30(const uint8_t* src_y,
                int src_stride_v,
                uint8_t* dst_ar30,
                int dst_stride_ar30,
+               int width,
+               int height);
+
+// Convert H420 to AB30.
+LIBYUV_API
+int H420ToAB30(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
                int width,
                int height);
 

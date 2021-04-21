@@ -5310,6 +5310,40 @@ int H420ToAR30(const uint8_t* src_y,
                           &kYvuH709Constants, width, height);
 }
 
+// Convert I420 to AB30.
+LIBYUV_API
+int I420ToAB30(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height) {
+  return I420ToAR30Matrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
+                          src_stride_u, dst_ab30, dst_stride_ab30,
+                          &kYvuI601Constants, width, height);
+}
+
+// Convert H420 to AB30.
+LIBYUV_API
+int H420ToAB30(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height) {
+  return I420ToAR30Matrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
+                          src_stride_u, dst_ab30, dst_stride_ab30,
+                          &kYvuH709Constants, width, height);
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
