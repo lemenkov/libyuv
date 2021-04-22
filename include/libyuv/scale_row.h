@@ -19,9 +19,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO: Fix Win32 build
-// https://bugs.chromium.org/p/libyuv/issues/detail?id=900
-#if defined(__pnacl__) || defined(__CLR_VER) || defined(_M_IX86) || \
+#if defined(__pnacl__) || defined(__CLR_VER) || \
     (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
@@ -77,7 +75,7 @@ extern "C" {
 // The following are available for gcc/clang x86 platforms:
 // TODO(fbarchard): Port to Visual C
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+    (defined(__x86_64__) || defined(__i386__))
 #define HAS_SCALEUVROWDOWN2BOX_SSSE3
 #define HAS_SCALEROWUP2LINEAR_SSE2
 #define HAS_SCALEROWUP2LINEAR_SSSE3
@@ -96,8 +94,8 @@ extern "C" {
 // The following are available for gcc/clang x86 platforms, but
 // require clang 3.4 or gcc 4.7.
 // TODO(fbarchard): Port to Visual C
-#if !defined(LIBYUV_DISABLE_X86) &&                                     \
-    (defined(__x86_64__) || defined(__i386__)) && !defined(_MSC_VER) && \
+#if !defined(LIBYUV_DISABLE_X86) &&                  \
+    (defined(__x86_64__) || defined(__i386__)) &&    \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_SCALEUVROWDOWN2BOX_AVX2
 #define HAS_SCALEROWUP2LINEAR_AVX2

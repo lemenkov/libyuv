@@ -17,7 +17,7 @@ extern "C" {
 
 // This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+    (defined(__x86_64__) || defined(__i386__))
 
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 

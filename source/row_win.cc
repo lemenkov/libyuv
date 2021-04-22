@@ -10,9 +10,9 @@
 
 #include "libyuv/row.h"
 
-// This module is for Visual C 32/64 bit and clangcl 32 bit
+// This module is for Visual C 32/64 bit
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
-    (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
+    !defined(__clang__) && (defined(_M_IX86) || defined(_M_X64))
 
 #if defined(_M_X64)
 #include <emmintrin.h>

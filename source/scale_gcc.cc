@@ -18,7 +18,7 @@ extern "C" {
 
 // This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+    (defined(__x86_64__) || defined(__i386__))
 
 // Offsets for source bytes 0 to 9
 static const uvec8 kShuf0 = {0,   1,   3,   4,   5,   7,   8,   9,

@@ -23,7 +23,7 @@ namespace libyuv {
 // TODO(fbarchard): clang x86 has a higher accuracy YUV to RGB.
 // Port to Visual C and other CPUs
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+    (defined(__x86_64__) || defined(__i386__))
 #define ERROR_FULL 5
 #define ERROR_J420 4
 #else

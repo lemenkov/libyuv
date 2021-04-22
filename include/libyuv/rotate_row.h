@@ -18,9 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO: Fix Win32 build
-// https://bugs.chromium.org/p/libyuv/issues/detail?id=900
-#if defined(__pnacl__) || defined(__CLR_VER) || defined(_M_IX86) || \
+#if defined(__pnacl__) || defined(__CLR_VER) || \
     (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
@@ -34,8 +32,9 @@ extern "C" {
 #define LIBYUV_DISABLE_X86
 #endif
 #endif
-// The following are available for Visual C and clangcl 32 bit:
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
+// The following are available for Visual C 32 bit:
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER) && \
+    !defined(__clang__)
 #define HAS_TRANSPOSEWX8_SSSE3
 #define HAS_TRANSPOSEUVWX8_SSE2
 #endif

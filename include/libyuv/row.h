@@ -20,9 +20,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO: Fix Win32 build
-// https://bugs.chromium.org/p/libyuv/issues/detail?id=900
-#if defined(__pnacl__) || defined(__CLR_VER) || defined(_M_IX86) || \
+#if defined(__pnacl__) || defined(__CLR_VER) || \
     (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
@@ -247,10 +245,10 @@ extern "C" {
 #endif
 #endif
 
-// The following are available for AVX2 Visual C and clangcl 32 bit:
+// The following are available for AVX2 Visual C 32 bit:
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER) && \
-    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
+    !defined(__clang__) && defined(VISUALC_HAS_AVX2)
 #define HAS_ARGB1555TOARGBROW_AVX2
 #define HAS_ARGB4444TOARGBROW_AVX2
 #define HAS_ARGBTOARGB1555ROW_AVX2
@@ -272,7 +270,7 @@ extern "C" {
 // The following are available for gcc/clang x86 platforms:
 // TODO(fbarchard): Port to Visual C
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+    (defined(__x86_64__) || defined(__i386__))
 #define HAS_ABGRTOAR30ROW_SSSE3
 #define HAS_ARGBTOAR30ROW_SSSE3
 #define HAS_ARGBTOAR64ROW_SSSE3
@@ -319,7 +317,7 @@ extern "C" {
 // The following are available for AVX2 gcc/clang x86 platforms:
 // TODO(fbarchard): Port to Visual C
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
+    (defined(__x86_64__) || defined(__i386__)) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_ABGRTOAR30ROW_AVX2
 #define HAS_ABGRTOUVROW_AVX2
@@ -379,7 +377,7 @@ extern "C" {
 // TODO(fbarchard): Port to GCC and Visual C
 // TODO(fbarchard): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI. Issue libyuv:789
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
+    (defined(__x86_64__) || defined(__i386__)) && \
     (defined(CLANG_HAS_AVX512))
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #endif
@@ -551,24 +549,14 @@ extern "C" {
 #define HAS_BGRATOYROW_MSA
 #define HAS_HALFFLOATROW_MSA
 #define HAS_I400TOARGBROW_MSA
-//#define HAS_I422ALPHATOARGBROW_MSA
-//#define HAS_I422TOARGBROW_MSA
-//#define HAS_I422TORGB24ROW_MSA
-//#define HAS_I422TORGBAROW_MSA
 #define HAS_I422TOUYVYROW_MSA
 #define HAS_I422TOYUY2ROW_MSA
-//#define HAS_I444TOARGBROW_MSA
-//#define HAS_I422TOARGB1555ROW_MSA
-//#define HAS_I422TORGB565ROW_MSA
 #define HAS_INTERPOLATEROW_MSA
 #define HAS_J400TOARGBROW_MSA
 #define HAS_MERGEUVROW_MSA
 #define HAS_MIRRORROW_MSA
 #define HAS_MIRRORUVROW_MSA
 #define HAS_MIRRORSPLITUVROW_MSA
-//#define HAS_NV12TOARGBROW_MSA
-//#define HAS_NV12TORGB565ROW_MSA
-//#define HAS_NV21TOARGBROW_MSA
 #define HAS_RAWTOARGBROW_MSA
 #define HAS_RAWTORGB24ROW_MSA
 #define HAS_RAWTOUVROW_MSA
@@ -588,10 +576,8 @@ extern "C" {
 #define HAS_SOBELXYROW_MSA
 #define HAS_SOBELYROW_MSA
 #define HAS_SPLITUVROW_MSA
-//#define HAS_UYVYTOARGBROW_MSA
 #define HAS_UYVYTOUVROW_MSA
 #define HAS_UYVYTOYROW_MSA
-//#define HAS_YUY2TOARGBROW_MSA
 #define HAS_YUY2TOUV422ROW_MSA
 #define HAS_YUY2TOUVROW_MSA
 #define HAS_YUY2TOYROW_MSA
@@ -641,8 +627,6 @@ extern "C" {
 #define HAS_I400TOARGBROW_MMI
 #define HAS_I422TOUYVYROW_MMI
 #define HAS_I422TOYUY2ROW_MMI
-//#define HAS_I422TOARGBROW_MMI
-//#define HAS_I444TOARGBROW_MMI
 #define HAS_INTERPOLATEROW_MMI
 #define HAS_J400TOARGBROW_MMI
 #define HAS_MERGERGBROW_MMI
@@ -673,20 +657,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_MMI
 #define HAS_YUY2TOUVROW_MMI
 #define HAS_YUY2TOYROW_MMI
-//#define HAS_I210TOARGBROW_MMI
-//#define HAS_I422TOARGB4444ROW_MMI
-//#define HAS_I422TOARGB1555ROW_MMI
-//#define HAS_I422TORGB565ROW_MMI
-//#define HAS_NV21TORGB24ROW_MMI
-//#define HAS_NV12TORGB24ROW_MMI
-//#define HAS_I422ALPHATOARGBROW_MMI
-//#define HAS_I422TORGB24ROW_MMI
-//#define HAS_NV12TOARGBROW_MMI
-//#define HAS_NV21TOARGBROW_MMI
-//#define HAS_NV12TORGB565ROW_MMI
-//#define HAS_YUY2TOARGBROW_MMI
-//#define HAS_UYVYTOARGBROW_MMI
-//#define HAS_I422TORGBAROW_MMI
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)

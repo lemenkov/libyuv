@@ -22,15 +22,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// These 2 macros control YUV to RGB using unsigned math to extend range.
-// They can be used separately to enable new code and old data (clamped)
+// This macro control YUV to RGB using unsigned math to extend range of
+// YUV to RGB coefficients to 0 to 4 instead of 0 to 2 for more accuracy on B:
 // LIBYUV_UNLIMITED_DATA
-// LIBYUV_UNLIMITED_CODE
 
-// The following ifdef from row_win makes the C code match the row_win code,
-// which is 7 bit fixed point.
+// The following macro from row_win makes the C code match the row_win code,
+// which is 7 bit fixed point for ARGBToI420:
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
-    (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
+    !defined(__clang__) && (defined(_M_IX86) || defined(_M_X64))
 #define LIBYUV_RGB7 1
 #endif
 
@@ -3642,7 +3641,7 @@ void ARGBCopyYToAlphaRow_C(const uint8_t* src, uint8_t* dst, int width) {
 // Maximum temporary width for wrappers to process at a time, in pixels.
 #define MAXTWIDTH 2048
 
-#if !(defined(_MSC_VER) && defined(_M_IX86)) && \
+#if !(defined(_MSC_VER) && !defined(__clang__) && defined(_M_IX86)) && \
     defined(HAS_I422TORGB565ROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
 void I422ToRGB565Row_SSSE3(const uint8_t* src_y,
