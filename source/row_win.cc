@@ -75,28 +75,18 @@ extern "C" {
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(yuvconstants)                                            \
-  xmm0 = _mm_loadu_si128(&xmm3);                                          \
-  xmm1 = _mm_loadu_si128(&xmm3);                                          \
-  xmm2 = _mm_loadu_si128(&xmm3);                                          \
-  xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)yuvconstants->kUVToB);        \
-  xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)yuvconstants->kUVToR);        \
-  xmm1 = _mm_slli_epi16(xmm1, 8);                                         \
-  xmm1 = _mm_and_si128(xmm1, *(__m128i*)yuvconstants->kUVMaskBR);         \
-  xmm0 = _mm_add_epi16(xmm0, xmm1);                                       \
-  xmm1 = _mm_loadu_si128(&xmm3);                                          \
-  xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)yuvconstants->kUVToG);        \
+  xmm3 = _mm_sub_epi8(xmm3, _mm_set1_epi8(0x80));                         \
   xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);         \
-  xmm3 = _mm_and_si128(xmm3, *((__m128i*)(yuvconstants->kUVMaskBR) + 1)); \
-  xmm2 = _mm_add_epi16(xmm2, xmm3);                                       \
-  xmm0 = _mm_add_epi16(xmm0, xmm4);                                       \
-  xmm2 = _mm_add_epi16(xmm2, xmm4);                                       \
-  xmm4 = _mm_add_epi16(xmm4, *(__m128i*)yuvconstants->kUVBiasG);          \
-  xmm0 = _mm_subs_epu16(xmm0, *(__m128i*)yuvconstants->kUVBiasB);         \
-  xmm1 = _mm_subs_epu16(xmm4, xmm1);                                      \
-  xmm2 = _mm_subs_epu16(xmm2, *(__m128i*)yuvconstants->kUVBiasR);         \
-  xmm0 = _mm_srli_epi16(xmm0, 6);                                         \
-  xmm1 = _mm_srli_epi16(xmm1, 6);                                         \
-  xmm2 = _mm_srli_epi16(xmm2, 6);                                         \
+  xmm4 = _mm_add_epi16(xmm4, *(__m128i*)yuvconstants->kYBiasToRgb);       \
+  xmm0 = _mm_maddubs_epi16(*(__m128i*)yuvconstants->kUVToB, xmm3);        \
+  xmm1 = _mm_maddubs_epi16(*(__m128i*)yuvconstants->kUVToG, xmm3);        \
+  xmm2 = _mm_maddubs_epi16(*(__m128i*)yuvconstants->kUVToR, xmm3);        \
+  xmm0 = _mm_adds_epi16(xmm4, xmm0);                                      \
+  xmm1 = _mm_subs_epi16(xmm4, xmm1);                                      \
+  xmm2 = _mm_adds_epi16(xmm4, xmm2);                                      \
+  xmm0 = _mm_srai_epi16(xmm0, 6);                                         \
+  xmm1 = _mm_srai_epi16(xmm1, 6);                                         \
+  xmm2 = _mm_srai_epi16(xmm2, 6);                                         \
   xmm0 = _mm_packus_epi16(xmm0, xmm0);                                    \
   xmm1 = _mm_packus_epi16(xmm1, xmm1);                                    \
   xmm2 = _mm_packus_epi16(xmm2, xmm2);
@@ -254,11 +244,11 @@ static const uvec8 kAddY16 = {16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
 // 7 bit fixed point 0.5.
 static const vec16 kAddYJ64 = {64, 64, 64, 64, 64, 64, 64, 64};
 
-static const uvec8 kAddUV128 = {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
-                                128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
-
-static const uvec16 kAddUVJ128 = {0x8080u, 0x8080u, 0x8080u, 0x8080u,
-                                  0x8080u, 0x8080u, 0x8080u, 0x8080u};
+// 8 bit fixed point 0.5, for bias of UV.
+static const ulvec8 kBiasUV128 = {
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
 
 // Shuffle table for converting RGB24 to ARGB.
 static const uvec8 kShuffleMaskRGB24ToARGB = {
@@ -1447,7 +1437,7 @@ __declspec(naked) void ARGBToUVRow_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm5, xmmword ptr kBiasUV128
     movdqa     xmm6, xmmword ptr kARGBToV
     movdqa     xmm7, xmmword ptr kARGBToU
     sub        edi, edx  // stride from u to v
@@ -1519,7 +1509,7 @@ __declspec(naked) void ARGBToUVJRow_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    movdqa     xmm5, xmmword ptr kAddUVJ128
+    movdqa     xmm5, xmmword ptr kBiasUV128
     movdqa     xmm6, xmmword ptr kARGBToVJ
     movdqa     xmm7, xmmword ptr kARGBToUJ
     sub        edi, edx  // stride from u to v
@@ -1593,7 +1583,7 @@ __declspec(naked) void ARGBToUVRow_AVX2(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    vbroadcastf128 ymm5, xmmword ptr kAddUV128
+    vbroadcastf128 ymm5, xmmword ptr kBiasUV128
     vbroadcastf128 ymm6, xmmword ptr kARGBToV
     vbroadcastf128 ymm7, xmmword ptr kARGBToU
     sub        edi, edx   // stride from u to v
@@ -1661,7 +1651,7 @@ __declspec(naked) void ARGBToUVJRow_AVX2(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    vbroadcastf128 ymm5, xmmword ptr kAddUVJ128
+    vbroadcastf128 ymm5, xmmword ptr kBiasUV128
     vbroadcastf128 ymm6, xmmword ptr kARGBToVJ
     vbroadcastf128 ymm7, xmmword ptr kARGBToUJ
     sub        edi, edx   // stride from u to v
@@ -1726,7 +1716,7 @@ __declspec(naked) void ARGBToUV444Row_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 4 + 8]  // dst_u
     mov        edi, [esp + 4 + 12]  // dst_v
     mov        ecx, [esp + 4 + 16]  // width
-    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm5, xmmword ptr kBiasUV128
     movdqa     xmm6, xmmword ptr kARGBToV
     movdqa     xmm7, xmmword ptr kARGBToU
     sub        edi, edx    // stride from u to v
@@ -1787,7 +1777,7 @@ __declspec(naked) void BGRAToUVRow_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm5, xmmword ptr kBiasUV128
     movdqa     xmm6, xmmword ptr kBGRAToV
     movdqa     xmm7, xmmword ptr kBGRAToU
     sub        edi, edx  // stride from u to v
@@ -1859,7 +1849,7 @@ __declspec(naked) void ABGRToUVRow_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm5, xmmword ptr kBiasUV128
     movdqa     xmm6, xmmword ptr kABGRToV
     movdqa     xmm7, xmmword ptr kABGRToU
     sub        edi, edx  // stride from u to v
@@ -1931,7 +1921,7 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // width
-    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm5, xmmword ptr kBiasUV128
     movdqa     xmm6, xmmword ptr kRGBAToV
     movdqa     xmm7, xmmword ptr kRGBAToU
     sub        edi, edx  // stride from u to v
@@ -2097,33 +2087,26 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb,
 
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants) \
-  __asm {                                    \
-    __asm vpmaddubsw ymm0, ymm3, ymmword ptr [YuvConstants + KUVTOB] /* B UV */\
-    __asm vpmaddubsw ymm2, ymm3, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
-    __asm vpsllw     ymm1, ymm3, 8                                             \
-    __asm vbroadcastf128 ymm6, xmmword ptr [YuvConstants + KUMASKB]            \
-    __asm vpand      ymm1, ymm1, ymm6                                          \
-    __asm vpaddw     ymm0, ymm0, ymm1                                          \
-    __asm vpmaddubsw ymm1, ymm3, ymmword ptr [YuvConstants + KUVTOG] /* B UV */\
+  __asm {                                                                      \
+    __asm vpsubb     ymm3, ymm3, ymmword ptr kBiasUV128                        \
     __asm vpmulhuw   ymm4, ymm4, ymmword ptr [YuvConstants + KYTORGB]          \
-    __asm vbroadcastf128 ymm6, xmmword ptr [YuvConstants + KVMASKR]            \
-    __asm vpand      ymm3, ymm3, ymm6                                          \
-    __asm vpaddw     ymm2, ymm2, ymm3                                          \
-    __asm vpaddw     ymm0, ymm0, ymm4                                          \
-    __asm vmovdqu    ymm6, ymmword ptr [YuvConstants + KUVBIASG]               \
-    __asm vpaddw     ymm3, ymm4, ymm6                                          \
-    __asm vpaddw     ymm2, ymm2, ymm4                                          \
-    __asm vmovdqu    ymm6, ymmword ptr [YuvConstants + KUVBIASB]               \
-    __asm vpsubusw   ymm0, ymm0, ymm6                                          \
-    __asm vpsubusw   ymm1, ymm3, ymm1                                          \
-    __asm vmovdqu    ymm6, ymmword ptr [YuvConstants + KUVBIASR]               \
-    __asm vpsubusw   ymm2, ymm2, ymm6                                          \
-    __asm vpsrlw     ymm0, ymm0, 6                                             \
-    __asm vpsrlw     ymm1, ymm1, 6                                             \
-    __asm vpsrlw     ymm2, ymm2, 6                                             \
-    __asm vpackuswb  ymm0, ymm0, ymm0 /* B */                                  \
-    __asm vpackuswb  ymm1, ymm1, ymm1 /* G */                                  \
-    __asm vpackuswb  ymm2, ymm2, ymm2 /* R */                                  \
+    __asm vmovdqa    ymm0, ymmword ptr [YuvConstants + KUVTOB]                 \
+    __asm vmovdqa    ymm1, ymmword ptr [YuvConstants + KUVTOG]                 \
+    __asm vmovdqa    ymm2, ymmword ptr [YuvConstants + KUVTOR]                 \
+    __asm vpmaddubsw ymm0, ymm0, ymm3 /* B UV */                               \
+    __asm vpmaddubsw ymm1, ymm1, ymm3 /* G UV */                               \
+    __asm vpmaddubsw ymm2, ymm2, ymm3 /* B UV */                               \
+    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KYBIASTORGB]            \
+    __asm vpaddw     ymm4, ymm3, ymm4                                          \
+    __asm vpaddsw    ymm0, ymm0, ymm4                                          \
+    __asm vpsubsw    ymm1, ymm4, ymm1                                          \
+    __asm vpaddsw    ymm2, ymm2, ymm4                                          \
+    __asm vpsraw     ymm0, ymm0, 6                                             \
+    __asm vpsraw     ymm1, ymm1, 6                                             \
+    __asm vpsraw     ymm2, ymm2, 6                                             \
+    __asm vpackuswb  ymm0, ymm0, ymm0                                          \
+    __asm vpackuswb  ymm1, ymm1, ymm1                                          \
+    __asm vpackuswb  ymm2, ymm2, ymm2                                          \
   }
 
 // Store 16 ARGB values.
@@ -2582,34 +2565,27 @@ __declspec(naked) void I422ToRGBARow_AVX2(
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(YuvConstants) \
-  __asm {                                         \
-    __asm movdqa     xmm0, xmm3                                                \
-    __asm movdqa     xmm1, xmm3                                                \
-    __asm movdqa     xmm2, xmm3                                                \
-    __asm pmaddubsw  xmm0, xmmword ptr [YuvConstants + KUVTOB]                 \
-    __asm pmaddubsw  xmm2, xmmword ptr [YuvConstants + KUVTOR]                 \
-    __asm psllw      xmm1, 8                                                   \
-    __asm pand       xmm1, xmmword ptr [YuvConstants + KUMASKB]                \
-    __asm paddw      xmm0, xmm1                                                \
-    __asm pmaddubsw  xmm1, xmmword ptr [YuvConstants + KUVTOG]                 \
+  __asm {                                                                      \
+    __asm psubb      xmm3, xmmword ptr kBiasUV128                              \
     __asm pmulhuw    xmm4, xmmword ptr [YuvConstants + KYTORGB]                \
-    __asm pand       xmm3, xmmword ptr [YuvConstants + KVMASKR]                \
-    __asm paddw      xmm0, xmm4                                                \
-    __asm movdqa     xmm6, xmmword ptr [YuvConstants + KUVBIASG]               \
-    __asm paddw      xmm2, xmm4                                                \
-    __asm paddw      xmm4, xmm6                                                \
-    __asm movdqa     xmm6, xmmword ptr [YuvConstants + KUVBIASG]               \
-    __asm psubusw    xmm0, xmm6                                                \
-    __asm psubusw    xmm4, xmm1                                                \
-    __asm movdqa     xmm6, xmmword ptr [YuvConstants + KUVBIASG]               \
-    __asm psubusw    xmm2, xmm6                                                \
+    __asm movdqa     xmm0, xmmword ptr [YuvConstants + KUVTOB]                 \
+    __asm movdqa     xmm1, xmmword ptr [YuvConstants + KUVTOG]                 \
+    __asm movdqa     xmm2, xmmword ptr [YuvConstants + KUVTOR]                 \
+    __asm pmaddubsw  xmm0, xmm3                                                \
+    __asm pmaddubsw  xmm1, xmm3                                                \
+    __asm pmaddubsw  xmm2, xmm3                                                \
+    __asm movdqa     xmm3, xmmword ptr [YuvConstants + KYBIASTORGB]            \
+    __asm paddw      xmm4, xmm3                                                \
+    __asm paddsw     xmm0, xmm4                                                \
+    __asm paddsw     xmm2, xmm4                                                \
+    __asm psubsw     xmm4, xmm1                                                \
     __asm movdqa     xmm1, xmm4                                                \
-    __asm psrlw      xmm0, 6                                                   \
-    __asm psrlw      xmm1, 6                                                   \
-    __asm psrlw      xmm2, 6                                                   \
-    __asm packuswb   xmm0, xmm0 /* B */                              \
-    __asm packuswb   xmm1, xmm1 /* G */                              \
-    __asm packuswb   xmm2, xmm2 /* R */             \
+    __asm psraw      xmm0, 6                                                   \
+    __asm psraw      xmm1, 6                                                   \
+    __asm psraw      xmm2, 6                                                   \
+    __asm packuswb   xmm0, xmm0 /* B */                                        \
+    __asm packuswb   xmm1, xmm1 /* G */                                        \
+    __asm packuswb   xmm2, xmm2 /* R */                                        \
   }
 
 // Store 8 ARGB values.

@@ -55,8 +55,8 @@ static __inline int32_t clamp1023(int32_t v) {
   return (-(v >= 1023) | v) & 1023;
 }
 
-// clamp to 2^n - 1
-static __inline int32_t clamp2nm1(int32_t v, int32_t max) {
+// clamp to max
+static __inline int32_t ClampMax(int32_t v, int32_t max) {
   return (-(v >= max) | v) & max;
 }
 
@@ -77,7 +77,7 @@ static __inline int32_t clamp1023(int32_t v) {
   return (v > 1023) ? 1023 : v;
 }
 
-static __inline int32_t clamp2nm1(int32_t v, int32_t max) {
+static __inline int32_t ClampMax(int32_t v, int32_t max) {
   return (v > max) ? max : v;
 }
 
@@ -1422,45 +1422,36 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 // clang-format off
 
 #if defined(__aarch64__) || defined(__arm__)
-#define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR, BB, BG, BR) \
-  {{UB, VR, UG, VG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},     \
+// Bias values to round, and subtract 128 from U and V.
+// For B and R this is negative. For G this is positive.
+#define BB (UB * 128 - YB)
+#define BG (UG * 128 + VG * 128 + YB)
+#define BR (VR * 128 - YB)
+
+#define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR)         \
+  {{UB, VR, UG, VG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, \
    {YG, BB, BG, BR, YB, 0, 0, 0}}
 #else
-#define UVMASK(C) ((C) > 127 ? 0xff : 0)
-
-#define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR, BB, BG, BR)         \
+#define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR)                     \
   {{UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,          \
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0},         \
    {UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,  \
     UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG}, \
    {0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,          \
     0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR},         \
-   {BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB}, \
-   {BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG}, \
-   {BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR}, \
    {YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG}, \
-   {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}, \
-   {0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB),      \
-    0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB), 0, UVMASK(UB),      \
-    0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR),      \
-    0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR), 0, UVMASK(VR)}}
+   {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}}
 #endif
 
 // clang-format on
 
-#define MAKEYUVCONSTANTS(name, YG, YB, UB, UG, VG, VR, BB, BG, BR) \
-  const struct YuvConstants SIMD_ALIGNED(kYuv##name##Constants) =  \
-      YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR, BB, BG, BR);        \
-  const struct YuvConstants SIMD_ALIGNED(kYvu##name##Constants) =  \
-      YUBCONSTANTSBODY(YG, YB, VR, VG, UG, UB, BR, BG, BB);
+#define MAKEYUVCONSTANTS(name, YG, YB, UB, UG, VG, VR)            \
+  const struct YuvConstants SIMD_ALIGNED(kYuv##name##Constants) = \
+      YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR);                   \
+  const struct YuvConstants SIMD_ALIGNED(kYvu##name##Constants) = \
+      YUBCONSTANTSBODY(YG, YB, VR, VG, UG, UB);
 
 // TODO(fbarchard): Generate SIMD structures from float matrix.
-
-// Bias values to round, and subtract 128 from U and V.
-// For B and R this is negative. For G this is positive.
-#define BB (UB * 128 - YB)
-#define BG (UG * 128 + VG * 128 + YB)
-#define BR (VR * 128 - YB)
 
 // BT.601 limited range YUV to RGB reference
 //  R = (Y - 16) * 1.164             + V * 1.596
@@ -1482,7 +1473,7 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 #define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
 #define YB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
-MAKEYUVCONSTANTS(I601, YG, YB, UB, UG, VG, VR, BB, BG, BR)
+MAKEYUVCONSTANTS(I601, YG, YB, UB, UG, VG, VR)
 
 #undef YG
 #undef YB
@@ -1507,7 +1498,7 @@ MAKEYUVCONSTANTS(I601, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #define YG 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
 #define YB 32    /* 64 / 2 */
 
-MAKEYUVCONSTANTS(JPEG, YG, YB, UB, UG, VG, VR, BB, BG, BR)
+MAKEYUVCONSTANTS(JPEG, YG, YB, UB, UG, VG, VR)
 
 #undef YG
 #undef YB
@@ -1536,7 +1527,7 @@ MAKEYUVCONSTANTS(JPEG, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
 #define YB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
-MAKEYUVCONSTANTS(H709, YG, YB, UB, UG, VG, VR, BB, BG, BR)
+MAKEYUVCONSTANTS(H709, YG, YB, UB, UG, VG, VR)
 
 #undef YG
 #undef YB
@@ -1561,7 +1552,7 @@ MAKEYUVCONSTANTS(H709, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #define YG 16320 /* round(1 * 64 * 256 * 256 / 257) */
 #define YB 32    /* 64 / 2 */
 
-MAKEYUVCONSTANTS(F709, YG, YB, UB, UG, VG, VR, BB, BG, BR)
+MAKEYUVCONSTANTS(F709, YG, YB, UB, UG, VG, VR)
 
 #undef YG
 #undef YB
@@ -1590,7 +1581,7 @@ MAKEYUVCONSTANTS(F709, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #define YG 19003 /* round(1.164384 * 64 * 256 * 256 / 257) */
 #define YB -1160 /* 1.164384 * 64 * -16 + 64 / 2 */
 
-MAKEYUVCONSTANTS(2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
+MAKEYUVCONSTANTS(2020, YG, YB, UB, UG, VG, VR)
 
 #undef YG
 #undef YB
@@ -1614,7 +1605,7 @@ MAKEYUVCONSTANTS(2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #define YG 16320 /* round(1 * 64 * 256 * 256 / 257) */
 #define YB 32    /* 64 / 2 */
 
-MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
+MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
 
 #undef YG
 #undef YB
@@ -1630,25 +1621,39 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR, BB, BG, BR)
 #undef MAKEYUVCONSTANTS
 
 #if defined(__aarch64__) || defined(__arm__)
-#define LOAD_YUV_CONSTANTS                  \
-  int ub = -yuvconstants->kUVCoeff[0];      \
-  int vr = -yuvconstants->kUVCoeff[1];      \
-  int ug = yuvconstants->kUVCoeff[2];       \
-  int vg = yuvconstants->kUVCoeff[3];       \
-  int yg = yuvconstants->kRGBCoeffBias[0];  \
-  int bb = -yuvconstants->kRGBCoeffBias[1]; \
-  int bg = yuvconstants->kRGBCoeffBias[2];  \
-  int br = -yuvconstants->kRGBCoeffBias[3]
+#define LOAD_YUV_CONSTANTS                 \
+  int ub = yuvconstants->kUVCoeff[0];      \
+  int vr = yuvconstants->kUVCoeff[1];      \
+  int ug = yuvconstants->kUVCoeff[2];      \
+  int vg = yuvconstants->kUVCoeff[3];      \
+  int yg = yuvconstants->kRGBCoeffBias[0]; \
+  int bb = yuvconstants->kRGBCoeffBias[1]; \
+  int bg = yuvconstants->kRGBCoeffBias[2]; \
+  int br = yuvconstants->kRGBCoeffBias[3]
+
+#define CALC_RGB16                         \
+  int32_t y1 = (uint32_t)(y32 * yg) >> 16; \
+  int b16 = y1 + (u * ub) - bb;            \
+  int g16 = y1 + bg - (u * ug + v * vg);   \
+  int r16 = y1 + (v * vr) - br
 #else
-#define LOAD_YUV_CONSTANTS             \
-  int ub = -yuvconstants->kUVToB[0];   \
-  int ug = yuvconstants->kUVToG[0];    \
-  int vg = yuvconstants->kUVToG[1];    \
-  int vr = -yuvconstants->kUVToR[1];   \
-  int bb = -yuvconstants->kUVBiasB[0]; \
-  int bg = yuvconstants->kUVBiasG[0];  \
-  int br = -yuvconstants->kUVBiasR[0]; \
-  int yg = yuvconstants->kYToRgb[0]
+#define LOAD_YUV_CONSTANTS            \
+  int ub = yuvconstants->kUVToB[0];   \
+  int ug = yuvconstants->kUVToG[0];   \
+  int vg = yuvconstants->kUVToG[1];   \
+  int vr = yuvconstants->kUVToR[1];   \
+  int yg = yuvconstants->kYToRgb[0];  \
+  int yb = yuvconstants->kYBiasToRgb[0]
+
+#define CALC_RGB16                                \
+  int32_t y1 = ((uint32_t)(y32 * yg) >> 16) + yb; \
+  int8_t ui = u;                                  \
+  int8_t vi = v;                                  \
+  ui -= 0x80;                                     \
+  vi -= 0x80;                                     \
+  int b16 = y1 + (ui * ub);                       \
+  int g16 = y1 - (ui * ug + vi * vg);             \
+  int r16 = y1 + (vi * vr)
 #endif
 
 // C reference code that mimics the YUV assembly.
@@ -1661,11 +1666,11 @@ static __inline void YuvPixel(uint8_t y,
                               uint8_t* r,
                               const struct YuvConstants* yuvconstants) {
   LOAD_YUV_CONSTANTS;
-
-  uint32_t y1 = (uint32_t)(y * 0x0101 * yg) >> 16;
-  *b = Clamp((int32_t)(y1 - (u * ub) + bb) >> 6);
-  *g = Clamp((int32_t)(y1 - (u * ug + v * vg) + bg) >> 6);
-  *r = Clamp((int32_t)(y1 - (v * vr) + br) >> 6);
+  uint32_t y32 = y * 0x0101;
+  CALC_RGB16;
+  *b = Clamp((int32_t)(b16) >> 6);
+  *g = Clamp((int32_t)(g16) >> 6);
+  *r = Clamp((int32_t)(r16) >> 6);
 }
 
 // Reads 8 bit YUV and leaves result as 16 bit.
@@ -1677,11 +1682,11 @@ static __inline void YuvPixel8_16(uint8_t y,
                                   int* r,
                                   const struct YuvConstants* yuvconstants) {
   LOAD_YUV_CONSTANTS;
-
-  uint32_t y1 = (uint32_t)(y * 0x0101 * yg) >> 16;
-  *b = (int)(y1 - (u * ub) + bb);
-  *g = (int)(y1 - (u * ug + v * vg) + bg);
-  *r = (int)(y1 - (v * vr) + br);
+  uint32_t y32 = y * 0x0101;
+  CALC_RGB16;
+  *b = b16;
+  *g = g16;
+  *r = r16;
 }
 
 // C reference code that mimics the YUV 16 bit assembly.
@@ -1694,13 +1699,13 @@ static __inline void YuvPixel10_16(uint16_t y,
                                    int* r,
                                    const struct YuvConstants* yuvconstants) {
   LOAD_YUV_CONSTANTS;
-
-  uint32_t y1 = (uint32_t)((y << 6) * yg) >> 16;
+  uint32_t y32 = y << 6;
   u = clamp255(u >> 2);
   v = clamp255(v >> 2);
-  *b = (int)(-(u * ub) + y1 + bb);
-  *g = (int)(-(u * ug + v * vg) + y1 + bg);
-  *r = (int)(-(v * vr) + y1 + br);
+  CALC_RGB16;
+  *b = b16;
+  *g = g16;
+  *r = r16;
 }
 
 // C reference code that mimics the YUV 16 bit assembly.
@@ -1713,13 +1718,13 @@ static __inline void YuvPixel12_16(int16_t y,
                                    int* r,
                                    const struct YuvConstants* yuvconstants) {
   LOAD_YUV_CONSTANTS;
-
-  uint32_t y1 = (uint32_t)((y << 4) * yg) >> 16;
+  uint32_t y32 = y << 4;
   u = clamp255(u >> 4);
   v = clamp255(v >> 4);
-  *b = (int)(-(u * ub) + y1 + bb);
-  *g = (int)(-(u * ug + v * vg) + y1 + bg);
-  *r = (int)(-(v * vr) + y1 + br);
+  CALC_RGB16;
+  *b = b16;
+  *g = g16;
+  *r = r16;
 }
 
 // C reference code that mimics the YUV 10 bit assembly.
@@ -1768,13 +1773,13 @@ static __inline void YuvPixel16_8(uint16_t y,
                                   uint8_t* r,
                                   const struct YuvConstants* yuvconstants) {
   LOAD_YUV_CONSTANTS;
-
-  uint32_t y1 = (uint32_t)(y * yg) >> 16;
+  uint32_t y32 = y;
   u = clamp255(u >> 8);
   v = clamp255(v >> 8);
-  *b = Clamp((int32_t)(y1 + -(u * ub) + bb) >> 6);
-  *g = Clamp((int32_t)(y1 + -(u * ug + v * vg) + bg) >> 6);
-  *r = Clamp((int32_t)(y1 + -(v * vr) + br) >> 6);
+  CALC_RGB16;
+  *b = Clamp((int32_t)(b16) >> 6);
+  *g = Clamp((int32_t)(g16) >> 6);
+  *r = Clamp((int32_t)(r16) >> 6);
 }
 
 // C reference code that mimics the YUV 16 bit assembly.
@@ -1787,13 +1792,13 @@ static __inline void YuvPixel16_16(uint16_t y,
                                    int* r,
                                    const struct YuvConstants* yuvconstants) {
   LOAD_YUV_CONSTANTS;
-
-  uint32_t y1 = (uint32_t)(y * yg) >> 16;
+  uint32_t y32 = y;
   u = clamp255(u >> 8);
   v = clamp255(v >> 8);
-  *b = (int)(y1 + -(u * ub) + bb);
-  *g = (int)(y1 + -(u * ug + v * vg) + bg);
-  *r = (int)(y1 + -(v * vr) + br);
+  CALC_RGB16;
+  *b = b16;
+  *g = g16;
+  *r = r16;
 }
 
 // C reference code that mimics the YUV assembly.
@@ -2779,10 +2784,10 @@ void MergeAR64Row_C(const uint16_t* src_r,
   int shift = 16 - depth;
   int max = (1 << depth) - 1;
   for (x = 0; x < width; ++x) {
-    dst_ar64[0] = clamp2nm1(src_b[x], max) << shift;
-    dst_ar64[1] = clamp2nm1(src_g[x], max) << shift;
-    dst_ar64[2] = clamp2nm1(src_r[x], max) << shift;
-    dst_ar64[3] = clamp2nm1(src_a[x], max) << shift;
+    dst_ar64[0] = ClampMax(src_b[x], max) << shift;
+    dst_ar64[1] = ClampMax(src_g[x], max) << shift;
+    dst_ar64[2] = ClampMax(src_r[x], max) << shift;
+    dst_ar64[3] = ClampMax(src_a[x], max) << shift;
     dst_ar64 += 4;
   }
 }
@@ -2819,9 +2824,9 @@ void MergeXR64Row_C(const uint16_t* src_r,
   int shift = 16 - depth;
   int max = (1 << depth) - 1;
   for (x = 0; x < width; ++x) {
-    dst_ar64[0] = clamp2nm1(src_b[x], max) << shift;
-    dst_ar64[1] = clamp2nm1(src_g[x], max) << shift;
-    dst_ar64[2] = clamp2nm1(src_r[x], max) << shift;
+    dst_ar64[0] = ClampMax(src_b[x], max) << shift;
+    dst_ar64[1] = ClampMax(src_g[x], max) << shift;
+    dst_ar64[2] = ClampMax(src_r[x], max) << shift;
     dst_ar64[3] = 0xffff;
     dst_ar64 += 4;
   }
