@@ -1422,17 +1422,14 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 // clang-format off
 
 #if defined(__aarch64__) || defined(__arm__)
-// Bias values to round, and subtract 128 from U and V.
-// For B and R this is negative. For G this is positive.
-#define BB (UB * 128 - YB)
-#define BG (UG * 128 + VG * 128 + YB)
-#define BR (VR * 128 - YB)
-
-#define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR)         \
-  {{UB, VR, UG, VG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, \
-   {YG, BB, BG, BR, YB, 0, 0, 0}}
+// Bias values include subtract 128 from U and V, bias from Y and rounding.
+// For B and R bias is negative. For G bias is positive.
+#define YUVCONSTANTSBODY(YG, YB, UB, UG, VG, VR)                             \
+  {{UB, VR, UG, VG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},                     \
+   {YG, (UB * 128 - YB), (UG * 128 + VG * 128 + YB), (VR * 128 - YB), YB, 0, \
+    0, 0}}
 #else
-#define YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR)                     \
+#define YUVCONSTANTSBODY(YG, YB, UB, UG, VG, VR)                     \
   {{UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,          \
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0},         \
    {UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,  \
@@ -1447,9 +1444,9 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 
 #define MAKEYUVCONSTANTS(name, YG, YB, UB, UG, VG, VR)            \
   const struct YuvConstants SIMD_ALIGNED(kYuv##name##Constants) = \
-      YUBCONSTANTSBODY(YG, YB, UB, UG, VG, VR);                   \
+      YUVCONSTANTSBODY(YG, YB, UB, UG, VG, VR);                   \
   const struct YuvConstants SIMD_ALIGNED(kYvu##name##Constants) = \
-      YUBCONSTANTSBODY(YG, YB, VR, VG, UG, UB);
+      YUVCONSTANTSBODY(YG, YB, VR, VG, UG, UB);
 
 // TODO(fbarchard): Generate SIMD structures from float matrix.
 
