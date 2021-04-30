@@ -16,8 +16,7 @@ extern "C" {
 #endif
 
 // This module is for GCC x86 and x64.
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
@@ -2770,7 +2769,7 @@ void OMITFP I210AlphaToARGBRow_SSSE3(const uint16_t* y_buf,
                                      int width) {
   asm volatile(
       YUVTORGB_SETUP(
-          yuvconstants) "sub         %[u_buf],%[v_buf]             \n"
+      yuvconstants) "sub         %[u_buf],%[v_buf]             \n"
 
       LABELALIGN "1:                                        \n" READYUVA210
           YUVTORGB(yuvconstants) STOREARGB
@@ -3376,8 +3375,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpsubsw     %%ymm1,%%ymm4,%%ymm1                               \n" \
   "vpaddsw     %%ymm4,%%ymm2,%%ymm2                               \n"
 
-#define YUVTORGB_REGS_AVX2 \
-  "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",
+#define YUVTORGB_REGS_AVX2 "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",
 
 #else  // Convert 16 pixels: 16 UV and 16 Y.
 

@@ -18,7 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if defined(__pnacl__) || defined(__CLR_VER) || \
+#if defined(__pnacl__) || defined(__CLR_VER) ||            \
     (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
@@ -54,16 +54,15 @@ extern "C" {
 #endif
 
 // The following are available for Visual C and clangcl 32 bit:
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-     defined(_MSC_VER) && !defined(__clang__) && \
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER) && \
+    !defined(__clang__) &&                                                   \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
 #define HAS_HASHDJB2_AVX2
 #define HAS_SUMSQUAREERROR_AVX2
 #endif
 
 // The following are available for GCC and clangcl:
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_HAMMINGDISTANCE_SSSE3
 #endif
 

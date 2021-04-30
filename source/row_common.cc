@@ -1634,12 +1634,12 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
   int g16 = y1 + bg - (u * ug + v * vg);   \
   int r16 = y1 + (v * vr) - br
 #else
-#define LOAD_YUV_CONSTANTS            \
-  int ub = yuvconstants->kUVToB[0];   \
-  int ug = yuvconstants->kUVToG[0];   \
-  int vg = yuvconstants->kUVToG[1];   \
-  int vr = yuvconstants->kUVToR[1];   \
-  int yg = yuvconstants->kYToRgb[0];  \
+#define LOAD_YUV_CONSTANTS           \
+  int ub = yuvconstants->kUVToB[0];  \
+  int ug = yuvconstants->kUVToG[0];  \
+  int vg = yuvconstants->kUVToG[1];  \
+  int vr = yuvconstants->kUVToR[1];  \
+  int yg = yuvconstants->kYToRgb[0]; \
   int yb = yuvconstants->kYBiasToRgb[0]
 
 #define CALC_RGB16                                \

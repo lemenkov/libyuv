@@ -183,7 +183,7 @@ TESTPLANARTOP(I412, uint16_t, 2, 1, 1, I444, uint8_t, 1, 1, 1, 12)
 #define TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X,          \
                         SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
                         W1280, N, NEG, OFF, PN, OFF_U, OFF_V)                 \
-  TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##_##PN##N) {       \
+  TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##To##PN##N) {      \
     const int kWidth = W1280;                                                 \
     const int kHeight = benchmark_height_;                                    \
     const int kSizeUV =                                                       \
@@ -2817,10 +2817,11 @@ TESTPTOB(TestYUY2ToNV12, YUY2ToI420, YUY2ToNV12)
 TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
 
 // Transitive tests.  A to B to C is same as A to C.
+// Benchmarks A To B to C for comparison to 1 step, benchmarked elsewhere.
 
 #define TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B, \
                        W1280, N, NEG, OFF, FMT_C, BPP_C)                      \
-  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {             \
+  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##To##FMT_C##N) {            \
     const int kWidth = W1280;                                                 \
     const int kHeight = benchmark_height_;                                    \
     const int kStrideB = SUBSAMPLE(kWidth, SUB_B) * BPP_B;                    \
@@ -2838,23 +2839,23 @@ TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
       src_v[i + OFF] = (fastrand() & 0xff);                                   \
     }                                                                         \
     memset(dst_argb_b + OFF, 1, kStrideB * kHeight);                          \
-    for (int i = 0; i < benchmark_iterations_; ++i) {                         \
-      FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth, src_u + OFF, kStrideUV,      \
-                            src_v + OFF, kStrideUV, dst_argb_b + OFF,         \
-                            kStrideB, kWidth, NEG kHeight);                   \
-    }                                                                         \
+    FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth, src_u + OFF, kStrideUV,        \
+                          src_v + OFF, kStrideUV, dst_argb_b + OFF, kStrideB, \
+                          kWidth, NEG kHeight);                               \
     /* Convert to a 3rd format in 1 step and 2 steps and compare  */          \
     const int kStrideC = kWidth * BPP_C;                                      \
     align_buffer_page_end(dst_argb_c, kStrideC* kHeight + OFF);               \
     align_buffer_page_end(dst_argb_bc, kStrideC* kHeight + OFF);              \
     memset(dst_argb_c + OFF, 2, kStrideC * kHeight);                          \
     memset(dst_argb_bc + OFF, 3, kStrideC * kHeight);                         \
-    FMT_PLANAR##To##FMT_C(src_y + OFF, kWidth, src_u + OFF, kStrideUV,        \
-                          src_v + OFF, kStrideUV, dst_argb_c + OFF, kStrideC, \
-                          kWidth, NEG kHeight);                               \
-    /* Convert B to C */                                                      \
-    FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF, kStrideC, \
-                     kWidth, kHeight);                                        \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                         \
+      FMT_PLANAR##To##FMT_C(src_y + OFF, kWidth, src_u + OFF, kStrideUV,      \
+                            src_v + OFF, kStrideUV, dst_argb_c + OFF,         \
+                            kStrideC, kWidth, NEG kHeight);                   \
+      /* Convert B to C */                                                    \
+      FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF,         \
+                       kStrideC, kWidth, kHeight);                            \
+    }                                                                         \
     for (int i = 0; i < kStrideC * kHeight; ++i) {                            \
       EXPECT_EQ(dst_argb_c[i + OFF], dst_argb_bc[i + OFF]);                   \
     }                                                                         \
@@ -2877,26 +2878,28 @@ TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
   TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,      \
                  benchmark_width_, _Opt, +, 0, FMT_C, BPP_C)
 
-TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, ABGR, 4)
 TESTPLANARTOE(I420, 2, 2, ABGR, 1, 4, ARGB, 4)
-TESTPLANARTOE(J420, 2, 2, ARGB, 1, 4, ARGB, 4)
-TESTPLANARTOE(J420, 2, 2, ABGR, 1, 4, ARGB, 4)
-TESTPLANARTOE(H420, 2, 2, ARGB, 1, 4, ARGB, 4)
-TESTPLANARTOE(H420, 2, 2, ABGR, 1, 4, ARGB, 4)
-TESTPLANARTOE(U420, 2, 2, ARGB, 1, 4, ARGB, 4)
-TESTPLANARTOE(U420, 2, 2, ABGR, 1, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, BGRA, 1, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, RGBA, 1, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, RGB24, 1, 3, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, RAW, 1, 3, RGB24, 3)
-TESTPLANARTOE(I420, 2, 2, RGB24, 1, 3, RAW, 3)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, ABGR, 4)
 TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, RAW, 3)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, RGB24, 3)
+TESTPLANARTOE(I420, 2, 2, BGRA, 1, 4, ARGB, 4)
 TESTPLANARTOE(I420, 2, 2, RAW, 1, 3, ARGB, 4)
-TESTPLANARTOE(H420, 2, 2, RGB24, 1, 3, ARGB, 4)
-TESTPLANARTOE(H420, 2, 2, RAW, 1, 3, RGB24, 3)
-TESTPLANARTOE(H420, 2, 2, RGB24, 1, 3, RAW, 3)
+TESTPLANARTOE(I420, 2, 2, RAW, 1, 3, RGB24, 3)
+TESTPLANARTOE(I420, 2, 2, RGB24, 1, 3, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, RGB24, 1, 3, RAW, 3)
+TESTPLANARTOE(I420, 2, 2, RGBA, 1, 4, ARGB, 4)
+TESTPLANARTOE(H420, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(H420, 2, 2, ARGB, 1, 4, ABGR, 4)
 TESTPLANARTOE(H420, 2, 2, ARGB, 1, 4, RAW, 3)
+TESTPLANARTOE(H420, 2, 2, ARGB, 1, 4, RGB24, 3)
 TESTPLANARTOE(H420, 2, 2, RAW, 1, 3, ARGB, 4)
+TESTPLANARTOE(H420, 2, 2, RAW, 1, 3, RGB24, 3)
+TESTPLANARTOE(H420, 2, 2, RGB24, 1, 3, ARGB, 4)
+TESTPLANARTOE(H420, 2, 2, RGB24, 1, 3, RAW, 3)
+TESTPLANARTOE(J420, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(J420, 2, 2, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(U420, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(U420, 2, 2, ARGB, 1, 4, ARGB, 4)
 #ifdef LITTLE_ENDIAN_ONLY_TEST
 TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, RGB565, 2)
 TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, ARGB1555, 2)
@@ -2932,7 +2935,7 @@ TESTPLANARTOE(I422, 2, 1, UYVY, 2, 4, ARGB, 4)
 
 #define TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B, \
                         W1280, N, NEG, OFF, FMT_C, BPP_C, ATTEN)               \
-  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {              \
+  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##To##FMT_C##N) {             \
     const int kWidth = W1280;                                                  \
     const int kHeight = benchmark_height_;                                     \
     const int kStrideB = SUBSAMPLE(kWidth, SUB_B) * BPP_B;                     \
@@ -2952,25 +2955,25 @@ TESTPLANARTOE(I422, 2, 1, UYVY, 2, 4, ARGB, 4)
       src_v[i + OFF] = (fastrand() & 0xff);                                    \
     }                                                                          \
     memset(dst_argb_b + OFF, 1, kStrideB * kHeight);                           \
-    for (int i = 0; i < benchmark_iterations_; ++i) {                          \
-      FMT_PLANAR##To##FMT_B(                                                   \
-          src_y + OFF, kWidth, src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),      \
-          src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X), src_a + OFF, kWidth,      \
-          dst_argb_b + OFF, kStrideB, kWidth, NEG kHeight, ATTEN);             \
-    }                                                                          \
+    FMT_PLANAR##To##FMT_B(                                                     \
+        src_y + OFF, kWidth, src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),        \
+        src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X), src_a + OFF, kWidth,        \
+        dst_argb_b + OFF, kStrideB, kWidth, NEG kHeight, ATTEN);               \
     /* Convert to a 3rd format in 1 step and 2 steps and compare  */           \
     const int kStrideC = kWidth * BPP_C;                                       \
     align_buffer_page_end(dst_argb_c, kStrideC* kHeight + OFF);                \
     align_buffer_page_end(dst_argb_bc, kStrideC* kHeight + OFF);               \
     memset(dst_argb_c + OFF, 2, kStrideC * kHeight);                           \
     memset(dst_argb_bc + OFF, 3, kStrideC * kHeight);                          \
-    FMT_PLANAR##To##FMT_C(                                                     \
-        src_y + OFF, kWidth, src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),        \
-        src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X), src_a + OFF, kWidth,        \
-        dst_argb_c + OFF, kStrideC, kWidth, NEG kHeight, ATTEN);               \
-    /* Convert B to C */                                                       \
-    FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF, kStrideC,  \
-                     kWidth, kHeight);                                         \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                          \
+      FMT_PLANAR##To##FMT_C(                                                   \
+          src_y + OFF, kWidth, src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),      \
+          src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X), src_a + OFF, kWidth,      \
+          dst_argb_c + OFF, kStrideC, kWidth, NEG kHeight, ATTEN);             \
+      /* Convert B to C */                                                     \
+      FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF,          \
+                       kStrideC, kWidth, kHeight);                             \
+    }                                                                          \
     for (int i = 0; i < kStrideC * kHeight; ++i) {                             \
       EXPECT_EQ(dst_argb_c[i + OFF], dst_argb_bc[i + OFF]);                    \
     }                                                                          \
@@ -3033,7 +3036,7 @@ TESTQPLANARTOE(V444Alpha, 1, 1, ABGR, 1, 4, ARGB, 4)
 
 #define TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, W1280, N, NEG, \
                       OFF, FMT_C, BPP_C)                                       \
-  TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##_##FMT_C##N) {                   \
+  TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##To##FMT_C##N) {                  \
     const int kWidth = W1280;                                                  \
     const int kHeight = benchmark_height_;                                     \
     const int kStrideA = SUBSAMPLE(kWidth, SUB_A) * BPP_A;                     \
@@ -3042,21 +3045,21 @@ TESTQPLANARTOE(V444Alpha, 1, 1, ABGR, 1, 4, ARGB, 4)
     align_buffer_page_end(dst_argb_b, kStrideB* kHeight + OFF);                \
     MemRandomize(src_argb_a + OFF, kStrideA * kHeight);                        \
     memset(dst_argb_b + OFF, 1, kStrideB * kHeight);                           \
-    for (int i = 0; i < benchmark_iterations_; ++i) {                          \
-      FMT_A##To##FMT_B(src_argb_a + OFF, kStrideA, dst_argb_b + OFF, kStrideB, \
-                       kWidth, NEG kHeight);                                   \
-    }                                                                          \
+    FMT_A##To##FMT_B(src_argb_a + OFF, kStrideA, dst_argb_b + OFF, kStrideB,   \
+                     kWidth, NEG kHeight);                                     \
     /* Convert to a 3rd format in 1 step and 2 steps and compare  */           \
     const int kStrideC = kWidth * BPP_C;                                       \
     align_buffer_page_end(dst_argb_c, kStrideC* kHeight + OFF);                \
     align_buffer_page_end(dst_argb_bc, kStrideC* kHeight + OFF);               \
     memset(dst_argb_c + OFF, 2, kStrideC * kHeight);                           \
     memset(dst_argb_bc + OFF, 3, kStrideC * kHeight);                          \
-    FMT_A##To##FMT_C(src_argb_a + OFF, kStrideA, dst_argb_c + OFF, kStrideC,   \
-                     kWidth, NEG kHeight);                                     \
-    /* Convert B to C */                                                       \
-    FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF, kStrideC,  \
-                     kWidth, kHeight);                                         \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                          \
+      FMT_A##To##FMT_C(src_argb_a + OFF, kStrideA, dst_argb_c + OFF, kStrideC, \
+                       kWidth, NEG kHeight);                                   \
+      /* Convert B to C */                                                     \
+      FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF,          \
+                       kStrideC, kWidth, kHeight);                             \
+    }                                                                          \
     for (int i = 0; i < kStrideC * kHeight; i += 4) {                          \
       EXPECT_EQ(dst_argb_c[i + OFF + 0], dst_argb_bc[i + OFF + 0]);            \
       EXPECT_EQ(dst_argb_c[i + OFF + 1], dst_argb_bc[i + OFF + 1]);            \
