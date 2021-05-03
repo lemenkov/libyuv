@@ -228,7 +228,11 @@ TEST_F(LibYUVBaseTest, TestLinuxNeon) {
     printf("WARNING: unable to load \"../../unit_test/testdata/arm_v7.txt\"\n");
   }
 #if defined(__linux__) && defined(__ARM_NEON__)
-  EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("/proc/cpuinfo"));
+  if (FileExists("/proc/cpuinfo")) {
+    EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("/proc/cpuinfo"));
+  } else {
+    printf("WARNING: unable to load \"/proc/cpuinfo\"\n");
+  }
 #endif
 }
 
