@@ -965,7 +965,7 @@ void ARGB1555ToUVRow_C(const uint8_t* src_argb1555,
     uint8_t r0 = (src_argb1555[1] & 0x7c) >> 2;
     uint8_t b2 = next_argb1555[0] & 0x1f;
     uint8_t g2 = (next_argb1555[0] >> 5) | ((next_argb1555[1] & 0x03) << 3);
-    uint8_t r2 = next_argb1555[1] >> 3;
+    uint8_t r2 = (next_argb1555[1] & 0x7c) >> 2;
 
     b0 = (b0 << 3) | (b0 >> 2);
     g0 = (g0 << 3) | (g0 >> 2);
