@@ -1726,7 +1726,7 @@ void ARGBToAB64Row_NEON(const uint8_t* src_argb,
       : "+r"(src_argb),          // %0
         "+r"(dst_ab64),          // %1
         "+r"(width)              // %2
-      : "m"(kShuffleARGBToABGR)  // %3
+      : "Q"(kShuffleARGBToABGR)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
@@ -1750,7 +1750,7 @@ void AR64ToARGBRow_NEON(const uint16_t* src_ar64,
       : "+r"(src_ar64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
-      : "m"(kShuffleAR64ToARGB)  // %3
+      : "Q"(kShuffleAR64ToARGB)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
@@ -1774,7 +1774,7 @@ void AB64ToARGBRow_NEON(const uint16_t* src_ab64,
       : "+r"(src_ab64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
-      : "m"(kShuffleAB64ToARGB)  // %3
+      : "Q"(kShuffleAB64ToARGB)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
