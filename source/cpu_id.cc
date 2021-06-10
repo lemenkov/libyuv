@@ -133,7 +133,7 @@ int GetXCR0() {
 #pragma optimize("g", on)
 #endif
 
-// based on libvpx arm_cpudetect.c
+// Based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
 LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
   char cpuinfo_line[512];
