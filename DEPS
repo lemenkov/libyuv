@@ -383,10 +383,6 @@ deps = {
       'condition': 'checkout_android',
       'dep_type': 'cipd',
   },
-  'src/third_party/turbine/src': {
-      'url': Var('chromium_git') + '/external/github.com/google/turbine.git' + '@' + '0f2a5024fe4a9bb745bcd5ac7c655cebe11649bc',
-      'condition': 'checkout_android',
-  },
   'src/third_party/ub-uiautomator/lib': {
     'url': Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
     'condition': 'checkout_android',
