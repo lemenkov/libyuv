@@ -2487,6 +2487,16 @@ hooks = [
                '--root', 'src',
     ],
   },
+  {
+    'name': 'Generate component metadata for tests',
+    'pattern': '.',
+    'action': [
+      'vpython',
+      'src/testing/generate_location_tags.py',
+      '--out',
+      'src/testing/location_tags.json',
+    ],
+  },
 ]
 
 recursedeps = []
