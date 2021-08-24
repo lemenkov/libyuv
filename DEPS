@@ -80,8 +80,6 @@ deps = {
     Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + 'e9be5fd6d723a435ca2da162f9e0ffcb688747c1',
   'src/tools':
     Var('chromium_git') + '/chromium/src/tools' + '@' + '4f73c6f51dc2198347630219417cbf21a7064bdd',
-  'src/tools/swarming_client':
-    Var('chromium_git') + '/infra/luci/client-py.git' + '@' + 'a32a1607f6093d338f756c7e7c7b4333b0c50c9c',
 
   # libyuv-only dependencies (not present in Chromium).
   'src/third_party/gtest-parallel':
