@@ -399,16 +399,6 @@ deps = {
     'url': Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
     'condition': 'checkout_android',
   },
-  'src/third_party/xstream': {
-      'packages': [
-          {
-              'package': 'chromium/third_party/xstream',
-              'version': '4278b1b78b86ab7a1a29e64d5aec9a47a9aab0fe',
-          },
-      ],
-      'condition': 'checkout_android',
-      'dep_type': 'cipd',
-  },
 
   # iOS deps:
   'src/ios': {
