@@ -1711,7 +1711,7 @@ void ARGBToAB64Row_NEON(const uint8_t* src_argb,
                         uint16_t* dst_ab64,
                         int width) {
   asm volatile(
-      "ld1         {v4.16b}, %3                  \n"  // shuffler
+      "ldr         q4, %3                        \n"  // shuffler
       "1:                                        \n"
       "ldp         q0, q2, [%0], #32             \n"  // load 8 pixels
       "tbl         v0.16b, {v0.16b}, v4.16b      \n"
@@ -1726,7 +1726,7 @@ void ARGBToAB64Row_NEON(const uint8_t* src_argb,
       : "+r"(src_argb),          // %0
         "+r"(dst_ab64),          // %1
         "+r"(width)              // %2
-      : "Q"(kShuffleARGBToABGR)  // %3
+      : "m"(kShuffleARGBToABGR)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
@@ -1737,7 +1737,7 @@ void AR64ToARGBRow_NEON(const uint16_t* src_ar64,
                         uint8_t* dst_argb,
                         int width) {
   asm volatile(
-      "ld1         {v4.16b}, %3                  \n"  // shuffler
+      "ldr         q4, %3                        \n"  // shuffler
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"  // load 4 pixels
       "ldp         q2, q3, [%0], #32             \n"  // load 4 pixels
@@ -1750,7 +1750,7 @@ void AR64ToARGBRow_NEON(const uint16_t* src_ar64,
       : "+r"(src_ar64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
-      : "Q"(kShuffleAR64ToARGB)  // %3
+      : "m"(kShuffleAR64ToARGB)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
@@ -1761,7 +1761,7 @@ void AB64ToARGBRow_NEON(const uint16_t* src_ab64,
                         uint8_t* dst_argb,
                         int width) {
   asm volatile(
-      "ld1         {v4.16b}, %3                  \n"  // shuffler
+      "ldr         q4, %3                        \n"  // shuffler
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"  // load 4 pixels
       "ldp         q2, q3, [%0], #32             \n"  // load 4 pixels
@@ -1774,7 +1774,7 @@ void AB64ToARGBRow_NEON(const uint16_t* src_ab64,
       : "+r"(src_ab64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
-      : "Q"(kShuffleAB64ToARGB)  // %3
+      : "m"(kShuffleAB64ToARGB)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
