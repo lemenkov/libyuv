@@ -772,7 +772,8 @@ int ConvertFromI420(const uint8_t* y,
                    height);
       break;
     case FOURCC_NV12: {
-      uint8_t* dst_uv = dst_sample + width * height;
+      int dst_y_stride = dst_sample_stride ? dst_sample_stride : width;
+      uint8_t* dst_uv = dst_sample + dst_y_stride * height;
       r = I420ToNV12(y, y_stride, u, u_stride, v, v_stride, dst_sample,
                      dst_sample_stride ? dst_sample_stride : width, dst_uv,
                      dst_sample_stride ? dst_sample_stride : width, width,
@@ -780,7 +781,8 @@ int ConvertFromI420(const uint8_t* y,
       break;
     }
     case FOURCC_NV21: {
-      uint8_t* dst_vu = dst_sample + width * height;
+      int dst_y_stride = dst_sample_stride ? dst_sample_stride : width;
+      uint8_t* dst_vu = dst_sample + dst_y_stride * height;
       r = I420ToNV21(y, y_stride, u, u_stride, v, v_stride, dst_sample,
                      dst_sample_stride ? dst_sample_stride : width, dst_vu,
                      dst_sample_stride ? dst_sample_stride : width, width,
