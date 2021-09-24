@@ -1385,56 +1385,56 @@ TEST_FACTOR(3, 1, 3, 0)
 #undef DX
 
 TEST_F(LibYUVScaleTest, PlaneTest3x) {
-  const int kSrcStride = 48;
-  const int kDstStride = 16;
+  const int kSrcStride = 480;
+  const int kDstStride = 160;
   const int kSize = kSrcStride * 3;
   align_buffer_page_end(orig_pixels, kSize);
-  for (int i = 0; i < 48 * 3; ++i) {
+  for (int i = 0; i < 480 * 3; ++i) {
     orig_pixels[i] = i;
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations16 =
-      benchmark_width_ * benchmark_height_ / (16 * 1) * benchmark_iterations_;
-  for (int i = 0; i < iterations16; ++i) {
-    ScalePlane(orig_pixels, kSrcStride, 48, 3, dest_pixels, kDstStride, 16, 1,
+  int iterations160 =
+      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  for (int i = 0; i < iterations160; ++i) {
+    ScalePlane(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
                kFilterBilinear);
   }
 
-  EXPECT_EQ(49, dest_pixels[0]);
+  EXPECT_EQ(225, dest_pixels[0]);
 
-  ScalePlane(orig_pixels, kSrcStride, 48, 3, dest_pixels, kDstStride, 16, 1,
+  ScalePlane(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
              kFilterNone);
 
-  EXPECT_EQ(49, dest_pixels[0]);
+  EXPECT_EQ(225, dest_pixels[0]);
 
   free_aligned_buffer_page_end(dest_pixels);
   free_aligned_buffer_page_end(orig_pixels);
 }
 
 TEST_F(LibYUVScaleTest, PlaneTest4x) {
-  const int kSrcStride = 64;
-  const int kDstStride = 16;
+  const int kSrcStride = 640;
+  const int kDstStride = 160;
   const int kSize = kSrcStride * 4;
   align_buffer_page_end(orig_pixels, kSize);
-  for (int i = 0; i < 64 * 4; ++i) {
+  for (int i = 0; i < 640 * 4; ++i) {
     orig_pixels[i] = i;
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations16 =
-      benchmark_width_ * benchmark_height_ / (16 * 1) * benchmark_iterations_;
-  for (int i = 0; i < iterations16; ++i) {
-    ScalePlane(orig_pixels, kSrcStride, 64, 4, dest_pixels, kDstStride, 16, 1,
+  int iterations160 =
+      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  for (int i = 0; i < iterations160; ++i) {
+    ScalePlane(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
                kFilterBilinear);
   }
 
-  EXPECT_EQ((65 + 66 + 129 + 130 + 2) / 4, dest_pixels[0]);
+  EXPECT_EQ(66, dest_pixels[0]);
 
-  ScalePlane(orig_pixels, kSrcStride, 64, 4, dest_pixels, kDstStride, 16, 1,
+  ScalePlane(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
              kFilterNone);
 
-  EXPECT_EQ(130, dest_pixels[0]);  // expect the 3rd pixel of the 3rd row
+  EXPECT_EQ(2, dest_pixels[0]);  // expect the 3rd pixel of the 3rd row
 
   free_aligned_buffer_page_end(dest_pixels);
   free_aligned_buffer_page_end(orig_pixels);
