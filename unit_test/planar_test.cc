@@ -1966,7 +1966,7 @@ static int TestBlur(int width,
   return max_diff;
 }
 
-#if defined(ENABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
+#if !defined(DISABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
 #define DISABLED_ARM(name) name
 #else
 #define DISABLED_ARM(name) DISABLED_##name
