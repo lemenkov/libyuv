@@ -20,6 +20,12 @@ namespace libyuv {
 #define STRINGIZE(line) #line
 #define FILELINESTR(file, line) file ":" STRINGIZE(line)
 
+#if !defined(DISABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
+// SLOW TESTS are those that are unoptimized C code.
+// FULL TESTS are optimized but test many variations of the same code.
+#define ENABLE_FULL_TESTS
+#endif
+
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int UVTestFilter(int src_width,
                         int src_height,
@@ -125,6 +131,7 @@ static int UVTestFilter(int src_width,
     EXPECT_LE(diff, max_diff);                                               \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 // Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
 // filtering is different fixed point implementations for SSSE3, Neon and C.
 #define TEST_FACTOR(name, nom, denom)         \
@@ -132,6 +139,11 @@ static int UVTestFilter(int src_width,
   TEST_FACTOR1(name, Linear, nom, denom, 3)   \
   TEST_FACTOR1(name, Bilinear, nom, denom, 3) \
   TEST_FACTOR1(name, Box, nom, denom, 3)
+#else
+// Test a scale factor with Bilinear.
+#define TEST_FACTOR(name, nom, denom)         \
+  TEST_FACTOR1(name, Bilinear, nom, denom, 3)
+#endif
 
 TEST_FACTOR(2, 1, 2)
 TEST_FACTOR(4, 1, 4)
@@ -159,15 +171,19 @@ TEST_FACTOR(3, 1, 3)
     EXPECT_LE(diff, max_diff);                                              \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 /// Test scale to a specified size with all 4 filters.
 #define TEST_SCALETO(name, width, height)       \
   TEST_SCALETO1(name, width, height, None, 0)   \
   TEST_SCALETO1(name, width, height, Linear, 3) \
   TEST_SCALETO1(name, width, height, Bilinear, 3)
+#else
+#define TEST_SCALETO(name, width, height)       \
+  TEST_SCALETO1(name, width, height, Bilinear, 3)
+#endif
 
 TEST_SCALETO(UVScale, 1, 1)
-// TODO(https://bugs.chromium.org/p/libyuv/issues/detail?id=905): Investigate.
-// TEST_SCALETO(UVScale, 256, 144) /* 128x72 * 2 */
+//TEST_SCALETO(UVScale, 256, 144) /* 128x72 * 2 */
 TEST_SCALETO(UVScale, 320, 240)
 TEST_SCALETO(UVScale, 569, 480)
 TEST_SCALETO(UVScale, 640, 360)
@@ -175,7 +191,6 @@ TEST_SCALETO(UVScale, 640, 360)
 TEST_SCALETO(UVScale, 1280, 720)
 TEST_SCALETO(UVScale, 1920, 1080)
 #endif  // DISABLE_SLOW_TESTS
-
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
@@ -188,10 +203,14 @@ TEST_SCALETO(UVScale, 1920, 1080)
     EXPECT_LE(diff, max_diff);                                                 \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 // Test scale with swapped width and height with all 3 filters.
 TEST_SCALESWAPXY1(UVScale, None, 0)
 TEST_SCALESWAPXY1(UVScale, Linear, 0)
 TEST_SCALESWAPXY1(UVScale, Bilinear, 0)
+#else
+TEST_SCALESWAPXY1(UVScale, Bilinear, 0)
+#endif
 #undef TEST_SCALESWAPXY1
 
 TEST_F(LibYUVScaleTest, UVTest3x) {

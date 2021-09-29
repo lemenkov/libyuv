@@ -22,6 +22,12 @@
 #define STRINGIZE(line) #line
 #define FILELINESTR(file, line) file ":" STRINGIZE(line)
 
+#if !defined(DISABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
+// SLOW TESTS are those that are unoptimized C code.
+// FULL TESTS are optimized but test many variations of the same code.
+#define ENABLE_FULL_TESTS
+#endif
+
 namespace libyuv {
 
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
@@ -889,16 +895,24 @@ static int NV12TestFilter(int src_width,
   TEST_FACTOR1(, name, Bilinear, nom, denom, 3) \
   TEST_FACTOR1(, name, Box, nom, denom, boxdiff)
 #else
+#if defined(ENABLE_FULL_TESTS)
 #define TEST_FACTOR(name, nom, denom, boxdiff)           \
   TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0)     \
   TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, 3)   \
   TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
   TEST_FACTOR1(DISABLED_, name, Box, nom, denom, boxdiff)
+#else
+#define TEST_FACTOR(name, nom, denom, boxdiff)           \
+  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
+  TEST_FACTOR1(DISABLED_, name, Box, nom, denom, boxdiff)
+#endif
 #endif
 
 TEST_FACTOR(2, 1, 2, 0)
 TEST_FACTOR(4, 1, 4, 0)
-// TEST_FACTOR(8, 1, 8, 0) Disable for benchmark performance.  Takes 90 seconds.
+#ifndef DISABLE_SLOW_TESTS
+TEST_FACTOR(8, 1, 8, 0)
+#endif
 TEST_FACTOR(3by4, 3, 4, 1)
 TEST_FACTOR(3by8, 3, 8, 1)
 TEST_FACTOR(3, 1, 3, 0)
@@ -1016,17 +1030,21 @@ TEST_FACTOR(3, 1, 3, 0)
   TEST_SCALETO1(, name, width, height, Bilinear, 3) \
   TEST_SCALETO1(, name, width, height, Box, 3)
 #else
-// Test scale to a specified size with all 4 filters.
+#if defined(ENABLE_FULL_TESTS)
 #define TEST_SCALETO(name, width, height)                    \
   TEST_SCALETO1(DISABLED_, name, width, height, None, 0)     \
   TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3)   \
   TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3) \
   TEST_SCALETO1(DISABLED_, name, width, height, Box, 3)
+#else
+#define TEST_SCALETO(name, width, height)                    \
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3) \
+  TEST_SCALETO1(DISABLED_, name, width, height, Box, 3)
+#endif
 #endif
 
 TEST_SCALETO(Scale, 1, 1)
-// TODO(https://bugs.chromium.org/p/libyuv/issues/detail?id=905): Investigate.
-// TEST_SCALETO(Scale, 256, 144) /* 128x72 * 2 */
+//TEST_SCALETO(Scale, 256, 144) /* 128x72 * 2 */
 TEST_SCALETO(Scale, 320, 240)
 TEST_SCALETO(Scale, 569, 480)
 TEST_SCALETO(Scale, 640, 360)
@@ -1034,7 +1052,6 @@ TEST_SCALETO(Scale, 640, 360)
 TEST_SCALETO(Scale, 1280, 720)
 TEST_SCALETO(Scale, 1920, 1080)
 #endif  // DISABLE_SLOW_TESTS
-
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
@@ -1096,10 +1113,15 @@ TEST_SCALESWAPXY1(, Scale, Linear, 3)
 TEST_SCALESWAPXY1(, Scale, Bilinear, 3)
 TEST_SCALESWAPXY1(, Scale, Box, 3)
 #else
+#if defined(ENABLE_FULL_TESTS)
 TEST_SCALESWAPXY1(DISABLED_, Scale, None, 0)
 TEST_SCALESWAPXY1(DISABLED_, Scale, Linear, 3)
 TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 3)
 TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 3)
+#else
+TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 3)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 3)
+#endif
 #endif
 
 #undef TEST_SCALESWAPXY1
