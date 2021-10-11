@@ -1298,7 +1298,7 @@ int ARGBToRGB24(const uint8_t* src_argb,
 #if defined(HAS_ARGBTORGB24ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToRGB24Row = ARGBToRGB24Row_NEON;
     }
   }
