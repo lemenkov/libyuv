@@ -1591,20 +1591,6 @@ TESTEND(BGRAToARGB, uint8_t, 4, 4, 1)
 TESTEND(ABGRToARGB, uint8_t, 4, 4, 1)
 TESTEND(AB64ToAR64, uint16_t, 4, 4, 1)
 
-TEST_F(LibYUVConvertTest, Test565) {
-  SIMD_ALIGNED(uint8_t orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8_t pixels565[256][2]);
-
-  for (int i = 0; i < 256; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      orig_pixels[i][j] = i;
-    }
-  }
-  ARGBToRGB565(&orig_pixels[0][0], 0, &pixels565[0][0], 0, 256, 1);
-  uint32_t checksum = HashDjb2(&pixels565[0][0], sizeof(pixels565), 5381);
-  EXPECT_EQ(610919429u, checksum);
-}
-
 #ifdef HAVE_JPEG
 TEST_F(LibYUVConvertTest, ValidateJpeg) {
   const int kOff = 10;
@@ -3831,10 +3817,11 @@ TEST_F(LibYUVConvertTest, TestH420ToARGB) {
     ++histogram_b[b];
     ++histogram_g[g];
     ++histogram_r[r];
-    int expected_y = Clamp(static_cast<int>((i - 16) * 1.164f));
-    EXPECT_NEAR(b, expected_y, 1);
-    EXPECT_NEAR(g, expected_y, 1);
-    EXPECT_NEAR(r, expected_y, 1);
+    // Reference formula for Y channel contribution in YUV to RGB conversions:
+    int expected_y = Clamp(static_cast<int>((i - 16) * 1.164f + 0.5f));
+    EXPECT_EQ(b, expected_y);
+    EXPECT_EQ(g, expected_y);
+    EXPECT_EQ(r, expected_y);
     EXPECT_EQ(a, 255);
   }
 
@@ -3956,7 +3943,7 @@ TEST_F(LibYUVConvertTest, TestH010ToAR30) {
     ++histogram_b[b10];
     ++histogram_g[g10];
     ++histogram_r[r10];
-    int expected_y = Clamp10(static_cast<int>((i - 64) * 1.164f));
+    int expected_y = Clamp10(static_cast<int>((i - 64) * 1.164f + 0.5));
     EXPECT_NEAR(b10, expected_y, 4);
     EXPECT_NEAR(g10, expected_y, 4);
     EXPECT_NEAR(r10, expected_y, 4);
@@ -4132,6 +4119,48 @@ TEST_F(LibYUVConvertTest, TestARGBToRGB24) {
   free_aligned_buffer_page_end(argb_pixels);
   free_aligned_buffer_page_end(dest_rgb24);
 }
+
+TEST_F(LibYUVConvertTest, Test565) {
+  SIMD_ALIGNED(uint8_t orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8_t pixels565[256][2]);
+
+  for (int i = 0; i < 256; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      orig_pixels[i][j] = i;
+    }
+  }
+  ARGBToRGB565(&orig_pixels[0][0], 0, &pixels565[0][0], 0, 256, 1);
+  uint32_t checksum = HashDjb2(&pixels565[0][0], sizeof(pixels565), 5381);
+  EXPECT_EQ(610919429u, checksum);
+}
+
+// Test RGB24 to J420 is exact
+#if defined(LIBYUV_BIT_EXACT)
+TEST_F(LibYUVConvertTest, TestRGB24ToJ420) {
+  const int kSize = 256;
+  align_buffer_page_end(orig_rgb24, kSize * 3 * 2);  // 2 rows of RGB24
+  align_buffer_page_end(dest_j420, kSize * 3 / 2 * 2);
+  int iterations256 = (benchmark_width_ * benchmark_height_ + (kSize * 2 - 1)) / (kSize * 2) * benchmark_iterations_;
+
+  for (int i = 0; i < kSize * 3 * 2; ++i) {
+    orig_rgb24[i] = i;
+  }
+
+  for (int i = 0; i < iterations256; ++i) {
+    RGB24ToJ420(orig_rgb24, kSize * 3,
+                dest_j420, kSize,  // Y plane
+                dest_j420 + kSize * 2, kSize / 2,  // U plane
+                dest_j420 + kSize * 5 / 2, kSize / 2,  // V plane
+                kSize, 2);
+  }
+
+  uint32_t checksum = HashDjb2(dest_j420, kSize * 3 / 2 * 2, 5381);
+  EXPECT_EQ(2755440272u, checksum);
+
+  free_aligned_buffer_page_end(orig_rgb24);
+  free_aligned_buffer_page_end(dest_j420);
+}
+#endif
 
 // Test I400 with jpeg matrix is same as J400
 TEST_F(LibYUVConvertTest, TestI400) {
