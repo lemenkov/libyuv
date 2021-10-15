@@ -690,7 +690,8 @@ void ScaleUVLinearUp2(int src_width,
 #endif
 
   if (dst_height == 1) {
-    ScaleRowUp(src_uv + ((src_height - 1) / 2) * (int64_t)src_stride, dst_uv, dst_width);
+    ScaleRowUp(src_uv + ((src_height - 1) / 2) * (int64_t)src_stride, dst_uv,
+               dst_width);
   } else {
     dy = FixedDiv(src_height - 1, dst_height - 1);
     y = (1 << 15) - 1;
@@ -796,7 +797,8 @@ void ScaleUVLinearUp2_16(int src_width,
 #endif
 
   if (dst_height == 1) {
-    ScaleRowUp(src_uv + ((src_height - 1) / 2) * (int64_t)src_stride, dst_uv, dst_width);
+    ScaleRowUp(src_uv + ((src_height - 1) / 2) * (int64_t)src_stride, dst_uv,
+               dst_width);
   } else {
     dy = FixedDiv(src_height - 1, dst_height - 1);
     y = (1 << 15) - 1;
@@ -927,7 +929,8 @@ static void ScaleUVSimple(int src_width,
   }
 
   for (j = 0; j < dst_height; ++j) {
-    ScaleUVCols(dst_uv, src_uv + (y >> 16) * (int64_t)src_stride, dst_width, x, dx);
+    ScaleUVCols(dst_uv, src_uv + (y >> 16) * (int64_t)src_stride, dst_width, x,
+                dx);
     dst_uv += dst_stride;
     y += dy;
   }
@@ -1061,8 +1064,8 @@ static void ScaleUV(const uint8_t* src,
 #ifdef HAS_UVCOPY
         if (dx == 0x10000 && dy == 0x10000) {
           // Straight copy.
-          UVCopy(src + (y >> 16) * (int64_t)src_stride + (x >> 16) * 2, src_stride, dst,
-                 dst_stride, clip_width, clip_height);
+          UVCopy(src + (y >> 16) * (int64_t)src_stride + (x >> 16) * 2,
+                 src_stride, dst, dst_stride, clip_width, clip_height);
           return;
         }
 #endif
@@ -1163,12 +1166,13 @@ int UVScale_16(const uint16_t* src_uv,
 #ifdef HAS_UVCOPY
   if (!filtering && src_width == dst_width && (src_height % dst_height == 0)) {
     if (dst_height == 1) {
-      UVCopy_16(src_uv + ((src_height - 1) / 2) * (int64_t)src_stride_uv, src_stride_uv,
-                dst_uv, dst_stride_uv, dst_width, dst_height);
+      UVCopy_16(src_uv + ((src_height - 1) / 2) * (int64_t)src_stride_uv,
+                src_stride_uv, dst_uv, dst_stride_uv, dst_width, dst_height);
     } else {
       dy = src_height / dst_height;
-      UVCopy_16(src_uv + ((dy - 1) / 2) * (int64_t)src_stride_uv, dy * (int64_t)src_stride_uv,
-                dst_uv, dst_stride_uv, dst_width, dst_height);
+      UVCopy_16(src_uv + ((dy - 1) / 2) * (int64_t)src_stride_uv,
+                dy * (int64_t)src_stride_uv, dst_uv, dst_stride_uv, dst_width,
+                dst_height);
     }
 
     return 0;

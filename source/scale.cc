@@ -1829,7 +1829,8 @@ static void ScalePlaneSimple(int src_width,
   }
 
   for (i = 0; i < dst_height; ++i) {
-    ScaleCols(dst_ptr, src_ptr + (y >> 16) * (int64_t)src_stride, dst_width, x, dx);
+    ScaleCols(dst_ptr, src_ptr + (y >> 16) * (int64_t)src_stride, dst_width, x,
+              dx);
     dst_ptr += dst_stride;
     y += dy;
   }
@@ -1870,7 +1871,8 @@ static void ScalePlaneSimple_16(int src_width,
   }
 
   for (i = 0; i < dst_height; ++i) {
-    ScaleCols(dst_ptr, src_ptr + (y >> 16) * (int64_t)src_stride, dst_width, x, dx);
+    ScaleCols(dst_ptr, src_ptr + (y >> 16) * (int64_t)src_stride, dst_width, x,
+              dx);
     dst_ptr += dst_stride;
     y += dy;
   }

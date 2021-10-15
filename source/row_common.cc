@@ -28,14 +28,20 @@ extern "C" {
 
 // The following macro from row_win makes the C code match the row_win code,
 // which is 7 bit fixed point for ARGBToI420:
-#if !defined(LIBYUV_BIT_EXACT) && !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
-    !defined(__clang__) && (defined(_M_IX86) || defined(_M_X64))
+#if !defined(LIBYUV_BIT_EXACT) && !defined(LIBYUV_DISABLE_X86) && \
+    defined(_MSC_VER) && !defined(__clang__) &&                   \
+    (defined(_M_IX86) || defined(_M_X64))
 #define LIBYUV_RGB7 1
 #endif
 
-#if !defined(LIBYUV_BIT_EXACT) && (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86))
+#if !defined(LIBYUV_BIT_EXACT) && (defined(__x86_64__) || defined(_M_X64) || \
+                                   defined(__i386__) || defined(_M_IX86))
 #define LIBYUV_ARGBTOUV_PAVGB 1
 #define LIBYUV_RGBTOU_TRUNCATE 1
+#define LIBYUV_ATTENUATE_DUP 1
+#endif
+#if defined(LIBYUV_BIT_EXACT)
+#define LIBYUV_UNATTENUATE_DUP 1
 #endif
 
 // llvm x86 is poor at ternary operator, so use branchless min/max.
@@ -3151,11 +3157,11 @@ void BlendPlaneRow_C(const uint8_t* src0,
 }
 #undef UBLEND
 
-#if defined(__aarch64__) || defined(__arm__)
-#define ATTENUATE(f, a) (f * a + 128) >> 8
-#else
+#if LIBYUV_ATTENUATE_DUP
 // This code mimics the SSSE3 version for better testability.
 #define ATTENUATE(f, a) (a | (a << 8)) * (f | (f << 8)) >> 24
+#else
+#define ATTENUATE(f, a) (f * a + 128) >> 8
 #endif
 
 // Multiply source RGB by alpha and store to destination.
@@ -3242,6 +3248,14 @@ const uint32_t fixed_invtbl8[256] = {
     T(0xfc),    T(0xfd),    T(0xfe), 0x01000100};
 #undef T
 
+#if LIBYUV_UNATTENUATE_DUP
+// This code mimics the Intel SIMD version for better testability.
+#define UNATTENUATE(f, ia) clamp255(((f | (f << 8)) * ia) >> 16)
+#else
+#define UNATTENUATE(f, ia) clamp255((f * ia) >> 8)
+#endif
+
+// mimics the Intel SIMD code for exactness.
 void ARGBUnattenuateRow_C(const uint8_t* src_argb,
                           uint8_t* dst_argb,
                           int width) {
@@ -3252,13 +3266,11 @@ void ARGBUnattenuateRow_C(const uint8_t* src_argb,
     uint32_t r = src_argb[2];
     const uint32_t a = src_argb[3];
     const uint32_t ia = fixed_invtbl8[a] & 0xffff;  // 8.8 fixed point
-    b = (b * ia) >> 8;
-    g = (g * ia) >> 8;
-    r = (r * ia) >> 8;
+
     // Clamping should not be necessary but is free in assembly.
-    dst_argb[0] = clamp255(b);
-    dst_argb[1] = clamp255(g);
-    dst_argb[2] = clamp255(r);
+    dst_argb[0] = UNATTENUATE(b, ia);
+    dst_argb[1] = UNATTENUATE(g, ia);
+    dst_argb[2] = UNATTENUATE(r, ia);
     dst_argb[3] = a;
     src_argb += 4;
     dst_argb += 4;

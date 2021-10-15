@@ -258,20 +258,20 @@ static int ARGBClipTestFilter(int src_width,
 // Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
 // filtering is different fixed point implementations for SSSE3, Neon and C.
 #ifndef DISABLE_SLOW_TESTS
-#define TEST_FACTOR(name, nom, denom)  \
+#define TEST_FACTOR(name, nom, denom)           \
   TEST_FACTOR1(, name, None, nom, denom, 0)     \
   TEST_FACTOR1(, name, Linear, nom, denom, 3)   \
   TEST_FACTOR1(, name, Bilinear, nom, denom, 3) \
   TEST_FACTOR1(, name, Box, nom, denom, 3)
 #else
 #if defined(ENABLE_FULL_TESTS)
-#define TEST_FACTOR(name, nom, denom)           \
+#define TEST_FACTOR(name, nom, denom)                    \
   TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0)     \
   TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, 3)   \
   TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
   TEST_FACTOR1(DISABLED_, name, Box, nom, denom, 3)
 #else
-#define TEST_FACTOR(name, nom, denom)           \
+#define TEST_FACTOR(name, nom, denom) \
   TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3)
 #endif
 #endif
@@ -320,24 +320,24 @@ TEST_FACTOR(3, 1, 3)
 
 #ifndef DISABLE_SLOW_TESTS
 // Test scale to a specified size with all 4 filters.
-#define TEST_SCALETO(name, width, height)           \
-  TEST_SCALETO1(, name, width, height, None, 0)     \
-  TEST_SCALETO1(, name, width, height, Linear, 3)   \
+#define TEST_SCALETO(name, width, height)         \
+  TEST_SCALETO1(, name, width, height, None, 0)   \
+  TEST_SCALETO1(, name, width, height, Linear, 3) \
   TEST_SCALETO1(, name, width, height, Bilinear, 3)
 #else
 #if defined(ENABLE_FULL_TESTS)
-#define TEST_SCALETO(name, width, height)                    \
-  TEST_SCALETO1(DISABLED_, name, width, height, None, 0)     \
-  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3)   \
+#define TEST_SCALETO(name, width, height)                  \
+  TEST_SCALETO1(DISABLED_, name, width, height, None, 0)   \
+  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3) \
   TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3)
 #else
-#define TEST_SCALETO(name, width, height)                    \
+#define TEST_SCALETO(name, width, height) \
   TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3)
 #endif
 #endif
 
 TEST_SCALETO(ARGBScale, 1, 1)
-//TEST_SCALETO(ARGBScale, 256, 144) /* 128x72 * 2 */
+// TEST_SCALETO(ARGBScale, 256, 144) /* 128x72 * 2 */
 TEST_SCALETO(ARGBScale, 320, 240)
 TEST_SCALETO(ARGBScale, 569, 480)
 TEST_SCALETO(ARGBScale, 640, 360)
@@ -524,8 +524,8 @@ TEST_F(LibYUVScaleTest, ARGBTest3x) {
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations160 =
-      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  int iterations160 = (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 *
+                      benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     ARGBScale(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
               kFilterBilinear);
@@ -561,8 +561,8 @@ TEST_F(LibYUVScaleTest, ARGBTest4x) {
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations160 =
-      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  int iterations160 = (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 *
+                      benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     ARGBScale(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
               kFilterBilinear);

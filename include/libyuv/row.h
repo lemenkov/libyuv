@@ -20,7 +20,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if defined(LIBYUV_BIT_EXACT) || defined(__pnacl__) || defined(__CLR_VER) ||            \
+#if defined(__pnacl__) || defined(__CLR_VER) ||            \
     (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
@@ -74,8 +74,10 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 // Conversions:
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
+#endif
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
 #define HAS_ARGBEXTRACTALPHAROW_SSE2
@@ -87,13 +89,15 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_SSSE3
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565ROW_SSE2
+#define HAS_ARGBTOYJROW_SSSE3
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ARGBTOUV444ROW_SSSE3
 #define HAS_ARGBTOUVJROW_SSSE3
 #define HAS_ARGBTOUVROW_SSSE3
-#define HAS_ARGBTOYJROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
+#endif
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
@@ -119,14 +123,16 @@ extern "C" {
 #define HAS_NV21TORGB24ROW_SSSE3
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RAWTORGB24ROW_SSSE3
-#define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
+#define HAS_RGB565TOARGBROW_SSE2
+#if !defined(LIBYUV_BIT_EXACT)
+#define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOYROW_SSSE3
 #define HAS_RGB24TOYJROW_SSSE3
 #define HAS_RAWTOYJROW_SSSE3
-#define HAS_RGB565TOARGBROW_SSE2
 #define HAS_RGBATOUVROW_SSSE3
 #define HAS_RGBATOYROW_SSSE3
+#endif
 #define HAS_SETROW_ERMS
 #define HAS_SETROW_X86
 #define HAS_SPLITUVROW_SSE2
@@ -142,7 +148,9 @@ extern "C" {
 // Effects:
 #define HAS_ARGBADDROW_SSE2
 #define HAS_ARGBAFFINEROW_SSE2
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ARGBATTENUATEROW_SSSE3
+#endif
 #define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
 #define HAS_ARGBCOLORTABLEROW_X86
@@ -192,12 +200,14 @@ extern "C" {
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
+#define HAS_ARGBTOYJROW_AVX2
+#define HAS_RAWTOYJROW_AVX2
+#define HAS_RGB24TOYJROW_AVX2
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ARGBTOUVJROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
-#define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
-#define HAS_RGB24TOYJROW_AVX2
-#define HAS_RAWTOYJROW_AVX2
+#endif
 #define HAS_COPYROW_AVX
 #define HAS_H422TOARGBROW_AVX2
 #define HAS_HALFFLOATROW_AVX2
@@ -230,7 +240,9 @@ extern "C" {
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ARGBATTENUATEROW_AVX2
+#endif
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
@@ -297,7 +309,9 @@ extern "C" {
 #define HAS_P410TOARGBROW_SSSE3
 #define HAS_RAWTORGBAROW_SSSE3
 #define HAS_RGB24MIRRORROW_SSSE3
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_RGBATOYJROW_SSSE3
+#endif
 #define HAS_SPLITARGBROW_SSE2
 #define HAS_SPLITARGBROW_SSSE3
 #define HAS_SPLITXRGBROW_SSE2
@@ -319,8 +333,10 @@ extern "C" {
     (defined(__x86_64__) || defined(__i386__)) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_ABGRTOAR30ROW_AVX2
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ABGRTOUVROW_AVX2
 #define HAS_ABGRTOYROW_AVX2
+#endif
 #define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_ARGBTORAWROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
@@ -356,7 +372,9 @@ extern "C" {
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MIRRORUVROW_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_RGBATOYJROW_AVX2
+#endif
 #define HAS_SPLITARGBROW_AVX2
 #define HAS_SPLITXRGBROW_AVX2
 #define HAS_SPLITUVROW_16_AVX2

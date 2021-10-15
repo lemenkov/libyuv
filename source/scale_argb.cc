@@ -888,8 +888,8 @@ static void ScaleARGBSimple(int src_width,
   }
 
   for (j = 0; j < dst_height; ++j) {
-    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * (int64_t)src_stride, dst_width, x,
-                  dx);
+    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * (int64_t)src_stride,
+                  dst_width, x, dx);
     dst_argb += dst_stride;
     y += dy;
   }
@@ -973,8 +973,8 @@ static void ScaleARGB(const uint8_t* src,
         filtering = kFilterNone;
         if (dx == 0x10000 && dy == 0x10000) {
           // Straight copy.
-          ARGBCopy(src + (y >> 16) * (int64_t)src_stride + (x >> 16) * 4, src_stride,
-                   dst, dst_stride, clip_width, clip_height);
+          ARGBCopy(src + (y >> 16) * (int64_t)src_stride + (x >> 16) * 4,
+                   src_stride, dst, dst_stride, clip_width, clip_height);
           return;
         }
       }

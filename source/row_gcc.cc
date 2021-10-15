@@ -1417,9 +1417,12 @@ void RGBAToYJRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
 }
 #endif  // HAS_RGBATOYJROW_SSSE3
 
-#ifdef HAS_ARGBTOYROW_AVX2
+#if defined(HAS_ARGBTOYROW_AVX2) || defined(HAS_ARGBEXTRACTALPHAROW_AVX2)
 // vpermd for vphaddw + vpackuswb vpermd.
 static const lvec32 kPermdARGBToY_AVX = {0, 4, 1, 5, 2, 6, 3, 7};
+#endif
+
+#ifdef HAS_ARGBTOYROW_AVX2
 
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {

@@ -1373,10 +1373,10 @@ void ARGBToRGB24Row_NEON(const uint8_t* src_argb,
                          int width) {
   asm volatile(
       "1:                                        \n"
-      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64\n"  // load 16 ARGB
-      "subs        %w2, %w2, #16                 \n"     // 16 pixels per loop.
+      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 ARGB
+      "subs        %w2, %w2, #16                 \n"  // 16 pixels per loop.
       "prfm        pldl1keep, [%0, 448]          \n"
-      "st3         {v0.16b,v1.16b,v2.16b}, [%1], #48\n"  // store 8 RGB24
+      "st3         {v0.16b,v1.16b,v2.16b}, [%1], #48 \n"  // store 8 RGB24
       "b.gt        1b                            \n"
       : "+r"(src_argb),   // %0
         "+r"(dst_rgb24),  // %1
@@ -1682,7 +1682,6 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
       :
       : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19", "v23");
 }
-
 
 void ARGBToAR64Row_NEON(const uint8_t* src_argb,
                         uint16_t* dst_ar64,

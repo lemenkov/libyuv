@@ -1532,7 +1532,7 @@ TESTATOBD(ARGB, 4, 4, 1, RGB565, 2, 2, 1)
 // e.g. endian swap twice.
 #define TESTENDI(FMT_ATOB, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, W1280, N, NEG,   \
                  OFF)                                                          \
-  TEST_F(LibYUVConvertTest, FMT_ATOB##_Endswap##N) {                          \
+  TEST_F(LibYUVConvertTest, FMT_ATOB##_Endswap##N) {                           \
     const int kWidth = W1280;                                                  \
     const int kHeight = benchmark_height_;                                     \
     const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;       \
@@ -1580,8 +1580,8 @@ TESTATOBD(ARGB, 4, 4, 1, RGB565, 2, 2, 1)
   TESTENDI(FMT_ATOB, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, benchmark_width_,     \
            _Opt, +, 0)
 #else
-#define TESTEND(FMT_ATOB, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A)                  \
-  TESTENDI(FMT_ATOB, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, benchmark_width_,     \
+#define TESTEND(FMT_ATOB, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A)              \
+  TESTENDI(FMT_ATOB, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, benchmark_width_, \
            _Opt, +, 0)
 #endif
 
@@ -3509,9 +3509,9 @@ TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
   TESTQPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
                     YALIGN, benchmark_width_, _Premult, +, 0, 1, S_DEPTH)
 #else
-#define TESTQPLANAR16TOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,    \
-                         ALIGN, YALIGN, S_DEPTH)                            \
-  TESTQPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
+#define TESTQPLANAR16TOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,   \
+                         ALIGN, YALIGN, S_DEPTH)                           \
+  TESTQPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
                     YALIGN, benchmark_width_, _Opt, +, 0, 0, S_DEPTH)
 #endif
 
@@ -4140,17 +4140,17 @@ TEST_F(LibYUVConvertTest, TestRGB24ToJ420) {
   const int kSize = 256;
   align_buffer_page_end(orig_rgb24, kSize * 3 * 2);  // 2 rows of RGB24
   align_buffer_page_end(dest_j420, kSize * 3 / 2 * 2);
-  int iterations256 = (benchmark_width_ * benchmark_height_ + (kSize * 2 - 1)) / (kSize * 2) * benchmark_iterations_;
+  int iterations256 = (benchmark_width_ * benchmark_height_ + (kSize * 2 - 1)) /
+                      (kSize * 2) * benchmark_iterations_;
 
   for (int i = 0; i < kSize * 3 * 2; ++i) {
     orig_rgb24[i] = i;
   }
 
   for (int i = 0; i < iterations256; ++i) {
-    RGB24ToJ420(orig_rgb24, kSize * 3,
-                dest_j420, kSize,  // Y plane
-                dest_j420 + kSize * 2, kSize / 2,  // U plane
-                dest_j420 + kSize * 5 / 2, kSize / 2,  // V plane
+    RGB24ToJ420(orig_rgb24, kSize * 3, dest_j420, kSize,  // Y plane
+                dest_j420 + kSize * 2, kSize / 2,         // U plane
+                dest_j420 + kSize * 5 / 2, kSize / 2,     // V plane
                 kSize, 2);
   }
 

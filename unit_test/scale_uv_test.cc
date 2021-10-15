@@ -141,7 +141,7 @@ static int UVTestFilter(int src_width,
   TEST_FACTOR1(name, Box, nom, denom, 3)
 #else
 // Test a scale factor with Bilinear.
-#define TEST_FACTOR(name, nom, denom)         \
+#define TEST_FACTOR(name, nom, denom) \
   TEST_FACTOR1(name, Bilinear, nom, denom, 3)
 #endif
 
@@ -178,12 +178,12 @@ TEST_FACTOR(3, 1, 3)
   TEST_SCALETO1(name, width, height, Linear, 3) \
   TEST_SCALETO1(name, width, height, Bilinear, 3)
 #else
-#define TEST_SCALETO(name, width, height)       \
+#define TEST_SCALETO(name, width, height) \
   TEST_SCALETO1(name, width, height, Bilinear, 3)
 #endif
 
 TEST_SCALETO(UVScale, 1, 1)
-//TEST_SCALETO(UVScale, 256, 144) /* 128x72 * 2 */
+// TEST_SCALETO(UVScale, 256, 144) /* 128x72 * 2 */
 TEST_SCALETO(UVScale, 320, 240)
 TEST_SCALETO(UVScale, 569, 480)
 TEST_SCALETO(UVScale, 640, 360)
@@ -224,8 +224,8 @@ TEST_F(LibYUVScaleTest, UVTest3x) {
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations160 =
-      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  int iterations160 = (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 *
+                      benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     UVScale(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
             kFilterBilinear);
@@ -255,8 +255,8 @@ TEST_F(LibYUVScaleTest, UVTest4x) {
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations160 =
-      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  int iterations160 = (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 *
+                      benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     UVScale(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
             kFilterBilinear);

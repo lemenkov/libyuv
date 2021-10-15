@@ -1044,7 +1044,7 @@ TEST_FACTOR(3, 1, 3, 0)
 #endif
 
 TEST_SCALETO(Scale, 1, 1)
-//TEST_SCALETO(Scale, 256, 144) /* 128x72 * 2 */
+// TEST_SCALETO(Scale, 256, 144) /* 128x72 * 2 */
 TEST_SCALETO(Scale, 320, 240)
 TEST_SCALETO(Scale, 569, 480)
 TEST_SCALETO(Scale, 640, 360)
@@ -1418,8 +1418,8 @@ TEST_F(LibYUVScaleTest, PlaneTest3x) {
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations160 =
-      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  int iterations160 = (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 *
+                      benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     ScalePlane(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
                kFilterBilinear);
@@ -1446,8 +1446,8 @@ TEST_F(LibYUVScaleTest, PlaneTest4x) {
   }
   align_buffer_page_end(dest_pixels, kDstStride);
 
-  int iterations160 =
-      (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 * benchmark_iterations_;
+  int iterations160 = (benchmark_width_ * benchmark_height_ + (160 - 1)) / 160 *
+                      benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     ScalePlane(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
                kFilterBilinear);
