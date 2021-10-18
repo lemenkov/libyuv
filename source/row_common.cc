@@ -342,8 +342,8 @@ void ARGBToRGB565DitherRow_C(const uint8_t* src_argb,
     uint8_t b1 = clamp255(src_argb[4] + dither1) >> 3;
     uint8_t g1 = clamp255(src_argb[5] + dither1) >> 2;
     uint8_t r1 = clamp255(src_argb[6] + dither1) >> 3;
-    WRITEWORD(dst_rgb, b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) |
-                           (r1 << 27));
+    *(uint16_t*)(dst_rgb + 0) = b0 | (g0 << 5) | (r0 << 11);
+    *(uint16_t*)(dst_rgb + 2) = b1 | (g1 << 5) | (r1 << 11);
     dst_rgb += 4;
     src_argb += 8;
   }
@@ -367,8 +367,8 @@ void ARGBToARGB1555Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
     uint8_t g1 = src_argb[5] >> 3;
     uint8_t r1 = src_argb[6] >> 3;
     uint8_t a1 = src_argb[7] >> 7;
-    *(uint32_t*)(dst_rgb) = b0 | (g0 << 5) | (r0 << 10) | (a0 << 15) |
-                            (b1 << 16) | (g1 << 21) | (r1 << 26) | (a1 << 31);
+    *(uint16_t*)(dst_rgb + 0) = b0 | (g0 << 5) | (r0 << 10) | (a0 << 15);
+    *(uint16_t*)(dst_rgb + 2) = b1 | (g1 << 5) | (r1 << 10) | (a1 << 15);
     dst_rgb += 4;
     src_argb += 8;
   }
@@ -392,8 +392,8 @@ void ARGBToARGB4444Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
     uint8_t g1 = src_argb[5] >> 4;
     uint8_t r1 = src_argb[6] >> 4;
     uint8_t a1 = src_argb[7] >> 4;
-    *(uint32_t*)(dst_rgb) = b0 | (g0 << 4) | (r0 << 8) | (a0 << 12) |
-                            (b1 << 16) | (g1 << 20) | (r1 << 24) | (a1 << 28);
+    *(uint16_t*)(dst_rgb + 0) = b0 | (g0 << 4) | (r0 << 8) | (a0 << 12);
+    *(uint16_t*)(dst_rgb + 2) = b1 | (g1 << 4) | (r1 << 8) | (a1 << 12);
     dst_rgb += 4;
     src_argb += 8;
   }
@@ -2279,8 +2279,8 @@ void I422ToARGB4444Row_C(const uint8_t* src_y,
     b1 = b1 >> 4;
     g1 = g1 >> 4;
     r1 = r1 >> 4;
-    *(uint32_t*)(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) | (b1 << 16) |
-                                 (g1 << 20) | (r1 << 24) | 0xf000f000;
+    *(uint16_t*)(dst_argb4444 + 0) = b0 | (g0 << 4) | (r0 << 8) | 0xf000;
+    *(uint16_t*)(dst_argb4444 + 2) = b1 | (g1 << 4) | (r1 << 8) | 0xf000;
     src_y += 2;
     src_u += 1;
     src_v += 1;
@@ -2317,8 +2317,8 @@ void I422ToARGB1555Row_C(const uint8_t* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 3;
     r1 = r1 >> 3;
-    *(uint32_t*)(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) | (b1 << 16) |
-                                 (g1 << 21) | (r1 << 26) | 0x80008000;
+    *(uint16_t*)(dst_argb1555 + 0) = b0 | (g0 << 5) | (r0 << 10) | 0x8000;
+    *(uint16_t*)(dst_argb1555 + 2) = b1 | (g1 << 5) | (r1 << 10) | 0x8000;
     src_y += 2;
     src_u += 1;
     src_v += 1;
@@ -2355,8 +2355,8 @@ void I422ToRGB565Row_C(const uint8_t* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 2;
     r1 = r1 >> 3;
-    *(uint32_t*)(dst_rgb565) =
-        b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) | (r1 << 27);
+    *(uint16_t*)(dst_rgb565 + 0) = b0 | (g0 << 5) | (r0 << 11);  // for ubsan
+    *(uint16_t*)(dst_rgb565 + 2) = b1 | (g1 << 5) | (r1 << 11);
     src_y += 2;
     src_u += 1;
     src_v += 1;
@@ -2482,8 +2482,8 @@ void NV12ToRGB565Row_C(const uint8_t* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 2;
     r1 = r1 >> 3;
-    *(uint32_t*)(dst_rgb565) =
-        b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) | (r1 << 27);
+    *(uint16_t*)(dst_rgb565 + 0) = b0 | (g0 << 5) | (r0 << 11);
+    *(uint16_t*)(dst_rgb565 + 2) = b1 | (g1 << 5) | (r1 << 11);
     src_y += 2;
     src_uv += 2;
     dst_rgb565 += 4;  // Advance 2 pixels.
