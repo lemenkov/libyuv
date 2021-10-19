@@ -4096,6 +4096,68 @@ TEST_F(LibYUVConvertTest, TestH420ToAR30) {
   free_aligned_buffer_page_end(ar30_pixels);
 }
 
+// Test I400 with jpeg matrix is same as J400
+TEST_F(LibYUVConvertTest, TestI400) {
+  const int kSize = 256;
+  align_buffer_page_end(orig_i400, kSize);
+  align_buffer_page_end(argb_pixels_i400, kSize * 4);
+  align_buffer_page_end(argb_pixels_j400, kSize * 4);
+  align_buffer_page_end(argb_pixels_jpeg_i400, kSize * 4);
+  align_buffer_page_end(argb_pixels_h709_i400, kSize * 4);
+  align_buffer_page_end(argb_pixels_2020_i400, kSize * 4);
+
+  // Test grey scale
+  for (int i = 0; i < kSize; ++i) {
+    orig_i400[i] = i;
+  }
+
+  J400ToARGB(orig_i400, 0, argb_pixels_j400, 0, kSize, 1);
+  I400ToARGB(orig_i400, 0, argb_pixels_i400, 0, kSize, 1);
+  I400ToARGBMatrix(orig_i400, 0, argb_pixels_jpeg_i400, 0, &kYuvJPEGConstants,
+                   kSize, 1);
+  I400ToARGBMatrix(orig_i400, 0, argb_pixels_h709_i400, 0, &kYuvH709Constants,
+                   kSize, 1);
+  I400ToARGBMatrix(orig_i400, 0, argb_pixels_2020_i400, 0, &kYuv2020Constants,
+                   kSize, 1);
+
+  EXPECT_EQ(0, argb_pixels_i400[0]);
+  EXPECT_EQ(0, argb_pixels_j400[0]);
+  EXPECT_EQ(0, argb_pixels_jpeg_i400[0]);
+  EXPECT_EQ(0, argb_pixels_h709_i400[0]);
+  EXPECT_EQ(0, argb_pixels_2020_i400[0]);
+  EXPECT_EQ(0, argb_pixels_i400[16 * 4]);
+  EXPECT_EQ(16, argb_pixels_j400[16 * 4]);
+  EXPECT_EQ(16, argb_pixels_jpeg_i400[16 * 4]);
+  EXPECT_EQ(0, argb_pixels_h709_i400[16 * 4]);
+  EXPECT_EQ(0, argb_pixels_2020_i400[16 * 4]);
+  EXPECT_EQ(130, argb_pixels_i400[128 * 4]);
+  EXPECT_EQ(128, argb_pixels_j400[128 * 4]);
+  EXPECT_EQ(128, argb_pixels_jpeg_i400[128 * 4]);
+  EXPECT_EQ(130, argb_pixels_h709_i400[128 * 4]);
+  EXPECT_EQ(130, argb_pixels_2020_i400[128 * 4]);
+  EXPECT_EQ(255, argb_pixels_i400[255 * 4]);
+  EXPECT_EQ(255, argb_pixels_j400[255 * 4]);
+  EXPECT_EQ(255, argb_pixels_jpeg_i400[255 * 4]);
+  EXPECT_EQ(255, argb_pixels_h709_i400[255 * 4]);
+  EXPECT_EQ(255, argb_pixels_2020_i400[255 * 4]);
+
+  for (int i = 0; i < kSize * 4; ++i) {
+    if ((i & 3) == 3) {
+      EXPECT_EQ(255, argb_pixels_j400[i]);
+    } else {
+      EXPECT_EQ(i / 4, argb_pixels_j400[i]);
+    }
+    EXPECT_EQ(argb_pixels_jpeg_i400[i], argb_pixels_j400[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_i400);
+  free_aligned_buffer_page_end(argb_pixels_i400);
+  free_aligned_buffer_page_end(argb_pixels_j400);
+  free_aligned_buffer_page_end(argb_pixels_jpeg_i400);
+  free_aligned_buffer_page_end(argb_pixels_h709_i400);
+  free_aligned_buffer_page_end(argb_pixels_2020_i400);
+}
+
 // Test RGB24 to ARGB and back to RGB24
 TEST_F(LibYUVConvertTest, TestARGBToRGB24) {
   const int kSize = 256;
@@ -4162,66 +4224,32 @@ TEST_F(LibYUVConvertTest, TestRGB24ToJ420) {
 }
 #endif
 
-// Test I400 with jpeg matrix is same as J400
-TEST_F(LibYUVConvertTest, TestI400) {
+// Test RGB24 to I420 is exact
+#if defined(LIBYUV_BIT_EXACT)
+TEST_F(LibYUVConvertTest, TestRGB24ToI420) {
   const int kSize = 256;
-  align_buffer_page_end(orig_i400, kSize);
-  align_buffer_page_end(argb_pixels_i400, kSize * 4);
-  align_buffer_page_end(argb_pixels_j400, kSize * 4);
-  align_buffer_page_end(argb_pixels_jpeg_i400, kSize * 4);
-  align_buffer_page_end(argb_pixels_h709_i400, kSize * 4);
-  align_buffer_page_end(argb_pixels_2020_i400, kSize * 4);
+  align_buffer_page_end(orig_rgb24, kSize * 3 * 2);  // 2 rows of RGB24
+  align_buffer_page_end(dest_i420, kSize * 3 / 2 * 2);
+  int iterations256 = (benchmark_width_ * benchmark_height_ + (kSize * 2 - 1)) /
+                      (kSize * 2) * benchmark_iterations_;
 
-  // Test grey scale
-  for (int i = 0; i < kSize; ++i) {
-    orig_i400[i] = i;
+  for (int i = 0; i < kSize * 3 * 2; ++i) {
+    orig_rgb24[i] = i;
   }
 
-  J400ToARGB(orig_i400, 0, argb_pixels_j400, 0, kSize, 1);
-  I400ToARGB(orig_i400, 0, argb_pixels_i400, 0, kSize, 1);
-  I400ToARGBMatrix(orig_i400, 0, argb_pixels_jpeg_i400, 0, &kYuvJPEGConstants,
-                   kSize, 1);
-  I400ToARGBMatrix(orig_i400, 0, argb_pixels_h709_i400, 0, &kYuvH709Constants,
-                   kSize, 1);
-  I400ToARGBMatrix(orig_i400, 0, argb_pixels_2020_i400, 0, &kYuv2020Constants,
-                   kSize, 1);
-
-  EXPECT_EQ(0, argb_pixels_i400[0]);
-  EXPECT_EQ(0, argb_pixels_j400[0]);
-  EXPECT_EQ(0, argb_pixels_jpeg_i400[0]);
-  EXPECT_EQ(0, argb_pixels_h709_i400[0]);
-  EXPECT_EQ(0, argb_pixels_2020_i400[0]);
-  EXPECT_EQ(0, argb_pixels_i400[16 * 4]);
-  EXPECT_EQ(16, argb_pixels_j400[16 * 4]);
-  EXPECT_EQ(16, argb_pixels_jpeg_i400[16 * 4]);
-  EXPECT_EQ(0, argb_pixels_h709_i400[16 * 4]);
-  EXPECT_EQ(0, argb_pixels_2020_i400[16 * 4]);
-  EXPECT_EQ(130, argb_pixels_i400[128 * 4]);
-  EXPECT_EQ(128, argb_pixels_j400[128 * 4]);
-  EXPECT_EQ(128, argb_pixels_jpeg_i400[128 * 4]);
-  EXPECT_EQ(130, argb_pixels_h709_i400[128 * 4]);
-  EXPECT_EQ(130, argb_pixels_2020_i400[128 * 4]);
-  EXPECT_EQ(255, argb_pixels_i400[255 * 4]);
-  EXPECT_EQ(255, argb_pixels_j400[255 * 4]);
-  EXPECT_EQ(255, argb_pixels_jpeg_i400[255 * 4]);
-  EXPECT_EQ(255, argb_pixels_h709_i400[255 * 4]);
-  EXPECT_EQ(255, argb_pixels_2020_i400[255 * 4]);
-
-  for (int i = 0; i < kSize * 4; ++i) {
-    if ((i & 3) == 3) {
-      EXPECT_EQ(255, argb_pixels_j400[i]);
-    } else {
-      EXPECT_EQ(i / 4, argb_pixels_j400[i]);
-    }
-    EXPECT_EQ(argb_pixels_jpeg_i400[i], argb_pixels_j400[i]);
+  for (int i = 0; i < iterations256; ++i) {
+    RGB24ToI420(orig_rgb24, kSize * 3, dest_i420, kSize,  // Y plane
+                dest_i420 + kSize * 2, kSize / 2,         // U plane
+                dest_i420 + kSize * 5 / 2, kSize / 2,     // V plane
+                kSize, 2);
   }
 
-  free_aligned_buffer_page_end(orig_i400);
-  free_aligned_buffer_page_end(argb_pixels_i400);
-  free_aligned_buffer_page_end(argb_pixels_j400);
-  free_aligned_buffer_page_end(argb_pixels_jpeg_i400);
-  free_aligned_buffer_page_end(argb_pixels_h709_i400);
-  free_aligned_buffer_page_end(argb_pixels_2020_i400);
+  uint32_t checksum = HashDjb2(dest_i420, kSize * 3 / 2 * 2, 5381);
+  EXPECT_EQ(1526656597u, checksum);
+
+  free_aligned_buffer_page_end(orig_rgb24);
+  free_aligned_buffer_page_end(dest_i420);
 }
+#endif
 
 }  // namespace libyuv

@@ -2001,13 +2001,103 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
       "urshr       v1.8h, v1.8h, #1              \n"
       "urshr       v2.8h, v2.8h, #1              \n"
 
-      "subs        %w4, %w4, #16                 \n"  // 32 processed per loop.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
       "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
       "b.gt        1b                            \n"
   : "+r"(src_argb),  // %0
     "+r"(src_argb_1),  // %1
+    "+r"(dst_u),     // %2
+    "+r"(dst_v),     // %3
+    "+r"(width)        // %4
+  :
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+    "v20", "v21", "v22", "v23", "v24", "v25"
+  );
+}
+
+void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
+                        int src_stride_rgb24,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  const uint8_t* src_rgb24_1 = src_rgb24 + src_stride_rgb24;
+  asm volatile (
+      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
+      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
+      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
+      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
+      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
+      "1:                                        \n"
+      "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 pixels.
+      "uaddlp      v0.8h, v0.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uaddlp      v1.8h, v1.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uaddlp      v2.8h, v2.16b                 \n"  // R 16 bytes -> 8 shorts.
+      "ld3         {v4.16b,v5.16b,v6.16b}, [%1], #48 \n"  // load next 16
+      "uadalp      v0.8h, v4.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
+
+      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
+      "urshr       v1.8h, v1.8h, #1              \n"
+      "urshr       v2.8h, v2.8h, #1              \n"
+
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
+    RGBTOUV(v0.8h, v1.8h, v2.8h)
+      "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
+      "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
+      "b.gt        1b                            \n"
+  : "+r"(src_rgb24),  // %0
+    "+r"(src_rgb24_1),  // %1
+    "+r"(dst_u),     // %2
+    "+r"(dst_v),     // %3
+    "+r"(width)        // %4
+  :
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+    "v20", "v21", "v22", "v23", "v24", "v25"
+  );
+}
+
+void RAWToUVJRow_NEON(const uint8_t* src_raw,
+                        int src_stride_raw,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  const uint8_t* src_raw_1 = src_raw + src_stride_raw;
+  asm volatile (
+      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
+      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
+      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
+      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
+      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
+      "1:                                        \n"
+      "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 pixels.
+      "uaddlp      v0.8h, v0.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uaddlp      v1.8h, v1.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uaddlp      v2.8h, v2.16b                 \n"  // R 16 bytes -> 8 shorts.
+      "ld3         {v4.16b,v5.16b,v6.16b}, [%1], #48 \n"  // load next 16
+      "uadalp      v0.8h, v4.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
+
+      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
+      "urshr       v1.8h, v1.8h, #1              \n"
+      "urshr       v2.8h, v2.8h, #1              \n"
+
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
+    RGBTOUV(v2.8h, v1.8h, v0.8h)
+      "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
+      "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
+      "b.gt        1b                            \n"
+  : "+r"(src_raw),  // %0
+    "+r"(src_raw_1),  // %1
     "+r"(dst_u),     // %2
     "+r"(dst_v),     // %3
     "+r"(width)        // %4
@@ -2041,7 +2131,7 @@ void BGRAToUVRow_NEON(const uint8_t* src_bgra,
       "urshr       v1.8h, v3.8h, #1              \n"
       "urshr       v2.8h, v2.8h, #1              \n"
 
-      "subs        %w4, %w4, #16                 \n"  // 32 processed per loop.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
       "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
@@ -2081,7 +2171,7 @@ void ABGRToUVRow_NEON(const uint8_t* src_abgr,
       "urshr       v2.8h, v2.8h, #1              \n"
       "urshr       v1.8h, v1.8h, #1              \n"
 
-      "subs        %w4, %w4, #16                 \n"  // 32 processed per loop.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
     RGBTOUV(v0.8h, v2.8h, v1.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
       "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
@@ -2121,7 +2211,7 @@ void RGBAToUVRow_NEON(const uint8_t* src_rgba,
       "urshr       v1.8h, v1.8h, #1              \n"
       "urshr       v2.8h, v2.8h, #1              \n"
 
-      "subs        %w4, %w4, #16                 \n"  // 32 processed per loop.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
       "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
@@ -2161,7 +2251,7 @@ void RGB24ToUVRow_NEON(const uint8_t* src_rgb24,
       "urshr       v1.8h, v1.8h, #1              \n"
       "urshr       v2.8h, v2.8h, #1              \n"
 
-      "subs        %w4, %w4, #16                 \n"  // 32 processed per loop.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
       "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
@@ -2186,7 +2276,7 @@ void RAWToUVRow_NEON(const uint8_t* src_raw,
   asm volatile (
     RGBTOUV_SETUP_REG
       "1:                                        \n"
-      "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 8 RAW pixels.
+      "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 RAW pixels.
       "uaddlp      v2.8h, v2.16b                 \n"  // B 16 bytes -> 8 shorts.
       "prfm        pldl1keep, [%0, 448]          \n"
       "uaddlp      v1.8h, v1.16b                 \n"  // G 16 bytes -> 8 shorts.
@@ -2201,7 +2291,7 @@ void RAWToUVRow_NEON(const uint8_t* src_raw,
       "urshr       v1.8h, v1.8h, #1              \n"
       "urshr       v0.8h, v0.8h, #1              \n"
 
-      "subs        %w4, %w4, #16                 \n"  // 32 processed per loop.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
     RGBTOUV(v2.8h, v1.8h, v0.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
       "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.

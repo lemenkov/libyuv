@@ -74,9 +74,9 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 // Conversions:
+#define HAS_ABGRTOYROW_SSSE3
 #if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ABGRTOUVROW_SSSE3
-#define HAS_ABGRTOYROW_SSSE3
 #endif
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
@@ -90,13 +90,13 @@ extern "C" {
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565ROW_SSE2
 #define HAS_ARGBTOYJROW_SSSE3
+#define HAS_ARGBTOYROW_SSSE3
+#define HAS_BGRATOYROW_SSSE3
 #if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ARGBTOUV444ROW_SSSE3
 #define HAS_ARGBTOUVJROW_SSSE3
 #define HAS_ARGBTOUVROW_SSSE3
-#define HAS_ARGBTOYROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
-#define HAS_BGRATOYROW_SSSE3
 #endif
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
@@ -125,13 +125,13 @@ extern "C" {
 #define HAS_RAWTORGB24ROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
 #define HAS_RGB565TOARGBROW_SSE2
-#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOYROW_SSSE3
+#define HAS_RGBATOYROW_SSSE3
+#if !defined(LIBYUV_BIT_EXACT)
 #define HAS_RGB24TOYJROW_SSSE3
 #define HAS_RAWTOYJROW_SSSE3
 #define HAS_RGBATOUVROW_SSSE3
-#define HAS_RGBATOYROW_SSSE3
 #endif
 #define HAS_SETROW_ERMS
 #define HAS_SETROW_X86
@@ -203,10 +203,10 @@ extern "C" {
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_RAWTOYJROW_AVX2
 #define HAS_RGB24TOYJROW_AVX2
+#define HAS_ARGBTOYROW_AVX2
 #if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ARGBTOUVJROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
-#define HAS_ARGBTOYROW_AVX2
 #endif
 #define HAS_COPYROW_AVX
 #define HAS_H422TOARGBROW_AVX2
@@ -472,10 +472,12 @@ extern "C" {
 #define HAS_RAWTORGB24ROW_NEON
 #define HAS_RAWTORGBAROW_NEON
 #define HAS_RAWTOUVROW_NEON
+#define HAS_RAWTOUVJROW_NEON
 #define HAS_RAWTOYJROW_NEON
 #define HAS_RAWTOYROW_NEON
 #define HAS_RGB24TOARGBROW_NEON
 #define HAS_RGB24TOUVROW_NEON
+#define HAS_RGB24TOUVJROW_NEON
 #define HAS_RGB24TOYJROW_NEON
 #define HAS_RGB24TOYROW_NEON
 #define HAS_RGB565TOARGBROW_NEON
@@ -1096,6 +1098,16 @@ void RAWToUVRow_NEON(const uint8_t* src_raw,
                      uint8_t* dst_u,
                      uint8_t* dst_v,
                      int width);
+void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
+                       int src_stride_rgb24,
+                       uint8_t* dst_u,
+                       uint8_t* dst_v,
+                       int width);
+void RAWToUVJRow_NEON(const uint8_t* src_raw,
+                     int src_stride_raw,
+                     uint8_t* dst_u,
+                     uint8_t* dst_v,
+                     int width);
 void RGB565ToUVRow_NEON(const uint8_t* src_rgb565,
                         int src_stride_rgb565,
                         uint8_t* dst_u,
@@ -1433,6 +1445,16 @@ void RAWToUVRow_Any_NEON(const uint8_t* src_ptr,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
                          int width);
+void RGB24ToUVJRow_Any_NEON(const uint8_t* src_ptr,
+                           int src_stride,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
+void RAWToUVJRow_Any_NEON(const uint8_t* src_ptr,
+                         int src_stride,
+                         uint8_t* dst_u,
+                         uint8_t* dst_v,
+                         int width);
 void RGB565ToUVRow_Any_NEON(const uint8_t* src_ptr,
                             int src_stride,
                             uint8_t* dst_u,
@@ -1574,6 +1596,16 @@ void RGB24ToUVRow_C(const uint8_t* src_rgb,
                     uint8_t* dst_v,
                     int width);
 void RAWToUVRow_C(const uint8_t* src_rgb,
+                  int src_stride_rgb,
+                  uint8_t* dst_u,
+                  uint8_t* dst_v,
+                  int width);
+void RGB24ToUVJRow_C(const uint8_t* src_rgb,
+                    int src_stride_rgb,
+                    uint8_t* dst_u,
+                    uint8_t* dst_v,
+                    int width);
+void RAWToUVJRow_C(const uint8_t* src_rgb,
                   int src_stride_rgb,
                   uint8_t* dst_u,
                   uint8_t* dst_v,
