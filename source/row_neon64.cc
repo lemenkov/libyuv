@@ -2063,10 +2063,10 @@ void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
 }
 
 void RAWToUVJRow_NEON(const uint8_t* src_raw,
-                        int src_stride_raw,
-                        uint8_t* dst_u,
-                        uint8_t* dst_v,
-                        int width) {
+                      int src_stride_raw,
+                      uint8_t* dst_u,
+                      uint8_t* dst_v,
+                      int width) {
   const uint8_t* src_raw_1 = src_raw + src_stride_raw;
   asm volatile (
       "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2

@@ -290,6 +290,8 @@ TESTPLANARTOP(I412, uint16_t, 2, 1, 1, I444, uint8_t, 1, 1, 1, 12)
 TESTAPLANARTOP(Android420, I420, 1, 0, 0, 2, 2, I420, 2, 2)
 TESTAPLANARTOP(Android420, NV12, 2, 0, 1, 2, 2, I420, 2, 2)
 TESTAPLANARTOP(Android420, NV21, 2, 1, 0, 2, 2, I420, 2, 2)
+#undef TESTAPLANARTOP
+#undef TESTAPLANARTOPI
 
 // wrapper to keep API the same
 int I400ToNV21(const uint8_t* src_y,

@@ -1099,15 +1099,15 @@ void RAWToUVRow_NEON(const uint8_t* src_raw,
                      uint8_t* dst_v,
                      int width);
 void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
-                       int src_stride_rgb24,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width);
+                        int src_stride_rgb24,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width);
 void RAWToUVJRow_NEON(const uint8_t* src_raw,
-                     int src_stride_raw,
-                     uint8_t* dst_u,
-                     uint8_t* dst_v,
-                     int width);
+                      int src_stride_raw,
+                      uint8_t* dst_u,
+                      uint8_t* dst_v,
+                      int width);
 void RGB565ToUVRow_NEON(const uint8_t* src_rgb565,
                         int src_stride_rgb565,
                         uint8_t* dst_u,
@@ -1446,15 +1446,15 @@ void RAWToUVRow_Any_NEON(const uint8_t* src_ptr,
                          uint8_t* dst_v,
                          int width);
 void RGB24ToUVJRow_Any_NEON(const uint8_t* src_ptr,
-                           int src_stride,
-                           uint8_t* dst_u,
-                           uint8_t* dst_v,
-                           int width);
+                            int src_stride,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width);
 void RAWToUVJRow_Any_NEON(const uint8_t* src_ptr,
-                         int src_stride,
-                         uint8_t* dst_u,
-                         uint8_t* dst_v,
-                         int width);
+                          int src_stride,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
 void RGB565ToUVRow_Any_NEON(const uint8_t* src_ptr,
                             int src_stride,
                             uint8_t* dst_u,
@@ -1601,15 +1601,15 @@ void RAWToUVRow_C(const uint8_t* src_rgb,
                   uint8_t* dst_v,
                   int width);
 void RGB24ToUVJRow_C(const uint8_t* src_rgb,
-                    int src_stride_rgb,
-                    uint8_t* dst_u,
-                    uint8_t* dst_v,
-                    int width);
+                     int src_stride_rgb,
+                     uint8_t* dst_u,
+                     uint8_t* dst_v,
+                     int width);
 void RAWToUVJRow_C(const uint8_t* src_rgb,
-                  int src_stride_rgb,
-                  uint8_t* dst_u,
-                  uint8_t* dst_v,
-                  int width);
+                   int src_stride_rgb,
+                   uint8_t* dst_u,
+                   uint8_t* dst_v,
+                   int width);
 void RGB565ToUVRow_C(const uint8_t* src_rgb565,
                      int src_stride_rgb565,
                      uint8_t* dst_u,

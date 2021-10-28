@@ -221,14 +221,14 @@ void RotatePlane180(const uint8_t* src,
 }
 
 LIBYUV_API
-void TransposeUV(const uint8_t* src,
-                 int src_stride,
-                 uint8_t* dst_a,
-                 int dst_stride_a,
-                 uint8_t* dst_b,
-                 int dst_stride_b,
-                 int width,
-                 int height) {
+void SplitTransposeUV(const uint8_t* src,
+                      int src_stride,
+                      uint8_t* dst_a,
+                      int dst_stride_a,
+                      uint8_t* dst_b,
+                      int dst_stride_b,
+                      int width,
+                      int height) {
   int i = height;
 #if defined(HAS_TRANSPOSEUVWX16_MSA)
   void (*TransposeUVWx16)(const uint8_t* src, int src_stride, uint8_t* dst_a,
@@ -300,49 +300,49 @@ void TransposeUV(const uint8_t* src,
 }
 
 LIBYUV_API
-void RotateUV90(const uint8_t* src,
-                int src_stride,
-                uint8_t* dst_a,
-                int dst_stride_a,
-                uint8_t* dst_b,
-                int dst_stride_b,
-                int width,
-                int height) {
+void SplitRotateUV90(const uint8_t* src,
+                     int src_stride,
+                     uint8_t* dst_a,
+                     int dst_stride_a,
+                     uint8_t* dst_b,
+                     int dst_stride_b,
+                     int width,
+                     int height) {
   src += src_stride * (height - 1);
   src_stride = -src_stride;
 
-  TransposeUV(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b, width,
-              height);
+  SplitTransposeUV(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                   width, height);
 }
 
 LIBYUV_API
-void RotateUV270(const uint8_t* src,
-                 int src_stride,
-                 uint8_t* dst_a,
-                 int dst_stride_a,
-                 uint8_t* dst_b,
-                 int dst_stride_b,
-                 int width,
-                 int height) {
+void SplitRotateUV270(const uint8_t* src,
+                      int src_stride,
+                      uint8_t* dst_a,
+                      int dst_stride_a,
+                      uint8_t* dst_b,
+                      int dst_stride_b,
+                      int width,
+                      int height) {
   dst_a += dst_stride_a * (width - 1);
   dst_b += dst_stride_b * (width - 1);
   dst_stride_a = -dst_stride_a;
   dst_stride_b = -dst_stride_b;
 
-  TransposeUV(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b, width,
-              height);
+  SplitTransposeUV(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                   width, height);
 }
 
 // Rotate 180 is a horizontal and vertical flip.
 LIBYUV_API
-void RotateUV180(const uint8_t* src,
-                 int src_stride,
-                 uint8_t* dst_a,
-                 int dst_stride_a,
-                 uint8_t* dst_b,
-                 int dst_stride_b,
-                 int width,
-                 int height) {
+void SplitRotateUV180(const uint8_t* src,
+                      int src_stride,
+                      uint8_t* dst_a,
+                      int dst_stride_a,
+                      uint8_t* dst_b,
+                      int dst_stride_b,
+                      int width,
+                      int height) {
   int i;
   void (*MirrorSplitUVRow)(const uint8_t* src, uint8_t* dst_u, uint8_t* dst_v,
                            int width) = MirrorSplitUVRow_C;
@@ -376,6 +376,52 @@ void RotateUV180(const uint8_t* src,
     dst_a -= dst_stride_a;
     dst_b -= dst_stride_b;
   }
+}
+
+// Rotate UV and split into planar.
+// width and height expected to be half size for NV12
+LIBYUV_API
+int SplitRotateUV(const uint8_t* src_uv,
+                  int src_stride_uv,
+                  uint8_t* dst_u,
+                  int dst_stride_u,
+                  uint8_t* dst_v,
+                  int dst_stride_v,
+                  int width,
+                  int height,
+                  enum RotationMode mode) {
+  if (!src_uv || width <= 0 || height == 0 || !dst_u || !dst_v) {
+    return -1;
+  }
+
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_uv = src_uv + (height - 1) * src_stride_uv;
+    src_stride_uv = -src_stride_uv;
+  }
+
+  switch (mode) {
+    case kRotate0:
+      SplitUVPlane(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                   dst_stride_v, width, height);
+      return 0;
+    case kRotate90:
+      SplitRotateUV90(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                      dst_stride_v, width, height);
+      return 0;
+    case kRotate270:
+      SplitRotateUV270(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                       dst_stride_v, width, height);
+      return 0;
+    case kRotate180:
+      SplitRotateUV180(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                       dst_stride_v, width, height);
+      return 0;
+    default:
+      break;
+  }
+  return -1;
 }
 
 LIBYUV_API
@@ -584,22 +630,113 @@ int NV12ToI420Rotate(const uint8_t* src_y,
                         width, height);
     case kRotate90:
       RotatePlane90(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-      RotateUV90(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
-                 dst_stride_v, halfwidth, halfheight);
+      SplitRotateUV90(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                      dst_stride_v, halfwidth, halfheight);
       return 0;
     case kRotate270:
       RotatePlane270(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-      RotateUV270(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
-                  dst_stride_v, halfwidth, halfheight);
+      SplitRotateUV270(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                       dst_stride_v, halfwidth, halfheight);
       return 0;
     case kRotate180:
       RotatePlane180(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-      RotateUV180(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
-                  dst_stride_v, halfwidth, halfheight);
+      SplitRotateUV180(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                       dst_stride_v, halfwidth, halfheight);
       return 0;
     default:
       break;
   }
+  return -1;
+}
+
+static void SplitPixels(const uint8_t* src_u,
+                        int src_pixel_stride_uv,
+                        uint8_t* dst_u,
+                        int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    *dst_u = *src_u;
+    ++dst_u;
+    src_u += src_pixel_stride_uv;
+  }
+}
+
+// Convert Android420 to I420 with Rotate
+LIBYUV_API
+int Android420ToI420Rotate(const uint8_t* src_y,
+                           int src_stride_y,
+                           const uint8_t* src_u,
+                           int src_stride_u,
+                           const uint8_t* src_v,
+                           int src_stride_v,
+                           int src_pixel_stride_uv,
+                           uint8_t* dst_y,
+                           int dst_stride_y,
+                           uint8_t* dst_u,
+                           int dst_stride_u,
+                           uint8_t* dst_v,
+                           int dst_stride_v,
+                           int width,
+                           int height,
+                           enum RotationMode rotation) {
+  int y;
+  const ptrdiff_t vu_off = src_v - src_u;
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  if (dst_y) {
+    RotatePlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height,
+                rotation);
+  }
+
+  // Copy UV planes - I420
+  if (src_pixel_stride_uv == 1) {
+    RotatePlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight,
+                rotation);
+    RotatePlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight,
+                rotation);
+    return 0;
+  }
+  // Split UV planes - NV21
+  if (src_pixel_stride_uv == 2 && vu_off == -1 &&
+      src_stride_u == src_stride_v) {
+    SplitRotateUV(src_v, src_stride_v, dst_v, dst_stride_v, dst_u, dst_stride_u,
+                  halfwidth, halfheight, rotation);
+    return 0;
+  }
+  // Split UV planes - NV12
+  if (src_pixel_stride_uv == 2 && vu_off == 1 && src_stride_u == src_stride_v) {
+    SplitRotateUV(src_u, src_stride_u, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                  halfwidth, halfheight, rotation);
+    return 0;
+  }
+
+  if (rotation == 0) {
+    for (y = 0; y < halfheight; ++y) {
+      SplitPixels(src_u, src_pixel_stride_uv, dst_u, halfwidth);
+      SplitPixels(src_v, src_pixel_stride_uv, dst_v, halfwidth);
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+      dst_u += dst_stride_u;
+      dst_v += dst_stride_v;
+    }
+    return 0;
+  }
+  // unsupported type and/or rotation.
   return -1;
 }
 

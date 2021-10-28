@@ -1951,7 +1951,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
   int y;
 #if defined(HAS_RGB24TOYJROW)
   void (*RGB24ToUVJRow)(const uint8_t* src_rgb24, int src_stride_rgb24,
-                       uint8_t* dst_u, uint8_t* dst_v, int width) =
+                        uint8_t* dst_u, uint8_t* dst_v, int width) =
       RGB24ToUVJRow_C;
   void (*RGB24ToYJRow)(const uint8_t* src_rgb24, uint8_t* dst_y, int width) =
       RGB24ToYJRow_C;
@@ -1959,7 +1959,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
   void (*RGB24ToARGBRow)(const uint8_t* src_rgb, uint8_t* dst_argb, int width) =
       RGB24ToARGBRow_C;
   void (*ARGBToUVJRow)(const uint8_t* src_argb0, int src_stride_argb,
-                      uint8_t* dst_u, uint8_t* dst_v, int width) =
+                       uint8_t* dst_u, uint8_t* dst_v, int width) =
       ARGBToUVJRow_C;
   void (*ARGBToYJRow)(const uint8_t* src_argb, uint8_t* dst_y, int width) =
       ARGBToYJRow_C;
@@ -2108,20 +2108,19 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
 // Convert RAW to I420.
 LIBYUV_API
 int RAWToI420(const uint8_t* src_raw,
-                int src_stride_raw,
-                uint8_t* dst_y,
-                int dst_stride_y,
-                uint8_t* dst_u,
-                int dst_stride_u,
-                uint8_t* dst_v,
-                int dst_stride_v,
-                int width,
-                int height) {
+              int src_stride_raw,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_u,
+              int dst_stride_u,
+              uint8_t* dst_v,
+              int dst_stride_v,
+              int width,
+              int height) {
   int y;
 #if defined(HAS_RAWTOYROW)
-  void (*RAWToUVRow)(const uint8_t* src_raw, int src_stride_raw,
-                       uint8_t* dst_u, uint8_t* dst_v, int width) =
-      RAWToUVRow_C;
+  void (*RAWToUVRow)(const uint8_t* src_raw, int src_stride_raw, uint8_t* dst_u,
+                     uint8_t* dst_v, int width) = RAWToUVRow_C;
   void (*RAWToYRow)(const uint8_t* src_raw, uint8_t* dst_y, int width) =
       RAWToYRow_C;
 #else
@@ -2277,19 +2276,19 @@ int RAWToI420(const uint8_t* src_raw,
 // Convert RAW to J420.
 LIBYUV_API
 int RAWToJ420(const uint8_t* src_raw,
-                int src_stride_raw,
-                uint8_t* dst_y,
-                int dst_stride_y,
-                uint8_t* dst_u,
-                int dst_stride_u,
-                uint8_t* dst_v,
-                int dst_stride_v,
-                int width,
-                int height) {
+              int src_stride_raw,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_u,
+              int dst_stride_u,
+              uint8_t* dst_v,
+              int dst_stride_v,
+              int width,
+              int height) {
   int y;
 #if defined(HAS_RAWTOYJROW)
   void (*RAWToUVJRow)(const uint8_t* src_raw, int src_stride_raw,
-                       uint8_t* dst_u, uint8_t* dst_v, int width) =
+                      uint8_t* dst_u, uint8_t* dst_v, int width) =
       RAWToUVJRow_C;
   void (*RAWToYJRow)(const uint8_t* src_raw, uint8_t* dst_y, int width) =
       RAWToYJRow_C;
@@ -2297,7 +2296,7 @@ int RAWToJ420(const uint8_t* src_raw,
   void (*RAWToARGBRow)(const uint8_t* src_rgb, uint8_t* dst_argb, int width) =
       RAWToARGBRow_C;
   void (*ARGBToUVJRow)(const uint8_t* src_argb0, int src_stride_argb,
-                      uint8_t* dst_u, uint8_t* dst_v, int width) =
+                       uint8_t* dst_u, uint8_t* dst_v, int width) =
       ARGBToUVJRow_C;
   void (*ARGBToYJRow)(const uint8_t* src_argb, uint8_t* dst_y, int width) =
       ARGBToYJRow_C;
@@ -3118,18 +3117,6 @@ int RAWToJ400(const uint8_t* src_raw,
   return 0;
 }
 
-static void SplitPixels(const uint8_t* src_u,
-                        int src_pixel_stride_uv,
-                        uint8_t* dst_u,
-                        int width) {
-  int i;
-  for (i = 0; i < width; ++i) {
-    *dst_u = *src_u;
-    ++dst_u;
-    src_u += src_pixel_stride_uv;
-  }
-}
-
 // Convert Android420 to I420.
 LIBYUV_API
 int Android420ToI420(const uint8_t* src_y,
@@ -3147,58 +3134,10 @@ int Android420ToI420(const uint8_t* src_y,
                      int dst_stride_v,
                      int width,
                      int height) {
-  int y;
-  const ptrdiff_t vu_off = src_v - src_u;
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (halfheight - 1) * src_stride_u;
-    src_v = src_v + (halfheight - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
-  }
-
-  if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-  }
-
-  // Copy UV planes as is - I420
-  if (src_pixel_stride_uv == 1) {
-    CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
-    CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
-    return 0;
-    // Split UV planes - NV21
-  }
-  if (src_pixel_stride_uv == 2 && vu_off == -1 &&
-      src_stride_u == src_stride_v) {
-    SplitUVPlane(src_v, src_stride_v, dst_v, dst_stride_v, dst_u, dst_stride_u,
-                 halfwidth, halfheight);
-    return 0;
-    // Split UV planes - NV12
-  }
-  if (src_pixel_stride_uv == 2 && vu_off == 1 && src_stride_u == src_stride_v) {
-    SplitUVPlane(src_u, src_stride_u, dst_u, dst_stride_u, dst_v, dst_stride_v,
-                 halfwidth, halfheight);
-    return 0;
-  }
-
-  for (y = 0; y < halfheight; ++y) {
-    SplitPixels(src_u, src_pixel_stride_uv, dst_u, halfwidth);
-    SplitPixels(src_v, src_pixel_stride_uv, dst_v, halfwidth);
-    src_u += src_stride_u;
-    src_v += src_stride_v;
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
-  }
-  return 0;
+  return Android420ToI420Rotate(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                                src_stride_v, src_pixel_stride_uv, dst_y,
+                                dst_stride_y, dst_u, dst_stride_u, dst_v,
+                                dst_stride_v, width, height, kRotate0);
 }
 
 #ifdef __cplusplus

@@ -1832,10 +1832,10 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
 
 // TODO(fbarchard): Subsample match C code.
 void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
-                       int src_stride_rgb24,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
+                        int src_stride_rgb24,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
   asm volatile (
       "add         %1, %0, %1                    \n"  // src_stride + src_rgb24
       "vmov.s16    q10, #127 / 2                 \n"  // UB / VR 0.500 coefficient
@@ -1878,10 +1878,10 @@ void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
 
 // TODO(fbarchard): Subsample match C code.
 void RAWToUVJRow_NEON(const uint8_t* src_raw,
-                       int src_stride_raw,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
+                      int src_stride_raw,
+                      uint8_t* dst_u,
+                      uint8_t* dst_v,
+                      int width) {
   asm volatile (
       "add         %1, %0, %1                    \n"  // src_stride + src_raw
       "vmov.s16    q10, #127 / 2                 \n"  // UB / VR 0.500 coefficient
