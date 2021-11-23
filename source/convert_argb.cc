@@ -3925,6 +3925,14 @@ int NV21ToYUV24(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_NV21TOYUV24ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    NV21ToYUV24Row = NV21ToYUV24Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      NV21ToYUV24Row = NV21ToYUV24Row_SSSE3;
+    }
+  }
+#endif
 #if defined(HAS_NV21TOYUV24ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     NV21ToYUV24Row = NV21ToYUV24Row_Any_AVX2;

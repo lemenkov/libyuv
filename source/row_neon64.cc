@@ -15,6 +15,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Enable LIBYUV_USE_ST2 and LIBYUV_USE_ST3 for CPUs that prefer them.
+// Exynos M1, M2, M3 are slow with ST2, ST3 and ST4 instructions.
+
 // This module is for GCC Neon armv8 64 bit.
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
@@ -1683,6 +1686,7 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
       : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19", "v23");
 }
 
+#if LIBYUV_USE_ST2
 void ARGBToAR64Row_NEON(const uint8_t* src_argb,
                         uint16_t* dst_ar64,
                         int width) {
@@ -1702,6 +1706,28 @@ void ARGBToAR64Row_NEON(const uint8_t* src_argb,
       :
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
+#else
+void ARGBToAR64Row_NEON(const uint8_t* src_argb,
+                        uint16_t* dst_ar64,
+                        int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 ARGB pixels
+      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
+      "zip1        v2.16b, v0.16b, v0.16b        \n"
+      "zip2        v3.16b, v0.16b, v0.16b        \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "zip1        v4.16b, v1.16b, v1.16b        \n"
+      "zip2        v5.16b, v1.16b, v1.16b        \n"
+      "st1         {v2.16b, v3.16b, v4.16b, v5.16b}, [%1], #64 \n" // 8 AR64
+      "b.gt        1b                            \n"
+      : "+r"(src_argb),  // %0
+        "+r"(dst_ar64),  // %1
+        "+r"(width)      // %2
+      :
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
+}
+#endif  // LIBYUV_USE_ST2
 
 static const uvec8 kShuffleARGBToABGR = {2,  1, 0, 3,  6,  5,  4,  7,
                                          10, 9, 8, 11, 14, 13, 12, 15};
@@ -3669,6 +3695,7 @@ void GaussRow_F32_NEON(const float* src, float* dst, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8");
 }
 
+#if LIBYUV_USE_ST3
 // Convert biplanar NV21 to packed YUV24
 void NV21ToYUV24Row_NEON(const uint8_t* src_y,
                          const uint8_t* src_vu,
@@ -3692,8 +3719,42 @@ void NV21ToYUV24Row_NEON(const uint8_t* src_y,
       :
       : "cc", "memory", "v0", "v1", "v2");
 }
+#else
+static const uvec8 kYUV24Shuffle[3] =
+  {{ 16, 17, 0, 16, 17, 1, 18, 19, 2, 18, 19, 3, 20, 21, 4, 20 },
+   { 21, 5, 22, 23, 6, 22, 23, 7, 24, 25, 8, 24, 25, 9, 26, 27 },
+   { 10, 26, 27, 11, 28, 29, 12, 28, 29, 13, 30, 31, 14, 30, 31, 15 }};
 
-// AYUV is YVUA in memory.  UV for NV12 is UV order in memory.
+// Convert biplanar NV21 to packed YUV24
+// NV21 has VU in memory for chroma.
+// YUV24 is VUY in memory
+void NV21ToYUV24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                         uint8_t* dst_yuv24,
+                         int width) {
+  asm volatile(
+      "ld1         {v5.16b,v6.16b,v7.16b}, [%4]\n"  // 3 shuffler constants
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], #16           \n"  // load 16 Y values
+      "ld1         {v1.16b}, [%1], #16           \n"  // load 8 VU values
+      "tbl         v2.16b, {v0.16b,v1.16b}, v5.16b\n" // weave into YUV24
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "tbl         v3.16b, {v0.16b,v1.16b}, v6.16b\n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "tbl         v4.16b, {v0.16b,v1.16b}, v7.16b\n"
+      "subs        %w3, %w3, #16                 \n"  // 16 pixels per loop
+      "st1         {v2.16b,v3.16b,v4.16b}, [%2], #48\n"  // store 16 YUV pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_y),      // %0
+        "+r"(src_vu),     // %1
+        "+r"(dst_yuv24),  // %2
+        "+r"(width)       // %3
+      : "r"(&kYUV24Shuffle[0])  // %4
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+}
+#endif  // LIBYUV_USE_ST3
+
+// AYUV is VUYA in memory.  UV for NV12 is UV order in memory.
 void AYUVToUVRow_NEON(const uint8_t* src_ayuv,
                       int src_stride_ayuv,
                       uint8_t* dst_uv,
@@ -3708,8 +3769,8 @@ void AYUVToUVRow_NEON(const uint8_t* src_ayuv,
       "uaddlp      v1.8h, v1.16b                 \n"  // U 16 bytes -> 8 shorts.
       "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%1], #64 \n"  // load next 16
       "uadalp      v0.8h, v4.16b                 \n"  // V 16 bytes -> 8 shorts.
-      "prfm        pldl1keep, [%1, 448]          \n"
       "uadalp      v1.8h, v5.16b                 \n"  // U 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]          \n"
       "uqrshrn     v3.8b, v0.8h, #2              \n"  // 2x2 average
       "uqrshrn     v2.8b, v1.8h, #2              \n"
       "subs        %w3, %w3, #16                 \n"  // 16 processed per loop.
@@ -3737,8 +3798,8 @@ void AYUVToVURow_NEON(const uint8_t* src_ayuv,
       "uaddlp      v1.8h, v1.16b                 \n"  // U 16 bytes -> 8 shorts.
       "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%1], #64 \n"  // load next 16
       "uadalp      v0.8h, v4.16b                 \n"  // V 16 bytes -> 8 shorts.
-      "prfm        pldl1keep, [%1, 448]          \n"
       "uadalp      v1.8h, v5.16b                 \n"  // U 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]          \n"
       "uqrshrn     v0.8b, v0.8h, #2              \n"  // 2x2 average
       "uqrshrn     v1.8b, v1.8h, #2              \n"
       "subs        %w3, %w3, #16                 \n"  // 16 processed per loop.
