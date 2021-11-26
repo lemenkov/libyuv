@@ -2286,7 +2286,7 @@ pre_deps_hooks = [
     # TODO(kjellander): Remove this in March 2017.
     'name': 'cleanup_links',
     'pattern': '.',
-    'action': ['python', 'src/cleanup_links.py'],
+    'action': ['python3', 'src/cleanup_links.py'],
   },
 ]
 
@@ -2298,7 +2298,7 @@ hooks = [
     'name': 'landmines',
     'pattern': '.',
     'action': [
-        'python',
+        'python3',
         'src/build/landmines.py',
         '--landmine-scripts',
         'src/tools_libyuv/get_landmines.py',
@@ -2311,48 +2311,48 @@ hooks = [
     'name': 'sysroot_arm',
     'pattern': '.',
     'condition': 'checkout_linux and checkout_arm',
-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+    'action': ['python3', 'src/build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=arm'],
   },
   {
     'name': 'sysroot_arm64',
     'pattern': '.',
     'condition': 'checkout_linux and checkout_arm64',
-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+    'action': ['python3', 'src/build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=arm64'],
   },
   {
     'name': 'sysroot_x86',
     'pattern': '.',
     'condition': 'checkout_linux and (checkout_x86 or checkout_x64)',
-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+    'action': ['python3', 'src/build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=x86'],
   },
   {
     'name': 'sysroot_mips',
     'pattern': '.',
     'condition': 'checkout_linux and checkout_mips',
-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+    'action': ['python3', 'src/build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=mips'],
   },
   {
     'name': 'sysroot_x64',
     'pattern': '.',
     'condition': 'checkout_linux and checkout_x64',
-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+    'action': ['python3', 'src/build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=x64'],
   },
   {
     # Update the Windows toolchain if necessary.
     'name': 'win_toolchain',
     'pattern': '.',
-    'action': ['python', 'src/build/vs_toolchain.py', 'update'],
+    'action': ['python3', 'src/build/vs_toolchain.py', 'update'],
   },
   {
     # Update the Mac toolchain if necessary.
     'name': 'mac_toolchain',
     'pattern': '.',
-    'action': ['python', 'src/build/mac_toolchain.py'],
+    'action': ['python3', 'src/build/mac_toolchain.py'],
     'condition': 'checkout_mac',
   },
   # Pull the msan libraries on linux.
@@ -2360,7 +2360,7 @@ hooks = [
     'name': 'msan_chained_origins',
     'pattern': '.',
     'condition': 'checkout_linux',
-    'action': [ 'python',
+    'action': [ 'python3',
                 'src/third_party/depot_tools/download_from_google_storage.py',
                 '--no_resume',
                 '--no_auth',
@@ -2372,7 +2372,7 @@ hooks = [
     'name': 'msan_no_origins',
     'pattern': '.',
     'condition': 'checkout_linux',
-    'action': [ 'python',
+    'action': [ 'python3',
                 'src/third_party/depot_tools/download_from_google_storage.py',
                 '--no_resume',
                 '--no_auth',
@@ -2385,13 +2385,13 @@ hooks = [
     # Note: On Win, this should run after win_toolchain, as it may use it.
     'name': 'clang',
     'pattern': '.',
-    'action': ['python', 'src/tools/clang/scripts/update.py'],
+    'action': ['python3', 'src/tools/clang/scripts/update.py'],
   },
   {
     # Update LASTCHANGE.
     'name': 'lastchange',
     'pattern': '.',
-    'action': ['python', 'src/build/util/lastchange.py',
+    'action': ['python3', 'src/build/util/lastchange.py',
                '-o', 'src/build/util/LASTCHANGE'],
   },
   # Pull clang-format binaries using checked-in hashes.
@@ -2479,7 +2479,7 @@ hooks = [
     'name': 'Generate component metadata for tests',
     'pattern': '.',
     'action': [
-      'vpython',
+      'vpython3',
       'src/testing/generate_location_tags.py',
       '--out',
       'src/testing/location_tags.json',
