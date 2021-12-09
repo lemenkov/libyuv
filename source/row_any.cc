@@ -545,21 +545,21 @@ ANY31PT(MergeXRGB16To8Row_Any_NEON,
 #undef ANY31PT
 
 // Any 2 planes to 1.
-#define ANY21(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)              \
-  void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr,  \
-               int width) {                                                    \
-    SIMD_ALIGNED(uint8_t temp[128 * 3]);                                       \
-    memset(temp, 0, 128 * 2); /* for msan */                                   \
-    int r = width & MASK;                                                      \
-    int n = width & ~MASK;                                                     \
-    if (n > 0) {                                                               \
-      ANY_SIMD(y_buf, uv_buf, dst_ptr, n);                                     \
-    }                                                                          \
-    memcpy(temp, y_buf + n * SBPP, r * SBPP);                                  \
-    memcpy(temp + 128, uv_buf + (n >> UVSHIFT) * SBPP2,                        \
-           SS(r, UVSHIFT) * SBPP2);                                            \
-    ANY_SIMD(temp, temp + 128, temp + 256, MASK + 1);                          \
-    memcpy(dst_ptr + n * BPP, temp + 256, r * BPP);                            \
+#define ANY21(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)             \
+  void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr, \
+               int width) {                                                   \
+    SIMD_ALIGNED(uint8_t temp[128 * 3]);                                      \
+    memset(temp, 0, 128 * 2); /* for msan */                                  \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(y_buf, uv_buf, dst_ptr, n);                                    \
+    }                                                                         \
+    memcpy(temp, y_buf + n * SBPP, r * SBPP);                                 \
+    memcpy(temp + 128, uv_buf + (n >> UVSHIFT) * SBPP2,                       \
+           SS(r, UVSHIFT) * SBPP2);                                           \
+    ANY_SIMD(temp, temp + 128, temp + 256, MASK + 1);                         \
+    memcpy(dst_ptr + n * BPP, temp + 256, r * BPP);                           \
   }
 
 // Merge functions.

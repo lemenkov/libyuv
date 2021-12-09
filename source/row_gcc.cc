@@ -8894,10 +8894,10 @@ void ARGBLumaColorTableRow_SSSE3(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
-static const uvec8 kYUV24Shuffle[3] =
-  {{ 8, 9, 0, 8, 9, 1, 10, 11, 2, 10, 11, 3, 12, 13, 4, 12 },
-   { 9, 1, 10, 11, 2, 10, 11, 3, 12, 13, 4, 12, 13, 5, 14, 15 },
-   { 2, 10, 11, 3, 12, 13, 4, 12, 13, 5, 14, 15, 6, 14, 15, 7 }};
+static const uvec8 kYUV24Shuffle[3] = {
+    {8, 9, 0, 8, 9, 1, 10, 11, 2, 10, 11, 3, 12, 13, 4, 12},
+    {9, 1, 10, 11, 2, 10, 11, 3, 12, 13, 4, 12, 13, 5, 14, 15},
+    {2, 10, 11, 3, 12, 13, 4, 12, 13, 5, 14, 15, 6, 14, 15, 7}};
 
 // Convert biplanar NV21 to packed YUV24
 // NV21 has VU in memory for chroma.
@@ -8929,10 +8929,10 @@ void NV21ToYUV24Row_SSSE3(const uint8_t* src_y,
       "lea         48(%2),%2                     \n"
       "sub         $16,%3                        \n"  // 16 pixels per loop
       "jg          1b                            \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_vu),     // %1
-        "+r"(dst_yuv24),  // %2
-        "+r"(width)       // %3
+      : "+r"(src_y),            // %0
+        "+r"(src_vu),           // %1
+        "+r"(dst_yuv24),        // %2
+        "+r"(width)             // %3
       : "r"(&kYUV24Shuffle[0])  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
@@ -8945,79 +8945,78 @@ void NV21ToYUV24Row_AVX2(const uint8_t* src_y,
                          uint8_t* dst_yuv24,
                          int width) {
   asm volatile(
-      "sub          %0,%1                         \n"
-      "vbroadcastf128 (%4),%%ymm4                 \n"  // 3 shuffler constants
-      "vbroadcastf128 16(%4),%%ymm5               \n"
-      "vbroadcastf128 32(%4),%%ymm6               \n"
+      "sub         %0,%1                         \n"
+      "vbroadcastf128 (%4),%%ymm4                \n"  // 3 shuffler constants
+      "vbroadcastf128 16(%4),%%ymm5              \n"
+      "vbroadcastf128 32(%4),%%ymm6              \n"
 
-      "1:                                         \n"
-      "vmovdqu      (%0),%%ymm2                   \n"  // load 32 Y values
-      "vmovdqu      (%0,%1),%%ymm3                \n"  // load 16 VU values
-      "lea          32(%0),%0                     \n"
-      "vshufps      $0x44,%%ymm3,%%ymm2,%%ymm0    \n"  // Y 0..7,  UV 0..3
-      "vshufps      $0x99,%%ymm3,%%ymm2,%%ymm1    \n"  // Y 4..11, UV 2..5
-      "vshufps      $0xee,%%ymm3,%%ymm2,%%ymm2    \n"  // Y 8..15, UV 4..7
-      "vpshufb      %%ymm4,%%ymm0,%%ymm0          \n"  // weave into YUV24
-      "vpshufb      %%ymm5,%%ymm1,%%ymm1          \n"
-      "vpshufb      %%ymm6,%%ymm2,%%ymm2          \n"
-      "vperm2i128   $0x20,%%ymm1,%%ymm0,%%ymm3    \n"
-      "vperm2i128   $0x30,%%ymm0,%%ymm2,%%ymm0    \n"
-      "vperm2i128   $0x31,%%ymm2,%%ymm1,%%ymm1    \n"
-      "vmovdqu      %%ymm3,(%2)                   \n"
-      "vmovdqu      %%ymm0,32(%2)                 \n"
-      "vmovdqu      %%ymm1,64(%2)                 \n"
-      "lea          96(%2),%2                     \n"
-      "sub          $32,%3                        \n"  // 32 pixels per loop
-      "jg           1b                            \n"
-      "vzeroupper                                 \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_vu),     // %1
-        "+r"(dst_yuv24),  // %2
-        "+r"(width)       // %3
+      "1:                                        \n"
+      "vmovdqu     (%0),%%ymm2                   \n"  // load 32 Y values
+      "vmovdqu     (%0,%1),%%ymm3                \n"  // load 16 VU values
+      "lea         32(%0),%0                     \n"
+      "vshufps     $0x44,%%ymm3,%%ymm2,%%ymm0    \n"  // Y 0..7,  UV 0..3
+      "vshufps     $0x99,%%ymm3,%%ymm2,%%ymm1    \n"  // Y 4..11, UV 2..5
+      "vshufps     $0xee,%%ymm3,%%ymm2,%%ymm2    \n"  // Y 8..15, UV 4..7
+      "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"  // weave into YUV24
+      "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+      "vpshufb     %%ymm6,%%ymm2,%%ymm2          \n"
+      "vperm2i128  $0x20,%%ymm1,%%ymm0,%%ymm3    \n"
+      "vperm2i128  $0x30,%%ymm0,%%ymm2,%%ymm0    \n"
+      "vperm2i128  $0x31,%%ymm2,%%ymm1,%%ymm1    \n"
+      "vmovdqu     %%ymm3,(%2)                   \n"
+      "vmovdqu     %%ymm0,32(%2)                 \n"
+      "vmovdqu     %%ymm1,64(%2)                 \n"
+      "lea         96(%2),%2                     \n"
+      "sub         $32,%3                        \n"  // 32 pixels per loop
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : "+r"(src_y),            // %0
+        "+r"(src_vu),           // %1
+        "+r"(dst_yuv24),        // %2
+        "+r"(width)             // %3
       : "r"(&kYUV24Shuffle[0])  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 
 #ifdef HAS_NV21ToYUV24ROW_AVX512
 // The following VMBI VEX256 code tests okay with the intelsde emulator.
-static const lvec8 kYUV24Perm[3] =
-  {{ 32, 33, 0, 32, 33, 1, 34, 35, 2, 34, 35, 3, 36, 37, 4, 36,
-     37, 5, 38, 39, 6, 38, 39, 7, 40, 41, 8, 40, 41, 9, 42, 43 },
-   { 10, 42, 43, 11, 44, 45, 12, 44, 45, 13, 46, 47, 14, 46, 47, 15,
-     48, 49, 16, 48, 49, 17, 50, 51, 18, 50, 51, 19, 52, 53, 20, 52 },
-   { 53, 21, 54, 55, 22, 54, 55, 23, 56, 57, 24, 56, 57, 25, 58, 59,
-     26, 58, 59, 27, 60, 61, 28, 60, 61, 29, 62, 63, 30, 62, 63, 31 }};
+static const lvec8 kYUV24Perm[3] = {
+    {32, 33, 0,  32, 33, 1,  34, 35, 2,  34, 35, 3,  36, 37, 4,  36,
+     37, 5,  38, 39, 6,  38, 39, 7,  40, 41, 8,  40, 41, 9,  42, 43},
+    {10, 42, 43, 11, 44, 45, 12, 44, 45, 13, 46, 47, 14, 46, 47, 15,
+     48, 49, 16, 48, 49, 17, 50, 51, 18, 50, 51, 19, 52, 53, 20, 52},
+    {53, 21, 54, 55, 22, 54, 55, 23, 56, 57, 24, 56, 57, 25, 58, 59,
+     26, 58, 59, 27, 60, 61, 28, 60, 61, 29, 62, 63, 30, 62, 63, 31}};
 
 void NV21ToYUV24Row_AVX512(const uint8_t* src_y,
                            const uint8_t* src_vu,
                            uint8_t* dst_yuv24,
                            int width) {
   asm volatile(
-      "sub          %0,%1                         \n"
-      "vmovdqa       (%4),%%ymm4                   \n"  // 3 shuffler constants
-      "vmovdqa       32(%4),%%ymm5                 \n"
-      "vmovdqa       64(%4),%%ymm6                 \n"
-      LABELALIGN
-      "1:                                         \n"
-      "vmovdqu      (%0),%%ymm2                   \n"  // load 32 Y values
-      "vmovdqu      (%0,%1),%%ymm3                \n"  // load 16 VU values
-      "lea          32(%0),%0                     \n"
-      "vmovdqa      %%ymm2, %%ymm0                \n"
-      "vmovdqa      %%ymm2, %%ymm1                \n"
-      "vpermt2b     %%ymm3,%%ymm4,%%ymm0          \n"
-      "vpermt2b     %%ymm3,%%ymm5,%%ymm1          \n"
-      "vpermt2b     %%ymm3,%%ymm6,%%ymm2          \n"
-      "vmovdqu      %%ymm0,(%2)                   \n"
-      "vmovdqu      %%ymm1,32(%2)                 \n"
-      "vmovdqu      %%ymm2,64(%2)                 \n"
-      "lea          96(%2),%2                     \n"
-      "sub          $32,%3                        \n"
-      "jg           1b                            \n"
-      "vzeroupper                                 \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_vu),     // %1
-        "+r"(dst_yuv24),  // %2
-        "+r"(width)       // %3
+      "sub         %0,%1                         \n"
+      "vmovdqa     (%4),%%ymm4                   \n"  // 3 shuffler constants
+      "vmovdqa     32(%4),%%ymm5                 \n"
+      "vmovdqa     64(%4),%%ymm6                 \n" LABELALIGN
+      "1:                                        \n"
+      "vmovdqu     (%0),%%ymm2                   \n"  // load 32 Y values
+      "vmovdqu     (%0,%1),%%ymm3                \n"  // load 16 VU values
+      "lea         32(%0),%0                     \n"
+      "vmovdqa     %%ymm2, %%ymm0                \n"
+      "vmovdqa     %%ymm2, %%ymm1                \n"
+      "vpermt2b    %%ymm3,%%ymm4,%%ymm0          \n"
+      "vpermt2b    %%ymm3,%%ymm5,%%ymm1          \n"
+      "vpermt2b    %%ymm3,%%ymm6,%%ymm2          \n"
+      "vmovdqu     %%ymm0,(%2)                   \n"
+      "vmovdqu     %%ymm1,32(%2)                 \n"
+      "vmovdqu     %%ymm2,64(%2)                 \n"
+      "lea         96(%2),%2                     \n"
+      "sub         $32,%3                        \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : "+r"(src_y),         // %0
+        "+r"(src_vu),        // %1
+        "+r"(dst_yuv24),     // %2
+        "+r"(width)          // %3
       : "r"(&kYUV24Perm[0])  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
