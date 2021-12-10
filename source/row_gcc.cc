@@ -8207,6 +8207,7 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
                          ptrdiff_t src_stride,
                          int dst_width,
                          int source_y_fraction) {
+  size_t width_tmp = (size_t)(dst_width);
   asm volatile(
       "cmp         $0x0,%3                       \n"
       "je          100f                          \n"
@@ -8269,7 +8270,7 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
       "999:                                      \n"
       : "+D"(dst_ptr),               // %0
         "+S"(src_ptr),               // %1
-        "+cm"(dst_width),            // %2
+        "+c"(width_tmp),             // %2
         "+r"(source_y_fraction)      // %3
       : "r"((intptr_t)(src_stride))  // %4
       : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm4", "xmm5");
