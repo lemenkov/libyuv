@@ -8124,7 +8124,7 @@ void ARGBAffineRow_SSE2(const uint8_t* src_argb,
 void InterpolateRow_SSSE3(uint8_t* dst_ptr,
                           const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
-                          int dst_width,
+                          int width,
                           int source_y_fraction) {
   asm volatile(
       "sub         %1,%0                         \n"
@@ -8193,7 +8193,7 @@ void InterpolateRow_SSSE3(uint8_t* dst_ptr,
       "99:                                       \n"
       : "+r"(dst_ptr),               // %0
         "+r"(src_ptr),               // %1
-        "+rm"(dst_width),            // %2
+        "+rm"(width),                // %2
         "+r"(source_y_fraction)      // %3
       : "r"((intptr_t)(src_stride))  // %4
       : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
@@ -8205,13 +8205,12 @@ void InterpolateRow_SSSE3(uint8_t* dst_ptr,
 void InterpolateRow_AVX2(uint8_t* dst_ptr,
                          const uint8_t* src_ptr,
                          ptrdiff_t src_stride,
-                         int dst_width,
+                         int width,
                          int source_y_fraction) {
-  size_t width_tmp = (size_t)(dst_width);
   asm volatile(
+      "sub         %1,%0                         \n"
       "cmp         $0x0,%3                       \n"
       "je          100f                          \n"
-      "sub         %1,%0                         \n"
       "cmp         $0x80,%3                      \n"
       "je          50f                           \n"
 
@@ -8262,15 +8261,17 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
       // Blend 100 / 0 - Copy row unchanged.
       LABELALIGN
       "100:                                      \n"
-      "rep         movsb                         \n"
-      "jmp         999f                          \n"
+      "vmovdqu     (%1),%%ymm0                   \n"
+      "vmovdqu     %%ymm0,0x00(%1,%0,1)          \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x20,%2                      \n"
+      "jg          100b                          \n"
 
       "99:                                       \n"
       "vzeroupper                                \n"
-      "999:                                      \n"
-      : "+D"(dst_ptr),               // %0
-        "+S"(src_ptr),               // %1
-        "+c"(width_tmp),             // %2
+      : "+r"(dst_ptr),               // %0
+        "+r"(src_ptr),               // %1
+        "+r"(width),                 // %2
         "+r"(source_y_fraction)      // %3
       : "r"((intptr_t)(src_stride))  // %4
       : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm4", "xmm5");
