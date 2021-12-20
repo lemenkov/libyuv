@@ -127,6 +127,22 @@ static void ScaleARGBDown2(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEARGBROWDOWN2_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBRowDown2 =
+        filtering == kFilterNone
+            ? ScaleARGBRowDown2_Any_LSX
+            : (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_Any_LSX
+                                          : ScaleARGBRowDown2Box_Any_LSX);
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBRowDown2 =
+          filtering == kFilterNone
+              ? ScaleARGBRowDown2_LSX
+              : (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_LSX
+                                            : ScaleARGBRowDown2Box_LSX);
+    }
+  }
+#endif
 
   if (filtering == kFilterLinear) {
     src_stride = 0;
@@ -263,6 +279,16 @@ static void ScaleARGBDownEven(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEARGBROWDOWNEVEN_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_Any_LSX
+                                     : ScaleARGBRowDownEven_Any_LSX;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBRowDownEven =
+          filtering ? ScaleARGBRowDownEvenBox_LSX : ScaleARGBRowDownEven_LSX;
+    }
+  }
+#endif
 
   if (filtering == kFilterLinear) {
     src_stride = 0;
@@ -366,6 +392,14 @@ static void ScaleARGBBilinearDown(int src_width,
     ScaleARGBFilterCols = ScaleARGBFilterCols_Any_MSA;
     if (IS_ALIGNED(dst_width, 8)) {
       ScaleARGBFilterCols = ScaleARGBFilterCols_MSA;
+    }
+  }
+#endif
+#if defined(HAS_SCALEARGBFILTERCOLS_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_Any_LSX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBFilterCols = ScaleARGBFilterCols_LSX;
     }
   }
 #endif
@@ -493,6 +527,14 @@ static void ScaleARGBBilinearUp(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEARGBFILTERCOLS_LSX)
+  if (filtering && TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_Any_LSX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBFilterCols = ScaleARGBFilterCols_LSX;
+    }
+  }
+#endif
 #if defined(HAS_SCALEARGBCOLS_SSE2)
   if (!filtering && TestCpuFlag(kCpuHasSSE2) && src_width < 32768) {
     ScaleARGBFilterCols = ScaleARGBCols_SSE2;
@@ -519,6 +561,14 @@ static void ScaleARGBBilinearUp(int src_width,
     ScaleARGBFilterCols = ScaleARGBCols_Any_MSA;
     if (IS_ALIGNED(dst_width, 4)) {
       ScaleARGBFilterCols = ScaleARGBCols_MSA;
+    }
+  }
+#endif
+#if defined(HAS_SCALEARGBCOLS_LSX)
+  if (!filtering && TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBFilterCols = ScaleARGBCols_Any_LSX;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBFilterCols = ScaleARGBCols_LSX;
     }
   }
 #endif
@@ -740,6 +790,14 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEARGBFILTERCOLS_LSX)
+  if (filtering && TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_Any_LSX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBFilterCols = ScaleARGBFilterCols_LSX;
+    }
+  }
+#endif
 #if defined(HAS_SCALEARGBCOLS_SSE2)
   if (!filtering && TestCpuFlag(kCpuHasSSE2) && src_width < 32768) {
     ScaleARGBFilterCols = ScaleARGBCols_SSE2;
@@ -766,6 +824,14 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
     ScaleARGBFilterCols = ScaleARGBCols_Any_MSA;
     if (IS_ALIGNED(dst_width, 4)) {
       ScaleARGBFilterCols = ScaleARGBCols_MSA;
+    }
+  }
+#endif
+#if defined(HAS_SCALEARGBCOLS_LSX)
+  if (!filtering && TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBFilterCols = ScaleARGBCols_Any_LSX;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBFilterCols = ScaleARGBCols_LSX;
     }
   }
 #endif
@@ -910,6 +976,14 @@ static void ScaleARGBSimple(int src_width,
     ScaleARGBCols = ScaleARGBCols_Any_MSA;
     if (IS_ALIGNED(dst_width, 4)) {
       ScaleARGBCols = ScaleARGBCols_MSA;
+    }
+  }
+#endif
+#if defined(HAS_SCALEARGBCOLS_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ScaleARGBCols = ScaleARGBCols_Any_LSX;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBCols = ScaleARGBCols_LSX;
     }
   }
 #endif
