@@ -84,6 +84,14 @@ int ARGBToI444(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUV444ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToUV444Row = ARGBToUV444Row_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToUV444Row = ARGBToUV444Row_LASX;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
@@ -121,6 +129,14 @@ int ARGBToI444(const uint8_t* src_argb,
     ARGBToYRow = ARGBToYRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
     }
   }
 #endif
@@ -245,6 +261,17 @@ int ARGBToI422(const uint8_t* src_argb,
   }
 #endif
 
+#if defined(HAS_ARGBTOYROW_LASX) && defined(HAS_ARGBTOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    ARGBToUVRow = ARGBToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
+      ARGBToUVRow = ARGBToUVRow_LASX;
+    }
+  }
+#endif
+
   for (y = 0; y < height; ++y) {
     ARGBToUVRow(src_argb, 0, dst_u, dst_v, width);
     ARGBToYRow(src_argb, dst_y, width);
@@ -352,6 +379,16 @@ int ARGBToNV12(const uint8_t* src_argb,
     }
     if (IS_ALIGNED(width, 32)) {
       ARGBToUVRow = ARGBToUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_LASX) && defined(HAS_ARGBTOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    ARGBToUVRow = ARGBToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
+      ARGBToUVRow = ARGBToUVRow_LASX;
     }
   }
 #endif
@@ -516,6 +553,16 @@ int ARGBToNV21(const uint8_t* src_argb,
     }
     if (IS_ALIGNED(width, 32)) {
       ARGBToUVRow = ARGBToUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_LASX) && defined(HAS_ARGBTOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    ARGBToUVRow = ARGBToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
+      ARGBToUVRow = ARGBToUVRow_LASX;
     }
   }
 #endif
@@ -1015,6 +1062,16 @@ int ARGBToYUY2(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_LASX) && defined(HAS_ARGBTOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    ARGBToUVRow = ARGBToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
+      ARGBToUVRow = ARGBToUVRow_LASX;
+    }
+  }
+#endif
 #if defined(HAS_I422TOYUY2ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     I422ToYUY2Row = I422ToYUY2Row_Any_SSE2;
@@ -1052,6 +1109,14 @@ int ARGBToYUY2(const uint8_t* src_argb,
     I422ToYUY2Row = I422ToYUY2Row_Any_MSA;
     if (IS_ALIGNED(width, 32)) {
       I422ToYUY2Row = I422ToYUY2Row_MSA;
+    }
+  }
+#endif
+#if defined(HAS_I422TOYUY2ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    I422ToYUY2Row = I422ToYUY2Row_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToYUY2Row = I422ToYUY2Row_LASX;
     }
   }
 #endif
@@ -1180,6 +1245,16 @@ int ARGBToUYVY(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_LASX) && defined(HAS_ARGBTOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    ARGBToUVRow = ARGBToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
+      ARGBToUVRow = ARGBToUVRow_LASX;
+    }
+  }
+#endif
 #if defined(HAS_I422TOUYVYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     I422ToUYVYRow = I422ToUYVYRow_Any_SSE2;
@@ -1217,6 +1292,14 @@ int ARGBToUYVY(const uint8_t* src_argb,
     I422ToUYVYRow = I422ToUYVYRow_Any_MSA;
     if (IS_ALIGNED(width, 32)) {
       I422ToUYVYRow = I422ToUYVYRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    I422ToUYVYRow = I422ToUYVYRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToUYVYRow = I422ToUYVYRow_LASX;
     }
   }
 #endif
@@ -1302,6 +1385,14 @@ int ARGBToI400(const uint8_t* src_argb,
     ARGBToYRow = ARGBToYRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
     }
   }
 #endif
@@ -1403,6 +1494,14 @@ int ARGBToRGB24(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB24ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_LASX;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBToRGB24Row(src_argb, dst_rgb24, width);
@@ -1474,6 +1573,14 @@ int ARGBToRAW(const uint8_t* src_argb,
     ARGBToRAWRow = ARGBToRAWRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       ARGBToRAWRow = ARGBToRAWRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORAWROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToRAWRow = ARGBToRAWRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToRAWRow = ARGBToRAWRow_LASX;
     }
   }
 #endif
@@ -1555,6 +1662,14 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_LASX;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_LASX;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBToRGB565DitherRow(src_argb, dst_rgb565,
@@ -1632,6 +1747,14 @@ int ARGBToRGB565(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToRGB565Row = ARGBToRGB565Row_Any_LASX;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB565Row = ARGBToRGB565Row_LASX;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBToRGB565Row(src_argb, dst_rgb565, width);
@@ -1706,6 +1829,14 @@ int ARGBToARGB1555(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOARGB1555ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToARGB1555Row = ARGBToARGB1555Row_Any_LASX;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToARGB1555Row = ARGBToARGB1555Row_LASX;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBToARGB1555Row(src_argb, dst_argb1555, width);
@@ -1777,6 +1908,14 @@ int ARGBToARGB4444(const uint8_t* src_argb,
     ARGBToARGB4444Row = ARGBToARGB4444Row_Any_MSA;
     if (IS_ALIGNED(width, 8)) {
       ARGBToARGB4444Row = ARGBToARGB4444Row_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOARGB4444ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToARGB4444Row = ARGBToARGB4444Row_Any_LASX;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToARGB4444Row = ARGBToARGB4444Row_LASX;
     }
   }
 #endif
