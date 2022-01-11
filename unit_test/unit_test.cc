@@ -120,6 +120,9 @@ int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_AVX512VL")) {
     cpu_info &= ~libyuv::kCpuHasAVX512VL;
   }
+  if (TestEnv("LIBYUV_DISABLE_AVX512VNNI")) {
+    cpu_info &= ~libyuv::kCpuHasAVX512VNNI;
+  }
   if (TestEnv("LIBYUV_DISABLE_AVX512VBMI")) {
     cpu_info &= ~libyuv::kCpuHasAVX512VBMI;
   }

@@ -40,6 +40,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   int has_gfni = TestCpuFlag(kCpuHasGFNI);
   int has_avx512bw = TestCpuFlag(kCpuHasAVX512BW);
   int has_avx512vl = TestCpuFlag(kCpuHasAVX512VL);
+  int has_avx512vnni = TestCpuFlag(kCpuHasAVX512VNNI);
   int has_avx512vbmi = TestCpuFlag(kCpuHasAVX512VBMI);
   int has_avx512vbmi2 = TestCpuFlag(kCpuHasAVX512VBMI2);
   int has_avx512vbitalg = TestCpuFlag(kCpuHasAVX512VBITALG);
@@ -57,6 +58,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has GFNI %d\n", has_gfni);
   printf("Has AVX512BW %d\n", has_avx512bw);
   printf("Has AVX512VL %d\n", has_avx512vl);
+  printf("Has AVX512VNNI %d\n", has_avx512vnni);
   printf("Has AVX512VBMI %d\n", has_avx512vbmi);
   printf("Has AVX512VBMI2 %d\n", has_avx512vbmi2);
   printf("Has AVX512VBITALG %d\n", has_avx512vbitalg);
