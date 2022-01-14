@@ -3181,6 +3181,21 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                             \n"
 
+#define READYUV422_AVX512BW                                           \
+  "vmovdqu    (%[u_buf]),%%xmm3                                   \n" \
+  "vmovdqu    0x00(%[u_buf],%[v_buf],1),%%xmm1                    \n" \
+  "vpermq     %%zmm3,%%zmm16,%%zmm3                               \n" \
+  "vpermq     %%zmm1,%%zmm16,%%zmm1                               \n" \
+  "lea        0x10(%[u_buf]),%[u_buf]                             \n" \
+  "vpunpcklbw %%zmm1,%%zmm3,%%zmm3                                \n" \
+  "vpermq     $0xd8,%%zmm3,%%zmm3                                 \n" \
+  "vpunpcklwd %%zmm3,%%zmm3,%%zmm3                                \n" \
+  "vmovdqu8   (%[y_buf]),%%ymm4                                   \n" \
+  "vpermq     %%zmm4,%%zmm17,%%zmm4                               \n" \
+  "vpermq     $0xd8,%%zmm4,%%zmm4                                 \n" \
+  "vpunpcklbw %%zmm4,%%zmm4,%%zmm4                                \n" \
+  "lea        0x20(%[y_buf]),%[y_buf]                             \n"
+
 // Read 8 UV from 210, upsample to 16 UV
 // TODO(fbarchard): Consider vshufb to replace pack/unpack
 // TODO(fbarchard): Consider vunpcklpd to combine the 2 registers into 1.
@@ -3356,6 +3371,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpshufb    %[kShuffleUYVYUV], %%ymm3, %%ymm3                   \n" \
   "lea        0x20(%[uyvy_buf]),%[uyvy_buf]                       \n"
 
+// TODO(fbarchard): Remove broadcastb
 #if defined(__x86_64__)
 #define YUVTORGB_SETUP_AVX2(yuvconstants)                             \
   "vpcmpeqb    %%xmm13,%%xmm13,%%xmm13                            \n" \
@@ -3366,6 +3382,24 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovdqa     64(%[yuvconstants]),%%ymm10                        \n" \
   "vmovdqa     96(%[yuvconstants]),%%ymm11                        \n" \
   "vmovdqa     128(%[yuvconstants]),%%ymm12                       \n"
+
+#define YUVTORGB_SETUP_AVX512BW(yuvconstants)                         \
+  "vpcmpeqb   %%xmm13,%%xmm13,%%xmm13                             \n" \
+  "movdqa     (%[yuvconstants]),%%xmm8                            \n" \
+  "vpbroadcastq %%xmm8, %%zmm8                                    \n" \
+  "vpsllw     $7,%%xmm13,%%xmm13                                  \n" \
+  "vpbroadcastb %%xmm13,%%zmm13                                   \n" \
+  "movq     32(%[yuvconstants]),%%xmm9                            \n" \
+  "vpbroadcastq %%xmm9,%%zmm9                                     \n" \
+  "movq     64(%[yuvconstants]),%%xmm10                           \n" \
+  "vpbroadcastq %%xmm10,%%zmm10                                   \n" \
+  "movq     96(%[yuvconstants]),%%xmm11                           \n" \
+  "vpbroadcastq %%xmm11,%%zmm11                                   \n" \
+  "movq     128(%[yuvconstants]),%%xmm12                          \n" \
+  "vpbroadcastq %%xmm12,%%zmm12                                   \n" \
+  "vmovdqu8 (%[quadsplitperm]),%%zmm16                            \n" \
+  "vmovdqu8 (%[dquadsplitperm]),%%zmm17                           \n" \
+  "vmovdqu8 (%[unperm]),%%zmm18                                   \n"
 
 #define YUVTORGB16_AVX2(yuvconstants)                                 \
   "vpsubb      %%ymm13,%%ymm3,%%ymm3                              \n" \
@@ -3378,7 +3412,20 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpsubsw     %%ymm1,%%ymm4,%%ymm1                               \n" \
   "vpaddsw     %%ymm4,%%ymm2,%%ymm2                               \n"
 
+#define YUVTORGB16_AVX512BW(yuvconstants)                             \
+  "vpsubb      %%zmm13,%%zmm3,%%zmm3                              \n" \
+  "vpmulhuw    %%zmm11,%%zmm4,%%zmm4                              \n" \
+  "vpmaddubsw  %%zmm3,%%zmm8,%%zmm0                               \n" \
+  "vpmaddubsw  %%zmm3,%%zmm9,%%zmm1                               \n" \
+  "vpmaddubsw  %%zmm3,%%zmm10,%%zmm2                              \n" \
+  "vpaddw      %%zmm4,%%zmm12,%%zmm4                              \n" \
+  "vpaddsw     %%zmm4,%%zmm0,%%zmm0                               \n" \
+  "vpsubsw     %%zmm1,%%zmm4,%%zmm1                               \n" \
+  "vpaddsw     %%zmm4,%%zmm2,%%zmm2                               \n"
+
 #define YUVTORGB_REGS_AVX2 "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",
+#define YUVTORGB_REGS_AVX512BW \
+  "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm16", "xmm17", "xmm18",
 
 #else  // Convert 16 pixels: 16 UV and 16 Y.
 
@@ -3413,6 +3460,15 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb   %%ymm1,%%ymm1,%%ymm1                               \n" \
   "vpackuswb   %%ymm2,%%ymm2,%%ymm2                               \n"
 
+#define YUVTORGB_AVX512BW(yuvconstants)                               \
+  YUVTORGB16_AVX512BW(yuvconstants)                                   \
+  "vpsraw     $0x6,%%zmm0,%%zmm0                                  \n" \
+  "vpsraw     $0x6,%%zmm1,%%zmm1                                  \n" \
+  "vpsraw     $0x6,%%zmm2,%%zmm2                                  \n" \
+  "vpackuswb  %%zmm0,%%zmm0,%%zmm0                                \n" \
+  "vpackuswb  %%zmm1,%%zmm1,%%zmm1                                \n" \
+  "vpackuswb  %%zmm2,%%zmm2,%%zmm2                                \n"
+
 // Store 16 ARGB values.
 #define STOREARGB_AVX2                                                \
   "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n" \
@@ -3424,6 +3480,18 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovdqu    %%ymm1,(%[dst_argb])                                \n" \
   "vmovdqu    %%ymm0,0x20(%[dst_argb])                            \n" \
   "lea        0x40(%[dst_argb]), %[dst_argb]                      \n"
+
+// Store 32 ARGB values.
+#define STOREARGB_AVX512BW                                            \
+  "vpunpcklbw %%zmm1,%%zmm0,%%zmm0                                \n" \
+  "vpermq     %%zmm0,%%zmm18,%%zmm0                               \n" \
+  "vpunpcklbw %%zmm5,%%zmm2,%%zmm2                                \n" \
+  "vpermq     %%zmm2,%%zmm18,%%zmm2                               \n" \
+  "vpunpcklwd %%zmm2,%%zmm0,%%zmm1                                \n" \
+  "vpunpckhwd %%zmm2,%%zmm0,%%zmm0                                \n" \
+  "vmovdqu8   %%zmm1,(%[dst_argb])                                \n" \
+  "vmovdqu8   %%zmm0,0x40(%[dst_argb])                            \n" \
+  "lea        0x80(%[dst_argb]), %[dst_argb]                      \n"
 
 // Store 16 AR30 values.
 #define STOREAR30_AVX2                                                \
@@ -3520,6 +3588,50 @@ void OMITFP I422ToARGBRow_AVX2(const uint8_t* y_buf,
   );
 }
 #endif  // HAS_I422TOARGBROW_AVX2
+
+#if defined(HAS_I422TOARGBROW_AVX512BW)
+static const uint64_t kSplitQuadWords[8] = {0, 2, 2, 2, 1, 2, 2, 2};
+static const uint64_t kSplitDoubleQuadWords[8] = {0, 1, 4, 4, 2, 3, 4, 4};
+static const uint64_t kUnpermuteAVX512[8] = {0, 4, 1, 5, 2, 6, 3, 7};
+
+// 32 pixels
+// 16 UV values upsampled to 32 UV, mixed with 32 Y producing 32 ARGB (128
+// bytes).
+void OMITFP I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
+                                   const uint8_t* u_buf,
+                                   const uint8_t* v_buf,
+                                   uint8_t* dst_argb,
+                                   const struct YuvConstants* yuvconstants,
+                                   int width) {
+  asm volatile (
+    YUVTORGB_SETUP_AVX512BW(yuvconstants)
+      "sub         %[u_buf],%[v_buf]             \n"
+      "vpcmpeqb    %%xmm5,%%xmm5,%%xmm5          \n"
+      "vpbroadcastq %%xmm5,%%zmm5                \n"
+
+    LABELALIGN
+      "1:                                        \n"
+    READYUV422_AVX512BW
+    YUVTORGB_AVX512BW(yuvconstants)
+    STOREARGB_AVX512BW
+      "sub         $0x20,%[width]                \n"
+      "jg          1b                            \n"
+
+      "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),                         // %[y_buf]
+    [u_buf]"+r"(u_buf),                         // %[u_buf]
+    [v_buf]"+r"(v_buf),                         // %[v_buf]
+    [dst_argb]"+r"(dst_argb),                   // %[dst_argb]
+    [width]"+rm"(width)                         // %[width]
+  : [yuvconstants]"r"(yuvconstants),            // %[yuvconstants]
+    [quadsplitperm]"r"(kSplitQuadWords),        // %[quadsplitperm]
+    [dquadsplitperm]"r"(kSplitDoubleQuadWords), // %[dquadsplitperm]
+    [unperm]"r"(kUnpermuteAVX512)               // %[unperm]
+  : "memory", "cc", YUVTORGB_REGS_AVX512BW
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I422TOARGBROW_AVX512BW
 
 #if defined(HAS_I422TOAR30ROW_AVX2)
 // 16 pixels

@@ -398,6 +398,13 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #endif
 
+// The following are available for AVX512 clang x64 platforms:
+// TODO(fbarchard): Port to x86
+#if !defined(LIBYUV_DISABLE_X86) && \
+    defined(__x86_64__) && (defined(CLANG_HAS_AVX512))
+#define HAS_I422TOARGBROW_AVX512BW
+#endif
+
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
@@ -3027,6 +3034,12 @@ void I422ToARGBRow_AVX2(const uint8_t* y_buf,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I422ToRGBARow_AVX2(const uint8_t* y_buf,
                         const uint8_t* u_buf,
                         const uint8_t* v_buf,
@@ -3368,6 +3381,12 @@ void I422ToARGBRow_Any_AVX2(const uint8_t* y_buf,
                             uint8_t* dst_ptr,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I422ToARGBRow_Any_AVX512BW(const uint8_t* y_buf,
+                                const uint8_t* u_buf,
+                                const uint8_t* v_buf,
+                                uint8_t* dst_ptr,
+                                const struct YuvConstants* yuvconstants,
+                                int width);
 void I422ToRGBARow_Any_AVX2(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,

@@ -7,7 +7,6 @@
  *  in the file PATENTS. All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
 #include "libyuv/convert_argb.h"
 
 #include "libyuv/cpu_id.h"
@@ -87,6 +86,14 @@ int I420ToARGBMatrix(const uint8_t* src_y,
     I422ToARGBRow = I422ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       I422ToARGBRow = I422ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) == (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
+    I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToARGBRow = I422ToARGBRow_AVX512BW;
     }
   }
 #endif
@@ -318,6 +325,14 @@ int I422ToARGBMatrix(const uint8_t* src_y,
     I422ToARGBRow = I422ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       I422ToARGBRow = I422ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) == (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
+    I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToARGBRow = I422ToARGBRow_AVX512BW;
     }
   }
 #endif
@@ -5139,6 +5154,14 @@ int I420ToRGB565Dither(const uint8_t* src_y,
     I422ToARGBRow = I422ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       I422ToARGBRow = I422ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) == (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
+    I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToARGBRow = I422ToARGBRow_AVX512BW;
     }
   }
 #endif
