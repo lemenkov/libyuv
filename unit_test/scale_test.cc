@@ -1221,10 +1221,6 @@ extern "C" void ScaleRowUp2_16_NEON(const uint16_t* src_ptr,
                                     ptrdiff_t src_stride,
                                     uint16_t* dst,
                                     int dst_width);
-extern "C" void ScaleRowUp2_16_MMI(const uint16_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   uint16_t* dst,
-                                   int dst_width);
 extern "C" void ScaleRowUp2_16_C(const uint16_t* src_ptr,
                                  ptrdiff_t src_stride,
                                  uint16_t* dst,
@@ -1248,13 +1244,6 @@ TEST_F(LibYUVScaleTest, TestScaleRowUp2_16) {
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
       ScaleRowUp2_16_NEON(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
-    } else {
-      ScaleRowUp2_16_C(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
-    }
-#elif !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
-    int has_mmi = TestCpuFlag(kCpuHasMMI);
-    if (has_mmi) {
-      ScaleRowUp2_16_MMI(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
     } else {
       ScaleRowUp2_16_C(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
     }

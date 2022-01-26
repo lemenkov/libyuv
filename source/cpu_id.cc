@@ -174,18 +174,12 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
   }
   while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
     if (memcmp(cpuinfo_line, "cpu model", 9) == 0) {
-      // Workaround early kernel without mmi in ASEs line.
-      if (strstr(cpuinfo_line, "Loongson-3")) {
-        flag |= kCpuHasMMI;
-      } else if (strstr(cpuinfo_line, "Loongson-2K")) {
-        flag |= kCpuHasMMI | kCpuHasMSA;
+      // Workaround early kernel without MSA in ASEs line.
+      if (strstr(cpuinfo_line, "Loongson-2K")) {
+        flag |= kCpuHasMSA;
       }
     }
     if (memcmp(cpuinfo_line, "ASEs implemented", 16) == 0) {
-      if (strstr(cpuinfo_line, "loongson-mmi") &&
-          strstr(cpuinfo_line, "loongson-ext")) {
-        flag |= kCpuHasMMI;
-      }
       if (strstr(cpuinfo_line, "msa")) {
         flag |= kCpuHasMSA;
       }

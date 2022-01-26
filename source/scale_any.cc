@@ -152,27 +152,6 @@ SDANY(ScaleRowDown2Box_Any_MSA,
       1,
       31)
 #endif
-#ifdef HAS_SCALEROWDOWN2_MMI
-SDANY(ScaleRowDown2_Any_MMI, ScaleRowDown2_MMI, ScaleRowDown2_C, 2, 1, 7)
-SDANY(ScaleRowDown2Linear_Any_MMI,
-      ScaleRowDown2Linear_MMI,
-      ScaleRowDown2Linear_C,
-      2,
-      1,
-      7)
-SDANY(ScaleRowDown2Box_Any_MMI,
-      ScaleRowDown2Box_MMI,
-      ScaleRowDown2Box_C,
-      2,
-      1,
-      7)
-SDODD(ScaleRowDown2Box_Odd_MMI,
-      ScaleRowDown2Box_MMI,
-      ScaleRowDown2Box_Odd_C,
-      2,
-      1,
-      7)
-#endif
 #ifdef HAS_SCALEROWDOWN2_LSX
 SDANY(ScaleRowDown2_Any_LSX, ScaleRowDown2_LSX, ScaleRowDown2_C, 2, 1, 31)
 SDANY(ScaleRowDown2Linear_Any_LSX,
@@ -223,15 +202,6 @@ SDANY(ScaleRowDown4Box_Any_MSA,
       4,
       1,
       15)
-#endif
-#ifdef HAS_SCALEROWDOWN4_MMI
-SDANY(ScaleRowDown4_Any_MMI, ScaleRowDown4_MMI, ScaleRowDown4_C, 4, 1, 7)
-SDANY(ScaleRowDown4Box_Any_MMI,
-      ScaleRowDown4Box_MMI,
-      ScaleRowDown4Box_C,
-      4,
-      1,
-      7)
 #endif
 #ifdef HAS_SCALEROWDOWN4_LSX
 SDANY(ScaleRowDown4_Any_LSX, ScaleRowDown4_LSX, ScaleRowDown4_C, 4, 1, 15)
@@ -321,14 +291,6 @@ SDANY(ScaleRowDown34_1_Box_Any_LSX,
       4 / 3,
       1,
       47)
-#endif
-#ifdef HAS_SCALEROWDOWN34_MMI
-SDANY(ScaleRowDown34_Any_MMI,
-      ScaleRowDown34_MMI,
-      ScaleRowDown34_C,
-      4 / 3,
-      1,
-      23)
 #endif
 #ifdef HAS_SCALEROWDOWN38_SSSE3
 SDANY(ScaleRowDown38_Any_SSSE3,
@@ -471,26 +433,6 @@ SDANY(ScaleARGBRowDown2Box_Any_MSA,
       4,
       3)
 #endif
-#ifdef HAS_SCALEARGBROWDOWN2_MMI
-SDANY(ScaleARGBRowDown2_Any_MMI,
-      ScaleARGBRowDown2_MMI,
-      ScaleARGBRowDown2_C,
-      2,
-      4,
-      1)
-SDANY(ScaleARGBRowDown2Linear_Any_MMI,
-      ScaleARGBRowDown2Linear_MMI,
-      ScaleARGBRowDown2Linear_C,
-      2,
-      4,
-      1)
-SDANY(ScaleARGBRowDown2Box_Any_MMI,
-      ScaleARGBRowDown2Box_MMI,
-      ScaleARGBRowDown2Box_C,
-      2,
-      4,
-      1)
-#endif
 #ifdef HAS_SCALEARGBROWDOWN2_LSX
 SDANY(ScaleARGBRowDown2_Any_LSX,
       ScaleARGBRowDown2_LSX,
@@ -562,18 +504,6 @@ SDAANY(ScaleARGBRowDownEvenBox_Any_MSA,
        4,
        3)
 #endif
-#ifdef HAS_SCALEARGBROWDOWNEVEN_MMI
-SDAANY(ScaleARGBRowDownEven_Any_MMI,
-       ScaleARGBRowDownEven_MMI,
-       ScaleARGBRowDownEven_C,
-       4,
-       1)
-SDAANY(ScaleARGBRowDownEvenBox_Any_MMI,
-       ScaleARGBRowDownEvenBox_MMI,
-       ScaleARGBRowDownEvenBox_C,
-       4,
-       1)
-#endif
 #ifdef HAS_SCALEARGBROWDOWNEVEN_LSX
 SDAANY(ScaleARGBRowDownEven_Any_LSX,
        ScaleARGBRowDownEven_LSX,
@@ -629,9 +559,6 @@ SAROW(ScaleAddRow_Any_MSA, ScaleAddRow_MSA, 1, 2, 15)
 #ifdef HAS_SCALEADDROW_LSX
 SAROW(ScaleAddRow_Any_LSX, ScaleAddRow_LSX, 1, 2, 15)
 #endif
-#ifdef HAS_SCALEADDROW_MMI
-SAROW(ScaleAddRow_Any_MMI, ScaleAddRow_MMI, 1, 2, 7)
-#endif
 #undef SAANY
 
 #else
@@ -657,9 +584,6 @@ SAANY(ScaleAddRow_Any_NEON, ScaleAddRow_NEON, ScaleAddRow_C, 15)
 #endif
 #ifdef HAS_SCALEADDROW_MSA
 SAANY(ScaleAddRow_Any_MSA, ScaleAddRow_MSA, ScaleAddRow_C, 15)
-#endif
-#ifdef HAS_SCALEADDROW_MMI
-SAANY(ScaleAddRow_Any_MMI, ScaleAddRow_MMI, ScaleAddRow_C, 7)
 #endif
 #ifdef HAS_SCALEADDROW_LSX
 SAANY(ScaleAddRow_Any_LSX, ScaleAddRow_LSX, ScaleAddRow_C, 15)
@@ -697,9 +621,6 @@ CANY(ScaleARGBCols_Any_MSA, ScaleARGBCols_MSA, ScaleARGBCols_C, 4, 3)
 #endif
 #ifdef HAS_SCALEARGBCOLS_LSX
 CANY(ScaleARGBCols_Any_LSX, ScaleARGBCols_LSX, ScaleARGBCols_C, 4, 3)
-#endif
-#ifdef HAS_SCALEARGBCOLS_MMI
-CANY(ScaleARGBCols_Any_MMI, ScaleARGBCols_MMI, ScaleARGBCols_C, 4, 0)
 #endif
 #ifdef HAS_SCALEARGBFILTERCOLS_NEON
 CANY(ScaleARGBFilterCols_Any_NEON,

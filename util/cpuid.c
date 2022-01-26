@@ -74,8 +74,6 @@ int main(int argc, const char* argv[]) {
   if (has_mips) {
     int has_msa = TestCpuFlag(kCpuHasMSA);
     printf("Has MSA %x\n", has_msa);
-    int has_mmi = TestCpuFlag(kCpuHasMMI);
-    printf("Has MMI %x\n", has_mmi);
   }
   if (has_loongarch) {
     int has_lsx  = TestCpuFlag(kCpuHasLSX);

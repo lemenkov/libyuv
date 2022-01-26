@@ -65,10 +65,6 @@ group("libyuv") {
     deps += [ ":libyuv_msa" ]
   }
 
-  if (libyuv_use_mmi) {
-    deps += [ ":libyuv_mmi" ]
-  }
-
   if (!is_ios && !libyuv_disable_jpeg) {
     # Make sure that clients of libyuv link with libjpeg. This can't go in
     # libyuv_internal because in Windows x64 builds that will generate a clang
@@ -174,9 +170,6 @@ static_library("libyuv_internal") {
       "-ffp-contract=fast",  # Enable fma vectorization for NEON.
     ]
   }
-  if (!libyuv_use_mmi) {
-    defines += [ "LIBYUV_DISABLE_MMI" ]
-  }
 }
 
 if (libyuv_use_neon) {
@@ -222,22 +215,6 @@ if (libyuv_use_msa) {
       "source/rotate_msa.cc",
       "source/row_msa.cc",
       "source/scale_msa.cc",
-    ]
-
-    deps = [ ":libyuv_internal" ]
-
-    public_configs = [ ":libyuv_config" ]
-  }
-}
-
-if (libyuv_use_mmi) {
-  static_library("libyuv_mmi") {
-    sources = [
-      # MMI Source Files
-      "source/compare_mmi.cc",
-      "source/rotate_mmi.cc",
-      "source/row_mmi.cc",
-      "source/scale_mmi.cc",
     ]
 
     deps = [ ":libyuv_internal" ]

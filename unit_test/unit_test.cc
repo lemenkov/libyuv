@@ -77,9 +77,6 @@ int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_MSA")) {
     cpu_info &= ~libyuv::kCpuHasMSA;
   }
-  if (TestEnv("LIBYUV_DISABLE_MMI")) {
-    cpu_info &= ~libyuv::kCpuHasMMI;
-  }
 #endif
 #if defined(__longarch__) && defined(__linux__)
   if (TestEnv("LIBYUV_DISABLE_LSX")) {

@@ -69,8 +69,6 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has MIPS %d\n", has_mips);
   int has_msa = TestCpuFlag(kCpuHasMSA);
   printf("Has MSA %d\n", has_msa);
-  int has_mmi = TestCpuFlag(kCpuHasMMI);
-  printf("Has MMI %d\n", has_mmi);
 #endif
 
 #if defined(__loongarch__)
@@ -253,18 +251,13 @@ TEST_F(LibYUVBaseTest, TestLinuxNeon) {
 #endif
 }
 
-TEST_F(LibYUVBaseTest, TestLinuxMipsMsaMmi) {
+TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {
   if (FileExists("../../unit_test/testdata/mips.txt")) {
     printf("Note: testing to load \"../../unit_test/testdata/mips.txt\"\n");
 
     EXPECT_EQ(0, MipsCpuCaps("../../unit_test/testdata/mips.txt"));
-    EXPECT_EQ(kCpuHasMMI,
-              MipsCpuCaps("../../unit_test/testdata/mips_loongson3.txt"));
-    EXPECT_EQ(kCpuHasMMI,
-              MipsCpuCaps("../../unit_test/testdata/mips_loongson_mmi.txt"));
     EXPECT_EQ(kCpuHasMSA, MipsCpuCaps("../../unit_test/testdata/mips_msa.txt"));
-    EXPECT_EQ(kCpuHasMMI | kCpuHasMSA,
-              MipsCpuCaps("../../unit_test/testdata/mips_loongson2k.txt"));
+    EXPECT_EQ(kCpuHasMSA, MipsCpuCaps("../../unit_test/testdata/mips_loongson2k.txt"));
   } else {
     printf("WARNING: unable to load \"../../unit_test/testdata/mips.txt\"\n");
   }
