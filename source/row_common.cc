@@ -2659,6 +2659,21 @@ void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24, int width) {
   }
 }
 
+void DetileRow_C(const uint8_t* src,
+                 ptrdiff_t src_tile_stride,
+                 uint8_t* dst,
+                 int width) {
+  int x;
+  for (x = 0; x < width - 15; x += 16) {
+    memcpy(dst, src, 16);
+    dst += 16;
+    src += src_tile_stride;
+  }
+  if (width & 15) {
+    memcpy(dst, src, width & 15);
+  }
+}
+
 void SplitUVRow_C(const uint8_t* src_uv,
                   uint8_t* dst_u,
                   uint8_t* dst_v,

@@ -257,7 +257,8 @@ TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {
 
     EXPECT_EQ(0, MipsCpuCaps("../../unit_test/testdata/mips.txt"));
     EXPECT_EQ(kCpuHasMSA, MipsCpuCaps("../../unit_test/testdata/mips_msa.txt"));
-    EXPECT_EQ(kCpuHasMSA, MipsCpuCaps("../../unit_test/testdata/mips_loongson2k.txt"));
+    EXPECT_EQ(kCpuHasMSA,
+              MipsCpuCaps("../../unit_test/testdata/mips_loongson2k.txt"));
   } else {
     printf("WARNING: unable to load \"../../unit_test/testdata/mips.txt\"\n");
   }

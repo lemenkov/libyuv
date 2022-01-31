@@ -193,25 +193,21 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
 
 // TODO(fbarchard): Consider read_loongarch_ir().
 #define LOONGARCH_CFG2 0x2
-#define LOONGARCH_CFG2_LSX    (1 << 6)
-#define LOONGARCH_CFG2_LASX   (1 << 7)
+#define LOONGARCH_CFG2_LSX (1 << 6)
+#define LOONGARCH_CFG2_LASX (1 << 7)
 
 #if defined(__loongarch__) && defined(__linux__)
 LIBYUV_API SAFEBUFFERS int LoongarchCpuCaps(void) {
   int flag = 0x0;
   uint32_t cfg2 = 0;
 
-  __asm__ volatile(
-  "cpucfg %0, %1 \n\t"
-  : "+&r"(cfg2)
-  : "r"(LOONGARCH_CFG2)
-  );
+  __asm__ volatile("cpucfg %0, %1 \n\t" : "+&r"(cfg2) : "r"(LOONGARCH_CFG2));
 
   if (cfg2 & LOONGARCH_CFG2_LSX)
-      flag |= kCpuHasLSX;
+    flag |= kCpuHasLSX;
 
   if (cfg2 & LOONGARCH_CFG2_LASX)
-      flag |= kCpuHasLASX;
+    flag |= kCpuHasLASX;
   return flag;
 }
 #endif

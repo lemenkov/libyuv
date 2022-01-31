@@ -616,13 +616,13 @@ void DetileRow_NEON(const uint8_t* src,
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], %3            \n"  // load 16 bytes
       "subs        %w2, %w2, #16                 \n"  // 16 processed per loop
-      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%0, 1792]         \n"  // 7 tiles of 256b ahead
       "st1         {v0.16b}, [%1], #16           \n"  // store 16 bytes
       "b.gt        1b                            \n"
-      : "+r"(src),                  // %0
-        "+r"(dst),                  // %1
-        "+r"(width)                 // %2
-      : "r"(src_tile_stride)        // %3
+      : "+r"(src),            // %0
+        "+r"(dst),            // %1
+        "+r"(width)           // %2
+      : "r"(src_tile_stride)  // %3
       : "cc", "memory", "v0"  // Clobber List
   );
 }

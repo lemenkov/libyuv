@@ -1484,6 +1484,45 @@ TEST_F(LibYUVPlanarTest, TestCopyPlane) {
   EXPECT_EQ(0, err);
 }
 
+TEST_F(LibYUVPlanarTest, TestDetilePlane) {
+  int i, j;
+
+  // orig is tiled.  Allocate enough memory for tiles.
+  int orig_width = (benchmark_width_ + 15) & ~15;
+  int orig_height = (benchmark_height_ + 15) & ~15;
+  int orig_plane_size = orig_width * orig_height;
+  int y_plane_size = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(orig_y, orig_plane_size);
+  align_buffer_page_end(dst_c, y_plane_size);
+  align_buffer_page_end(dst_opt, y_plane_size);
+
+  MemRandomize(orig_y, orig_plane_size);
+  memset(dst_c, 0, y_plane_size);
+  memset(dst_opt, 0, y_plane_size);
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags_);
+  for (j = 0; j < benchmark_iterations_; j++) {
+    DetilePlane(orig_y, orig_width, dst_c, benchmark_width_,
+                benchmark_width_, benchmark_height_, 16);
+  }
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info_);
+  for (j = 0; j < benchmark_iterations_; j++) {
+    DetilePlane(orig_y, orig_width, dst_opt, benchmark_width_,
+                benchmark_width_, benchmark_height_, 16);
+  }
+
+  for (i = 0; i < y_plane_size; ++i) {
+    EXPECT_EQ(dst_c[i], dst_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+}
+
 static int TestMultiply(int width,
                         int height,
                         int benchmark_iterations,

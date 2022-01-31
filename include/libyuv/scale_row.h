@@ -1564,7 +1564,6 @@ void ScaleRowDown34_1_Box_Any_MSA(const uint8_t* src_ptr,
                                   uint8_t* dst_ptr,
                                   int dst_width);
 
-
 void ScaleRowDown2_LSX(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst,

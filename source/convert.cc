@@ -2448,8 +2448,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
     }
   }
 // MSA version does direct RGB565 to YUV.
-#elif (defined(HAS_RGB565TOYROW_MSA)  \
-       || defined(HAS_RGB565TOYROW_LSX))
+#elif (defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_LSX))
 #if defined(HAS_RGB565TOYROW_MSA) && defined(HAS_RGB565TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB565ToUVRow = RGB565ToUVRow_Any_MSA;

@@ -631,7 +631,8 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
   }
 #endif
 #if defined(HAS_I422TOARGBROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) == (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
+  if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
     I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
     if (IS_ALIGNED(src_width, 32)) {
       I422ToARGBRow = I422ToARGBRow_AVX512BW;

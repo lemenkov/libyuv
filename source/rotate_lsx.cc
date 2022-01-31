@@ -20,28 +20,28 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#define ILVLH_B(in0, in1, in2, in3, out0, out1, out2, out3)           \
-  {                                                                   \
-    DUP2_ARG2(__lsx_vilvl_b, in1, in0, in3, in2, out0, out2);         \
-    DUP2_ARG2(__lsx_vilvh_b, in1, in0, in3, in2, out1, out3);         \
+#define ILVLH_B(in0, in1, in2, in3, out0, out1, out2, out3)   \
+  {                                                           \
+    DUP2_ARG2(__lsx_vilvl_b, in1, in0, in3, in2, out0, out2); \
+    DUP2_ARG2(__lsx_vilvh_b, in1, in0, in3, in2, out1, out3); \
   }
 
-#define ILVLH_H(in0, in1, in2, in3, out0, out1, out2, out3)           \
-  {                                                                   \
-    DUP2_ARG2(__lsx_vilvl_h, in1, in0, in3, in2, out0, out2);         \
-    DUP2_ARG2(__lsx_vilvh_h, in1, in0, in3, in2, out1, out3);         \
+#define ILVLH_H(in0, in1, in2, in3, out0, out1, out2, out3)   \
+  {                                                           \
+    DUP2_ARG2(__lsx_vilvl_h, in1, in0, in3, in2, out0, out2); \
+    DUP2_ARG2(__lsx_vilvh_h, in1, in0, in3, in2, out1, out3); \
   }
 
-#define ILVLH_W(in0, in1, in2, in3, out0, out1, out2, out3)           \
-  {                                                                   \
-    DUP2_ARG2(__lsx_vilvl_w, in1, in0, in3, in2, out0, out2);         \
-    DUP2_ARG2(__lsx_vilvh_w, in1, in0, in3, in2, out1, out3);         \
+#define ILVLH_W(in0, in1, in2, in3, out0, out1, out2, out3)   \
+  {                                                           \
+    DUP2_ARG2(__lsx_vilvl_w, in1, in0, in3, in2, out0, out2); \
+    DUP2_ARG2(__lsx_vilvh_w, in1, in0, in3, in2, out1, out3); \
   }
 
-#define ILVLH_D(in0, in1, in2, in3, out0, out1, out2, out3)           \
-  {                                                                   \
-    DUP2_ARG2(__lsx_vilvl_d, in1, in0, in3, in2, out0, out2);         \
-    DUP2_ARG2(__lsx_vilvh_d, in1, in0, in3, in2, out1, out3);         \
+#define ILVLH_D(in0, in1, in2, in3, out0, out1, out2, out3)   \
+  {                                                           \
+    DUP2_ARG2(__lsx_vilvl_d, in1, in0, in3, in2, out0, out2); \
+    DUP2_ARG2(__lsx_vilvh_d, in1, in0, in3, in2, out1, out3); \
   }
 
 #define LSX_ST_4(_dst0, _dst1, _dst2, _dst3, _dst, _stride, _stride2, \
@@ -54,11 +54,11 @@ extern "C" {
     _dst += _stride4;                                                 \
   }
 
-#define LSX_ST_2(_dst0, _dst1, _dst, _stride, _stride2)               \
-  {                                                                   \
-    __lsx_vst(_dst0, _dst, 0);                                        \
-    __lsx_vstx(_dst1, _dst, _stride);                                 \
-    _dst += _stride2;                                                 \
+#define LSX_ST_2(_dst0, _dst1, _dst, _stride, _stride2) \
+  {                                                     \
+    __lsx_vst(_dst0, _dst, 0);                          \
+    __lsx_vstx(_dst1, _dst, _stride);                   \
+    _dst += _stride2;                                   \
   }
 
 void TransposeWx16_C(const uint8_t* src,
@@ -84,7 +84,6 @@ void TransposeUVWx16_C(const uint8_t* src,
                    dst_stride_a, (dst_b + 8), dst_stride_b, width);
 }
 
-
 void TransposeWx16_LSX(const uint8_t* src,
                        int src_stride,
                        uint8_t* dst,
@@ -92,7 +91,7 @@ void TransposeWx16_LSX(const uint8_t* src,
                        int width) {
   int x;
   int len = width / 16;
-  uint8_t *s;
+  uint8_t* s;
   int src_stride2 = src_stride << 1;
   int src_stride3 = src_stride + src_stride2;
   int src_stride4 = src_stride2 << 1;
@@ -139,23 +138,23 @@ void TransposeWx16_LSX(const uint8_t* src,
     res8 = __lsx_vilvl_w(reg4, reg0);
     res9 = __lsx_vilvh_w(reg4, reg0);
     ILVLH_D(res0, res8, res1, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2,
-             dst_stride3, dst_stride4);
+    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
+             dst_stride4);
     res8 = __lsx_vilvl_w(reg5, reg1);
     res9 = __lsx_vilvh_w(reg5, reg1);
     ILVLH_D(res2, res8, res3, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2,
-             dst_stride3, dst_stride4);
+    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
+             dst_stride4);
     res8 = __lsx_vilvl_w(reg6, reg2);
     res9 = __lsx_vilvh_w(reg6, reg2);
     ILVLH_D(res4, res8, res5, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2,
-             dst_stride3, dst_stride4);
+    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
+             dst_stride4);
     res8 = __lsx_vilvl_w(reg7, reg3);
     res9 = __lsx_vilvh_w(reg7, reg3);
     ILVLH_D(res6, res8, res7, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2,
-             dst_stride3, dst_stride4);
+    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
+             dst_stride4);
     src += 16;
   }
 }

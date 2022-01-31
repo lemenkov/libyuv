@@ -23,178 +23,176 @@ extern "C" {
 #define ALPHA_VAL (-1)
 
 // Fill YUV -> RGB conversion constants into vectors
-#define YUVTORGB_SETUP(yuvconst, ubvr, ugvg, yg, yb)                  \
-  {                                                                   \
-    __m256i ub, vr, ug, vg;                                           \
-                                                                      \
-    ub = __lasx_xvreplgr2vr_h(yuvconst->kUVToB[0]);                   \
-    vr = __lasx_xvreplgr2vr_h(yuvconst->kUVToR[1]);                   \
-    ug = __lasx_xvreplgr2vr_h(yuvconst->kUVToG[0]);                   \
-    vg = __lasx_xvreplgr2vr_h(yuvconst->kUVToG[1]);                   \
-    yg = __lasx_xvreplgr2vr_h(yuvconst->kYToRgb[0]);                  \
-    yb = __lasx_xvreplgr2vr_w(yuvconst->kYBiasToRgb[0]);              \
-    ubvr = __lasx_xvilvl_h(ub, vr);                                   \
-    ugvg = __lasx_xvilvl_h(ug, vg);                                   \
+#define YUVTORGB_SETUP(yuvconst, ubvr, ugvg, yg, yb)     \
+  {                                                      \
+    __m256i ub, vr, ug, vg;                              \
+                                                         \
+    ub = __lasx_xvreplgr2vr_h(yuvconst->kUVToB[0]);      \
+    vr = __lasx_xvreplgr2vr_h(yuvconst->kUVToR[1]);      \
+    ug = __lasx_xvreplgr2vr_h(yuvconst->kUVToG[0]);      \
+    vg = __lasx_xvreplgr2vr_h(yuvconst->kUVToG[1]);      \
+    yg = __lasx_xvreplgr2vr_h(yuvconst->kYToRgb[0]);     \
+    yb = __lasx_xvreplgr2vr_w(yuvconst->kYBiasToRgb[0]); \
+    ubvr = __lasx_xvilvl_h(ub, vr);                      \
+    ugvg = __lasx_xvilvl_h(ug, vg);                      \
   }
 
 // Load 32 YUV422 pixel data
-#define READYUV422_D(psrc_y, psrc_u, psrc_v, out_y, uv_l, uv_h)       \
-  {                                                                   \
-    __m256i temp0, temp1;                                             \
-                                                                      \
-    DUP2_ARG2(__lasx_xvld, psrc_y, 0, psrc_u, 0, out_y, temp0);       \
-    temp1 = __lasx_xvld(psrc_v, 0);                                   \
-    temp0 = __lasx_xvsub_b(temp0, const_0x80);                        \
-    temp1 = __lasx_xvsub_b(temp1, const_0x80);                        \
-    temp0 = __lasx_vext2xv_h_b(temp0);                                \
-    temp1 = __lasx_vext2xv_h_b(temp1);                                \
-    uv_l  = __lasx_xvilvl_h(temp0, temp1);                            \
-    uv_h  = __lasx_xvilvh_h(temp0, temp1);                            \
+#define READYUV422_D(psrc_y, psrc_u, psrc_v, out_y, uv_l, uv_h) \
+  {                                                             \
+    __m256i temp0, temp1;                                       \
+                                                                \
+    DUP2_ARG2(__lasx_xvld, psrc_y, 0, psrc_u, 0, out_y, temp0); \
+    temp1 = __lasx_xvld(psrc_v, 0);                             \
+    temp0 = __lasx_xvsub_b(temp0, const_0x80);                  \
+    temp1 = __lasx_xvsub_b(temp1, const_0x80);                  \
+    temp0 = __lasx_vext2xv_h_b(temp0);                          \
+    temp1 = __lasx_vext2xv_h_b(temp1);                          \
+    uv_l = __lasx_xvilvl_h(temp0, temp1);                       \
+    uv_h = __lasx_xvilvh_h(temp0, temp1);                       \
   }
 
 // Load 16 YUV422 pixel data
-#define READYUV422(psrc_y, psrc_u, psrc_v, out_y, uv)                 \
-  {                                                                   \
-    __m256i temp0, temp1;                                             \
-                                                                      \
-    out_y = __lasx_xvld(psrc_y, 0);                                   \
-    temp0 = __lasx_xvldrepl_d(psrc_u, 0);                             \
-    temp1 = __lasx_xvldrepl_d(psrc_v, 0);                             \
-    uv    = __lasx_xvilvl_b(temp0, temp1);                            \
-    uv    = __lasx_xvsub_b(uv, const_0x80);                           \
-    uv    = __lasx_vext2xv_h_b(uv);                                   \
+#define READYUV422(psrc_y, psrc_u, psrc_v, out_y, uv) \
+  {                                                   \
+    __m256i temp0, temp1;                             \
+                                                      \
+    out_y = __lasx_xvld(psrc_y, 0);                   \
+    temp0 = __lasx_xvldrepl_d(psrc_u, 0);             \
+    temp1 = __lasx_xvldrepl_d(psrc_v, 0);             \
+    uv = __lasx_xvilvl_b(temp0, temp1);               \
+    uv = __lasx_xvsub_b(uv, const_0x80);              \
+    uv = __lasx_vext2xv_h_b(uv);                      \
   }
 
 // Convert 16 pixels of YUV420 to RGB.
-#define YUVTORGB_D(in_y, in_uvl, in_uvh, ubvr, ugvg,                           \
-                    yg, yb, b_l, b_h, g_l, g_h, r_l, r_h)                      \
-  {                                                                            \
-    __m256i u_l, u_h, v_l, v_h;                                                \
-    __m256i yl_ev, yl_od, yh_ev, yh_od;                                        \
-    __m256i temp0, temp1, temp2, temp3;                                        \
-                                                                               \
-    temp0 = __lasx_xvilvl_b(in_y, in_y);                                       \
-    temp1 = __lasx_xvilvh_b(in_y, in_y);                                       \
-    yl_ev = __lasx_xvmulwev_w_hu_h(temp0, yg);                                 \
-    yl_od = __lasx_xvmulwod_w_hu_h(temp0, yg);                                 \
-    yh_ev = __lasx_xvmulwev_w_hu_h(temp1, yg);                                 \
-    yh_od = __lasx_xvmulwod_w_hu_h(temp1, yg);                                 \
-    DUP4_ARG2(__lasx_xvsrai_w, yl_ev, 16, yl_od, 16, yh_ev, 16, yh_od, 16,     \
-              yl_ev, yl_od, yh_ev, yh_od);                                     \
-    yl_ev = __lasx_xvadd_w(yl_ev, yb);                                         \
-    yl_od = __lasx_xvadd_w(yl_od, yb);                                         \
-    yh_ev = __lasx_xvadd_w(yh_ev, yb);                                         \
-    yh_od = __lasx_xvadd_w(yh_od, yb);                                         \
-    v_l   = __lasx_xvmulwev_w_h(in_uvl, ubvr);                                 \
-    u_l   = __lasx_xvmulwod_w_h(in_uvl, ubvr);                                 \
-    v_h   = __lasx_xvmulwev_w_h(in_uvh, ubvr);                                 \
-    u_h   = __lasx_xvmulwod_w_h(in_uvh, ubvr);                                 \
-    temp0 = __lasx_xvadd_w(yl_ev, u_l);                                        \
-    temp1 = __lasx_xvadd_w(yl_od, u_l);                                        \
-    temp2 = __lasx_xvadd_w(yh_ev, u_h);                                        \
-    temp3 = __lasx_xvadd_w(yh_od, u_h);                                        \
-    DUP4_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp2, 6, temp3, 6,         \
-              temp0, temp1, temp2, temp3);                                     \
-    DUP4_ARG1(__lasx_xvclip255_w, temp0, temp1, temp2, temp3,                  \
-              temp0, temp1, temp2, temp3);                                     \
-    b_l   = __lasx_xvpackev_h(temp1, temp0);                                   \
-    b_h   = __lasx_xvpackev_h(temp3, temp2);                                   \
-    temp0 = __lasx_xvadd_w(yl_ev, v_l);                                        \
-    temp1 = __lasx_xvadd_w(yl_od, v_l);                                        \
-    temp2 = __lasx_xvadd_w(yh_ev, v_h);                                        \
-    temp3 = __lasx_xvadd_w(yh_od, v_h);                                        \
-    DUP4_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp2, 6, temp3, 6,         \
-              temp0, temp1, temp2, temp3);                                     \
-    DUP4_ARG1(__lasx_xvclip255_w, temp0, temp1, temp2, temp3,                  \
-              temp0, temp1, temp2, temp3);                                     \
-    r_l   = __lasx_xvpackev_h(temp1, temp0);                                   \
-    r_h   = __lasx_xvpackev_h(temp3, temp2);                                   \
-    DUP2_ARG2(__lasx_xvdp2_w_h, in_uvl, ugvg, in_uvh, ugvg, u_l, u_h);         \
-    temp0 = __lasx_xvsub_w(yl_ev, u_l);                                        \
-    temp1 = __lasx_xvsub_w(yl_od, u_l);                                        \
-    temp2 = __lasx_xvsub_w(yh_ev, u_h);                                        \
-    temp3 = __lasx_xvsub_w(yh_od, u_h);                                        \
-    DUP4_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp2, 6, temp3, 6,         \
-              temp0, temp1, temp2, temp3);                                     \
-    DUP4_ARG1(__lasx_xvclip255_w, temp0, temp1, temp2, temp3,                  \
-              temp0, temp1, temp2, temp3);                                     \
-    g_l   = __lasx_xvpackev_h(temp1, temp0);                                   \
-    g_h   = __lasx_xvpackev_h(temp3, temp2);                                   \
+#define YUVTORGB_D(in_y, in_uvl, in_uvh, ubvr, ugvg, yg, yb, b_l, b_h, g_l,   \
+                   g_h, r_l, r_h)                                             \
+  {                                                                           \
+    __m256i u_l, u_h, v_l, v_h;                                               \
+    __m256i yl_ev, yl_od, yh_ev, yh_od;                                       \
+    __m256i temp0, temp1, temp2, temp3;                                       \
+                                                                              \
+    temp0 = __lasx_xvilvl_b(in_y, in_y);                                      \
+    temp1 = __lasx_xvilvh_b(in_y, in_y);                                      \
+    yl_ev = __lasx_xvmulwev_w_hu_h(temp0, yg);                                \
+    yl_od = __lasx_xvmulwod_w_hu_h(temp0, yg);                                \
+    yh_ev = __lasx_xvmulwev_w_hu_h(temp1, yg);                                \
+    yh_od = __lasx_xvmulwod_w_hu_h(temp1, yg);                                \
+    DUP4_ARG2(__lasx_xvsrai_w, yl_ev, 16, yl_od, 16, yh_ev, 16, yh_od, 16,    \
+              yl_ev, yl_od, yh_ev, yh_od);                                    \
+    yl_ev = __lasx_xvadd_w(yl_ev, yb);                                        \
+    yl_od = __lasx_xvadd_w(yl_od, yb);                                        \
+    yh_ev = __lasx_xvadd_w(yh_ev, yb);                                        \
+    yh_od = __lasx_xvadd_w(yh_od, yb);                                        \
+    v_l = __lasx_xvmulwev_w_h(in_uvl, ubvr);                                  \
+    u_l = __lasx_xvmulwod_w_h(in_uvl, ubvr);                                  \
+    v_h = __lasx_xvmulwev_w_h(in_uvh, ubvr);                                  \
+    u_h = __lasx_xvmulwod_w_h(in_uvh, ubvr);                                  \
+    temp0 = __lasx_xvadd_w(yl_ev, u_l);                                       \
+    temp1 = __lasx_xvadd_w(yl_od, u_l);                                       \
+    temp2 = __lasx_xvadd_w(yh_ev, u_h);                                       \
+    temp3 = __lasx_xvadd_w(yh_od, u_h);                                       \
+    DUP4_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp2, 6, temp3, 6, temp0, \
+              temp1, temp2, temp3);                                           \
+    DUP4_ARG1(__lasx_xvclip255_w, temp0, temp1, temp2, temp3, temp0, temp1,   \
+              temp2, temp3);                                                  \
+    b_l = __lasx_xvpackev_h(temp1, temp0);                                    \
+    b_h = __lasx_xvpackev_h(temp3, temp2);                                    \
+    temp0 = __lasx_xvadd_w(yl_ev, v_l);                                       \
+    temp1 = __lasx_xvadd_w(yl_od, v_l);                                       \
+    temp2 = __lasx_xvadd_w(yh_ev, v_h);                                       \
+    temp3 = __lasx_xvadd_w(yh_od, v_h);                                       \
+    DUP4_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp2, 6, temp3, 6, temp0, \
+              temp1, temp2, temp3);                                           \
+    DUP4_ARG1(__lasx_xvclip255_w, temp0, temp1, temp2, temp3, temp0, temp1,   \
+              temp2, temp3);                                                  \
+    r_l = __lasx_xvpackev_h(temp1, temp0);                                    \
+    r_h = __lasx_xvpackev_h(temp3, temp2);                                    \
+    DUP2_ARG2(__lasx_xvdp2_w_h, in_uvl, ugvg, in_uvh, ugvg, u_l, u_h);        \
+    temp0 = __lasx_xvsub_w(yl_ev, u_l);                                       \
+    temp1 = __lasx_xvsub_w(yl_od, u_l);                                       \
+    temp2 = __lasx_xvsub_w(yh_ev, u_h);                                       \
+    temp3 = __lasx_xvsub_w(yh_od, u_h);                                       \
+    DUP4_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp2, 6, temp3, 6, temp0, \
+              temp1, temp2, temp3);                                           \
+    DUP4_ARG1(__lasx_xvclip255_w, temp0, temp1, temp2, temp3, temp0, temp1,   \
+              temp2, temp3);                                                  \
+    g_l = __lasx_xvpackev_h(temp1, temp0);                                    \
+    g_h = __lasx_xvpackev_h(temp3, temp2);                                    \
   }
 
 // Convert 8 pixels of YUV420 to RGB.
-#define YUVTORGB(in_y, in_uv, ubvr, ugvg,                                      \
-                 yg, yb, out_b, out_g, out_r)                                  \
-  {                                                                            \
-    __m256i u_l, v_l, yl_ev, yl_od;                                            \
-    __m256i temp0, temp1;                                                      \
-                                                                               \
-    in_y  = __lasx_xvpermi_d(in_y, 0xD8);                                      \
-    temp0 = __lasx_xvilvl_b(in_y, in_y);                                       \
-    yl_ev = __lasx_xvmulwev_w_hu_h(temp0, yg);                                 \
-    yl_od = __lasx_xvmulwod_w_hu_h(temp0, yg);                                 \
-    DUP2_ARG2(__lasx_xvsrai_w, yl_ev, 16, yl_od, 16, yl_ev, yl_od);            \
-    yl_ev = __lasx_xvadd_w(yl_ev, yb);                                         \
-    yl_od = __lasx_xvadd_w(yl_od, yb);                                         \
-    v_l   = __lasx_xvmulwev_w_h(in_uv, ubvr);                                  \
-    u_l   = __lasx_xvmulwod_w_h(in_uv, ubvr);                                  \
-    temp0 = __lasx_xvadd_w(yl_ev, u_l);                                        \
-    temp1 = __lasx_xvadd_w(yl_od, u_l);                                        \
-    DUP2_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp0, temp1);              \
-    DUP2_ARG1(__lasx_xvclip255_w, temp0, temp1, temp0, temp1);                 \
-    out_b = __lasx_xvpackev_h(temp1, temp0);                                   \
-    temp0 = __lasx_xvadd_w(yl_ev, v_l);                                        \
-    temp1 = __lasx_xvadd_w(yl_od, v_l);                                        \
-    DUP2_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp0, temp1);              \
-    DUP2_ARG1(__lasx_xvclip255_w, temp0, temp1, temp0, temp1);                 \
-    out_r = __lasx_xvpackev_h(temp1, temp0);                                   \
-    u_l   = __lasx_xvdp2_w_h(in_uv, ugvg);                                     \
-    temp0 = __lasx_xvsub_w(yl_ev, u_l);                                        \
-    temp1 = __lasx_xvsub_w(yl_od, u_l);                                        \
-    DUP2_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp0, temp1);              \
-    DUP2_ARG1(__lasx_xvclip255_w, temp0, temp1, temp0, temp1);                 \
-    out_g = __lasx_xvpackev_h(temp1, temp0);                                   \
+#define YUVTORGB(in_y, in_uv, ubvr, ugvg, yg, yb, out_b, out_g, out_r) \
+  {                                                                    \
+    __m256i u_l, v_l, yl_ev, yl_od;                                    \
+    __m256i temp0, temp1;                                              \
+                                                                       \
+    in_y = __lasx_xvpermi_d(in_y, 0xD8);                               \
+    temp0 = __lasx_xvilvl_b(in_y, in_y);                               \
+    yl_ev = __lasx_xvmulwev_w_hu_h(temp0, yg);                         \
+    yl_od = __lasx_xvmulwod_w_hu_h(temp0, yg);                         \
+    DUP2_ARG2(__lasx_xvsrai_w, yl_ev, 16, yl_od, 16, yl_ev, yl_od);    \
+    yl_ev = __lasx_xvadd_w(yl_ev, yb);                                 \
+    yl_od = __lasx_xvadd_w(yl_od, yb);                                 \
+    v_l = __lasx_xvmulwev_w_h(in_uv, ubvr);                            \
+    u_l = __lasx_xvmulwod_w_h(in_uv, ubvr);                            \
+    temp0 = __lasx_xvadd_w(yl_ev, u_l);                                \
+    temp1 = __lasx_xvadd_w(yl_od, u_l);                                \
+    DUP2_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp0, temp1);      \
+    DUP2_ARG1(__lasx_xvclip255_w, temp0, temp1, temp0, temp1);         \
+    out_b = __lasx_xvpackev_h(temp1, temp0);                           \
+    temp0 = __lasx_xvadd_w(yl_ev, v_l);                                \
+    temp1 = __lasx_xvadd_w(yl_od, v_l);                                \
+    DUP2_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp0, temp1);      \
+    DUP2_ARG1(__lasx_xvclip255_w, temp0, temp1, temp0, temp1);         \
+    out_r = __lasx_xvpackev_h(temp1, temp0);                           \
+    u_l = __lasx_xvdp2_w_h(in_uv, ugvg);                               \
+    temp0 = __lasx_xvsub_w(yl_ev, u_l);                                \
+    temp1 = __lasx_xvsub_w(yl_od, u_l);                                \
+    DUP2_ARG2(__lasx_xvsrai_w, temp0, 6, temp1, 6, temp0, temp1);      \
+    DUP2_ARG1(__lasx_xvclip255_w, temp0, temp1, temp0, temp1);         \
+    out_g = __lasx_xvpackev_h(temp1, temp0);                           \
   }
 
 // Pack and Store 16 ARGB values.
-#define STOREARGB_D(a_l, a_h, r_l, r_h, g_l, g_h,            \
-                     b_l, b_h, pdst_argb)                    \
-  {                                                          \
-    __m256i temp0, temp1, temp2, temp3;                      \
-                                                             \
-    temp0 = __lasx_xvpackev_b(g_l, b_l);                     \
-    temp1 = __lasx_xvpackev_b(a_l, r_l);                     \
-    temp2 = __lasx_xvpackev_b(g_h, b_h);                     \
-    temp3 = __lasx_xvpackev_b(a_h, r_h);                     \
-    r_l   = __lasx_xvilvl_h(temp1, temp0);                   \
-    r_h   = __lasx_xvilvh_h(temp1, temp0);                   \
-    g_l   = __lasx_xvilvl_h(temp3, temp2);                   \
-    g_h   = __lasx_xvilvh_h(temp3, temp2);                   \
-    temp0 = __lasx_xvpermi_q(r_h, r_l, 0x20);                \
-    temp1 = __lasx_xvpermi_q(g_h, g_l, 0x20);                \
-    temp2 = __lasx_xvpermi_q(r_h, r_l, 0x31);                \
-    temp3 = __lasx_xvpermi_q(g_h, g_l, 0x31);                \
-    __lasx_xvst(temp0, pdst_argb, 0);                        \
-    __lasx_xvst(temp1, pdst_argb, 32);                       \
-    __lasx_xvst(temp2, pdst_argb, 64);                       \
-    __lasx_xvst(temp3, pdst_argb, 96);                       \
-    pdst_argb += 128;                                        \
+#define STOREARGB_D(a_l, a_h, r_l, r_h, g_l, g_h, b_l, b_h, pdst_argb) \
+  {                                                                    \
+    __m256i temp0, temp1, temp2, temp3;                                \
+                                                                       \
+    temp0 = __lasx_xvpackev_b(g_l, b_l);                               \
+    temp1 = __lasx_xvpackev_b(a_l, r_l);                               \
+    temp2 = __lasx_xvpackev_b(g_h, b_h);                               \
+    temp3 = __lasx_xvpackev_b(a_h, r_h);                               \
+    r_l = __lasx_xvilvl_h(temp1, temp0);                               \
+    r_h = __lasx_xvilvh_h(temp1, temp0);                               \
+    g_l = __lasx_xvilvl_h(temp3, temp2);                               \
+    g_h = __lasx_xvilvh_h(temp3, temp2);                               \
+    temp0 = __lasx_xvpermi_q(r_h, r_l, 0x20);                          \
+    temp1 = __lasx_xvpermi_q(g_h, g_l, 0x20);                          \
+    temp2 = __lasx_xvpermi_q(r_h, r_l, 0x31);                          \
+    temp3 = __lasx_xvpermi_q(g_h, g_l, 0x31);                          \
+    __lasx_xvst(temp0, pdst_argb, 0);                                  \
+    __lasx_xvst(temp1, pdst_argb, 32);                                 \
+    __lasx_xvst(temp2, pdst_argb, 64);                                 \
+    __lasx_xvst(temp3, pdst_argb, 96);                                 \
+    pdst_argb += 128;                                                  \
   }
 
 // Pack and Store 8 ARGB values.
-#define STOREARGB(in_a, in_r, in_g, in_b, pdst_argb)         \
-  {                                                          \
-    __m256i temp0, temp1;                                    \
-                                                             \
-    temp0 = __lasx_xvpackev_b(in_g, in_b);                   \
-    temp1 = __lasx_xvpackev_b(in_a, in_r);                   \
-    in_a  = __lasx_xvilvl_h(temp1, temp0);                   \
-    in_r  = __lasx_xvilvh_h(temp1, temp0);                   \
-    temp0 = __lasx_xvpermi_q(in_r, in_a, 0x20);              \
-    temp1 = __lasx_xvpermi_q(in_r, in_a, 0x31);              \
-    __lasx_xvst(temp0, pdst_argb, 0);                        \
-    __lasx_xvst(temp1, pdst_argb, 32);                       \
-    pdst_argb += 64;                                         \
+#define STOREARGB(in_a, in_r, in_g, in_b, pdst_argb) \
+  {                                                  \
+    __m256i temp0, temp1;                            \
+                                                     \
+    temp0 = __lasx_xvpackev_b(in_g, in_b);           \
+    temp1 = __lasx_xvpackev_b(in_a, in_r);           \
+    in_a = __lasx_xvilvl_h(temp1, temp0);            \
+    in_r = __lasx_xvilvh_h(temp1, temp0);            \
+    temp0 = __lasx_xvpermi_q(in_r, in_a, 0x20);      \
+    temp1 = __lasx_xvpermi_q(in_r, in_a, 0x31);      \
+    __lasx_xvst(temp0, pdst_argb, 0);                \
+    __lasx_xvst(temp1, pdst_argb, 32);               \
+    pdst_argb += 64;                                 \
   }
 
 void MirrorRow_LASX(const uint8_t* src, uint8_t* dst, int width) {
@@ -205,15 +203,15 @@ void MirrorRow_LASX(const uint8_t* src, uint8_t* dst, int width) {
                       0x08090A0B0C0D0E0F, 0x0001020304050607};
   src += width - 64;
   for (x = 0; x < len; x++) {
-      DUP2_ARG2(__lasx_xvld, src, 0, src, 32, src0, src1);
-      DUP2_ARG3(__lasx_xvshuf_b, src0, src0, shuffler,
-                src1, src1, shuffler, src0, src1);
-      src0 = __lasx_xvpermi_q(src0, src0, 0x01);
-      src1 = __lasx_xvpermi_q(src1, src1, 0x01);
-      __lasx_xvst(src1, dst, 0);
-      __lasx_xvst(src0, dst, 32);
-      dst += 64;
-      src -= 64;
+    DUP2_ARG2(__lasx_xvld, src, 0, src, 32, src0, src1);
+    DUP2_ARG3(__lasx_xvshuf_b, src0, src0, shuffler, src1, src1, shuffler, src0,
+              src1);
+    src0 = __lasx_xvpermi_q(src0, src0, 0x01);
+    src1 = __lasx_xvpermi_q(src1, src1, 0x01);
+    __lasx_xvst(src1, dst, 0);
+    __lasx_xvst(src0, dst, 32);
+    dst += 64;
+    src -= 64;
   }
 }
 
@@ -226,12 +224,12 @@ void MirrorUVRow_LASX(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
 
   src_uv += (width - 16) << 1;
   for (x = 0; x < len; x++) {
-      src = __lasx_xvld(src_uv, 0);
-      dst = __lasx_xvshuf_h(shuffler, src, src);
-      dst = __lasx_xvpermi_q(dst, dst, 0x01);
-      __lasx_xvst(dst, dst_uv, 0);
-      src_uv -= 32;
-      dst_uv += 32;
+    src = __lasx_xvld(src_uv, 0);
+    dst = __lasx_xvshuf_h(shuffler, src, src);
+    dst = __lasx_xvpermi_q(dst, dst, 0x01);
+    __lasx_xvst(dst, dst_uv, 0);
+    src_uv -= 32;
+    dst_uv += 32;
   }
 }
 
@@ -244,15 +242,15 @@ void ARGBMirrorRow_LASX(const uint8_t* src, uint8_t* dst, int width) {
                       0x0B0A09080F0E0D0C, 0x0302010007060504};
   src += (width * 4) - 64;
   for (x = 0; x < len; x++) {
-      DUP2_ARG2(__lasx_xvld, src, 0, src, 32, src0, src1);
-      DUP2_ARG3(__lasx_xvshuf_b, src0, src0, shuffler,
-                src1, src1, shuffler, src0, src1);
-      dst1 = __lasx_xvpermi_q(src0, src0, 0x01);
-      dst0 = __lasx_xvpermi_q(src1, src1, 0x01);
-      __lasx_xvst(dst0, dst, 0);
-      __lasx_xvst(dst1, dst, 32);
-      dst += 64;
-      src -= 64;
+    DUP2_ARG2(__lasx_xvld, src, 0, src, 32, src0, src1);
+    DUP2_ARG3(__lasx_xvshuf_b, src0, src0, shuffler, src1, src1, shuffler, src0,
+              src1);
+    dst1 = __lasx_xvpermi_q(src0, src0, 0x01);
+    dst0 = __lasx_xvpermi_q(src1, src1, 0x01);
+    __lasx_xvst(dst0, dst, 0);
+    __lasx_xvst(dst1, dst, 32);
+    dst += 64;
+    src -= 64;
   }
 }
 
@@ -268,21 +266,21 @@ void I422ToYUY2Row_LASX(const uint8_t* src_y,
   __m256i dst_yuy2_0, dst_yuy2_1;
 
   for (x = 0; x < len; x++) {
-      DUP2_ARG2(__lasx_xvld, src_u, 0, src_v, 0, src_u0, src_v0);
-      src_y0 = __lasx_xvld(src_y, 0);
-      src_u0 = __lasx_xvpermi_d(src_u0, 0xD8);
-      src_v0 = __lasx_xvpermi_d(src_v0, 0xD8);
-      vec_uv0 = __lasx_xvilvl_b(src_v0, src_u0);
-      vec_yuy2_0 = __lasx_xvilvl_b(vec_uv0, src_y0);
-      vec_yuy2_1 = __lasx_xvilvh_b(vec_uv0, src_y0);
-      dst_yuy2_0 = __lasx_xvpermi_q(vec_yuy2_1, vec_yuy2_0, 0x20);
-      dst_yuy2_1 = __lasx_xvpermi_q(vec_yuy2_1, vec_yuy2_0, 0x31);
-      __lasx_xvst(dst_yuy2_0, dst_yuy2, 0);
-      __lasx_xvst(dst_yuy2_1, dst_yuy2, 32);
-      src_u += 16;
-      src_v += 16;
-      src_y += 32;
-      dst_yuy2 += 64;
+    DUP2_ARG2(__lasx_xvld, src_u, 0, src_v, 0, src_u0, src_v0);
+    src_y0 = __lasx_xvld(src_y, 0);
+    src_u0 = __lasx_xvpermi_d(src_u0, 0xD8);
+    src_v0 = __lasx_xvpermi_d(src_v0, 0xD8);
+    vec_uv0 = __lasx_xvilvl_b(src_v0, src_u0);
+    vec_yuy2_0 = __lasx_xvilvl_b(vec_uv0, src_y0);
+    vec_yuy2_1 = __lasx_xvilvh_b(vec_uv0, src_y0);
+    dst_yuy2_0 = __lasx_xvpermi_q(vec_yuy2_1, vec_yuy2_0, 0x20);
+    dst_yuy2_1 = __lasx_xvpermi_q(vec_yuy2_1, vec_yuy2_0, 0x31);
+    __lasx_xvst(dst_yuy2_0, dst_yuy2, 0);
+    __lasx_xvst(dst_yuy2_1, dst_yuy2, 32);
+    src_u += 16;
+    src_v += 16;
+    src_y += 32;
+    dst_yuy2 += 64;
   }
 }
 
@@ -298,21 +296,21 @@ void I422ToUYVYRow_LASX(const uint8_t* src_y,
   __m256i dst_uyvy0, dst_uyvy1;
 
   for (x = 0; x < len; x++) {
-      DUP2_ARG2(__lasx_xvld, src_u, 0, src_v, 0, src_u0, src_v0);
-      src_y0 = __lasx_xvld(src_y, 0);
-      src_u0 = __lasx_xvpermi_d(src_u0, 0xD8);
-      src_v0 = __lasx_xvpermi_d(src_v0, 0xD8);
-      vec_uv0 = __lasx_xvilvl_b(src_v0, src_u0);
-      vec_uyvy0 = __lasx_xvilvl_b(src_y0, vec_uv0);
-      vec_uyvy1 = __lasx_xvilvh_b(src_y0, vec_uv0);
-      dst_uyvy0 = __lasx_xvpermi_q(vec_uyvy1, vec_uyvy0, 0x20);
-      dst_uyvy1 = __lasx_xvpermi_q(vec_uyvy1, vec_uyvy0, 0x31);
-      __lasx_xvst(dst_uyvy0, dst_uyvy, 0);
-      __lasx_xvst(dst_uyvy1, dst_uyvy, 32);
-      src_u += 16;
-      src_v += 16;
-      src_y += 32;
-      dst_uyvy +=64;
+    DUP2_ARG2(__lasx_xvld, src_u, 0, src_v, 0, src_u0, src_v0);
+    src_y0 = __lasx_xvld(src_y, 0);
+    src_u0 = __lasx_xvpermi_d(src_u0, 0xD8);
+    src_v0 = __lasx_xvpermi_d(src_v0, 0xD8);
+    vec_uv0 = __lasx_xvilvl_b(src_v0, src_u0);
+    vec_uyvy0 = __lasx_xvilvl_b(src_y0, vec_uv0);
+    vec_uyvy1 = __lasx_xvilvh_b(src_y0, vec_uv0);
+    dst_uyvy0 = __lasx_xvpermi_q(vec_uyvy1, vec_uyvy0, 0x20);
+    dst_uyvy1 = __lasx_xvpermi_q(vec_uyvy1, vec_uyvy0, 0x31);
+    __lasx_xvst(dst_uyvy0, dst_uyvy, 0);
+    __lasx_xvst(dst_uyvy1, dst_uyvy, 32);
+    src_u += 16;
+    src_v += 16;
+    src_y += 32;
+    dst_uyvy += 64;
   }
 }
 
@@ -335,8 +333,8 @@ void I422ToARGBRow_LASX(const uint8_t* src_y,
     __m256i y, uv_l, uv_h, b_l, b_h, g_l, g_h, r_l, r_h;
 
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
     STOREARGB_D(alpha, alpha, r_l, r_h, g_l, g_h, b_l, b_h, dst_argb);
     src_y += 32;
     src_u += 16;
@@ -363,8 +361,8 @@ void I422ToRGBARow_LASX(const uint8_t* src_y,
     __m256i y, uv_l, uv_h, b_l, b_h, g_l, g_h, r_l, r_h;
 
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
     STOREARGB_D(r_l, r_h, g_l, g_h, b_l, b_h, alpha, alpha, dst_argb);
     src_y += 32;
     src_u += 16;
@@ -392,12 +390,12 @@ void I422AlphaToARGBRow_LASX(const uint8_t* src_y,
   for (x = 0; x < len; x++) {
     __m256i y, uv_l, uv_h, b_l, b_h, g_l, g_h, r_l, r_h, a_l, a_h;
 
-    y   = __lasx_xvld(src_a, 0);
+    y = __lasx_xvld(src_a, 0);
     a_l = __lasx_xvilvl_b(zero, y);
     a_h = __lasx_xvilvh_b(zero, y);
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
     STOREARGB_D(a_l, a_h, r_l, r_h, g_l, g_h, b_l, b_h, dst_argb);
     src_y += 32;
     src_u += 16;
@@ -437,12 +435,13 @@ void I422ToRGB24Row_LASX(const uint8_t* src_y,
     __m256i temp0, temp1, temp2, temp3;
 
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
     temp0 = __lasx_xvpackev_b(g_l, b_l);
     temp1 = __lasx_xvpackev_b(g_h, b_h);
     DUP4_ARG3(__lasx_xvshuf_b, r_l, temp0, shuffler1, r_h, temp1, shuffler1,
-              r_l, temp0, shuffler0, r_h, temp1, shuffler0, temp2, temp3, temp0, temp1);
+              r_l, temp0, shuffler0, r_h, temp1, shuffler0, temp2, temp3, temp0,
+              temp1);
 
     b_l = __lasx_xvilvl_d(temp1, temp2);
     b_h = __lasx_xvilvh_d(temp3, temp1);
@@ -479,22 +478,22 @@ void I422ToRGB565Row_LASX(const uint8_t* src_y,
     __m256i dst_l, dst_h;
 
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
-    b_l   = __lasx_xvsrli_h(b_l, 3);
-    b_h   = __lasx_xvsrli_h(b_h, 3);
-    g_l   = __lasx_xvsrli_h(g_l, 2);
-    g_h   = __lasx_xvsrli_h(g_h, 2);
-    r_l   = __lasx_xvsrli_h(r_l, 3);
-    r_h   = __lasx_xvsrli_h(r_h, 3);
-    r_l   = __lasx_xvslli_h(r_l, 11);
-    r_h   = __lasx_xvslli_h(r_h, 11);
-    g_l   = __lasx_xvslli_h(g_l, 5);
-    g_h   = __lasx_xvslli_h(g_h, 5);
-    r_l   = __lasx_xvor_v(r_l, g_l);
-    r_l   = __lasx_xvor_v(r_l, b_l);
-    r_h   = __lasx_xvor_v(r_h, g_h);
-    r_h   = __lasx_xvor_v(r_h, b_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
+    b_l = __lasx_xvsrli_h(b_l, 3);
+    b_h = __lasx_xvsrli_h(b_h, 3);
+    g_l = __lasx_xvsrli_h(g_l, 2);
+    g_h = __lasx_xvsrli_h(g_h, 2);
+    r_l = __lasx_xvsrli_h(r_l, 3);
+    r_h = __lasx_xvsrli_h(r_h, 3);
+    r_l = __lasx_xvslli_h(r_l, 11);
+    r_h = __lasx_xvslli_h(r_h, 11);
+    g_l = __lasx_xvslli_h(g_l, 5);
+    g_h = __lasx_xvslli_h(g_h, 5);
+    r_l = __lasx_xvor_v(r_l, g_l);
+    r_l = __lasx_xvor_v(r_l, b_l);
+    r_h = __lasx_xvor_v(r_h, g_h);
+    r_h = __lasx_xvor_v(r_h, b_h);
     dst_l = __lasx_xvpermi_q(r_h, r_l, 0x20);
     dst_h = __lasx_xvpermi_q(r_h, r_l, 0x31);
     __lasx_xvst(dst_l, dst_rgb565, 0);
@@ -518,10 +517,10 @@ void I422ToARGB4444Row_LASX(const uint8_t* src_y,
   __m256i vec_yb, vec_yg;
   __m256i vec_ubvr, vec_ugvg;
   __m256i const_0x80 = __lasx_xvldi(0x80);
-  __m256i alpha = {0xF000F000F000F000, 0xF000F000F000F000,
-                   0xF000F000F000F000, 0xF000F000F000F000};
-  __m256i mask  = {0x00F000F000F000F0, 0x00F000F000F000F0,
-                   0x00F000F000F000F0, 0x00F000F000F000F0};
+  __m256i alpha = {0xF000F000F000F000, 0xF000F000F000F000, 0xF000F000F000F000,
+                   0xF000F000F000F000};
+  __m256i mask = {0x00F000F000F000F0, 0x00F000F000F000F0, 0x00F000F000F000F0,
+                  0x00F000F000F000F0};
 
   YUVTORGB_SETUP(yuvconstants, vec_ubvr, vec_ugvg, vec_yg, vec_yb);
 
@@ -530,8 +529,8 @@ void I422ToARGB4444Row_LASX(const uint8_t* src_y,
     __m256i dst_l, dst_h;
 
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
     b_l = __lasx_xvsrli_h(b_l, 4);
     b_h = __lasx_xvsrli_h(b_h, 4);
     r_l = __lasx_xvsrli_h(r_l, 4);
@@ -568,8 +567,8 @@ void I422ToARGB1555Row_LASX(const uint8_t* src_y,
   __m256i vec_yb, vec_yg;
   __m256i vec_ubvr, vec_ugvg;
   __m256i const_0x80 = __lasx_xvldi(0x80);
-  __m256i alpha = {0x8000800080008000, 0x8000800080008000,
-                   0x8000800080008000, 0x8000800080008000};
+  __m256i alpha = {0x8000800080008000, 0x8000800080008000, 0x8000800080008000,
+                   0x8000800080008000};
 
   YUVTORGB_SETUP(yuvconstants, vec_ubvr, vec_ugvg, vec_yg, vec_yb);
 
@@ -578,8 +577,8 @@ void I422ToARGB1555Row_LASX(const uint8_t* src_y,
     __m256i dst_l, dst_h;
 
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
-    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg,
-                vec_yb, b_l, b_h, g_l, g_h, r_l, r_h);
+    YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
+               g_h, r_l, r_h);
     b_l = __lasx_xvsrli_h(b_l, 3);
     b_h = __lasx_xvsrli_h(b_h, 3);
     g_l = __lasx_xvsrli_h(g_l, 3);
@@ -751,13 +750,13 @@ void ARGBToYRow_LASX(const uint8_t* src_argb0, uint8_t* dst_y, int width) {
   int len = width / 32;
   __m256i src0, src1, src2, src3, vec0, vec1, vec2, vec3;
   __m256i tmp0, tmp1, dst0;
-  __m256i const_19   = __lasx_xvldi(0x19);
-  __m256i const_42   = __lasx_xvldi(0x42);
-  __m256i const_81   = __lasx_xvldi(0x81);
+  __m256i const_19 = __lasx_xvldi(0x19);
+  __m256i const_42 = __lasx_xvldi(0x42);
+  __m256i const_81 = __lasx_xvldi(0x81);
   __m256i const_1080 = {0x1080108010801080, 0x1080108010801080,
                         0x1080108010801080, 0x1080108010801080};
-  __m256i control    = {0x0000000400000000, 0x0000000500000001,
-                        0x0000000600000002, 0x0000000700000003};
+  __m256i control = {0x0000000400000000, 0x0000000500000001, 0x0000000600000002,
+                     0x0000000700000003};
 
   for (x = 0; x < len; x++) {
     DUP4_ARG2(__lasx_xvld, src_argb0, 0, src_argb0, 32, src_argb0, 64,
@@ -802,8 +801,8 @@ void ARGBToUVRow_LASX(const uint8_t* src_argb0,
                         0x002f002f002f002f, 0x002f002f002f002f};
   __m256i const_0x12 = {0x0009000900090009, 0x0009000900090009,
                         0x0009000900090009, 0x0009000900090009};
-  __m256i control    = {0x0000000400000000, 0x0000000500000001,
-                        0x0000000600000002, 0x0000000700000003};
+  __m256i control = {0x0000000400000000, 0x0000000500000001, 0x0000000600000002,
+                     0x0000000700000003};
   __m256i const_0x8080 = {0x8080808080808080, 0x8080808080808080,
                           0x8080808080808080, 0x8080808080808080};
 
@@ -861,13 +860,13 @@ void ARGBToRGB24Row_LASX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   int len = (width / 32) - 1;
   __m256i src0, src1, src2, src3;
   __m256i tmp0, tmp1, tmp2, tmp3;
-  __m256i shuf    = {0x0908060504020100, 0x000000000E0D0C0A,
-                     0x0908060504020100, 0x000000000E0D0C0A};
-  __m256i control = {0x0000000100000000, 0x0000000400000002,
-                     0x0000000600000005, 0x0000000700000003};
+  __m256i shuf = {0x0908060504020100, 0x000000000E0D0C0A, 0x0908060504020100,
+                  0x000000000E0D0C0A};
+  __m256i control = {0x0000000100000000, 0x0000000400000002, 0x0000000600000005,
+                     0x0000000700000003};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64,
-              src_argb, 96, src0, src1, src2, src3);
+    DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64, src_argb,
+              96, src0, src1, src2, src3);
     tmp0 = __lasx_xvshuf_b(src0, src0, shuf);
     tmp1 = __lasx_xvshuf_b(src1, src1, shuf);
     tmp2 = __lasx_xvshuf_b(src2, src2, shuf);
@@ -883,8 +882,8 @@ void ARGBToRGB24Row_LASX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
     dst_rgb += 96;
     src_argb += 128;
   }
-  DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64,
-            src_argb, 96, src0, src1, src2, src3);
+  DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64, src_argb, 96,
+            src0, src1, src2, src3);
   tmp0 = __lasx_xvshuf_b(src0, src0, shuf);
   tmp1 = __lasx_xvshuf_b(src1, src1, shuf);
   tmp2 = __lasx_xvshuf_b(src2, src2, shuf);
@@ -907,13 +906,13 @@ void ARGBToRAWRow_LASX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   int len = (width / 32) - 1;
   __m256i src0, src1, src2, src3;
   __m256i tmp0, tmp1, tmp2, tmp3;
-  __m256i shuf    = {0x090A040506000102, 0x000000000C0D0E08,
-                     0x090A040506000102, 0x000000000C0D0E08};
-  __m256i control = {0x0000000100000000, 0x0000000400000002,
-                     0x0000000600000005, 0x0000000700000003};
+  __m256i shuf = {0x090A040506000102, 0x000000000C0D0E08, 0x090A040506000102,
+                  0x000000000C0D0E08};
+  __m256i control = {0x0000000100000000, 0x0000000400000002, 0x0000000600000005,
+                     0x0000000700000003};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64,
-              src_argb, 96, src0, src1, src2, src3);
+    DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64, src_argb,
+              96, src0, src1, src2, src3);
     tmp0 = __lasx_xvshuf_b(src0, src0, shuf);
     tmp1 = __lasx_xvshuf_b(src1, src1, shuf);
     tmp2 = __lasx_xvshuf_b(src2, src2, shuf);
@@ -929,8 +928,8 @@ void ARGBToRAWRow_LASX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
     dst_rgb += 96;
     src_argb += 128;
   }
-  DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64,
-            src_argb, 96, src0, src1, src2, src3);
+  DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64, src_argb, 96,
+            src0, src1, src2, src3);
   tmp0 = __lasx_xvshuf_b(src0, src0, shuf);
   tmp1 = __lasx_xvshuf_b(src1, src1, shuf);
   tmp2 = __lasx_xvshuf_b(src2, src2, shuf);
@@ -948,13 +947,15 @@ void ARGBToRAWRow_LASX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   __lasx_xvstelm_d(tmp3, dst_rgb, 16, 2);
 }
 
-void ARGBToRGB565Row_LASX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
+void ARGBToRGB565Row_LASX(const uint8_t* src_argb,
+                          uint8_t* dst_rgb,
+                          int width) {
   int x;
   int len = width / 16;
   __m256i zero = __lasx_xvldi(0);
   __m256i src0, src1, tmp0, tmp1, dst0;
-  __m256i shift = {0x0300030003000300, 0x0300030003000300,
-                   0x0300030003000300, 0x0300030003000300};
+  __m256i shift = {0x0300030003000300, 0x0300030003000300, 0x0300030003000300,
+                   0x0300030003000300};
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src0, src1);
@@ -980,10 +981,10 @@ void ARGBToARGB1555Row_LASX(const uint8_t* src_argb,
   int len = width / 16;
   __m256i zero = __lasx_xvldi(0);
   __m256i src0, src1, tmp0, tmp1, tmp2, tmp3, dst0;
-  __m256i shift1 = {0x0703070307030703, 0x0703070307030703,
-                    0x0703070307030703, 0x0703070307030703};
-  __m256i shift2 = {0x0200020002000200, 0x0200020002000200,
-                    0x0200020002000200, 0x0200020002000200};
+  __m256i shift1 = {0x0703070307030703, 0x0703070307030703, 0x0703070307030703,
+                    0x0703070307030703};
+  __m256i shift2 = {0x0200020002000200, 0x0200020002000200, 0x0200020002000200,
+                    0x0200020002000200};
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src0, src1);
@@ -1036,17 +1037,17 @@ void ARGBToUV444Row_LASX(const uint8_t* src_argb,
   __m256i tmp0, tmp1, tmp2, tmp3;
   __m256i reg0, reg1, reg2, reg3, dst0, dst1;
   __m256i const_112 = __lasx_xvldi(112);
-  __m256i const_74  = __lasx_xvldi(74);
-  __m256i const_38  = __lasx_xvldi(38);
-  __m256i const_94  = __lasx_xvldi(94);
-  __m256i const_18  = __lasx_xvldi(18);
+  __m256i const_74 = __lasx_xvldi(74);
+  __m256i const_38 = __lasx_xvldi(38);
+  __m256i const_94 = __lasx_xvldi(94);
+  __m256i const_18 = __lasx_xvldi(18);
   __m256i const_0x8080 = {0x8080808080808080, 0x8080808080808080,
                           0x8080808080808080, 0x8080808080808080};
-  __m256i control = {0x0000000400000000, 0x0000000500000001,
-                     0x0000000600000002, 0x0000000700000003};
+  __m256i control = {0x0000000400000000, 0x0000000500000001, 0x0000000600000002,
+                     0x0000000700000003};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64,
-              src_argb, 96, src0, src1, src2, src3);
+    DUP4_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src_argb, 64, src_argb,
+              96, src0, src1, src2, src3);
     tmp0 = __lasx_xvpickev_h(src1, src0);
     tmp1 = __lasx_xvpickod_h(src1, src0);
     tmp2 = __lasx_xvpickev_h(src3, src2);
@@ -1101,7 +1102,7 @@ void ARGBMultiplyRow_LASX(const uint8_t* src_argb0,
     __lasx_xvst(dst0, dst_argb, 0);
     src_argb0 += 32;
     src_argb1 += 32;
-    dst_argb  += 32;
+    dst_argb += 32;
   }
 }
 
@@ -1119,7 +1120,7 @@ void ARGBAddRow_LASX(const uint8_t* src_argb0,
     __lasx_xvst(dst0, dst_argb, 0);
     src_argb0 += 32;
     src_argb1 += 32;
-    dst_argb  += 32;
+    dst_argb += 32;
   }
 }
 
@@ -1137,7 +1138,7 @@ void ARGBSubtractRow_LASX(const uint8_t* src_argb0,
     __lasx_xvst(dst0, dst_argb, 0);
     src_argb0 += 32;
     src_argb1 += 32;
-    dst_argb  += 32;
+    dst_argb += 32;
   }
 }
 
@@ -1149,8 +1150,8 @@ void ARGBAttenuateRow_LASX(const uint8_t* src_argb,
   __m256i src0, src1, tmp0, tmp1;
   __m256i reg0, reg1, reg2, reg3, reg4, reg5;
   __m256i b, g, r, a, dst0, dst1;
-  __m256i control = {0x0005000100040000, 0x0007000300060002,
-                     0x0005000100040000, 0x0007000300060002};
+  __m256i control = {0x0005000100040000, 0x0007000300060002, 0x0005000100040000,
+                     0x0007000300060002};
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src0, src1);
@@ -1199,12 +1200,12 @@ void ARGBToRGB565DitherRow_LASX(const uint8_t* src_argb,
     DUP2_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src0, src1);
     tmp0 = __lasx_xvpickev_b(src1, src0);
     tmp1 = __lasx_xvpickod_b(src1, src0);
-    b    = __lasx_xvpackev_b(zero, tmp0);
-    r    = __lasx_xvpackod_b(zero, tmp0);
-    g    = __lasx_xvpackev_b(zero, tmp1);
-    b    = __lasx_xvadd_h(b, vec_dither);
-    g    = __lasx_xvadd_h(g, vec_dither);
-    r    = __lasx_xvadd_h(r, vec_dither);
+    b = __lasx_xvpackev_b(zero, tmp0);
+    r = __lasx_xvpackod_b(zero, tmp0);
+    g = __lasx_xvpackev_b(zero, tmp1);
+    b = __lasx_xvadd_h(b, vec_dither);
+    g = __lasx_xvadd_h(g, vec_dither);
+    r = __lasx_xvadd_h(r, vec_dither);
     DUP2_ARG1(__lasx_xvclip255_h, b, g, b, g);
     r = __lasx_xvclip255_h(r);
     b = __lasx_xvsrai_h(b, 3);
@@ -1228,8 +1229,8 @@ void ARGBShuffleRow_LASX(const uint8_t* src_argb,
   int x;
   int len = width / 16;
   __m256i src0, src1, dst0, dst1;
-  __m256i shuf = {0x0404040400000000, 0x0C0C0C0C08080808,
-                  0x0404040400000000, 0x0C0C0C0C08080808};
+  __m256i shuf = {0x0404040400000000, 0x0C0C0C0C08080808, 0x0404040400000000,
+                  0x0C0C0C0C08080808};
   __m256i temp = __lasx_xvldrepl_w(shuffler, 0);
 
   shuf = __lasx_xvadd_b(shuf, temp);
@@ -1274,8 +1275,8 @@ void ARGBGrayRow_LASX(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
   __m256i reg0, reg1, reg2, dst0, dst1;
   __m256i const_128 = __lasx_xvldi(0x480);
   __m256i const_150 = __lasx_xvldi(0x96);
-  __m256i const_br  = {0x4D1D4D1D4D1D4D1D, 0x4D1D4D1D4D1D4D1D,
-                       0x4D1D4D1D4D1D4D1D, 0x4D1D4D1D4D1D4D1D};
+  __m256i const_br = {0x4D1D4D1D4D1D4D1D, 0x4D1D4D1D4D1D4D1D,
+                      0x4D1D4D1D4D1D4D1D, 0x4D1D4D1D4D1D4D1D};
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lasx_xvld, src_argb, 0, src_argb, 32, src0, src1);
@@ -1301,17 +1302,17 @@ void ARGBSepiaRow_LASX(uint8_t* dst_argb, int width) {
   __m256i src0, src1, tmp0, tmp1;
   __m256i reg0, reg1, spb, spg, spr;
   __m256i dst0, dst1;
-  __m256i spb_g  = __lasx_xvldi(68);
-  __m256i spg_g  = __lasx_xvldi(88);
-  __m256i spr_g  = __lasx_xvldi(98);
-  __m256i spb_br = {0x2311231123112311, 0x2311231123112311,
-                    0x2311231123112311, 0x2311231123112311};
-  __m256i spg_br = {0x2D162D162D162D16, 0x2D162D162D162D16,
-                    0x2D162D162D162D16, 0x2D162D162D162D16};
-  __m256i spr_br = {0x3218321832183218, 0x3218321832183218,
-                    0x3218321832183218, 0x3218321832183218};
-  __m256i shuff  = {0x1706150413021100, 0x1F0E1D0C1B0A1908,
-                    0x1706150413021100, 0x1F0E1D0C1B0A1908};
+  __m256i spb_g = __lasx_xvldi(68);
+  __m256i spg_g = __lasx_xvldi(88);
+  __m256i spr_g = __lasx_xvldi(98);
+  __m256i spb_br = {0x2311231123112311, 0x2311231123112311, 0x2311231123112311,
+                    0x2311231123112311};
+  __m256i spg_br = {0x2D162D162D162D16, 0x2D162D162D162D16, 0x2D162D162D162D16,
+                    0x2D162D162D162D16};
+  __m256i spr_br = {0x3218321832183218, 0x3218321832183218, 0x3218321832183218,
+                    0x3218321832183218};
+  __m256i shuff = {0x1706150413021100, 0x1F0E1D0C1B0A1908, 0x1706150413021100,
+                   0x1F0E1D0C1B0A1908};
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lasx_xvld, dst_argb, 0, dst_argb, 32, src0, src1);
@@ -1319,14 +1320,14 @@ void ARGBSepiaRow_LASX(uint8_t* dst_argb, int width) {
     tmp1 = __lasx_xvpickod_b(src1, src0);
     DUP2_ARG2(__lasx_xvdp2_h_bu, tmp0, spb_br, tmp0, spg_br, spb, spg);
     spr = __lasx_xvdp2_h_bu(tmp0, spr_br);
-    spb  = __lasx_xvmaddwev_h_bu(spb, tmp1, spb_g);
-    spg  = __lasx_xvmaddwev_h_bu(spg, tmp1, spg_g);
-    spr  = __lasx_xvmaddwev_h_bu(spr, tmp1, spr_g);
-    spb  = __lasx_xvsrli_h(spb, 7);
-    spg  = __lasx_xvsrli_h(spg, 7);
-    spr  = __lasx_xvsrli_h(spr, 7);
-    spg  = __lasx_xvsat_hu(spg, 7);
-    spr  = __lasx_xvsat_hu(spr, 7);
+    spb = __lasx_xvmaddwev_h_bu(spb, tmp1, spb_g);
+    spg = __lasx_xvmaddwev_h_bu(spg, tmp1, spg_g);
+    spr = __lasx_xvmaddwev_h_bu(spr, tmp1, spr_g);
+    spb = __lasx_xvsrli_h(spb, 7);
+    spg = __lasx_xvsrli_h(spg, 7);
+    spr = __lasx_xvsrli_h(spr, 7);
+    spg = __lasx_xvsat_hu(spg, 7);
+    spr = __lasx_xvsat_hu(spr, 7);
     reg0 = __lasx_xvpackev_b(spg, spb);
     reg1 = __lasx_xvshuf_b(tmp1, spr, shuff);
     dst0 = __lasx_xvilvl_h(reg1, reg0);

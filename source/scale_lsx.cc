@@ -22,15 +22,15 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#define LOAD_DATA(_src, _in, _out)                                 \
-  {                                                                \
-    int _tmp1, _tmp2, _tmp3, _tmp4;                                \
-    DUP4_ARG2(__lsx_vpickve2gr_w, _in, 0, _in, 1, _in, 2,          \
-              _in, 3, _tmp1, _tmp2, _tmp3, _tmp4);                 \
-    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp1], 0);                \
-    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp2], 1);                \
-    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp3], 2);                \
-    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp4], 3);                \
+#define LOAD_DATA(_src, _in, _out)                                       \
+  {                                                                      \
+    int _tmp1, _tmp2, _tmp3, _tmp4;                                      \
+    DUP4_ARG2(__lsx_vpickve2gr_w, _in, 0, _in, 1, _in, 2, _in, 3, _tmp1, \
+              _tmp2, _tmp3, _tmp4);                                      \
+    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp1], 0);                      \
+    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp2], 1);                      \
+    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp3], 2);                      \
+    _out = __lsx_vinsgr2vr_w(_out, _src[_tmp4], 3);                      \
   }
 
 void ScaleARGBRowDown2_LSX(const uint8_t* src_argb,
@@ -157,8 +157,8 @@ void ScaleARGBRowDownEvenBox_LSX(const uint8_t* src_argb,
     next_argb += stepx;
     tmp7 = __lsx_vldrepl_d(next_argb, 0);
     next_argb += stepx;
-    DUP4_ARG2(__lsx_vilvl_d, tmp1, tmp0, tmp3, tmp2, tmp5, tmp4,
-              tmp7, tmp6, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vilvl_d, tmp1, tmp0, tmp3, tmp2, tmp5, tmp4, tmp7, tmp6,
+              src0, src1, src2, src3);
     DUP2_ARG2(__lsx_vaddwev_h_bu, src0, src2, src1, src3, tmp0, tmp2);
     DUP2_ARG2(__lsx_vaddwod_h_bu, src0, src2, src1, src3, tmp1, tmp3);
     DUP2_ARG2(__lsx_vpackev_w, tmp1, tmp0, tmp3, tmp2, reg0, reg1);
@@ -181,8 +181,8 @@ void ScaleRowDown2_LSX(const uint8_t* src_ptr,
   (void)src_stride;
 
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr,
-              48, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr, 48,
+              src0, src1, src2, src3);
     DUP2_ARG2(__lsx_vpickod_b, src1, src0, src3, src2, dst0, dst1);
     __lsx_vst(dst0, dst, 0);
     __lsx_vst(dst1, dst, 16);
@@ -201,9 +201,9 @@ void ScaleRowDown2Linear_LSX(const uint8_t* src_ptr,
   __m128i tmp0, tmp1, tmp2, tmp3, dst0, dst1;
   (void)src_stride;
 
-  for(x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr,
-              48, src0, src1, src2, src3);
+  for (x = 0; x < len; x++) {
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr, 48,
+              src0, src1, src2, src3);
     DUP2_ARG2(__lsx_vpickev_b, src1, src0, src3, src2, tmp0, tmp2);
     DUP2_ARG2(__lsx_vpickod_b, src1, src0, src3, src2, tmp1, tmp3);
     DUP2_ARG2(__lsx_vavgr_bu, tmp0, tmp1, tmp2, tmp3, dst0, dst1);
@@ -220,20 +220,20 @@ void ScaleRowDown2Box_LSX(const uint8_t* src_ptr,
                           int dst_width) {
   int x;
   int len = dst_width / 32;
-  const uint8_t *src_nex = src_ptr + src_stride;
+  const uint8_t* src_nex = src_ptr + src_stride;
   __m128i src0, src1, src2, src3, src4, src5, src6, src7;
   __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   __m128i dst0, dst1;
 
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr,
-              48, src0, src1, src2, src3);
-    DUP4_ARG2(__lsx_vld, src_nex, 0, src_nex, 16, src_nex, 32, src_nex,
-              48, src4, src5, src6, src7);
-    DUP4_ARG2(__lsx_vaddwev_h_bu, src0, src4, src1, src5, src2, src6, src3, src7,
-              tmp0, tmp2, tmp4, tmp6);
-    DUP4_ARG2(__lsx_vaddwod_h_bu, src0, src4, src1, src5, src2, src6, src3, src7,
-              tmp1, tmp3, tmp5, tmp7);
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr, 48,
+              src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_nex, 0, src_nex, 16, src_nex, 32, src_nex, 48,
+              src4, src5, src6, src7);
+    DUP4_ARG2(__lsx_vaddwev_h_bu, src0, src4, src1, src5, src2, src6, src3,
+              src7, tmp0, tmp2, tmp4, tmp6);
+    DUP4_ARG2(__lsx_vaddwod_h_bu, src0, src4, src1, src5, src2, src6, src3,
+              src7, tmp1, tmp3, tmp5, tmp7);
     DUP4_ARG2(__lsx_vadd_h, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7,
               tmp0, tmp1, tmp2, tmp3);
     DUP2_ARG3(__lsx_vsrarni_b_h, tmp1, tmp0, 2, tmp3, tmp2, 2, dst0, dst1);
@@ -255,8 +255,8 @@ void ScaleRowDown4_LSX(const uint8_t* src_ptr,
   (void)src_stride;
 
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr,
-              48, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr, 48,
+              src0, src1, src2, src3);
     DUP2_ARG2(__lsx_vpickev_b, src1, src0, src3, src2, tmp0, tmp1);
     dst0 = __lsx_vpickod_b(tmp1, tmp0);
     __lsx_vst(dst0, dst, 0);
@@ -279,30 +279,30 @@ void ScaleRowDown4Box_LSX(const uint8_t* src_ptr,
   __m128i reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7, dst0;
 
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr,
-              48, src0, src1, src2, src3);
-    DUP4_ARG2(__lsx_vld, ptr1, 0, ptr1, 16, ptr1, 32, ptr1, 48,
-              src4, src5, src6, src7);
-    DUP4_ARG2(__lsx_vaddwev_h_bu, src0, src4, src1, src5, src2, src6, src3, src7,
-              tmp0, tmp2, tmp4, tmp6);
-    DUP4_ARG2(__lsx_vaddwod_h_bu, src0, src4, src1, src5, src2, src6, src3, src7,
-              tmp1, tmp3, tmp5, tmp7);
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr, 48,
+              src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, ptr1, 0, ptr1, 16, ptr1, 32, ptr1, 48, src4, src5,
+              src6, src7);
+    DUP4_ARG2(__lsx_vaddwev_h_bu, src0, src4, src1, src5, src2, src6, src3,
+              src7, tmp0, tmp2, tmp4, tmp6);
+    DUP4_ARG2(__lsx_vaddwod_h_bu, src0, src4, src1, src5, src2, src6, src3,
+              src7, tmp1, tmp3, tmp5, tmp7);
     DUP4_ARG2(__lsx_vadd_h, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7,
               reg0, reg1, reg2, reg3);
-    DUP4_ARG2(__lsx_vld, ptr2, 0, ptr2, 16, ptr2, 32, ptr2, 48,
-              src0, src1, src2, src3);
-    DUP4_ARG2(__lsx_vld, ptr3, 0, ptr3, 16, ptr3, 32, ptr3, 48,
-              src4, src5, src6, src7);
-    DUP4_ARG2(__lsx_vaddwev_h_bu, src0, src4, src1, src5, src2, src6, src3, src7,
-              tmp0, tmp2, tmp4, tmp6);
-    DUP4_ARG2(__lsx_vaddwod_h_bu, src0, src4, src1, src5, src2, src6, src3, src7,
-              tmp1, tmp3, tmp5, tmp7);
+    DUP4_ARG2(__lsx_vld, ptr2, 0, ptr2, 16, ptr2, 32, ptr2, 48, src0, src1,
+              src2, src3);
+    DUP4_ARG2(__lsx_vld, ptr3, 0, ptr3, 16, ptr3, 32, ptr3, 48, src4, src5,
+              src6, src7);
+    DUP4_ARG2(__lsx_vaddwev_h_bu, src0, src4, src1, src5, src2, src6, src3,
+              src7, tmp0, tmp2, tmp4, tmp6);
+    DUP4_ARG2(__lsx_vaddwod_h_bu, src0, src4, src1, src5, src2, src6, src3,
+              src7, tmp1, tmp3, tmp5, tmp7);
     DUP4_ARG2(__lsx_vadd_h, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7,
               reg4, reg5, reg6, reg7);
     DUP4_ARG2(__lsx_vadd_h, reg0, reg4, reg1, reg5, reg2, reg6, reg3, reg7,
               reg0, reg1, reg2, reg3);
-    DUP4_ARG2(__lsx_vhaddw_wu_hu, reg0, reg0, reg1, reg1, reg2, reg2, reg3, reg3,
-              reg0, reg1, reg2, reg3);
+    DUP4_ARG2(__lsx_vhaddw_wu_hu, reg0, reg0, reg1, reg1, reg2, reg2, reg3,
+              reg3, reg0, reg1, reg2, reg3);
     DUP2_ARG3(__lsx_vsrarni_h_w, reg1, reg0, 4, reg3, reg2, 4, tmp0, tmp1);
     dst0 = __lsx_vpickev_b(tmp1, tmp0);
     __lsx_vst(dst0, dst, 0);
@@ -353,8 +353,8 @@ void ScaleRowDown38_2_Box_LSX(const uint8_t* src_ptr,
   len = dst_width / 12;
 
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_nex, 0, src_nex,
-              16, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_nex, 0, src_nex, 16, src0,
+              src1, src2, src3);
     DUP2_ARG2(__lsx_vaddwev_h_bu, src0, src2, src1, src3, tmp0, tmp2);
     DUP2_ARG2(__lsx_vaddwod_h_bu, src0, src2, src1, src3, tmp1, tmp3);
     DUP2_ARG2(__lsx_vpickev_h, tmp2, tmp0, tmp3, tmp1, reg0, reg1);
@@ -394,15 +394,15 @@ void ScaleRowDown38_3_Box_LSX(const uint8_t* src_ptr,
   len = dst_width / 12;
 
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, ptr1, 0, ptr1, 16,
-              src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, ptr1, 0, ptr1, 16, src0, src1,
+              src2, src3);
     DUP2_ARG2(__lsx_vld, ptr2, 0, ptr2, 16, src4, src5);
     DUP2_ARG2(__lsx_vaddwev_h_bu, src0, src2, src1, src3, tmp0, tmp2);
     DUP2_ARG2(__lsx_vaddwod_h_bu, src0, src2, src1, src3, tmp1, tmp3);
     DUP2_ARG2(__lsx_vpackev_b, zero, src4, zero, src5, tmp4, tmp6);
     DUP2_ARG2(__lsx_vpackod_b, zero, src4, zero, src5, tmp5, tmp7);
-    DUP4_ARG2(__lsx_vadd_h, tmp0, tmp4, tmp1, tmp5, tmp2, tmp6, tmp3,
-              tmp7, tmp0, tmp1, tmp2, tmp3);
+    DUP4_ARG2(__lsx_vadd_h, tmp0, tmp4, tmp1, tmp5, tmp2, tmp6, tmp3, tmp7,
+              tmp0, tmp1, tmp2, tmp3);
     DUP2_ARG2(__lsx_vpickev_h, tmp2, tmp0, tmp3, tmp1, reg0, reg1);
     DUP2_ARG2(__lsx_vpackod_h, tmp1, tmp0, tmp3, tmp2, reg2, reg3);
     tmp4 = __lsx_vpickev_w(reg3, reg2);
@@ -476,28 +476,28 @@ void ScaleFilterCols_LSX(uint8_t* dst_ptr,
     tmp3 = __lsx_vsrai_w(vec_x, 16);
     tmp7 = __lsx_vand_v(vec_x, const1);
     vec_x = __lsx_vadd_w(vec_x, vec1);
-    DUP4_ARG2(__lsx_vsrai_w, tmp4, 9, tmp5, 9, tmp6, 9, tmp7, 9,
-              tmp4, tmp5, tmp6, tmp7);
+    DUP4_ARG2(__lsx_vsrai_w, tmp4, 9, tmp5, 9, tmp6, 9, tmp7, 9, tmp4, tmp5,
+              tmp6, tmp7);
     LOAD_DATA(src_ptr, tmp0, reg0);
     LOAD_DATA(src_ptr, tmp1, reg1);
     LOAD_DATA(src_ptr, tmp2, reg2);
     LOAD_DATA(src_ptr, tmp3, reg3);
-    DUP4_ARG2(__lsx_vaddi_wu, tmp0, 1, tmp1, 1, tmp2, 1, tmp3, 1,
-              tmp0, tmp1, tmp2, tmp3);
+    DUP4_ARG2(__lsx_vaddi_wu, tmp0, 1, tmp1, 1, tmp2, 1, tmp3, 1, tmp0, tmp1,
+              tmp2, tmp3);
     LOAD_DATA(src_ptr, tmp0, reg4);
     LOAD_DATA(src_ptr, tmp1, reg5);
     LOAD_DATA(src_ptr, tmp2, reg6);
     LOAD_DATA(src_ptr, tmp3, reg7);
-    DUP4_ARG2(__lsx_vsub_w, reg4, reg0, reg5, reg1, reg6, reg2, reg7,
-              reg3, reg4, reg5, reg6, reg7);
-    DUP4_ARG2(__lsx_vmul_w, reg4, tmp4, reg5, tmp5, reg6, tmp6, reg7,
-              tmp7, reg4, reg5, reg6, reg7);
-    DUP4_ARG2(__lsx_vadd_w, reg4, const2, reg5, const2, reg6, const2,
-              reg7, const2, reg4, reg5, reg6, reg7);
-    DUP4_ARG2(__lsx_vsrai_w, reg4, 7, reg5, 7, reg6, 7, reg7, 7,
+    DUP4_ARG2(__lsx_vsub_w, reg4, reg0, reg5, reg1, reg6, reg2, reg7, reg3,
               reg4, reg5, reg6, reg7);
-    DUP4_ARG2(__lsx_vadd_w, reg0, reg4, reg1, reg5, reg2, reg6, reg3,
-              reg7, reg0, reg1, reg2, reg3);
+    DUP4_ARG2(__lsx_vmul_w, reg4, tmp4, reg5, tmp5, reg6, tmp6, reg7, tmp7,
+              reg4, reg5, reg6, reg7);
+    DUP4_ARG2(__lsx_vadd_w, reg4, const2, reg5, const2, reg6, const2, reg7,
+              const2, reg4, reg5, reg6, reg7);
+    DUP4_ARG2(__lsx_vsrai_w, reg4, 7, reg5, 7, reg6, 7, reg7, 7, reg4, reg5,
+              reg6, reg7);
+    DUP4_ARG2(__lsx_vadd_w, reg0, reg4, reg1, reg5, reg2, reg6, reg3, reg7,
+              reg0, reg1, reg2, reg3);
     DUP2_ARG2(__lsx_vpickev_h, reg1, reg0, reg3, reg2, tmp0, tmp1);
     dst0 = __lsx_vpickev_b(tmp1, tmp0);
     __lsx_vst(dst0, dst_ptr, 0);
@@ -598,7 +598,8 @@ void ScaleRowDown34_LSX(const uint8_t* src_ptr,
   for (x = 0; x < dst_width; x += 48) {
     DUP4_ARG2(__lsx_vld, src_ptr, 0, src_ptr, 16, src_ptr, 32, src_ptr, 48,
               src0, src1, src2, src3);
-    DUP2_ARG3(__lsx_vshuf_b, src1, src0, shuff0, src2, src1, shuff1, dst0, dst1);
+    DUP2_ARG3(__lsx_vshuf_b, src1, src0, shuff0, src2, src1, shuff1, dst0,
+              dst1);
     dst2 = __lsx_vshuf_b(src3, src2, shuff2);
     __lsx_vst(dst0, dst, 0);
     __lsx_vst(dst1, dst, 16);
@@ -644,16 +645,16 @@ void ScaleRowDown34_0_Box_LSX(const uint8_t* src_ptr,
               const0, src0, src1, src2, src3);
     DUP4_ARG2(__lsx_vdp2_h_bu, tmp4, const1, tmp5, const2, tmp6, const0, tmp7,
               const1, src4, src5, src6, src7);
-    DUP4_ARG2(__lsx_vdp2_h_bu, tmp8, const2, tmp9, const0, tmp10, const1,
-              tmp11, const2, tmp0, tmp1, tmp2, tmp3);
+    DUP4_ARG2(__lsx_vdp2_h_bu, tmp8, const2, tmp9, const0, tmp10, const1, tmp11,
+              const2, tmp0, tmp1, tmp2, tmp3);
     DUP4_ARG2(__lsx_vsrar_h, src0, shift0, src1, shift1, src2, shift2, src3,
               shift0, src0, src1, src2, src3);
     DUP4_ARG2(__lsx_vsrar_h, src4, shift1, src5, shift2, src6, shift0, src7,
               shift1, src4, src5, src6, src7);
     DUP4_ARG2(__lsx_vsrar_h, tmp0, shift2, tmp1, shift0, tmp2, shift1, tmp3,
               shift2, tmp0, tmp1, tmp2, tmp3);
-    DUP4_ARG2(__lsx_vslli_h, src0, 1, src1, 1, src2, 1, src3, 1,
-              tmp5, tmp6, tmp7, tmp8);
+    DUP4_ARG2(__lsx_vslli_h, src0, 1, src1, 1, src2, 1, src3, 1, tmp5, tmp6,
+              tmp7, tmp8);
     DUP2_ARG2(__lsx_vslli_h, src4, 1, src5, 1, tmp9, tmp10);
     DUP4_ARG2(__lsx_vadd_h, src0, tmp5, src1, tmp6, src2, tmp7, src3, tmp8,
               src0, src1, src2, src3);
@@ -708,8 +709,8 @@ void ScaleRowDown34_1_Box_LSX(const uint8_t* src_ptr,
               const0, src0, src1, src2, src3);
     DUP4_ARG2(__lsx_vdp2_h_bu, tmp4, const1, tmp5, const2, tmp6, const0, tmp7,
               const1, src4, src5, src6, src7);
-    DUP4_ARG2(__lsx_vdp2_h_bu, tmp8, const2, tmp9, const0, tmp10, const1,
-              tmp11, const2, tmp0, tmp1, tmp2, tmp3);
+    DUP4_ARG2(__lsx_vdp2_h_bu, tmp8, const2, tmp9, const0, tmp10, const1, tmp11,
+              const2, tmp0, tmp1, tmp2, tmp3);
     DUP4_ARG2(__lsx_vsrar_h, src0, shift0, src1, shift1, src2, shift2, src3,
               shift0, src0, src1, src2, src3);
     DUP4_ARG2(__lsx_vsrar_h, src4, shift1, src5, shift2, src6, shift0, src7,
