@@ -2059,6 +2059,51 @@ ANY11S(AYUVToVURow_Any_NEON, AYUVToVURow_NEON, 0, 4, 15)
 #endif
 #undef ANY11S
 
+#define ANYDETILE(NAMEANY, ANY_SIMD, MASK)                                  \
+  void NAMEANY(const uint8_t* src, ptrdiff_t src_tile_stride, uint8_t* dst, \
+               int width) {                                                 \
+    SIMD_ALIGNED(uint8_t temp[16 * 2]);                                     \
+    memset(temp, 0, 16); /* for msan */                                     \
+    int r = width & MASK;                                                   \
+    int n = width & ~MASK;                                                  \
+    if (n > 0) {                                                            \
+      ANY_SIMD(src, src_tile_stride, dst, n);                               \
+    }                                                                       \
+    memcpy(temp, src + (n / 16) * src_tile_stride, r);                      \
+    ANY_SIMD(temp, src_tile_stride, temp + 16, MASK + 1);                   \
+    memcpy(dst + n, temp + 16, r);                                          \
+  }
+
+#ifdef HAS_DETILEROW_NEON
+ANYDETILE(DetileRow_Any_NEON, DetileRow_NEON, 15)
+#endif
+#ifdef HAS_DETILEROW_SSE2
+ANYDETILE(DetileRow_Any_SSE2, DetileRow_SSE2, 15)
+#endif
+
+#define ANYDETILESPLITUV(NAMEANY, ANY_SIMD, MASK)                \
+  void NAMEANY(const uint8_t* src_uv, ptrdiff_t src_tile_stride, \
+               uint8_t* dst_u, uint8_t* dst_v, int width) {      \
+    SIMD_ALIGNED(uint8_t temp[16 * 2]);                          \
+    memset(temp, 0, 16 * 2); /* for msan */                      \
+    int r = width & MASK;                                        \
+    int n = width & ~MASK;                                       \
+    if (n > 0) {                                                 \
+      ANY_SIMD(src_uv, src_tile_stride, dst_u, dst_v, n);        \
+    }                                                            \
+    memcpy(temp, src_uv + (n / 16) * src_tile_stride, r);        \
+    ANY_SIMD(temp, src_tile_stride, temp + 16, temp + 24, r);    \
+    memcpy(dst_u + n / 2, temp + 16, (r + 1) / 2);               \
+    memcpy(dst_v + n / 2, temp + 24, (r + 1) / 2);               \
+  }
+
+#ifdef HAS_DETILESPLITUVROW_NEON
+ANYDETILESPLITUV(DetileSplitUVRow_Any_NEON, DetileSplitUVRow_NEON, 15)
+#endif
+#ifdef HAS_DETILESPLITUVROW_SSSE3
+ANYDETILESPLITUV(DetileSplitUVRow_Any_SSSE3, DetileSplitUVRow_SSSE3, 15)
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -564,6 +564,60 @@ int I422ToNV21(const uint8_t* src_y,
   return 0;
 }
 
+LIBYUV_API
+int MM21ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  if (!src_uv || !dst_uv || width <= 0) {
+    return -1;
+  }
+
+  int sign = height < 0 ? -1 : 1;
+
+  if (dst_y) {
+    DetilePlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height, 32);
+  }
+  DetilePlane(src_uv, src_stride_uv, dst_uv, dst_stride_uv, (width + 1) & ~1,
+              (height + sign) / 2, 16);
+
+  return 0;
+}
+
+LIBYUV_API
+int MM21ToI420(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  int sign = height < 0 ? -1 : 1;
+
+  if (!src_uv || !dst_u || !dst_v || width <= 0) {
+    return -1;
+  }
+
+  if (dst_y) {
+    DetilePlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height, 32);
+  }
+  DetileSplitUVPlane(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                     dst_stride_v, (width + 1) & ~1, (height + sign) / 2, 16);
+
+  return 0;
+}
+
 #ifdef I422TONV21_ROW_VERSION
 // Unittest fails for this version.
 // 422 chroma is 1/2 width, 1x height

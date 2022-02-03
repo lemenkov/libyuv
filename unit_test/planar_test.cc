@@ -1523,6 +1523,107 @@ TEST_F(LibYUVPlanarTest, TestDetilePlane) {
   free_aligned_buffer_page_end(dst_opt);
 }
 
+TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
+  int i, j;
+
+  // orig is tiled.  Allocate enough memory for tiles.
+  int orig_width = (benchmark_width_ + 15) & ~15;
+  int orig_height = (benchmark_height_ + 15) & ~15;
+  int orig_plane_size = orig_width * orig_height;
+  int u_plane_size = benchmark_width_ * benchmark_height_;
+  int v_plane_size = u_plane_size;
+  align_buffer_page_end(orig_uv, orig_plane_size);
+  align_buffer_page_end(dst_u_c, u_plane_size);
+  align_buffer_page_end(dst_u_opt, u_plane_size);
+  align_buffer_page_end(dst_v_c, v_plane_size);
+  align_buffer_page_end(dst_v_opt, v_plane_size);
+
+  MemRandomize(orig_uv, orig_plane_size);
+  memset(dst_u_c, 0, u_plane_size);
+  memset(dst_u_opt, 0, u_plane_size);
+  memset(dst_v_c, 0, v_plane_size);
+  memset(dst_v_opt, 0, v_plane_size);
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags_);
+  for (j = 0; j < benchmark_iterations_; j++) {
+    DetileSplitUVPlane(orig_uv, orig_width, dst_u_c, (benchmark_width_ + 1) / 2,
+                       dst_v_c, (benchmark_width_ + 1) / 2, benchmark_width_,
+                       benchmark_height_, 16);
+  }
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info_);
+  for (j = 0; j < benchmark_iterations_; j++) {
+    DetileSplitUVPlane(
+        orig_uv, orig_width, dst_u_opt, (benchmark_width_ + 1) / 2, dst_v_opt,
+        (benchmark_width_ + 1) / 2, benchmark_width_, benchmark_height_, 16);
+  }
+
+  for (i = 0; i < u_plane_size; ++i) {
+    EXPECT_EQ(dst_u_c[i], dst_u_opt[i]);
+  }
+  for (i = 0; i < v_plane_size; ++i) {
+    EXPECT_EQ(dst_v_c[i], dst_v_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_uv);
+  free_aligned_buffer_page_end(dst_u_c);
+  free_aligned_buffer_page_end(dst_u_opt);
+  free_aligned_buffer_page_end(dst_v_c);
+  free_aligned_buffer_page_end(dst_v_opt);
+}
+
+TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Correctness) {
+  int i, j;
+
+  // orig is tiled.  Allocate enough memory for tiles.
+  int orig_width = (benchmark_width_ + 15) & ~15;
+  int orig_height = (benchmark_height_ + 15) & ~15;
+  int orig_plane_size = orig_width * orig_height;
+  int u_plane_size = benchmark_width_ * benchmark_height_;
+  int v_plane_size = u_plane_size;
+  align_buffer_page_end(orig_uv, orig_plane_size);
+  align_buffer_page_end(detiled_uv, orig_plane_size);
+  align_buffer_page_end(dst_u_two_stage, u_plane_size);
+  align_buffer_page_end(dst_u_opt, u_plane_size);
+  align_buffer_page_end(dst_v_two_stage, v_plane_size);
+  align_buffer_page_end(dst_v_opt, v_plane_size);
+
+  MemRandomize(orig_uv, orig_plane_size);
+  memset(detiled_uv, 0, orig_plane_size);
+  memset(dst_u_two_stage, 0, u_plane_size);
+  memset(dst_u_opt, 0, u_plane_size);
+  memset(dst_v_two_stage, 0, v_plane_size);
+  memset(dst_v_opt, 0, v_plane_size);
+
+  for (j = 0; j < benchmark_iterations_; j++) {
+    DetileSplitUVPlane(
+        orig_uv, orig_width, dst_u_opt, (benchmark_width_ + 1) / 2, dst_v_opt,
+        (benchmark_width_ + 1) / 2, benchmark_width_, benchmark_height_, 16);
+  }
+
+  DetilePlane(orig_uv, orig_width, detiled_uv, benchmark_width_,
+              benchmark_width_, benchmark_height_, 16);
+  SplitUVPlane(detiled_uv, orig_width, dst_u_two_stage,
+               (benchmark_width_ + 1) / 2, dst_v_two_stage,
+               (benchmark_width_ + 1) / 2, benchmark_width_, benchmark_height_);
+
+  for (i = 0; i < u_plane_size; ++i) {
+    EXPECT_EQ(dst_u_two_stage[i], dst_u_opt[i]);
+  }
+  for (i = 0; i < v_plane_size; ++i) {
+    EXPECT_EQ(dst_v_two_stage[i], dst_v_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_uv);
+  free_aligned_buffer_page_end(detiled_uv);
+  free_aligned_buffer_page_end(dst_u_two_stage);
+  free_aligned_buffer_page_end(dst_u_opt);
+  free_aligned_buffer_page_end(dst_v_two_stage);
+  free_aligned_buffer_page_end(dst_v_opt);
+}
+
 static int TestMultiply(int width,
                         int height,
                         int benchmark_iterations,

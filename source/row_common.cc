@@ -2674,6 +2674,30 @@ void DetileRow_C(const uint8_t* src,
   }
 }
 
+void DetileSplitUVRow_C(const uint8_t* src_uv,
+                        ptrdiff_t src_tile_stride,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  int tile;
+  for (tile = 0; tile < width / 16; tile++) {
+    for (int x = 0; x < 8; x++) {
+      *dst_u++ = src_uv[0];
+      *dst_v++ = src_uv[1];
+      src_uv += 2;
+    }
+    src_uv += src_tile_stride - 16;
+  }
+  for (int x = 0; x < (width & 0xF) / 2; ++x) {
+    *dst_u = *src_uv;
+    dst_u++;
+    src_uv++;
+    *dst_v = *src_uv;
+    dst_v++;
+    src_uv++;
+  }
+}
+
 void SplitUVRow_C(const uint8_t* src_uv,
                   uint8_t* dst_u,
                   uint8_t* dst_v,

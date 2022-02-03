@@ -575,6 +575,52 @@ void SplitUVRow_NEON(const uint8_t* src_uv,
   );
 }
 
+// Reads 16 byte Y's from tile and writes out 16 Y's.
+// MM21 Y tiles are 16x32 so src_tile_stride = 512 bytes
+// MM21 UV tiles are 8x16 so src_tile_stride = 256 bytes
+// width measured in bytes so 8 UV = 16.
+void DetileRow_NEON(const uint8_t* src,
+                    ptrdiff_t src_tile_stride,
+                    uint8_t* dst,
+                    int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld1.16         {q0}, [%0], %3            \n"  // load 16 bytes
+      "subs            %2, %2, #16               \n"  // 16 processed per loop
+      "pld             [%0, 1792]                 \n"
+      "vst1.16         {q0}, [%1]!               \n"  // store 16 bytes
+      "bgt             1b                        \n"
+      : "+r"(src),            // %0
+        "+r"(dst),            // %1
+        "+r"(width)           // %2
+      : "r"(src_tile_stride)  // %3
+      : "cc", "memory", "q0"  // Clobber List
+  );
+}
+
+// Read 16 bytes of UV, detile, and write 8 bytes of U and 8 bytes of V.
+void DetileSplitUVRow_NEON(const uint8_t* src_uv,
+                           ptrdiff_t src_tile_stride,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld2.8      {d0, d1}, [%0], %4            \n"
+      "subs        %3, %3, #16                   \n"
+      "pld         [%0, 1792]                     \n"
+      "vst1.8      {d0}, [%1]!                   \n"
+      "vst1.8      {d1}, [%2]!                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_uv),               // %0
+        "+r"(dst_u),                // %1
+        "+r"(dst_v),                // %2
+        "+r"(width)                 // %3
+      : "r"(src_tile_stride)        // %4
+      : "cc", "memory", "d0", "d1"  // Clobber List
+  );
+}
+
 // Reads 16 U's and V's and writes out 16 pairs of UV.
 void MergeUVRow_NEON(const uint8_t* src_u,
                      const uint8_t* src_v,

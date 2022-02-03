@@ -290,6 +290,8 @@ extern "C" {
 #define HAS_AB64TOARGBROW_SSSE3
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
+#define HAS_DETILEROW_SSE2
+#define HAS_DETILESPLITUVROW_SSSE3
 #define HAS_HALFMERGEUVROW_SSSE3
 #define HAS_I210TOAR30ROW_SSSE3
 #define HAS_I210TOARGBROW_SSSE3
@@ -537,6 +539,7 @@ extern "C" {
 #define HAS_GAUSSROW_F32_NEON
 #define HAS_GAUSSCOL_F32_NEON
 #define HAS_DETILEROW_NEON
+#define HAS_DETILESPLITUVROW_NEON
 #endif
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #define HAS_ABGRTOUVROW_MSA
@@ -1839,6 +1842,43 @@ void DetileRow_NEON(const uint8_t* src,
                     ptrdiff_t src_tile_stride,
                     uint8_t* dst,
                     int width);
+void DetileRow_Any_NEON(const uint8_t* src,
+                        ptrdiff_t src_tile_stride,
+                        uint8_t* dst,
+                        int width);
+void DetileRow_SSE2(const uint8_t* src,
+                    ptrdiff_t src_tile_stride,
+                    uint8_t* dst,
+                    int width);
+void DetileRow_Any_SSE2(const uint8_t* src,
+                        ptrdiff_t src_tile_stride,
+                        uint8_t* dst,
+                        int width);
+void DetileSplitUVRow_C(const uint8_t* src_uv,
+                        ptrdiff_t src_tile_stride,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width);
+void DetileSplitUVRow_SSSE3(const uint8_t* src_uv,
+                            ptrdiff_t src_tile_stride,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width);
+void DetileSplitUVRow_Any_SSSE3(const uint8_t* src_uv,
+                                ptrdiff_t src_tile_stride,
+                                uint8_t* dst_u,
+                                uint8_t* dst_v,
+                                int width);
+void DetileSplitUVRow_NEON(const uint8_t* src_uv,
+                           ptrdiff_t src_tile_stride,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
+void DetileSplitUVRow_Any_NEON(const uint8_t* src_uv,
+                               ptrdiff_t src_tile_stride,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
 void MergeUVRow_C(const uint8_t* src_u,
                   const uint8_t* src_v,
                   uint8_t* dst_uv,

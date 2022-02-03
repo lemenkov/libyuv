@@ -9,7 +9,6 @@
  */
 
 #include "libyuv/row.h"
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -4764,6 +4763,63 @@ void SplitUVRow_SSE2(const uint8_t* src_uv,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
 }
 #endif  // HAS_SPLITUVROW_SSE2
+
+#ifdef HAS_DETILEROW_SSE2
+void DetileRow_SSE2(const uint8_t* src,
+                    ptrdiff_t src_tile_stride,
+                    uint8_t* dst,
+                    int width) {
+  asm volatile(
+      "1:                                        \n"
+      "movdqu      (%0),%%xmm0                   \n"
+      "sub         $0x10,%2                      \n"
+      "lea         (%0,%3),%0                    \n"
+      "movdqu      %%xmm0,(%1)                   \n"
+      "lea         0x10(%1),%1                   \n"
+      "jg          1b                            \n"
+      : "+r"(src),            // %0
+        "+r"(dst),            // %1
+        "+r"(width)           // %2
+      : "r"(src_tile_stride)  // %3
+      : "cc", "memory", "xmm0");
+}
+#endif  // HAS_DETILEROW_SSE2
+
+#ifdef HAS_DETILESPLITUVROW_SSSE3
+// TODO(greenjustin): Look into generating these constants instead of loading
+// them since this can cause branch mispredicts for fPIC code on 32-bit
+// machines.
+static const uvec8 kDeinterlaceUV = {0, 2, 4, 6, 8, 10, 12, 14,
+                                     1, 3, 5, 7, 9, 11, 13, 15};
+
+// TODO(greenjustin): Research alternatives to pshufb, since pshufb can be very
+// slow on older SSE2 processors.
+void DetileSplitUVRow_SSSE3(const uint8_t* src_uv,
+                            ptrdiff_t src_tile_stride,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width) {
+  asm volatile(
+      "movdqu      %4,%%xmm1                     \n"
+      "1:                                        \n"
+      "movdqu      (%0),%%xmm0                   \n"
+      "lea         (%0, %5),%0                   \n"
+      "pshufb      %%xmm1,%%xmm0                 \n"
+      "movq        %%xmm0,(%1)                   \n"
+      "lea         0x8(%1),%1                    \n"
+      "movhps      %%xmm0,(%2)                   \n"
+      "lea         0x8(%2),%2                    \n"
+      "sub         $0x10,%3                      \n"
+      "jg          1b                            \n"
+      : "+r"(src_uv),         // %0
+        "+r"(dst_u),          // %1
+        "+r"(dst_v),          // %2
+        "+r"(width)           // %3
+      : "m"(kDeinterlaceUV),  // %4
+        "r"(src_tile_stride)  // %5
+      : "cc", "memory", "xmm0", "xmm1");
+}
+#endif  // HAS_DETILESPLITUVROW_SSSE3
 
 #ifdef HAS_MERGEUVROW_AVX2
 void MergeUVRow_AVX2(const uint8_t* src_u,
