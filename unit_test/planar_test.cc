@@ -1503,15 +1503,15 @@ TEST_F(LibYUVPlanarTest, TestDetilePlane) {
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags_);
   for (j = 0; j < benchmark_iterations_; j++) {
-    DetilePlane(orig_y, orig_width, dst_c, benchmark_width_,
-                benchmark_width_, benchmark_height_, 16);
+    DetilePlane(orig_y, orig_width, dst_c, benchmark_width_, benchmark_width_,
+                benchmark_height_, 16);
   }
 
   // Enable optimizations.
   MaskCpuFlags(benchmark_cpu_info_);
   for (j = 0; j < benchmark_iterations_; j++) {
-    DetilePlane(orig_y, orig_width, dst_opt, benchmark_width_,
-                benchmark_width_, benchmark_height_, 16);
+    DetilePlane(orig_y, orig_width, dst_opt, benchmark_width_, benchmark_width_,
+                benchmark_height_, 16);
   }
 
   for (i = 0; i < y_plane_size; ++i) {

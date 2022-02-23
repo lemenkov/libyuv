@@ -29,10 +29,7 @@ void TransposePlane(const uint8_t* src,
                     int width,
                     int height) {
   int i = height;
-#if defined(HAS_TRANSPOSEWX16_MSA)
-  void (*TransposeWx16)(const uint8_t* src, int src_stride, uint8_t* dst,
-                        int dst_stride, int width) = TransposeWx16_C;
-#elif defined(HAS_TRANSPOSEWX16_LSX)
+#if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX)
   void (*TransposeWx16)(const uint8_t* src, int src_stride, uint8_t* dst,
                         int dst_stride, int width) = TransposeWx16_C;
 #else
@@ -40,24 +37,12 @@ void TransposePlane(const uint8_t* src,
                        int dst_stride, int width) = TransposeWx8_C;
 #endif
 
-#if defined(HAS_TRANSPOSEWX16_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    TransposeWx16 = TransposeWx16_Any_MSA;
-    if (IS_ALIGNED(width, 16)) {
-      TransposeWx16 = TransposeWx16_MSA;
-    }
-  }
-#elif defined(HAS_TRANSPOSEWX16_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    TransposeWx16 = TransposeWx16_Any_LSX;
-    if (IS_ALIGNED(width, 16)) {
-      TransposeWx16 = TransposeWx16_LSX;
-    }
-  }
-#else
 #if defined(HAS_TRANSPOSEWX8_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    TransposeWx8 = TransposeWx8_NEON;
+    TransposeWx8 = TransposeWx8_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeWx8 = TransposeWx8_NEON;
+    }
   }
 #endif
 #if defined(HAS_TRANSPOSEWX8_SSSE3)
@@ -76,17 +61,24 @@ void TransposePlane(const uint8_t* src,
     }
   }
 #endif
-#endif /* defined(HAS_TRANSPOSEWX16_MSA) */
-
 #if defined(HAS_TRANSPOSEWX16_MSA)
-  // Work across the source in 16x16 tiles
-  while (i >= 16) {
-    TransposeWx16(src, src_stride, dst, dst_stride, width);
-    src += 16 * src_stride;  // Go down 16 rows.
-    dst += 16;               // Move over 16 columns.
-    i -= 16;
+  if (TestCpuFlag(kCpuHasMSA)) {
+    TransposeWx16 = TransposeWx16_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx16 = TransposeWx16_MSA;
+    }
   }
-#elif defined(HAS_TRANSPOSEWX16_LSX)
+#endif
+#if defined(HAS_TRANSPOSEWX16_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    TransposeWx16 = TransposeWx16_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx16 = TransposeWx16_LSX;
+    }
+  }
+#endif
+
+#if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX)
   // Work across the source in 16x16 tiles
   while (i >= 16) {
     TransposeWx16(src, src_stride, dst, dst_stride, width);

@@ -637,7 +637,7 @@ void DetileSplitUVRow_NEON(const uint8_t* src_uv,
       "1:                                        \n"
       "ld2         {v0.8b,v1.8b}, [%0], %4       \n"
       "subs        %w3, %w3, #16                 \n"
-      "prfm        pldl1keep, [%0, 1792]          \n"
+      "prfm        pldl1keep, [%0, 1792]         \n"
       "st1         {v0.8b}, [%1], #8             \n"
       "st1         {v1.8b}, [%2], #8             \n"
       "b.gt        1b                            \n"

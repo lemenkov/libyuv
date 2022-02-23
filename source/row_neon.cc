@@ -585,11 +585,11 @@ void DetileRow_NEON(const uint8_t* src,
                     int width) {
   asm volatile(
       "1:                                        \n"
-      "vld1.16         {q0}, [%0], %3            \n"  // load 16 bytes
-      "subs            %2, %2, #16               \n"  // 16 processed per loop
-      "pld             [%0, 1792]                 \n"
-      "vst1.16         {q0}, [%1]!               \n"  // store 16 bytes
-      "bgt             1b                        \n"
+      "vld1.16     {q0}, [%0], %3                \n"  // load 16 bytes
+      "subs        %2, %2, #16                   \n"  // 16 processed per loop
+      "pld         [%0, 1792]                    \n"
+      "vst1.16     {q0}, [%1]!                   \n"  // store 16 bytes
+      "bgt         1b                            \n"
       : "+r"(src),            // %0
         "+r"(dst),            // %1
         "+r"(width)           // %2
@@ -608,7 +608,7 @@ void DetileSplitUVRow_NEON(const uint8_t* src_uv,
       "1:                                        \n"
       "vld2.8      {d0, d1}, [%0], %4            \n"
       "subs        %3, %3, #16                   \n"
-      "pld         [%0, 1792]                     \n"
+      "pld         [%0, 1792]                    \n"
       "vst1.8      {d0}, [%1]!                   \n"
       "vst1.8      {d1}, [%2]!                   \n"
       "bgt         1b                            \n"

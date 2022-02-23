@@ -433,7 +433,7 @@ TESTPLANARTOBP(I212, uint16_t, 2, 2, 1, P212, uint16_t, 2, 2, 1, 12)
                   "DST_SUBSAMP_Y unsupported");                                \
     const int kWidth = W1280;                                                  \
     const int kHeight = benchmark_height_;                                     \
-    const int kSrcHalfWidth = SUBSAMPLE(kWidth, SRC_SUBSAMP_X);               \
+    const int kSrcHalfWidth = SUBSAMPLE(kWidth, SRC_SUBSAMP_X);                \
     const int kDstHalfWidth = SUBSAMPLE(kWidth, DST_SUBSAMP_X);                \
     const int kDstHalfHeight = SUBSAMPLE(kHeight, DST_SUBSAMP_Y);              \
     const int kPaddedWidth = (kWidth + (TILE_WIDTH - 1)) & ~(TILE_WIDTH - 1);  \
