@@ -196,7 +196,7 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
 #define LOONGARCH_CFG2_LSX (1 << 6)
 #define LOONGARCH_CFG2_LASX (1 << 7)
 
-#if defined(__loongarch__) && defined(__linux__)
+#if defined(__loongarch__)
 LIBYUV_API SAFEBUFFERS int LoongarchCpuCaps(void) {
   int flag = 0x0;
   uint32_t cfg2 = 0;

@@ -152,7 +152,7 @@ extern "C" {
     _reg1 = __lsx_vmsub_h(_reg1, const_94, _tmpg);               \
     _reg0 = __lsx_vmsub_h(_reg0, const_38, _tmpr);               \
     _reg1 = __lsx_vmsub_h(_reg1, const_18, _tmpb);               \
-    _dst0 = __lsx_vsrlni_b_h(_reg1, _reg0, 8);                   \
+    _dst0 = __lsx_vpickod_b(_reg1, _reg0);                       \
   }
 
 void ARGB4444ToARGBRow_LSX(const uint8_t* src_argb4444,
@@ -355,7 +355,6 @@ void ARGB1555ToYRow_LSX(const uint8_t* src_argb1555,
   __m128i const_129 = __lsx_vldi(129);
   __m128i const_25 = __lsx_vldi(25);
   __m128i const_1080 = {0x1080108010801080, 0x1080108010801080};
-  __m128i shuff = {0x0B030A0209010800, 0x0F070E060D050C04};
 
   for (x = 0; x < len; x++) {
     src0 = __lsx_vld(src_argb1555, 0);
@@ -384,8 +383,7 @@ void ARGB1555ToYRow_LSX(const uint8_t* src_argb1555,
     reg1 = __lsx_vmaddwod_h_bu(reg1, tmpg, const_129);
     reg0 = __lsx_vmaddwev_h_bu(reg0, tmpr, const_66);
     reg1 = __lsx_vmaddwod_h_bu(reg1, tmpr, const_66);
-    dst0 = __lsx_vsrlni_b_h(reg1, reg0, 8);
-    dst0 = __lsx_vshuf_b(dst0, dst0, shuff);
+    dst0 = __lsx_vpackod_b(reg1, reg0);
     __lsx_vst(dst0, dst_y, 0);
     dst_y += 16;
     src_argb1555 += 32;
@@ -468,7 +466,6 @@ void RGB565ToYRow_LSX(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
   __m128i const_129 = __lsx_vldi(129);
   __m128i const_25 = __lsx_vldi(25);
   __m128i const_1080 = {0x1080108010801080, 0x1080108010801080};
-  __m128i shuff = {0x0B030A0209010800, 0x0F070E060D050C04};
 
   for (x = 0; x < len; x++) {
     src0 = __lsx_vld(src_rgb565, 0);
@@ -495,8 +492,7 @@ void RGB565ToYRow_LSX(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
     reg1 = __lsx_vmaddwod_h_bu(reg1, tmpg, const_129);
     reg0 = __lsx_vmaddwev_h_bu(reg0, tmpr, const_66);
     reg1 = __lsx_vmaddwod_h_bu(reg1, tmpr, const_66);
-    dst0 = __lsx_vsrlni_b_h(reg1, reg0, 8);
-    dst0 = __lsx_vshuf_b(dst0, dst0, shuff);
+    dst0 = __lsx_vpackod_b(reg1, reg0);
     __lsx_vst(dst0, dst_y, 0);
     dst_y += 16;
     src_rgb565 += 32;
@@ -591,7 +587,7 @@ void RGB24ToYRow_LSX(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
     reg1 = __lsx_vmaddwev_h_bu(const_1080, tmp3, const_129);
     reg0 = __lsx_vdp2add_h_bu(reg0, const_br, tmp0);
     reg1 = __lsx_vdp2add_h_bu(reg1, const_br, tmp1);
-    dst0 = __lsx_vsrlni_b_h(reg1, reg0, 8);
+    dst0 = __lsx_vpickod_b(reg1, reg0);
     __lsx_vst(dst0, dst_y, 0);
     dst_y += 16;
     src_rgb24 += 48;
@@ -939,7 +935,7 @@ void ARGBToYJRow_LSX(const uint8_t* src_argb, uint8_t* dst_y, int width) {
     reg1 = __lsx_vmaddwev_h_bu(const_128, tmp3, const_150);
     reg0 = __lsx_vdp2add_h_bu(reg0, const_br, tmp0);
     reg1 = __lsx_vdp2add_h_bu(reg1, const_br, tmp2);
-    dst0 = __lsx_vsrlni_b_h(reg1, reg0, 8);
+    dst0 = __lsx_vpickod_b(reg1, reg0);
     __lsx_vst(dst0, dst_y, 0);
     dst_y += 16;
     src_argb += 64;
@@ -1228,7 +1224,7 @@ void ARGBToUVJRow_LSX(const uint8_t* src_argb,
     reg1 = __lsx_vmsub_h(reg1, const_53, tmpg);
     reg0 = __lsx_vmsub_h(reg0, const_21, tmpr);
     reg1 = __lsx_vmsub_h(reg1, const_10, tmpb);
-    dst0 = __lsx_vsrlni_b_h(reg1, reg0, 8);
+    dst0 = __lsx_vpickod_b(reg1, reg0);
     __lsx_vstelm_d(dst0, dst_u, 0, 0);
     __lsx_vstelm_d(dst0, dst_v, 0, 1);
     dst_u += 8;

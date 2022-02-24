@@ -18,7 +18,7 @@
  *                Xiwei Gu   <guxiwei-hf@loongson.cn>
  *                Lu Wang    <wanglu@loongson.cn>
  *
- * This file is a header file for loongarch builtin extention.
+ * This file is a header file for loongarch builtin extension.
  *
  */
 
@@ -27,12 +27,12 @@
 
 /**
  * MAJOR version: Macro usage changes.
- * MINOR version: Add new functions, or bug fix.
+ * MINOR version: Add new functions, or bug fixes.
  * MICRO version: Comment changes or implementation changes.
  */
 #define LSOM_VERSION_MAJOR 1
-#define LSOM_VERSION_MINOR 0
-#define LSOM_VERSION_MICRO 3
+#define LSOM_VERSION_MINOR 1
+#define LSOM_VERSION_MICRO 0
 
 #define DUP2_ARG1(_INS, _IN0, _IN1, _OUT0, _OUT1) \
   {                                               \
@@ -79,11 +79,11 @@
  * Description : Dot product & addition of byte vector elements
  * Arguments   : Inputs  - in_c, in_h, in_l
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Signed byte elements from in_h are multiplied by
  *               signed byte elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
- *               Then the results plus to signed half word elements from in_c.
+ *               Then the results plus to signed half-word elements from in_c.
  * Example     : out = __lsx_vdp2add_h_b(in_c, in_h, in_l)
  *        in_c : 1,2,3,4, 1,2,3,4
  *        in_h : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
@@ -91,8 +91,7 @@
  *         out : 23,40,41,26, 23,40,41,26
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_h_b(__m128i in_c,
-                                        __m128i in_h,
+static inline __m128i __lsx_vdp2add_h_b(__m128i in_c, __m128i in_h,
                                         __m128i in_l) {
   __m128i out;
 
@@ -106,20 +105,19 @@ static inline __m128i __lsx_vdp2add_h_b(__m128i in_c,
  * Description : Dot product & addition of byte vector elements
  * Arguments   : Inputs  - in_c, in_h, in_l
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Unsigned byte elements from in_h are multiplied by
  *               unsigned byte elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
- *               The results plus to signed half word elements from in_c.
- * Example     : out = __lsx_vdp2add_h_b(in_c, in_h, in_l)
+ *               The results plus to signed half-word elements from in_c.
+ * Example     : out = __lsx_vdp2add_h_bu(in_c, in_h, in_l)
  *        in_c : 1,2,3,4, 1,2,3,4
  *        in_h : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
  *        in_l : 8,7,6,5, 4,3,2,1, 8,7,6,5, 4,3,2,1
  *         out : 23,40,41,26, 23,40,41,26
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c,
-                                         __m128i in_h,
+static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c, __m128i in_h,
                                          __m128i in_l) {
   __m128i out;
 
@@ -130,12 +128,38 @@ static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c,
 
 /*
  * =============================================================================
- * Description : Dot product & addition of half word vector elements
+ * Description : Dot product & addition of byte vector elements
  * Arguments   : Inputs  - in_c, in_h, in_l
  *               Outputs - out
- *               Retrun Type - __m128i
- * Details     : Signed half word elements from in_h are multiplied by
- *               signed half word elements from in_l, and then added adjacent to
+ *               Return Type - halfword
+ * Details     : Unsigned byte elements from in_h are multiplied by
+ *               signed byte elements from in_l, and then added adjacent to
+ *               each other to get results with the twice size of input.
+ *               The results plus to signed half-word elements from in_c.
+ * Example     : out = __lsx_vdp2add_h_bu_b(in_c, in_h, in_l)
+ *        in_c : 1,1,1,1, 1,1,1,1
+ *        in_h : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
+ *        in_l : -1,-2,-3,-4, -5,-6,-7,-8, 1,2,3,4, 5,6,7,8
+ *         out : -4,-24,-60,-112, 6,26,62,114
+ * =============================================================================
+ */
+static inline __m128i __lsx_vdp2add_h_bu_b(__m128i in_c, __m128i in_h,
+                                           __m128i in_l) {
+  __m128i out;
+
+  out = __lsx_vmaddwev_h_bu_b(in_c, in_h, in_l);
+  out = __lsx_vmaddwod_h_bu_b(out, in_h, in_l);
+  return out;
+}
+
+/*
+ * =============================================================================
+ * Description : Dot product & addition of half-word vector elements
+ * Arguments   : Inputs  - in_c, in_h, in_l
+ *               Outputs - out
+ *               Return Type - __m128i
+ * Details     : Signed half-word elements from in_h are multiplied by
+ *               signed half-word elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
  *               Then the results plus to signed word elements from in_c.
  * Example     : out = __lsx_vdp2add_h_b(in_c, in_h, in_l)
@@ -145,8 +169,7 @@ static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c,
  *         out : 23,40,41,26
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_w_h(__m128i in_c,
-                                        __m128i in_h,
+static inline __m128i __lsx_vdp2add_w_h(__m128i in_c, __m128i in_h,
                                         __m128i in_l) {
   __m128i out;
 
@@ -160,7 +183,7 @@ static inline __m128i __lsx_vdp2add_w_h(__m128i in_c,
  * Description : Dot product of byte vector elements
  * Arguments   : Inputs  - in_h, in_l
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Signed byte elements from in_h are multiplied by
  *               signed byte elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
@@ -183,7 +206,7 @@ static inline __m128i __lsx_vdp2_h_b(__m128i in_h, __m128i in_l) {
  * Description : Dot product of byte vector elements
  * Arguments   : Inputs  - in_h, in_l
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Unsigned byte elements from in_h are multiplied by
  *               unsigned byte elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
@@ -206,7 +229,7 @@ static inline __m128i __lsx_vdp2_h_bu(__m128i in_h, __m128i in_l) {
  * Description : Dot product of byte vector elements
  * Arguments   : Inputs  - in_h, in_l
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Unsigned byte elements from in_h are multiplied by
  *               signed byte elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
@@ -229,7 +252,7 @@ static inline __m128i __lsx_vdp2_h_bu_b(__m128i in_h, __m128i in_l) {
  * Description : Dot product of byte vector elements
  * Arguments   : Inputs  - in_h, in_l
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Signed byte elements from in_h are multiplied by
  *               signed byte elements from in_l, and then added adjacent to
  *               each other to get results with the twice size of input.
@@ -251,7 +274,8 @@ static inline __m128i __lsx_vdp2_w_h(__m128i in_h, __m128i in_l) {
  * =============================================================================
  * Description : Clip all halfword elements of input vector between min & max
  *               out = ((_in) < (min)) ? (min) : (((_in) > (max)) ? (max) :
- * (_in)) Arguments   : Inputs  - _in  (input vector)
+ *               (_in))
+ * Arguments   : Inputs  - _in  (input vector)
  *                       - min  (min threshold)
  *                       - max  (max threshold)
  *               Outputs - out  (output vector with clipped elements)
@@ -276,7 +300,7 @@ static inline __m128i __lsx_vclip_h(__m128i _in, __m128i min, __m128i max) {
  * Description : Set each element of vector between 0 and 255
  * Arguments   : Inputs  - _in
  *               Outputs - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Signed byte elements from _in are clamped between 0 and 255.
  * Example     : out = __lsx_vclip255_h(_in)
  *         _in : -8,255,280,249, -8,255,280,249
@@ -296,7 +320,7 @@ static inline __m128i __lsx_vclip255_h(__m128i _in) {
  * Description : Set each element of vector between 0 and 255
  * Arguments   : Inputs  - _in
  *               Outputs - out
- *               Retrun Type - word
+ *               Return Type - word
  * Details     : Signed byte elements from _in are clamped between 0 and 255.
  * Example     : out = __lsx_vclip255_w(_in)
  *         _in : -8,255,280,249
@@ -363,16 +387,18 @@ static inline __m128i __lsx_vclip255_w(__m128i _in) {
  * Description : Transpose 8x8 block with byte elements in vectors
  * Arguments   : Inputs  - _in0, _in1, _in2, _in3, _in4, _in5, _in6, _in7
  *               Outputs - _out0, _out1, _out2, _out3, _out4, _out5, _out6,
- * _out7 Details     : The rows of the matrix become columns, and the columns
- * become rows. Example     : LSX_TRANSPOSE8x8_B _in0 : 00,01,02,03,04,05,06,07,
- * 00,00,00,00,00,00,00,00 _in1 : 10,11,12,13,14,15,16,17,
- * 00,00,00,00,00,00,00,00 _in2 : 20,21,22,23,24,25,26,27,
- * 00,00,00,00,00,00,00,00 _in3 : 30,31,32,33,34,35,36,37,
- * 00,00,00,00,00,00,00,00 _in4 : 40,41,42,43,44,45,46,47,
- * 00,00,00,00,00,00,00,00 _in5 : 50,51,52,53,54,55,56,57,
- * 00,00,00,00,00,00,00,00 _in6 : 60,61,62,63,64,65,66,67,
- * 00,00,00,00,00,00,00,00 _in7 : 70,71,72,73,74,75,76,77,
- * 00,00,00,00,00,00,00,00
+ *               _out7
+ * Details     : The rows of the matrix become columns, and the columns
+ *               become rows.
+ * Example     : LSX_TRANSPOSE8x8_B
+ *        _in0 : 00,01,02,03,04,05,06,07, 00,00,00,00,00,00,00,00
+ *        _in1 : 10,11,12,13,14,15,16,17, 00,00,00,00,00,00,00,00
+ *        _in2 : 20,21,22,23,24,25,26,27, 00,00,00,00,00,00,00,00
+ *        _in3 : 30,31,32,33,34,35,36,37, 00,00,00,00,00,00,00,00
+ *        _in4 : 40,41,42,43,44,45,46,47, 00,00,00,00,00,00,00,00
+ *        _in5 : 50,51,52,53,54,55,56,57, 00,00,00,00,00,00,00,00
+ *        _in6 : 60,61,62,63,64,65,66,67, 00,00,00,00,00,00,00,00
+ *        _in7 : 70,71,72,73,74,75,76,77, 00,00,00,00,00,00,00,00
  *
  *      _ out0 : 00,10,20,30,40,50,60,70, 00,00,00,00,00,00,00,00
  *      _ out1 : 01,11,21,31,41,51,61,71, 00,00,00,00,00,00,00,00
@@ -388,8 +414,8 @@ static inline __m128i __lsx_vclip255_w(__m128i _in) {
                            _out0, _out1, _out2, _out3, _out4, _out5, _out6, \
                            _out7)                                           \
   {                                                                         \
-    __m128i zero = {0};                                                     \
-    __m128i shuf8 = {0x0F0E0D0C0B0A0908, 0x1716151413121110};               \
+    __m128i zero = { 0 };                                                   \
+    __m128i shuf8 = { 0x0F0E0D0C0B0A0908, 0x1716151413121110 };             \
     __m128i _t0, _t1, _t2, _t3, _t4, _t5, _t6, _t7;                         \
                                                                             \
     _t0 = __lsx_vilvl_b(_in2, _in0);                                        \
@@ -412,7 +438,7 @@ static inline __m128i __lsx_vclip255_w(__m128i _in) {
 
 /*
  * =============================================================================
- * Description : Transpose 8x8 block with half word elements in vectors
+ * Description : Transpose 8x8 block with half-word elements in vectors
  * Arguments   : Inputs  - in0, in1, in2, in3, in4, in5, in6, in7
  *               Outputs - out0, out1, out2, out3, out4, out5, out6, out7
  * Details     :
@@ -467,15 +493,16 @@ static inline __m128i __lsx_vclip255_w(__m128i _in) {
  *               Outputs - _out0, _out1, _out2, _out3  (output 4x8 byte block)
  *               Return Type - as per RTYPE
  * Details     : The rows of the matrix become columns, and the columns become
- * rows. Example     : LSX_TRANSPOSE8x4_B _in0 : 00,01,02,03,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in1 : 10,11,12,13,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in2 : 20,21,22,23,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in3 : 30,31,32,33,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in4 : 40,41,42,43,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in5 : 50,51,52,53,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in6 : 60,61,62,63,00,00,00,00,
- * 00,00,00,00,00,00,00,00 _in7 : 70,71,72,73,00,00,00,00,
- * 00,00,00,00,00,00,00,00
+ *               rows.
+ * Example     : LSX_TRANSPOSE8x4_B
+ *        _in0 : 00,01,02,03,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in1 : 10,11,12,13,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in2 : 20,21,22,23,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in3 : 30,31,32,33,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in4 : 40,41,42,43,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in5 : 50,51,52,53,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in6 : 60,61,62,63,00,00,00,00, 00,00,00,00,00,00,00,00
+ *        _in7 : 70,71,72,73,00,00,00,00, 00,00,00,00,00,00,00,00
  *
  *       _out0 : 00,10,20,30,40,50,60,70, 00,00,00,00,00,00,00,00
  *       _out1 : 01,11,21,31,41,51,61,71, 00,00,00,00,00,00,00,00
@@ -705,7 +732,7 @@ static inline __m256i __lasx_xvdp2_h_bu(__m256i in_h, __m256i in_l) {
  * Details     : Signed byte elements from in_h are multiplied with
  *               signed byte elements from in_l producing a result
  *               twice the size of input i.e. signed halfword.
- *               Then this iniplication results of adjacent odd-even elements
+ *               Then this multiplication results of adjacent odd-even elements
  *               are added to the out vector
  * Example     : See out = __lasx_xvdp2_w_h(in_h, in_l)
  * =============================================================================
@@ -748,10 +775,10 @@ static inline __m256i __lasx_xvdp2_w_h(__m256i in_h, __m256i in_l) {
  * Description : Dot product of word vector elements
  * Arguments   : Inputs - in_h, in_l
  *               Output - out
- *               Retrun Type - signed double
+ *               Return Type - signed double
  * Details     : Signed word elements from in_h are multiplied with
  *               signed word elements from in_l producing a result
- *               twice the size of input i.e. signed double word.
+ *               twice the size of input i.e. signed double-word.
  *               Then this multiplied results of adjacent odd-even elements
  *               are added to the out vector.
  * Example     : See out = __lasx_xvdp2_w_h(in_h, in_l)
@@ -792,7 +819,7 @@ static inline __m256i __lasx_xvdp2_w_hu_h(__m256i in_h, __m256i in_l) {
  * Description : Dot product & addition of byte vector elements
  * Arguments   : Inputs - in_h, in_l
  *               Output - out
- *               Retrun Type - halfword
+ *               Return Type - halfword
  * Details     : Signed byte elements from in_h are multiplied with
  *               signed byte elements from in_l producing a result
  *               twice the size of input i.e. signed halfword.
@@ -801,13 +828,58 @@ static inline __m256i __lasx_xvdp2_w_hu_h(__m256i in_h, __m256i in_l) {
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_h_b(__m256i in_c,
-                                          __m256i in_h,
+static inline __m256i __lasx_xvdp2add_h_b(__m256i in_c, __m256i in_h,
                                           __m256i in_l) {
   __m256i out;
 
   out = __lasx_xvmaddwev_h_b(in_c, in_h, in_l);
   out = __lasx_xvmaddwod_h_b(out, in_h, in_l);
+  return out;
+}
+
+/*
+ * =============================================================================
+ * Description : Dot product & addition of byte vector elements
+ * Arguments   : Inputs - in_h, in_l
+ *               Output - out
+ *               Return Type - halfword
+ * Details     : Unsigned byte elements from in_h are multiplied with
+ *               unsigned byte elements from in_l producing a result
+ *               twice the size of input i.e. signed halfword.
+ *               Then this multiplied results of adjacent odd-even elements
+ *               are added to the in_c vector.
+ * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
+ * =============================================================================
+ */
+static inline __m256i __lasx_xvdp2add_h_bu(__m256i in_c, __m256i in_h,
+                                           __m256i in_l) {
+  __m256i out;
+
+  out = __lasx_xvmaddwev_h_bu(in_c, in_h, in_l);
+  out = __lasx_xvmaddwod_h_bu(out, in_h, in_l);
+  return out;
+}
+
+/*
+ * =============================================================================
+ * Description : Dot product & addition of byte vector elements
+ * Arguments   : Inputs - in_h, in_l
+ *               Output - out
+ *               Return Type - halfword
+ * Details     : Unsigned byte elements from in_h are multiplied with
+ *               signed byte elements from in_l producing a result
+ *               twice the size of input i.e. signed halfword.
+ *               Then this multiplied results of adjacent odd-even elements
+ *               are added to the in_c vector.
+ * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
+ * =============================================================================
+ */
+static inline __m256i __lasx_xvdp2add_h_bu_b(__m256i in_c, __m256i in_h,
+                                             __m256i in_l) {
+  __m256i out;
+
+  out = __lasx_xvmaddwev_h_bu_b(in_c, in_h, in_l);
+  out = __lasx_xvmaddwod_h_bu_b(out, in_h, in_l);
   return out;
 }
 
@@ -829,8 +901,7 @@ static inline __m256i __lasx_xvdp2add_h_b(__m256i in_c,
  *         out : 23,40,41,26, 23,40,41,26
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_w_h(__m256i in_c,
-                                          __m256i in_h,
+static inline __m256i __lasx_xvdp2add_w_h(__m256i in_c, __m256i in_h,
                                           __m256i in_l) {
   __m256i out;
 
@@ -853,8 +924,7 @@ static inline __m256i __lasx_xvdp2add_w_h(__m256i in_c,
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_w_hu(__m256i in_c,
-                                           __m256i in_h,
+static inline __m256i __lasx_xvdp2add_w_hu(__m256i in_c, __m256i in_h,
                                            __m256i in_l) {
   __m256i out;
 
@@ -877,8 +947,7 @@ static inline __m256i __lasx_xvdp2add_w_hu(__m256i in_c,
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_w_hu_h(__m256i in_c,
-                                             __m256i in_h,
+static inline __m256i __lasx_xvdp2add_w_hu_h(__m256i in_c, __m256i in_h,
                                              __m256i in_l) {
   __m256i out;
 
@@ -902,8 +971,7 @@ static inline __m256i __lasx_xvdp2add_w_hu_h(__m256i in_c,
  * Example     : See out = __lasx_xvdp2sub_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2sub_h_bu(__m256i in_c,
-                                           __m256i in_h,
+static inline __m256i __lasx_xvdp2sub_h_bu(__m256i in_c, __m256i in_h,
                                            __m256i in_l) {
   __m256i out;
 
@@ -932,8 +1000,7 @@ static inline __m256i __lasx_xvdp2sub_h_bu(__m256i in_c,
  *         out : -7,-3,0,0, 0,-1,0,-1
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2sub_w_h(__m256i in_c,
-                                          __m256i in_h,
+static inline __m256i __lasx_xvdp2sub_w_h(__m256i in_c, __m256i in_h,
                                           __m256i in_l) {
   __m256i out;
 
@@ -949,10 +1016,10 @@ static inline __m256i __lasx_xvdp2sub_w_h(__m256i in_c,
  * Arguments   : Inputs - in_h, in_l
  *               Output - out
  *               Return Type - signed word
- * Details     : Signed halfword elements from in_h are iniplied with
+ * Details     : Signed halfword elements from in_h are multiplied with
  *               signed halfword elements from in_l producing a result
  *               four times the size of input i.e. signed doubleword.
- *               Then this iniplication results of four adjacent elements
+ *               Then this multiplication results of four adjacent elements
  *               are added together and stored to the out vector.
  * Example     : out = __lasx_xvdp4_d_h(in_h, in_l)
  *        in_h :  3,1,3,0, 0,0,0,1, 0,0,1,-1, 0,0,0,1
@@ -1134,8 +1201,7 @@ static inline __m256i __lasx_xvaddw_w_w_h(__m256i in_h, __m256i in_l) {
  *         out : 201, 602,1203,2004, -995, -1794,-2793,-3992
  * =============================================================================
  */
-static inline __m256i __lasx_xvmaddwl_w_h(__m256i in_c,
-                                          __m256i in_h,
+static inline __m256i __lasx_xvmaddwl_w_h(__m256i in_c, __m256i in_h,
                                           __m256i in_l) {
   __m256i tmp0, tmp1, out;
 
@@ -1159,8 +1225,7 @@ static inline __m256i __lasx_xvmaddwl_w_h(__m256i in_c,
  * Example     : See out = __lasx_xvmaddwl_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvmaddwh_w_h(__m256i in_c,
-                                          __m256i in_h,
+static inline __m256i __lasx_xvmaddwh_w_h(__m256i in_c, __m256i in_h,
                                           __m256i in_l) {
   __m256i tmp0, tmp1, out;
 
@@ -1221,22 +1286,24 @@ static inline __m256i __lasx_xvmulwh_w_h(__m256i in_h, __m256i in_l) {
 
 /*
  * =============================================================================
- * Description : The low half of the vector elements are expanded and
- *               added saturately after being doubled.
+ * Description : The low half of the vector elements are added to the high half
+ *               after being doubled, then saturated.
  * Arguments   : Inputs - in_h, in_l
  *               Output - out
- * Details     : The in_h vector adds the in_l vector saturately after the lower
- *               half of the two-fold zero extension (unsigned byte to unsigned
- *               halfword) and the results are stored to the out vector.
+ * Details     : The in_h vector adds the in_l vector after the lower half of
+ *               the two-fold zero extension (unsigned byte to unsigned
+ *               halfword) and then saturated. The results are stored to the out
+ *               vector.
  * Example     : out = __lasx_xvsaddw_hu_hu_bu(in_h, in_l)
  *        in_h : 2,65532,1,2, 1,0,0,0, 0,0,1,0, 1,0,0,1
  *        in_l : 3,6,3,0, 0,0,0,1, 0,0,1,1, 0,0,0,1, 3,18,3,0, 0,0,0,1, 0,0,1,1,
- * 0,0,0,1 out : 5,65535,4,2, 1,0,0,1, 3,18,4,0, 1,0,0,2,
+ *               0,0,0,1
+ *        out  : 5,65535,4,2, 1,0,0,1, 3,18,4,0, 1,0,0,2,
  * =============================================================================
  */
 static inline __m256i __lasx_xvsaddw_hu_hu_bu(__m256i in_h, __m256i in_l) {
   __m256i tmp1, out;
-  __m256i zero = {0};
+  __m256i zero = { 0 };
 
   tmp1 = __lasx_xvilvl_b(zero, in_l);
   out = __lasx_xvsadd_hu(in_h, tmp1);
@@ -1308,8 +1375,8 @@ static inline __m256i __lasx_xvclip255_w(__m256i in) {
 /*
  * =============================================================================
  * Description : Indexed halfword element values are replicated to all
- *               elements in output vector. If 'indx < 8' use xvsplati_l_*,
- *               if 'indx >= 8' use xvsplati_h_*.
+ *               elements in output vector. If 'idx < 8' use xvsplati_l_*,
+ *               if 'idx >= 8' use xvsplati_h_*.
  * Arguments   : Inputs - in, idx
  *               Output - out
  * Details     : Idx element value from in vector is replicated to all
@@ -1332,8 +1399,8 @@ static inline __m256i __lasx_xvsplati_l_h(__m256i in, int idx) {
 /*
  * =============================================================================
  * Description : Indexed halfword element values are replicated to all
- *               elements in output vector. If 'indx < 8' use xvsplati_l_*,
- *               if 'indx >= 8' use xvsplati_h_*.
+ *               elements in output vector. If 'idx < 8' use xvsplati_l_*,
+ *               if 'idx >= 8' use xvsplati_h_*.
  * Arguments   : Inputs - in, idx
  *               Output - out
  * Details     : Idx element value from in vector is replicated to all
@@ -1355,7 +1422,7 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
 
 /*
  * =============================================================================
- * Description : Transpose 4x4 block with double word elements in vectors
+ * Description : Transpose 4x4 block with double-word elements in vectors
  * Arguments   : Inputs  - _in0, _in1, _in2, _in3
  *               Outputs - _out0, _out1, _out2, _out3
  * Example     : LASX_TRANSPOSE4x4_D
@@ -1389,10 +1456,16 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  * Description : Transpose 8x8 block with word elements in vectors
  * Arguments   : Inputs  - _in0, _in1, _in2, _in3, _in4, _in5, _in6, _in7
  *               Outputs - _out0, _out1, _out2, _out3, _out4, _out5, _out6,
- * _out7 Example     : LASX_TRANSPOSE8x8_W _in0 : 1,2,3,4,5,6,7,8 _in1 :
- * 2,2,3,4,5,6,7,8 _in2 : 3,2,3,4,5,6,7,8 _in3 : 4,2,3,4,5,6,7,8 _in4 :
- * 5,2,3,4,5,6,7,8 _in5 : 6,2,3,4,5,6,7,8 _in6 : 7,2,3,4,5,6,7,8 _in7 :
- * 8,2,3,4,5,6,7,8
+ *               _out7
+ * Example     : LASX_TRANSPOSE8x8_W
+ *        _in0 : 1,2,3,4,5,6,7,8
+ *        _in1 : 2,2,3,4,5,6,7,8
+ *        _in2 : 3,2,3,4,5,6,7,8
+ *        _in3 : 4,2,3,4,5,6,7,8
+ *        _in4 : 5,2,3,4,5,6,7,8
+ *        _in5 : 6,2,3,4,5,6,7,8
+ *        _in6 : 7,2,3,4,5,6,7,8
+ *        _in7 : 8,2,3,4,5,6,7,8
  *
  *       _out0 : 1,2,3,4,5,6,7,8
  *       _out1 : 2,2,2,2,2,2,2,2
@@ -1445,8 +1518,10 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  *                         _in8, _in9, _in10, _in11, _in12, _in13, _in14, _in15
  *                         (input 16x8 byte block)
  *               Outputs - _out0, _out1, _out2, _out3, _out4, _out5, _out6,
- * _out7 (output 8x16 byte block) Details     : The rows of the matrix become
- * columns, and the columns become rows. Example     : See LASX_TRANSPOSE16x8_H
+ *                         _out7 (output 8x16 byte block)
+ * Details     : The rows of the matrix become columns, and the columns become
+ *               rows.
+ * Example     : See LASX_TRANSPOSE16x8_H
  * =============================================================================
  */
 #define LASX_TRANSPOSE16x8_B(_in0, _in1, _in2, _in3, _in4, _in5, _in6, _in7,  \
@@ -1498,13 +1573,20 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  *                         _in8, _in9, _in10, _in11, _in12, _in13, _in14, _in15
  *                         (input 16x8 byte block)
  *               Outputs - _out0, _out1, _out2, _out3, _out4, _out5, _out6,
- * _out7 (output 8x16 byte block) Details     : The rows of the matrix become
- * columns, and the columns become rows. Example     : LASX_TRANSPOSE16x8_H _in0
- * : 1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in1 : 2,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in2
- * : 3,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in3 : 4,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in4
- * : 5,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in5 : 6,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in6
- * : 7,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in7 : 8,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in8
- * : 9,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0 _in9 : 1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *                         _out7 (output 8x16 byte block)
+ * Details     : The rows of the matrix become columns, and the columns become
+ *               rows.
+ * Example     : LASX_TRANSPOSE16x8_H
+ *        _in0 : 1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in1 : 2,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in2 : 3,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in3 : 4,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in4 : 5,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in5 : 6,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in6 : 7,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in7 : 8,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in8 : 9,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
+ *        _in9 : 1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
  *       _in10 : 0,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
  *       _in11 : 2,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
  *       _in12 : 3,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0
@@ -1597,7 +1679,8 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  *               Outputs - _out0, _out1, _out2, _out3
  *               Return Type - signed halfword
  * Details     : The rows of the matrix become columns, and the columns become
- * rows. Example     : See LASX_TRANSPOSE8x8_H
+ *               rows.
+ * Example     : See LASX_TRANSPOSE8x8_H
  * =============================================================================
  */
 #define LASX_TRANSPOSE4x4_H(_in0, _in1, _in2, _in3, _out0, _out1, _out2, \
@@ -1619,7 +1702,8 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  * Arguments   : Inputs  - _in0, _in1, _in2, _in3, _in4, _in5, _in6, _in7
  *                         (input 8x8 byte block)
  *               Outputs - _out0, _out1, _out2, _out3, _out4, _out5, _out6,
- * _out7 (output 8x8 byte block) Example     : See LASX_TRANSPOSE8x8_H
+ *                         _out7 (output 8x8 byte block)
+ * Example     : See LASX_TRANSPOSE8x8_H
  * =============================================================================
  */
 #define LASX_TRANSPOSE8x8_B(_in0, _in1, _in2, _in3, _in4, _in5, _in6, _in7,  \
@@ -1652,11 +1736,16 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  * Arguments   : Inputs  - _in0, _in1, ~
  *               Outputs - _out0, _out1, ~
  * Details     : The rows of the matrix become columns, and the columns become
- * rows. Example     : LASX_TRANSPOSE8x8_H _in0 : 1,2,3,4, 5,6,7,8, 1,2,3,4,
- * 5,6,7,8 _in1 : 8,2,3,4, 5,6,7,8, 8,2,3,4, 5,6,7,8 _in2 : 8,2,3,4, 5,6,7,8,
- * 8,2,3,4, 5,6,7,8 _in3 : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8 _in4 : 9,2,3,4,
- * 5,6,7,8, 9,2,3,4, 5,6,7,8 _in5 : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8 _in6 :
- * 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8 _in7 : 9,2,3,4, 5,6,7,8, 9,2,3,4, 5,6,7,8
+ *               rows.
+ * Example     : LASX_TRANSPOSE8x8_H
+ *        _in0 : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
+ *        _in1 : 8,2,3,4, 5,6,7,8, 8,2,3,4, 5,6,7,8
+ *        _in2 : 8,2,3,4, 5,6,7,8, 8,2,3,4, 5,6,7,8
+ *        _in3 : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
+ *        _in4 : 9,2,3,4, 5,6,7,8, 9,2,3,4, 5,6,7,8
+ *        _in5 : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
+ *        _in6 : 1,2,3,4, 5,6,7,8, 1,2,3,4, 5,6,7,8
+ *        _in7 : 9,2,3,4, 5,6,7,8, 9,2,3,4, 5,6,7,8
  *
  *       _out0 : 1,8,8,1, 9,1,1,9, 1,8,8,1, 9,1,1,9
  *       _out1 : 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2
@@ -1832,14 +1921,12 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  *               VP:1,2,3,4,
  * =============================================================================
  */
-#define VECT_PRINT(RTYPE, element_num, in0, enter) \
-  {                                                \
-    RTYPE _tmp0 = (RTYPE)in0;                      \
-    int _i = 0;                                    \
-    if (enter)                                     \
-      printf("\nVP:");                             \
-    for (_i = 0; _i < element_num; _i++)           \
-      printf("%d,", _tmp0[_i]);                    \
+#define VECT_PRINT(RTYPE, element_num, in0, enter)                 \
+  {                                                                \
+    RTYPE _tmp0 = (RTYPE)in0;                                      \
+    int _i = 0;                                                    \
+    if (enter) printf("\nVP:");                                    \
+    for (_i = 0; _i < element_num; _i++) printf("%d,", _tmp0[_i]); \
   }
 
 #endif /* LOONGSON_INTRINSICS_H */
