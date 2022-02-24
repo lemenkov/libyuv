@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # Copyright 2016 The LibYuv Project Authors. All rights reserved.
 #
 # Use of this source code is governed by a BSD-style license
