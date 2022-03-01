@@ -327,6 +327,17 @@ int ARGBToUYVY(const uint8_t* src_argb,
                int width,
                int height);
 
+// RAW to JNV21 full range NV21
+LIBYUV_API
+int RAWToJNV21(const uint8_t* src_raw,
+               int src_stride_raw,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
+               int width,
+               int height);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

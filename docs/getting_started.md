@@ -27,12 +27,12 @@ Then you'll get a .gclient file like:
       },
     ];
 
-For iOS add `target_os=['ios'];` to your OSX .gclient and run `gclient sync.`
+For iOS add `;target_os=['ios'];` to your OSX .gclient and run `gclient sync.`
 
-Browse the Git reprository: https://chromium.googlesource.com/libyuv/libyuv/+/main
+Browse the Git reprository: https://chromium.googlesource.com/libyuv/libyuv/+/master
 
 ### Android
-For Android add `target_os=['android'];` to your Linux .gclient
+For Android add `;target_os=['android'];` to your Linux .gclient
 
     solutions = [
       { "name"        : "src",
@@ -43,7 +43,7 @@ For Android add `target_os=['android'];` to your Linux .gclient
         },
         "safesync_url": "",
       },
-    ]
+    ];
     target_os = ["android", "linux"];
 
 Then run:
