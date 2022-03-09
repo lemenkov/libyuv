@@ -658,7 +658,7 @@ CANY(ScaleARGBFilterCols_Any_LSX,
       }                                                            \
       C(src_ptr + (n / 2), dst_ptr + n + 1, r);                    \
     }                                                              \
-    dst_ptr[dst_width - 1] = src_ptr[(dst_width / 2) - 1];         \
+    dst_ptr[dst_width - 1] = src_ptr[(dst_width - 1) / 2];         \
   }
 
 // Even the C versions need to be wrapped, because boundary pixels have to

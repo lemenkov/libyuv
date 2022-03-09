@@ -673,6 +673,13 @@ TESTBIPLANARTOP(MM21, uint8_t, 1, 2, 2, I420, uint8_t, 1, 2, 2, 8, 16, 32)
 #define V444ToARGB(a, b, c, d, e, f, g, h, i, j) \
   I444ToARGBMatrix(a, b, c, d, e, f, g, h, &kYuvV2020Constants, i, j)
 
+#define I420ToARGBFilter(a, b, c, d, e, f, g, h, i, j)                     \
+  I420ToARGBMatrixFilter(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j, \
+                         kFilterBilinear)
+#define I422ToARGBFilter(a, b, c, d, e, f, g, h, i, j)                     \
+  I422ToARGBMatrixFilter(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j, \
+                         kFilterBilinear)
+
 #define ALIGNINT(V, ALIGN) (((V) + (ALIGN)-1) / (ALIGN) * (ALIGN))
 
 #define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
@@ -806,6 +813,8 @@ TESTPLANARTOB(H420, 2, 2, AR30, 4, 4, 1)
 TESTPLANARTOB(I420, 2, 2, AB30, 4, 4, 1)
 TESTPLANARTOB(H420, 2, 2, AB30, 4, 4, 1)
 #endif
+TESTPLANARTOB(I420, 2, 2, ARGBFilter, 4, 4, 1)
+TESTPLANARTOB(I422, 2, 1, ARGBFilter, 4, 4, 1)
 #else
 TESTPLANARTOB(I420, 2, 2, ABGR, 4, 4, 1)
 TESTPLANARTOB(I420, 2, 2, ARGB, 4, 4, 1)
@@ -822,12 +831,14 @@ TESTPLANARTOB(I422, 2, 1, RGB565, 2, 2, 1)
 TESTPLANARTOB(I420, 2, 2, I400, 1, 1, 1)
 TESTPLANARTOB(I420, 2, 2, UYVY, 2, 4, 1)
 TESTPLANARTOB(I420, 2, 2, YUY2, 2, 4, 1)
+TESTPLANARTOB(I420, 2, 2, ARGBFilter, 4, 4, 1)
 TESTPLANARTOB(I422, 2, 1, ABGR, 4, 4, 1)
 TESTPLANARTOB(I422, 2, 1, ARGB, 4, 4, 1)
 TESTPLANARTOB(I422, 2, 1, BGRA, 4, 4, 1)
 TESTPLANARTOB(I422, 2, 1, RGBA, 4, 4, 1)
 TESTPLANARTOB(I422, 2, 1, UYVY, 2, 4, 1)
 TESTPLANARTOB(I422, 2, 1, YUY2, 2, 4, 1)
+TESTPLANARTOB(I422, 2, 1, ARGBFilter, 4, 4, 1)
 TESTPLANARTOB(I444, 1, 1, ABGR, 4, 4, 1)
 TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4, 1)
 #endif
@@ -990,6 +1001,13 @@ TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4, 1)
   I444AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
 
+#define I420AlphaToARGBFilter(a, b, c, d, e, f, g, h, i, j, k, l, m) \
+  I420AlphaToARGBMatrixFilter(a, b, c, d, e, f, g, h, i, j,          \
+                              &kYuvI601Constants, k, l, m, kFilterBilinear)
+#define I422AlphaToARGBFilter(a, b, c, d, e, f, g, h, i, j, k, l, m) \
+  I422AlphaToARGBMatrixFilter(a, b, c, d, e, f, g, h, i, j,          \
+                              &kYuvI601Constants, k, l, m, kFilterBilinear)
+
 #if defined(ENABLE_FULL_TESTS)
 TESTQPLANARTOB(I420Alpha, 2, 2, ARGB, 4, 4, 1)
 TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1)
@@ -1027,10 +1045,14 @@ TESTQPLANARTOB(U444Alpha, 1, 1, ARGB, 4, 4, 1)
 TESTQPLANARTOB(U444Alpha, 1, 1, ABGR, 4, 4, 1)
 TESTQPLANARTOB(V444Alpha, 1, 1, ARGB, 4, 4, 1)
 TESTQPLANARTOB(V444Alpha, 1, 1, ABGR, 4, 4, 1)
+TESTQPLANARTOB(I420Alpha, 2, 2, ARGBFilter, 4, 4, 1)
+TESTQPLANARTOB(I422Alpha, 2, 1, ARGBFilter, 4, 4, 1)
 #else
 TESTQPLANARTOB(I420Alpha, 2, 2, ARGB, 4, 4, 1)
 TESTQPLANARTOB(I422Alpha, 2, 1, ARGB, 4, 4, 1)
 TESTQPLANARTOB(I444Alpha, 1, 1, ARGB, 4, 4, 1)
+TESTQPLANARTOB(I420Alpha, 2, 2, ARGBFilter, 4, 4, 1)
+TESTQPLANARTOB(I422Alpha, 2, 1, ARGBFilter, 4, 4, 1)
 #endif
 
 #define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C,       \
@@ -3355,6 +3377,19 @@ TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
 #define U410ToAB30(a, b, c, d, e, f, g, h, i, j) \
   I410ToAB30Matrix(a, b, c, d, e, f, g, h, &kYuv2020Constants, i, j)
 
+#define I010ToARGBFilter(a, b, c, d, e, f, g, h, i, j)                     \
+  I010ToARGBMatrixFilter(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j, \
+                         kFilterBilinear)
+#define I010ToAR30Filter(a, b, c, d, e, f, g, h, i, j)                     \
+  I010ToAR30MatrixFilter(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j, \
+                         kFilterBilinear)
+#define I210ToARGBFilter(a, b, c, d, e, f, g, h, i, j)                     \
+  I210ToARGBMatrixFilter(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j, \
+                         kFilterBilinear)
+#define I210ToAR30Filter(a, b, c, d, e, f, g, h, i, j)                     \
+  I210ToAR30MatrixFilter(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j, \
+                         kFilterBilinear)
+
 // TODO(fbarchard): Fix clamping issue affected by U channel.
 #define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_MASK, FMT_B,   \
                          BPP_B, ALIGN, YALIGN, W1280, N, NEG, SOFF, DOFF)     \
@@ -3435,6 +3470,8 @@ TESTPLANAR16TOB(H410, 1, 1, 0x3ff, ABGR, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, ARGB, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, ABGR, 4, 4, 1)
 TESTPLANAR16TOB(I012, 2, 2, 0xfff, ARGB, 4, 4, 1)
+TESTPLANAR16TOB(I010, 2, 2, 0x3ff, ARGBFilter, 4, 4, 1)
+TESTPLANAR16TOB(I210, 2, 1, 0x3ff, ARGBFilter, 4, 4, 1)
 
 #ifdef LITTLE_ENDIAN_ONLY_TEST
 TESTPLANAR16TOB(I010, 2, 2, 0x3ff, AR30, 4, 4, 1)
@@ -3456,6 +3493,8 @@ TESTPLANAR16TOB(H410, 1, 1, 0x3ff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AR30, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(I010, 2, 2, 0x3ff, AR30Filter, 4, 4, 1)
+TESTPLANAR16TOB(I210, 2, 1, 0x3ff, AR30Filter, 4, 4, 1)
 #endif  // LITTLE_ENDIAN_ONLY_TEST
 #endif  // DISABLE_SLOW_TESTS
 
@@ -3643,6 +3682,12 @@ TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
 #define V410AlphaToABGR(a, b, c, d, e, f, g, h, i, j, k, l, m)                \
   I410AlphaToABGRMatrix(a, b, c, d, e, f, g, h, i, j, &kYuvV2020Constants, k, \
                         l, m)
+#define I010AlphaToARGBFilter(a, b, c, d, e, f, g, h, i, j, k, l, m) \
+  I010AlphaToARGBMatrixFilter(a, b, c, d, e, f, g, h, i, j,          \
+                              &kYuvI601Constants, k, l, m, kFilterBilinear)
+#define I210AlphaToARGBFilter(a, b, c, d, e, f, g, h, i, j, k, l, m) \
+  I010AlphaToARGBMatrixFilter(a, b, c, d, e, f, g, h, i, j,          \
+                              &kYuvI601Constants, k, l, m, kFilterBilinear)
 
 // These conversions are only optimized for x86
 #if !defined(DISABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
@@ -3682,6 +3727,8 @@ TESTQPLANAR16TOB(U410Alpha, 1, 1, ARGB, 4, 4, 1, 10)
 TESTQPLANAR16TOB(U410Alpha, 1, 1, ABGR, 4, 4, 1, 10)
 TESTQPLANAR16TOB(V410Alpha, 1, 1, ARGB, 4, 4, 1, 10)
 TESTQPLANAR16TOB(V410Alpha, 1, 1, ABGR, 4, 4, 1, 10)
+TESTQPLANAR16TOB(I010Alpha, 2, 2, ARGBFilter, 4, 4, 1, 10)
+TESTQPLANAR16TOB(I210Alpha, 2, 1, ARGBFilter, 4, 4, 1, 10)
 #endif  // DISABLE_SLOW_TESTS
 
 #define TESTBIPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,     \
@@ -3766,6 +3813,15 @@ TESTQPLANAR16TOB(V410Alpha, 1, 1, ABGR, 4, 4, 1, 10)
 #define P216ToAR30(a, b, c, d, e, f, g, h) \
   P216ToAR30Matrix(a, b, c, d, e, f, &kYuvH709Constants, g, h)
 
+#define P010ToARGBFilter(a, b, c, d, e, f, g, h) \
+  P010ToARGBMatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
+#define P210ToARGBFilter(a, b, c, d, e, f, g, h) \
+  P210ToARGBMatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
+#define P010ToAR30Filter(a, b, c, d, e, f, g, h) \
+  P010ToAR30MatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
+#define P210ToAR30Filter(a, b, c, d, e, f, g, h) \
+  P210ToAR30MatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
+
 #if !defined(DISABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
 TESTBIPLANAR16TOB(P010, 2, 2, ARGB, 4, 4, 1, 10)
 TESTBIPLANAR16TOB(P210, 2, 1, ARGB, 4, 4, 1, 10)
@@ -3773,6 +3829,8 @@ TESTBIPLANAR16TOB(P012, 2, 2, ARGB, 4, 4, 1, 12)
 TESTBIPLANAR16TOB(P212, 2, 1, ARGB, 4, 4, 1, 12)
 TESTBIPLANAR16TOB(P016, 2, 2, ARGB, 4, 4, 1, 16)
 TESTBIPLANAR16TOB(P216, 2, 1, ARGB, 4, 4, 1, 16)
+TESTBIPLANAR16TOB(P010, 2, 2, ARGBFilter, 4, 4, 1, 10)
+TESTBIPLANAR16TOB(P210, 2, 1, ARGBFilter, 4, 4, 1, 10)
 #ifdef LITTLE_ENDIAN_ONLY_TEST
 TESTBIPLANAR16TOB(P010, 2, 2, AR30, 4, 4, 1, 10)
 TESTBIPLANAR16TOB(P210, 2, 1, AR30, 4, 4, 1, 10)
@@ -3780,6 +3838,8 @@ TESTBIPLANAR16TOB(P012, 2, 2, AR30, 4, 4, 1, 12)
 TESTBIPLANAR16TOB(P212, 2, 1, AR30, 4, 4, 1, 12)
 TESTBIPLANAR16TOB(P016, 2, 2, AR30, 4, 4, 1, 16)
 TESTBIPLANAR16TOB(P216, 2, 1, AR30, 4, 4, 1, 16)
+TESTBIPLANAR16TOB(P010, 2, 2, AR30Filter, 4, 4, 1, 10)
+TESTBIPLANAR16TOB(P210, 2, 1, AR30Filter, 4, 4, 1, 10)
 #endif  // LITTLE_ENDIAN_ONLY_TEST
 #endif  // DISABLE_SLOW_TESTS
 
