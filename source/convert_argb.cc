@@ -6935,7 +6935,7 @@ int I420ToARGBMatrixFilter(const uint8_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I420ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
@@ -6966,7 +6966,7 @@ int I422ToARGBMatrixFilter(const uint8_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I422ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
@@ -6995,7 +6995,7 @@ int I010ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I010ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
@@ -7025,7 +7025,7 @@ int I210ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I210ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
@@ -7054,7 +7054,7 @@ int I010ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I010ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
@@ -7084,7 +7084,7 @@ int I210ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I210ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
@@ -7116,7 +7116,7 @@ int I420AlphaToARGBMatrixFilter(const uint8_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter) {
+                                enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I420AlphaToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u,
@@ -7151,7 +7151,7 @@ int I422AlphaToARGBMatrixFilter(const uint8_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter) {
+                                enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I422AlphaToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u,
@@ -7185,7 +7185,7 @@ int I010AlphaToARGBMatrixFilter(const uint16_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter) {
+                                enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I010AlphaToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u,
@@ -7220,7 +7220,7 @@ int I210AlphaToARGBMatrixFilter(const uint16_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter) {
+                                enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return I210AlphaToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u,
@@ -7249,7 +7249,7 @@ int P010ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return P010ToARGBMatrix(src_y, src_stride_y, src_uv, src_stride_uv,
@@ -7277,7 +7277,7 @@ int P210ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return P210ToARGBMatrix(src_y, src_stride_y, src_uv, src_stride_uv,
@@ -7304,7 +7304,7 @@ int P010ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return P010ToAR30Matrix(src_y, src_stride_y, src_uv, src_stride_uv,
@@ -7332,7 +7332,7 @@ int P210ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) {
+                           enum FilterMode filter) {
   switch (filter) {
     case kFilterNone:
       return P210ToAR30Matrix(src_y, src_stride_y, src_uv, src_stride_uv,

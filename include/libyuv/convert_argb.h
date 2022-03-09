@@ -1944,7 +1944,7 @@ int I420ToARGBMatrixFilter(const uint8_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert I422 to ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -1959,7 +1959,7 @@ int I422ToARGBMatrixFilter(const uint8_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert I010 to AR30 with matrix and UV filter mode.
 LIBYUV_API
@@ -1974,7 +1974,7 @@ int I010ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert I210 to AR30 with matrix and UV filter mode.
 LIBYUV_API
@@ -1989,7 +1989,7 @@ int I210ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert I010 to ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2004,7 +2004,7 @@ int I010ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert I210 to ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2019,7 +2019,7 @@ int I210ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert I420 with Alpha to attenuated ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2037,7 +2037,7 @@ int I420AlphaToARGBMatrixFilter(const uint8_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter);
+                                enum FilterMode filter);
 
 // Convert I422 with Alpha to attenuated ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2055,7 +2055,7 @@ int I422AlphaToARGBMatrixFilter(const uint8_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter);
+                                enum FilterMode filter);
 
 // Convert I010 with Alpha to attenuated ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2073,7 +2073,7 @@ int I010AlphaToARGBMatrixFilter(const uint16_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter);
+                                enum FilterMode filter);
 
 // Convert I210 with Alpha to attenuated ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2091,7 +2091,7 @@ int I210AlphaToARGBMatrixFilter(const uint16_t* src_y,
                                 int width,
                                 int height,
                                 int attenuate,
-                                FilterMode filter);
+                                enum FilterMode filter);
 
 // Convert P010 to ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2104,7 +2104,7 @@ int P010ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert P210 to ARGB with matrix and UV filter mode.
 LIBYUV_API
@@ -2117,7 +2117,7 @@ int P210ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter) ;
+                           enum FilterMode filter) ;
 
 // Convert P010 to AR30 with matrix and UV filter mode.
 LIBYUV_API
@@ -2130,7 +2130,7 @@ int P010ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert P210 to AR30 with matrix and UV filter mode.
 LIBYUV_API
@@ -2143,7 +2143,7 @@ int P210ToAR30MatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           FilterMode filter);
+                           enum FilterMode filter);
 
 // Convert camera sample to ARGB with cropping, rotation and vertical flip.
 // "sample_size" is needed to parse MJPG.
