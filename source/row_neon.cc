@@ -1645,29 +1645,6 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
-void ARGBToYRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  asm volatile(
-      "vmov.u8     d24, #25                      \n"  // B * 0.1016 coefficient
-      "vmov.u8     d25, #129                     \n"  // G * 0.5078 coefficient
-      "vmov.u8     d26, #66                      \n"  // R * 0.2578 coefficient
-      "vmov.u8     d27, #16                      \n"  // Add 16 constant
-      "1:                                        \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 ARGB pixels.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q2, d0, d24                   \n"  // B
-      "vmlal.u8    q2, d1, d25                   \n"  // G
-      "vmlal.u8    q2, d2, d26                   \n"  // R
-      "vqrshrn.u16 d0, q2, #8                    \n"  // 16 bit to 8 bit Y
-      "vqadd.u8    d0, d27                       \n"
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_argb),  // %0
-        "+r"(dst_y),     // %1
-        "+r"(width)      // %2
-      :
-      : "cc", "memory", "q0", "q1", "q2", "q12", "q13");
-}
-
 void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
                               uint8_t* dst_a,
                               int width) {
@@ -1684,48 +1661,6 @@ void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
       :
       : "cc", "memory", "q0", "q1", "q2", "q3"  // Clobber List
   );
-}
-
-void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  asm volatile(
-      "vmov.u8     d24, #29                      \n"  // B * 0.1140 coefficient
-      "vmov.u8     d25, #150                     \n"  // G * 0.5870 coefficient
-      "vmov.u8     d26, #77                      \n"  // R * 0.2990 coefficient
-      "1:                                        \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 ARGB pixels.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q2, d0, d24                   \n"  // B
-      "vmlal.u8    q2, d1, d25                   \n"  // G
-      "vmlal.u8    q2, d2, d26                   \n"  // R
-      "vqrshrn.u16 d0, q2, #8                    \n"  // 16 bit to 8 bit Y
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_argb),  // %0
-        "+r"(dst_y),     // %1
-        "+r"(width)      // %2
-      :
-      : "cc", "memory", "q0", "q1", "q2", "q12", "q13");
-}
-
-void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  asm volatile(
-      "vmov.u8     d24, #29                      \n"  // B * 0.1140 coefficient
-      "vmov.u8     d25, #150                     \n"  // G * 0.5870 coefficient
-      "vmov.u8     d26, #77                      \n"  // R * 0.2990 coefficient
-      "1:                                        \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 RGBA pixels.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q2, d1, d24                   \n"  // B
-      "vmlal.u8    q2, d2, d25                   \n"  // G
-      "vmlal.u8    q2, d3, d26                   \n"  // R
-      "vqrshrn.u16 d0, q2, #8                    \n"  // 16 bit to 8 bit Y
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_rgba),  // %0
-        "+r"(dst_y),     // %1
-        "+r"(width)      // %2
-      :
-      : "cc", "memory", "q0", "q1", "q2", "q12", "q13");
 }
 
 // 8x1 pixels.
@@ -1747,15 +1682,13 @@ void ARGBToUV444Row_NEON(const uint8_t* src_argb,
       "vmull.u8    q2, d0, d24                   \n"  // B
       "vmlsl.u8    q2, d1, d25                   \n"  // G
       "vmlsl.u8    q2, d2, d26                   \n"  // R
-      "vadd.u16    q2, q2, q15                   \n"  // +128 -> unsigned
 
       "vmull.u8    q3, d2, d24                   \n"  // R
       "vmlsl.u8    q3, d1, d28                   \n"  // G
       "vmlsl.u8    q3, d0, d27                   \n"  // B
-      "vadd.u16    q3, q3, q15                   \n"  // +128 -> unsigned
 
-      "vqshrn.u16  d0, q2, #8                    \n"  // 16 bit to 8 bit U
-      "vqshrn.u16  d1, q3, #8                    \n"  // 16 bit to 8 bit V
+      "vaddhn.u16  d0, q2, q15                   \n"  // +128 -> unsigned
+      "vaddhn.u16  d1, q3, q15                   \n"  // +128 -> unsigned
 
       "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels U.
       "vst1.8      {d1}, [%2]!                   \n"  // store 8 pixels V.
@@ -1775,13 +1708,11 @@ void ARGBToUV444Row_NEON(const uint8_t* src_argb,
   "vmul.s16   q8, " #QB ", q10               \n" /* B                    */ \
   "vmls.s16   q8, " #QG ", q11               \n" /* G                    */ \
   "vmls.s16   q8, " #QR ", q12               \n" /* R                    */ \
-  "vadd.u16   q8, q8, q15                    \n" /* +128 -> unsigned     */ \
   "vmul.s16   q9, " #QR ", q10               \n" /* R                    */ \
   "vmls.s16   q9, " #QG ", q14               \n" /* G                    */ \
   "vmls.s16   q9, " #QB ", q13               \n" /* B                    */ \
-  "vadd.u16   q9, q9, q15                    \n" /* +128 -> unsigned     */ \
-  "vqshrn.u16  d0, q8, #8                    \n" /* 16 bit to 8 bit U    */ \
-  "vqshrn.u16  d1, q9, #8                    \n" /* 16 bit to 8 bit V    */
+  "vaddhn.u16 d0, q8, q15                    \n" /* +128 -> unsigned     */ \
+  "vaddhn.u16 d1, q9, q15                    \n" /* +128 -> unsigned     */
 // clang-format on
 
 // TODO(fbarchard): Consider vhadd vertical, then vpaddl horizontal, avoid shr.
@@ -2559,161 +2490,169 @@ void AB64ToARGBRow_NEON(const uint16_t* src_ab64,
       : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
 }
 
-void BGRAToYRow_NEON(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
+struct RgbConstants {
+  uint8_t kRGBToY[4];
+  uint16_t kAddY;
+  uint16_t pad;
+};
+
+// RGB to JPeg coefficients
+// B * 0.1140 coefficient = 29
+// G * 0.5870 coefficient = 150
+// R * 0.2990 coefficient = 77
+// Add 0.5 = 0x80
+struct RgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0}, 128};
+
+struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128};
+
+// RGB to BT.601 coefficients
+// B * 0.1016 coefficient = 25
+// G * 0.5078 coefficient = 129
+// R * 0.2578 coefficient = 66
+// Add 16.5 = 0x1080
+
+struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0}, 0x1080};
+
+struct RgbConstants kRawI601Constants = {{66, 129, 25, 0}, 0x1080};
+
+// ARGB expects first 3 values to contain RGB and 4th value is ignored.
+void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
+                           uint8_t* dst_y,
+                           int width,
+                           const struct RgbConstants* rgbconstants) {
   asm volatile(
-      "vmov.u8     d6, #25                       \n"  // B * 0.1016 coefficient
-      "vmov.u8     d5, #129                      \n"  // G * 0.5078 coefficient
-      "vmov.u8     d4, #66                       \n"  // R * 0.2578 coefficient
-      "vmov.u8     d7, #16                       \n"  // Add 16 constant
+      "vld1.8      {d0}, [%3]                    \n"  // load rgbconstants
+      "vdup.u8     d20, d0[0]                    \n"
+      "vdup.u8     d21, d0[1]                    \n"
+      "vdup.u8     d22, d0[2]                    \n"
+      "vdup.u16    q12, d0[2]                    \n"
       "1:                                        \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 pixels of BGRA.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q8, d1, d4                    \n"  // R
-      "vmlal.u8    q8, d2, d5                    \n"  // G
-      "vmlal.u8    q8, d3, d6                    \n"  // B
-      "vqrshrn.u16 d0, q8, #8                    \n"  // 16 bit to 8 bit Y
-      "vqadd.u8    d0, d7                        \n"
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
+      "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  // load 16 pixels of ARGB
+      "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"
+      "subs        %2, %2, #16                   \n"  // 16 processed per loop.
+      "vmull.u8    q8, d0, d20                   \n"  // B
+      "vmull.u8    q9, d1, d20                   \n"
+      "vmlal.u8    q8, d2, d21                   \n"  // G
+      "vmlal.u8    q9, d3, d21                   \n"
+      "vmlal.u8    q8, d4, d22                   \n"  // R
+      "vmlal.u8    q9, d5, d22                   \n"
+      "vaddhn.u16  d0, q8, q12                   \n"  // 16 bit to 8 bit Y
+      "vaddhn.u16  d1, q9, q12                   \n"
+      "vst1.8      {d0, d1}, [%1]!               \n"  // store 16 pixels Y.
       "bgt         1b                            \n"
-      : "+r"(src_bgra),  // %0
-        "+r"(dst_y),     // %1
-        "+r"(width)      // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
+      : "+r"(src_argb),    // %0
+        "+r"(dst_y),       // %1
+        "+r"(width)        // %2
+      : "r"(rgbconstants)  // %3
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "d20", "d21", "d22",
+        "q12");
+}
+
+void ARGBToYRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_NEON(src_argb, dst_y, width, &kRgb24I601Constants);
+}
+
+void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
+  ARGBToYMatrixRow_NEON(src_argb, dst_yj, width, &kRgb24JPEGConstants);
 }
 
 void ABGRToYRow_NEON(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_NEON(src_abgr, dst_y, width, &kRawI601Constants);
+}
+
+// RGBA expects first value to be A and ignored, then 3 values to contain RGB.
+// Same code as ARGB, except the LD4
+void RGBAToYMatrixRow_NEON(const uint8_t* src_rgba,
+                           uint8_t* dst_y,
+                           int width,
+                           const struct RgbConstants* rgbconstants) {
   asm volatile(
-      "vmov.u8     d6, #25                       \n"  // B * 0.1016 coefficient
-      "vmov.u8     d5, #129                      \n"  // G * 0.5078 coefficient
-      "vmov.u8     d4, #66                       \n"  // R * 0.2578 coefficient
-      "vmov.u8     d7, #16                       \n"  // Add 16 constant
+      "vld1.8      {d0}, [%3]                    \n"  // load rgbconstants
+      "vdup.u8     d20, d0[0]                    \n"
+      "vdup.u8     d21, d0[1]                    \n"
+      "vdup.u8     d22, d0[2]                    \n"
+      "vdup.u16    q12, d0[2]                    \n"
       "1:                                        \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 pixels of ABGR.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q8, d0, d4                    \n"  // R
-      "vmlal.u8    q8, d1, d5                    \n"  // G
-      "vmlal.u8    q8, d2, d6                    \n"  // B
-      "vqrshrn.u16 d0, q8, #8                    \n"  // 16 bit to 8 bit Y
-      "vqadd.u8    d0, d7                        \n"
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
+      "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  // load 16 pixels of RGBA
+      "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"
+      "subs        %2, %2, #16                   \n"  // 16 processed per loop.
+      "vmull.u8    q8, d2, d20                   \n"  // B
+      "vmull.u8    q9, d3, d20                   \n"
+      "vmlal.u8    q8, d4, d21                   \n"  // G
+      "vmlal.u8    q9, d5, d21                   \n"
+      "vmlal.u8    q8, d6, d22                   \n"  // R
+      "vmlal.u8    q9, d7, d22                   \n"
+      "vaddhn.u16  d0, q8, q12                   \n"  // 16 bit to 8 bit Y
+      "vaddhn.u16  d1, q9, q12                   \n"
+      "vst1.8      {d0, d1}, [%1]!               \n"  // store 16 pixels Y.
       "bgt         1b                            \n"
-      : "+r"(src_abgr),  // %0
-        "+r"(dst_y),     // %1
-        "+r"(width)      // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
+      : "+r"(src_rgba),    // %0
+        "+r"(dst_y),       // %1
+        "+r"(width)        // %2
+      : "r"(rgbconstants)  // %3
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "d20", "d21", "d22",
+        "q12");
 }
 
 void RGBAToYRow_NEON(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  asm volatile(
-      "vmov.u8     d4, #25                       \n"  // B * 0.1016 coefficient
-      "vmov.u8     d5, #129                      \n"  // G * 0.5078 coefficient
-      "vmov.u8     d6, #66                       \n"  // R * 0.2578 coefficient
-      "vmov.u8     d7, #16                       \n"  // Add 16 constant
-      "1:                                        \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 pixels of RGBA.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q8, d1, d4                    \n"  // B
-      "vmlal.u8    q8, d2, d5                    \n"  // G
-      "vmlal.u8    q8, d3, d6                    \n"  // R
-      "vqrshrn.u16 d0, q8, #8                    \n"  // 16 bit to 8 bit Y
-      "vqadd.u8    d0, d7                        \n"
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_rgba),  // %0
-        "+r"(dst_y),     // %1
-        "+r"(width)      // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
+  RGBAToYMatrixRow_NEON(src_rgba, dst_y, width, &kRgb24I601Constants);
 }
 
-void RGB24ToYRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
-  asm volatile(
-      "vmov.u8     d4, #25                       \n"  // B * 0.1016 coefficient
-      "vmov.u8     d5, #129                      \n"  // G * 0.5078 coefficient
-      "vmov.u8     d6, #66                       \n"  // R * 0.2578 coefficient
-      "vmov.u8     d7, #16                       \n"  // Add 16 constant
-      "1:                                        \n"
-      "vld3.8      {d0, d1, d2}, [%0]!           \n"  // load 8 pixels of RGB24.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q8, d0, d4                    \n"  // B
-      "vmlal.u8    q8, d1, d5                    \n"  // G
-      "vmlal.u8    q8, d2, d6                    \n"  // R
-      "vqrshrn.u16 d0, q8, #8                    \n"  // 16 bit to 8 bit Y
-      "vqadd.u8    d0, d7                        \n"
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_rgb24),  // %0
-        "+r"(dst_y),      // %1
-        "+r"(width)       // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
+void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
+  RGBAToYMatrixRow_NEON(src_rgba, dst_yj, width, &kRgb24JPEGConstants);
 }
 
-void RAWToYRow_NEON(const uint8_t* src_raw, uint8_t* dst_y, int width) {
+void BGRAToYRow_NEON(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
+  RGBAToYMatrixRow_NEON(src_bgra, dst_y, width, &kRawI601Constants);
+}
+
+void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
+                          uint8_t* dst_y,
+                          int width,
+                          const struct RgbConstants* rgbconstants) {
   asm volatile(
-      "vmov.u8     d6, #25                       \n"  // B * 0.1016 coefficient
-      "vmov.u8     d5, #129                      \n"  // G * 0.5078 coefficient
-      "vmov.u8     d4, #66                       \n"  // R * 0.2578 coefficient
-      "vmov.u8     d7, #16                       \n"  // Add 16 constant
+      "vld1.8      {d0}, [%3]                    \n"  // load rgbconstants
+      "vdup.u8     d20, d0[0]                    \n"
+      "vdup.u8     d21, d0[1]                    \n"
+      "vdup.u8     d22, d0[2]                    \n"
+      "vdup.u16    q12, d0[2]                    \n"
       "1:                                        \n"
-      "vld3.8      {d0, d1, d2}, [%0]!           \n"  // load 8 pixels of RAW.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q8, d0, d4                    \n"  // B
-      "vmlal.u8    q8, d1, d5                    \n"  // G
-      "vmlal.u8    q8, d2, d6                    \n"  // R
-      "vqrshrn.u16 d0, q8, #8                    \n"  // 16 bit to 8 bit Y
-      "vqadd.u8    d0, d7                        \n"
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
+      "vld3.8      {d2, d4, d6}, [%0]!           \n"  // load 16 pixels of
+                                                      // RGB24.
+      "vld3.8      {d3, d5, d7}, [%0]!           \n"
+      "subs        %2, %2, #16                   \n"  // 16 processed per loop.
+      "vmull.u8    q8, d2, d20                   \n"  // B
+      "vmull.u8    q9, d3, d20                   \n"
+      "vmlal.u8    q8, d4, d21                   \n"  // G
+      "vmlal.u8    q9, d5, d21                   \n"
+      "vmlal.u8    q8, d6, d22                   \n"  // R
+      "vmlal.u8    q9, d7, d22                   \n"
+      "vaddhn.u16  d0, q8, q12                   \n"  // 16 bit to 8 bit Y
+      "vaddhn.u16  d1, q9, q12                   \n"
+      "vst1.8      {d0, d1}, [%1]!               \n"  // store 16 pixels Y.
       "bgt         1b                            \n"
-      : "+r"(src_raw),  // %0
-        "+r"(dst_y),    // %1
-        "+r"(width)     // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
+      : "+r"(src_rgb),     // %0
+        "+r"(dst_y),       // %1
+        "+r"(width)        // %2
+      : "r"(rgbconstants)  // %3
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "d20", "d21", "d22",
+        "q12");
 }
 
 void RGB24ToYJRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
-  asm volatile(
-      "vmov.u8     d4, #29                       \n"  // B * 0.1140 coefficient
-      "vmov.u8     d5, #150                      \n"  // G * 0.5870 coefficient
-      "vmov.u8     d6, #77                       \n"  // R * 0.2990 coefficient
-      "1:                                        \n"
-      "vld3.8      {d0, d1, d2}, [%0]!           \n"  // load 8 pixels of RGB24.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q4, d0, d4                    \n"  // B
-      "vmlal.u8    q4, d1, d5                    \n"  // G
-      "vmlal.u8    q4, d2, d6                    \n"  // R
-      "vqrshrn.u16 d0, q4, #8                    \n"  // 16 bit to 8 bit Y
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_rgb24),  // %0
-        "+r"(dst_yj),     // %1
-        "+r"(width)       // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "q4");
+  RGBToYMatrixRow_NEON(src_rgb24, dst_yj, width, &kRgb24JPEGConstants);
 }
 
 void RAWToYJRow_NEON(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
-  asm volatile(
-      "vmov.u8     d6, #29                       \n"  // B * 0.1140 coefficient
-      "vmov.u8     d5, #150                      \n"  // G * 0.5870 coefficient
-      "vmov.u8     d4, #77                       \n"  // R * 0.2990 coefficient
-      "1:                                        \n"
-      "vld3.8      {d0, d1, d2}, [%0]!           \n"  // load 8 pixels of RAW.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
-      "vmull.u8    q4, d0, d4                    \n"  // R
-      "vmlal.u8    q4, d1, d5                    \n"  // G
-      "vmlal.u8    q4, d2, d6                    \n"  // B
-      "vqrshrn.u16 d0, q4, #8                    \n"  // 16 bit to 8 bit Y
-      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels Y.
-      "bgt         1b                            \n"
-      : "+r"(src_raw),  // %0
-        "+r"(dst_yj),   // %1
-        "+r"(width)     // %2
-      :
-      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "q4");
+  RGBToYMatrixRow_NEON(src_raw, dst_yj, width, &kRawJPEGConstants);
+}
+
+void RGB24ToYRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
+  RGBToYMatrixRow_NEON(src_rgb24, dst_y, width, &kRgb24I601Constants);
+}
+
+void RAWToYRow_NEON(const uint8_t* src_raw, uint8_t* dst_y, int width) {
+  RGBToYMatrixRow_NEON(src_raw, dst_y, width, &kRawI601Constants);
 }
 
 // Bilinear filter 16x2 -> 16x1

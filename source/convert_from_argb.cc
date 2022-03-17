@@ -103,7 +103,7 @@ int ARGBToI444(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -205,7 +205,7 @@ int ARGBToI422(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -283,7 +283,7 @@ int ARGBToNV12(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -477,7 +477,7 @@ int ARGBToNV21(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -638,7 +638,7 @@ int ABGRToNV12(const uint8_t* src_abgr,
 #if defined(HAS_ABGRTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ABGRToYRow = ABGRToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ABGRToYRow = ABGRToYRow_NEON;
     }
   }
@@ -790,7 +790,7 @@ int ABGRToNV21(const uint8_t* src_abgr,
 #if defined(HAS_ABGRTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ABGRToYRow = ABGRToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ABGRToYRow = ABGRToYRow_NEON;
     }
   }
@@ -947,7 +947,7 @@ int ARGBToYUY2(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -1110,7 +1110,7 @@ int ARGBToUYVY(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -1249,7 +1249,7 @@ int ARGBToI400(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
   }
@@ -1906,7 +1906,7 @@ int ARGBToJ420(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYJRow = ARGBToYJRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYJRow = ARGBToYJRow_NEON;
     }
   }
@@ -2029,7 +2029,7 @@ int ARGBToJ422(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYJRow = ARGBToYJRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYJRow = ARGBToYJRow_NEON;
     }
   }
@@ -2248,7 +2248,7 @@ int ARGBToJ400(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYJRow = ARGBToYJRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYJRow = ARGBToYJRow_NEON;
     }
   }
@@ -2314,7 +2314,7 @@ int RGBAToJ400(const uint8_t* src_rgba,
 #if defined(HAS_RGBATOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RGBAToYJRow = RGBAToYJRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       RGBAToYJRow = RGBAToYJRow_NEON;
     }
   }
@@ -2387,11 +2387,9 @@ int RAWToJNV21(const uint8_t* src_raw,
   if (TestCpuFlag(kCpuHasNEON)) {
     RAWToUVJRow = RAWToUVJRow_Any_NEON;
     RAWToYJRow = RAWToYJRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       RAWToYJRow = RAWToYJRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        RAWToUVJRow = RAWToUVJRow_NEON;
-      }
+      RAWToUVJRow = RAWToUVJRow_NEON;
     }
   }
 #endif

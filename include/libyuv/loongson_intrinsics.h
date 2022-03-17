@@ -91,7 +91,8 @@
  *         out : 23,40,41,26, 23,40,41,26
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_h_b(__m128i in_c, __m128i in_h,
+static inline __m128i __lsx_vdp2add_h_b(__m128i in_c,
+                                        __m128i in_h,
                                         __m128i in_l) {
   __m128i out;
 
@@ -117,7 +118,8 @@ static inline __m128i __lsx_vdp2add_h_b(__m128i in_c, __m128i in_h,
  *         out : 23,40,41,26, 23,40,41,26
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c, __m128i in_h,
+static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c,
+                                         __m128i in_h,
                                          __m128i in_l) {
   __m128i out;
 
@@ -143,7 +145,8 @@ static inline __m128i __lsx_vdp2add_h_bu(__m128i in_c, __m128i in_h,
  *         out : -4,-24,-60,-112, 6,26,62,114
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_h_bu_b(__m128i in_c, __m128i in_h,
+static inline __m128i __lsx_vdp2add_h_bu_b(__m128i in_c,
+                                           __m128i in_h,
                                            __m128i in_l) {
   __m128i out;
 
@@ -169,7 +172,8 @@ static inline __m128i __lsx_vdp2add_h_bu_b(__m128i in_c, __m128i in_h,
  *         out : 23,40,41,26
  * =============================================================================
  */
-static inline __m128i __lsx_vdp2add_w_h(__m128i in_c, __m128i in_h,
+static inline __m128i __lsx_vdp2add_w_h(__m128i in_c,
+                                        __m128i in_h,
                                         __m128i in_l) {
   __m128i out;
 
@@ -414,8 +418,8 @@ static inline __m128i __lsx_vclip255_w(__m128i _in) {
                            _out0, _out1, _out2, _out3, _out4, _out5, _out6, \
                            _out7)                                           \
   {                                                                         \
-    __m128i zero = { 0 };                                                   \
-    __m128i shuf8 = { 0x0F0E0D0C0B0A0908, 0x1716151413121110 };             \
+    __m128i zero = {0};                                                     \
+    __m128i shuf8 = {0x0F0E0D0C0B0A0908, 0x1716151413121110};               \
     __m128i _t0, _t1, _t2, _t3, _t4, _t5, _t6, _t7;                         \
                                                                             \
     _t0 = __lsx_vilvl_b(_in2, _in0);                                        \
@@ -828,7 +832,8 @@ static inline __m256i __lasx_xvdp2_w_hu_h(__m256i in_h, __m256i in_l) {
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_h_b(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2add_h_b(__m256i in_c,
+                                          __m256i in_h,
                                           __m256i in_l) {
   __m256i out;
 
@@ -851,7 +856,8 @@ static inline __m256i __lasx_xvdp2add_h_b(__m256i in_c, __m256i in_h,
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_h_bu(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2add_h_bu(__m256i in_c,
+                                           __m256i in_h,
                                            __m256i in_l) {
   __m256i out;
 
@@ -874,7 +880,8 @@ static inline __m256i __lasx_xvdp2add_h_bu(__m256i in_c, __m256i in_h,
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_h_bu_b(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2add_h_bu_b(__m256i in_c,
+                                             __m256i in_h,
                                              __m256i in_l) {
   __m256i out;
 
@@ -901,7 +908,8 @@ static inline __m256i __lasx_xvdp2add_h_bu_b(__m256i in_c, __m256i in_h,
  *         out : 23,40,41,26, 23,40,41,26
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_w_h(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2add_w_h(__m256i in_c,
+                                          __m256i in_h,
                                           __m256i in_l) {
   __m256i out;
 
@@ -924,7 +932,8 @@ static inline __m256i __lasx_xvdp2add_w_h(__m256i in_c, __m256i in_h,
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_w_hu(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2add_w_hu(__m256i in_c,
+                                           __m256i in_h,
                                            __m256i in_l) {
   __m256i out;
 
@@ -947,7 +956,8 @@ static inline __m256i __lasx_xvdp2add_w_hu(__m256i in_c, __m256i in_h,
  * Example     : See out = __lasx_xvdp2add_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2add_w_hu_h(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2add_w_hu_h(__m256i in_c,
+                                             __m256i in_h,
                                              __m256i in_l) {
   __m256i out;
 
@@ -971,7 +981,8 @@ static inline __m256i __lasx_xvdp2add_w_hu_h(__m256i in_c, __m256i in_h,
  * Example     : See out = __lasx_xvdp2sub_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2sub_h_bu(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2sub_h_bu(__m256i in_c,
+                                           __m256i in_h,
                                            __m256i in_l) {
   __m256i out;
 
@@ -1000,7 +1011,8 @@ static inline __m256i __lasx_xvdp2sub_h_bu(__m256i in_c, __m256i in_h,
  *         out : -7,-3,0,0, 0,-1,0,-1
  * =============================================================================
  */
-static inline __m256i __lasx_xvdp2sub_w_h(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvdp2sub_w_h(__m256i in_c,
+                                          __m256i in_h,
                                           __m256i in_l) {
   __m256i out;
 
@@ -1201,7 +1213,8 @@ static inline __m256i __lasx_xvaddw_w_w_h(__m256i in_h, __m256i in_l) {
  *         out : 201, 602,1203,2004, -995, -1794,-2793,-3992
  * =============================================================================
  */
-static inline __m256i __lasx_xvmaddwl_w_h(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvmaddwl_w_h(__m256i in_c,
+                                          __m256i in_h,
                                           __m256i in_l) {
   __m256i tmp0, tmp1, out;
 
@@ -1225,7 +1238,8 @@ static inline __m256i __lasx_xvmaddwl_w_h(__m256i in_c, __m256i in_h,
  * Example     : See out = __lasx_xvmaddwl_w_h(in_c, in_h, in_l)
  * =============================================================================
  */
-static inline __m256i __lasx_xvmaddwh_w_h(__m256i in_c, __m256i in_h,
+static inline __m256i __lasx_xvmaddwh_w_h(__m256i in_c,
+                                          __m256i in_h,
                                           __m256i in_l) {
   __m256i tmp0, tmp1, out;
 
@@ -1303,7 +1317,7 @@ static inline __m256i __lasx_xvmulwh_w_h(__m256i in_h, __m256i in_l) {
  */
 static inline __m256i __lasx_xvsaddw_hu_hu_bu(__m256i in_h, __m256i in_l) {
   __m256i tmp1, out;
-  __m256i zero = { 0 };
+  __m256i zero = {0};
 
   tmp1 = __lasx_xvilvl_b(zero, in_l);
   out = __lasx_xvsadd_hu(in_h, tmp1);
@@ -1921,12 +1935,14 @@ static inline __m256i __lasx_xvsplati_h_h(__m256i in, int idx) {
  *               VP:1,2,3,4,
  * =============================================================================
  */
-#define VECT_PRINT(RTYPE, element_num, in0, enter)                 \
-  {                                                                \
-    RTYPE _tmp0 = (RTYPE)in0;                                      \
-    int _i = 0;                                                    \
-    if (enter) printf("\nVP:");                                    \
-    for (_i = 0; _i < element_num; _i++) printf("%d,", _tmp0[_i]); \
+#define VECT_PRINT(RTYPE, element_num, in0, enter) \
+  {                                                \
+    RTYPE _tmp0 = (RTYPE)in0;                      \
+    int _i = 0;                                    \
+    if (enter)                                     \
+      printf("\nVP:");                             \
+    for (_i = 0; _i < element_num; _i++)           \
+      printf("%d,", _tmp0[_i]);                    \
   }
 
 #endif /* LOONGSON_INTRINSICS_H */

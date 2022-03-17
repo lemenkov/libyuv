@@ -1314,7 +1314,7 @@ TESTATOBIPLANAR(ARGB, 1, 4, NV12, 2, 2)
 TESTATOBIPLANAR(ARGB, 1, 4, NV21, 2, 2)
 TESTATOBIPLANAR(ABGR, 1, 4, NV12, 2, 2)
 TESTATOBIPLANAR(ABGR, 1, 4, NV21, 2, 2)
-TESTATOBIPLANAR(RAW,  1, 3, JNV21, 2, 2)
+TESTATOBIPLANAR(RAW, 1, 3, JNV21, 2, 2)
 TESTATOBIPLANAR(YUY2, 2, 4, NV12, 2, 2)
 TESTATOBIPLANAR(UYVY, 2, 4, NV12, 2, 2)
 TESTATOBIPLANAR(AYUV, 1, 4, NV12, 2, 2)
@@ -3813,14 +3813,18 @@ TESTQPLANAR16TOB(I210Alpha, 2, 1, ARGBFilter, 4, 4, 1, 10)
 #define P216ToAR30(a, b, c, d, e, f, g, h) \
   P216ToAR30Matrix(a, b, c, d, e, f, &kYuvH709Constants, g, h)
 
-#define P010ToARGBFilter(a, b, c, d, e, f, g, h) \
-  P010ToARGBMatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
-#define P210ToARGBFilter(a, b, c, d, e, f, g, h) \
-  P210ToARGBMatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
-#define P010ToAR30Filter(a, b, c, d, e, f, g, h) \
-  P010ToAR30MatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
-#define P210ToAR30Filter(a, b, c, d, e, f, g, h) \
-  P210ToAR30MatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, kFilterBilinear)
+#define P010ToARGBFilter(a, b, c, d, e, f, g, h)                     \
+  P010ToARGBMatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, \
+                         kFilterBilinear)
+#define P210ToARGBFilter(a, b, c, d, e, f, g, h)                     \
+  P210ToARGBMatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, \
+                         kFilterBilinear)
+#define P010ToAR30Filter(a, b, c, d, e, f, g, h)                     \
+  P010ToAR30MatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, \
+                         kFilterBilinear)
+#define P210ToAR30Filter(a, b, c, d, e, f, g, h)                     \
+  P210ToAR30MatrixFilter(a, b, c, d, e, f, &kYuvH709Constants, g, h, \
+                         kFilterBilinear)
 
 #if !defined(DISABLE_SLOW_TESTS) || defined(__x86_64__) || defined(__i386__)
 TESTBIPLANAR16TOB(P010, 2, 2, ARGB, 4, 4, 1, 10)

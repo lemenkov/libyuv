@@ -1380,7 +1380,9 @@ void BGRAToYRow_LSX(const uint8_t* src_bgra, uint8_t* dst_y, int width);
 void ABGRToYRow_LSX(const uint8_t* src_abgr, uint8_t* dst_y, int width);
 void RGBAToYRow_LSX(const uint8_t* src_rgba, uint8_t* dst_y, int width);
 void ARGB1555ToYRow_LSX(const uint8_t* src_argb1555, uint8_t* dst_y, int width);
-void ARGB1555ToYRow_LASX(const uint8_t* src_argb1555, uint8_t* dst_y, int width);
+void ARGB1555ToYRow_LASX(const uint8_t* src_argb1555,
+                         uint8_t* dst_y,
+                         int width);
 void RGB565ToYRow_LSX(const uint8_t* src_rgb565, uint8_t* dst_y, int width);
 void RGB565ToYRow_LASX(const uint8_t* src_rgb565, uint8_t* dst_y, int width);
 void RGB24ToYRow_LSX(const uint8_t* src_rgb24, uint8_t* dst_y, int width);
@@ -2748,7 +2750,9 @@ void RGB24ToARGBRow_NEON(const uint8_t* src_rgb24,
                          int width);
 void RGB24ToARGBRow_MSA(const uint8_t* src_rgb24, uint8_t* dst_argb, int width);
 void RGB24ToARGBRow_LSX(const uint8_t* src_rgb24, uint8_t* dst_argb, int width);
-void RGB24ToARGBRow_LASX(const uint8_t* src_rgb24, uint8_t* dst_argb, int width);
+void RGB24ToARGBRow_LASX(const uint8_t* src_rgb24,
+                         uint8_t* dst_argb,
+                         int width);
 void RAWToARGBRow_NEON(const uint8_t* src_raw, uint8_t* dst_argb, int width);
 void RAWToRGBARow_NEON(const uint8_t* src_raw, uint8_t* dst_rgba, int width);
 void RAWToARGBRow_MSA(const uint8_t* src_raw, uint8_t* dst_argb, int width);
@@ -2851,8 +2855,8 @@ void RGB24ToARGBRow_Any_LSX(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
 void RGB24ToARGBRow_Any_LASX(const uint8_t* src_ptr,
-                            uint8_t* dst_ptr,
-                            int width);
+                             uint8_t* dst_ptr,
+                             int width);
 void RAWToARGBRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RAWToRGBARow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RAWToARGBRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);

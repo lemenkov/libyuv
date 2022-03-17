@@ -14,7 +14,7 @@
 #include "libyuv/basic_types.h"
 
 #include "libyuv/rotate.h"  // For enum RotationMode.
-#include "libyuv/scale.h"  // For enum FilterMode.
+#include "libyuv/scale.h"   // For enum FilterMode.
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -2117,7 +2117,7 @@ int P210ToARGBMatrixFilter(const uint16_t* src_y,
                            const struct YuvConstants* yuvconstants,
                            int width,
                            int height,
-                           enum FilterMode filter) ;
+                           enum FilterMode filter);
 
 // Convert P010 to AR30 with matrix and UV filter mode.
 LIBYUV_API
