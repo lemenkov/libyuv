@@ -2091,18 +2091,18 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
 #endif
 #endif  // HAS_RGB24TOYJROW
 
-{
+  {
 #if !defined(HAS_RGB24TOYJROW)
-  // Allocate 2 rows of ARGB.
-  const int kRowSize = (width * 4 + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2);
+    // Allocate 2 rows of ARGB.
+    const int kRowSize = (width * 4 + 31) & ~31;
+    align_buffer_64(row, kRowSize * 2);
 #endif
 
-  for (y = 0; y < height - 1; y += 2) {
+    for (y = 0; y < height - 1; y += 2) {
 #if defined(HAS_RGB24TOYJROW)
-    RGB24ToUVJRow(src_rgb24, src_stride_rgb24, dst_u, dst_v, width);
-    RGB24ToYJRow(src_rgb24, dst_y, width);
-    RGB24ToYJRow(src_rgb24 + src_stride_rgb24, dst_y + dst_stride_y, width);
+      RGB24ToUVJRow(src_rgb24, src_stride_rgb24, dst_u, dst_v, width);
+      RGB24ToYJRow(src_rgb24, dst_y, width);
+      RGB24ToYJRow(src_rgb24 + src_stride_rgb24, dst_y + dst_stride_y, width);
 #else
       RGB24ToARGBRow(src_rgb24, row, width);
       RGB24ToARGBRow(src_rgb24 + src_stride_rgb24, row + kRowSize, width);
@@ -2110,26 +2110,26 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
       ARGBToYJRow(row, dst_y, width);
       ARGBToYJRow(row + kRowSize, dst_y + dst_stride_y, width);
 #endif
-    src_rgb24 += src_stride_rgb24 * 2;
-    dst_y += dst_stride_y * 2;
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
-  }
-  if (height & 1) {
+      src_rgb24 += src_stride_rgb24 * 2;
+      dst_y += dst_stride_y * 2;
+      dst_u += dst_stride_u;
+      dst_v += dst_stride_v;
+    }
+    if (height & 1) {
 #if defined(HAS_RGB24TOYJROW)
-    RGB24ToUVJRow(src_rgb24, 0, dst_u, dst_v, width);
-    RGB24ToYJRow(src_rgb24, dst_y, width);
+      RGB24ToUVJRow(src_rgb24, 0, dst_u, dst_v, width);
+      RGB24ToYJRow(src_rgb24, dst_y, width);
 #else
       RGB24ToARGBRow(src_rgb24, row, width);
       ARGBToUVJRow(row, 0, dst_u, dst_v, width);
       ARGBToYJRow(row, dst_y, width);
 #endif
-  }
+    }
 #if !defined(HAS_RGB24TOYJROW)
-  free_aligned_buffer_64(row);
+    free_aligned_buffer_64(row);
 #endif
-}
-return 0;
+  }
+  return 0;
 }
 #undef HAS_RGB24TOYJROW
 

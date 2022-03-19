@@ -52,6 +52,7 @@ LOCAL_OBJ_FILES := \
 	source/scale_msa.o         \
 	source/scale_neon.o        \
 	source/scale_neon64.o      \
+	source/scale_rgb.o         \
 	source/scale_uv.o          \
 	source/scale_win.o         \
 	source/video_common.o

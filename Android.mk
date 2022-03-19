@@ -45,6 +45,7 @@ LOCAL_SRC_FILES := \
     source/scale_msa.cc         \
     source/scale_neon.cc        \
     source/scale_neon64.cc      \
+    source/scale_rgb.cc         \
     source/scale_uv.cc          \
     source/scale_win.cc         \
     source/video_common.cc
@@ -97,6 +98,7 @@ LOCAL_SRC_FILES := \
     unit_test/rotate_argb_test.cc \
     unit_test/rotate_test.cc      \
     unit_test/scale_argb_test.cc  \
+    unit_test/scale_rgb_test.cc   \
     unit_test/scale_test.cc       \
     unit_test/scale_uv_test.cc    \
     unit_test/unit_test.cc        \
