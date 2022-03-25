@@ -6443,6 +6443,7 @@ static int I010AlphaToARGBMatrixBilinear(
   }
   dst_argb += dst_stride_argb;
   src_y += src_stride_y;
+  src_a += src_stride_a;
 
   for (y = 0; y < height - 2; y += 2) {
     Scale2RowUp(src_u, src_stride_u, temp_u_1, kRowSize, width);
@@ -6472,6 +6473,9 @@ static int I010AlphaToARGBMatrixBilinear(
     Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
     I410AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                        width);
+    if (attenuate) {
+      ARGBAttenuateRow(dst_argb, dst_argb, width);
+    }
   }
 
   free_aligned_buffer_64(row);
