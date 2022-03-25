@@ -2746,9 +2746,9 @@ struct RgbConstants {
 // G * 0.5870 coefficient = 150
 // R * 0.2990 coefficient = 77
 // Add 0.5 = 0x80
-struct RgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0}, 128};
+static const struct RgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0}, 128};
 
-struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128};
+static const struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128};
 
 // RGB to BT.601 coefficients
 // B * 0.1016 coefficient = 25
@@ -2756,9 +2756,10 @@ struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128};
 // R * 0.2578 coefficient = 66
 // Add 16.5 = 0x1080
 
-struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0}, 0x1080};
+static const struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0},
+                                                        0x1080};
 
-struct RgbConstants kRawI601Constants = {{66, 129, 25, 0}, 0x1080};
+static const struct RgbConstants kRawI601Constants = {{66, 129, 25, 0}, 0x1080};
 
 // ARGB expects first 3 values to contain RGB and 4th value is ignored.
 void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
