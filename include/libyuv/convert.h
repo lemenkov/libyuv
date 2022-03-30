@@ -106,6 +106,23 @@ int I422ToI444(const uint8_t* src_y,
                int width,
                int height);
 
+// Convert I422 to I210.
+LIBYUV_API
+int I422ToI210(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
 // Convert MM21 to NV12.
 LIBYUV_API
 int MM21ToNV12(const uint8_t* src_y,

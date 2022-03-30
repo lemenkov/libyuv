@@ -352,6 +352,24 @@ int I444Copy(const uint8_t* src_y,
              int width,
              int height);
 
+// Copy I210 to I210.
+#define I210ToI210 I210opy
+LIBYUV_API
+int I210Copy(const uint16_t* src_y,
+             int src_stride_y,
+             const uint16_t* src_u,
+             int src_stride_u,
+             const uint16_t* src_v,
+             int src_stride_v,
+             uint16_t* dst_y,
+             int dst_stride_y,
+             uint16_t* dst_u,
+             int dst_stride_u,
+             uint16_t* dst_v,
+             int dst_stride_v,
+             int width,
+             int height);
+
 // Copy NV12. Supports inverting.
 int NV12Copy(const uint8_t* src_y,
              int src_stride_y,

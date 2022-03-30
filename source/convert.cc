@@ -523,6 +523,47 @@ int I422ToI420(const uint8_t* src_y,
                     dst_v, dst_stride_v, width, height, src_uv_width, height);
 }
 
+LIBYUV_API
+int I422ToI210(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  int halfwidth = (width + 1) >> 1;
+  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  // Convert Y plane.
+  libyuv::Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 1024,
+                            width, height);
+  // Convert UV planes.
+  libyuv::Convert8To16Plane(src_u, src_stride_u, dst_u, dst_stride_u, 1024,
+                            halfwidth, height);
+  libyuv::Convert8To16Plane(src_v, src_stride_v, dst_v, dst_stride_v, 1024,
+                            halfwidth, height);
+  return 0;
+}
+
 // TODO(fbarchard): Implement row conversion.
 LIBYUV_API
 int I422ToNV21(const uint8_t* src_y,

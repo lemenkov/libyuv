@@ -2328,6 +2328,116 @@ int I444Scale_12(const uint16_t* src_y,
   return 0;
 }
 
+// Scale an I422 image.
+// This function in turn calls a scaling function for each plane.
+
+LIBYUV_API
+int I422Scale(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_u,
+              int src_stride_u,
+              const uint8_t* src_v,
+              int src_stride_v,
+              int src_width,
+              int src_height,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_u,
+              int dst_stride_u,
+              uint8_t* dst_v,
+              int dst_stride_v,
+              int dst_width,
+              int dst_height,
+              enum libyuv::FilterMode filtering) {
+  if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
+      dst_width <= 0 || dst_height <= 0) {
+    return -1;
+  }
+  int src_halfwidth = SUBSAMPLE(src_width, 1, 1);
+  int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
+
+  libyuv::ScalePlane(src_y, src_stride_y, src_width, src_height, dst_y,
+                     dst_stride_y, dst_width, dst_height, filtering);
+  libyuv::ScalePlane(src_u, src_stride_u, src_halfwidth, src_height, dst_u,
+                     dst_stride_u, dst_halfwidth, dst_height, filtering);
+  libyuv::ScalePlane(src_v, src_stride_v, src_halfwidth, src_height, dst_v,
+                     dst_stride_v, dst_halfwidth, dst_height, filtering);
+  return 0;
+}
+
+LIBYUV_API
+int I422Scale_16(const uint16_t* src_y,
+                 int src_stride_y,
+                 const uint16_t* src_u,
+                 int src_stride_u,
+                 const uint16_t* src_v,
+                 int src_stride_v,
+                 int src_width,
+                 int src_height,
+                 uint16_t* dst_y,
+                 int dst_stride_y,
+                 uint16_t* dst_u,
+                 int dst_stride_u,
+                 uint16_t* dst_v,
+                 int dst_stride_v,
+                 int dst_width,
+                 int dst_height,
+                 enum libyuv::FilterMode filtering) {
+  if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
+      dst_width <= 0 || dst_height <= 0) {
+    return -1;
+  }
+
+  int src_halfwidth = SUBSAMPLE(src_width, 1, 1);
+  int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
+
+  libyuv::ScalePlane_16(src_y, src_stride_y, src_width, src_height, dst_y,
+                        dst_stride_y, dst_width, dst_height, filtering);
+  libyuv::ScalePlane_16(src_u, src_stride_u, src_halfwidth, src_height, dst_u,
+                        dst_stride_u, dst_halfwidth, dst_height, filtering);
+  libyuv::ScalePlane_16(src_v, src_stride_v, src_halfwidth, src_height, dst_v,
+                        dst_stride_v, dst_halfwidth, dst_height, filtering);
+  return 0;
+}
+
+LIBYUV_API
+int I422Scale_12(const uint16_t* src_y,
+                 int src_stride_y,
+                 const uint16_t* src_u,
+                 int src_stride_u,
+                 const uint16_t* src_v,
+                 int src_stride_v,
+                 int src_width,
+                 int src_height,
+                 uint16_t* dst_y,
+                 int dst_stride_y,
+                 uint16_t* dst_u,
+                 int dst_stride_u,
+                 uint16_t* dst_v,
+                 int dst_stride_v,
+                 int dst_width,
+                 int dst_height,
+                 enum libyuv::FilterMode filtering) {
+  if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
+      dst_width <= 0 || dst_height <= 0) {
+    return -1;
+  }
+
+  int src_halfwidth = SUBSAMPLE(src_width, 1, 1);
+  int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
+
+  libyuv::ScalePlane_12(src_y, src_stride_y, src_width, src_height, dst_y,
+                        dst_stride_y, dst_width, dst_height, filtering);
+  libyuv::ScalePlane_12(src_u, src_stride_u, src_halfwidth, src_height, dst_u,
+                        dst_stride_u, dst_halfwidth, dst_height, filtering);
+  libyuv::ScalePlane_12(src_v, src_stride_v, src_halfwidth, src_height, dst_v,
+                        dst_stride_v, dst_halfwidth, dst_height, filtering);
+  return 0;
+}
+
 // Scale an NV12 image.
 // This function in turn calls a scaling function for each plane.
 
