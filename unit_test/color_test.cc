@@ -580,28 +580,28 @@ TEST_F(LibYUVColorTest, TestGreyYUV) {
 
 static void PrintHistogram(int rh[256], int gh[256], int bh[256]) {
   int i;
-  printf("hist");
+  printf("hist ");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", i - 128);
+      printf(" %8d", i - 128);
     }
   }
-  printf("\nred");
+  printf("\nred  ");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", rh[i]);
+      printf(" %8d", rh[i]);
     }
   }
   printf("\ngreen");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", gh[i]);
+      printf(" %8d", gh[i]);
     }
   }
-  printf("\nblue");
+  printf("\nblue ");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", bh[i]);
+      printf(" %8d", bh[i]);
     }
   }
   printf("\n");

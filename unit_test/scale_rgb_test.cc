@@ -28,13 +28,13 @@ namespace libyuv {
 
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int RGBTestFilter(int src_width,
-                        int src_height,
-                        int dst_width,
-                        int dst_height,
-                        FilterMode f,
-                        int benchmark_iterations,
-                        int disable_cpu_flags,
-                        int benchmark_cpu_info) {
+                         int src_height,
+                         int dst_width,
+                         int dst_height,
+                         FilterMode f,
+                         int benchmark_iterations,
+                         int disable_cpu_flags,
+                         int benchmark_cpu_info) {
   if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
     return 0;
   }
@@ -67,18 +67,18 @@ static int RGBTestFilter(int src_width,
   // Warm up both versions for consistent benchmarks.
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   RGBScale(src_rgb + (src_stride_rgb * b) + b * 3, src_stride_rgb, src_width,
-          src_height, dst_rgb_c + (dst_stride_rgb * b) + b * 3, dst_stride_rgb,
-          dst_width, dst_height, f);
+           src_height, dst_rgb_c + (dst_stride_rgb * b) + b * 3, dst_stride_rgb,
+           dst_width, dst_height, f);
   MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
   RGBScale(src_rgb + (src_stride_rgb * b) + b * 3, src_stride_rgb, src_width,
-          src_height, dst_rgb_opt + (dst_stride_rgb * b) + b * 3, dst_stride_rgb,
-          dst_width, dst_height, f);
+           src_height, dst_rgb_opt + (dst_stride_rgb * b) + b * 3,
+           dst_stride_rgb, dst_width, dst_height, f);
 
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   double c_time = get_time();
   RGBScale(src_rgb + (src_stride_rgb * b) + b * 3, src_stride_rgb, src_width,
-          src_height, dst_rgb_c + (dst_stride_rgb * b) + b * 3, dst_stride_rgb,
-          dst_width, dst_height, f);
+           src_height, dst_rgb_c + (dst_stride_rgb * b) + b * 3, dst_stride_rgb,
+           dst_width, dst_height, f);
 
   c_time = (get_time() - c_time);
 
@@ -86,8 +86,8 @@ static int RGBTestFilter(int src_width,
   double opt_time = get_time();
   for (i = 0; i < benchmark_iterations; ++i) {
     RGBScale(src_rgb + (src_stride_rgb * b) + b * 3, src_stride_rgb, src_width,
-            src_height, dst_rgb_opt + (dst_stride_rgb * b) + b * 3, dst_stride_rgb,
-            dst_width, dst_height, f);
+             src_height, dst_rgb_opt + (dst_stride_rgb * b) + b * 3,
+             dst_stride_rgb, dst_width, dst_height, f);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
 
@@ -122,8 +122,8 @@ static int RGBTestFilter(int src_width,
 #define SX(x, nom, denom) static_cast<int>((x / nom) * denom)
 
 #define TEST_FACTOR1(name, filter, nom, denom, max_diff)                     \
-  TEST_F(LibYUVScaleTest, RGBScaleDownBy##name##_##filter) {                  \
-    int diff = RGBTestFilter(                                                 \
+  TEST_F(LibYUVScaleTest, RGBScaleDownBy##name##_##filter) {                 \
+    int diff = RGBTestFilter(                                                \
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
         DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
         kFilter##filter, benchmark_iterations_, disable_cpu_flags_,          \
@@ -156,19 +156,19 @@ TEST_FACTOR(3, 1, 3)
 #undef SX
 #undef DX
 
-#define TEST_SCALETO1(name, width, height, filter, max_diff)                \
-  TEST_F(LibYUVScaleTest, name##To##width##x##height##_##filter) {          \
+#define TEST_SCALETO1(name, width, height, filter, max_diff)                 \
+  TEST_F(LibYUVScaleTest, name##To##width##x##height##_##filter) {           \
     int diff = RGBTestFilter(benchmark_width_, benchmark_height_, width,     \
-                            height, kFilter##filter, benchmark_iterations_, \
-                            disable_cpu_flags_, benchmark_cpu_info_);       \
-    EXPECT_LE(diff, max_diff);                                              \
-  }                                                                         \
-  TEST_F(LibYUVScaleTest, name##From##width##x##height##_##filter) {        \
+                             height, kFilter##filter, benchmark_iterations_, \
+                             disable_cpu_flags_, benchmark_cpu_info_);       \
+    EXPECT_LE(diff, max_diff);                                               \
+  }                                                                          \
+  TEST_F(LibYUVScaleTest, name##From##width##x##height##_##filter) {         \
     int diff = RGBTestFilter(width, height, Abs(benchmark_width_),           \
-                            Abs(benchmark_height_), kFilter##filter,        \
-                            benchmark_iterations_, disable_cpu_flags_,      \
-                            benchmark_cpu_info_);                           \
-    EXPECT_LE(diff, max_diff);                                              \
+                             Abs(benchmark_height_), kFilter##filter,        \
+                             benchmark_iterations_, disable_cpu_flags_,      \
+                             benchmark_cpu_info_);                           \
+    EXPECT_LE(diff, max_diff);                                               \
   }
 
 #if defined(ENABLE_FULL_TESTS)
@@ -194,13 +194,13 @@ TEST_SCALETO(RGBScale, 1920, 1080)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
-#define TEST_SCALESWAPXY1(name, filter, max_diff)                              \
-  TEST_F(LibYUVScaleTest, name##SwapXY_##filter) {                             \
-    int diff =                                                                 \
-        RGBTestFilter(benchmark_width_, benchmark_height_, benchmark_height_,   \
-                     benchmark_width_, kFilter##filter, benchmark_iterations_, \
-                     disable_cpu_flags_, benchmark_cpu_info_);                 \
-    EXPECT_LE(diff, max_diff);                                                 \
+#define TEST_SCALESWAPXY1(name, filter, max_diff)                      \
+  TEST_F(LibYUVScaleTest, name##SwapXY_##filter) {                     \
+    int diff = RGBTestFilter(benchmark_width_, benchmark_height_,      \
+                             benchmark_height_, benchmark_width_,      \
+                             kFilter##filter, benchmark_iterations_,   \
+                             disable_cpu_flags_, benchmark_cpu_info_); \
+    EXPECT_LE(diff, max_diff);                                         \
   }
 
 #if defined(ENABLE_FULL_TESTS)
@@ -228,14 +228,14 @@ TEST_F(LibYUVScaleTest, RGBTest3x) {
                       benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     RGBScale(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
-            kFilterBilinear);
+             kFilterBilinear);
   }
 
   EXPECT_EQ(225, dest_pixels[0]);
   EXPECT_EQ(255 - 225, dest_pixels[1]);
 
   RGBScale(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
-          kFilterNone);
+           kFilterNone);
 
   EXPECT_EQ(225, dest_pixels[0]);
   EXPECT_EQ(255 - 225, dest_pixels[1]);
@@ -259,14 +259,14 @@ TEST_F(LibYUVScaleTest, RGBTest4x) {
                       benchmark_iterations_;
   for (int i = 0; i < iterations160; ++i) {
     RGBScale(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
-            kFilterBilinear);
+             kFilterBilinear);
   }
 
   EXPECT_EQ(66, dest_pixels[0]);
   EXPECT_EQ(190, dest_pixels[1]);
 
   RGBScale(orig_pixels, kSrcStride, 64, 4, dest_pixels, kDstStride, 16, 1,
-          kFilterNone);
+           kFilterNone);
 
   EXPECT_EQ(2, dest_pixels[0]);  // expect the 3rd pixel of the 3rd row
   EXPECT_EQ(255 - 2, dest_pixels[1]);

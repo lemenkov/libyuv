@@ -353,7 +353,7 @@ int I444Copy(const uint8_t* src_y,
              int height);
 
 // Copy I210 to I210.
-#define I210ToI210 I210opy
+#define I210ToI210 I210Copy
 LIBYUV_API
 int I210Copy(const uint16_t* src_y,
              int src_stride_y,

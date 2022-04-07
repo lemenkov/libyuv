@@ -221,7 +221,7 @@ int I422Scale(const uint8_t* src_y,
               int dst_stride_v,
               int dst_width,
               int dst_height,
-              enum libyuv::FilterMode filtering);
+              enum FilterMode filtering);
 
 LIBYUV_API
 int I422Scale_16(const uint16_t* src_y,
@@ -240,7 +240,7 @@ int I422Scale_16(const uint16_t* src_y,
                  int dst_stride_v,
                  int dst_width,
                  int dst_height,
-                 enum libyuv::FilterMode filtering);
+                 enum FilterMode filtering);
 
 LIBYUV_API
 int I422Scale_12(const uint16_t* src_y,
@@ -259,7 +259,7 @@ int I422Scale_12(const uint16_t* src_y,
                  int dst_stride_v,
                  int dst_width,
                  int dst_height,
-                 enum libyuv::FilterMode filtering);
+                 enum FilterMode filtering);
 
 // Scales an NV12 image from the src width and height to the
 // dst width and height.

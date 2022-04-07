@@ -83,7 +83,7 @@ int I420Copy(const uint8_t* src_y,
              int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -125,7 +125,7 @@ int I010Copy(const uint16_t* src_y,
              int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -169,7 +169,7 @@ static int Planar16bitTo8bit(const uint16_t* src_y,
   int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
   int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
   int scale = 1 << (24 - depth);
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -539,7 +539,7 @@ int I422ToI210(const uint8_t* src_y,
                int width,
                int height) {
   int halfwidth = (width + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -554,13 +554,13 @@ int I422ToI210(const uint8_t* src_y,
   }
 
   // Convert Y plane.
-  libyuv::Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 1024,
-                            width, height);
+  Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 1024, width,
+                    height);
   // Convert UV planes.
-  libyuv::Convert8To16Plane(src_u, src_stride_u, dst_u, dst_stride_u, 1024,
-                            halfwidth, height);
-  libyuv::Convert8To16Plane(src_v, src_stride_v, dst_v, dst_stride_v, 1024,
-                            halfwidth, height);
+  Convert8To16Plane(src_u, src_stride_u, dst_u, dst_stride_u, 1024, halfwidth,
+                    height);
+  Convert8To16Plane(src_v, src_stride_v, dst_v, dst_stride_v, 1024, halfwidth,
+                    height);
   return 0;
 }
 

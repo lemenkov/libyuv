@@ -239,9 +239,11 @@ int I422Copy(const uint8_t* src_y,
              int width,
              int height) {
   int halfwidth = (width + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -277,7 +279,7 @@ int I444Copy(const uint8_t* src_y,
              int dst_stride_v,
              int width,
              int height) {
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -316,9 +318,11 @@ int I210Copy(const uint16_t* src_y,
              int width,
              int height) {
   int halfwidth = (width + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -331,14 +335,11 @@ int I210Copy(const uint16_t* src_y,
   }
 
   if (dst_y) {
-    libyuv::CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width,
-                         height);
+    CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
   // Copy UV planes.
-  libyuv::CopyPlane_16(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth,
-                       height);
-  libyuv::CopyPlane_16(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth,
-                       height);
+  CopyPlane_16(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height);
+  CopyPlane_16(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height);
   return 0;
 }
 
@@ -404,12 +405,13 @@ int NV12Copy(const uint8_t* src_y,
              int dst_stride_uv,
              int width,
              int height) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+
   if (!src_y || !dst_y || !src_uv || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -876,9 +878,11 @@ int NV21ToNV12(const uint8_t* src_y,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
+
   if (!src_vu || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
+
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
@@ -2218,10 +2222,12 @@ int I420Mirror(const uint8_t* src_y,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
+
   if (!src_y || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
       height == 0) {
     return -1;
   }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -2256,9 +2262,11 @@ int NV12Mirror(const uint8_t* src_y,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
+
   if (!src_y || !src_uv || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -2557,6 +2565,7 @@ int I420Blend(const uint8_t* src_y0,
       BlendPlaneRow_C;
   void (*ScaleRowDown2)(const uint8_t* src_ptr, ptrdiff_t src_stride,
                         uint8_t* dst_ptr, int dst_width) = ScaleRowDown2Box_C;
+
   if (!src_y0 || !src_u0 || !src_v0 || !src_y1 || !src_u1 || !src_v1 ||
       !alpha || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
@@ -3042,6 +3051,7 @@ int I420Rect(uint8_t* dst_y,
   uint8_t* start_y = dst_y + y * dst_stride_y + x;
   uint8_t* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
   uint8_t* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
+
   if (!dst_y || !dst_u || !dst_v || width <= 0 || height == 0 || x < 0 ||
       y < 0 || value_y < 0 || value_y > 255 || value_u < 0 || value_u > 255 ||
       value_v < 0 || value_v > 255) {
@@ -3955,10 +3965,12 @@ int I420Interpolate(const uint8_t* src0_y,
                     int interpolation) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
+
   if (!src0_y || !src0_u || !src0_v || !src1_y || !src1_u || !src1_v ||
       !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
+
   InterpolatePlane(src0_y, src0_stride_y, src1_y, src1_stride_y, dst_y,
                    dst_stride_y, width, height, interpolation);
   InterpolatePlane(src0_u, src0_stride_u, src1_u, src1_stride_u, dst_u,
@@ -4860,9 +4872,11 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
   void (*InterpolateRow)(uint8_t * dst_ptr, const uint8_t* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
+
   if (!src_yuy2 || !dst_y || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -4992,9 +5006,11 @@ int UYVYToNV12(const uint8_t* src_uyvy,
   void (*InterpolateRow)(uint8_t * dst_ptr, const uint8_t* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
+
   if (!src_uyvy || !dst_y || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;

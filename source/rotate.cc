@@ -494,8 +494,8 @@ int I420Rotate(const uint8_t* src_y,
                enum RotationMode mode) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v) {
+  if ((!src_y && dst_y) || !src_u || !src_v || width <= 0 || height == 0 ||
+      !dst_y || !dst_u || !dst_v) {
     return -1;
   }
 
@@ -559,7 +559,7 @@ int I422Rotate(const uint8_t* src_y,
                int dst_stride_v,
                int width,
                int height,
-               enum libyuv::RotationMode mode) {
+               enum RotationMode mode) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
@@ -578,49 +578,39 @@ int I422Rotate(const uint8_t* src_y,
   }
 
   switch (mode) {
-    case libyuv::kRotate0:
+    case kRotate0:
       // copy frame
-      libyuv::CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width,
-                        height);
-      libyuv::CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth,
-                        height);
-      libyuv::CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth,
-                        height);
+      CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+      CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height);
+      CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height);
       return 0;
-    case libyuv::kRotate90:
+    case kRotate90:
       // We need to rotate and rescale, we use plane Y as temporal storage.
-      libyuv::RotatePlane90(src_u, src_stride_u, dst_y, height, halfwidth,
-                            height);
-      libyuv::ScalePlane(dst_y, height, height, halfwidth, dst_u, halfheight,
-                         halfheight, width, libyuv::kFilterBilinear);
-      libyuv::RotatePlane90(src_v, src_stride_v, dst_y, height, halfwidth,
-                            height);
-      libyuv::ScalePlane(dst_y, height, height, halfwidth, dst_v, halfheight,
-                         halfheight, width, libyuv::kFilterLinear);
-      libyuv::RotatePlane90(src_y, src_stride_y, dst_y, dst_stride_y, width,
-                            height);
+      RotatePlane90(src_u, src_stride_u, dst_y, height, halfwidth, height);
+      ScalePlane(dst_y, height, height, halfwidth, dst_u, halfheight,
+                 halfheight, width, kFilterBilinear);
+      RotatePlane90(src_v, src_stride_v, dst_y, height, halfwidth, height);
+      ScalePlane(dst_y, height, height, halfwidth, dst_v, halfheight,
+                 halfheight, width, kFilterLinear);
+      RotatePlane90(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       return 0;
-    case libyuv::kRotate270:
+    case kRotate270:
       // We need to rotate and rescale, we use plane Y as temporal storage.
-      libyuv::RotatePlane270(src_u, src_stride_u, dst_y, height, halfwidth,
-                             height);
-      libyuv::ScalePlane(dst_y, height, height, halfwidth, dst_u, halfheight,
-                         halfheight, width, libyuv::kFilterBilinear);
-      libyuv::RotatePlane270(src_v, src_stride_v, dst_y, height, halfwidth,
-                             height);
-      libyuv::ScalePlane(dst_y, height, height, halfwidth, dst_v, halfheight,
-                         halfheight, width, libyuv::kFilterLinear);
-      libyuv::RotatePlane270(src_y, src_stride_y, dst_y, dst_stride_y, width,
-                             height);
+      RotatePlane270(src_u, src_stride_u, dst_y, height, halfwidth, height);
+      ScalePlane(dst_y, height, height, halfwidth, dst_u, halfheight,
+                 halfheight, width, kFilterBilinear);
+      RotatePlane270(src_v, src_stride_v, dst_y, height, halfwidth, height);
+      ScalePlane(dst_y, height, height, halfwidth, dst_v, halfheight,
+                 halfheight, width, kFilterLinear);
+      RotatePlane270(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
 
       return 0;
-    case libyuv::kRotate180:
-      libyuv::RotatePlane180(src_y, src_stride_y, dst_y, dst_stride_y, width,
-                             height);
-      libyuv::RotatePlane180(src_u, src_stride_u, dst_u, dst_stride_u,
-                             halfwidth, height);
-      libyuv::RotatePlane180(src_v, src_stride_v, dst_v, dst_stride_v,
-                             halfwidth, height);
+    case kRotate180:
+      RotatePlane180(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+      RotatePlane180(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth,
+                     height);
+      RotatePlane180(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth,
+                     height);
       return 0;
     default:
       break;
@@ -643,7 +633,7 @@ int I444Rotate(const uint8_t* src_y,
                int dst_stride_v,
                int width,
                int height,
-               enum libyuv::RotationMode mode) {
+               enum RotationMode mode) {
   if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
       !dst_u || !dst_v) {
     return -1;
@@ -661,23 +651,23 @@ int I444Rotate(const uint8_t* src_y,
   }
 
   switch (mode) {
-    case libyuv::kRotate0:
+    case kRotate0:
       // copy frame
       CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
       CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
-    case libyuv::kRotate90:
+    case kRotate90:
       RotatePlane90(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       RotatePlane90(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
       RotatePlane90(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
-    case libyuv::kRotate270:
+    case kRotate270:
       RotatePlane270(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       RotatePlane270(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
       RotatePlane270(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
-    case libyuv::kRotate180:
+    case kRotate180:
       RotatePlane180(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       RotatePlane180(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
       RotatePlane180(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
@@ -780,7 +770,8 @@ int Android420ToI420Rotate(const uint8_t* src_y,
   const ptrdiff_t vu_off = src_v - src_u;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
+      height == 0) {
     return -1;
   }
   // Negative height means invert the image.

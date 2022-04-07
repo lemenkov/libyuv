@@ -65,7 +65,7 @@ int I422Rotate(const uint8_t* src_y,
                int dst_stride_v,
                int width,
                int height,
-               enum libyuv::RotationMode mode);
+               enum RotationMode mode);
 
 // Rotate I444 frame.
 LIBYUV_API
