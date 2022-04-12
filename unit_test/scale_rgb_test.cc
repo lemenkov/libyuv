@@ -146,11 +146,13 @@ static int RGBTestFilter(int src_width,
 #endif
 
 TEST_FACTOR(2, 1, 2)
+#ifndef DISABLE_SLOW_TESTS
 TEST_FACTOR(4, 1, 4)
 // TEST_FACTOR(8, 1, 8)  Disable for benchmark performance.
 TEST_FACTOR(3by4, 3, 4)
 TEST_FACTOR(3by8, 3, 8)
 TEST_FACTOR(3, 1, 3)
+#endif
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 #undef SX
@@ -182,12 +184,14 @@ TEST_FACTOR(3, 1, 3)
   TEST_SCALETO1(name, width, height, Bilinear, 3)
 #endif
 
+#ifndef DISABLE_SLOW_TESTS
 TEST_SCALETO(RGBScale, 1, 1)
+#endif
 // TEST_SCALETO(RGBScale, 256, 144) /* 128x72 * 3 */
 TEST_SCALETO(RGBScale, 320, 240)
+#ifndef DISABLE_SLOW_TESTS
 TEST_SCALETO(RGBScale, 569, 480)
 TEST_SCALETO(RGBScale, 640, 360)
-#ifndef DISABLE_SLOW_TESTS
 TEST_SCALETO(RGBScale, 1280, 720)
 TEST_SCALETO(RGBScale, 1920, 1080)
 #endif  // DISABLE_SLOW_TESTS
