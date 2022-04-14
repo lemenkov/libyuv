@@ -1283,8 +1283,8 @@ void ScaleRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
       "paddw       %%xmm4,%%xmm2                 \n"  // 3*near+far+2 (hi)
       "psrlw       $2,%%xmm0                     \n"  // 3/4*near+1/4*far (lo)
       "psrlw       $2,%%xmm2                     \n"  // 3/4*near+1/4*far (hi)
-      "vpackuswb   %%xmm2,%%xmm0,%%xmm0          \n"
-      "vmovdqu     %%xmm0,(%1)                   \n"
+      "packuswb    %%xmm2,%%xmm0                 \n"
+      "movdqu      %%xmm0,(%1)                   \n"
 
       "lea         0x8(%0),%0                    \n"
       "lea         0x10(%1),%1                   \n"  // 8 sample to 16 sample
