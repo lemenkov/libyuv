@@ -6647,9 +6647,9 @@ static int P010ToARGBMatrixBilinear(const uint16_t* src_y,
   }
 #endif
 
-#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    Scale2RowUp = ScaleUVRowUp2_Bilinear_16_Any_SSE2;
+#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE41
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    Scale2RowUp = ScaleUVRowUp2_Bilinear_16_Any_SSE41;
   }
 #endif
 
@@ -6737,9 +6737,9 @@ static int P210ToARGBMatrixLinear(const uint16_t* src_y,
   }
 #endif
 
-#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleRowUp = ScaleUVRowUp2_Linear_16_Any_SSE2;
+#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE41
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    ScaleRowUp = ScaleUVRowUp2_Linear_16_Any_SSE41;
   }
 #endif
 
@@ -6813,9 +6813,9 @@ static int P010ToAR30MatrixBilinear(const uint16_t* src_y,
   }
 #endif
 
-#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    Scale2RowUp = ScaleUVRowUp2_Bilinear_16_Any_SSE2;
+#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE41
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    Scale2RowUp = ScaleUVRowUp2_Bilinear_16_Any_SSE41;
   }
 #endif
 
@@ -6903,9 +6903,9 @@ static int P210ToAR30MatrixLinear(const uint16_t* src_y,
   }
 #endif
 
-#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleRowUp = ScaleUVRowUp2_Linear_16_Any_SSE2;
+#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE41
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    ScaleRowUp = ScaleUVRowUp2_Linear_16_Any_SSE41;
   }
 #endif
 

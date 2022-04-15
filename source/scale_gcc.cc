@@ -1285,7 +1285,6 @@ void ScaleRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
       "psrlw       $2,%%xmm2                     \n"  // 3/4*near+1/4*far (hi)
       "packuswb    %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,(%1)                   \n"
-
       "lea         0x8(%0),%0                    \n"
       "lea         0x10(%1),%1                   \n"  // 8 sample to 16 sample
       "sub         $0x10,%2                      \n"
@@ -2666,10 +2665,10 @@ void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE2
-void ScaleUVRowUp2_Linear_16_SSE2(const uint16_t* src_ptr,
-                                  uint16_t* dst_ptr,
-                                  int dst_width) {
+#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE41
+void ScaleUVRowUp2_Linear_16_SSE41(const uint16_t* src_ptr,
+                                   uint16_t* dst_ptr,
+                                   int dst_width) {
   asm volatile(
       "pxor        %%xmm5,%%xmm5                 \n"
       "pcmpeqd     %%xmm4,%%xmm4                 \n"
@@ -2716,12 +2715,12 @@ void ScaleUVRowUp2_Linear_16_SSE2(const uint16_t* src_ptr,
 }
 #endif
 
-#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE2
-void ScaleUVRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
-                                    ptrdiff_t src_stride,
-                                    uint16_t* dst_ptr,
-                                    ptrdiff_t dst_stride,
-                                    int dst_width) {
+#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE41
+void ScaleUVRowUp2_Bilinear_16_SSE41(const uint16_t* src_ptr,
+                                     ptrdiff_t src_stride,
+                                     uint16_t* dst_ptr,
+                                     ptrdiff_t dst_stride,
+                                     int dst_width) {
   asm volatile(
       "pxor        %%xmm7,%%xmm7                 \n"
       "pcmpeqd     %%xmm6,%%xmm6                 \n"

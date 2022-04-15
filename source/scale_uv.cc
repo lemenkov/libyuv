@@ -747,9 +747,9 @@ void ScaleUVLinearUp2_16(int src_width,
   // This function can only scale up by 2 times horizontally.
   assert(src_width == ((dst_width + 1) / 2));
 
-#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleRowUp = ScaleUVRowUp2_Linear_16_Any_SSE2;
+#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE41
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    ScaleRowUp = ScaleUVRowUp2_Linear_16_Any_SSE41;
   }
 #endif
 
@@ -800,9 +800,9 @@ void ScaleUVBilinearUp2_16(int src_width,
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
 
-#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    Scale2RowUp = ScaleUVRowUp2_Bilinear_16_Any_SSE2;
+#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE41
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    Scale2RowUp = ScaleUVRowUp2_Bilinear_16_Any_SSE41;
   }
 #endif
 

@@ -924,9 +924,9 @@ SBUH2LANY(ScaleUVRowUp2_Linear_Any_AVX2,
           uint8_t)
 #endif
 
-#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE2
-SBUH2LANY(ScaleUVRowUp2_Linear_16_Any_SSE2,
-          ScaleUVRowUp2_Linear_16_SSE2,
+#ifdef HAS_SCALEUVROWUP2LINEAR_16_SSE41
+SBUH2LANY(ScaleUVRowUp2_Linear_16_Any_SSE41,
+          ScaleUVRowUp2_Linear_16_SSE41,
           ScaleUVRowUp2_Linear_16_C,
           3,
           uint16_t)
@@ -1022,9 +1022,9 @@ SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_AVX2,
           uint8_t)
 #endif
 
-#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE2
-SBU2BLANY(ScaleUVRowUp2_Bilinear_16_Any_SSE2,
-          ScaleUVRowUp2_Bilinear_16_SSE2,
+#ifdef HAS_SCALEUVROWUP2BILINEAR_16_SSE41
+SBU2BLANY(ScaleUVRowUp2_Bilinear_16_Any_SSE41,
+          ScaleUVRowUp2_Bilinear_16_SSE41,
           ScaleUVRowUp2_Bilinear_16_C,
           7,
           uint16_t)
