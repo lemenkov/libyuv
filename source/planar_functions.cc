@@ -997,7 +997,7 @@ void DetileSplitUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
-#if defined(HAS_DETILESPLITROW_NEON)
+#if defined(HAS_DETILESPLITUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     DetileSplitUVRow = DetileSplitUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
