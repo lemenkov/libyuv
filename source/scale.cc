@@ -1919,7 +1919,7 @@ void ScalePlane(const uint8_t* src,
     int dy = FixedDiv(src_height, dst_height);
     // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical(src_height, dst_width, dst_height, src_stride,
-                       dst_stride, src, dst, 0, 0, dy, 1, filtering);
+                       dst_stride, src, dst, 0, 0, dy, /*bpp=*/1, filtering);
     return;
   }
   if (dst_width <= Abs(src_width) && dst_height <= src_height) {
@@ -2013,7 +2013,7 @@ void ScalePlane_16(const uint16_t* src,
     int dy = FixedDiv(src_height, dst_height);
     // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical_16(src_height, dst_width, dst_height, src_stride,
-                          dst_stride, src, dst, 0, 0, dy, 1, filtering);
+                          dst_stride, src, dst, 0, 0, dy, /*bpp=*/1, filtering);
     return;
   }
   if (dst_width <= Abs(src_width) && dst_height <= src_height) {

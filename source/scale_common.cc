@@ -1465,7 +1465,7 @@ void ScalePlaneVertical(int src_height,
                         int x,
                         int y,
                         int dy,
-                        int bpp,
+                        int bpp,  // bytes per pixel. 4 for ARGB.
                         enum FilterMode filtering) {
   // TODO(fbarchard): Allow higher bpp.
   int dst_width_bytes = dst_width * bpp;
