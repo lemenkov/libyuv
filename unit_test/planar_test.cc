@@ -3364,19 +3364,19 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 
   MergeUVRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_u),
                   reinterpret_cast<const uint16_t*>(src_pixels_v),
-                  reinterpret_cast<uint16_t*>(dst_pixels_uv_c), 64, kPixels);
+                  reinterpret_cast<uint16_t*>(dst_pixels_uv_c), 16, kPixels);
 
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   for (int i = 0; i < benchmark_iterations_; ++i) {
     if (has_avx2) {
       MergeUVRow_16_AVX2(reinterpret_cast<const uint16_t*>(src_pixels_u),
                          reinterpret_cast<const uint16_t*>(src_pixels_v),
-                         reinterpret_cast<uint16_t*>(dst_pixels_uv_opt), 64,
+                         reinterpret_cast<uint16_t*>(dst_pixels_uv_opt), 16,
                          kPixels);
     } else {
       MergeUVRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_u),
                       reinterpret_cast<const uint16_t*>(src_pixels_v),
-                      reinterpret_cast<uint16_t*>(dst_pixels_uv_opt), 64,
+                      reinterpret_cast<uint16_t*>(dst_pixels_uv_opt), 16,
                       kPixels);
     }
   }
