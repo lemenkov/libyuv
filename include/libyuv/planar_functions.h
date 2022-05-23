@@ -461,6 +461,14 @@ int YUY2ToY(const uint8_t* src_yuy2,
             int width,
             int height);
 
+LIBYUV_API
+int UYVYToY(const uint8_t* src_uyvy,
+            int src_stride_uyvy,
+            uint8_t* dst_y,
+            int dst_stride_y,
+            int width,
+            int height);
+
 // Convert I420 to I400. (calls CopyPlane ignoring u/v).
 LIBYUV_API
 int I420ToI400(const uint8_t* src_y,

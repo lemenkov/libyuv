@@ -3463,6 +3463,64 @@ TEST_F(LibYUVPlanarTest, Convert16To8Plane) {
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
 
+TEST_F(LibYUVPlanarTest, YUY2ToY) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_y, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_opt, kPixels);
+  align_buffer_page_end(dst_pixels_y_c, kPixels);
+
+  MemRandomize(src_pixels_y, kPixels * 2);
+  memset(dst_pixels_y_opt, 0, kPixels);
+  memset(dst_pixels_y_c, 1, kPixels);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  YUY2ToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_c,
+          benchmark_width_, benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    YUY2ToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_opt,
+            benchmark_width_, benchmark_width_, benchmark_height_);
+  }
+
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+
+TEST_F(LibYUVPlanarTest, UYVYToY) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_y, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_opt, kPixels);
+  align_buffer_page_end(dst_pixels_y_c, kPixels);
+
+  MemRandomize(src_pixels_y, kPixels * 2);
+  memset(dst_pixels_y_opt, 0, kPixels);
+  memset(dst_pixels_y_c, 1, kPixels);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  UYVYToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_c,
+          benchmark_width_, benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    UYVYToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_opt,
+            benchmark_width_, benchmark_width_, benchmark_height_);
+  }
+
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+
 #ifdef ENABLE_ROW_TESTS
 // TODO(fbarchard): Improve test for more platforms.
 #ifdef HAS_CONVERT16TO8ROW_AVX2
@@ -3509,6 +3567,35 @@ TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
 #endif  // HAS_CONVERT16TO8ROW_AVX2
+
+#ifdef HAS_UYVYTOYROW_NEON
+TEST_F(LibYUVPlanarTest, UYVYToYRow_Opt) {
+  // NEON does multiple of 16, so round count up
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  align_buffer_page_end(src_pixels_y, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_opt, kPixels);
+  align_buffer_page_end(dst_pixels_y_c, kPixels);
+
+  MemRandomize(src_pixels_y, kPixels * 2);
+  memset(dst_pixels_y_opt, 0, kPixels);
+  memset(dst_pixels_y_c, 1, kPixels);
+
+  UYVYToYRow_C(src_pixels_y, dst_pixels_y_c, kPixels);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    UYVYToYRow_NEON(src_pixels_y, dst_pixels_y_opt, kPixels);
+  }
+
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+#endif  // HAS_UYVYTOYROW_NEON
+
 #endif  // ENABLE_ROW_TESTS
 
 TEST_F(LibYUVPlanarTest, Convert8To16Plane) {

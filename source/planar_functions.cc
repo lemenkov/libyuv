@@ -2053,6 +2053,73 @@ int YUY2ToY(const uint8_t* src_yuy2,
   return 0;
 }
 
+// Convert UYVY to Y.
+LIBYUV_API
+int UYVYToY(const uint8_t* src_uyvy,
+            int src_stride_uyvy,
+            uint8_t* dst_y,
+            int dst_stride_y,
+            int width,
+            int height) {
+  int y;
+  void (*UYVYToYRow)(const uint8_t* src_uyvy, uint8_t* dst_y, int width) =
+      UYVYToYRow_C;
+  if (!src_uyvy || !dst_y || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_uyvy = src_uyvy + (height - 1) * src_stride_uyvy;
+    src_stride_uyvy = -src_stride_uyvy;
+  }
+  // Coalesce rows.
+  if (src_stride_uyvy == width * 2 && dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_uyvy = dst_stride_y = 0;
+  }
+#if defined(HAS_UYVYTOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    UYVYToYRow = UYVYToYRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      UYVYToYRow = UYVYToYRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_UYVYTOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    UYVYToYRow = UYVYToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      UYVYToYRow = UYVYToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_UYVYTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    UYVYToYRow = UYVYToYRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      UYVYToYRow = UYVYToYRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_UYVYTOYROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    UYVYToYRow = UYVYToYRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      UYVYToYRow = UYVYToYRow_MSA;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    UYVYToYRow(src_uyvy, dst_y, width);
+    src_uyvy += src_stride_uyvy;
+    dst_y += dst_stride_y;
+  }
+  return 0;
+}
+
 // Mirror a plane of data.
 // See Also I400Mirror
 LIBYUV_API
