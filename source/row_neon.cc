@@ -3599,7 +3599,7 @@ void MultiplyRow_16_NEON(const uint16_t* src_y,
                          int scale,
                          int width) {
   asm volatile(
-      "vdup.16     q2, %2                        \n"
+      "vdup.16     q2, %3                        \n"
       "1:                                        \n"
       "vld1.16     {q0}, [%0]!                   \n"
       "vld1.16     {q1}, [%0]!                   \n"
@@ -3607,13 +3607,12 @@ void MultiplyRow_16_NEON(const uint16_t* src_y,
       "vmul.u16    q1, q1, q2                    \n"
       "vst1.16     {q0}, [%1]!                   \n"
       "vst1.16     {q1}, [%1]!                   \n"
-      "subs        %3, %3, #16                   \n"  // 16 src pixels per loop
+      "subs        %2, %2, #16                   \n"  // 16 src pixels per loop
       "bgt         1b                            \n"
       : "+r"(src_y),  // %0
         "+r"(dst_y),  // %1
-        "+r"(scale),  // %2
-        "+r"(width)   // %3
-      :
+        "+r"(width)   // %2
+      : "r"(scale)    // %3
       : "cc", "memory", "q0", "q1", "q2");
 }
 
@@ -3622,7 +3621,7 @@ void DivideRow_16_NEON(const uint16_t* src_y,
                        int scale,
                        int width) {
   asm volatile(
-      "vdup.16     q0, %2                        \n"
+      "vdup.16     q0, %3                        \n"
       "1:                                        \n"
       "vld1.16     {q1}, [%0]!                   \n"
       "vld1.16     {q2}, [%0]!                   \n"
@@ -3640,6 +3639,34 @@ void DivideRow_16_NEON(const uint16_t* src_y,
       "vmovn.u32   d5, q2                        \n"
       "vst1.16     {q1}, [%1]!                   \n"
       "vst1.16     {q2}, [%1]!                   \n"
+      "subs        %2, %2, #16                   \n"  // 16 src pixels per loop
+      "bgt         1b                            \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      : "r"(scale)    // %3
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
+}
+
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 32768 = 9 bits
+// 16384 = 10 bits
+// 4096 = 12 bits
+// 256 = 16 bits
+void Convert16To8Row_NEON(const uint16_t* src_y,
+                          uint8_t* dst_y,
+                          int scale,
+                          int width) {
+  asm volatile(
+      "vdup.16     q2, %2                        \n"
+      "1:                                        \n"
+      "vld1.16     {q0}, [%0]!                   \n"
+      "vld1.16     {q1}, [%0]!                   \n"
+      "vqdmulh.s16 q0, q0, q2                    \n"
+      "vqdmulh.s16 q1, q1, q2                    \n"
+      "vqshrn.u16  d0, q0, #1                    \n"
+      "vqshrn.u16  d1, q1, #1                    \n"
+      "vst1.16     {q0}, [%1]!                   \n"
       "subs        %3, %3, #16                   \n"  // 16 src pixels per loop
       "bgt         1b                            \n"
       : "+r"(src_y),  // %0
@@ -3647,7 +3674,7 @@ void DivideRow_16_NEON(const uint16_t* src_y,
         "+r"(scale),  // %2
         "+r"(width)   // %3
       :
-      : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
+      : "cc", "memory", "q0", "q1", "q2");
 }
 
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..

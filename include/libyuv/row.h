@@ -441,6 +441,7 @@ extern "C" {
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_BYTETOFLOATROW_NEON
+#define HAS_CONVERT16TO8ROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_DETILEROW_NEON
 #define HAS_DETILESPLITUVROW_NEON
@@ -2594,6 +2595,14 @@ void Convert16To8Row_Any_SSSE3(const uint16_t* src_ptr,
                                int width);
 void Convert16To8Row_Any_AVX2(const uint16_t* src_ptr,
                               uint8_t* dst_ptr,
+                              int scale,
+                              int width);
+void Convert16To8Row_NEON(const uint16_t* src_y,
+                          uint8_t* dst_y,
+                          int scale,
+                          int width);
+void Convert16To8Row_Any_NEON(const uint16_t* src_y,
+                              uint8_t* dst_y,
                               int scale,
                               int width);
 

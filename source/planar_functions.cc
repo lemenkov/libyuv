@@ -147,6 +147,14 @@ void Convert16To8Plane(const uint16_t* src_y,
     height = 1;
     src_stride_y = dst_stride_y = 0;
   }
+#if defined(HAS_CONVERT16TO8ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    Convert16To8Row = Convert16To8Row_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      Convert16To8Row = Convert16To8Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_CONVERT16TO8ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     Convert16To8Row = Convert16To8Row_Any_SSSE3;
