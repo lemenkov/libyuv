@@ -35,6 +35,9 @@ void CopyPlane(const uint8_t* src_y,
                int height) {
   int y;
   void (*CopyRow)(const uint8_t* src, uint8_t* dst, int width) = CopyRow_C;
+  if (width == 0 || height == 0) {
+    return;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;

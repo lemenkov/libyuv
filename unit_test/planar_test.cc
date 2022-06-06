@@ -1484,6 +1484,41 @@ TEST_F(LibYUVPlanarTest, TestCopyPlane) {
   EXPECT_EQ(0, err);
 }
 
+TEST_F(LibYUVPlanarTest, TestCopyPlaneZeroDimensionRegressionTest) {
+  // Regression test to verify copying a rect with a zero height or width does
+  // not lead to memory corruption.
+  uint8_t src = 42;
+  uint8_t dst = 0;
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags_);
+  CopyPlane(&src, 0, &dst, 0, 0, 0);
+  EXPECT_EQ(src, 42);
+  EXPECT_EQ(dst, 0);
+
+  CopyPlane(&src, 1, &dst, 1, 1, 0);
+  EXPECT_EQ(src, 42);
+  EXPECT_EQ(dst, 0);
+
+  CopyPlane(&src, 1, &dst, 1, 0, 1);
+  EXPECT_EQ(src, 42);
+  EXPECT_EQ(dst, 0);
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info_);
+  CopyPlane(&src, 0, &dst, 0, 0, 0);
+  EXPECT_EQ(src, 42);
+  EXPECT_EQ(dst, 0);
+
+  CopyPlane(&src, 1, &dst, 1, 1, 0);
+  EXPECT_EQ(src, 42);
+  EXPECT_EQ(dst, 0);
+
+  CopyPlane(&src, 1, &dst, 1, 0, 1);
+  EXPECT_EQ(src, 42);
+  EXPECT_EQ(dst, 0);
+}
+
 TEST_F(LibYUVPlanarTest, TestDetilePlane) {
   int i, j;
 
