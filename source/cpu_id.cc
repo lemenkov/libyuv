@@ -20,7 +20,7 @@
 #endif
 
 // For ArmCpuCaps() but unittested on all platforms
-#include <stdio.h>  // For fopen()
+#include <stdio.h>
 #include <string.h>
 
 #ifdef __cplusplus
