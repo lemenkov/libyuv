@@ -27,6 +27,10 @@ config("libyuv_config") {
   if (is_android && current_cpu != "arm64") {
     ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker" ]
   }
+
+  if (!libyuv_use_neon) {
+    defines = [ "LIBYUV_DISABLE_NEON" ]
+  }
 }
 
 # This target is built when no specific target is specified on the command line.

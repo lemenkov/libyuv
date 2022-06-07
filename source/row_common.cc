@@ -11,7 +11,6 @@
 #include "libyuv/row.h"
 
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>  // For memcpy and memset.
 
 #include "libyuv/basic_types.h"
@@ -3402,6 +3401,18 @@ static void HalfRow_16_C(const uint16_t* src_uv,
   }
 }
 
+static void HalfRow_16To8_C(const uint16_t* src_uv,
+                            ptrdiff_t src_uv_stride,
+                            uint8_t* dst_uv,
+                            int scale,
+                            int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_uv[x] = clamp255(
+        (((src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1) * scale) >> 16);
+  }
+}
+
 // C version 2x2 -> 2x1.
 void InterpolateRow_C(uint8_t* dst_ptr,
                       const uint8_t* src_ptr,
@@ -3432,6 +3443,51 @@ void InterpolateRow_C(uint8_t* dst_ptr,
   if (width & 1) {
     dst_ptr[0] =
         (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction + 128) >> 8;
+  }
+}
+
+// C version 2x2 16 bit-> 2x1 8 bit.
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 32768 = 9 bits
+// 16384 = 10 bits
+// 4096 = 12 bits
+// 256 = 16 bits
+void InterpolateRow_16To8_C(uint8_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int scale,
+                            int width,
+                            int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  int x;
+  if (source_y_fraction == 0) {
+    Convert16To8Row_C(src_ptr, dst_ptr, scale, width);
+    return;
+  }
+  if (source_y_fraction == 128) {
+    HalfRow_16To8_C(src_ptr, src_stride, dst_ptr, scale, width);
+    return;
+  }
+  for (x = 0; x < width - 1; x += 2) {
+    dst_ptr[0] = clamp255(
+        (((src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8) *
+         scale) >>
+        16);
+    dst_ptr[1] = clamp255(
+        (((src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8) *
+         scale) >>
+        16);
+    src_ptr += 2;
+    src_ptr1 += 2;
+    dst_ptr += 2;
+  }
+  if (width & 1) {
+    dst_ptr[0] = clamp255(
+        (((src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8) *
+         scale) >>
+        16);
   }
 }
 

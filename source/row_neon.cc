@@ -10,8 +10,6 @@
 
 #include "libyuv/row.h"
 
-#include <stdio.h>
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -20,6 +18,8 @@ extern "C" {
 // This module is for GCC Neon
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
     !defined(__aarch64__)
+
+// d8-d15, r4-r11,r14(lr) need to be preserved if used. r13(sp),r15(pc) are reserved.
 
 // q0: Y uint16x8_t
 // d2: U uint8x8_t
@@ -2715,6 +2715,66 @@ void InterpolateRow_NEON(uint8_t* dst_ptr,
       : "cc", "memory", "q0", "q1", "d4", "d5", "q13", "q14");
 }
 
+// Bilinear filter 8x2 -> 8x1
+void InterpolateRow_16_NEON(uint16_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int dst_width,
+                            int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+
+  asm volatile(
+      "cmp         %4, #0                        \n"
+      "beq         100f                          \n"
+      "cmp         %4, #128                      \n"
+      "beq         50f                           \n"
+
+      "vdup.16     d17, %4                       \n"
+      "vdup.16     d16, %5                       \n"
+      // General purpose row blend.
+      "1:                                        \n"
+      "vld1.16     {q0}, [%1]!                   \n"
+      "vld1.16     {q1}, [%2]!                   \n"
+      "subs        %3, %3, #8                    \n"
+      "vmull.u16   q2, d0, d16                   \n"
+      "vmull.u16   q3, d1, d16                   \n"
+      "vmlal.u16   q2, d2, d17                   \n"
+      "vmlal.u16   q3, d3, d17                   \n"
+      "vrshrn.u32  d0, q2, #8                    \n"
+      "vrshrn.u32  d1, q3, #8                    \n"
+      "vst1.16     {q0}, [%0]!                   \n"
+      "bgt         1b                            \n"
+      "b           99f                           \n"
+
+      // Blend 50 / 50.
+      "50:                                       \n"
+      "vld1.16     {q0}, [%1]!                   \n"
+      "vld1.16     {q1}, [%2]!                   \n"
+      "subs        %3, %3, #8                    \n"
+      "vrhadd.u16  q0, q1                        \n"
+      "vst1.16     {q0}, [%0]!                   \n"
+      "bgt         50b                           \n"
+      "b           99f                           \n"
+
+      // Blend 100 / 0 - Copy row unchanged.
+      "100:                                      \n"
+      "vld1.16     {q0}, [%1]!                   \n"
+      "subs        %3, %3, #8                    \n"
+      "vst1.16     {q0}, [%0]!                   \n"
+      "bgt         100b                          \n"
+
+      "99:                                       \n"
+      : "+r"(dst_ptr),      // %0
+        "+r"(src_ptr),      // %1
+        "+r"(src_ptr1),     // %2
+        "+r"(dst_width)     // %3
+      : "r"(y1_fraction),   // %4
+        "r"(y0_fraction)    // %5
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q8");
+}
+
 // dr * (256 - sa) / 256 + sr = dr - dr * sa / 256 + sr
 void ARGBBlendRow_NEON(const uint8_t* src_argb,
                        const uint8_t* src_argb1,
@@ -3666,7 +3726,7 @@ void Convert16To8Row_NEON(const uint16_t* src_y,
       "vqdmulh.s16 q1, q1, q2                    \n"
       "vqshrn.u16  d0, q0, #1                    \n"
       "vqshrn.u16  d1, q1, #1                    \n"
-      "vst1.16     {q0}, [%1]!                   \n"
+      "vst1.8      {q0}, [%1]!                   \n"
       "subs        %3, %3, #16                   \n"  // 16 src pixels per loop
       "bgt         1b                            \n"
       : "+r"(src_y),  // %0
