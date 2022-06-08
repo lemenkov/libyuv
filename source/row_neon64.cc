@@ -2966,6 +2966,71 @@ void InterpolateRow_NEON(uint8_t* dst_ptr,
       : "cc", "memory", "v0", "v1", "v3", "v4", "v5");
 }
 
+// Bilinear filter 8x2 -> 8x1
+void InterpolateRow_16_NEON(uint16_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int dst_width,
+                            int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+
+  asm volatile(
+      "cmp         %w4, #0                       \n"
+      "b.eq        100f                          \n"
+      "cmp         %w4, #128                     \n"
+      "b.eq        50f                           \n"
+
+      "dup         v5.8h, %w4                    \n"
+      "dup         v4.8h, %w5                    \n"
+      // General purpose row blend.
+      "1:                                        \n"
+      "ld1         {v0.8h}, [%1], #16            \n"
+      "ld1         {v1.8h}, [%2], #16            \n"
+      "subs        %w3, %w3, #8                  \n"
+      "umull       v2.4s, v0.4h, v4.4h           \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "umull2      v3.4s, v0.8h, v4.8h           \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "umlal       v2.4s, v1.4h, v5.4h           \n"
+      "umlal2      v3.4s, v1.8h, v5.8h           \n"
+      "rshrn       v0.4h, v2.4s, #8              \n"
+      "rshrn2      v0.8h, v3.4s, #8              \n"
+      "st1         {v0.8h}, [%0], #16            \n"
+      "b.gt        1b                            \n"
+      "b           99f                           \n"
+
+      // Blend 50 / 50.
+      "50:                                       \n"
+      "ld1         {v0.8h}, [%1], #16            \n"
+      "ld1         {v1.8h}, [%2], #16            \n"
+      "subs        %w3, %w3, #8                  \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "urhadd      v0.8h, v0.8h, v1.8h           \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "st1         {v0.8h}, [%0], #16            \n"
+      "b.gt        50b                           \n"
+      "b           99f                           \n"
+
+      // Blend 100 / 0 - Copy row unchanged.
+      "100:                                      \n"
+      "ld1         {v0.8h}, [%1], #16            \n"
+      "subs        %w3, %w3, #8                  \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "st1         {v0.8h}, [%0], #16            \n"
+      "b.gt        100b                          \n"
+
+      "99:                                       \n"
+      : "+r"(dst_ptr),      // %0
+        "+r"(src_ptr),      // %1
+        "+r"(src_ptr1),     // %2
+        "+r"(dst_width)     // %3
+      : "r"(y1_fraction),   // %4
+        "r"(y0_fraction)    // %5
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
+}
+
 // dr * (256 - sa) / 256 + sr = dr - dr * sa / 256 + sr
 void ARGBBlendRow_NEON(const uint8_t* src_argb,
                        const uint8_t* src_argb1,
@@ -4118,30 +4183,31 @@ void DivideRow_16_NEON(const uint16_t* src_y,
 }
 
 // Use scale to convert lsb formats to msb, depending how many bits there are:
-// 32768 = 9 bits
-// 16384 = 10 bits
-// 4096 = 12 bits
-// 256 = 16 bits
+// 32768 = 9 bits = shr 1
+// 16384 = 10 bits = shr 2
+// 4096 = 12 bits = shr 4
+// 256 = 16 bits = shr 8
 void Convert16To8Row_NEON(const uint16_t* src_y,
                           uint8_t* dst_y,
                           int scale,
                           int width) {
+  int shift = 15 - __builtin_clz(scale);  // Negative for shl will shift right
   asm volatile(
       "dup         v2.8h, %w3                    \n"
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
-      "sqdmulh     v0.8h, v0.8h, v2.8h           \n"
-      "sqdmulh     v1.8h, v1.8h, v2.8h           \n"
+      "ushl        v0.8h, v0.8h, v2.8h           \n"
+      "ushl        v1.8h, v1.8h, v2.8h           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
+      "uqxtn       v0.8b, v0.8h                  \n"
+      "uqxtn2      v0.16b, v1.8h                 \n"
       "subs        %w2, %w2, #16                 \n"  // 16 src pixels per loop
-      "uqshrn      v0.8b, v0.8h, #1              \n"
-      "uqshrn2     v0.16b, v1.8h, #1             \n"
       "str         q0, [%1], #16                 \n"  // store 16 pixels
       "b.gt        1b                            \n"
       : "+r"(src_y),  // %0
         "+r"(dst_y),  // %1
         "+r"(width)   // %2
-      : "r"(scale)    // %3
+      : "r"(shift)    // %3
       : "cc", "memory", "v0", "v1", "v2");
 }
 
