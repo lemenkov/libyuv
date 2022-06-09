@@ -4191,12 +4191,12 @@ void Convert16To8Row_NEON(const uint16_t* src_y,
                           uint8_t* dst_y,
                           int scale,
                           int width) {
-  int shift = 15 - __builtin_clz(scale);  // Negative for shl will shift right
+  int shift = 15 - __builtin_clz((int32_t)scale);  // Negative shl is shr
   asm volatile(
       "dup         v2.8h, %w3                    \n"
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
-      "ushl        v0.8h, v0.8h, v2.8h           \n"
+      "ushl        v0.8h, v0.8h, v2.8h           \n"  // shr = v2 is negative
       "ushl        v1.8h, v1.8h, v2.8h           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
       "uqxtn       v0.8b, v0.8h                  \n"

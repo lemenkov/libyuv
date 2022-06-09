@@ -29,6 +29,7 @@ static __inline int Abs(int v) {
 }
 
 #define SUBSAMPLE(v, a, s) (v < 0) ? (-((-v + a) >> s)) : ((v + a) >> s)
+#define CENTERSTART(dx, s) (dx < 0) ? -((-dx >> 1) + s) : ((dx >> 1) + s)
 
 // Scale plane, 1/2
 // This is an optimized version for scaling down a plane to 1/2 of
@@ -1154,7 +1155,7 @@ void ScalePlaneBilinearDown_16(int src_width,
 
 #if defined(HAS_INTERPOLATEROW_16_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_Any_16_SSE2;
+    InterpolateRow = InterpolateRow_16_Any_SSE2;
     if (IS_ALIGNED(src_width, 16)) {
       InterpolateRow = InterpolateRow_16_SSE2;
     }
@@ -1162,7 +1163,7 @@ void ScalePlaneBilinearDown_16(int src_width,
 #endif
 #if defined(HAS_INTERPOLATEROW_16_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_16_SSSE3;
+    InterpolateRow = InterpolateRow_16_Any_SSSE3;
     if (IS_ALIGNED(src_width, 16)) {
       InterpolateRow = InterpolateRow_16_SSSE3;
     }
@@ -1170,7 +1171,7 @@ void ScalePlaneBilinearDown_16(int src_width,
 #endif
 #if defined(HAS_INTERPOLATEROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    InterpolateRow = InterpolateRow_Any_16_AVX2;
+    InterpolateRow = InterpolateRow_16_Any_AVX2;
     if (IS_ALIGNED(src_width, 32)) {
       InterpolateRow = InterpolateRow_16_AVX2;
     }
@@ -1178,7 +1179,7 @@ void ScalePlaneBilinearDown_16(int src_width,
 #endif
 #if defined(HAS_INTERPOLATEROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    InterpolateRow = InterpolateRow_Any_16_NEON;
+    InterpolateRow = InterpolateRow_16_Any_NEON;
     if (IS_ALIGNED(src_width, 16)) {
       InterpolateRow = InterpolateRow_16_NEON;
     }
@@ -1706,7 +1707,7 @@ void ScalePlaneBilinearUp_16(int src_width,
 
 #if defined(HAS_INTERPOLATEROW_16_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_Any_16_SSE2;
+    InterpolateRow = InterpolateRow_16_Any_SSE2;
     if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_16_SSE2;
     }
@@ -1714,7 +1715,7 @@ void ScalePlaneBilinearUp_16(int src_width,
 #endif
 #if defined(HAS_INTERPOLATEROW_16_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_16_SSSE3;
+    InterpolateRow = InterpolateRow_16_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_16_SSSE3;
     }
@@ -1722,7 +1723,7 @@ void ScalePlaneBilinearUp_16(int src_width,
 #endif
 #if defined(HAS_INTERPOLATEROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    InterpolateRow = InterpolateRow_Any_16_AVX2;
+    InterpolateRow = InterpolateRow_16_Any_AVX2;
     if (IS_ALIGNED(dst_width, 32)) {
       InterpolateRow = InterpolateRow_16_AVX2;
     }
@@ -1730,7 +1731,7 @@ void ScalePlaneBilinearUp_16(int src_width,
 #endif
 #if defined(HAS_INTERPOLATEROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    InterpolateRow = InterpolateRow_Any_16_NEON;
+    InterpolateRow = InterpolateRow_16_Any_NEON;
     if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_16_NEON;
     }
@@ -1886,7 +1887,6 @@ static void ScalePlaneSimple_16(int src_width,
 
 // Scale a plane.
 // This function dispatches to a specialized scaler based on scale factor.
-
 LIBYUV_API
 void ScalePlane(const uint8_t* src,
                 int src_stride,
@@ -1916,10 +1916,19 @@ void ScalePlane(const uint8_t* src,
     return;
   }
   if (dst_width == src_width && filtering != kFilterBox) {
-    int dy = FixedDiv(src_height, dst_height);
+    int dy = 0;
+    int y = 0;
+    // When scaling down, use the center 2 rows to filter.
+    // When scaling up, last row of destination uses the last 2 source rows.
+    if (dst_height <= src_height) {
+      dy = FixedDiv(src_height, dst_height);
+      y = CENTERSTART(dy, -32768);  // Subtract 0.5 (32768) to center filter.
+    } else if (src_height > 1 && dst_height > 1) {
+      dy = FixedDiv1(src_height, dst_height);
+    }
     // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical(src_height, dst_width, dst_height, src_stride,
-                       dst_stride, src, dst, 0, 0, dy, /*bpp=*/1, filtering);
+                       dst_stride, src, dst, 0, y, dy, /*bpp=*/1, filtering);
     return;
   }
   if (dst_width <= Abs(src_width) && dst_height <= src_height) {
@@ -2010,10 +2019,22 @@ void ScalePlane_16(const uint16_t* src,
     return;
   }
   if (dst_width == src_width && filtering != kFilterBox) {
-    int dy = FixedDiv(src_height, dst_height);
+    int dy = 0;
+    int y = 0;
+    // When scaling down, use the center 2 rows to filter.
+    // When scaling up, last row of destination uses the last 2 source rows.
+    if (dst_height <= src_height) {
+      dy = FixedDiv(src_height, dst_height);
+      y = CENTERSTART(dy, -32768);  // Subtract 0.5 (32768) to center filter.
+      // When scaling up, ensure the last row of destination uses the last
+      // source. Avoid divide by zero for dst_height but will do no scaling
+      // later.
+    } else if (src_height > 1 && dst_height > 1) {
+      dy = FixedDiv1(src_height, dst_height);
+    }
     // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical_16(src_height, dst_width, dst_height, src_stride,
-                          dst_stride, src, dst, 0, 0, dy, /*bpp=*/1, filtering);
+                          dst_stride, src, dst, 0, y, dy, /*bpp=*/1, filtering);
     return;
   }
   if (dst_width <= Abs(src_width) && dst_height <= src_height) {

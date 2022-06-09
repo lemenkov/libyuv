@@ -991,6 +991,21 @@ int InterpolatePlane(const uint8_t* src0,
                      int height,
                      int interpolation);
 
+// Interpolate between two images using specified amount of interpolation
+// (0 to 255) and store to destination.
+// 'interpolation' is specified as 8 bit fraction where 0 means 100% src0
+// and 255 means 1% src0 and 99% src1.
+LIBYUV_API
+int InterpolatePlane_16(const uint16_t* src0,
+                        int src_stride0,  // measured in 16 bit pixels
+                        const uint16_t* src1,
+                        int src_stride1,
+                        uint16_t* dst,
+                        int dst_stride,
+                        int width,
+                        int height,
+                        int interpolation);
+
 // Interpolate between two ARGB images using specified amount of interpolation
 // Internally calls InterpolatePlane with width * 4 (bpp).
 LIBYUV_API

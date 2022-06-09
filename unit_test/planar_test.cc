@@ -1080,6 +1080,87 @@ TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
   }
 }
 
+TEST_F(LibYUVPlanarTest, TestInterpolatePlane_16) {
+  SIMD_ALIGNED(uint16_t orig_pixels_0[1280]);
+  SIMD_ALIGNED(uint16_t orig_pixels_1[1280]);
+  SIMD_ALIGNED(uint16_t interpolate_pixels[1280]);
+  memset(orig_pixels_0, 0, sizeof(orig_pixels_0));
+  memset(orig_pixels_1, 0, sizeof(orig_pixels_1));
+
+  orig_pixels_0[0] = 16u;
+  orig_pixels_0[1] = 32u;
+  orig_pixels_0[2] = 64u;
+  orig_pixels_0[3] = 128u;
+  orig_pixels_0[4] = 0u;
+  orig_pixels_0[5] = 0u;
+  orig_pixels_0[6] = 0u;
+  orig_pixels_0[7] = 255u;
+  orig_pixels_0[8] = 0u;
+  orig_pixels_0[9] = 0u;
+  orig_pixels_0[10] = 0u;
+  orig_pixels_0[11] = 0u;
+  orig_pixels_0[12] = 0u;
+  orig_pixels_0[13] = 0u;
+  orig_pixels_0[14] = 0u;
+  orig_pixels_0[15] = 0u;
+
+  orig_pixels_1[0] = 0u;
+  orig_pixels_1[1] = 0u;
+  orig_pixels_1[2] = 0u;
+  orig_pixels_1[3] = 0u;
+  orig_pixels_1[4] = 0u;
+  orig_pixels_1[5] = 0u;
+  orig_pixels_1[6] = 0u;
+  orig_pixels_1[7] = 0u;
+  orig_pixels_1[8] = 0u;
+  orig_pixels_1[9] = 0u;
+  orig_pixels_1[10] = 0u;
+  orig_pixels_1[11] = 0u;
+  orig_pixels_1[12] = 255u;
+  orig_pixels_1[13] = 255u;
+  orig_pixels_1[14] = 255u;
+  orig_pixels_1[15] = 255u;
+
+  InterpolatePlane_16(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                      &interpolate_pixels[0], 0, 16, 1, 128);
+  EXPECT_EQ(8u, interpolate_pixels[0]);
+  EXPECT_EQ(16u, interpolate_pixels[1]);
+  EXPECT_EQ(32u, interpolate_pixels[2]);
+  EXPECT_EQ(64u, interpolate_pixels[3]);
+  EXPECT_EQ(0u, interpolate_pixels[4]);
+  EXPECT_EQ(0u, interpolate_pixels[5]);
+  EXPECT_EQ(0u, interpolate_pixels[6]);
+  EXPECT_EQ(128u, interpolate_pixels[7]);
+  EXPECT_EQ(0u, interpolate_pixels[8]);
+  EXPECT_EQ(0u, interpolate_pixels[9]);
+  EXPECT_EQ(0u, interpolate_pixels[10]);
+  EXPECT_EQ(0u, interpolate_pixels[11]);
+  EXPECT_EQ(128u, interpolate_pixels[12]);
+  EXPECT_EQ(128u, interpolate_pixels[13]);
+  EXPECT_EQ(128u, interpolate_pixels[14]);
+  EXPECT_EQ(128u, interpolate_pixels[15]);
+
+  InterpolatePlane_16(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                      &interpolate_pixels[0], 0, 16, 1, 0);
+  EXPECT_EQ(16u, interpolate_pixels[0]);
+  EXPECT_EQ(32u, interpolate_pixels[1]);
+  EXPECT_EQ(64u, interpolate_pixels[2]);
+  EXPECT_EQ(128u, interpolate_pixels[3]);
+
+  InterpolatePlane_16(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                      &interpolate_pixels[0], 0, 16, 1, 192);
+
+  EXPECT_EQ(4u, interpolate_pixels[0]);
+  EXPECT_EQ(8u, interpolate_pixels[1]);
+  EXPECT_EQ(16u, interpolate_pixels[2]);
+  EXPECT_EQ(32u, interpolate_pixels[3]);
+
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    InterpolatePlane_16(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                        &interpolate_pixels[0], 0, 1280, 1, 123);
+  }
+}
+
 #define TESTTERP(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, STRIDE_B, W1280, TERP, \
                  N, NEG, OFF)                                                 \
   TEST_F(LibYUVPlanarTest, ARGBInterpolate##TERP##N) {                        \
@@ -1484,9 +1565,43 @@ TEST_F(LibYUVPlanarTest, TestCopyPlane) {
   EXPECT_EQ(0, err);
 }
 
-TEST_F(LibYUVPlanarTest, TestCopyPlaneZeroDimensionRegressionTest) {
-  // Regression test to verify copying a rect with a zero height or width does
-  // not lead to memory corruption.
+TEST_F(LibYUVPlanarTest, CopyPlane_Opt) {
+  int i;
+  int y_plane_size = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(orig_y, y_plane_size);
+  align_buffer_page_end(dst_c, y_plane_size);
+  align_buffer_page_end(dst_opt, y_plane_size);
+
+  MemRandomize(orig_y, y_plane_size);
+  memset(dst_c, 1, y_plane_size);
+  memset(dst_opt, 2, y_plane_size);
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags_);
+  for (i = 0; i < benchmark_iterations_; i++) {
+    CopyPlane(orig_y, benchmark_width_, dst_c, benchmark_width_,
+              benchmark_width_, benchmark_height_);
+  }
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info_);
+  for (i = 0; i < benchmark_iterations_; i++) {
+    CopyPlane(orig_y, benchmark_width_, dst_opt, benchmark_width_,
+              benchmark_width_, benchmark_height_);
+  }
+
+  for (i = 0; i < y_plane_size; ++i) {
+    EXPECT_EQ(dst_c[i], dst_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+}
+
+TEST_F(LibYUVPlanarTest, TestCopyPlaneZero) {
+  // Test to verify copying a rect with a zero height or width does
+  // not touch destination memory.
   uint8_t src = 42;
   uint8_t dst = 0;
 
@@ -3509,8 +3624,8 @@ TEST_F(LibYUVPlanarTest, YUY2ToY) {
   memset(dst_pixels_y_c, 1, kPixels);
 
   MaskCpuFlags(disable_cpu_flags_);
-  YUY2ToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_c,
-          benchmark_width_, benchmark_width_, benchmark_height_);
+  YUY2ToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_c, benchmark_width_,
+          benchmark_width_, benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
@@ -3538,8 +3653,8 @@ TEST_F(LibYUVPlanarTest, UYVYToY) {
   memset(dst_pixels_y_c, 1, kPixels);
 
   MaskCpuFlags(disable_cpu_flags_);
-  UYVYToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_c,
-          benchmark_width_, benchmark_width_, benchmark_height_);
+  UYVYToY(src_pixels_y, benchmark_width_ * 2, dst_pixels_y_c, benchmark_width_,
+          benchmark_width_, benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
