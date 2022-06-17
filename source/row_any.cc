@@ -1636,7 +1636,10 @@ ANY11C(UYVYToARGBRow_Any_LSX, UYVYToARGBRow_LSX, 1, 4, 4, 7)
       ANY_SIMD(dst_ptr, src_ptr, src_stride, n, source_y_fraction);           \
     }                                                                         \
     memcpy(temp, src_ptr + n * SBPP, r * SBPP * sizeof(T));                   \
-    memcpy(temp + 64, src_ptr + src_stride + n * SBPP, r * SBPP * sizeof(T)); \
+    if (source_y_fraction) {                                                  \
+      memcpy(temp + 64, src_ptr + src_stride + n * SBPP,                      \
+             r * SBPP * sizeof(T));                                           \
+    }                                                                         \
     ANY_SIMD(temp + 128, temp, 64, MASK + 1, source_y_fraction);              \
     memcpy(dst_ptr + n * BPP, temp + 128, r * BPP * sizeof(T));               \
   }
