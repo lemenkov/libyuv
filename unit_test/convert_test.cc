@@ -2643,7 +2643,7 @@ TEST_F(LibYUVConvertTest, I420CropOddY) {
   const int SUBSAMP_Y = 2;
   const int kWidth = benchmark_width_;
   const int kHeight = benchmark_height_;
-  const int crop_y = 1;
+  const int crop_y = benchmark_height_ > 1 ? 1 : 0;
   const int kDestWidth = benchmark_width_;
   const int kDestHeight = benchmark_height_ - crop_y * 2;
   const int kStrideU = SUBSAMPLE(kWidth, SUBSAMP_X);

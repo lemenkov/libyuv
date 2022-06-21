@@ -586,7 +586,9 @@ static void ScaleUVBilinearUp(int src_width,
       src += src_stride;
     }
     ScaleUVFilterCols(rowptr + rowstride, src, dst_width, x, dx);
-    src += src_stride;
+    if (src_height > 2) {
+      src += src_stride;
+    }
 
     for (j = 0; j < dst_height; ++j) {
       yi = y >> 16;
@@ -601,7 +603,9 @@ static void ScaleUVBilinearUp(int src_width,
           rowptr += rowstride;
           rowstride = -rowstride;
           lasty = yi;
-          src += src_stride;
+          if ((y + 65536) < max_y) {
+            src += src_stride;
+          }
         }
       }
       if (filtering == kFilterLinear) {

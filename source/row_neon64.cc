@@ -3022,12 +3022,12 @@ void InterpolateRow_16_NEON(uint16_t* dst_ptr,
       "b.gt        100b                          \n"
 
       "99:                                       \n"
-      : "+r"(dst_ptr),      // %0
-        "+r"(src_ptr),      // %1
-        "+r"(src_ptr1),     // %2
-        "+r"(dst_width)     // %3
-      : "r"(y1_fraction),   // %4
-        "r"(y0_fraction)    // %5
+      : "+r"(dst_ptr),     // %0
+        "+r"(src_ptr),     // %1
+        "+r"(src_ptr1),    // %2
+        "+r"(dst_width)    // %3
+      : "r"(y1_fraction),  // %4
+        "r"(y0_fraction)   // %5
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
 }
 

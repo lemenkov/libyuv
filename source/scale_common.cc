@@ -766,18 +766,18 @@ void ScaleRowDown38_3_Box_16_C(const uint16_t* src_ptr,
         (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[stride + 0] +
          src_ptr[stride + 1] + src_ptr[stride + 2] + src_ptr[stride * 2 + 0] +
          src_ptr[stride * 2 + 1] + src_ptr[stride * 2 + 2]) *
-            (65536 / 9) >>
+            (65536u / 9u) >>
         16;
     dst_ptr[1] =
         (src_ptr[3] + src_ptr[4] + src_ptr[5] + src_ptr[stride + 3] +
          src_ptr[stride + 4] + src_ptr[stride + 5] + src_ptr[stride * 2 + 3] +
          src_ptr[stride * 2 + 4] + src_ptr[stride * 2 + 5]) *
-            (65536 / 9) >>
+            (65536u / 9u) >>
         16;
     dst_ptr[2] =
         (src_ptr[6] + src_ptr[7] + src_ptr[stride + 6] + src_ptr[stride + 7] +
          src_ptr[stride * 2 + 6] + src_ptr[stride * 2 + 7]) *
-            (65536 / 6) >>
+            (65536u / 6u) >>
         16;
     src_ptr += 8;
     dst_ptr += 3;
@@ -820,15 +820,15 @@ void ScaleRowDown38_2_Box_16_C(const uint16_t* src_ptr,
   for (i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[stride + 0] +
                   src_ptr[stride + 1] + src_ptr[stride + 2]) *
-                     (65536 / 6) >>
+                     (65536u / 6u) >>
                  16;
     dst_ptr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] + src_ptr[stride + 3] +
                   src_ptr[stride + 4] + src_ptr[stride + 5]) *
-                     (65536 / 6) >>
+                     (65536u / 6u) >>
                  16;
     dst_ptr[2] =
         (src_ptr[6] + src_ptr[7] + src_ptr[stride + 6] + src_ptr[stride + 7]) *
-            (65536 / 4) >>
+            (65536u / 4u) >>
         16;
     src_ptr += 8;
     dst_ptr += 3;

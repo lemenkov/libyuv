@@ -3809,7 +3809,7 @@ int ARGBBlur(const uint8_t* src_argb,
   if (radius > (width / 2 - 1)) {
     radius = width / 2 - 1;
   }
-  if (radius <= 0) {
+  if (radius <= 0 || height <= 1) {
     return -1;
   }
 #if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)

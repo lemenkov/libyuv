@@ -19,7 +19,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
     !defined(__aarch64__)
 
-// d8-d15, r4-r11,r14(lr) need to be preserved if used. r13(sp),r15(pc) are reserved.
+// d8-d15, r4-r11,r14(lr) need to be preserved if used. r13(sp),r15(pc) are
+// reserved.
 
 // q0: Y uint16x8_t
 // d2: U uint8x8_t
@@ -2766,12 +2767,12 @@ void InterpolateRow_16_NEON(uint16_t* dst_ptr,
       "bgt         100b                          \n"
 
       "99:                                       \n"
-      : "+r"(dst_ptr),      // %0
-        "+r"(src_ptr),      // %1
-        "+r"(src_ptr1),     // %2
-        "+r"(dst_width)     // %3
-      : "r"(y1_fraction),   // %4
-        "r"(y0_fraction)    // %5
+      : "+r"(dst_ptr),     // %0
+        "+r"(src_ptr),     // %1
+        "+r"(src_ptr1),    // %2
+        "+r"(dst_width)    // %3
+      : "r"(y1_fraction),  // %4
+        "r"(y0_fraction)   // %5
       : "cc", "memory", "q0", "q1", "q2", "q3", "q8");
 }
 

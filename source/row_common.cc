@@ -3344,8 +3344,11 @@ void CumulativeSumToAverageRow_C(const int32_t* tl,
                                  int area,
                                  uint8_t* dst,
                                  int count) {
-  float ooa = 1.0f / area;
+  float ooa;
   int i;
+  assert(area != 0);
+
+  ooa = 1.0f / area;
   for (i = 0; i < count; ++i) {
     dst[0] = (uint8_t)((bl[w + 0] + tl[0] - bl[0] - tl[w + 0]) * ooa);
     dst[1] = (uint8_t)((bl[w + 1] + tl[1] - bl[1] - tl[w + 1]) * ooa);
