@@ -5198,37 +5198,26 @@ void Convert8To16Row_AVX2(const uint8_t* src_y,
 #endif  // HAS_CONVERT8TO16ROW_AVX2
 
 #ifdef HAS_SPLITRGBROW_SSSE3
-
 // Shuffle table for converting RGB to Planar.
-static const uvec8 kShuffleMaskRGBToR0 = {0u,   3u,   6u,   9u,   12u,  15u,
-                                          128u, 128u, 128u, 128u, 128u, 128u,
-                                          128u, 128u, 128u, 128u};
-static const uvec8 kShuffleMaskRGBToR1 = {128u, 128u, 128u, 128u, 128u, 128u,
-                                          2u,   5u,   8u,   11u,  14u,  128u,
-                                          128u, 128u, 128u, 128u};
-static const uvec8 kShuffleMaskRGBToR2 = {128u, 128u, 128u, 128u, 128u, 128u,
-                                          128u, 128u, 128u, 128u, 128u, 1u,
-                                          4u,   7u,   10u,  13u};
-
-static const uvec8 kShuffleMaskRGBToG0 = {1u,   4u,   7u,   10u,  13u,  128u,
-                                          128u, 128u, 128u, 128u, 128u, 128u,
-                                          128u, 128u, 128u, 128u};
-static const uvec8 kShuffleMaskRGBToG1 = {128u, 128u, 128u, 128u, 128u, 0u,
-                                          3u,   6u,   9u,   12u,  15u,  128u,
-                                          128u, 128u, 128u, 128u};
-static const uvec8 kShuffleMaskRGBToG2 = {128u, 128u, 128u, 128u, 128u, 128u,
-                                          128u, 128u, 128u, 128u, 128u, 2u,
-                                          5u,   8u,   11u,  14u};
-
-static const uvec8 kShuffleMaskRGBToB0 = {2u,   5u,   8u,   11u,  14u,  128u,
-                                          128u, 128u, 128u, 128u, 128u, 128u,
-                                          128u, 128u, 128u, 128u};
-static const uvec8 kShuffleMaskRGBToB1 = {128u, 128u, 128u, 128u, 128u, 1u,
-                                          4u,   7u,   10u,  13u,  128u, 128u,
-                                          128u, 128u, 128u, 128u};
-static const uvec8 kShuffleMaskRGBToB2 = {128u, 128u, 128u, 128u, 128u, 128u,
-                                          128u, 128u, 128u, 128u, 0u,   3u,
-                                          6u,   9u,   12u,  15u};
+static const uvec8 kSplitRGBShuffle[9] = {
+    {0u, 3u, 6u, 9u, 12u, 15u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
+     128u, 128u},
+    {128u, 128u, 128u, 128u, 128u, 128u, 2u, 5u, 8u, 11u, 14u, 128u, 128u, 128u,
+     128u, 128u},
+    {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 1u, 4u,
+     7u, 10u, 13u},
+    {1u, 4u, 7u, 10u, 13u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
+     128u, 128u},
+    {128u, 128u, 128u, 128u, 128u, 0u, 3u, 6u, 9u, 12u, 15u, 128u, 128u, 128u,
+     128u, 128u},
+    {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 2u, 5u,
+     8u, 11u, 14u},
+    {2u, 5u, 8u, 11u, 14u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
+     128u, 128u},
+    {128u, 128u, 128u, 128u, 128u, 1u, 4u, 7u, 10u, 13u, 128u, 128u, 128u, 128u,
+     128u, 128u},
+    {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u, 0u, 3u, 6u, 9u,
+     12u, 15u}};
 
 void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
                        uint8_t* dst_r,
@@ -5242,9 +5231,9 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "movdqu      0x20(%0),%%xmm2               \n"
-      "pshufb      %5, %%xmm0                    \n"
-      "pshufb      %6, %%xmm1                    \n"
-      "pshufb      %7, %%xmm2                    \n"
+      "pshufb      0(%5), %%xmm0                 \n"
+      "pshufb      16(%5), %%xmm1                \n"
+      "pshufb      32(%5), %%xmm2                \n"
       "por         %%xmm1,%%xmm0                 \n"
       "por         %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,(%1)                   \n"
@@ -5253,9 +5242,9 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "movdqu      0x20(%0),%%xmm2               \n"
-      "pshufb      %8, %%xmm0                    \n"
-      "pshufb      %9, %%xmm1                    \n"
-      "pshufb      %10, %%xmm2                   \n"
+      "pshufb      48(%5),%%xmm0                 \n"
+      "pshufb      64(%5),%%xmm1                 \n"
+      "pshufb      80(%5), %%xmm2                \n"
       "por         %%xmm1,%%xmm0                 \n"
       "por         %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,(%2)                   \n"
@@ -5264,9 +5253,9 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "movdqu      0x20(%0),%%xmm2               \n"
-      "pshufb      %11, %%xmm0                   \n"
-      "pshufb      %12, %%xmm1                   \n"
-      "pshufb      %13, %%xmm2                   \n"
+      "pshufb      96(%5), %%xmm0                \n"
+      "pshufb      112(%5), %%xmm1               \n"
+      "pshufb      128(%5), %%xmm2               \n"
       "por         %%xmm1,%%xmm0                 \n"
       "por         %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,(%3)                   \n"
@@ -5279,51 +5268,32 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
         "+r"(dst_g),               // %2
         "+r"(dst_b),               // %3
         "+r"(width)                // %4
-      : "m"(kShuffleMaskRGBToR0),  // %5
-        "m"(kShuffleMaskRGBToR1),  // %6
-        "m"(kShuffleMaskRGBToR2),  // %7
-        "m"(kShuffleMaskRGBToG0),  // %8
-        "m"(kShuffleMaskRGBToG1),  // %9
-        "m"(kShuffleMaskRGBToG2),  // %10
-        "m"(kShuffleMaskRGBToB0),  // %11
-        "m"(kShuffleMaskRGBToB1),  // %12
-        "m"(kShuffleMaskRGBToB2)   // %13
+      : "r"(&kSplitRGBShuffle[0])  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_SPLITRGBROW_SSSE3
 
 #ifdef HAS_MERGERGBROW_SSSE3
-
-// Shuffle table for converting RGB to Planar.
-static const uvec8 kShuffleMaskRToRGB0 = {0u, 128u, 128u, 1u, 128u, 128u,
-                                          2u, 128u, 128u, 3u, 128u, 128u,
-                                          4u, 128u, 128u, 5u};
-static const uvec8 kShuffleMaskGToRGB0 = {128u, 0u, 128u, 128u, 1u, 128u,
-                                          128u, 2u, 128u, 128u, 3u, 128u,
-                                          128u, 4u, 128u, 128u};
-static const uvec8 kShuffleMaskBToRGB0 = {128u, 128u, 0u, 128u, 128u, 1u,
-                                          128u, 128u, 2u, 128u, 128u, 3u,
-                                          128u, 128u, 4u, 128u};
-
-static const uvec8 kShuffleMaskGToRGB1 = {5u, 128u, 128u, 6u, 128u, 128u,
-                                          7u, 128u, 128u, 8u, 128u, 128u,
-                                          9u, 128u, 128u, 10u};
-static const uvec8 kShuffleMaskBToRGB1 = {128u, 5u, 128u, 128u, 6u, 128u,
-                                          128u, 7u, 128u, 128u, 8u, 128u,
-                                          128u, 9u, 128u, 128u};
-static const uvec8 kShuffleMaskRToRGB1 = {128u, 128u, 6u,  128u, 128u, 7u,
-                                          128u, 128u, 8u,  128u, 128u, 9u,
-                                          128u, 128u, 10u, 128u};
-
-static const uvec8 kShuffleMaskBToRGB2 = {10u, 128u, 128u, 11u, 128u, 128u,
-                                          12u, 128u, 128u, 13u, 128u, 128u,
-                                          14u, 128u, 128u, 15u};
-static const uvec8 kShuffleMaskRToRGB2 = {128u, 11u, 128u, 128u, 12u, 128u,
-                                          128u, 13u, 128u, 128u, 14u, 128u,
-                                          128u, 15u, 128u, 128u};
-static const uvec8 kShuffleMaskGToRGB2 = {128u, 128u, 11u, 128u, 128u, 12u,
-                                          128u, 128u, 13u, 128u, 128u, 14u,
-                                          128u, 128u, 15u, 128u};
+// Shuffle table for converting Planar to RGB.
+static const uvec8 kMergeRGBShuffle[9] = {
+    {0u, 128u, 128u, 1u, 128u, 128u, 2u, 128u, 128u, 3u, 128u, 128u, 4u, 128u,
+     128u, 5u},
+    {128u, 0u, 128u, 128u, 1u, 128u, 128u, 2u, 128u, 128u, 3u, 128u, 128u, 4u,
+     128u, 128u},
+    {128u, 128u, 0u, 128u, 128u, 1u, 128u, 128u, 2u, 128u, 128u, 3u, 128u, 128u,
+     4u, 128u},
+    {128u, 128u, 6u, 128u, 128u, 7u, 128u, 128u, 8u, 128u, 128u, 9u, 128u, 128u,
+     10u, 128u},
+    {5u, 128u, 128u, 6u, 128u, 128u, 7u, 128u, 128u, 8u, 128u, 128u, 9u, 128u,
+     128u, 10u},
+    {128u, 5u, 128u, 128u, 6u, 128u, 128u, 7u, 128u, 128u, 8u, 128u, 128u, 9u,
+     128u, 128u},
+    {128u, 11u, 128u, 128u, 12u, 128u, 128u, 13u, 128u, 128u, 14u, 128u, 128u,
+     15u, 128u, 128u},
+    {128u, 128u, 11u, 128u, 128u, 12u, 128u, 128u, 13u, 128u, 128u, 14u, 128u,
+     128u, 15u, 128u},
+    {10u, 128u, 128u, 11u, 128u, 128u, 12u, 128u, 128u, 13u, 128u, 128u, 14u,
+     128u, 128u, 15u}};
 
 void MergeRGBRow_SSSE3(const uint8_t* src_r,
                        const uint8_t* src_g,
@@ -5337,9 +5307,9 @@ void MergeRGBRow_SSSE3(const uint8_t* src_r,
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      (%1),%%xmm1                   \n"
       "movdqu      (%2),%%xmm2                   \n"
-      "pshufb      %5, %%xmm0                    \n"
-      "pshufb      %6, %%xmm1                    \n"
-      "pshufb      %7, %%xmm2                    \n"
+      "pshufb      (%5), %%xmm0                  \n"
+      "pshufb      16(%5), %%xmm1                \n"
+      "pshufb      32(%5), %%xmm2                \n"
       "por         %%xmm1,%%xmm0                 \n"
       "por         %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,(%3)                   \n"
@@ -5347,9 +5317,9 @@ void MergeRGBRow_SSSE3(const uint8_t* src_r,
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      (%1),%%xmm1                   \n"
       "movdqu      (%2),%%xmm2                   \n"
-      "pshufb      %8, %%xmm0                    \n"
-      "pshufb      %9, %%xmm1                    \n"
-      "pshufb      %10, %%xmm2                   \n"
+      "pshufb      48(%5), %%xmm0                \n"
+      "pshufb      64(%5), %%xmm1                \n"
+      "pshufb      80(%5), %%xmm2                \n"
       "por         %%xmm1,%%xmm0                 \n"
       "por         %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,16(%3)                 \n"
@@ -5357,9 +5327,9 @@ void MergeRGBRow_SSSE3(const uint8_t* src_r,
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      (%1),%%xmm1                   \n"
       "movdqu      (%2),%%xmm2                   \n"
-      "pshufb      %11, %%xmm0                   \n"
-      "pshufb      %12, %%xmm1                   \n"
-      "pshufb      %13, %%xmm2                   \n"
+      "pshufb      96(%5), %%xmm0                \n"
+      "pshufb      112(%5), %%xmm1               \n"
+      "pshufb      128(%5), %%xmm2               \n"
       "por         %%xmm1,%%xmm0                 \n"
       "por         %%xmm2,%%xmm0                 \n"
       "movdqu      %%xmm0,32(%3)                 \n"
@@ -5375,15 +5345,7 @@ void MergeRGBRow_SSSE3(const uint8_t* src_r,
         "+r"(src_b),               // %2
         "+r"(dst_rgb),             // %3
         "+r"(width)                // %4
-      : "m"(kShuffleMaskRToRGB0),  // %5
-        "m"(kShuffleMaskGToRGB0),  // %6
-        "m"(kShuffleMaskBToRGB0),  // %7
-        "m"(kShuffleMaskRToRGB1),  // %8
-        "m"(kShuffleMaskGToRGB1),  // %9
-        "m"(kShuffleMaskBToRGB1),  // %10
-        "m"(kShuffleMaskRToRGB2),  // %11
-        "m"(kShuffleMaskGToRGB2),  // %12
-        "m"(kShuffleMaskBToRGB2)   // %13
+      : "r"(&kMergeRGBShuffle[0])  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_MERGERGBROW_SSSE3

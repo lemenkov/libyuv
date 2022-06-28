@@ -348,6 +348,7 @@ extern "C" {
 #define HAS_AR64TOARGBROW_AVX2
 #define HAS_AB64TOARGBROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
+#define HAS_INTERPOLATEROW_16TO8_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_DIVIDEROW_16_AVX2
 #define HAS_HALFMERGEUVROW_AVX2
@@ -539,6 +540,7 @@ extern "C" {
 
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_INTERPOLATEROW_16TO8_NEON
 #define HAS_SCALESUMSAMPLES_NEON
 #define HAS_GAUSSROW_F32_NEON
 #define HAS_GAUSSCOL_F32_NEON
@@ -5221,6 +5223,30 @@ void InterpolateRow_16To8_C(uint8_t* dst_ptr,
                             int scale,
                             int width,
                             int source_y_fraction);
+void InterpolateRow_16To8_NEON(uint8_t* dst_ptr,
+                               const uint16_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               int scale,
+                               int width,
+                               int source_y_fraction);
+void InterpolateRow_16To8_Any_NEON(uint8_t* dst_ptr,
+                                   const uint16_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   int scale,
+                                   int width,
+                                   int source_y_fraction);
+void InterpolateRow_16To8_AVX2(uint8_t* dst_ptr,
+                               const uint16_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               int scale,
+                               int width,
+                               int source_y_fraction);
+void InterpolateRow_16To8_Any_AVX2(uint8_t* dst_ptr,
+                                   const uint16_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   int scale,
+                                   int width,
+                                   int source_y_fraction);
 
 // Sobel images.
 void SobelXRow_C(const uint8_t* src_y0,
