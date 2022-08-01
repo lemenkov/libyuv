@@ -2663,45 +2663,6 @@ void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24, int width) {
   }
 }
 
-void DetileRow_C(const uint8_t* src,
-                 ptrdiff_t src_tile_stride,
-                 uint8_t* dst,
-                 int width) {
-  int x;
-  for (x = 0; x < width - 15; x += 16) {
-    memcpy(dst, src, 16);
-    dst += 16;
-    src += src_tile_stride;
-  }
-  if (width & 15) {
-    memcpy(dst, src, width & 15);
-  }
-}
-
-void DetileSplitUVRow_C(const uint8_t* src_uv,
-                        ptrdiff_t src_tile_stride,
-                        uint8_t* dst_u,
-                        uint8_t* dst_v,
-                        int width) {
-  int tile;
-  for (tile = 0; tile < width / 16; tile++) {
-    for (int x = 0; x < 8; x++) {
-      *dst_u++ = src_uv[0];
-      *dst_v++ = src_uv[1];
-      src_uv += 2;
-    }
-    src_uv += src_tile_stride - 16;
-  }
-  for (int x = 0; x < (width & 0xF) / 2; ++x) {
-    *dst_u = *src_uv;
-    dst_u++;
-    src_uv++;
-    *dst_v = *src_uv;
-    dst_v++;
-    src_uv++;
-  }
-}
-
 void SplitUVRow_C(const uint8_t* src_uv,
                   uint8_t* dst_u,
                   uint8_t* dst_v,
@@ -2735,6 +2696,38 @@ void MergeUVRow_C(const uint8_t* src_u,
   if (width & 1) {
     dst_uv[0] = src_u[width - 1];
     dst_uv[1] = src_v[width - 1];
+  }
+}
+
+void DetileRow_C(const uint8_t* src,
+                 ptrdiff_t src_tile_stride,
+                 uint8_t* dst,
+                 int width) {
+  int x;
+  for (x = 0; x < width - 15; x += 16) {
+    memcpy(dst, src, 16);
+    dst += 16;
+    src += src_tile_stride;
+  }
+  if (width & 15) {
+    memcpy(dst, src, width & 15);
+  }
+}
+
+void DetileSplitUVRow_C(const uint8_t* src_uv,
+                        ptrdiff_t src_tile_stride,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  int x;
+  for (x = 0; x < width - 15; x += 16) {
+    SplitUVRow_C(src_uv, dst_u, dst_v, 8);
+    dst_u += 8;
+    dst_v += 8;
+    src_uv += src_tile_stride;
+  }
+  if (width & 15) {
+    SplitUVRow_C(src_uv, dst_u, dst_v, ((width & 15) + 1) / 2);
   }
 }
 
