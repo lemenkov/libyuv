@@ -83,8 +83,7 @@ extern "C" {
 #define HAS_SCALEROWUP2_LINEAR_12_SSSE3
 #define HAS_SCALEROWUP2_BILINEAR_12_SSSE3
 #define HAS_SCALEROWUP2_LINEAR_16_SSE2
-// TODO(libyuv:882): Fix SSE2 version of BILINEAR
-//#define HAS_SCALEROWUP2_BILINEAR_16_SSE2
+#define HAS_SCALEROWUP2_BILINEAR_16_SSE2
 #define HAS_SCALEUVROWUP2_LINEAR_SSSE3
 #define HAS_SCALEUVROWUP2_BILINEAR_SSSE3
 #define HAS_SCALEUVROWUP2_LINEAR_16_SSE41
@@ -693,7 +692,7 @@ void ScaleRowUp2_Bilinear_12_Any_SSSE3(const uint16_t* src_ptr,
 void ScaleRowUp2_Linear_16_Any_SSE2(const uint16_t* src_ptr,
                                     uint16_t* dst_ptr,
                                     int dst_width);
-void ScaleRowUp2_Bilinear_16_Any_SSSE3(const uint16_t* src_ptr,
+void ScaleRowUp2_Bilinear_16_Any_SSE2(const uint16_t* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint16_t* dst_ptr,
                                        ptrdiff_t dst_stride,

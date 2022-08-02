@@ -1242,7 +1242,7 @@ void ScaleRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
       "pshufd      $0b11011000,%%xmm4,%%xmm4     \n"
       "movdqu      %%xmm4,(%1)                   \n"  // store above
       "packssdw    %%xmm2,%%xmm5                 \n"
-      "pshufd      $0b11011000,%%xmm4,%%xmm4     \n"
+      "pshufd      $0b11011000,%%xmm5,%%xmm5     \n"
       "movdqu      %%xmm5,(%1,%4,2)              \n"  // store below
 
       "lea         0x8(%0),%0                    \n"

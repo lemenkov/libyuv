@@ -813,7 +813,7 @@ SU2BLANY(ScaleRowUp2_Bilinear_12_Any_SSSE3,
 #endif
 
 #ifdef HAS_SCALEROWUP2_BILINEAR_16_SSE2
-SU2BLANY(ScaleRowUp2_Bilinear_16_Any_SSSE3,
+SU2BLANY(ScaleRowUp2_Bilinear_16_Any_SSE2,
          ScaleRowUp2_Bilinear_16_SSE2,
          ScaleRowUp2_Bilinear_16_C,
          7,

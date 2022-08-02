@@ -1654,8 +1654,8 @@ void ScalePlaneUp2_16_Bilinear(int src_width,
   assert(src_height == ((dst_height + 1) / 2));
 
 #ifdef HAS_SCALEROWUP2_BILINEAR_16_SSE2
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    Scale2RowUp = ScaleRowUp2_Bilinear_16_Any_SSSE3;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_16_Any_SSE2;
   }
 #endif
 
