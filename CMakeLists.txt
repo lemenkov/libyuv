@@ -22,6 +22,10 @@ LIST ( SORT			ly_unittest_sources )
 
 INCLUDE_DIRECTORIES( BEFORE ${ly_inc_dir} )
 
+if(MSVC)
+  ADD_DEFINITIONS ( -D_CRT_SECURE_NO_WARNINGS )
+endif()
+
 # this creates the static library (.a)
 ADD_LIBRARY				( ${ly_lib_static} STATIC ${ly_source_files} )
 
