@@ -29,6 +29,9 @@ ADD_LIBRARY				( ${ly_lib_static} STATIC ${ly_source_files} )
 ADD_LIBRARY				( ${ly_lib_shared} SHARED ${ly_source_files} )
 SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES OUTPUT_NAME "${ly_lib_name}" )
 SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES PREFIX "lib" )
+if(WIN32)
+  SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES IMPORT_PREFIX "lib" )
+endif()
 
 # this creates the conversion tool
 ADD_EXECUTABLE			( yuvconvert ${ly_base_dir}/util/yuvconvert.cc )
