@@ -75,7 +75,7 @@ extern "C" {
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(yuvconstants)                                      \
-  xmm3 = _mm_sub_epi8(xmm3, _mm_set1_epi8(0x80));                   \
+  xmm3 = _mm_sub_epi8(xmm3, _mm_set1_epi8((char)0x80));             \
   xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);   \
   xmm4 = _mm_add_epi16(xmm4, *(__m128i*)yuvconstants->kYBiasToRgb); \
   xmm0 = _mm_maddubs_epi16(*(__m128i*)yuvconstants->kUVToB, xmm3);  \

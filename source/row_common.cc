@@ -1654,8 +1654,8 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
 
 #define CALC_RGB16                                \
   int32_t y1 = ((uint32_t)(y32 * yg) >> 16) + yb; \
-  int8_t ui = u;                                  \
-  int8_t vi = v;                                  \
+  int8_t ui = (int8_t)u;                          \
+  int8_t vi = (int8_t)v;                          \
   ui -= 0x80;                                     \
   vi -= 0x80;                                     \
   int b16 = y1 + (ui * ub);                       \
