@@ -1641,7 +1641,7 @@ int BGRAToI420(const uint8_t* src_bgra,
 #if defined(HAS_BGRATOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     BGRAToYRow = BGRAToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       BGRAToYRow = BGRAToYRow_NEON;
     }
   }
@@ -3190,6 +3190,7 @@ int RAWToJ400(const uint8_t* src_raw,
   if (!src_raw || !dst_yj || width <= 0 || height == 0) {
     return -1;
   }
+
   if (height < 0) {
     height = -height;
     src_raw = src_raw + (height - 1) * src_stride_raw;
@@ -3201,6 +3202,7 @@ int RAWToJ400(const uint8_t* src_raw,
     height = 1;
     src_stride_raw = dst_stride_yj = 0;
   }
+
 #if defined(HAS_RAWTOYJROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     RAWToYJRow = RAWToYJRow_Any_SSSE3;
@@ -3220,7 +3222,7 @@ int RAWToJ400(const uint8_t* src_raw,
 #if defined(HAS_RAWTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RAWToYJRow = RAWToYJRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       RAWToYJRow = RAWToYJRow_NEON;
     }
   }
