@@ -1907,6 +1907,20 @@ int I420ToRGB565Matrix(const uint8_t* src_y,
                        int width,
                        int height);
 
+// Convert I422 to RGB565 with specified color matrix.
+LIBYUV_API
+int I422ToRGB565Matrix(const uint8_t* src_y,
+                       int src_stride_y,
+                       const uint8_t* src_u,
+                       int src_stride_u,
+                       const uint8_t* src_v,
+                       int src_stride_v,
+                       uint8_t* dst_rgb565,
+                       int dst_stride_rgb565,
+                       const struct YuvConstants* yuvconstants,
+                       int width,
+                       int height);
+
 // Convert I420 to AR30 with matrix.
 LIBYUV_API
 int I420ToAR30Matrix(const uint8_t* src_y,
