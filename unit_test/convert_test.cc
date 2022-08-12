@@ -1410,7 +1410,7 @@ TESTATOBIPLANAR(AYUV, 1, 4, NV21, 2, 2)
                  EPP_B, STRIDE_B, HEIGHT_B)
 #else
 #define TESTATOB(FMT_A, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, FMT_B, TYPE_B,   \
-                 EPP_B, STRIDE_B, HEIGHT_B)                                 \
+                 EPP_B, STRIDE_B, HEIGHT_B, INPLACE)                        \
   TESTATOBI(FMT_A, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, FMT_B, TYPE_B, EPP_B, \
             STRIDE_B, HEIGHT_B, benchmark_width_, _Opt, +, 0)
 #endif
@@ -1450,7 +1450,7 @@ TESTATOB(ARGB, uint8_t, 4, 4, 1, RGB565, uint8_t, 2, 2, 1)
 #endif
 TESTATOB(ARGB, uint8_t, 4, 4, 1, RGBA, uint8_t, 4, 4, 1)
 TESTATOB(ARGB, uint8_t, 4, 4, 1, UYVY, uint8_t, 2, 4, 1)
-TESTATOB(ARGB, uint8_t, 4, 4, 1, YUY2, uint8_t, 2, 4, 1)  // 4
+TESTATOB(ARGB, uint8_t, 4, 4, 1, YUY2, uint8_t, 2, 4, 1)
 TESTATOB(ARGB1555, uint8_t, 2, 2, 1, ARGB, uint8_t, 4, 4, 1)
 TESTATOB(ARGB4444, uint8_t, 2, 2, 1, ARGB, uint8_t, 4, 4, 1)
 TESTATOB(BGRA, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
@@ -1483,6 +1483,127 @@ TESTATOB(AR64, uint16_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
 TESTATOB(AB64, uint16_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
 TESTATOB(AR64, uint16_t, 4, 4, 1, AB64, uint16_t, 4, 4, 1)
 TESTATOB(AB64, uint16_t, 4, 4, 1, AR64, uint16_t, 4, 4, 1)
+
+// in place test
+#define TESTATOAI(FMT_A, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, FMT_B, TYPE_B,    \
+                  EPP_B, STRIDE_B, HEIGHT_B, W1280, N, NEG, OFF)              \
+  TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##N) {                            \
+    const int kWidth = W1280;                                                 \
+    const int kHeight = benchmark_height_;                                    \
+    const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;      \
+    const int kHeightB = (kHeight + HEIGHT_B - 1) / HEIGHT_B * HEIGHT_B;      \
+    const int kStrideA =                                                      \
+        (kWidth * EPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;                \
+    const int kStrideB =                                                      \
+        (kWidth * EPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;                \
+    align_buffer_page_end(src_argb,                                           \
+                          kStrideA* kHeightA*(int)sizeof(TYPE_A) + OFF);      \
+    align_buffer_page_end(dst_argb_c,                                         \
+                          kStrideA* kHeightA*(int)sizeof(TYPE_A) + OFF);      \
+    align_buffer_page_end(dst_argb_opt,                                       \
+                          kStrideA* kHeightA*(int)sizeof(TYPE_A) + OFF);      \
+    for (int i = 0; i < kStrideA * kHeightA * (int)sizeof(TYPE_A); ++i) {     \
+      src_argb[i + OFF] = (fastrand() & 0xff);                                \
+    }                                                                         \
+    memcpy(dst_argb_c + OFF, src_argb,                                        \
+           kStrideA * kHeightA * (int)sizeof(TYPE_A));                        \
+    memcpy(dst_argb_opt + OFF, src_argb,                                      \
+           kStrideA * kHeightA * (int)sizeof(TYPE_A));                        \
+    MaskCpuFlags(disable_cpu_flags_);                                         \
+    FMT_A##To##FMT_B((TYPE_A*)(dst_argb_c /* src */ + OFF), kStrideA,         \
+                     (TYPE_B*)dst_argb_c, kStrideB, kWidth, NEG kHeight);     \
+    MaskCpuFlags(benchmark_cpu_info_);                                        \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                         \
+      FMT_A##To##FMT_B((TYPE_A*)(dst_argb_opt /* src */ + OFF), kStrideA,     \
+                       (TYPE_B*)dst_argb_opt, kStrideB, kWidth, NEG kHeight); \
+    }                                                                         \
+    memcpy(dst_argb_opt + OFF, src_argb,                                      \
+           kStrideA * kHeightA * (int)sizeof(TYPE_A));                        \
+    FMT_A##To##FMT_B((TYPE_A*)(dst_argb_opt /* src */ + OFF), kStrideA,       \
+                     (TYPE_B*)dst_argb_opt, kStrideB, kWidth, NEG kHeight);   \
+    for (int i = 0; i < kStrideB * kHeightB * (int)sizeof(TYPE_B); ++i) {     \
+      EXPECT_EQ(dst_argb_c[i], dst_argb_opt[i]);                              \
+    }                                                                         \
+    free_aligned_buffer_page_end(src_argb);                                   \
+    free_aligned_buffer_page_end(dst_argb_c);                                 \
+    free_aligned_buffer_page_end(dst_argb_opt);                               \
+  }
+
+#define TESTATOA(FMT_A, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, FMT_B, TYPE_B,   \
+                 EPP_B, STRIDE_B, HEIGHT_B)                                 \
+  TESTATOAI(FMT_A, TYPE_A, EPP_A, STRIDE_A, HEIGHT_A, FMT_B, TYPE_B, EPP_B, \
+            STRIDE_B, HEIGHT_B, benchmark_width_, _Inplace, +, 0)
+
+TESTATOA(AB30, uint8_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
+TESTATOA(AB30, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+#ifdef LITTLE_ENDIAN_ONLY_TEST
+TESTATOA(ABGR, uint8_t, 4, 4, 1, AR30, uint8_t, 4, 4, 1)
+#endif
+TESTATOA(ABGR, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+#ifdef LITTLE_ENDIAN_ONLY_TEST
+TESTATOA(AR30, uint8_t, 4, 4, 1, AB30, uint8_t, 4, 4, 1)
+#endif
+TESTATOA(AR30, uint8_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
+#ifdef LITTLE_ENDIAN_ONLY_TEST
+TESTATOA(AR30, uint8_t, 4, 4, 1, AR30, uint8_t, 4, 4, 1)
+TESTATOA(AR30, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+#endif
+TESTATOA(ARGB, uint8_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
+#ifdef LITTLE_ENDIAN_ONLY_TEST
+TESTATOA(ARGB, uint8_t, 4, 4, 1, AR30, uint8_t, 4, 4, 1)
+#endif
+TESTATOA(ARGB, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, ARGB1555, uint8_t, 2, 2, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, ARGB4444, uint8_t, 2, 2, 1)
+// TODO(fbarchard): Support in place for mirror.
+// TESTATOA(ARGB, uint8_t, 4, 4, 1, ARGBMirror, uint8_t, 4, 4, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, BGRA, uint8_t, 4, 4, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, I400, uint8_t, 1, 1, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, J400, uint8_t, 1, 1, 1)
+TESTATOA(RGBA, uint8_t, 4, 4, 1, J400, uint8_t, 1, 1, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, RAW, uint8_t, 3, 3, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, RGB24, uint8_t, 3, 3, 1)
+TESTATOA(ABGR, uint8_t, 4, 4, 1, RAW, uint8_t, 3, 3, 1)
+TESTATOA(ABGR, uint8_t, 4, 4, 1, RGB24, uint8_t, 3, 3, 1)
+#ifdef LITTLE_ENDIAN_ONLY_TEST
+TESTATOA(ARGB, uint8_t, 4, 4, 1, RGB565, uint8_t, 2, 2, 1)
+#endif
+TESTATOA(ARGB, uint8_t, 4, 4, 1, RGBA, uint8_t, 4, 4, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, UYVY, uint8_t, 2, 4, 1)
+TESTATOA(ARGB, uint8_t, 4, 4, 1, YUY2, uint8_t, 2, 4, 1)
+// TODO(fbarchard): Support in place for conversions that increase bpp.
+// TESTATOA(ARGB1555, uint8_t, 2, 2, 1, ARGB, uint8_t, 4, 4, 1)
+// TESTATOA(ARGB4444, uint8_t, 2, 2, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(BGRA, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+// TESTATOA(I400, uint8_t, 1, 1, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(I400, uint8_t, 1, 1, 1, I400, uint8_t, 1, 1, 1)
+// TESTATOA(I400, uint8_t, 1, 1, 1, I400Mirror, uint8_t, 1, 1, 1)
+// TESTATOA(J400, uint8_t, 1, 1, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(J400, uint8_t, 1, 1, 1, J400, uint8_t, 1, 1, 1)
+// TESTATOA(RAW, uint8_t, 3, 3, 1, ARGB, uint8_t, 4, 4, 1)
+// TESTATOA(RAW, uint8_t, 3, 3, 1, RGBA, uint8_t, 4, 4, 1)
+TESTATOA(RAW, uint8_t, 3, 3, 1, RGB24, uint8_t, 3, 3, 1)
+// TESTATOA(RGB24, uint8_t, 3, 3, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(RGB24, uint8_t, 3, 3, 1, J400, uint8_t, 1, 1, 1)
+// TESTATOA(RGB24, uint8_t, 3, 3, 1, RGB24Mirror, uint8_t, 3, 3, 1)
+TESTATOA(RAW, uint8_t, 3, 3, 1, J400, uint8_t, 1, 1, 1)
+#ifdef LITTLE_ENDIAN_ONLY_TEST
+// TESTATOA(RGB565, uint8_t, 2, 2, 1, ARGB, uint8_t, 4, 4, 1)
+#endif
+TESTATOA(RGBA, uint8_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+// TESTATOA(UYVY, uint8_t, 2, 4, 1, ARGB, uint8_t, 4, 4, 1)
+// TESTATOA(YUY2, uint8_t, 2, 4, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(YUY2, uint8_t, 2, 4, 1, Y, uint8_t, 1, 1, 1)
+// TESTATOA(ARGB, uint8_t, 4, 4, 1, AR64, uint16_t, 4, 4, 1)
+// TESTATOA(ARGB, uint8_t, 4, 4, 1, AB64, uint16_t, 4, 4, 1)
+// TESTATOA(ABGR, uint8_t, 4, 4, 1, AR64, uint16_t, 4, 4, 1)
+// TESTATOA(ABGR, uint8_t, 4, 4, 1, AB64, uint16_t, 4, 4, 1)
+TESTATOA(AR64, uint16_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(AB64, uint16_t, 4, 4, 1, ARGB, uint8_t, 4, 4, 1)
+TESTATOA(AR64, uint16_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
+TESTATOA(AB64, uint16_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
+TESTATOA(AR64, uint16_t, 4, 4, 1, AB64, uint16_t, 4, 4, 1)
+TESTATOA(AB64, uint16_t, 4, 4, 1, AR64, uint16_t, 4, 4, 1)
 
 #define TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A, FMT_B, BPP_B, STRIDE_B, \
                    HEIGHT_B, W1280, N, NEG, OFF)                             \

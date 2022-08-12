@@ -439,10 +439,14 @@ void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_ar30, int width) {
 void ARGBToAR64Row_C(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    dst_ar64[0] = src_argb[0] * 0x0101;
-    dst_ar64[1] = src_argb[1] * 0x0101;
-    dst_ar64[2] = src_argb[2] * 0x0101;
-    dst_ar64[3] = src_argb[3] * 0x0101;
+    uint16_t b = src_argb[0] * 0x0101;
+    uint16_t g = src_argb[1] * 0x0101;
+    uint16_t r = src_argb[2] * 0x0101;
+    uint16_t a = src_argb[3] * 0x0101;
+    dst_ar64[0] = b;
+    dst_ar64[1] = g;
+    dst_ar64[2] = r;
+    dst_ar64[3] = a;
     dst_ar64 += 4;
     src_argb += 4;
   }
@@ -451,10 +455,14 @@ void ARGBToAR64Row_C(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
 void ARGBToAB64Row_C(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    dst_ab64[0] = src_argb[2] * 0x0101;
-    dst_ab64[1] = src_argb[1] * 0x0101;
-    dst_ab64[2] = src_argb[0] * 0x0101;
-    dst_ab64[3] = src_argb[3] * 0x0101;
+    uint16_t b = src_argb[0] * 0x0101;
+    uint16_t g = src_argb[1] * 0x0101;
+    uint16_t r = src_argb[2] * 0x0101;
+    uint16_t a = src_argb[3] * 0x0101;
+    dst_ab64[0] = r;
+    dst_ab64[1] = g;
+    dst_ab64[2] = b;
+    dst_ab64[3] = a;
     dst_ab64 += 4;
     src_argb += 4;
   }
@@ -463,10 +471,14 @@ void ARGBToAB64Row_C(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
 void AR64ToARGBRow_C(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    dst_argb[0] = src_ar64[0] >> 8;
-    dst_argb[1] = src_ar64[1] >> 8;
-    dst_argb[2] = src_ar64[2] >> 8;
-    dst_argb[3] = src_ar64[3] >> 8;
+    uint8_t b = src_ar64[0] >> 8;
+    uint8_t g = src_ar64[1] >> 8;
+    uint8_t r = src_ar64[2] >> 8;
+    uint8_t a = src_ar64[3] >> 8;
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
     dst_argb += 4;
     src_ar64 += 4;
   }
@@ -475,10 +487,14 @@ void AR64ToARGBRow_C(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
 void AB64ToARGBRow_C(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    dst_argb[0] = src_ab64[2] >> 8;
-    dst_argb[1] = src_ab64[1] >> 8;
-    dst_argb[2] = src_ab64[0] >> 8;
-    dst_argb[3] = src_ab64[3] >> 8;
+    uint8_t r = src_ab64[0] >> 8;
+    uint8_t g = src_ab64[1] >> 8;
+    uint8_t b = src_ab64[2] >> 8;
+    uint8_t a = src_ab64[3] >> 8;
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
     dst_argb += 4;
     src_ab64 += 4;
   }
