@@ -651,6 +651,62 @@ void DetileSplitUVRow_NEON(const uint8_t* src_uv,
 }
 
 #if LIBYUV_USE_ST2
+// Read 16 Y, 8 UV, and write 8 YUY2
+void DetileToYUY2_NEON(const uint8_t* src_y,
+                         ptrdiff_t src_y_tile_stride,
+                         const uint8_t* src_uv,
+                         ptrdiff_t src_uv_tile_stride,
+                         uint8_t* dst_yuy2,
+                         int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], %4            \n"  // load 16 Ys
+      "prfm        pldl1keep, [%0, 1792]         \n"
+      "ld1         {v1.16b}, [%1], %5            \n"  // load 8 UVs
+      "prfm        pldl1keep, [%1, 1792]         \n"
+      "subs        %w3, %w3, #16                 \n"  // store 8 YUY2
+      "st2         {v0.16b,v1.16b}, [%2], #32    \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_y),            // %0
+        "+r"(src_uv),           // %1
+        "+r"(dst_yuy2),         // %2
+        "+r"(width)             // %3
+      : "r"(src_y_tile_stride), // %4
+        "r"(src_uv_tile_stride) // %5
+      : "cc", "memory", "v0", "v1"  // Clobber list
+  );
+}
+#else
+// Read 16 Y, 8 UV, and write 8 YUY2
+void DetileToYUY2_NEON(const uint8_t* src_y,
+                         ptrdiff_t src_y_tile_stride,
+                         const uint8_t* src_uv,
+                         ptrdiff_t src_uv_tile_stride,
+                         uint8_t* dst_yuy2,
+                         int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], %4            \n"  // load 16 Ys
+      "ld1         {v1.16b}, [%1], %5            \n"  // load 8 UVs
+      "subs        %w3, %w3, #16                 \n"
+      "prfm        pldl1keep, [%0, 1792]         \n"
+      "zip1        v2.16b, v0.16b, v1.16b        \n"
+      "prfm        pldl1keep, [%1, 1792]         \n"
+      "zip2        v3.16b, v0.16b, v1.16b        \n"
+      "st1         {v2.16b,v3.16b}, [%2], #32    \n"  // store 8 YUY2
+      "b.gt     1b                               \n"
+      : "+r"(src_y),             // %0
+        "+r"(src_uv),            // %1
+        "+r"(dst_yuy2),          // %2
+        "+r"(width)              // %3
+      : "r"(src_y_tile_stride),  // %4
+        "r"(src_uv_tile_stride)  // %5
+      : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber list
+  );
+}
+#endif
+
+#if LIBYUV_USE_ST2
 // Reads 16 U's and V's and writes out 16 pairs of UV.
 void MergeUVRow_NEON(const uint8_t* src_u,
                      const uint8_t* src_v,
@@ -2144,6 +2200,7 @@ void ARGBToUVRow_NEON(const uint8_t* src_argb,
   );
 }
 
+// TODO(fbarchard): Subsample match Intel code.
 void ARGBToUVJRow_NEON(const uint8_t* src_argb,
                        int src_stride_argb,
                        uint8_t* dst_u,
@@ -2182,6 +2239,51 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
     "+r"(src_argb_1),  // %1
     "+r"(dst_u),     // %2
     "+r"(dst_v),     // %3
+    "+r"(width)        // %4
+  :
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+    "v20", "v21", "v22", "v23", "v24", "v25"
+  );
+}
+
+void ABGRToUVJRow_NEON(const uint8_t* src_abgr,
+                       int src_stride_abgr,
+                       uint8_t* dst_uj,
+                       uint8_t* dst_vj,
+                       int width) {
+  const uint8_t* src_abgr_1 = src_abgr + src_stride_abgr;
+  asm volatile (
+      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
+      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
+      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
+      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
+      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
+      "1:                                        \n"
+      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels.
+      "uaddlp      v0.8h, v0.16b                 \n"  // R 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uaddlp      v1.8h, v1.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uaddlp      v2.8h, v2.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%1], #64 \n"  // load next 16
+      "uadalp      v0.8h, v4.16b                 \n"  // R 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uadalp      v2.8h, v6.16b                 \n"  // B 16 bytes -> 8 shorts.
+
+      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
+      "urshr       v1.8h, v1.8h, #1              \n"
+      "urshr       v2.8h, v2.8h, #1              \n"
+
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
+    RGBTOUV(v2.8h, v1.8h, v0.8h)
+      "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
+      "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
+      "b.gt        1b                            \n"
+  : "+r"(src_abgr),  // %0
+    "+r"(src_abgr_1),  // %1
+    "+r"(dst_uj),     // %2
+    "+r"(dst_vj),     // %3
     "+r"(width)        // %4
   :
   : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
@@ -2810,6 +2912,10 @@ void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
 
 void ABGRToYRow_NEON(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
   ARGBToYMatrixRow_NEON(src_abgr, dst_y, width, &kRawI601Constants);
+}
+
+void ABGRToYJRow_NEON(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
+  ARGBToYMatrixRow_NEON(src_abgr, dst_yj, width, &kRawJPEGConstants);
 }
 
 // RGBA expects first value to be A and ignored, then 3 values to contain RGB.

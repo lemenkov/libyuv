@@ -915,7 +915,7 @@ int NV21ToNV12(const uint8_t* src_y,
 // tile width is 16 and assumed.
 // tile_height is 16 or 32 for MM21.
 // src_stride_y is bytes per row of source ignoring tiling. e.g. 640
-// TODO: More detile row functions.
+// TODO(fbarchard): More detile row functions.
 
 LIBYUV_API
 void DetilePlane(const uint8_t* src_y,
@@ -1029,6 +1029,66 @@ void DetileSplitUVPlane(const uint8_t* src_uv,
     // Advance to next row of tiles.
     if ((y & (tile_height - 1)) == (tile_height - 1)) {
       src_uv = src_uv - src_tile_stride + src_stride_uv * tile_height;
+    }
+  }
+}
+
+LIBYUV_API
+void DetileToYUY2(const uint8_t* src_y,
+                      int src_stride_y,
+                      const uint8_t* src_uv,
+                      int src_stride_uv,
+                      uint8_t* dst_yuy2,
+                      int dst_stride_yuy2,
+                      int width,
+                      int height,
+                      int tile_height) {
+  const ptrdiff_t src_y_tile_stride = 16 * tile_height;
+  const ptrdiff_t src_uv_tile_stride = src_y_tile_stride / 2;
+  int y;
+  void (*DetileToYUY2)(const uint8_t* src_y, ptrdiff_t src_y_tile_stride,
+                         const uint8_t* src_uv, ptrdiff_t src_uv_tile_stride,
+                         uint8_t* dst_yuy2, int width) = DetileToYUY2_C;
+  assert(src_stride_y >= 0);
+  assert(src_stride_y > 0);
+  assert(src_stride_uv >= 0);
+  assert(src_stride_uv > 0);
+  assert(tile_height > 0);
+
+  if (width <= 0 || height == 0 || tile_height <= 0) {
+    return;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_yuy2 = dst_yuy2 + (height - 1) * dst_stride_yuy2;
+    dst_stride_yuy2 = -dst_stride_yuy2;
+  }
+
+#if defined(HAS_DETILETOYUY2_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    DetileToYUY2 = DetileToYUY2_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      DetileToYUY2 = DetileToYUY2_NEON;
+    }
+  }
+#endif
+
+  // Detile plane
+  for (y = 0; y < height; ++y) {
+    DetileToYUY2(src_y, src_y_tile_stride, src_uv, src_uv_tile_stride,
+                   dst_yuy2, width);
+    dst_yuy2 += dst_stride_yuy2;
+    src_y += 16;
+
+    if (y & 0x1) {
+      src_uv += 16;
+    }
+
+    // Advance to next row of tiles.
+    if ((y & (tile_height - 1)) == (tile_height - 1)) {
+      src_y = src_y - src_y_tile_stride + src_stride_y * tile_height;
+      src_uv = src_uv - src_uv_tile_stride + src_stride_uv * (tile_height / 2);
     }
   }
 }

@@ -798,6 +798,7 @@ static __inline int RGB2xToVJ(uint16_t r, uint16_t g, uint16_t b) {
 #endif
 
 MAKEROWYJ(ARGB, 2, 1, 0, 4)
+MAKEROWYJ(ABGR, 0, 1, 2, 4)
 MAKEROWYJ(RGBA, 3, 2, 1, 4)
 MAKEROWYJ(RGB24, 2, 1, 0, 3)
 MAKEROWYJ(RAW, 0, 1, 2, 3)
@@ -2744,6 +2745,27 @@ void DetileSplitUVRow_C(const uint8_t* src_uv,
   }
   if (width & 15) {
     SplitUVRow_C(src_uv, dst_u, dst_v, ((width & 15) + 1) / 2);
+  }
+}
+
+void DetileToYUY2_C(const uint8_t* src_y,
+                      ptrdiff_t src_y_tile_stride,
+                      const uint8_t* src_uv,
+                      ptrdiff_t src_uv_tile_stride,
+                      uint8_t* dst_yuy2,
+                      int width) {
+  for (int x = 0; x < width - 15; x += 16) {
+    for (int i = 0; i < 8; i++) {
+      dst_yuy2[0] = src_y[0];
+      dst_yuy2[1] = src_uv[0];
+      dst_yuy2[2] = src_y[1];
+      dst_yuy2[3] = src_uv[1];
+      dst_yuy2 += 4;
+      src_y += 2;
+      src_uv += 2;
+    }
+    src_y += src_y_tile_stride - 16;
+    src_uv += src_uv_tile_stride - 16;
   }
 }
 

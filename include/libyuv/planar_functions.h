@@ -105,6 +105,17 @@ void DetileSplitUVPlane(const uint8_t* src_uv,
                         int height,
                         int tile_height);
 
+// Convert a Y and UV plane of tiles into interlaced YUY2.
+void DetileToYUY2(const uint8_t* src_y,
+                  int src_stride_y,
+                  const uint8_t* src_uv,
+                  int src_stride_uv,
+                  uint8_t* dst_yuy2,
+                  int dst_stride_yuy2,
+                  int width,
+                  int height,
+                  int tile_height);
+
 // Split interleaved UV plane into separate U and V planes.
 LIBYUV_API
 void SplitUVPlane(const uint8_t* src_uv,
