@@ -262,10 +262,10 @@ int I210ToI420(const uint16_t* src_y,
                       height);
     ScalePlaneVertical_16To8(height, uv_width, uv_height, src_stride_u,
                              dst_stride_u, src_u, dst_u, 0, 32768, dy,
-                             /*wpp=*/1, scale, kFilterBilinear);
+                             /*bpp=*/1, scale, kFilterBilinear);
     ScalePlaneVertical_16To8(height, uv_width, uv_height, src_stride_v,
                              dst_stride_v, src_v, dst_v, 0, 32768, dy,
-                             /*wpp=*/1, scale, kFilterBilinear);
+                             /*bpp=*/1, scale, kFilterBilinear);
   }
   return 0;
 }

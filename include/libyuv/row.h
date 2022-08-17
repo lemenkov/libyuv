@@ -293,6 +293,7 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
 #define HAS_DETILEROW_SSE2
+#define HAS_DETILETOYUY2_SSE2
 #define HAS_DETILESPLITUVROW_SSSE3
 #define HAS_HALFMERGEUVROW_SSSE3
 #define HAS_I210TOAR30ROW_SSSE3
@@ -2048,18 +2049,30 @@ void DetileToYUY2_C(const uint8_t* src_y,
                       ptrdiff_t src_uv_tile_stride,
                       uint8_t* dst_yuy2,
                       int width);
+void DetileToYUY2_SSE2(const uint8_t* src_y,
+                       ptrdiff_t src_y_tile_stride,
+                       const uint8_t* src_uv,
+                       ptrdiff_t src_uv_tile_stride,
+                       uint8_t* dst_yuy2,
+                       int width);
+void DetileToYUY2_Any_SSE2(const uint8_t* src_y,
+                           ptrdiff_t src_y_tile_stride,
+                           const uint8_t* src_uv,
+                           ptrdiff_t src_uv_tile_stride,
+                           uint8_t* dst_yuy2,
+                           int width);
 void DetileToYUY2_NEON(const uint8_t* src_y,
-                         ptrdiff_t src_y_tile_stride,
-                         const uint8_t* src_uv,
-                         ptrdiff_t src_uv_tile_stride,
-                         uint8_t* dst_yuy2,
-                         int width);
+                       ptrdiff_t src_y_tile_stride,
+                       const uint8_t* src_uv,
+                       ptrdiff_t src_uv_tile_stride,
+                       uint8_t* dst_yuy2,
+                       int width);
 void DetileToYUY2_Any_NEON(const uint8_t* src_y,
-                             ptrdiff_t src_y_tile_stride,
-                             const uint8_t* src_uv,
-                             ptrdiff_t src_uv_tile_stride,
-                             uint8_t* dst_yuy2,
-                             int width);
+                           ptrdiff_t src_y_tile_stride,
+                           const uint8_t* src_uv,
+                           ptrdiff_t src_uv_tile_stride,
+                           uint8_t* dst_yuy2,
+                           int width);
 void MergeUVRow_C(const uint8_t* src_u,
                   const uint8_t* src_v,
                   uint8_t* dst_uv,

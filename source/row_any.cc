@@ -2272,6 +2272,10 @@ ANYDETILESPLITUV(DetileSplitUVRow_Any_SSSE3, DetileSplitUVRow_SSSE3, 15)
 ANYDETILEMERGE(DetileToYUY2_Any_NEON, DetileToYUY2_NEON, 15)
 #endif
 
+#ifdef HAS_DETILETOYUY2_SSE2
+ANYDETILEMERGE(DetileToYUY2_Any_SSE2, DetileToYUY2_SSE2, 15)
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

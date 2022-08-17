@@ -915,7 +915,7 @@ int NV21ToNV12(const uint8_t* src_y,
 // tile width is 16 and assumed.
 // tile_height is 16 or 32 for MM21.
 // src_stride_y is bytes per row of source ignoring tiling. e.g. 640
-// TODO(fbarchard): More detile row functions.
+// TODO: More detile row functions.
 
 LIBYUV_API
 void DetilePlane(const uint8_t* src_y,
@@ -1074,6 +1074,15 @@ void DetileToYUY2(const uint8_t* src_y,
   }
 #endif
 
+#if defined(HAS_DETILETOYUY2_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    DetileToYUY2 = DetileToYUY2_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      DetileToYUY2 = DetileToYUY2_SSE2;
+    }
+  }
+#endif
+
   // Detile plane
   for (y = 0; y < height; ++y) {
     DetileToYUY2(src_y, src_y_tile_stride, src_uv, src_uv_tile_stride,
@@ -1081,9 +1090,8 @@ void DetileToYUY2(const uint8_t* src_y,
     dst_yuy2 += dst_stride_yuy2;
     src_y += 16;
 
-    if (y & 0x1) {
+    if (y & 0x1)
       src_uv += 16;
-    }
 
     // Advance to next row of tiles.
     if ((y & (tile_height - 1)) == (tile_height - 1)) {
