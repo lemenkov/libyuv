@@ -1824,6 +1824,11 @@ void RGBAToUVRow_C(const uint8_t* src_rgb,
                    uint8_t* dst_u,
                    uint8_t* dst_v,
                    int width);
+void RGBAToUVJRow_C(const uint8_t* src_rgb,
+                    int src_stride_rgb,
+                    uint8_t* dst_u,
+                    uint8_t* dst_v,
+                    int width);
 void RGB24ToUVRow_C(const uint8_t* src_rgb,
                     int src_stride_rgb,
                     uint8_t* dst_u,
@@ -2044,11 +2049,11 @@ void DetileSplitUVRow_Any_NEON(const uint8_t* src_uv,
                                uint8_t* dst_v,
                                int width);
 void DetileToYUY2_C(const uint8_t* src_y,
-                      ptrdiff_t src_y_tile_stride,
-                      const uint8_t* src_uv,
-                      ptrdiff_t src_uv_tile_stride,
-                      uint8_t* dst_yuy2,
-                      int width);
+                    ptrdiff_t src_y_tile_stride,
+                    const uint8_t* src_uv,
+                    ptrdiff_t src_uv_tile_stride,
+                    uint8_t* dst_yuy2,
+                    int width);
 void DetileToYUY2_SSE2(const uint8_t* src_y,
                        ptrdiff_t src_y_tile_stride,
                        const uint8_t* src_uv,
@@ -5607,6 +5612,17 @@ void GaussCol_F32_C(const float* src0,
                     const float* src4,
                     float* dst,
                     int width);
+
+void GaussRow_C(const uint32_t* src, uint16_t* dst, int width);
+void GaussCol_C(const uint16_t* src0,
+                const uint16_t* src1,
+                const uint16_t* src2,
+                const uint16_t* src3,
+                const uint16_t* src4,
+                uint32_t* dst,
+                int width);
+
+void ClampFloatToZero_SSE2(const float* src_x, float* dst_y, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

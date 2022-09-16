@@ -1866,7 +1866,7 @@ int ARGBToJ420(const uint8_t* src_argb,
                int height) {
   int y;
   void (*ARGBToUVJRow)(const uint8_t* src_argb0, int src_stride_argb,
-                      uint8_t* dst_uj, uint8_t* dst_vj, int width) =
+                       uint8_t* dst_uj, uint8_t* dst_vj, int width) =
       ARGBToUVJRow_C;
   void (*ARGBToYJRow)(const uint8_t* src_argb, uint8_t* dst_yj, int width) =
       ARGBToYJRow_C;
@@ -2238,7 +2238,7 @@ int ABGRToJ420(const uint8_t* src_abgr,
                int height) {
   int y;
   void (*ABGRToUVJRow)(const uint8_t* src_abgr0, int src_stride_abgr,
-                      uint8_t* dst_uj, uint8_t* dst_vj, int width) =
+                       uint8_t* dst_uj, uint8_t* dst_vj, int width) =
       ABGRToUVJRow_C;
   void (*ABGRToYJRow)(const uint8_t* src_abgr, uint8_t* dst_yj, int width) =
       ABGRToYJRow_C;
@@ -2804,8 +2804,8 @@ int RAWToJNV21(const uint8_t* src_raw,
     uint8_t* row_vj = row_uj + ((halfwidth + 31) & ~31);
 #if !defined(HAS_RAWTOYJROW)
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 31) & ~31;
-    align_buffer_64(row, kRowSize * 2);
+    const int row_size = (width * 4 + 31) & ~31;
+    align_buffer_64(row, row_size * 2);
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
@@ -2816,11 +2816,11 @@ int RAWToJNV21(const uint8_t* src_raw,
       RAWToYJRow(src_raw + src_stride_raw, dst_y + dst_stride_y, width);
 #else
       RAWToARGBRow(src_raw, row, width);
-      RAWToARGBRow(src_raw + src_stride_raw, row + kRowSize, width);
-      ARGBToUVJRow(row, kRowSize, row_uj, row_vj, width);
+      RAWToARGBRow(src_raw + src_stride_raw, row + row_size, width);
+      ARGBToUVJRow(row, row_size, row_uj, row_vj, width);
       MergeUVRow_(row_vj, row_uj, dst_vu, halfwidth);
       ARGBToYJRow(row, dst_y, width);
-      ARGBToYJRow(row + kRowSize, dst_y + dst_stride_y, width);
+      ARGBToYJRow(row + row_size, dst_y + dst_stride_y, width);
 #endif
       src_raw += src_stride_raw * 2;
       dst_y += dst_stride_y * 2;

@@ -1315,11 +1315,11 @@ void ScalePlaneBilinearUp(int src_width,
     const uint8_t* src = src_ptr + yi * (int64_t)src_stride;
 
     // Allocate 2 row buffers.
-    const int kRowSize = (dst_width + 31) & ~31;
-    align_buffer_64(row, kRowSize * 2);
+    const int row_size = (dst_width + 31) & ~31;
+    align_buffer_64(row, row_size * 2);
 
     uint8_t* rowptr = row;
-    int rowstride = kRowSize;
+    int rowstride = row_size;
     int lasty = yi;
 
     ScaleFilterCols(rowptr, src, dst_width, x, dx);
@@ -1766,11 +1766,11 @@ void ScalePlaneBilinearUp_16(int src_width,
     const uint16_t* src = src_ptr + yi * (int64_t)src_stride;
 
     // Allocate 2 row buffers.
-    const int kRowSize = (dst_width + 31) & ~31;
-    align_buffer_64(row, kRowSize * 4);
+    const int row_size = (dst_width + 31) & ~31;
+    align_buffer_64(row, row_size * 4);
 
     uint16_t* rowptr = (uint16_t*)row;
-    int rowstride = kRowSize;
+    int rowstride = row_size;
     int lasty = yi;
 
     ScaleFilterCols(rowptr, src, dst_width, x, dx);

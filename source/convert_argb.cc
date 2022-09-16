@@ -7,8 +7,10 @@
  *  in the file PATENTS. All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #include "libyuv/convert_argb.h"
 
+#include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
@@ -5497,22 +5499,22 @@ static int I420ToARGBMatrixBilinear(const uint8_t* src_y,
 #endif
 
   // alloc 4 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 4);
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 4);
   uint8_t* temp_u_1 = row;
-  uint8_t* temp_u_2 = row + kRowSize;
-  uint8_t* temp_v_1 = row + kRowSize * 2;
-  uint8_t* temp_v_2 = row + kRowSize * 3;
+  uint8_t* temp_u_2 = row + row_size;
+  uint8_t* temp_v_1 = row + row_size * 2;
+  uint8_t* temp_v_2 = row + row_size * 3;
 
-  Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-  Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+  Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+  Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
   I444ToARGBRow(src_y, temp_u_1, temp_v_1, dst_argb, yuvconstants, width);
   dst_argb += dst_stride_argb;
   src_y += src_stride_y;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_u, src_stride_u, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, src_stride_v, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, src_stride_u, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, src_stride_v, temp_v_1, row_size, width);
     I444ToARGBRow(src_y, temp_u_1, temp_v_1, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
@@ -5524,8 +5526,8 @@ static int I420ToARGBMatrixBilinear(const uint8_t* src_y,
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
     I444ToARGBRow(src_y, temp_u_1, temp_v_1, dst_argb, yuvconstants, width);
   }
 
@@ -5622,10 +5624,10 @@ static int I422ToARGBMatrixLinear(const uint8_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2);
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 2);
   uint8_t* temp_u = row;
-  uint8_t* temp_v = row + kRowSize;
+  uint8_t* temp_v = row + row_size;
 
   for (y = 0; y < height; ++y) {
     ScaleRowUp(src_u, temp_u, width);
@@ -5635,6 +5637,188 @@ static int I422ToARGBMatrixLinear(const uint8_t* src_y,
     src_y += src_stride_y;
     src_u += src_stride_u;
     src_v += src_stride_v;
+  }
+
+  free_aligned_buffer_64(row);
+  return 0;
+}
+
+static int I420ToRGB24MatrixBilinear(const uint8_t* src_y,
+                                     int src_stride_y,
+                                     const uint8_t* src_u,
+                                     int src_stride_u,
+                                     const uint8_t* src_v,
+                                     int src_stride_v,
+                                     uint8_t* dst_rgb24,
+                                     int dst_stride_rgb24,
+                                     const struct YuvConstants* yuvconstants,
+                                     int width,
+                                     int height) {
+  int y;
+  void (*I444ToARGBRow)(const uint8_t* y_buf, const uint8_t* u_buf,
+                        const uint8_t* v_buf, uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants, int width) =
+      I444ToARGBRow_C;
+  void (*ARGBToRGB24Row)(const uint8_t* src_argb, uint8_t* dst_rgb, int width) =
+      ARGBToRGB24Row_C;
+  void (*Scale2RowUp)(const uint8_t* src_ptr, ptrdiff_t src_stride,
+                      uint8_t* dst_ptr, ptrdiff_t dst_stride, int dst_width) =
+      ScaleRowUp2_Bilinear_Any_C;
+  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_stride_rgb24 = -dst_stride_rgb24;
+  }
+#if defined(HAS_I444TOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I444ToARGBRow = I444ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I444ToARGBRow = I444ToARGBRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I444TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I444ToARGBRow = I444ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I444ToARGBRow = I444ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I444TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I444ToARGBRow = I444ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I444ToARGBRow = I444ToARGBRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_I444TOARGBROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    I444ToARGBRow = I444ToARGBRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      I444ToARGBRow = I444ToARGBRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_I444TOARGBROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    I444ToARGBRow = I444ToARGBRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      I444ToARGBRow = I444ToARGBRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_AVX512VBMI;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_AVX512VBMI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_LASX;
+    }
+  }
+#endif
+// TODO: Fix HAS macros to match function names
+#if defined(HAS_SCALEROWUP2_LINEAR_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_Any_SSE2;
+  }
+#endif
+#if defined(HAS_SCALEROWUP2_LINEAR_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_Any_SSSE3;
+  }
+#endif
+#if defined(HAS_SCALEROWUP2_LINEAR_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_Any_AVX2;
+  }
+#endif
+#if defined(HAS_SCALEROWUP2_LINEAR_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_Any_NEON;
+  }
+#endif
+
+  // alloc 4 lines temp
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 8);
+  uint8_t* temp_u_1 = row;
+  uint8_t* temp_u_2 = row + row_size;
+  uint8_t* temp_v_1 = row + row_size * 2;
+  uint8_t* temp_v_2 = row + row_size * 3;
+  uint8_t* temp_argb = row + row_size * 4;
+
+  Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+  Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
+  I444ToARGBRow(src_y, temp_u_1, temp_v_1, temp_argb, yuvconstants, width);
+  ARGBToRGB24Row(temp_argb, dst_rgb24, width);
+  dst_rgb24 += dst_stride_rgb24;
+  src_y += src_stride_y;
+
+  for (y = 0; y < height - 2; y += 2) {
+    Scale2RowUp(src_u, src_stride_u, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, src_stride_v, temp_v_1, row_size, width);
+    I444ToARGBRow(src_y, temp_u_1, temp_v_1, temp_argb, yuvconstants, width);
+    ARGBToRGB24Row(temp_argb, dst_rgb24, width);
+    dst_rgb24 += dst_stride_rgb24;
+    src_y += src_stride_y;
+    I444ToARGBRow(src_y, temp_u_2, temp_v_2, temp_argb, yuvconstants, width);
+    ARGBToRGB24Row(temp_argb, dst_rgb24, width);
+    dst_rgb24 += dst_stride_rgb24;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+
+  if (!(height & 1)) {
+    Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
+    I444ToARGBRow(src_y, temp_u_1, temp_v_1, temp_argb, yuvconstants, width);
+    ARGBToRGB24Row(temp_argb, dst_rgb24, width);
   }
 
   free_aligned_buffer_64(row);
@@ -5705,22 +5889,22 @@ static int I010ToAR30MatrixBilinear(const uint16_t* src_y,
 #endif
 
   // alloc 4 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 4 * sizeof(uint16_t));
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 4 * sizeof(uint16_t));
   uint16_t* temp_u_1 = (uint16_t*)(row);
-  uint16_t* temp_u_2 = (uint16_t*)(row) + kRowSize;
-  uint16_t* temp_v_1 = (uint16_t*)(row) + kRowSize * 2;
-  uint16_t* temp_v_2 = (uint16_t*)(row) + kRowSize * 3;
+  uint16_t* temp_u_2 = (uint16_t*)(row) + row_size;
+  uint16_t* temp_v_1 = (uint16_t*)(row) + row_size * 2;
+  uint16_t* temp_v_2 = (uint16_t*)(row) + row_size * 3;
 
-  Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-  Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+  Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+  Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
   I410ToAR30Row(src_y, temp_u_1, temp_v_1, dst_ar30, yuvconstants, width);
   dst_ar30 += dst_stride_ar30;
   src_y += src_stride_y;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_u, src_stride_u, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, src_stride_v, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, src_stride_u, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, src_stride_v, temp_v_1, row_size, width);
     I410ToAR30Row(src_y, temp_u_1, temp_v_1, dst_ar30, yuvconstants, width);
     dst_ar30 += dst_stride_ar30;
     src_y += src_stride_y;
@@ -5732,8 +5916,8 @@ static int I010ToAR30MatrixBilinear(const uint16_t* src_y,
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
     I410ToAR30Row(src_y, temp_u_1, temp_v_1, dst_ar30, yuvconstants, width);
   }
 
@@ -5803,10 +5987,10 @@ static int I210ToAR30MatrixLinear(const uint16_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2 * sizeof(uint16_t));
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 2 * sizeof(uint16_t));
   uint16_t* temp_u = (uint16_t*)(row);
-  uint16_t* temp_v = (uint16_t*)(row) + kRowSize;
+  uint16_t* temp_v = (uint16_t*)(row) + row_size;
 
   for (y = 0; y < height; ++y) {
     ScaleRowUp(src_u, temp_u, width);
@@ -5885,22 +6069,22 @@ static int I010ToARGBMatrixBilinear(const uint16_t* src_y,
 #endif
 
   // alloc 4 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 4 * sizeof(uint16_t));
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 4 * sizeof(uint16_t));
   uint16_t* temp_u_1 = (uint16_t*)(row);
-  uint16_t* temp_u_2 = (uint16_t*)(row) + kRowSize;
-  uint16_t* temp_v_1 = (uint16_t*)(row) + kRowSize * 2;
-  uint16_t* temp_v_2 = (uint16_t*)(row) + kRowSize * 3;
+  uint16_t* temp_u_2 = (uint16_t*)(row) + row_size;
+  uint16_t* temp_v_1 = (uint16_t*)(row) + row_size * 2;
+  uint16_t* temp_v_2 = (uint16_t*)(row) + row_size * 3;
 
-  Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-  Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+  Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+  Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
   I410ToARGBRow(src_y, temp_u_1, temp_v_1, dst_argb, yuvconstants, width);
   dst_argb += dst_stride_argb;
   src_y += src_stride_y;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_u, src_stride_u, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, src_stride_v, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, src_stride_u, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, src_stride_v, temp_v_1, row_size, width);
     I410ToARGBRow(src_y, temp_u_1, temp_v_1, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
@@ -5912,8 +6096,8 @@ static int I010ToARGBMatrixBilinear(const uint16_t* src_y,
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
     I410ToARGBRow(src_y, temp_u_1, temp_v_1, dst_argb, yuvconstants, width);
   }
 
@@ -5982,10 +6166,10 @@ static int I210ToARGBMatrixLinear(const uint16_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2 * sizeof(uint16_t));
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 2 * sizeof(uint16_t));
   uint16_t* temp_u = (uint16_t*)(row);
-  uint16_t* temp_v = (uint16_t*)(row) + kRowSize;
+  uint16_t* temp_v = (uint16_t*)(row) + row_size;
 
   for (y = 0; y < height; ++y) {
     ScaleRowUp(src_u, temp_u, width);
@@ -6134,15 +6318,15 @@ static int I420AlphaToARGBMatrixBilinear(
 #endif
 
   // alloc 4 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 4);
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 4);
   uint8_t* temp_u_1 = row;
-  uint8_t* temp_u_2 = row + kRowSize;
-  uint8_t* temp_v_1 = row + kRowSize * 2;
-  uint8_t* temp_v_2 = row + kRowSize * 3;
+  uint8_t* temp_u_2 = row + row_size;
+  uint8_t* temp_v_1 = row + row_size * 2;
+  uint8_t* temp_v_2 = row + row_size * 3;
 
-  Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-  Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+  Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+  Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
   I444AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                      width);
   if (attenuate) {
@@ -6153,8 +6337,8 @@ static int I420AlphaToARGBMatrixBilinear(
   src_a += src_stride_a;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_u, src_stride_u, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, src_stride_v, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, src_stride_u, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, src_stride_v, temp_v_1, row_size, width);
     I444AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                        width);
     if (attenuate) {
@@ -6176,8 +6360,8 @@ static int I420AlphaToARGBMatrixBilinear(
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
     I444AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                        width);
     if (attenuate) {
@@ -6317,10 +6501,10 @@ static int I422AlphaToARGBMatrixLinear(const uint8_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2);
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 2);
   uint8_t* temp_u = row;
-  uint8_t* temp_v = row + kRowSize;
+  uint8_t* temp_v = row + row_size;
 
   for (y = 0; y < height; ++y) {
     ScaleRowUp(src_u, temp_u, width);
@@ -6445,15 +6629,15 @@ static int I010AlphaToARGBMatrixBilinear(
 #endif
 
   // alloc 4 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 4 * sizeof(uint16_t));
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 4 * sizeof(uint16_t));
   uint16_t* temp_u_1 = (uint16_t*)(row);
-  uint16_t* temp_u_2 = (uint16_t*)(row) + kRowSize;
-  uint16_t* temp_v_1 = (uint16_t*)(row) + kRowSize * 2;
-  uint16_t* temp_v_2 = (uint16_t*)(row) + kRowSize * 3;
+  uint16_t* temp_u_2 = (uint16_t*)(row) + row_size;
+  uint16_t* temp_v_1 = (uint16_t*)(row) + row_size * 2;
+  uint16_t* temp_v_2 = (uint16_t*)(row) + row_size * 3;
 
-  Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-  Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+  Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+  Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
   I410AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                      width);
   if (attenuate) {
@@ -6464,8 +6648,8 @@ static int I010AlphaToARGBMatrixBilinear(
   src_a += src_stride_a;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_u, src_stride_u, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, src_stride_v, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, src_stride_u, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, src_stride_v, temp_v_1, row_size, width);
     I410AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                        width);
     if (attenuate) {
@@ -6487,8 +6671,8 @@ static int I010AlphaToARGBMatrixBilinear(
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_u, 0, temp_u_1, kRowSize, width);
-    Scale2RowUp(src_v, 0, temp_v_1, kRowSize, width);
+    Scale2RowUp(src_u, 0, temp_u_1, row_size, width);
+    Scale2RowUp(src_v, 0, temp_v_1, row_size, width);
     I410AlphaToARGBRow(src_y, temp_u_1, temp_v_1, src_a, dst_argb, yuvconstants,
                        width);
     if (attenuate) {
@@ -6600,10 +6784,10 @@ static int I210AlphaToARGBMatrixLinear(const uint16_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2 * sizeof(uint16_t));
+  const int row_size = (width + 31) & ~31;
+  align_buffer_64(row, row_size * 2 * sizeof(uint16_t));
   uint16_t* temp_u = (uint16_t*)(row);
-  uint16_t* temp_v = (uint16_t*)(row) + kRowSize;
+  uint16_t* temp_v = (uint16_t*)(row) + row_size;
 
   for (y = 0; y < height; ++y) {
     ScaleRowUp(src_u, temp_u, width);
@@ -6684,18 +6868,18 @@ static int P010ToARGBMatrixBilinear(const uint16_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (2 * width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2 * sizeof(uint16_t));
+  const int row_size = (2 * width + 31) & ~31;
+  align_buffer_64(row, row_size * 2 * sizeof(uint16_t));
   uint16_t* temp_uv_1 = (uint16_t*)(row);
-  uint16_t* temp_uv_2 = (uint16_t*)(row) + kRowSize;
+  uint16_t* temp_uv_2 = (uint16_t*)(row) + row_size;
 
-  Scale2RowUp(src_uv, 0, temp_uv_1, kRowSize, width);
+  Scale2RowUp(src_uv, 0, temp_uv_1, row_size, width);
   P410ToARGBRow(src_y, temp_uv_1, dst_argb, yuvconstants, width);
   dst_argb += dst_stride_argb;
   src_y += src_stride_y;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_uv, src_stride_uv, temp_uv_1, kRowSize, width);
+    Scale2RowUp(src_uv, src_stride_uv, temp_uv_1, row_size, width);
     P410ToARGBRow(src_y, temp_uv_1, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
@@ -6706,7 +6890,7 @@ static int P010ToARGBMatrixBilinear(const uint16_t* src_y,
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_uv, 0, temp_uv_1, kRowSize, width);
+    Scale2RowUp(src_uv, 0, temp_uv_1, row_size, width);
     P410ToARGBRow(src_y, temp_uv_1, dst_argb, yuvconstants, width);
   }
 
@@ -6773,8 +6957,8 @@ static int P210ToARGBMatrixLinear(const uint16_t* src_y,
   }
 #endif
 
-  const int kRowSize = (2 * width + 31) & ~31;
-  align_buffer_64(row, kRowSize * sizeof(uint16_t));
+  const int row_size = (2 * width + 31) & ~31;
+  align_buffer_64(row, row_size * sizeof(uint16_t));
   uint16_t* temp_uv = (uint16_t*)(row);
 
   for (y = 0; y < height; ++y) {
@@ -6850,18 +7034,18 @@ static int P010ToAR30MatrixBilinear(const uint16_t* src_y,
 #endif
 
   // alloc 2 lines temp
-  const int kRowSize = (2 * width + 31) & ~31;
-  align_buffer_64(row, kRowSize * 2 * sizeof(uint16_t));
+  const int row_size = (2 * width + 31) & ~31;
+  align_buffer_64(row, row_size * 2 * sizeof(uint16_t));
   uint16_t* temp_uv_1 = (uint16_t*)(row);
-  uint16_t* temp_uv_2 = (uint16_t*)(row) + kRowSize;
+  uint16_t* temp_uv_2 = (uint16_t*)(row) + row_size;
 
-  Scale2RowUp(src_uv, 0, temp_uv_1, kRowSize, width);
+  Scale2RowUp(src_uv, 0, temp_uv_1, row_size, width);
   P410ToAR30Row(src_y, temp_uv_1, dst_ar30, yuvconstants, width);
   dst_ar30 += dst_stride_ar30;
   src_y += src_stride_y;
 
   for (y = 0; y < height - 2; y += 2) {
-    Scale2RowUp(src_uv, src_stride_uv, temp_uv_1, kRowSize, width);
+    Scale2RowUp(src_uv, src_stride_uv, temp_uv_1, row_size, width);
     P410ToAR30Row(src_y, temp_uv_1, dst_ar30, yuvconstants, width);
     dst_ar30 += dst_stride_ar30;
     src_y += src_stride_y;
@@ -6872,7 +7056,7 @@ static int P010ToAR30MatrixBilinear(const uint16_t* src_y,
   }
 
   if (!(height & 1)) {
-    Scale2RowUp(src_uv, 0, temp_uv_1, kRowSize, width);
+    Scale2RowUp(src_uv, 0, temp_uv_1, row_size, width);
     P410ToAR30Row(src_y, temp_uv_1, dst_ar30, yuvconstants, width);
   }
 
@@ -6939,8 +7123,8 @@ static int P210ToAR30MatrixLinear(const uint16_t* src_y,
   }
 #endif
 
-  const int kRowSize = (2 * width + 31) & ~31;
-  align_buffer_64(row, kRowSize * sizeof(uint16_t));
+  const int row_size = (2 * width + 31) & ~31;
+  align_buffer_64(row, row_size * sizeof(uint16_t));
   uint16_t* temp_uv = (uint16_t*)(row);
 
   for (y = 0; y < height; ++y) {
@@ -7010,6 +7194,37 @@ int I422ToARGBMatrixFilter(const uint8_t* src_y,
       return I422ToARGBMatrixLinear(
           src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
           dst_argb, dst_stride_argb, yuvconstants, width, height);
+  }
+
+  return -1;
+}
+
+LIBYUV_API
+int I420ToRGB24MatrixFilter(const uint8_t* src_y,
+                            int src_stride_y,
+                            const uint8_t* src_u,
+                            int src_stride_u,
+                            const uint8_t* src_v,
+                            int src_stride_v,
+                            uint8_t* dst_rgb24,
+                            int dst_stride_rgb24,
+                            const struct YuvConstants* yuvconstants,
+                            int width,
+                            int height,
+                            enum FilterMode filter) {
+  switch (filter) {
+    case kFilterNone:
+      return I420ToRGB24Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                               src_stride_v, dst_rgb24, dst_stride_rgb24,
+                               yuvconstants, width, height);
+    case kFilterBilinear:
+    case kFilterBox:
+      return I420ToRGB24MatrixBilinear(
+          src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
+          dst_rgb24, dst_stride_rgb24, yuvconstants, width, height);
+    case kFilterLinear:
+      // TODO: Implement Linear using Bilinear with Scale2RowUp stride 0
+      return -1;
   }
 
   return -1;

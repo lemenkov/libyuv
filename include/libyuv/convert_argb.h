@@ -1975,6 +1975,21 @@ int I422ToARGBMatrixFilter(const uint8_t* src_y,
                            int height,
                            enum FilterMode filter);
 
+// Convert I420 to RGB24 with matrix and UV filter mode.
+LIBYUV_API
+int I420ToRGB24MatrixFilter(const uint8_t* src_y,
+                            int src_stride_y,
+                            const uint8_t* src_u,
+                            int src_stride_u,
+                            const uint8_t* src_v,
+                            int src_stride_v,
+                            uint8_t* dst_rgb24,
+                            int dst_stride_rgb24,
+                            const struct YuvConstants* yuvconstants,
+                            int width,
+                            int height,
+                            enum FilterMode filter);
+
 // Convert I010 to AR30 with matrix and UV filter mode.
 LIBYUV_API
 int I010ToAR30MatrixFilter(const uint16_t* src_y,

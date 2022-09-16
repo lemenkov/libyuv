@@ -4977,19 +4977,19 @@ void DetileToYUY2_SSE2(const uint8_t* src_y,
                        uint8_t* dst_yuy2,
                        int width) {
   asm volatile(
-      "1:                                       \n"
-      "movdqu     (%0),%%xmm0                   \n" // Load 16 Y
-      "sub        $0x10,%3                      \n"
-      "lea        (%0,%4),%0                    \n"
-      "movdqu     (%1),%%xmm1                   \n" // Load 8 UV
-      "lea        (%1,%5),%1                    \n"
-      "movdqu     %%xmm0,%%xmm2                 \n"
-      "punpcklbw  %%xmm1,%%xmm0                 \n"
-      "punpckhbw  %%xmm1,%%xmm2                 \n"
-      "movdqu     %%xmm0,(%2)                   \n"
-      "movdqu     %%xmm2,0x10(%2)               \n"
-      "lea        0x20(%2),%2                   \n"
-      "jg         1b                            \n"
+      "1:                                        \n"
+      "movdqu      (%0),%%xmm0                   \n"  // Load 16 Y
+      "sub         $0x10,%3                      \n"
+      "lea         (%0,%4),%0                    \n"
+      "movdqu      (%1),%%xmm1                   \n"  // Load 8 UV
+      "lea         (%1,%5),%1                    \n"
+      "movdqu      %%xmm0,%%xmm2                 \n"
+      "punpcklbw   %%xmm1,%%xmm0                 \n"
+      "punpckhbw   %%xmm1,%%xmm2                 \n"
+      "movdqu      %%xmm0,(%2)                   \n"
+      "movdqu      %%xmm2,0x10(%2)               \n"
+      "lea         0x20(%2),%2                   \n"
+      "jg          1b                            \n"
       : "+r"(src_y),                            // %0
         "+r"(src_uv),                           // %1
         "+r"(dst_yuy2),                         // %2

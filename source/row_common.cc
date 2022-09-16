@@ -2749,11 +2749,11 @@ void DetileSplitUVRow_C(const uint8_t* src_uv,
 }
 
 void DetileToYUY2_C(const uint8_t* src_y,
-                      ptrdiff_t src_y_tile_stride,
-                      const uint8_t* src_uv,
-                      ptrdiff_t src_uv_tile_stride,
-                      uint8_t* dst_yuy2,
-                      int width) {
+                    ptrdiff_t src_y_tile_stride,
+                    const uint8_t* src_uv,
+                    ptrdiff_t src_uv_tile_stride,
+                    uint8_t* dst_yuy2,
+                    int width) {
   for (int x = 0; x < width - 15; x += 16) {
     for (int i = 0; i < 8; i++) {
       dst_yuy2[0] = src_y[0];

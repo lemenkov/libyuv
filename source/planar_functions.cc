@@ -1035,20 +1035,20 @@ void DetileSplitUVPlane(const uint8_t* src_uv,
 
 LIBYUV_API
 void DetileToYUY2(const uint8_t* src_y,
-                      int src_stride_y,
-                      const uint8_t* src_uv,
-                      int src_stride_uv,
-                      uint8_t* dst_yuy2,
-                      int dst_stride_yuy2,
-                      int width,
-                      int height,
-                      int tile_height) {
+                  int src_stride_y,
+                  const uint8_t* src_uv,
+                  int src_stride_uv,
+                  uint8_t* dst_yuy2,
+                  int dst_stride_yuy2,
+                  int width,
+                  int height,
+                  int tile_height) {
   const ptrdiff_t src_y_tile_stride = 16 * tile_height;
   const ptrdiff_t src_uv_tile_stride = src_y_tile_stride / 2;
   int y;
   void (*DetileToYUY2)(const uint8_t* src_y, ptrdiff_t src_y_tile_stride,
-                         const uint8_t* src_uv, ptrdiff_t src_uv_tile_stride,
-                         uint8_t* dst_yuy2, int width) = DetileToYUY2_C;
+                       const uint8_t* src_uv, ptrdiff_t src_uv_tile_stride,
+                       uint8_t* dst_yuy2, int width) = DetileToYUY2_C;
   assert(src_stride_y >= 0);
   assert(src_stride_y > 0);
   assert(src_stride_uv >= 0);
@@ -1085,8 +1085,8 @@ void DetileToYUY2(const uint8_t* src_y,
 
   // Detile plane
   for (y = 0; y < height; ++y) {
-    DetileToYUY2(src_y, src_y_tile_stride, src_uv, src_uv_tile_stride,
-                   dst_yuy2, width);
+    DetileToYUY2(src_y, src_y_tile_stride, src_uv, src_uv_tile_stride, dst_yuy2,
+                 width);
     dst_yuy2 += dst_stride_yuy2;
     src_y += 16;
 
@@ -1224,18 +1224,18 @@ void MergeRGBPlane(const uint8_t* src_r,
 }
 
 LIBYUV_NOINLINE
-void SplitARGBPlaneAlpha(const uint8_t* src_argb,
-                         int src_stride_argb,
-                         uint8_t* dst_r,
-                         int dst_stride_r,
-                         uint8_t* dst_g,
-                         int dst_stride_g,
-                         uint8_t* dst_b,
-                         int dst_stride_b,
-                         uint8_t* dst_a,
-                         int dst_stride_a,
-                         int width,
-                         int height) {
+static void SplitARGBPlaneAlpha(const uint8_t* src_argb,
+                                int src_stride_argb,
+                                uint8_t* dst_r,
+                                int dst_stride_r,
+                                uint8_t* dst_g,
+                                int dst_stride_g,
+                                uint8_t* dst_b,
+                                int dst_stride_b,
+                                uint8_t* dst_a,
+                                int dst_stride_a,
+                                int width,
+                                int height) {
   int y;
   void (*SplitARGBRow)(const uint8_t* src_rgb, uint8_t* dst_r, uint8_t* dst_g,
                        uint8_t* dst_b, uint8_t* dst_a, int width) =
@@ -1295,16 +1295,16 @@ void SplitARGBPlaneAlpha(const uint8_t* src_argb,
 }
 
 LIBYUV_NOINLINE
-void SplitARGBPlaneOpaque(const uint8_t* src_argb,
-                          int src_stride_argb,
-                          uint8_t* dst_r,
-                          int dst_stride_r,
-                          uint8_t* dst_g,
-                          int dst_stride_g,
-                          uint8_t* dst_b,
-                          int dst_stride_b,
-                          int width,
-                          int height) {
+static void SplitARGBPlaneOpaque(const uint8_t* src_argb,
+                                 int src_stride_argb,
+                                 uint8_t* dst_r,
+                                 int dst_stride_r,
+                                 uint8_t* dst_g,
+                                 int dst_stride_g,
+                                 uint8_t* dst_b,
+                                 int dst_stride_b,
+                                 int width,
+                                 int height) {
   int y;
   void (*SplitXRGBRow)(const uint8_t* src_rgb, uint8_t* dst_r, uint8_t* dst_g,
                        uint8_t* dst_b, int width) = SplitXRGBRow_C;
@@ -1396,18 +1396,18 @@ void SplitARGBPlane(const uint8_t* src_argb,
 }
 
 LIBYUV_NOINLINE
-void MergeARGBPlaneAlpha(const uint8_t* src_r,
-                         int src_stride_r,
-                         const uint8_t* src_g,
-                         int src_stride_g,
-                         const uint8_t* src_b,
-                         int src_stride_b,
-                         const uint8_t* src_a,
-                         int src_stride_a,
-                         uint8_t* dst_argb,
-                         int dst_stride_argb,
-                         int width,
-                         int height) {
+static void MergeARGBPlaneAlpha(const uint8_t* src_r,
+                                int src_stride_r,
+                                const uint8_t* src_g,
+                                int src_stride_g,
+                                const uint8_t* src_b,
+                                int src_stride_b,
+                                const uint8_t* src_a,
+                                int src_stride_a,
+                                uint8_t* dst_argb,
+                                int dst_stride_argb,
+                                int width,
+                                int height) {
   int y;
   void (*MergeARGBRow)(const uint8_t* src_r, const uint8_t* src_g,
                        const uint8_t* src_b, const uint8_t* src_a,
@@ -1458,16 +1458,16 @@ void MergeARGBPlaneAlpha(const uint8_t* src_r,
 }
 
 LIBYUV_NOINLINE
-void MergeARGBPlaneOpaque(const uint8_t* src_r,
-                          int src_stride_r,
-                          const uint8_t* src_g,
-                          int src_stride_g,
-                          const uint8_t* src_b,
-                          int src_stride_b,
-                          uint8_t* dst_argb,
-                          int dst_stride_argb,
-                          int width,
-                          int height) {
+static void MergeARGBPlaneOpaque(const uint8_t* src_r,
+                                 int src_stride_r,
+                                 const uint8_t* src_g,
+                                 int src_stride_g,
+                                 const uint8_t* src_b,
+                                 int src_stride_b,
+                                 uint8_t* dst_argb,
+                                 int dst_stride_argb,
+                                 int width,
+                                 int height) {
   int y;
   void (*MergeXRGBRow)(const uint8_t* src_r, const uint8_t* src_g,
                        const uint8_t* src_b, uint8_t* dst_argb, int width) =
@@ -4545,16 +4545,16 @@ static int ARGBSobelize(const uint8_t* src_argb,
 #endif
   {
     // 3 rows with edges before/after.
-    const int kRowSize = (width + kEdge + 31) & ~31;
-    align_buffer_64(rows, kRowSize * 2 + (kEdge + kRowSize * 3 + kEdge));
+    const int row_size = (width + kEdge + 31) & ~31;
+    align_buffer_64(rows, row_size * 2 + (kEdge + row_size * 3 + kEdge));
     uint8_t* row_sobelx = rows;
-    uint8_t* row_sobely = rows + kRowSize;
-    uint8_t* row_y = rows + kRowSize * 2;
+    uint8_t* row_sobely = rows + row_size;
+    uint8_t* row_y = rows + row_size * 2;
 
     // Convert first row.
     uint8_t* row_y0 = row_y + kEdge;
-    uint8_t* row_y1 = row_y0 + kRowSize;
-    uint8_t* row_y2 = row_y1 + kRowSize;
+    uint8_t* row_y1 = row_y0 + row_size;
+    uint8_t* row_y2 = row_y1 + row_size;
     ARGBToYJRow(src_argb, row_y0, width);
     row_y0[-1] = row_y0[0];
     memset(row_y0 + width, row_y0[width - 1], 16);  // Extrude 16 for valgrind.
