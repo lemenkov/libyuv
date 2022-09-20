@@ -4052,30 +4052,6 @@ void I422ToARGB4444Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-// SSSE3 implemented in row_gcc.cc row_win.cc for 32 bit
-// For row_win Visual C (not clangcl)
-#if defined(HAS_I422TORGB24ROW_SSSE3) && defined(_M_X64) && !defined(__clang__)
-void I422ToRGB24Row_SSSE3(const uint8_t* src_y,
-                          const uint8_t* src_u,
-                          const uint8_t* src_v,
-                          uint8_t* dst_rgb24,
-                          const struct YuvConstants* yuvconstants,
-                          int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, yuvconstants, twidth);
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_rgb24 += twidth * 3;
-    width -= twidth;
-  }
-}
-#endif
-
 #if defined(HAS_I422TORGB24ROW_AVX2)
 void I422ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_u,
@@ -4096,29 +4072,6 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
-    dst_rgb24 += twidth * 3;
-    width -= twidth;
-  }
-}
-#endif
-
-// For row_win Visual C (not clangcl)
-#if defined(HAS_I444TORGB24ROW_SSSE3) && defined(_M_X64) && !defined(__clang__)
-void I444ToRGB24Row_SSSE3(const uint8_t* src_y,
-                          const uint8_t* src_u,
-                          const uint8_t* src_v,
-                          uint8_t* dst_rgb24,
-                          const struct YuvConstants* yuvconstants,
-                          int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I444ToARGBRow_SSSE3(src_y, src_u, src_v, row, yuvconstants, twidth);
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-    src_y += twidth;
-    src_u += twidth;
-    src_v += twidth;
     dst_rgb24 += twidth * 3;
     width -= twidth;
   }

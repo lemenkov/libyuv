@@ -2336,9 +2336,6 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "lea        0x8(%[y_buf]),%[y_buf]                          \n"
 
 // Read 4 UV from 422 10 bit, upsample to 8 UV
-// TODO(fbarchard): Consider shufb to replace pack/unpack
-// TODO(fbarchard): Consider pmulhuw to replace psraw
-// TODO(fbarchard): Consider pmullw to replace psllw and allow different bits.
 #define READYUV210                                                \
   "movq       (%[u_buf]),%%xmm3                               \n" \
   "movq       0x00(%[u_buf],%[v_buf],1),%%xmm1                \n" \
@@ -2350,7 +2347,7 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
   "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
-  "psraw      $4,%%xmm2                                       \n" \
+  "psrlw      $4,%%xmm2                                       \n" \
   "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
@@ -2365,7 +2362,7 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
   "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
-  "psraw      $4,%%xmm2                                       \n" \
+  "psrlw      $4,%%xmm2                                       \n" \
   "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n" \
   "movdqu     (%[a_buf]),%%xmm5                               \n" \
@@ -2387,7 +2384,7 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
   "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
-  "psraw      $4,%%xmm2                                       \n" \
+  "psrlw      $4,%%xmm2                                       \n" \
   "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
@@ -2405,7 +2402,7 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
   "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
-  "psraw      $4,%%xmm2                                       \n" \
+  "psrlw      $4,%%xmm2                                       \n" \
   "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n" \
   "movdqu     (%[a_buf]),%%xmm5                               \n" \
@@ -2424,8 +2421,8 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "punpcklwd  %%xmm3,%%xmm3                                   \n" \
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
   "movdqa     %%xmm4,%%xmm2                                   \n" \
-  "psllw      $6,%%xmm4                                       \n" \
-  "psraw      $4,%%xmm2                                       \n" \
+  "psllw      $4,%%xmm4                                       \n" \
+  "psrlw      $8,%%xmm2                                       \n" \
   "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
@@ -3448,7 +3445,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpunpcklwd %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
   "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
-  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpsrlw     $4,%%ymm4,%%ymm4                                 \n" \
   "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
@@ -3465,7 +3462,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpunpcklwd %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
   "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
-  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpsrlw     $4,%%ymm4,%%ymm4                                 \n" \
   "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n" \
   "vmovdqu    (%[a_buf]),%%ymm5                                \n" \
@@ -3485,7 +3482,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb  %%ymm1,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
   "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
-  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpsrlw     $4,%%ymm4,%%ymm4                                 \n" \
   "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
@@ -3502,7 +3499,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpunpcklwd %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
   "vpsllw     $4,%%ymm4,%%ymm2                                 \n" \
-  "vpsraw     $8,%%ymm4,%%ymm4                                 \n" \
+  "vpsrlw     $8,%%ymm4,%%ymm4                                 \n" \
   "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
@@ -3518,7 +3515,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb  %%ymm1,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
   "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
-  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpsrlw     $4,%%ymm4,%%ymm4                                 \n" \
   "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n" \
   "vmovdqu    (%[a_buf]),%%ymm5                                \n" \
