@@ -2348,7 +2348,10 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "packuswb   %%xmm3,%%xmm3                                   \n" \
   "punpcklwd  %%xmm3,%%xmm3                                   \n" \
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
+  "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
+  "psraw      $4,%%xmm2                                       \n" \
+  "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
 #define READYUVA210                                               \
@@ -2360,7 +2363,10 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "packuswb   %%xmm3,%%xmm3                                   \n" \
   "punpcklwd  %%xmm3,%%xmm3                                   \n" \
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
+  "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
+  "psraw      $4,%%xmm2                                       \n" \
+  "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n" \
   "movdqu     (%[a_buf]),%%xmm5                               \n" \
   "psraw      $2,%%xmm5                                       \n" \
@@ -2379,7 +2385,10 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "punpckhwd  %%xmm2,%%xmm1                                   \n" \
   "packuswb   %%xmm1,%%xmm3                                   \n" \
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
+  "movdqa     %%xmm4,%%xmm2                                   \n" \
   "psllw      $6,%%xmm4                                       \n" \
+  "psraw      $4,%%xmm2                                       \n" \
+  "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
 // Read 8 UV from 444 10 bit.  With 8 Alpha.
@@ -2394,7 +2403,10 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "punpckhwd  %%xmm2,%%xmm1                                   \n" \
   "packuswb   %%xmm1,%%xmm3                                   \n" \
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
-  "psllw      $0x6,%%xmm4                                     \n" \
+  "movdqa     %%xmm4,%%xmm2                                   \n" \
+  "psllw      $6,%%xmm4                                       \n" \
+  "psraw      $4,%%xmm2                                       \n" \
+  "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n" \
   "movdqu     (%[a_buf]),%%xmm5                               \n" \
   "psraw      $2,%%xmm5                                       \n" \
@@ -2411,7 +2423,10 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "packuswb   %%xmm3,%%xmm3                                   \n" \
   "punpcklwd  %%xmm3,%%xmm3                                   \n" \
   "movdqu     (%[y_buf]),%%xmm4                               \n" \
-  "psllw      $0x4,%%xmm4                                     \n" \
+  "movdqa     %%xmm4,%%xmm2                                   \n" \
+  "psllw      $6,%%xmm4                                       \n" \
+  "psraw      $4,%%xmm2                                       \n" \
+  "paddw      %%xmm2,%%xmm4                                   \n" \
   "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
@@ -3432,7 +3447,9 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb  %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vpunpcklwd %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
-  "vpsllw     $6,%%ymm4,%%ymm4                                 \n" \
+  "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
+  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
 // Read 8 UV from 210, upsample to 16 UV. With 16 Alpha.
@@ -3447,7 +3464,9 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb  %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vpunpcklwd %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
-  "vpsllw     $6,%%ymm4,%%ymm4                                 \n" \
+  "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
+  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n" \
   "vmovdqu    (%[a_buf]),%%ymm5                                \n" \
   "vpsraw     $2,%%ymm5,%%ymm5                                 \n" \
@@ -3465,7 +3484,9 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpunpcklwd %%ymm2,%%ymm3,%%ymm3                             \n" \
   "vpackuswb  %%ymm1,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
-  "vpsllw     $6,%%ymm4,%%ymm4                                 \n" \
+  "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
+  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
 // Read 8 UV from 212 12 bit, upsample to 16 UV
@@ -3480,7 +3501,9 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpackuswb  %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vpunpcklwd %%ymm3,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
-  "vpsllw     $0x4,%%ymm4,%%ymm4                               \n" \
+  "vpsllw     $4,%%ymm4,%%ymm2                                 \n" \
+  "vpsraw     $8,%%ymm4,%%ymm4                                 \n" \
+  "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
 // Read 16 UV from 410. With 16 Alpha.
@@ -3494,7 +3517,9 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpunpcklwd %%ymm2,%%ymm3,%%ymm3                             \n" \
   "vpackuswb  %%ymm1,%%ymm3,%%ymm3                             \n" \
   "vmovdqu    (%[y_buf]),%%ymm4                                \n" \
-  "vpsllw     $6,%%ymm4,%%ymm4                                 \n" \
+  "vpsllw     $6,%%ymm4,%%ymm2                                 \n" \
+  "vpsraw     $4,%%ymm4,%%ymm4                                 \n" \
+  "vpaddw     %%ymm2,%%ymm4,%%ymm4                             \n" \
   "lea        0x20(%[y_buf]),%[y_buf]                          \n" \
   "vmovdqu    (%[a_buf]),%%ymm5                                \n" \
   "vpsraw     $2,%%ymm5,%%ymm5                                 \n" \
