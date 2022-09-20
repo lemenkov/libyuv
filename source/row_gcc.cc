@@ -2582,6 +2582,20 @@ void RGBAToUVRow_SSSE3(const uint8_t* src_rgba,
   "movdqu    %%xmm0,0x10(%[dst_rgba])                          \n" \
   "lea       0x20(%[dst_rgba]),%[dst_rgba]                     \n"
 
+// Store 8 RGB24 values.
+#define STORERGB24                                                      \
+  "punpcklbw   %%xmm1,%%xmm0                                        \n" \
+  "punpcklbw   %%xmm2,%%xmm2                                        \n" \
+  "movdqa      %%xmm0,%%xmm1                                        \n" \
+  "punpcklwd   %%xmm2,%%xmm0                                        \n" \
+  "punpckhwd   %%xmm2,%%xmm1                                        \n" \
+  "pshufb      %%xmm5,%%xmm0                                        \n" \
+  "pshufb      %%xmm6,%%xmm1                                        \n" \
+  "palignr     $0xc,%%xmm0,%%xmm1                                   \n" \
+  "movq        %%xmm0,(%[dst_rgb24])                                \n" \
+  "movdqu      %%xmm1,0x8(%[dst_rgb24])                             \n" \
+  "lea         0x18(%[dst_rgb24]),%[dst_rgb24]                      \n"
+
 // Store 8 AR30 values.
 #define STOREAR30                                                  \
   "psraw      $0x4,%%xmm0                                      \n" \
@@ -2691,17 +2705,43 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8_t* y_buf,
       "1:                                        \n"
     READYUV422
     YUVTORGB(yuvconstants)
-      "punpcklbw   %%xmm1,%%xmm0                 \n"
-      "punpcklbw   %%xmm2,%%xmm2                 \n"
-      "movdqa      %%xmm0,%%xmm1                 \n"
-      "punpcklwd   %%xmm2,%%xmm0                 \n"
-      "punpckhwd   %%xmm2,%%xmm1                 \n"
-      "pshufb      %%xmm5,%%xmm0                 \n"
-      "pshufb      %%xmm6,%%xmm1                 \n"
-      "palignr     $0xc,%%xmm0,%%xmm1            \n"
-      "movq        %%xmm0,(%[dst_rgb24])         \n"
-      "movdqu      %%xmm1,0x8(%[dst_rgb24])      \n"
-      "lea         0x18(%[dst_rgb24]),%[dst_rgb24] \n"
+    STORERGB24
+      "subl        $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
+#if defined(__i386__)
+    [width]"+m"(width)     // %[width]
+#else
+    [width]"+rm"(width)    // %[width]
+#endif
+  : [yuvconstants]"r"(yuvconstants),  // %[yuvconstants]
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
+    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
+  : "memory", "cc", YUVTORGB_REGS
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+  );
+}
+
+void OMITFP I444ToRGB24Row_SSSE3(const uint8_t* y_buf,
+                                 const uint8_t* u_buf,
+                                 const uint8_t* v_buf,
+                                 uint8_t* dst_rgb24,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width) {
+  asm volatile (
+    YUVTORGB_SETUP(yuvconstants)
+      "movdqa      %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
+      "movdqa      %[kShuffleMaskARGBToRGB24],%%xmm6 \n"
+      "sub         %[u_buf],%[v_buf]             \n"
+
+    LABELALIGN
+      "1:                                        \n"
+    READYUV444
+    YUVTORGB(yuvconstants)
+    STORERGB24
       "subl        $0x8,%[width]                 \n"
       "jg          1b                            \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
