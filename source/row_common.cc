@@ -22,13 +22,9 @@ extern "C" {
 #endif
 
 // This macro controls YUV to RGB using unsigned math to extend range of
-// YUV to RGB coefficients to 0 to 4 instead of 0 to 2 for more accuracy on B:
-// LIBYUV_UNLIMITED_DATA
-
-// Macros to enable unlimited data for each colorspace
-// LIBYUV_UNLIMITED_BT601
-// LIBYUV_UNLIMITED_BT709
-// LIBYUV_UNLIMITED_BT2020
+// YUV to RGB coefficients to 0 to 4 instead of 0 to 2 for more accuracy on B.
+// Enable this macro for backwards compatiability with limited range 0 to 2.
+// LIBYUV_LIMITED_DATA
 
 // The following macro from row_win makes the C code match the row_win code,
 // which is 7 bit fixed point for ARGBToI420:
@@ -1484,7 +1480,7 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 // KR = 0.299; KB = 0.114
 
 // U and V contributions to R,G,B.
-#if defined(LIBYUV_UNLIMITED_DATA) || defined(LIBYUV_UNLIMITED_BT601)
+#if !defined(LIBYUV_LIMITED_DATA)
 #define UB 129 /* round(2.018 * 64) */
 #else
 #define UB 128 /* max(128, round(2.018 * 64)) */
@@ -1538,7 +1534,7 @@ MAKEYUVCONSTANTS(JPEG, YG, YB, UB, UG, VG, VR)
 //  KR = 0.2126, KB = 0.0722
 
 // U and V contributions to R,G,B.
-#if defined(LIBYUV_UNLIMITED_DATA) || defined(LIBYUV_UNLIMITED_BT709)
+#if !defined(LIBYUV_LIMITED_DATA)
 #define UB 135 /* round(2.112 * 64) */
 #else
 #define UB 128 /* max(128, round(2.112 * 64)) */
@@ -1592,7 +1588,7 @@ MAKEYUVCONSTANTS(F709, YG, YB, UB, UG, VG, VR)
 // KR = 0.2627; KB = 0.0593
 
 // U and V contributions to R,G,B.
-#if defined(LIBYUV_UNLIMITED_DATA) || defined(LIBYUV_UNLIMITED_BT2020)
+#if !defined(LIBYUV_LIMITED_DATA)
 #define UB 137 /* round(2.142 * 64) */
 #else
 #define UB 128 /* max(128, round(2.142 * 64)) */
