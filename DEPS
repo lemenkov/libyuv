@@ -2347,18 +2347,6 @@ hooks = [
     ],
   },
   {
-    # We used to use src as a CIPD root. We moved it to a different directory
-    # in crrev.com/c/930178 but left the clobber here to ensure that that CL
-    # could be reverted safely. This can be safely removed once crbug.com/794764
-    # is resolved.
-    'name': 'Android Clobber Deprecated CIPD Root',
-    'pattern': '.',
-    'condition': 'checkout_android',
-    'action': ['src/build/cipd/clobber_cipd_root.py',
-               '--root', 'src',
-    ],
-  },
-  {
     'name': 'Generate component metadata for tests',
     'pattern': '.',
     'action': [
