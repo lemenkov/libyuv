@@ -2620,10 +2620,10 @@ TEST_F(LibYUVConvertTest, TestMJPGToARGB) {
 
   // Test result matches known hash value.
   uint32_t dst_argb_hash = HashDjb2(dst_argb, width * height, 5381);
-#if defined(LIBYUV_LIMITED_DATA)
-  EXPECT_EQ(dst_argb_hash, 2355976473u);
-#else
+#ifdef LIBYUV_UNLIMITED_DATA
   EXPECT_EQ(dst_argb_hash, 3900633302u);
+#else
+  EXPECT_EQ(dst_argb_hash, 2355976473u);
 #endif
 
   free_aligned_buffer_page_end(dst_argb);

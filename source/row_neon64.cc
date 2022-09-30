@@ -1808,6 +1808,29 @@ void UYVYToUVRow_NEON(const uint8_t* src_uyvy,
   );
 }
 
+void YUY2ToNVUVRow_NEON(const uint8_t* src_yuy2,
+                        int stride_yuy2,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* src_yuy2b = src_yuy2 + stride_yuy2;
+  asm volatile(
+      "1:                                        \n"
+      "ld2         {v0.16b,v1.16b}, [%0], #32    \n"  // load 16 pixels
+      "subs        %w3, %w3, #16                 \n"  // 16 pixels = 8 UVs.
+      "ld2         {v2.16b,v3.16b}, [%1], #32    \n"  // load next row
+      "urhadd      v4.16b, v1.16b, v3.16b        \n"  // average rows of UV
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "st1         {v4.16b}, [%2], #16           \n"  // store 8 UV.
+      "b.gt        1b                            \n"
+      : "+r"(src_yuy2),   // %0
+        "+r"(src_yuy2b),  // %1
+        "+r"(dst_uv),     // %2
+        "+r"(width)       // %3
+      :
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4"  // Clobber List
+  );
+}
+
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_NEON(const uint8_t* src_argb,
                          uint8_t* dst_argb,

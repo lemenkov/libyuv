@@ -673,6 +673,35 @@ ANY21(SobelXYRow_Any_LSX, SobelXYRow_LSX, 0, 1, 1, 4, 15)
 #endif
 #undef ANY21
 
+// Any 2 planes to 1 with stride
+// width is measured in source pixels. 4 bytes contains 2 pixels
+#define ANY21S(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                        \
+  void NAMEANY(const uint8_t* src_yuy2, int stride_yuy2, uint8_t* dst_uv, \
+               int width) {                                               \
+    SIMD_ALIGNED(uint8_t temp[32 * 3]);                                   \
+    memset(temp, 0, 32 * 2); /* for msan */                               \
+    int awidth = (width + 1) / 2;                                         \
+    int r = awidth & MASK;                                                \
+    int n = awidth & ~MASK;                                               \
+    if (n > 0) {                                                          \
+      ANY_SIMD(src_yuy2, stride_yuy2, dst_uv, n * 2);                     \
+    }                                                                     \
+    memcpy(temp, src_yuy2 + n * SBPP, r * SBPP);                          \
+    memcpy(temp + 32, src_yuy2 + stride_yuy2 + n * SBPP, r * SBPP);       \
+    ANY_SIMD(temp, 32, temp + 64, MASK + 1);                              \
+    memcpy(dst_uv + n * BPP, temp + 64, r * BPP);                         \
+  }
+
+#ifdef HAS_YUY2TONVUVROW_NEON
+ANY21S(YUY2ToNVUVRow_Any_NEON, YUY2ToNVUVRow_NEON, 4, 2, 7)
+#endif
+#ifdef HAS_YUY2TONVUVROW_SSE2
+ANY21S(YUY2ToNVUVRow_Any_SSE2, YUY2ToNVUVRow_SSE2, 4, 2, 7)
+#endif
+#ifdef HAS_YUY2TONVUVROW_AVX2
+ANY21S(YUY2ToNVUVRow_Any_AVX2, YUY2ToNVUVRow_AVX2, 4, 2, 15)
+#endif
+
 // Any 2 planes to 1 with yuvconstants
 #define ANY21C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)            \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr, \

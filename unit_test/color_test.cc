@@ -32,10 +32,10 @@ namespace libyuv {
 #endif
 #define ERROR_R 1
 #define ERROR_G 1
-#if defined(LIBYUV_LIMITED_DATA)
-#define ERROR_B 18
-#else
+#ifdef LIBYUV_UNLIMITED_DATA
 #define ERROR_B 1
+#else
+#define ERROR_B 18
 #endif
 
 #define TESTCS(TESTNAME, YUVTOARGB, ARGBTOYUV, HS1, HS, HN, DIFF)              \
@@ -502,10 +502,10 @@ TEST_F(LibYUVColorTest, TestYUV) {
   YUVToRGB(240, 0, 0, &r1, &g1, &b1);
   EXPECT_EQ(57, r1);
   EXPECT_EQ(255, g1);
-#if defined(LIBYUV_LIMITED_DATA)
-  EXPECT_EQ(5, b1);
-#else
+#ifdef LIBYUV_UNLIMITED_DATA
   EXPECT_EQ(3, b1);
+#else
+  EXPECT_EQ(5, b1);
 #endif
 
   for (int i = 0; i < 256; ++i) {

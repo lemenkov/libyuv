@@ -6739,6 +6739,33 @@ void YUY2ToYRow_SSE2(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
 
+void YUY2ToNVUVRow_SSE2(const uint8_t* src_yuy2,
+                        int stride_yuy2,
+                        uint8_t* dst_uv,
+                        int width) {
+  asm volatile(LABELALIGN
+      "1:                                        \n"
+      "movdqu      (%0),%%xmm0                   \n"
+      "movdqu      0x10(%0),%%xmm1               \n"
+      "movdqu      0x00(%0,%3,1),%%xmm2          \n"
+      "movdqu      0x10(%0,%3,1),%%xmm3          \n"
+      "lea         0x20(%0),%0                   \n"
+      "pavgb       %%xmm2,%%xmm0                 \n"
+      "pavgb       %%xmm3,%%xmm1                 \n"
+      "psrlw       $0x8,%%xmm0                   \n"
+      "psrlw       $0x8,%%xmm1                   \n"
+      "packuswb    %%xmm1,%%xmm0                 \n"
+      "movdqu      %%xmm0,(%1)                   \n"
+      "lea         0x10(%1),%1                   \n"
+      "sub         $0x10,%2                      \n"
+      "jg          1b                            \n"
+               : "+r"(src_yuy2),               // %0
+                 "+r"(dst_uv),                 // %1
+                 "+r"(width)                   // %2
+               : "r"((intptr_t)(stride_yuy2))  // %3
+               : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+}
+
 void YUY2ToUVRow_SSE2(const uint8_t* src_yuy2,
                       int stride_yuy2,
                       uint8_t* dst_u,
@@ -6937,6 +6964,35 @@ void YUY2ToYRow_AVX2(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
         "+r"(width)      // %2
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
+}
+
+void YUY2ToNVUVRow_AVX2(const uint8_t* src_yuy2,
+                        int stride_yuy2,
+                        uint8_t* dst_uv,
+                        int width) {
+  asm volatile(
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vmovdqu     0x20(%0),%%ymm1               \n"
+      "vpavgb      0x00(%0,%3,1),%%ymm0,%%ymm0   \n"
+      "vpavgb      0x20(%0,%3,1),%%ymm1,%%ymm1   \n"
+      "lea         0x40(%0),%0                   \n"
+      "vpsrlw      $0x8,%%ymm0,%%ymm0            \n"
+      "vpsrlw      $0x8,%%ymm1,%%ymm1            \n"
+      "vpackuswb   %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "vmovdqu     %%ymm0,(%1)                   \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x20,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : "+r"(src_yuy2),               // %0
+        "+r"(dst_uv),                 // %1
+        "+r"(width)                   // %2
+      : "r"((intptr_t)(stride_yuy2))  // %3
+      : "memory", "cc", "xmm0", "xmm1");
 }
 
 void YUY2ToUVRow_AVX2(const uint8_t* src_yuy2,

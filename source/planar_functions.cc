@@ -5095,9 +5095,6 @@ int ARGBCopyYToAlpha(const uint8_t* src_y,
   return 0;
 }
 
-// TODO(fbarchard): Consider if width is even Y channel can be split
-// directly. A SplitUVRow_Odd function could copy the remaining chroma.
-
 LIBYUV_API
 int YUY2ToNV12(const uint8_t* src_yuy2,
                int src_stride_yuy2,
@@ -5108,13 +5105,10 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
                int width,
                int height) {
   int y;
-  int halfwidth = (width + 1) >> 1;
-  void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
-                     int width) = SplitUVRow_C;
-  void (*InterpolateRow)(uint8_t * dst_ptr, const uint8_t* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) = InterpolateRow_C;
-
+  void (*YUY2ToYRow)(const uint8_t* src_yuy2, uint8_t* dst_y, int width) =
+      YUY2ToYRow_C;
+  void (*YUY2ToNVUVRow)(const uint8_t* src_yuy2, int stride_yuy2,
+                        uint8_t* dst_uv, int width) = YUY2ToNVUVRow_C;
   if (!src_yuy2 || !dst_y || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
@@ -5125,109 +5119,83 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
     src_yuy2 = src_yuy2 + (height - 1) * src_stride_yuy2;
     src_stride_yuy2 = -src_stride_yuy2;
   }
-#if defined(HAS_SPLITUVROW_SSE2)
+#if defined(HAS_YUY2TOYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    SplitUVRow = SplitUVRow_Any_SSE2;
+    YUY2ToYRow = YUY2ToYRow_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_SSE2;
+      YUY2ToYRow = YUY2ToYRow_SSE2;
     }
   }
 #endif
-#if defined(HAS_SPLITUVROW_AVX2)
+#if defined(HAS_YUY2TOYROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    SplitUVRow = SplitUVRow_Any_AVX2;
+    YUY2ToYRow = YUY2ToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
-      SplitUVRow = SplitUVRow_AVX2;
+      YUY2ToYRow = YUY2ToYRow_AVX2;
     }
   }
 #endif
-#if defined(HAS_SPLITUVROW_NEON)
+#if defined(HAS_YUY2TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    SplitUVRow = SplitUVRow_Any_NEON;
+    YUY2ToYRow = YUY2ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_NEON;
+      YUY2ToYRow = YUY2ToYRow_NEON;
     }
   }
 #endif
-#if defined(HAS_SPLITUVROW_MSA)
+#if defined(HAS_YUY2TOYROW_MSA) && defined(HAS_YUY2TOUV422ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
-    SplitUVRow = SplitUVRow_Any_MSA;
+    YUY2ToYRow = YUY2ToYRow_Any_MSA;
     if (IS_ALIGNED(width, 32)) {
-      SplitUVRow = SplitUVRow_MSA;
+      YUY2ToYRow = YUY2ToYRow_MSA;
     }
   }
 #endif
-#if defined(HAS_SPLITUVROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    SplitUVRow = SplitUVRow_Any_LSX;
+#if defined(HAS_YUY2TOYROW_LASX) && defined(HAS_YUY2TOUV422ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    YUY2ToYRow = YUY2ToYRow_Any_LASX;
     if (IS_ALIGNED(width, 32)) {
-      SplitUVRow = SplitUVRow_LSX;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    InterpolateRow = InterpolateRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      InterpolateRow = InterpolateRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    InterpolateRow = InterpolateRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    InterpolateRow = InterpolateRow_Any_MSA;
-    if (IS_ALIGNED(width, 32)) {
-      InterpolateRow = InterpolateRow_MSA;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    InterpolateRow = InterpolateRow_Any_LSX;
-    if (IS_ALIGNED(width, 32)) {
-      InterpolateRow = InterpolateRow_LSX;
+      YUY2ToYRow = YUY2ToYRow_LASX;
     }
   }
 #endif
 
-  {
-    int awidth = halfwidth * 2;
-    // row of y and 2 rows of uv
-    align_buffer_64(rows, awidth * 3);
+#if defined(HAS_YUY2TONVUVROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    YUY2ToNVUVRow = YUY2ToNVUVRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToNVUVRow = YUY2ToNVUVRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TONVUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    YUY2ToNVUVRow = YUY2ToNVUVRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      YUY2ToNVUVRow = YUY2ToNVUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TONVUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    YUY2ToNVUVRow = YUY2ToNVUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToNVUVRow = YUY2ToNVUVRow_NEON;
+    }
+  }
+#endif
 
-    for (y = 0; y < height - 1; y += 2) {
-      // Split Y from UV.
-      SplitUVRow(src_yuy2, rows, rows + awidth, awidth);
-      memcpy(dst_y, rows, width);
-      SplitUVRow(src_yuy2 + src_stride_yuy2, rows, rows + awidth * 2, awidth);
-      memcpy(dst_y + dst_stride_y, rows, width);
-      InterpolateRow(dst_uv, rows + awidth, awidth, awidth, 128);
-      src_yuy2 += src_stride_yuy2 * 2;
-      dst_y += dst_stride_y * 2;
-      dst_uv += dst_stride_uv;
-    }
-    if (height & 1) {
-      // Split Y from UV.
-      SplitUVRow(src_yuy2, rows, dst_uv, awidth);
-      memcpy(dst_y, rows, width);
-    }
-    free_aligned_buffer_64(rows);
+  for (y = 0; y < height - 1; y += 2) {
+    YUY2ToYRow(src_yuy2, dst_y, width);
+    YUY2ToYRow(src_yuy2 + src_stride_yuy2, dst_y + dst_stride_y, width);
+    YUY2ToNVUVRow(src_yuy2, src_stride_yuy2, dst_uv, width);
+    src_yuy2 += src_stride_yuy2 * 2;
+    dst_y += dst_stride_y * 2;
+    dst_uv += dst_stride_uv;
+  }
+  if (height & 1) {
+    YUY2ToYRow(src_yuy2, dst_y, width);
+    YUY2ToNVUVRow(src_yuy2, 0, dst_uv, width);
   }
   return 0;
 }
