@@ -7,6 +7,9 @@ vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '28dca358ed2cca4c15c1609f710703c0ba46f717',
   'gn_version': 'git_revision:6f13aaac55a977e1948910942675c69f2b4f7a94',
+  # ninja CIPD package version.
+  # https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/ninja
+  'ninja_version': 'version:2@1.8.2.chromium.3',
 
   # Keep the Chromium default of generating location tags.
   'generate_location_tags': True,
@@ -320,6 +323,15 @@ deps = {
   'src/third_party/libunwindstack': {
       'url': Var('chromium_git') + '/chromium/src/third_party/libunwindstack.git' + '@' + 'e184bd94bf23148bf5f3a983f9d740ddb86fd46e',
       'condition': 'checkout_android',
+  },
+  'src/third_party/ninja': {
+    'packages': [
+      {
+        'package': 'infra/3pp/tools/ninja/${{platform}}',
+        'version': Var('ninja_version'),
+      }
+    ],
+    'dep_type': 'cipd',
   },
   'src/third_party/mockito/src': {
     'url': Var('chromium_git') + '/external/mockito/mockito.git' + '@' + '04a2a289a4222f80ad20717c25144981210d2eac',
