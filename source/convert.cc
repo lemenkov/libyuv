@@ -1647,16 +1647,6 @@ int BGRAToI420(const uint8_t* src_bgra,
     src_bgra = src_bgra + (height - 1) * src_stride_bgra;
     src_stride_bgra = -src_stride_bgra;
   }
-#if defined(HAS_BGRATOYROW_SSSE3) && defined(HAS_BGRATOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    BGRAToUVRow = BGRAToUVRow_Any_SSSE3;
-    BGRAToYRow = BGRAToYRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      BGRAToUVRow = BGRAToUVRow_SSSE3;
-      BGRAToYRow = BGRAToYRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_BGRATOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     BGRAToYRow = BGRAToYRow_Any_NEON;
@@ -1673,23 +1663,57 @@ int BGRAToI420(const uint8_t* src_bgra,
     }
   }
 #endif
+#if defined(HAS_BGRATOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    BGRAToYRow = BGRAToYRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      BGRAToYRow = BGRAToYRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_BGRATOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    BGRAToUVRow = BGRAToUVRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      BGRAToUVRow = BGRAToUVRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_BGRATOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    BGRAToYRow = BGRAToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      BGRAToYRow = BGRAToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_BGRATOUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    BGRAToUVRow = BGRAToUVRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      BGRAToUVRow = BGRAToUVRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_BGRATOYROW_MSA) && defined(HAS_BGRATOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     BGRAToYRow = BGRAToYRow_Any_MSA;
     BGRAToUVRow = BGRAToUVRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       BGRAToYRow = BGRAToYRow_MSA;
+    }
+    if (IS_ALIGNED(width, 32)) {
       BGRAToUVRow = BGRAToUVRow_MSA;
     }
   }
 #endif
-#if defined(HAS_BGRATOYROW_LSX) && defined(HAS_BGRATOUVROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    BGRAToYRow = BGRAToYRow_Any_LSX;
-    BGRAToUVRow = BGRAToUVRow_Any_LSX;
-    if (IS_ALIGNED(width, 16)) {
-      BGRAToYRow = BGRAToYRow_LSX;
-      BGRAToUVRow = BGRAToUVRow_LSX;
+#if defined(HAS_BGRATOYROW_LASX) && defined(HAS_BGRATOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    BGRAToYRow = BGRAToYRow_Any_LASX;
+    BGRAToUVRow = BGRAToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      BGRAToYRow = BGRAToYRow_LASX;
+      BGRAToUVRow = BGRAToUVRow_LASX;
     }
   }
 #endif
