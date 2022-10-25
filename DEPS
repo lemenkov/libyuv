@@ -10,6 +10,8 @@ vars = {
   # ninja CIPD package version.
   # https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/ninja
   'ninja_version': 'version:2@1.8.2.chromium.3',
+  # reclient CIPD package version
+  'reclient_version': 're_client_version:0.81.1.0853992-gomaip',
 
   # Keep the Chromium default of generating location tags.
   'generate_location_tags': True,
@@ -54,6 +56,16 @@ deps = {
     ],
     'dep_type': 'cipd',
     'condition': 'checkout_win',
+  },
+
+  'src/buildtools/reclient': {
+    'packages': [
+      {
+        'package': 'infra/rbe/client/${{platform}}',
+        'version': Var('reclient_version'),
+      }
+    ],
+    'dep_type': 'cipd',
   },
 
   'src/buildtools/clang_format/script':
