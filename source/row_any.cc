@@ -2242,26 +2242,31 @@ ANY11S(AYUVToVURow_Any_NEON, AYUVToVURow_NEON, 0, 4, 15)
 #endif
 #undef ANY11S
 
-#define ANYDETILE(NAMEANY, ANY_SIMD, MASK)                                  \
-  void NAMEANY(const uint8_t* src, ptrdiff_t src_tile_stride, uint8_t* dst, \
-               int width) {                                                 \
-    SIMD_ALIGNED(uint8_t temp[16 * 2]);                                     \
-    memset(temp, 0, 16); /* for msan */                                     \
-    int r = width & MASK;                                                   \
-    int n = width & ~MASK;                                                  \
-    if (n > 0) {                                                            \
-      ANY_SIMD(src, src_tile_stride, dst, n);                               \
-    }                                                                       \
-    memcpy(temp, src + (n / 16) * src_tile_stride, r);                      \
-    ANY_SIMD(temp, src_tile_stride, temp + 16, MASK + 1);                   \
-    memcpy(dst + n, temp + 16, r);                                          \
+#define ANYDETILE(NAMEANY, ANY_SIMD, T, BPP, MASK)                           \
+  void NAMEANY(const T* src, ptrdiff_t src_tile_stride, T* dst, int width) { \
+    SIMD_ALIGNED(T temp[16 * 2]);                                            \
+    memset(temp, 0, 16 * BPP); /* for msan */                                \
+    int r = width & MASK;                                                    \
+    int n = width & ~MASK;                                                   \
+    if (n > 0) {                                                             \
+      ANY_SIMD(src, src_tile_stride, dst, n);                                \
+    }                                                                        \
+    memcpy(temp, src + (n / 16) * src_tile_stride, r * BPP);                 \
+    ANY_SIMD(temp, src_tile_stride, temp + 16, MASK + 1);                    \
+    memcpy(dst + n, temp + 16, r * BPP);                                     \
   }
 
 #ifdef HAS_DETILEROW_NEON
-ANYDETILE(DetileRow_Any_NEON, DetileRow_NEON, 15)
+ANYDETILE(DetileRow_Any_NEON, DetileRow_NEON, uint8_t, 1, 15)
 #endif
 #ifdef HAS_DETILEROW_SSE2
-ANYDETILE(DetileRow_Any_SSE2, DetileRow_SSE2, 15)
+ANYDETILE(DetileRow_Any_SSE2, DetileRow_SSE2, uint8_t, 1, 15)
+#endif
+#ifdef HAS_DETILEROW_16_NEON
+ANYDETILE(DetileRow_16_Any_NEON, DetileRow_16_NEON, uint16_t, 2, 15)
+#endif
+#ifdef HAS_DETILEROW_16_SSE2
+ANYDETILE(DetileRow_16_Any_SSE2, DetileRow_16_SSE2, uint16_t, 2, 15)
 #endif
 
 #define ANYDETILESPLITUV(NAMEANY, ANY_SIMD, MASK)                \

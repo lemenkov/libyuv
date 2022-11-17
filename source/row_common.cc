@@ -2748,6 +2748,21 @@ void DetileRow_C(const uint8_t* src,
   }
 }
 
+void DetileRow_16_C(const uint16_t* src,
+                    ptrdiff_t src_tile_stride,
+                    uint16_t* dst,
+                    int width) {
+  int x;
+  for (x = 0; x < width - 15; x += 16) {
+    memcpy(dst, src, 16 * sizeof(uint16_t));
+    dst += 16;
+    src += src_tile_stride;
+  }
+  if (width & 15) {
+    memcpy(dst, src, (width & 15) * sizeof(uint16_t));
+  }
+}
+
 void DetileSplitUVRow_C(const uint8_t* src_uv,
                         ptrdiff_t src_tile_stride,
                         uint8_t* dst_u,
