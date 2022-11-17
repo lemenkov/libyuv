@@ -913,6 +913,9 @@ int NV21ToNV12(const uint8_t* src_y,
   return 0;
 }
 
+// Test if tile_height is a power of 2 (16 or 32)
+#define IS_POWEROFTWO(x) (!((x) & ((x)-1)))
+
 // Detile a plane of data
 // tile width is 16 and assumed.
 // tile_height is 16 or 32 for MM21.
@@ -930,7 +933,8 @@ int DetilePlane(const uint8_t* src_y,
   int y;
   void (*DetileRow)(const uint8_t* src, ptrdiff_t src_tile_stride, uint8_t* dst,
                     int width) = DetileRow_C;
-  if (!src_y || !dst_y || width <= 0 || height == 0 || !IS_POWEROFTWO(tile_height)) {
+  if (!src_y || !dst_y || width <= 0 || height == 0 ||
+      !IS_POWEROFTWO(tile_height)) {
     return -1;
   }
 
@@ -986,7 +990,8 @@ int DetilePlane_16(const uint16_t* src_y,
   int y;
   void (*DetileRow_16)(const uint16_t* src, ptrdiff_t src_tile_stride,
                        uint16_t* dst, int width) = DetileRow_16_C;
-  if (!src_y || !dst_y || width <= 0 || height == 0 || !IS_POWEROFTWO(tile_height)) {
+  if (!src_y || !dst_y || width <= 0 || height == 0 ||
+      !IS_POWEROFTWO(tile_height)) {
     return -1;
   }
 

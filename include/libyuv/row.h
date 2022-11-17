@@ -825,8 +825,7 @@ struct YuvConstants {
 
 #endif
 
-#define IS_POWEROFTWO(x) (!((x) & ((x) - 1)))
-#define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
+#define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a)-1)))
 
 #define align_buffer_64(var, size)                                           \
   uint8_t* var##_mem = (uint8_t*)(malloc((size) + 63));         /* NOLINT */ \

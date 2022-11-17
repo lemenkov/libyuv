@@ -1210,6 +1210,7 @@ void ARGBToAR64Row_AVX2(const uint8_t* src_argb,
       "lea         0x40(%1),%1                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_ar64),  // %1
         "+r"(width)      // %2
@@ -1237,6 +1238,7 @@ void ARGBToAB64Row_AVX2(const uint8_t* src_argb,
       "lea         0x40(%1),%1                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_argb),             // %0
         "+r"(dst_ab64),             // %1
         "+r"(width)                 // %2
@@ -1265,6 +1267,7 @@ void AR64ToARGBRow_AVX2(const uint16_t* src_ar64,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_ar64),  // %0
         "+r"(dst_argb),  // %1
         "+r"(width)      // %2
@@ -1293,6 +1296,7 @@ void AB64ToARGBRow_AVX2(const uint16_t* src_ab64,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_ab64),          // %0
         "+r"(dst_argb),          // %1
         "+r"(width)              // %2
@@ -1457,9 +1461,8 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
       "vbroadcastf128 %5,%%ymm7                  \n"
-      "vmovdqu     %6,%%ymm6                     \n"
-
-      LABELALIGN RGBTOY_AVX2(ymm7)
+      "vmovdqu     %6,%%ymm6                     \n" LABELALIGN RGBTOY_AVX2(
+      ymm7) "vzeroupper                                \n"
       : "+r"(src_argb),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1479,9 +1482,8 @@ void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
       "vbroadcastf128 %5,%%ymm7                  \n"
-      "vmovdqu     %6,%%ymm6                     \n"
-
-      LABELALIGN RGBTOY_AVX2(ymm7)
+      "vmovdqu     %6,%%ymm6                     \n" LABELALIGN RGBTOY_AVX2(
+      ymm7) "vzeroupper                                \n"
       : "+r"(src_abgr),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1500,9 +1502,8 @@ void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
-      "vmovdqu     %5,%%ymm6                     \n"
-
-      LABELALIGN RGBTOY_AVX2(ymm5)
+      "vmovdqu     %5,%%ymm6                     \n" LABELALIGN RGBTOY_AVX2(
+      ymm5) "vzeroupper                                \n"
       : "+r"(src_argb),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1520,9 +1521,8 @@ void ABGRToYJRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
-      "vmovdqu     %5,%%ymm6                     \n"
-
-      LABELALIGN RGBTOY_AVX2(ymm5)
+      "vmovdqu     %5,%%ymm6                     \n" LABELALIGN RGBTOY_AVX2(
+      ymm5) "vzeroupper                                \n"
       : "+r"(src_abgr),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1540,9 +1540,7 @@ void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
-      "vmovdqu     %5,%%ymm6                     \n"
-
-      LABELALIGN RGBTOY_AVX2(
+      "vmovdqu     %5,%%ymm6                     \n" LABELALIGN RGBTOY_AVX2(
       ymm5) "vzeroupper                                \n"
       : "+r"(src_rgba),         // %0
         "+r"(dst_y),            // %1
@@ -6479,6 +6477,7 @@ void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width) {
       "lea         0x40(%1),%1                   \n"
       "sub         $0x40,%2                      \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src),   // %0
         "+r"(dst),   // %1
         "+r"(width)  // %2
