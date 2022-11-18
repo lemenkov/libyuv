@@ -2268,6 +2268,9 @@ ANYDETILE(DetileRow_16_Any_NEON, DetileRow_16_NEON, uint16_t, 2, 15)
 #ifdef HAS_DETILEROW_16_SSE2
 ANYDETILE(DetileRow_16_Any_SSE2, DetileRow_16_SSE2, uint16_t, 2, 15)
 #endif
+#ifdef HAS_DETILEROW_16_AVX
+ANYDETILE(DetileRow_16_Any_AVX, DetileRow_16_AVX, uint16_t, 2, 15)
+#endif
 
 #define ANYDETILESPLITUV(NAMEANY, ANY_SIMD, MASK)                \
   void NAMEANY(const uint8_t* src_uv, ptrdiff_t src_tile_stride, \

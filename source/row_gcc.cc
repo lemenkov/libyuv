@@ -5051,6 +5051,28 @@ void DetileRow_16_SSE2(const uint16_t* src,
 }
 #endif  // HAS_DETILEROW_SSE2
 
+#ifdef HAS_DETILEROW_16_AVX
+void DetileRow_16_AVX(const uint16_t* src,
+                      ptrdiff_t src_tile_stride,
+                      uint16_t* dst,
+                      int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "lea         (%0,%3,2),%0                  \n"
+      "vmovdqu     %%ymm0,(%1)                   \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x10,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : "+r"(src),            // %0
+        "+r"(dst),            // %1
+        "+r"(width)           // %2
+      : "r"(src_tile_stride)  // %3
+      : "cc", "memory", "xmm0");
+}
+#endif  // HAS_DETILEROW_AVX
+
 #ifdef HAS_DETILETOYUY2_SSE2
 // Read 16 Y, 8 UV, and write 8 YUYV.
 void DetileToYUY2_SSE2(const uint8_t* src_y,

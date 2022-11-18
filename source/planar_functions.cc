@@ -1002,7 +1002,7 @@ int DetilePlane_16(const uint16_t* src_y,
     dst_stride_y = -dst_stride_y;
   }
 
-#if defined(HAS_DETILEROW_SSE2)
+#if defined(HAS_DETILEROW_16_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     DetileRow_16 = DetileRow_16_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
@@ -1010,7 +1010,15 @@ int DetilePlane_16(const uint16_t* src_y,
     }
   }
 #endif
-#if defined(HAS_DETILEROW_NEON)
+#if defined(HAS_DETILEROW_16_AVX)
+  if (TestCpuFlag(kCpuHasAVX)) {
+    DetileRow_16 = DetileRow_16_Any_AVX;
+    if (IS_ALIGNED(width, 16)) {
+      DetileRow_16 = DetileRow_16_AVX;
+    }
+  }
+#endif
+#if defined(HAS_DETILEROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     DetileRow_16 = DetileRow_16_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
