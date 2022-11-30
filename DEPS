@@ -15,6 +15,18 @@ vars = {
 
   # Keep the Chromium default of generating location tags.
   'generate_location_tags': True,
+
+  # By default, download the fuchsia sdk from the public sdk directory.
+  'fuchsia_sdk_cipd_prefix': 'fuchsia/sdk/gn/',
+  'fuchsia_version': 'version:10.20221110.2.1',
+  # By default, download the fuchsia images from the fuchsia GCS bucket.
+  'fuchsia_images_bucket': 'fuchsia',
+  'checkout_fuchsia': False,
+  # Since the images are hundreds of MB, default to only downloading the image
+  # most commonly useful for developers. Bots and developers that need to use
+  # other images can override this with additional images.
+  'checkout_fuchsia_boot_images': "terminal.qemu-x64",
+  'checkout_fuchsia_product_bundles': '"{checkout_fuchsia_boot_images}" != ""',
 }
 
 deps = {
@@ -2291,6 +2303,27 @@ hooks = [
                 '--bucket', 'chromium-instrumented-libraries',
                 '-s', 'src/third_party/instrumented_libraries/binaries/msan-no-origins-xenial.tgz.sha1',
               ],
+  },
+  {
+    'name': 'Download Fuchsia SDK from GCS',
+    'pattern': '.',
+    'condition': 'checkout_fuchsia',
+    'action': [
+      'python3',
+      'src/build/fuchsia/update_sdk.py',
+      '--cipd-prefix={fuchsia_sdk_cipd_prefix}',
+      '--version={fuchsia_version}',
+    ],
+  },
+  {
+    'name': 'Download Fuchsia system images',
+    'pattern': '.',
+    'condition': 'checkout_fuchsia and checkout_fuchsia_product_bundles',
+    'action': [
+      'python3',
+      'src/build/fuchsia/update_product_bundles.py',
+      '{checkout_fuchsia_boot_images}',
+    ],
   },
   {
     # Pull clang if needed or requested via GYP_DEFINES.
