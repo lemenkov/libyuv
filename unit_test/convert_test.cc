@@ -538,6 +538,26 @@ TESTBIPLANARTOBP(P016, uint16_t, 2, 2, 2, P416, uint16_t, 2, 1, 1, 12, 1, 1)
 TESTBIPLANARTOBP(P216, uint16_t, 2, 2, 1, P416, uint16_t, 2, 1, 1, 12, 1, 1)
 TESTBIPLANARTOBP(MM21, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8, 16, 32)
 
+// TODO (greenjustin): Test all variants.
+TESTBIPLANARTOBPI(MT2T,
+                  uint16_t,
+                  2,
+                  2,
+                  2,
+                  P010,
+                  uint16_t,
+                  2,
+                  2,
+                  2,
+                  benchmark_width_,
+                  _Opt,
+                  +,
+                  0,
+                  1,
+                  10,
+                  16,
+                  32)
+
 #define TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,        \
                          SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,            \
                          DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF,     \

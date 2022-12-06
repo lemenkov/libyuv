@@ -2801,6 +2801,33 @@ void DetileToYUY2_C(const uint8_t* src_y,
   }
 }
 
+// Unpack MT2T into tiled P010 64 pixels at a time. MT2T's bitstream is encoded
+// in 80 byte blocks representing 64 pixels each. The first 16 bytes of the
+// block contain all of the lower 2 bits of each pixel packed together, and the
+// next 64 bytes represent all the upper 8 bits of the pixel.
+void UnpackMT2T_C(const uint16_t* src, uint16_t* dst, size_t size) {
+  for (size_t i = 0; i < size; i += 80) {
+    const uint8_t* src_lower_bits = (uint8_t*)src;
+    const uint8_t* src_upper_bits = ((uint8_t*)src) + 16;
+
+    for (int j = 0; j < 16; j++) {
+      uint8_t lower_bits = src_lower_bits[j];
+      *dst++ = (lower_bits & 0x03) << 6 | (uint16_t)src_upper_bits[j * 4] << 8 |
+               (uint16_t)src_upper_bits[j * 4] >> 2;
+      *dst++ = (lower_bits & 0x0C) << 4 |
+               (uint16_t)src_upper_bits[j * 4 + 1] << 8 |
+               (uint16_t)src_upper_bits[j * 4 + 1] >> 2;
+      *dst++ = (lower_bits & 0x30) << 2 |
+               (uint16_t)src_upper_bits[j * 4 + 2] << 8 |
+               (uint16_t)src_upper_bits[j * 4 + 2] >> 2;
+      *dst++ = (lower_bits & 0xC0) | (uint16_t)src_upper_bits[j * 4 + 3] << 8 |
+               (uint16_t)src_upper_bits[j * 4 + 3] >> 2;
+    }
+
+    src += 40;
+  }
+}
+
 void SplitRGBRow_C(const uint8_t* src_rgb,
                    uint8_t* dst_r,
                    uint8_t* dst_g,

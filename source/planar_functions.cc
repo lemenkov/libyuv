@@ -3196,6 +3196,7 @@ int RAWToRGB24(const uint8_t* src_raw,
   return 0;
 }
 
+// TODO(fbarchard): Consider uint8_t value
 LIBYUV_API
 void SetPlane(uint8_t* dst_y,
               int dst_stride_y,
@@ -3256,7 +3257,7 @@ void SetPlane(uint8_t* dst_y,
 
   // Set plane
   for (y = 0; y < height; ++y) {
-    SetRow(dst_y, value, width);
+    SetRow(dst_y, (uint8_t)value, width);
     dst_y += dst_stride_y;
   }
 }

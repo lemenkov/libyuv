@@ -720,6 +720,60 @@ void DetileToYUY2_NEON(const uint8_t* src_y,
 }
 #endif
 
+void UnpackMT2T_NEON(const uint16_t* src, uint16_t* dst, size_t size) {
+  const uint16_t* src_lower_bits = src;
+  const uint16_t* src_upper_bits = src + 8;
+  asm volatile(
+      "1:                                        \n"
+      "vld4.8      {d1, d3, d5, d7}, [%1]!       \n"  // Load 32 bytes of upper
+                                                      // bits.
+      "vld1.8      {d6}, [%0]!                   \n"  // Load 8 bytes of lower
+                                                      // bits.
+      "vshl.u8     d4, d6, #2                    \n"  // Align lower bits.
+      "vshl.u8     d2, d6, #4                    \n"
+      "vshl.u8     d0, d6, #6                    \n"
+      "vzip.u8     d0, d1                        \n"  // Zip lower and upper
+                                                      // bits together.
+      "vzip.u8     d2, d3                        \n"
+      "vzip.u8     d4, d5                        \n"
+      "vzip.u8     d6, d7                        \n"
+      "vsri.u16    q0, q0, #10                   \n"  // Copy upper 6 bits into
+                                                      // lower 6 bits for better
+                                                      // accuracy in
+                                                      // conversions.
+      "vsri.u16    q1, q1, #10                   \n"
+      "vsri.u16    q2, q2, #10                   \n"
+      "vsri.u16    q3, q3, #10                   \n"
+      "vst4.16     {d0, d2, d4, d6}, [%2]!       \n"  // Store 32 pixels
+      "vst4.16     {d1, d3, d5, d7}, [%2]!       \n"
+      "vld4.8      {d1, d3, d5, d7}, [%1]!       \n"  // Process last 32 pixels
+                                                      // in the block
+      "vld1.8      {d6}, [%0]!                   \n"
+      "vshl.u8     d4, d6, #2                    \n"
+      "vshl.u8     d2, d6, #4                    \n"
+      "vshl.u8     d0, d6, #6                    \n"
+      "vzip.u8     d0, d1                        \n"
+      "vzip.u8     d2, d3                        \n"
+      "vzip.u8     d4, d5                        \n"
+      "vzip.u8     d6, d7                        \n"
+      "vsri.u16    q0, q0, #10                   \n"
+      "vsri.u16    q1, q1, #10                   \n"
+      "vsri.u16    q2, q2, #10                   \n"
+      "vsri.u16    q3, q3, #10                   \n"
+      "vst4.16     {d0, d2, d4, d6}, [%2]!       \n"
+      "vst4.16     {d1, d3, d5, d7}, [%2]!       \n"
+      "mov         %0, %1                        \n"
+      "add         %1, %0, #16                   \n"
+      "subs        %3, %3, #80                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_lower_bits),  // %0
+        "+r"(src_upper_bits),  // %1
+        "+r"(dst),             // %2
+        "+r"(size)             // %3
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3");
+}
+
 // Reads 16 U's and V's and writes out 16 pairs of UV.
 void MergeUVRow_NEON(const uint8_t* src_u,
                      const uint8_t* src_v,

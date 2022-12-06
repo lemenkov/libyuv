@@ -162,6 +162,19 @@ int MM21ToYUY2(const uint8_t* src_y,
                int width,
                int height);
 
+// Convert MT2T to P010
+LIBYUV_API
+int MT2TToP010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
 // Convert I422 to NV21.
 LIBYUV_API
 int I422ToNV21(const uint8_t* src_y,

@@ -455,6 +455,7 @@ extern "C" {
 #define HAS_DETILEROW_NEON
 #define HAS_DETILESPLITUVROW_NEON
 #define HAS_DETILETOYUY2_NEON
+#define HAS_UNPACKMT2T_NEON
 #define HAS_DIVIDEROW_16_NEON
 #define HAS_HALFFLOATROW_NEON
 #define HAS_HALFMERGEUVROW_NEON
@@ -2122,6 +2123,8 @@ void DetileToYUY2_Any_NEON(const uint8_t* src_y,
                            ptrdiff_t src_uv_tile_stride,
                            uint8_t* dst_yuy2,
                            int width);
+void UnpackMT2T_C(const uint16_t* src, uint16_t* dst, size_t size);
+void UnpackMT2T_NEON(const uint16_t* src, uint16_t* dst, size_t size);
 void MergeUVRow_C(const uint8_t* src_u,
                   const uint8_t* src_v,
                   uint8_t* dst_uv,

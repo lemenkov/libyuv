@@ -732,6 +732,67 @@ int MM21ToYUY2(const uint8_t* src_y,
   return 0;
 }
 
+// Convert MT2T into P010. See tinyurl.com/mtk-10bit-video-format for format
+// documentation.
+// TODO(greenjustin): Add an MT2T to I420 conversion.
+// TODO(greenjustin): Investigate if there are valid stride parameters other
+// than width.
+LIBYUV_API
+int MT2TToP010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  if (width <= 0 || height <= 0 || !src_y || !src_uv || !dst_y || !dst_uv) {
+    return -1;
+  }
+
+  // TODO(greenjustin): Investigate if we can allow arbitrary sizes. This may
+  // not be semantically meaningful in this format, but we do not have samples
+  // of unaligned data to conclude that yet. This format is 16x32 tiled, so we
+  // must pad the width and height to reflect that.
+  int aligned_width = (width + 15) & ~15;
+  int aligned_height = (height + 31) & ~31;
+
+  {
+    size_t y_size = aligned_width * aligned_height * 10 / 8;
+    size_t uv_size = aligned_width * ((aligned_height + 1) / 2) * 10 / 8;
+    size_t tmp_y_size = aligned_width * aligned_height * sizeof(uint16_t);
+    size_t tmp_uv_size =
+        aligned_width * ((aligned_height + 1) / 2) * sizeof(uint16_t);
+    void (*UnpackMT2T)(const uint16_t* src, uint16_t* dst, size_t size) =
+        UnpackMT2T_C;
+    align_buffer_64(tmp_y, tmp_y_size);
+    align_buffer_64(tmp_uv, tmp_uv_size);
+
+#if defined(HAS_UNPACKMT2T_NEON)
+    if (TestCpuFlag(kCpuHasNEON)) {
+      UnpackMT2T = UnpackMT2T_NEON;
+    }
+#endif
+
+    // TODO(greenjustin): Unpack and detile in rows rather than planes to keep
+    // the caches hot.
+    UnpackMT2T(src_y, (uint16_t*)tmp_y, y_size);
+    UnpackMT2T(src_uv, (uint16_t*)tmp_uv, uv_size);
+
+    DetilePlane_16((uint16_t*)tmp_y, src_stride_y, dst_y, dst_stride_y, width,
+                   height, 32);
+    DetilePlane_16((uint16_t*)tmp_uv, src_stride_uv, dst_uv, dst_stride_uv,
+                   width, (height + 1) / 2, 16);
+
+    free_aligned_buffer_64(tmp_y);
+    free_aligned_buffer_64(tmp_uv);
+  }
+
+  return 0;
+}
+
 #ifdef I422TONV21_ROW_VERSION
 // Unittest fails for this version.
 // 422 chroma is 1/2 width, 1x height
