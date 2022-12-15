@@ -163,10 +163,13 @@ int MM21ToYUY2(const uint8_t* src_y,
                int height);
 
 // Convert MT2T to P010
+// Note that src_y and src_uv point to packed 10-bit values, so the Y plane will
+// be 10 / 8 times the dimensions of the image. Also for this reason,
+// src_stride_y and src_stride_uv are given in bytes.
 LIBYUV_API
-int MT2TToP010(const uint16_t* src_y,
+int MT2TToP010(const uint8_t* src_y,
                int src_stride_y,
-               const uint16_t* src_uv,
+               const uint8_t* src_uv,
                int src_stride_uv,
                uint16_t* dst_y,
                int dst_stride_y,

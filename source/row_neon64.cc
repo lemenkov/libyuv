@@ -751,9 +751,9 @@ void DetileToYUY2_NEON(const uint8_t* src_y,
 
 // Unpack MT2T into tiled P010 64 pixels at a time. See
 // tinyurl.com/mtk-10bit-video-format for format documentation.
-void UnpackMT2T_NEON(const uint16_t* src, uint16_t* dst, size_t size) {
-  const uint16_t* src_lower_bits = src;
-  const uint16_t* src_upper_bits = src + 8;
+void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
+  const uint8_t* src_lower_bits = src;
+  const uint8_t* src_upper_bits = src + 16;
   asm volatile(
       "1:                                        \n"
       "ld4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%1], #32 \n"

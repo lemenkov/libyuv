@@ -720,9 +720,9 @@ void DetileToYUY2_NEON(const uint8_t* src_y,
 }
 #endif
 
-void UnpackMT2T_NEON(const uint16_t* src, uint16_t* dst, size_t size) {
-  const uint16_t* src_lower_bits = src;
-  const uint16_t* src_upper_bits = src + 8;
+void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
+  const uint8_t* src_lower_bits = src;
+  const uint8_t* src_upper_bits = src + 16;
   asm volatile(
       "1:                                        \n"
       "vld4.8      {d1, d3, d5, d7}, [%1]!       \n"  // Load 32 bytes of upper
