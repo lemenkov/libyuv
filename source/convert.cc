@@ -292,6 +292,61 @@ int I210ToI422(const uint16_t* src_y,
 }
 
 LIBYUV_API
+int I410ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  const int depth = 10;
+  const int scale = 1 << (24 - depth);
+
+  if (width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  {
+    const int uv_width = SUBSAMPLE(width, 1, 1);
+    const int uv_stride = uv_width;
+    const int uv_height = SUBSAMPLE(height, 1, 1);
+
+    // Scale uv planes using Y plane as temp buffer and then convert to 8 bits.
+    ScalePlane_12(src_u, src_stride_u, width, height, (uint16_t*)dst_y,
+                  uv_stride, uv_width, uv_height, kFilterBilinear);
+    Convert16To8Plane((uint16_t*)dst_y, uv_stride, dst_u, dst_stride_u, scale,
+                      uv_width, uv_height);
+
+    ScalePlane_12(src_v, src_stride_v, width, height, (uint16_t*)dst_y,
+                  uv_stride, uv_width, uv_height, kFilterBilinear);
+    Convert16To8Plane((uint16_t*)dst_y, uv_stride, dst_v, dst_stride_v, scale,
+                      uv_width, uv_height);
+
+    // Convert Y plane last.
+    Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
+                      height);
+  }
+  return 0;
+}
+
+LIBYUV_API
 int I410ToI444(const uint16_t* src_y,
                int src_stride_y,
                const uint16_t* src_u,
