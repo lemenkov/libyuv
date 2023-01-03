@@ -325,23 +325,14 @@ int I410ToI420(const uint16_t* src_y,
 
   {
     const int uv_width = SUBSAMPLE(width, 1, 1);
-    const int uv_stride = uv_width;
     const int uv_height = SUBSAMPLE(height, 1, 1);
 
-    // Scale uv planes using Y plane as temp buffer and then convert to 8 bits.
-    ScalePlane_12(src_u, src_stride_u, width, height, (uint16_t*)dst_y,
-                  uv_stride, uv_width, uv_height, kFilterBilinear);
-    Convert16To8Plane((uint16_t*)dst_y, uv_stride, dst_u, dst_stride_u, scale,
-                      uv_width, uv_height);
-
-    ScalePlane_12(src_v, src_stride_v, width, height, (uint16_t*)dst_y,
-                  uv_stride, uv_width, uv_height, kFilterBilinear);
-    Convert16To8Plane((uint16_t*)dst_y, uv_stride, dst_v, dst_stride_v, scale,
-                      uv_width, uv_height);
-
-    // Convert Y plane last.
     Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
                       height);
+    ScalePlaneDown2_16To8(width, height, uv_width, uv_height, src_stride_u,
+                          dst_stride_u, src_u, dst_u, scale, kFilterBilinear);
+    ScalePlaneDown2_16To8(width, height, uv_width, uv_height, src_stride_v,
+                          dst_stride_v, src_v, dst_v, scale, kFilterBilinear);
   }
   return 0;
 }

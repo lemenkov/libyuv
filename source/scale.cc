@@ -198,6 +198,42 @@ static void ScalePlaneDown2_16(int src_width,
   }
 }
 
+void ScalePlaneDown2_16To8(int src_width,
+                           int src_height,
+                           int dst_width,
+                           int dst_height,
+                           int src_stride,
+                           int dst_stride,
+                           const uint16_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           int scale,
+                           enum FilterMode filtering) {
+  int y;
+  void (*ScaleRowDown2)(const uint16_t* src_ptr, ptrdiff_t src_stride,
+                        uint8_t* dst_ptr, int dst_width, int scale) =
+      filtering == kFilterNone
+          ? ScaleRowDown2_16To8_C
+          : (filtering == kFilterLinear ? ScaleRowDown2Linear_16To8_C
+                                        : ScaleRowDown2Box_16To8_C);
+  int row_stride = src_stride * 2;
+  (void)src_width;
+  (void)src_height;
+  if (!filtering) {
+    src_ptr += src_stride;  // Point to odd rows.
+    src_stride = 0;
+  }
+
+  if (filtering == kFilterLinear) {
+    src_stride = 0;
+  }
+  // TODO(fbarchard): Loop through source height to allow odd height.
+  for (y = 0; y < dst_height; ++y) {
+    ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width, scale);
+    src_ptr += row_stride;
+    dst_ptr += dst_stride;
+  }
+}
+
 // Scale plane, 1/4
 // This is an optimized version for scaling down a plane to 1/4 of
 // its original size.
