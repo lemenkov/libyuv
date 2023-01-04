@@ -2688,6 +2688,19 @@ void MirrorRow_C(const uint8_t* src, uint8_t* dst, int width) {
   }
 }
 
+void MirrorRow_16_C(const uint16_t* src, uint16_t* dst, int width) {
+  int x;
+  src += width - 1;
+  for (x = 0; x < width - 1; x += 2) {
+    dst[x] = src[0];
+    dst[x + 1] = src[-1];
+    src -= 2;
+  }
+  if (width & 1) {
+    dst[width - 1] = src[0];
+  }
+}
+
 void MirrorUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   int x;
   src_uv += (width - 1) << 1;

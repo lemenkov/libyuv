@@ -78,6 +78,18 @@ static inline bool SizeValid(int src_width,
   free(var##_mem);                        \
   var = 0
 
+#define align_buffer_page_end_16(var, size)                                 \
+  uint8_t* var##_mem =                                                      \
+      reinterpret_cast<uint8_t*>(malloc(((size * 2) + 4095 + 63) & ~4095)); \
+  uint16_t* var = reinterpret_cast<uint16_t*>(                              \
+      (intptr_t)(var##_mem + (((size * 2) + 4095 + 63) & ~4095) -           \
+                 (size * 2)) &                                              \
+      ~63)
+
+#define free_aligned_buffer_page_end_16(var) \
+  free(var##_mem);                           \
+  var = 0
+
 #ifdef WIN32
 static inline double get_time() {
   LARGE_INTEGER t, f;

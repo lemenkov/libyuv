@@ -837,6 +837,14 @@ struct YuvConstants {
   free(var##_mem);                  \
   var = 0
 
+#define align_buffer_64_16(var, size)                                          \
+  uint8_t* var##_mem = (uint8_t*)(malloc((size * 2) + 63));       /* NOLINT */ \
+  uint16_t* var = (uint16_t*)(((intptr_t)(var##_mem) + 63) & ~63) /* NOLINT */
+
+#define free_aligned_buffer_64_16(var) \
+  free(var##_mem);                     \
+  var = 0
+
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
 #else
@@ -1933,6 +1941,8 @@ void MirrorSplitUVRow_C(const uint8_t* src_uv,
                         uint8_t* dst_u,
                         uint8_t* dst_v,
                         int width);
+
+void MirrorRow_16_C(const uint16_t* src, uint16_t* dst, int width);
 
 void ARGBMirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
