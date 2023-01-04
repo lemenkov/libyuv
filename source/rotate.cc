@@ -138,7 +138,7 @@ void RotatePlane180(const uint8_t* src,
                     int dst_stride,
                     int width,
                     int height) {
-  // Swap first and last row and mirror the content. Uses a temporary row.
+  // Swap top and bottom row and mirror the content. Uses a temporary row.
   align_buffer_64(row, width);
   const uint8_t* src_bot = src + src_stride * (height - 1);
   uint8_t* dst_bot = dst + dst_stride * (height - 1);
@@ -209,9 +209,9 @@ void RotatePlane180(const uint8_t* src,
 
   // Odd height will harmlessly mirror the middle row twice.
   for (y = 0; y < half_height; ++y) {
-    CopyRow(src, row, width);        // Copy first row into buffer
-    MirrorRow(src_bot, dst, width);  // Mirror last row into first row
-    MirrorRow(row, dst_bot, width);  // Mirror buffer into last row
+    CopyRow(src, row, width);        // Copy top row into buffer
+    MirrorRow(src_bot, dst, width);  // Mirror bottom row into top row
+    MirrorRow(row, dst_bot, width);  // Mirror buffer into bottom row
     src += src_stride;
     dst += dst_stride;
     src_bot -= src_stride;
@@ -531,7 +531,7 @@ static void RotatePlane180_16(const uint16_t* src,
                               int dst_stride,
                               int width,
                               int height) {
-  // Swap first and last row and mirror the content. Uses a temporary row.
+  // Swap top and bottom row and mirror the content. Uses a temporary row.
   align_buffer_64_16(row, width);
   const uint16_t* src_bot = src + src_stride * (height - 1);
   uint16_t* dst_bot = dst + dst_stride * (height - 1);
@@ -540,9 +540,9 @@ static void RotatePlane180_16(const uint16_t* src,
 
   // Odd height will harmlessly mirror the middle row twice.
   for (y = 0; y < half_height; ++y) {
-    CopyRow_16_C(src, row, width);        // Copy first row into buffer
-    MirrorRow_16_C(src_bot, dst, width);  // Mirror last row into first row
-    MirrorRow_16_C(row, dst_bot, width);  // Mirror buffer into last row
+    CopyRow_16_C(src, row, width);        // Copy top row into buffer
+    MirrorRow_16_C(src_bot, dst, width);  // Mirror bottom row into top row
+    MirrorRow_16_C(row, dst_bot, width);  // Mirror buffer into bottom row
     src += src_stride;
     dst += dst_stride;
     src_bot -= src_stride;
@@ -695,7 +695,7 @@ int I422Rotate(const uint8_t* src_y,
 
   switch (mode) {
     case kRotate0:
-      // Copy frame.
+      // Copy frame
       CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height);
       CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height);
@@ -1044,7 +1044,7 @@ int I210Rotate(const uint16_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v || dst_stride_y < 0) {
+      !dst_u || !dst_v) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1060,7 +1060,7 @@ int I210Rotate(const uint16_t* src_y,
 
   switch (mode) {
     case kRotate0:
-      // Copy frame.
+      // Copy frame
       CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
       CopyPlane_16(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height);
       CopyPlane_16(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height);

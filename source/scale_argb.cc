@@ -289,10 +289,10 @@ static void ScaleARGBBilinearDown(int src_width,
                                   int dy,
                                   enum FilterMode filtering) {
   int j;
-  void (*InterpolateRow)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*InterpolateRow)(uint8_t* dst_argb, const uint8_t* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
-  void (*ScaleARGBFilterCols)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*ScaleARGBFilterCols)(uint8_t* dst_argb, const uint8_t* src_argb,
                               int dst_width, int x, int dx) =
       (src_width >= 32768) ? ScaleARGBFilterCols64_C : ScaleARGBFilterCols_C;
   int64_t xlast = x + (int64_t)(dst_width - 1) * dx;
@@ -421,10 +421,10 @@ static void ScaleARGBBilinearUp(int src_width,
                                 int dy,
                                 enum FilterMode filtering) {
   int j;
-  void (*InterpolateRow)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*InterpolateRow)(uint8_t* dst_argb, const uint8_t* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
-  void (*ScaleARGBFilterCols)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*ScaleARGBFilterCols)(uint8_t* dst_argb, const uint8_t* src_argb,
                               int dst_width, int x, int dx) =
       filtering ? ScaleARGBFilterCols_C : ScaleARGBCols_C;
   const int max_y = (src_height - 1) << 16;
@@ -668,7 +668,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
   }
 #endif
 
-  void (*InterpolateRow)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*InterpolateRow)(uint8_t* dst_argb, const uint8_t* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
 #if defined(HAS_INTERPOLATEROW_SSSE3)
@@ -712,7 +712,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
   }
 #endif
 
-  void (*ScaleARGBFilterCols)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*ScaleARGBFilterCols)(uint8_t* dst_argb, const uint8_t* src_argb,
                               int dst_width, int x, int dx) =
       filtering ? ScaleARGBFilterCols_C : ScaleARGBCols_C;
   if (src_width >= 32768) {
@@ -883,7 +883,7 @@ static void ScaleARGBSimple(int src_width,
                             int y,
                             int dy) {
   int j;
-  void (*ScaleARGBCols)(uint8_t * dst_argb, const uint8_t* src_argb,
+  void (*ScaleARGBCols)(uint8_t* dst_argb, const uint8_t* src_argb,
                         int dst_width, int x, int dx) =
       (src_width >= 32768) ? ScaleARGBCols64_C : ScaleARGBCols_C;
   (void)src_height;

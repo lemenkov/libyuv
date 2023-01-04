@@ -338,10 +338,10 @@ static void ScaleUVBilinearDown(int src_width,
                                 int dy,
                                 enum FilterMode filtering) {
   int j;
-  void (*InterpolateRow)(uint8_t * dst_uv, const uint8_t* src_uv,
+  void (*InterpolateRow)(uint8_t* dst_uv, const uint8_t* src_uv,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
-  void (*ScaleUVFilterCols)(uint8_t * dst_uv, const uint8_t* src_uv,
+  void (*ScaleUVFilterCols)(uint8_t* dst_uv, const uint8_t* src_uv,
                             int dst_width, int x, int dx) =
       (src_width >= 32768) ? ScaleUVFilterCols64_C : ScaleUVFilterCols_C;
   int64_t xlast = x + (int64_t)(dst_width - 1) * dx;
@@ -464,10 +464,10 @@ static void ScaleUVBilinearUp(int src_width,
                               int dy,
                               enum FilterMode filtering) {
   int j;
-  void (*InterpolateRow)(uint8_t * dst_uv, const uint8_t* src_uv,
+  void (*InterpolateRow)(uint8_t* dst_uv, const uint8_t* src_uv,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
-  void (*ScaleUVFilterCols)(uint8_t * dst_uv, const uint8_t* src_uv,
+  void (*ScaleUVFilterCols)(uint8_t* dst_uv, const uint8_t* src_uv,
                             int dst_width, int x, int dx) =
       filtering ? ScaleUVFilterCols_C : ScaleUVCols_C;
   const int max_y = (src_height - 1) << 16;
@@ -854,7 +854,7 @@ static void ScaleUVSimple(int src_width,
                           int y,
                           int dy) {
   int j;
-  void (*ScaleUVCols)(uint8_t * dst_uv, const uint8_t* src_uv, int dst_width,
+  void (*ScaleUVCols)(uint8_t* dst_uv, const uint8_t* src_uv, int dst_width,
                       int x, int dx) =
       (src_width >= 32768) ? ScaleUVCols64_C : ScaleUVCols_C;
   (void)src_height;

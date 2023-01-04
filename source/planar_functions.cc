@@ -333,7 +333,7 @@ int I210Copy(const uint16_t* src_y,
   return 0;
 }
 
-// Copy I444.
+// Copy I410.
 LIBYUV_API
 int I410Copy(const uint16_t* src_y,
              int src_stride_y,
@@ -3243,7 +3243,7 @@ void SetPlane(uint8_t* dst_y,
               int height,
               uint32_t value) {
   int y;
-  void (*SetRow)(uint8_t * dst, uint8_t value, int width) = SetRow_C;
+  void (*SetRow)(uint8_t* dst, uint8_t value, int width) = SetRow_C;
 
   if (width <= 0 || height == 0) {
     return;
@@ -3344,7 +3344,7 @@ int ARGBRect(uint8_t* dst_argb,
              int height,
              uint32_t value) {
   int y;
-  void (*ARGBSetRow)(uint8_t * dst_argb, uint32_t value, int width) =
+  void (*ARGBSetRow)(uint8_t* dst_argb, uint32_t value, int width) =
       ARGBSetRow_C;
   if (!dst_argb || width <= 0 || height == 0 || dst_x < 0 || dst_y < 0) {
     return -1;
@@ -3649,7 +3649,7 @@ int ARGBSepia(uint8_t* dst_argb,
               int width,
               int height) {
   int y;
-  void (*ARGBSepiaRow)(uint8_t * dst_argb, int width) = ARGBSepiaRow_C;
+  void (*ARGBSepiaRow)(uint8_t* dst_argb, int width) = ARGBSepiaRow_C;
   uint8_t* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
     return -1;
@@ -3792,7 +3792,7 @@ int ARGBColorTable(uint8_t* dst_argb,
                    int width,
                    int height) {
   int y;
-  void (*ARGBColorTableRow)(uint8_t * dst_argb, const uint8_t* table_argb,
+  void (*ARGBColorTableRow)(uint8_t* dst_argb, const uint8_t* table_argb,
                             int width) = ARGBColorTableRow_C;
   uint8_t* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || !table_argb || width <= 0 || height <= 0 || dst_x < 0 ||
@@ -3828,7 +3828,7 @@ int RGBColorTable(uint8_t* dst_argb,
                   int width,
                   int height) {
   int y;
-  void (*RGBColorTableRow)(uint8_t * dst_argb, const uint8_t* table_argb,
+  void (*RGBColorTableRow)(uint8_t* dst_argb, const uint8_t* table_argb,
                            int width) = RGBColorTableRow_C;
   uint8_t* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || !table_argb || width <= 0 || height <= 0 || dst_x < 0 ||
@@ -3873,7 +3873,7 @@ int ARGBQuantize(uint8_t* dst_argb,
                  int width,
                  int height) {
   int y;
-  void (*ARGBQuantizeRow)(uint8_t * dst_argb, int scale, int interval_size,
+  void (*ARGBQuantizeRow)(uint8_t* dst_argb, int scale, int interval_size,
                           int interval_offset, int width) = ARGBQuantizeRow_C;
   uint8_t* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0 ||
@@ -4126,7 +4126,7 @@ int InterpolatePlane(const uint8_t* src0,
                      int height,
                      int interpolation) {
   int y;
-  void (*InterpolateRow)(uint8_t * dst_ptr, const uint8_t* src_ptr,
+  void (*InterpolateRow)(uint8_t* dst_ptr, const uint8_t* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
   if (!src0 || !src1 || !dst || width <= 0 || height == 0) {
@@ -4206,7 +4206,7 @@ int InterpolatePlane_16(const uint16_t* src0,
                         int height,
                         int interpolation) {
   int y;
-  void (*InterpolateRow_16)(uint16_t * dst_ptr, const uint16_t* src_ptr,
+  void (*InterpolateRow_16)(uint16_t* dst_ptr, const uint16_t* src_ptr,
                             ptrdiff_t src_stride, int dst_width,
                             int source_y_fraction) = InterpolateRow_16_C;
   if (!src0 || !src1 || !dst || width <= 0 || height == 0) {
@@ -5321,7 +5321,7 @@ int UYVYToNV12(const uint8_t* src_uyvy,
   int halfwidth = (width + 1) >> 1;
   void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
                      int width) = SplitUVRow_C;
-  void (*InterpolateRow)(uint8_t * dst_ptr, const uint8_t* src_ptr,
+  void (*InterpolateRow)(uint8_t* dst_ptr, const uint8_t* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
 

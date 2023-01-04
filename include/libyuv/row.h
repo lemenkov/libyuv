@@ -11,7 +11,8 @@
 #ifndef INCLUDE_LIBYUV_ROW_H_
 #define INCLUDE_LIBYUV_ROW_H_
 
-#include <stdlib.h>  // For malloc.
+#include <stddef.h>  // For NULL
+#include <stdlib.h>  // For malloc
 
 #include "libyuv/basic_types.h"
 
@@ -829,21 +830,21 @@ struct YuvConstants {
 
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a)-1)))
 
-#define align_buffer_64(var, size)                                           \
-  uint8_t* var##_mem = (uint8_t*)(malloc((size) + 63));         /* NOLINT */ \
-  uint8_t* var = (uint8_t*)(((intptr_t)(var##_mem) + 63) & ~63) /* NOLINT */
+#define align_buffer_64(var, size)                                         \
+  void* var##_mem = malloc((size) + 63);                      /* NOLINT */ \
+  uint8_t* var = (uint8_t*)(((intptr_t)var##_mem + 63) & ~63) /* NOLINT */
 
 #define free_aligned_buffer_64(var) \
   free(var##_mem);                  \
-  var = 0
+  var = NULL
 
-#define align_buffer_64_16(var, size)                                          \
-  uint8_t* var##_mem = (uint8_t*)(malloc((size * 2) + 63));       /* NOLINT */ \
-  uint16_t* var = (uint16_t*)(((intptr_t)(var##_mem) + 63) & ~63) /* NOLINT */
+#define align_buffer_64_16(var, size)                                        \
+  void* var##_mem = malloc((size)*2 + 63);                      /* NOLINT */ \
+  uint16_t* var = (uint16_t*)(((intptr_t)var##_mem + 63) & ~63) /* NOLINT */
 
 #define free_aligned_buffer_64_16(var) \
   free(var##_mem);                     \
-  var = 0
+  var = NULL
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP

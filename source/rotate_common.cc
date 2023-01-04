@@ -94,8 +94,8 @@ void TransposeUVWxH_C(const uint8_t* src,
   for (i = 0; i < width * 2; i += 2) {
     int j;
     for (j = 0; j < height; ++j) {
-      dst_a[j + ((i >> 1) * dst_stride_a)] = src[i + (j * src_stride)];
-      dst_b[j + ((i >> 1) * dst_stride_b)] = src[i + (j * src_stride) + 1];
+      dst_a[((i >> 1) * dst_stride_a) + j] = src[i + (j * src_stride)];
+      dst_b[((i >> 1) * dst_stride_b) + j] = src[i + (j * src_stride) + 1];
     }
   }
 }
