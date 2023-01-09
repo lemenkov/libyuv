@@ -128,10 +128,6 @@ deps = {
       'condition': 'checkout_android',
       'dep_type': 'cipd',
   },
-  'src/third_party/auto/src': {
-    'url': Var('chromium_git') + '/external/github.com/google/auto.git' + '@' + '097f0ee6ffb0dc2a663d8afa0744ee1f230ae712',
-    'condition': 'checkout_android',
-  },
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git' + '@' + 'f0518d45119dd4dd322a884669daf8247bc3c992',
   'src/base': {
