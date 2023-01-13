@@ -24,6 +24,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// subsample amount uses a shift.
 #define SUBSAMPLE(v, a, s) (v < 0) ? (-((-v + a) >> s)) : ((v + a) >> s)
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
@@ -1267,6 +1268,71 @@ int NV16ToNV24(const uint8_t* src_y,
   UVScale(src_uv, src_stride_uv, SUBSAMPLE(width, 1, 1), height, dst_uv,
           dst_stride_uv, Abs(width), Abs(height), kFilterBilinear);
   return 0;
+}
+
+// Any P[420]1[02] to I[420]1[02] format with mirroring.
+static int PxxxToIxxx(const uint16_t* src_y,
+                      int src_stride_y,
+                      const uint16_t* src_uv,
+                      int src_stride_uv,
+                      uint16_t* dst_y,
+                      int dst_stride_y,
+                      uint16_t* dst_u,
+                      int dst_stride_u,
+                      uint16_t* dst_v,
+                      int dst_stride_v,
+                      int width,
+                      int height,
+                      int subsample_x,
+                      int subsample_y,
+                      int depth) {
+  const int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  const int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  if (width <= 0 || height == 0) {
+    return -1;
+  }
+
+  ConvertToLSBPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height,
+                       depth);
+  SplitUVPlane_16(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
+                  dst_stride_v, uv_width, uv_height, depth);
+  return 0;
+}
+
+LIBYUV_API
+int P010ToI010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return PxxxToIxxx(src_y, src_stride_y, src_uv, src_stride_uv, dst_y,
+                    dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                    width, height, 1, 1, 10);
+}
+
+LIBYUV_API
+int P012ToI012(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height) {
+  return PxxxToIxxx(src_y, src_stride_y, src_uv, src_stride_uv, dst_y,
+                    dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                    width, height, 1, 1, 12);
 }
 
 LIBYUV_API
