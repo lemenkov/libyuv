@@ -3911,31 +3911,29 @@ void DivideRow_16_NEON(const uint16_t* src_y,
                        int scale,
                        int width) {
   asm volatile(
-      "vdup.16     q0, %3                        \n"
+      "vdup.16     q6, %3                        \n"
       "1:                                        \n"
-      "vld1.16     {q1}, [%0]!                   \n"
-      "vld1.16     {q2}, [%0]!                   \n"
-      "vmovl.u16   q3, d2                        \n"
-      "vmovl.u16   q1, d3                        \n"
-      "vmovl.u16   q4, d4                        \n"
-      "vmovl.u16   q2, d5                        \n"
-      "vshl.u32    q3, q3, q0                    \n"
-      "vshl.u32    q4, q4, q0                    \n"
-      "vshl.u32    q1, q1, q0                    \n"
-      "vshl.u32    q2, q2, q0                    \n"
-      "vmovn.u32   d2, q3                        \n"
-      "vmovn.u32   d3, q1                        \n"
-      "vmovn.u32   d4, q4                        \n"
-      "vmovn.u32   d5, q2                        \n"
-      "vst1.16     {q1}, [%1]!                   \n"
-      "vst1.16     {q2}, [%1]!                   \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"
+      "vmovl.u16   q2, d0                        \n"
+      "vmovl.u16   q3, d1                        \n"
+      "vmovl.u16   q4, d2                        \n"
+      "vmovl.u16   q5, d3                        \n"
+      "vmul.u32    q2, q2, q6                    \n"
+      "vmul.u32    q3, q3, q6                    \n"
+      "vmul.u32    q4, q4, q6                    \n"
+      "vmul.u32    q5, q5, q6                    \n"
+      "vshrn.u32   d0, q2, #16                   \n"
+      "vshrn.u32   d1, q3, #16                   \n"
+      "vshrn.u32   d2, q4, #16                   \n"
+      "vshrn.u32   d3, q5, #16                   \n"
+      "vst1.16     {q0, q1}, [%1]!               \n"  // store 16 pixels
       "subs        %2, %2, #16                   \n"  // 16 src pixels per loop
       "bgt         1b                            \n"
       : "+r"(src_y),  // %0
         "+r"(dst_y),  // %1
         "+r"(width)   // %2
       : "r"(scale)    // %3
-      : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
 }
 
 // Use scale to convert lsb formats to msb, depending how many bits there are:

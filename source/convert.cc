@@ -24,7 +24,10 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// subsample amount uses a shift.
+// Subsample amount uses a shift.
+//   v is value
+//   a is amount to add to round up
+//   s is shift to subsample down
 #define SUBSAMPLE(v, a, s) (v < 0) ? (-((-v + a) >> s)) : ((v + a) >> s)
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
@@ -1291,7 +1294,6 @@ static int PxxxToIxxx(const uint16_t* src_y,
   if (width <= 0 || height == 0) {
     return -1;
   }
-
   ConvertToLSBPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height,
                        depth);
   SplitUVPlane_16(src_uv, src_stride_uv, dst_u, dst_stride_u, dst_v,
