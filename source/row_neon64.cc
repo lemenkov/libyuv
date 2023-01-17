@@ -4461,22 +4461,18 @@ void DivideRow_16_NEON(const uint16_t* src_y,
                        int scale,
                        int width) {
   asm volatile(
-      "dup         v6.8h, %w3                    \n"
+      "dup         v4.8h, %w3                    \n"
       "1:                                        \n"
-      "ldp         q0, q1, [%0], #32             \n"
-      "ushll       v2.4s, v0.4h, #0              \n"
-      "ushll2      v3.4s, v0.8h, #0              \n"
-      "ushll       v4.4s, v1.4h, #0              \n"
-      "ushll2      v5.4s, v1.8h, #0              \n"
+      "ldp         q2, q3, [%0], #32             \n"
+      "umull       v0.4s, v2.4h, v4.4h           \n"
+      "umull2      v1.4s, v2.8h, v4.8h           \n"
+      "umull       v2.4s, v3.4h, v4.4h           \n"
+      "umull2      v3.4s, v3.8h, v4.8h           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "mul         v2.4s, v2.4s, v6.4s           \n"
-      "mul         v3.4s, v3.4s, v6.4s           \n"
-      "mul         v4.4s, v4.4s, v6.4s           \n"
-      "mul         v5.4s, v5.4s, v6.4s           \n"
-      "shrn        v0.4h, v2.4s, #16             \n"
-      "shrn2       v0.8h, v3.4s, #16             \n"
-      "shrn        v1.4h, v4.4s, #16             \n"
-      "shrn2       v1.8h, v5.4s, #16             \n"
+      "shrn        v0.4h, v0.4s, #16             \n"
+      "shrn2       v0.8h, v1.4s, #16             \n"
+      "shrn        v1.4h, v2.4s, #16             \n"
+      "shrn2       v1.8h, v3.4s, #16             \n"
       "stp         q0, q1, [%1], #32             \n"  // store 16 pixels
       "subs        %w2, %w2, #16                 \n"  // 16 src pixels per loop
       "b.gt        1b                            \n"
@@ -4484,7 +4480,7 @@ void DivideRow_16_NEON(const uint16_t* src_y,
         "+r"(dst_y),  // %1
         "+r"(width)   // %2
       : "r"(scale)    // %3
-      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
 // Use scale to convert lsb formats to msb, depending how many bits there are:
