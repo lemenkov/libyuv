@@ -569,7 +569,7 @@ ANY31PT(MergeXRGB16To8Row_Any_NEON,
 ANY21(MergeUVRow_Any_SSE2, MergeUVRow_SSE2, 0, 1, 1, 2, 15)
 #endif
 #ifdef HAS_MERGEUVROW_AVX2
-ANY21(MergeUVRow_Any_AVX2, MergeUVRow_AVX2, 0, 1, 1, 2, 31)
+ANY21(MergeUVRow_Any_AVX2, MergeUVRow_AVX2, 0, 1, 1, 2, 15)
 #endif
 #ifdef HAS_MERGEUVROW_AVX512BW
 ANY21(MergeUVRow_Any_AVX512BW, MergeUVRow_AVX512BW, 0, 1, 1, 2, 31)
@@ -861,7 +861,7 @@ ANY21CT(P410ToAR30Row_Any_AVX2, P410ToAR30Row_AVX2, 0, 0, uint16_t, 2, 4, 15)
   }
 
 #ifdef HAS_MERGEUVROW_16_AVX2
-ANY21PT(MergeUVRow_16_Any_AVX2, MergeUVRow_16_AVX2, uint16_t, 2, 15)
+ANY21PT(MergeUVRow_16_Any_AVX2, MergeUVRow_16_AVX2, uint16_t, 2, 7)
 #endif
 #ifdef HAS_MERGEUVROW_16_NEON
 ANY21PT(MergeUVRow_16_Any_NEON, MergeUVRow_16_NEON, uint16_t, 2, 7)

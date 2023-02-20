@@ -3534,8 +3534,8 @@ TESTTPLANARTOP(MergeXR30, uint16_t, uint8_t, 16)
 // TODO(fbarchard): improve test for platforms and cpu detect
 #ifdef HAS_MERGEUVROW_16_AVX2
 TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
-  // Round count up to multiple of 16
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 15) & ~15;
+  // Round count up to multiple of 8
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 7) & ~7;
 
   align_buffer_page_end(src_pixels_u, kPixels * 2);
   align_buffer_page_end(src_pixels_v, kPixels * 2);

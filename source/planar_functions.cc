@@ -162,7 +162,7 @@ void Convert8To16Plane(const uint8_t* src_y,
                        int src_stride_y,
                        uint16_t* dst_y,
                        int dst_stride_y,
-                       int scale,  // 16384 for 10 bits
+                       int scale,  // 1024 for 10 bits
                        int width,
                        int height) {
   int y;
@@ -594,7 +594,7 @@ void MergeUVPlane(const uint8_t* src_u,
 #if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
+    if (IS_ALIGNED(width, 16)) {
       MergeUVRow = MergeUVRow_AVX2;
     }
   }
@@ -736,7 +736,7 @@ void MergeUVPlane_16(const uint16_t* src_u,
 #if defined(HAS_MERGEUVROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow_16 = MergeUVRow_16_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 8)) {
       MergeUVRow_16 = MergeUVRow_16_AVX2;
     }
   }

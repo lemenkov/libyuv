@@ -17,8 +17,6 @@ extern "C" {
 // This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
-#include <immintrin.h>
-
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
 // Constants for ARGB
@@ -5145,21 +5143,30 @@ void DetileSplitUVRow_SSSE3(const uint8_t* src_uv,
 #endif  // HAS_DETILESPLITUVROW_SSSE3
 
 #ifdef HAS_MERGEUVROW_AVX512BW
-__attribute__ ((target("avx512vl,avx512bw")))
 void MergeUVRow_AVX512BW(const uint8_t* src_u,
                          const uint8_t* src_v,
                          uint8_t* dst_uv,
                          int width) {
-  do {
-    const __m512i u = _mm512_cvtepu8_epi16(_mm256_loadu_epi8(src_u));
-    const __m512i v = _mm512_slli_epi64(_mm512_cvtepu8_epi16(_mm256_loadu_epi8(src_v)), 8);
-    const __m512i uv = _mm512_or_si512(u, v);
-    _mm512_storeu_epi8(dst_uv, uv);
-    src_u += 32;
-    src_v += 32;
-    dst_uv += 64;
-    width -= 32;
-  } while (width > 0);
+      asm volatile("sub         %0,%1                         \n"
+
+               LABELALIGN
+      "1:                                        \n"
+      "vpmovzxbw   (%0),%%zmm0                   \n"
+      "vpmovzxbw   0x00(%0,%1,1),%%zmm1          \n"
+      "lea         0x20(%0),%0                   \n"
+      "vpsllw      $0x8,%%zmm1,%%zmm1            \n"
+      "vporq       %%zmm0,%%zmm1,%%zmm2          \n"
+      "vmovdqu64   %%zmm2,(%2)                   \n"
+      "lea         0x40(%2),%2                   \n"
+      "sub         $0x20,%3                      \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+               : "+r"(src_u),   // %0
+                 "+r"(src_v),   // %1
+                 "+r"(dst_uv),  // %2
+                 "+r"(width)    // %3
+               :
+               : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_MERGEUVROW_AVX512BW
 
@@ -5168,31 +5175,26 @@ void MergeUVRow_AVX2(const uint8_t* src_u,
                      const uint8_t* src_v,
                      uint8_t* dst_uv,
                      int width) {
-  asm volatile(
+      asm volatile("sub         %0,%1                         \n"
 
-      "sub         %0,%1                         \n"
-
-      LABELALIGN
+               LABELALIGN
       "1:                                        \n"
-      "vmovdqu     (%0),%%ymm0                   \n"
-      "vmovdqu     0x00(%0,%1,1),%%ymm1          \n"
-      "lea         0x20(%0),%0                   \n"
-      "vpunpcklbw  %%ymm1,%%ymm0,%%ymm2          \n"
-      "vpunpckhbw  %%ymm1,%%ymm0,%%ymm0          \n"
-      "vextractf128 $0x0,%%ymm2,(%2)             \n"
-      "vextractf128 $0x0,%%ymm0,0x10(%2)         \n"
-      "vextractf128 $0x1,%%ymm2,0x20(%2)         \n"
-      "vextractf128 $0x1,%%ymm0,0x30(%2)         \n"
-      "lea         0x40(%2),%2                   \n"
-      "sub         $0x20,%3                      \n"
+      "vpmovzxbw   (%0),%%ymm0                   \n"
+      "vpmovzxbw   0x00(%0,%1,1),%%ymm1          \n"
+      "lea         0x10(%0),%0                   \n"
+      "vpsllw      $0x8,%%ymm1,%%ymm1            \n"
+      "vpor        %%ymm0,%%ymm1,%%ymm2          \n"
+      "vmovdqu     %%ymm2,(%2)                   \n"
+      "lea         0x20(%2),%2                   \n"
+      "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_u),   // %0
-        "+r"(src_v),   // %1
-        "+r"(dst_uv),  // %2
-        "+r"(width)    // %3
-      :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+               : "+r"(src_u),   // %0
+                 "+r"(src_v),   // %1
+                 "+r"(dst_uv),  // %2
+                 "+r"(width)    // %3
+               :
+               : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_MERGEUVROW_AVX2
 
@@ -5201,11 +5203,9 @@ void MergeUVRow_SSE2(const uint8_t* src_u,
                      const uint8_t* src_v,
                      uint8_t* dst_uv,
                      int width) {
-  asm volatile(
+      asm volatile("sub         %0,%1                         \n"
 
-      "sub         %0,%1                         \n"
-
-      LABELALIGN
+               LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x00(%0,%1,1),%%xmm1          \n"
@@ -5218,12 +5218,12 @@ void MergeUVRow_SSE2(const uint8_t* src_u,
       "lea         0x20(%2),%2                   \n"
       "sub         $0x10,%3                      \n"
       "jg          1b                            \n"
-      : "+r"(src_u),   // %0
-        "+r"(src_v),   // %1
-        "+r"(dst_uv),  // %2
-        "+r"(width)    // %3
-      :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+               : "+r"(src_u),   // %0
+                 "+r"(src_v),   // %1
+                 "+r"(dst_uv),  // %2
+                 "+r"(width)    // %3
+               :
+               : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_MERGEUVROW_SSE2
 
@@ -5233,37 +5233,35 @@ void MergeUVRow_16_AVX2(const uint16_t* src_u,
                         uint16_t* dst_uv,
                         int depth,
                         int width) {
-  depth = 16 - depth;
   // clang-format off
   asm volatile (
       "vmovd       %4,%%xmm3                     \n"
+      "vmovd       %5,%%xmm4                     \n"
+
+
       "sub         %0,%1                         \n"
+      // 8 pixels per loop.
 
-    // 16 pixels per loop.
-    LABELALIGN
+      LABELALIGN
       "1:                                        \n"
-      "vmovdqu     (%0),%%ymm0                   \n"
-      "vmovdqu     (%0,%1,1),%%ymm1              \n"
-      "add         $0x20,%0                      \n"
-
+      "vpmovzxwd   (%0),%%ymm0                   \n"
+      "vpmovzxwd   0x00(%0,%1,1),%%ymm1          \n"
+      "lea         0x10(%0),%0                   \n"
       "vpsllw      %%xmm3,%%ymm0,%%ymm0          \n"
-      "vpsllw      %%xmm3,%%ymm1,%%ymm1          \n"
-      "vpunpcklwd  %%ymm1,%%ymm0,%%ymm2          \n"  // mutates
-      "vpunpckhwd  %%ymm1,%%ymm0,%%ymm0          \n"
-      "vextractf128 $0x0,%%ymm2,(%2)             \n"
-      "vextractf128 $0x0,%%ymm0,0x10(%2)         \n"
-      "vextractf128 $0x1,%%ymm2,0x20(%2)         \n"
-      "vextractf128 $0x1,%%ymm0,0x30(%2)         \n"
-      "add         $0x40,%2                      \n"
-      "sub         $0x10,%3                      \n"
+      "vpslld      %%xmm4,%%ymm1,%%ymm1          \n"
+      "vpor        %%ymm0,%%ymm1,%%ymm2          \n"
+      "vmovdqu     %%ymm2,(%2)                   \n"
+      "lea         0x20(%2),%2                   \n"
+      "sub         $0x8,%3                       \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-  : "+r"(src_u),   // %0
-    "+r"(src_v),   // %1
-    "+r"(dst_uv),  // %2
-    "+r"(width)    // %3
-  : "r"(depth)     // %4
-  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+  : "+r"(src_u),      // %0
+    "+r"(src_v),      // %1
+    "+r"(dst_uv),     // %2
+    "+r"(width)       // %3
+  : "r"(16 - depth),  // %4
+    "r"(32 - depth)   // %5
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
   // clang-format on
 }
 #endif  // HAS_MERGEUVROW_AVX2
@@ -5469,7 +5467,6 @@ void Convert16To8Row_AVX2(const uint16_t* src_y,
 // 512 = 9 bits
 // 1024 = 10 bits
 // 4096 = 12 bits
-// TODO(fbarchard): reduce to SSE2
 void Convert8To16Row_SSE2(const uint8_t* src_y,
                           uint16_t* dst_y,
                           int scale,

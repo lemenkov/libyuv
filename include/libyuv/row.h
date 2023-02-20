@@ -402,9 +402,8 @@ extern "C" {
 // The following are available for AVX512 clang x86 platforms:
 // TODO(fbarchard): Port to GCC and Visual C
 // TODO(fbarchard): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI. Issue libyuv:789
-// TODO(fbarchard): Port MERGEUV to assembly
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || defined(__i386__)) && (defined(CLANG_HAS_AVX512) && !defined(_MSC_VER))
+    (defined(__x86_64__) || defined(__i386__)) && defined(CLANG_HAS_AVX512)
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_MERGEUVROW_AVX512BW
 #endif

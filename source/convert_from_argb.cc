@@ -384,7 +384,7 @@ int ARGBToNV12(const uint8_t* src_argb,
 #if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
@@ -562,7 +562,7 @@ int ARGBToNV21(const uint8_t* src_argb,
 #if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
@@ -737,7 +737,7 @@ int ABGRToNV12(const uint8_t* src_abgr,
 #if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
@@ -913,7 +913,7 @@ int ABGRToNV21(const uint8_t* src_abgr,
 #if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
@@ -2948,7 +2948,7 @@ int RAWToJNV21(const uint8_t* src_raw,
 #if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
