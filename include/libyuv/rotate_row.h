@@ -56,10 +56,6 @@ extern "C" {
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #define HAS_TRANSPOSEWX8_NEON
 #define HAS_TRANSPOSEUVWX8_NEON
-#endif
-
-#if !defined(LIBYUV_DISABLE_NEON) && \
-    (defined(LIBYUV_NEON) || defined(__aarch64__))
 #define HAS_TRANSPOSE4X4_32_NEON
 #endif
 

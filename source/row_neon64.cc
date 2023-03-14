@@ -752,49 +752,39 @@ void DetileToYUY2_NEON(const uint8_t* src_y,
 // Unpack MT2T into tiled P010 64 pixels at a time. See
 // tinyurl.com/mtk-10bit-video-format for format documentation.
 void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
-  const uint8_t* src_lower_bits = src;
-  const uint8_t* src_upper_bits = src + 16;
   asm volatile(
-      "1:                                        \n"
-      "ld4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%1], #32 \n"
-      "ld1         {v7.8b}, [%0], #8             \n"
-      "shl         v6.8b, v7.8b, #2              \n"
-      "shl         v5.8b, v7.8b, #4              \n"
-      "shl         v4.8b, v7.8b, #6              \n"
-      "zip1        v0.16b, v4.16b, v0.16b        \n"
-      "zip1        v1.16b, v5.16b, v1.16b        \n"
-      "zip1        v2.16b, v6.16b, v2.16b        \n"
-      "zip1        v3.16b, v7.16b, v3.16b        \n"
-      "sri         v0.8h, v0.8h, #10             \n"
-      "sri         v1.8h, v1.8h, #10             \n"
-      "sri         v2.8h, v2.8h, #10             \n"
-      "sri         v3.8h, v3.8h, #10             \n"
-      "st4         {v0.8h, v1.8h, v2.8h, v3.8h}, [%2], #64 \n"
-      "ld4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%1], #32 \n"
-      "ld1         {v7.8b}, [%0], #8             \n"
-      "shl         v6.8b, v7.8b, #2              \n"
-      "shl         v5.8b, v7.8b, #4              \n"
-      "shl         v4.8b, v7.8b, #6              \n"
-      "zip1        v0.16b, v4.16b, v0.16b        \n"
-      "zip1        v1.16b, v5.16b, v1.16b        \n"
-      "zip1        v2.16b, v6.16b, v2.16b        \n"
-      "zip1        v3.16b, v7.16b, v3.16b        \n"
-      "sri         v0.8h, v0.8h, #10             \n"
-      "sri         v1.8h, v1.8h, #10             \n"
-      "sri         v2.8h, v2.8h, #10             \n"
-      "sri         v3.8h, v3.8h, #10             \n"
-      "st4         {v0.8h, v1.8h, v2.8h, v3.8h}, [%2], #64 \n"
-      "mov         %0, %1                        \n"
-      "add         %1, %0, #16                   \n"
-      "subs        %3, %3, #80                   \n"
-      "b.gt        1b                            \n"
-      : "+r"(src_lower_bits),  // %0
-        "+r"(src_upper_bits),  // %1
-        "+r"(dst),             // %2
-        "+r"(size)             // %3
+      "1:                                                      \n"
+      "ld1         {v7.16b}, [%0], #16                         \n"
+      "ld1         {v0.16b-v3.16b}, [%0], #64                  \n"
+      "shl         v4.16b, v7.16b, #6                          \n"
+      "shl         v5.16b, v7.16b, #4                          \n"
+      "shl         v6.16b, v7.16b, #2                          \n"
+      "subs        %2, %2, #80                                 \n"
+      "zip1        v16.16b, v4.16b, v0.16b                     \n"
+      "zip1        v18.16b, v5.16b, v1.16b                     \n"
+      "zip1        v20.16b, v6.16b, v2.16b                     \n"
+      "zip1        v22.16b, v7.16b, v3.16b                     \n"
+      "zip2        v17.16b, v4.16b, v0.16b                     \n"
+      "zip2        v19.16b, v5.16b, v1.16b                     \n"
+      "zip2        v21.16b, v6.16b, v2.16b                     \n"
+      "zip2        v23.16b, v7.16b, v3.16b                     \n"
+      "sri         v16.8h, v16.8h, #10                         \n"
+      "sri         v17.8h, v17.8h, #10                         \n"
+      "sri         v18.8h, v18.8h, #10                         \n"
+      "sri         v19.8h, v19.8h, #10                         \n"
+      "st1         {v16.8h-v19.8h}, [%1], #64                  \n"
+      "sri         v20.8h, v20.8h, #10                         \n"
+      "sri         v21.8h, v21.8h, #10                         \n"
+      "sri         v22.8h, v22.8h, #10                         \n"
+      "sri         v23.8h, v23.8h, #10                         \n"
+      "st1         {v20.8h-v23.8h}, [%1], #64                  \n"
+      "b.gt        1b                                          \n"
+      : "+r"(src),  // %0
+        "+r"(dst),  // %1
+        "+r"(size)  // %2
       :
       : "cc", "memory", "w0", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-        "v8", "v9", "v10", "v11", "v12");
+        "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 
 #if LIBYUV_USE_ST2
