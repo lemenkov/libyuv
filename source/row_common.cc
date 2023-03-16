@@ -2881,7 +2881,7 @@ void UnpackMT2T_C(const uint8_t* src, uint16_t* dst, size_t size) {
         *dst++ = ((src_lower_bits[k] >> (j * 2)) & 0x3) << 6 |
                  (uint16_t)*src_upper_bits << 8 |
                  (uint16_t)*src_upper_bits >> 2;
-                 src_upper_bits++;
+        src_upper_bits++;
       }
     }
 

@@ -722,37 +722,37 @@ void DetileToYUY2_NEON(const uint8_t* src_y,
 
 void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
   asm volatile(
-      "1:                                          \n"
-      "vld1.8      q14, [%0]!                      \n"  // Load lower bits.
-      "vld1.8      q9, [%0]!                       \n"  // Load upper bits row
+      "1:                                        \n"
+      "vld1.8      q14, [%0]!                    \n"  // Load lower bits.
+      "vld1.8      q9, [%0]!                     \n"  // Load upper bits row
                                                         // by row.
-      "vld1.8      q11, [%0]!                      \n"
-      "vld1.8      q13, [%0]!                      \n"
-      "vld1.8      q15, [%0]!                      \n"
-      "vshl.u8     q8, q14, #6                     \n"  // Shift lower bit data
+      "vld1.8      q11, [%0]!                    \n"
+      "vld1.8      q13, [%0]!                    \n"
+      "vld1.8      q15, [%0]!                    \n"
+      "vshl.u8     q8, q14, #6                   \n"  // Shift lower bit data
                                                         // appropriately.
-      "vshl.u8     q10, q14, #4                    \n"
-      "vshl.u8     q12, q14, #2                    \n"
-      "vzip.u8     q8, q9                          \n"  // Interleave upper and
+      "vshl.u8     q10, q14, #4                  \n"
+      "vshl.u8     q12, q14, #2                  \n"
+      "vzip.u8     q8, q9                        \n"  // Interleave upper and
                                                         // lower bits.
-      "vzip.u8     q10, q11                        \n"
-      "vzip.u8     q12, q13                        \n"
-      "vzip.u8     q14, q15                        \n"
-      "vsri.u16    q8, q8, #10                     \n"  // Copy upper 6 bits
+      "vzip.u8     q10, q11                      \n"
+      "vzip.u8     q12, q13                      \n"
+      "vzip.u8     q14, q15                      \n"
+      "vsri.u16    q8, q8, #10                   \n"  // Copy upper 6 bits
                                                         // into lower 6 bits for
                                                         // better accuracy in
                                                         // conversions.
-      "vsri.u16    q9, q9, #10                     \n"
-      "vsri.u16    q10, q10, #10                   \n"
-      "vsri.u16    q11, q11, #10                   \n"
-      "vsri.u16    q12, q12, #10                   \n"
-      "vsri.u16    q13, q13, #10                   \n"
-      "vsri.u16    q14, q14, #10                   \n"
-      "vsri.u16    q15, q15, #10                   \n"
-      "vstmia      %1!, {q8-q15}                   \n"  // Store pixel block (64
+      "vsri.u16    q9, q9, #10                   \n"
+      "vsri.u16    q10, q10, #10                 \n"
+      "vsri.u16    q11, q11, #10                 \n"
+      "vsri.u16    q12, q12, #10                 \n"
+      "vsri.u16    q13, q13, #10                 \n"
+      "vsri.u16    q14, q14, #10                 \n"
+      "vsri.u16    q15, q15, #10                 \n"
+      "vstmia      %1!, {q8-q15}                 \n"  // Store pixel block (64
                                                         // pixels).
-      "subs        %2, %2, #80                     \n"
-      "bgt         1b                              \n"
+      "subs        %2, %2, #80                   \n"
+      "bgt         1b                            \n"
       : "+r"(src),  // %0
         "+r"(dst),  // %1
         "+r"(size)  // %2

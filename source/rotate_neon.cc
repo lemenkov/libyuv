@@ -411,7 +411,6 @@ void TransposeUVWx8_NEON(const uint8_t* src,
       : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11");
 }
 
-
 // Transpose 32 bit values (ARGB)
 void Transpose4x4_32_NEON(const uint8_t* src,
                           int src_stride,
