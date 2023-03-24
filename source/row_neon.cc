@@ -91,10 +91,11 @@ extern "C" {
 
 #define YUVTORGB_SETUP                                        \
   "vld4.8     {d26[], d27[], d28[], d29[]}, [%[kUVCoeff]] \n" \
-  "vld1.16    {d31[]}, [%[kRGBCoeffBias]]!   \n"              \
-  "vld1.16    {d20[], d21[]}, [%[kRGBCoeffBias]]! \n"         \
-  "vld1.16    {d22[], d23[]}, [%[kRGBCoeffBias]]! \n"         \
-  "vld1.16    {d24[], d25[]}, [%[kRGBCoeffBias]] \n"
+  "vld1.16    {d31[]}, [%[kRGBCoeffBias]]!                \n" \
+  "vld1.16    {d20[], d21[]}, [%[kRGBCoeffBias]]!         \n" \
+  "vld1.16    {d22[], d23[]}, [%[kRGBCoeffBias]]!         \n" \
+  "vld1.16    {d24[], d25[]}, [%[kRGBCoeffBias]]          \n" \
+  "sub         %[kRGBCoeffBias], %[kRGBCoeffBias], #10    \n"
 
 // q0: B uint16x8_t
 // q1: G uint16x8_t
@@ -1754,20 +1755,20 @@ void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
                                 const uint32_t dither4,
                                 int width) {
   asm volatile(
-      "vdup.32     d7, %2                        \n"  // dither4
+      "vdup.32     d7, %3                        \n"  // dither4
       "1:                                        \n"
-      "vld4.8      {d0, d2, d4, d6}, [%1]!       \n"  // load 8 pixels of ARGB.
-      "subs        %3, %3, #8                    \n"  // 8 processed per loop.
+      "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  // load 8 pixels of ARGB.
+      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
       "vqadd.u8    d0, d0, d7                    \n"
       "vqadd.u8    d2, d2, d7                    \n"
       "vqadd.u8    d4, d4, d7                    \n"  // add for dither
       ARGBTORGB565
-      "vst1.8      {q2}, [%0]!                   \n"  // store 8 RGB565.
+      "vst1.8      {q2}, [%1]!                   \n"  // store 8 RGB565.
       "bgt         1b                            \n"
-      : "+r"(dst_rgb)   // %0
-      : "r"(src_argb),  // %1
-        "r"(dither4),   // %2
-        "r"(width)      // %3
+      : "+r"(src_argb),  // %0
+        "+r"(dst_rgb),   // %1
+        "+r"(width)      // %2
+      : "r"(dither4)     // %3
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 

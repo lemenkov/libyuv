@@ -1982,21 +1982,21 @@ void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
                                 const uint32_t dither4,
                                 int width) {
   asm volatile(
-      "dup         v1.4s, %w2                    \n"  // dither4
+      "dup         v1.4s, %w3                    \n"  // dither4
       "1:                                        \n"
-      "ld4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%1], #32 \n"  // load 8
-                                                                 // pixels
-      "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
+      "ld4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%0], #32 \n"  // load 8 ARGB
+      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
       "uqadd       v16.8b, v16.8b, v1.8b         \n"
       "prfm        pldl1keep, [%0, 448]          \n"
       "uqadd       v17.8b, v17.8b, v1.8b         \n"
-      "uqadd       v18.8b, v18.8b, v1.8b         \n" ARGBTORGB565
-      "st1         {v18.16b}, [%0], #16          \n"  // store 8 pixels RGB565.
+      "uqadd       v18.8b, v18.8b, v1.8b         \n"
+      ARGBTORGB565
+      "st1         {v18.16b}, [%1], #16          \n"  // store 8 pixels RGB565.
       "b.gt        1b                            \n"
-      : "+r"(dst_rgb)   // %0
-      : "r"(src_argb),  // %1
-        "r"(dither4),   // %2
-        "r"(width)      // %3
+      : "+r"(src_argb),  // %0
+        "+r"(dst_rgb),   // %1
+        "+r"(width)      // %2
+      : "r"(dither4)     // %3
       : "cc", "memory", "v1", "v16", "v17", "v18", "v19");
 }
 
