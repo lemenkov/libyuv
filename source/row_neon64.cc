@@ -1989,8 +1989,7 @@ void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
       "uqadd       v16.8b, v16.8b, v1.8b         \n"
       "prfm        pldl1keep, [%0, 448]          \n"
       "uqadd       v17.8b, v17.8b, v1.8b         \n"
-      "uqadd       v18.8b, v18.8b, v1.8b         \n"
-      ARGBTORGB565
+      "uqadd       v18.8b, v18.8b, v1.8b         \n" ARGBTORGB565
       "st1         {v18.16b}, [%1], #16          \n"  // store 8 pixels RGB565.
       "b.gt        1b                            \n"
       : "+r"(src_argb),  // %0

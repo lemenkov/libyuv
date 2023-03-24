@@ -89,13 +89,14 @@ extern "C" {
   "vsli.u16   d2, d2, #8                     \n" \
   "vsri.u16   d3, d3, #8                     \n"
 
+// TODO: Use single register for kUVCoeff and multiply by lane
 #define YUVTORGB_SETUP                                        \
+  "vld1.16    {d31}, [%[kRGBCoeffBias]]                   \n" \
   "vld4.8     {d26[], d27[], d28[], d29[]}, [%[kUVCoeff]] \n" \
-  "vld1.16    {d31[]}, [%[kRGBCoeffBias]]!                \n" \
-  "vld1.16    {d20[], d21[]}, [%[kRGBCoeffBias]]!         \n" \
-  "vld1.16    {d22[], d23[]}, [%[kRGBCoeffBias]]!         \n" \
-  "vld1.16    {d24[], d25[]}, [%[kRGBCoeffBias]]          \n" \
-  "sub         %[kRGBCoeffBias], %[kRGBCoeffBias], #10    \n"
+  "vdup.u16   q10, d31[1]                                 \n" \
+  "vdup.u16   q11, d31[2]                                 \n" \
+  "vdup.u16   q12, d31[3]                                 \n" \
+  "vdup.u16   d31, d31[0]                                 \n"
 
 // q0: B uint16x8_t
 // q1: G uint16x8_t
@@ -726,23 +727,23 @@ void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
       "1:                                        \n"
       "vld1.8      q14, [%0]!                    \n"  // Load lower bits.
       "vld1.8      q9, [%0]!                     \n"  // Load upper bits row
-                                                        // by row.
+                                                      // by row.
       "vld1.8      q11, [%0]!                    \n"
       "vld1.8      q13, [%0]!                    \n"
       "vld1.8      q15, [%0]!                    \n"
       "vshl.u8     q8, q14, #6                   \n"  // Shift lower bit data
-                                                        // appropriately.
+                                                      // appropriately.
       "vshl.u8     q10, q14, #4                  \n"
       "vshl.u8     q12, q14, #2                  \n"
       "vzip.u8     q8, q9                        \n"  // Interleave upper and
-                                                        // lower bits.
+                                                      // lower bits.
       "vzip.u8     q10, q11                      \n"
       "vzip.u8     q12, q13                      \n"
       "vzip.u8     q14, q15                      \n"
       "vsri.u16    q8, q8, #10                   \n"  // Copy upper 6 bits
-                                                        // into lower 6 bits for
-                                                        // better accuracy in
-                                                        // conversions.
+                                                      // into lower 6 bits for
+                                                      // better accuracy in
+                                                      // conversions.
       "vsri.u16    q9, q9, #10                   \n"
       "vsri.u16    q10, q10, #10                 \n"
       "vsri.u16    q11, q11, #10                 \n"
@@ -751,7 +752,7 @@ void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
       "vsri.u16    q14, q14, #10                 \n"
       "vsri.u16    q15, q15, #10                 \n"
       "vstmia      %1!, {q8-q15}                 \n"  // Store pixel block (64
-                                                        // pixels).
+                                                      // pixels).
       "subs        %2, %2, #80                   \n"
       "bgt         1b                            \n"
       : "+r"(src),  // %0
@@ -1755,20 +1756,20 @@ void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
                                 const uint32_t dither4,
                                 int width) {
   asm volatile(
-      "vdup.32     d7, %3                        \n"  // dither4
+      "vdup.32     d7, %2                        \n"  // dither4
       "1:                                        \n"
-      "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  // load 8 pixels of ARGB.
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop.
+      "vld4.8      {d0, d2, d4, d6}, [%1]!       \n"  // load 8 pixels of ARGB.
+      "subs        %3, %3, #8                    \n"  // 8 processed per loop.
       "vqadd.u8    d0, d0, d7                    \n"
       "vqadd.u8    d2, d2, d7                    \n"
       "vqadd.u8    d4, d4, d7                    \n"  // add for dither
       ARGBTORGB565
-      "vst1.8      {q2}, [%1]!                   \n"  // store 8 RGB565.
+      "vst1.8      {q2}, [%0]!                   \n"  // store 8 RGB565.
       "bgt         1b                            \n"
-      : "+r"(src_argb),  // %0
-        "+r"(dst_rgb),   // %1
-        "+r"(width)      // %2
-      : "r"(dither4)     // %3
+      : "+r"(dst_rgb)   // %0
+      : "r"(src_argb),  // %1
+        "r"(dither4),   // %2
+        "r"(width)      // %3
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
