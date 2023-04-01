@@ -3124,6 +3124,11 @@ int RAWToARGB(const uint8_t* src_raw,
     }
   }
 #endif
+#if defined(HAS_RAWTOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    RAWToARGBRow = RAWToARGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     RAWToARGBRow(src_raw, dst_argb, width);
@@ -3173,6 +3178,11 @@ int RAWToRGBA(const uint8_t* src_raw,
     if (IS_ALIGNED(width, 8)) {
       RAWToRGBARow = RAWToRGBARow_NEON;
     }
+  }
+#endif
+#if defined(HAS_RAWTORGBAROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    RAWToRGBARow = RAWToRGBARow_RVV;
   }
 #endif
 

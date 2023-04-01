@@ -3234,6 +3234,11 @@ int RAWToRGB24(const uint8_t* src_raw,
     }
   }
 #endif
+#if defined(HAS_RAWTORGB24ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    RAWToRGB24Row = RAWToRGB24Row_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     RAWToRGB24Row(src_raw, dst_rgb24, width);

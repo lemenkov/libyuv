@@ -757,6 +757,12 @@ extern "C" {
 #define HAS_RAWTOYJROW_LASX
 #endif
 
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv)
+#define HAS_RAWTOARGBROW_RVV
+#define HAS_RAWTORGBAROW_RVV
+#define HAS_RAWTORGB24ROW_RVV
+#endif
+
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
 #if defined(VISUALC_HAS_AVX2)
 #define SIMD_ALIGNED(var) __declspec(align(32)) var
@@ -2960,9 +2966,12 @@ void RAWToRGBARow_NEON(const uint8_t* src_raw, uint8_t* dst_rgba, int width);
 void RAWToARGBRow_MSA(const uint8_t* src_raw, uint8_t* dst_argb, int width);
 void RAWToARGBRow_LSX(const uint8_t* src_raw, uint8_t* dst_argb, int width);
 void RAWToARGBRow_LASX(const uint8_t* src_raw, uint8_t* dst_argb, int width);
+void RAWToARGBRow_RVV(const uint8_t* src_raw, uint8_t* dst_argb, int width);
+void RAWToRGBARow_RVV(const uint8_t* src_raw, uint8_t* dst_rgba, int width);
 void RAWToRGB24Row_NEON(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RAWToRGB24Row_MSA(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RAWToRGB24Row_LSX(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
+void RAWToRGB24Row_RVV(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RGB565ToARGBRow_NEON(const uint8_t* src_rgb565,
                           uint8_t* dst_argb,
                           int width);
