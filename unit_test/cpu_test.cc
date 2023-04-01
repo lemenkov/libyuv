@@ -27,6 +27,14 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   int has_neon = TestCpuFlag(kCpuHasNEON);
   printf("Has NEON %d\n", has_neon);
 #endif
+#if defined(__riscv) && defined(__linux__)
+  int has_riscv = TestCpuFlag(kCpuHasRISCV);
+  printf("Has RISCV %d\n", has_riscv);
+  int has_rvv = TestCpuFlag(kCpuHasRVV);
+  printf("Has RVV %d\n", has_rvv);
+  int has_rvvzvfh = TestCpuFlag(kCpuHasRVVZVFH);
+  printf("Has RVVZVFH %d\n", has_rvvzvfh);
+#endif
   int has_x86 = TestCpuFlag(kCpuHasX86);
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
@@ -164,6 +172,9 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef _WIN32
   printf("_WIN32 %d\n", _WIN32);
 #endif
+#ifdef __riscv
+  printf("__riscv %d\n", __riscv);
+#endif
 #ifdef GG_LONGLONG
   printf("GG_LONGLONG %d\n", GG_LONGLONG);
 #endif
@@ -262,6 +273,32 @@ TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {
   } else {
     printf("WARNING: unable to load \"../../unit_test/testdata/mips.txt\"\n");
   }
+}
+
+TEST_F(LibYUVBaseTest, TestLinuxRVV) {
+  if (FileExists("../../unit_test/testdata/riscv64.txt")) {
+    printf("Note: testing to load \"../../unit_test/testdata/riscv64.txt\"\n");
+
+    EXPECT_EQ(0, RiscvCpuCaps("../../unit_test/testdata/riscv64.txt"));
+    EXPECT_EQ(kCpuHasRVV,
+              RiscvCpuCaps("../../unit_test/testdata/riscv64_rvv.txt"));
+    EXPECT_EQ(kCpuHasRVV | kCpuHasRVVZVFH,
+              RiscvCpuCaps("../../unit_test/testdata/riscv64_rvv_zvfh.txt"));
+  } else {
+    printf(
+        "WARNING: unable to load "
+        "\"../../unit_test/testdata/riscv64.txt\"\n");
+  }
+#if defined(__linux__) && defined(__riscv)
+  if (FileExists("/proc/cpuinfo")) {
+    if (!(kCpuHasRVV & RiscvCpuCaps("/proc/cpuinfo"))) {
+      // This can happen on RVV emulator but /proc/cpuinfo is from host.
+      printf("WARNING: RVV build enabled but CPU does not have RVV\n");
+    }
+  } else {
+    printf("WARNING: unable to load \"/proc/cpuinfo\"\n");
+  }
+#endif
 }
 
 // TODO(fbarchard): Fix clangcl test of cpuflags.
