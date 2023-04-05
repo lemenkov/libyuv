@@ -820,6 +820,7 @@ static void ScaleAddCols2_C(int dst_width,
     int ix = x >> 16;
     x += dx;
     boxwidth = MIN1((x >> 16) - ix);
+    assert(((boxwidth - minboxwidth) == 0) || ((boxwidth - minboxwidth) == 1));
     *dst_ptr++ = (uint8_t)(SumPixels(boxwidth, src_ptr + ix) *
                                scaletbl[boxwidth - minboxwidth] >>
                            16);
@@ -842,6 +843,7 @@ static void ScaleAddCols2_16_C(int dst_width,
     int ix = x >> 16;
     x += dx;
     boxwidth = MIN1((x >> 16) - ix);
+    assert(((boxwidth - minboxwidth) == 0) || ((boxwidth - minboxwidth) == 1));
     *dst_ptr++ = SumPixels_16(boxwidth, src_ptr + ix) *
                      scaletbl[boxwidth - minboxwidth] >>
                  16;
