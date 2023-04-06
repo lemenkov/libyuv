@@ -2284,7 +2284,7 @@ ANY11S(AYUVToVURow_Any_NEON, AYUVToVURow_NEON, 0, 4, 15)
 #define ANYDETILE(NAMEANY, ANY_SIMD, T, BPP, MASK)                           \
   void NAMEANY(const T* src, ptrdiff_t src_tile_stride, T* dst, int width) { \
     SIMD_ALIGNED(T temp[16 * 2]);                                            \
-    memset(temp, 0, 16 * BPP); /* for msan */                                \
+    memset(temp, 0, sizeof(temp)); /* for msan */                            \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
