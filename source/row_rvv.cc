@@ -12,7 +12,7 @@
  * Copyright (c) 2023 SiFive, Inc. All rights reserved.
  *
  * Contributed by Darren Hsieh <darren.hsieh@sifive.com>
- *
+ * Contributed by Bruce Lai <bruce.lai@sifive.com>
  */
 
 #include <assert.h>
@@ -26,6 +26,77 @@
 namespace libyuv {
 extern "C" {
 #endif
+
+void ARGBToAR64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
+  size_t avl = (size_t)4 * width;
+  do {
+    vuint16m8_t v_ar64;
+    vuint8m4_t v_argb;
+    size_t vl = __riscv_vsetvl_e8m4(avl);
+    v_argb = __riscv_vle8_v_u8m4(src_argb, vl);
+    v_ar64 = __riscv_vwaddu_vx_u16m8(v_argb, 0, vl);
+    v_ar64 = __riscv_vmul_vx_u16m8(v_ar64, 0x0101, vl);
+    __riscv_vse16_v_u16m8(dst_ar64, v_ar64, vl);
+    avl -= vl;
+    src_argb += vl;
+    dst_ar64 += vl;
+  } while (avl > 0);
+}
+
+void ARGBToAB64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
+  size_t avl = (size_t)width;
+  do {
+    vuint16m2_t v_b_16, v_g_16, v_r_16, v_a_16;
+    vuint8m1_t v_b, v_g, v_r, v_a;
+    size_t vl = __riscv_vsetvl_e8m1(avl);
+    __riscv_vlseg4e8_v_u8m1(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    v_b_16 = __riscv_vwaddu_vx_u16m2(v_b, 0, vl);
+    v_g_16 = __riscv_vwaddu_vx_u16m2(v_g, 0, vl);
+    v_r_16 = __riscv_vwaddu_vx_u16m2(v_r, 0, vl);
+    v_a_16 = __riscv_vwaddu_vx_u16m2(v_a, 0, vl);
+    v_b_16 = __riscv_vmul_vx_u16m2(v_b_16, 0x0101, vl);
+    v_g_16 = __riscv_vmul_vx_u16m2(v_g_16, 0x0101, vl);
+    v_r_16 = __riscv_vmul_vx_u16m2(v_r_16, 0x0101, vl);
+    v_a_16 = __riscv_vmul_vx_u16m2(v_a_16, 0x0101, vl);
+    __riscv_vsseg4e16_v_u16m2(dst_ab64, v_r_16, v_g_16, v_b_16, v_a_16, vl);
+    avl -= vl;
+    src_argb += 4 * vl;
+    dst_ab64 += 4 * vl;
+  } while (avl > 0);
+}
+
+void AR64ToARGBRow_RVV(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
+  size_t avl = (size_t)4 * width;
+  do {
+    vuint16m8_t v_ar64;
+    vuint8m4_t v_argb;
+    size_t vl = __riscv_vsetvl_e16m8(avl);
+    v_ar64 = __riscv_vle16_v_u16m8(src_ar64, vl);
+    v_argb = __riscv_vnsrl_wx_u8m4(v_ar64, 8, vl);
+    __riscv_vse8_v_u8m4(dst_argb, v_argb, vl);
+    avl -= vl;
+    src_ar64 += vl;
+    dst_argb += vl;
+  } while (avl > 0);
+}
+
+void AB64ToARGBRow_RVV(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
+  size_t avl = (size_t)width;
+  do {
+    vuint16m2_t v_b_16, v_g_16, v_r_16, v_a_16;
+    vuint8m1_t v_b, v_g, v_r, v_a;
+    size_t vl = __riscv_vsetvl_e16m2(avl);
+    __riscv_vlseg4e16_v_u16m2(&v_r_16, &v_g_16, &v_b_16, &v_a_16, src_ab64, vl);
+    v_b = __riscv_vnsrl_wx_u8m1(v_b_16, 8, vl);
+    v_g = __riscv_vnsrl_wx_u8m1(v_g_16, 8, vl);
+    v_r = __riscv_vnsrl_wx_u8m1(v_r_16, 8, vl);
+    v_a = __riscv_vnsrl_wx_u8m1(v_a_16, 8, vl);
+    __riscv_vsseg4e8_v_u8m1(dst_argb, v_b, v_g, v_r, v_a, vl);
+    avl -= vl;
+    src_ab64 += 4 * vl;
+    dst_argb += 4 * vl;
+  } while (avl > 0);
+}
 
 void RAWToARGBRow_RVV(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   size_t vl = __riscv_vsetvl_e8m2(width);

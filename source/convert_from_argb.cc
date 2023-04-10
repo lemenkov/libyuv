@@ -2751,6 +2751,11 @@ int ARGBToAR64(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOAR64ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBToAR64Row = ARGBToAR64Row_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBToAR64Row(src_argb, dst_ar64, width);
@@ -2808,6 +2813,11 @@ int ARGBToAB64(const uint8_t* src_argb,
     if (IS_ALIGNED(width, 8)) {
       ARGBToAB64Row = ARGBToAB64Row_NEON;
     }
+  }
+#endif
+#if defined(HAS_ARGBTOAB64ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBToAB64Row = ARGBToAB64Row_RVV;
   }
 #endif
 
