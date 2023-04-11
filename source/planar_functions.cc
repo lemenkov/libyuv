@@ -1268,6 +1268,11 @@ void SplitRGBPlane(const uint8_t* src_rgb,
     }
   }
 #endif
+#if defined(HAS_SPLITRGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitRGBRow = SplitRGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     // Copy a row of RGB.
@@ -1327,6 +1332,11 @@ void MergeRGBPlane(const uint8_t* src_r,
     }
   }
 #endif
+#if defined(HAS_MERGERGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeRGBRow = MergeRGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     // Merge a row of U and V into a row of RGB.
@@ -1358,6 +1368,9 @@ static void SplitARGBPlaneAlpha(const uint8_t* src_argb,
 
   assert(height > 0);
 
+  if (width <= 0 || height == 0) {
+    return;
+  }
   if (src_stride_argb == width * 4 && dst_stride_r == width &&
       dst_stride_g == width && dst_stride_b == width && dst_stride_a == width) {
     width *= height;
@@ -1398,6 +1411,11 @@ static void SplitARGBPlaneAlpha(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_SPLITARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitARGBRow = SplitARGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     SplitARGBRow(src_argb, dst_r, dst_g, dst_b, dst_a, width);
@@ -1425,6 +1443,9 @@ static void SplitARGBPlaneOpaque(const uint8_t* src_argb,
                        uint8_t* dst_b, int width) = SplitXRGBRow_C;
   assert(height > 0);
 
+  if (width <= 0 || height == 0) {
+    return;
+  }
   if (src_stride_argb == width * 4 && dst_stride_r == width &&
       dst_stride_g == width && dst_stride_b == width) {
     width *= height;
@@ -1462,6 +1483,11 @@ static void SplitARGBPlaneOpaque(const uint8_t* src_argb,
     if (IS_ALIGNED(width, 16)) {
       SplitXRGBRow = SplitXRGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_SPLITXRGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitXRGBRow = SplitXRGBRow_RVV;
   }
 #endif
 
@@ -1530,6 +1556,9 @@ static void MergeARGBPlaneAlpha(const uint8_t* src_r,
 
   assert(height > 0);
 
+  if (width <= 0 || height == 0) {
+    return;
+  }
   if (src_stride_r == width && src_stride_g == width && src_stride_b == width &&
       src_stride_a == width && dst_stride_argb == width * 4) {
     width *= height;
@@ -1561,6 +1590,11 @@ static void MergeARGBPlaneAlpha(const uint8_t* src_r,
     }
   }
 #endif
+#if defined(HAS_MERGEARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeARGBRow = MergeARGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     MergeARGBRow(src_r, src_g, src_b, src_a, dst_argb, width);
@@ -1590,6 +1624,9 @@ static void MergeARGBPlaneOpaque(const uint8_t* src_r,
 
   assert(height > 0);
 
+  if (width <= 0 || height == 0) {
+    return;
+  }
   if (src_stride_r == width && src_stride_g == width && src_stride_b == width &&
       dst_stride_argb == width * 4) {
     width *= height;
@@ -1618,6 +1655,11 @@ static void MergeARGBPlaneOpaque(const uint8_t* src_r,
     if (IS_ALIGNED(width, 16)) {
       MergeXRGBRow = MergeXRGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_MERGEXRGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeXRGBRow = MergeXRGBRow_RVV;
   }
 #endif
 

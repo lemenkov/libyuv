@@ -764,6 +764,12 @@ extern "C" {
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBTORAWROW_RVV
 #define HAS_ARGBTORGB24ROW_RVV
+#define HAS_MERGEARGBROW_RVV
+#define HAS_MERGERGBROW_RVV
+#define HAS_MERGEXRGBROW_RVV
+#define HAS_SPLITARGBROW_RVV
+#define HAS_SPLITRGBROW_RVV
+#define HAS_SPLITXRGBROW_RVV
 #define HAS_RAWTOARGBROW_RVV
 #define HAS_RAWTORGB24ROW_RVV
 #define HAS_RAWTORGBAROW_RVV
@@ -2282,6 +2288,11 @@ void SplitRGBRow_NEON(const uint8_t* src_rgb,
                       uint8_t* dst_g,
                       uint8_t* dst_b,
                       int width);
+void SplitRGBRow_RVV(const uint8_t* src_rgb,
+                     uint8_t* dst_r,
+                     uint8_t* dst_g,
+                     uint8_t* dst_b,
+                     int width);
 void SplitRGBRow_Any_SSSE3(const uint8_t* src_ptr,
                            uint8_t* dst_r,
                            uint8_t* dst_g,
@@ -2308,6 +2319,11 @@ void MergeRGBRow_NEON(const uint8_t* src_r,
                       const uint8_t* src_b,
                       uint8_t* dst_rgb,
                       int width);
+void MergeRGBRow_RVV(const uint8_t* src_r,
+                     const uint8_t* src_g,
+                     const uint8_t* src_b,
+                     uint8_t* dst_rgb,
+                     int width);
 void MergeRGBRow_Any_SSSE3(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
@@ -2342,6 +2358,12 @@ void MergeARGBRow_NEON(const uint8_t* src_r,
                        const uint8_t* src_a,
                        uint8_t* dst_argb,
                        int width);
+void MergeARGBRow_RVV(const uint8_t* src_r,
+                      const uint8_t* src_g,
+                      const uint8_t* src_b,
+                      const uint8_t* src_a,
+                      uint8_t* dst_argb,
+                      int width);
 void MergeARGBRow_Any_SSE2(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
@@ -2390,6 +2412,12 @@ void SplitARGBRow_NEON(const uint8_t* src_rgba,
                        uint8_t* dst_b,
                        uint8_t* dst_a,
                        int width);
+void SplitARGBRow_RVV(const uint8_t* src_rgba,
+                      uint8_t* dst_r,
+                      uint8_t* dst_g,
+                      uint8_t* dst_b,
+                      uint8_t* dst_a,
+                      int width);
 void SplitARGBRow_Any_SSE2(const uint8_t* src_ptr,
                            uint8_t* dst_r,
                            uint8_t* dst_g,
@@ -2434,6 +2462,11 @@ void MergeXRGBRow_NEON(const uint8_t* src_r,
                        const uint8_t* src_b,
                        uint8_t* dst_argb,
                        int width);
+void MergeXRGBRow_RVV(const uint8_t* src_r,
+                      const uint8_t* src_g,
+                      const uint8_t* src_b,
+                      uint8_t* dst_argb,
+                      int width);
 void MergeXRGBRow_Any_SSE2(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
@@ -2474,6 +2507,11 @@ void SplitXRGBRow_NEON(const uint8_t* src_rgba,
                        uint8_t* dst_g,
                        uint8_t* dst_b,
                        int width);
+void SplitXRGBRow_RVV(const uint8_t* src_rgba,
+                      uint8_t* dst_r,
+                      uint8_t* dst_g,
+                      uint8_t* dst_b,
+                      int width);
 void SplitXRGBRow_Any_SSE2(const uint8_t* src_ptr,
                            uint8_t* dst_r,
                            uint8_t* dst_g,
