@@ -1280,18 +1280,13 @@ void ScaleUVRowDown2_C(const uint8_t* src_uv,
                        ptrdiff_t src_stride,
                        uint8_t* dst_uv,
                        int dst_width) {
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   int x;
   (void)src_stride;
-  for (x = 0; x < dst_width - 1; x += 2) {
-    dst[0] = src[1];
-    dst[1] = src[3];
-    src += 2;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[1];
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = src_uv[2];  // Store the 2nd UV
+    dst_uv[1] = src_uv[3];
+    src_uv += 4;
+    dst_uv += 2;
   }
 }
 
