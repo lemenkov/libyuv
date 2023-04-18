@@ -2209,6 +2209,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToI420) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_u, half_width * half_height);
@@ -2243,6 +2246,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToI420_NV21) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   // Convert to NV21
   align_buffer_page_end(dst_y, width * height);
@@ -2302,6 +2308,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToI420_NV12) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   // Convert to NV12
   align_buffer_page_end(dst_y, width * height);
@@ -2361,6 +2370,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_420) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2391,6 +2403,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV12_420) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2426,6 +2441,9 @@ TEST_F(LibYUVConvertTest, DISABLED_TestMJPGToNV21_422) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2456,6 +2474,9 @@ TEST_F(LibYUVConvertTest, DISABLED_TestMJPGToNV12_422) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2490,6 +2511,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_400) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2520,6 +2544,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV12_400) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2554,6 +2581,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_444) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2584,6 +2614,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV12_444) {
   int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_y, width * height);
   align_buffer_page_end(dst_uv, half_width * half_height * 2);
@@ -2616,6 +2649,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToARGB) {
 
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
+  if (benchmark_iterations < 1) {
+    benchmark_iterations = 1;
+  }
 
   align_buffer_page_end(dst_argb, width * height * 4);
   for (int times = 0; times < benchmark_iterations; ++times) {

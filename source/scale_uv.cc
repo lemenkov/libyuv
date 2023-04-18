@@ -1039,7 +1039,7 @@ static void ScaleUV(const uint8_t* src,
                        dst_stride, src, dst, x, y, dy, /*bpp=*/2, filtering);
     return;
   }
-  if (filtering && (dst_width + 1) / 2 == src_width) {
+  if ((filtering == kFilterLinear) && ((dst_width + 1) / 2 == src_width)) {
     ScaleUVLinearUp2(src_width, src_height, clip_width, clip_height, src_stride,
                      dst_stride, src, dst);
     return;
@@ -1139,7 +1139,7 @@ int UVScale_16(const uint16_t* src_uv,
   }
 #endif
 
-  if (filtering && (dst_width + 1) / 2 == src_width) {
+  if ((filtering == kFilterLinear) && ((dst_width + 1) / 2 == src_width)) {
     ScaleUVLinearUp2_16(src_width, src_height, dst_width, dst_height,
                         src_stride_uv, dst_stride_uv, src_uv, dst_uv);
     return 0;
