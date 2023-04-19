@@ -241,10 +241,6 @@ After running script, clang & qemu are built in `build-toolchain-qemu/riscv-clan
 
 ### Run on QEMU
 
-To test RVV on user mode QEMU, we need to hack `source/cpu_id.cc`. By forcing `RiscvCpuCaps` to read from a dummy cpuinfo file instead of the host `/proc/cpuinfo`. Because the program detects CPU Caps from `/proc/cpuinfo` and determines whether to use RVV originally.
-
-    sed -i 's+RiscvCpuCaps("/proc/cpuinfo+RiscvCpuCaps("../../unit_test/testdata/riscv64_rvv.txt+g' source/cpu_id.cc
-
 #### Run libyuv_unittest on QEMU
     cd out/Release/
     USE_RVV=ON \
