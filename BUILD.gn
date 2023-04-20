@@ -6,6 +6,7 @@
 # in the file PATENTS. All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("//build/config/features.gni")
 import("//testing/test.gni")
 import("libyuv.gni")
 
@@ -150,7 +151,7 @@ static_library("libyuv_internal") {
     configs += [ "//build/config/gcc:symbol_visibility_default" ]
   }
 
-  if (!is_ios && !libyuv_disable_jpeg) {
+  if ((!is_ios || use_blink) && !libyuv_disable_jpeg) {
     defines += [ "HAVE_JPEG" ]
 
     # Needed to pull in libjpeg headers. Can't add //third_party:jpeg to deps
