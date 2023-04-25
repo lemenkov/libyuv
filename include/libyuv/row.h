@@ -782,6 +782,11 @@ extern "C" {
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBTORAWROW_RVV
 #define HAS_ARGBTORGB24ROW_RVV
+#define HAS_ARGBTOYROW_RVV
+#define HAS_ARGBTOYJROW_RVV
+#define HAS_ABGRTOYROW_RVV
+#define HAS_ABGRTOYJROW_RVV
+#define HAS_BGRATOYROW_RVV
 #define HAS_I422TOARGBROW_RVV
 #define HAS_I422TORGB24ROW_RVV
 #define HAS_I422TORGBAROW_RVV
@@ -790,13 +795,19 @@ extern "C" {
 #define HAS_MERGEARGBROW_RVV
 #define HAS_MERGERGBROW_RVV
 #define HAS_MERGEXRGBROW_RVV
-#define HAS_SPLITARGBROW_RVV
-#define HAS_SPLITRGBROW_RVV
-#define HAS_SPLITXRGBROW_RVV
 #define HAS_RAWTOARGBROW_RVV
 #define HAS_RAWTORGB24ROW_RVV
 #define HAS_RAWTORGBAROW_RVV
+#define HAS_RAWTOYJROW_RVV
+#define HAS_RAWTOYROW_RVV
 #define HAS_RGB24TOARGBROW_RVV
+#define HAS_RGB24TOYJROW_RVV
+#define HAS_RGB24TOYROW_RVV
+#define HAS_RGBATOYROW_RVV
+#define HAS_RGBATOYJROW_RVV
+#define HAS_SPLITARGBROW_RVV
+#define HAS_SPLITRGBROW_RVV
+#define HAS_SPLITXRGBROW_RVV
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -1327,6 +1338,10 @@ void ARGBToYRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_yj, int width);
 void ABGRToYJRow_NEON(const uint8_t* src_abgr, uint8_t* dst_yj, int width);
 void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_yj, int width);
+void ARGBToYRow_RVV(const uint8_t* src_argb, uint8_t* dst_y, int width);
+void ARGBToYJRow_RVV(const uint8_t* src_argb, uint8_t* dst_yj, int width);
+void ABGRToYJRow_RVV(const uint8_t* src_rgba, uint8_t* dst_yj, int width);
+void RGBAToYJRow_RVV(const uint8_t* src_rgba, uint8_t* dst_yj, int width);
 void ARGBToYRow_MSA(const uint8_t* src_argb0, uint8_t* dst_y, int width);
 void ARGBToYJRow_MSA(const uint8_t* src_argb0, uint8_t* dst_y, int width);
 void ARGBToYRow_LSX(const uint8_t* src_argb0, uint8_t* dst_y, int width);
@@ -1548,6 +1563,13 @@ void ARGB1555ToYRow_NEON(const uint8_t* src_argb1555,
 void ARGB4444ToYRow_NEON(const uint8_t* src_argb4444,
                          uint8_t* dst_y,
                          int width);
+void BGRAToYRow_RVV(const uint8_t* src_bgra, uint8_t* dst_y, int width);
+void ABGRToYRow_RVV(const uint8_t* src_abgr, uint8_t* dst_y, int width);
+void RGBAToYRow_RVV(const uint8_t* src_rgba, uint8_t* dst_y, int width);
+void RGB24ToYRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_y, int width);
+void RGB24ToYJRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_yj, int width);
+void RAWToYRow_RVV(const uint8_t* src_raw, uint8_t* dst_y, int width);
+void RAWToYJRow_RVV(const uint8_t* src_raw, uint8_t* dst_yj, int width);
 void BGRAToYRow_MSA(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ABGRToYRow_MSA(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void RGBAToYRow_MSA(const uint8_t* src_argb, uint8_t* dst_y, int width);

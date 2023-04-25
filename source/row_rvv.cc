@@ -543,6 +543,173 @@ void MergeXRGBRow_RVV(const uint8_t* src_r,
   } while (w > 0);
 }
 
+struct RgbConstants {
+  uint8_t kRGBToY[4];
+  uint16_t kAddY;
+  uint16_t pad;
+};
+
+// RGB to JPeg coefficients
+// B * 0.1140 coefficient = 29
+// G * 0.5870 coefficient = 150
+// R * 0.2990 coefficient = 77
+// Add 0.5 = 0x80
+static const struct RgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0},
+                                                        128,
+                                                        0};
+
+static const struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128, 0};
+
+// RGB to BT.601 coefficients
+// B * 0.1016 coefficient = 25
+// G * 0.5078 coefficient = 129
+// R * 0.2578 coefficient = 66
+// Add 16.5 = 0x1080
+
+static const struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0},
+                                                        0x1080,
+                                                        0};
+
+static const struct RgbConstants kRawI601Constants = {{66, 129, 25, 0},
+                                                      0x1080,
+                                                      0};
+
+// ARGB expects first 3 values to contain RGB and 4th value is ignored.
+void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
+                          uint8_t* dst_y,
+                          int width,
+                          const struct RgbConstants* rgbconstants) {
+  assert(width != 0);
+  size_t w = (size_t)width;
+  vuint8m2_t v_by, v_gy, v_ry;  // vectors are to store RGBToY constant
+  vuint16m4_t v_addy;           // vector is to store kAddY
+  size_t vl = __riscv_vsetvl_e8m2(w);
+  v_by = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[0], vl);
+  v_gy = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[1], vl);
+  v_ry = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[2], vl);
+  v_addy = __riscv_vmv_v_x_u16m4(rgbconstants->kAddY, vl);
+  do {
+    vuint8m2_t v_b, v_g, v_r, v_a, v_y;
+    vuint16m4_t v_y_u16;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    v_y_u16 = __riscv_vwmulu_vv_u16m4(v_r, v_ry, vl);
+    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_gy, v_g, vl);
+    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_by, v_b, vl);
+    v_y_u16 = __riscv_vadd_vv_u16m4(v_y_u16, v_addy, vl);
+    v_y = __riscv_vnsrl_wx_u8m2(v_y_u16, 8, vl);
+    __riscv_vse8_v_u8m2(dst_y, v_y, vl);
+    w -= vl;
+    src_argb += 4 * vl;
+    dst_y += vl;
+  } while (w > 0);
+}
+
+void ARGBToYRow_RVV(const uint8_t* src_argb, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_RVV(src_argb, dst_y, width, &kRgb24I601Constants);
+}
+
+void ARGBToYJRow_RVV(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
+  ARGBToYMatrixRow_RVV(src_argb, dst_yj, width, &kRgb24JPEGConstants);
+}
+
+void ABGRToYRow_RVV(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_RVV(src_abgr, dst_y, width, &kRawI601Constants);
+}
+
+void ABGRToYJRow_RVV(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
+  ARGBToYMatrixRow_RVV(src_abgr, dst_yj, width, &kRawJPEGConstants);
+}
+
+// RGBA expects first value to be A and ignored, then 3 values to contain RGB.
+void RGBAToYMatrixRow_RVV(const uint8_t* src_rgba,
+                          uint8_t* dst_y,
+                          int width,
+                          const struct RgbConstants* rgbconstants) {
+  assert(width != 0);
+  size_t w = (size_t)width;
+  vuint8m2_t v_by, v_gy, v_ry;  // vectors are to store RGBToY constant
+  vuint16m4_t v_addy;           // vector is to store kAddY
+  size_t vl = __riscv_vsetvl_e8m2(w);
+  v_by = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[0], vl);
+  v_gy = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[1], vl);
+  v_ry = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[2], vl);
+  v_addy = __riscv_vmv_v_x_u16m4(rgbconstants->kAddY, vl);
+  do {
+    vuint8m2_t v_b, v_g, v_r, v_a, v_y;
+    vuint16m4_t v_y_u16;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_a, &v_b, &v_g, &v_r, src_rgba, vl);
+    v_y_u16 = __riscv_vwmulu_vv_u16m4(v_r, v_ry, vl);
+    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_gy, v_g, vl);
+    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_by, v_b, vl);
+    v_y_u16 = __riscv_vadd_vv_u16m4(v_y_u16, v_addy, vl);
+    v_y = __riscv_vnsrl_wx_u8m2(v_y_u16, 8, vl);
+    __riscv_vse8_v_u8m2(dst_y, v_y, vl);
+    w -= vl;
+    src_rgba += 4 * vl;
+    dst_y += vl;
+  } while (w > 0);
+}
+
+void RGBAToYRow_RVV(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  RGBAToYMatrixRow_RVV(src_rgba, dst_y, width, &kRgb24I601Constants);
+}
+
+void RGBAToYJRow_RVV(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
+  RGBAToYMatrixRow_RVV(src_rgba, dst_yj, width, &kRgb24JPEGConstants);
+}
+
+void BGRAToYRow_RVV(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
+  RGBAToYMatrixRow_RVV(src_bgra, dst_y, width, &kRawI601Constants);
+}
+
+void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
+                         uint8_t* dst_y,
+                         int width,
+                         const struct RgbConstants* rgbconstants) {
+  assert(width != 0);
+  size_t w = (size_t)width;
+  vuint8m2_t v_by, v_gy, v_ry;  // vectors are to store RGBToY constant
+  vuint16m4_t v_addy;           // vector is to store kAddY
+  size_t vl = __riscv_vsetvl_e8m2(w);
+  v_by = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[0], vl);
+  v_gy = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[1], vl);
+  v_ry = __riscv_vmv_v_x_u8m2(rgbconstants->kRGBToY[2], vl);
+  v_addy = __riscv_vmv_v_x_u16m4(rgbconstants->kAddY, vl);
+  do {
+    vuint8m2_t v_b, v_g, v_r, v_y;
+    vuint16m4_t v_y_u16;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg3e8_v_u8m2(&v_b, &v_g, &v_r, src_rgb, vl);
+    v_y_u16 = __riscv_vwmulu_vv_u16m4(v_r, v_ry, vl);
+    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_gy, v_g, vl);
+    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_by, v_b, vl);
+    v_y_u16 = __riscv_vadd_vv_u16m4(v_y_u16, v_addy, vl);
+    v_y = __riscv_vnsrl_wx_u8m2(v_y_u16, 8, vl);
+    __riscv_vse8_v_u8m2(dst_y, v_y, vl);
+    w -= vl;
+    src_rgb += 3 * vl;
+    dst_y += vl;
+  } while (w > 0);
+}
+
+void RGB24ToYJRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
+  RGBToYMatrixRow_RVV(src_rgb24, dst_yj, width, &kRgb24JPEGConstants);
+}
+
+void RAWToYJRow_RVV(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
+  RGBToYMatrixRow_RVV(src_raw, dst_yj, width, &kRawJPEGConstants);
+}
+
+void RGB24ToYRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
+  RGBToYMatrixRow_RVV(src_rgb24, dst_y, width, &kRgb24I601Constants);
+}
+
+void RAWToYRow_RVV(const uint8_t* src_raw, uint8_t* dst_y, int width) {
+  RGBToYMatrixRow_RVV(src_raw, dst_y, width, &kRawI601Constants);
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
