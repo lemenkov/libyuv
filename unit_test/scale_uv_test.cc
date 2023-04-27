@@ -59,15 +59,15 @@ static int UVTestFilter(int src_width,
 
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   double c_time = get_time();
-  UVScale(src_uv, src_stride_uv, src_width, src_height,
-          dst_uv_c, dst_stride_uv, dst_width, dst_height, f);
+  UVScale(src_uv, src_stride_uv, src_width, src_height, dst_uv_c, dst_stride_uv,
+          dst_width, dst_height, f);
   c_time = (get_time() - c_time);
 
   MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
   double opt_time = get_time();
   for (i = 0; i < benchmark_iterations; ++i) {
-    UVScale(src_uv, src_stride_uv, src_width, src_height,
-            dst_uv_opt, dst_stride_uv, dst_width, dst_height, f);
+    UVScale(src_uv, src_stride_uv, src_width, src_height, dst_uv_opt,
+            dst_stride_uv, dst_width, dst_height, f);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
 
@@ -94,27 +94,26 @@ static int UVTestFilter(int src_width,
 #define DX(x, nom, denom) static_cast<int>((Abs(x) / nom) * nom)
 #define SX(x, nom, denom) static_cast<int>((x / nom) * denom)
 
-#define TEST_FACTOR1(name, filter, nom, denom)                     \
+#define TEST_FACTOR1(name, filter, nom, denom)                               \
   TEST_F(LibYUVScaleTest, UVScaleDownBy##name##_##filter) {                  \
     int diff = UVTestFilter(                                                 \
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
         DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
         kFilter##filter, benchmark_iterations_, disable_cpu_flags_,          \
         benchmark_cpu_info_);                                                \
-    EXPECT_EQ(0, diff);                                               \
+    EXPECT_EQ(0, diff);                                                      \
   }
 
 #if defined(ENABLE_FULL_TESTS)
 // Test a scale factor with all 4 filters.  Expect exact for SIMD vs C.
-#define TEST_FACTOR(name, nom, denom)         \
+#define TEST_FACTOR(name, nom, denom)      \
   TEST_FACTOR1(name, None, nom, denom)     \
   TEST_FACTOR1(name, Linear, nom, denom)   \
   TEST_FACTOR1(name, Bilinear, nom, denom) \
   TEST_FACTOR1(name, Box, nom, denom)
 #else
 // Test a scale factor with Bilinear.
-#define TEST_FACTOR(name, nom, denom) \
-  TEST_FACTOR1(name, Bilinear, nom, denom)
+#define TEST_FACTOR(name, nom, denom) TEST_FACTOR1(name, Bilinear, nom, denom)
 #endif
 
 TEST_FACTOR(2, 1, 2)
