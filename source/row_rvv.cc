@@ -19,7 +19,7 @@
 
 #include "libyuv/row.h"
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #include <riscv_vector.h>
 
 #ifdef __cplusplus
@@ -323,4 +323,4 @@ void MergeXRGBRow_RVV(const uint8_t* src_r,
 }  // namespace libyuv
 #endif
 
-#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv)
+#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)

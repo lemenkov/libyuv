@@ -231,7 +231,7 @@ If you don't have prebuilt clang and riscv64 qemu, run the script to download so
 After running script, clang & qemu are built in `build-toolchain-qemu/riscv-clang/` & `build-toolchain-qemu/riscv-qemu/`.
 
 ### Cross-compile for RISC-V target
-    cmake -B out/Release/ -DTEST=ON \
+    cmake -B out/Release/ -DUNIT_TEST=ON \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE="./riscv_script/riscv-clang.cmake" \
           -DTOOLCHAIN_PATH={TOOLCHAIN_PATH} \

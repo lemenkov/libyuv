@@ -757,7 +757,7 @@ extern "C" {
 #define HAS_RAWTOYJROW_LASX
 #endif
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #define HAS_AB64TOARGBROW_RVV
 #define HAS_AR64TOARGBROW_RVV
 #define HAS_ARGBTOAB64ROW_RVV
