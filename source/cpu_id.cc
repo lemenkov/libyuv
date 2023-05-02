@@ -181,26 +181,31 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
       // ISA string must begin with rv64{i,e,g} for a 64-bit processor.
       char* isa = strstr(cpuinfo_line, "rv64");
       if (isa) {
-        const int isa_len = strlen(isa);
-        // 5 ISA characters + 1 new-line character
-        if (isa_len < 6) {
+        size_t isa_len = strlen(isa);
+        char* extensions;
+        size_t extensions_len = 0;
+        size_t std_isa_len;
+        // Remove the new-line character at the end of string
+        if (isa[isa_len - 1] == '\n') {
+          isa[--isa_len] = '\0';
+        }
+        // 5 ISA characters
+        if (isa_len < 5) {
           fclose(f);
           return 0;
         }
         // Skip {i,e,g} canonical checking.
         // Skip rvxxx
         isa += 5;
-
         // Find the very first occurrence of 's', 'x' or 'z'.
         // To detect multi-letter standard, non-standard, and
         // supervisor-level extensions.
-        int extensions_len = 0;
-        char* extensions = strpbrk(isa, "zxs");
+        extensions = strpbrk(isa, "zxs");
         if (extensions) {
-          extensions_len = strlen(extensions);
           // Multi-letter extensions are seperated by a single underscore
           // as described in RISC-V User-Level ISA V2.2.
           char* ext = strtok(extensions, "_");
+          extensions_len = strlen(extensions);
           while (ext) {
             // Search for the ZVFH (Vector FP16) extension.
             if (!strcmp(ext, "zvfh")) {
@@ -209,7 +214,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
             ext = strtok(NULL, "_");
           }
         }
-        const int std_isa_len = isa_len - extensions_len - 5 - 1;
+        std_isa_len = isa_len - extensions_len - 5;
         // Detect the v in the standard single-letter extensions.
         if (memchr(isa, 'v', std_isa_len)) {
           // The RVV implied the F extension.
