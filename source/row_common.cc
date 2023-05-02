@@ -1484,7 +1484,7 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 
 // clang-format off
 
-#if defined(__aarch64__) || defined(__arm__)
+#if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
 // Bias values include subtract 128 from U and V, bias from Y and rounding.
 // For B and R bias is negative. For G bias is positive.
 #define YUVCONSTANTSBODY(YG, YB, UB, UG, VG, VR)                             \
@@ -1680,7 +1680,7 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
 
 #undef MAKEYUVCONSTANTS
 
-#if defined(__aarch64__) || defined(__arm__)
+#if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
 #define LOAD_YUV_CONSTANTS                 \
   int ub = yuvconstants->kUVCoeff[0];      \
   int vr = yuvconstants->kUVCoeff[1];      \
@@ -1868,7 +1868,7 @@ static __inline void YPixel(uint8_t y,
                             uint8_t* g,
                             uint8_t* r,
                             const struct YuvConstants* yuvconstants) {
-#if defined(__aarch64__) || defined(__arm__)
+#if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
   int yg = yuvconstants->kRGBCoeffBias[0];
   int ygb = yuvconstants->kRGBCoeffBias[4];
 #else

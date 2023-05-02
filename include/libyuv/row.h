@@ -782,6 +782,9 @@ extern "C" {
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBTORAWROW_RVV
 #define HAS_ARGBTORGB24ROW_RVV
+#define HAS_I422TOARGBROW_RVV
+#define HAS_I422TORGB24ROW_RVV
+#define HAS_I422TORGBAROW_RVV
 #define HAS_MERGEARGBROW_RVV
 #define HAS_MERGERGBROW_RVV
 #define HAS_MERGEXRGBROW_RVV
@@ -853,8 +856,8 @@ typedef uint32_t ulvec32[8];
 typedef uint8_t ulvec8[32];
 #endif
 
-#if defined(__aarch64__) || defined(__arm__)
-// This struct is for ARM color conversion.
+#if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
+// This struct is for ARM and RISC-V color conversion.
 struct YuvConstants {
   uvec8 kUVCoeff;
   vec16 kRGBCoeffBias;
@@ -1057,6 +1060,24 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         int width);
 void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
                         uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I422ToARGBRow_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I422ToRGBARow_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_rgba,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I422ToRGB24Row_RVV(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_rgb24,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I444ToARGBRow_MSA(const uint8_t* src_y,
