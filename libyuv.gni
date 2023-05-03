@@ -13,6 +13,7 @@ import("//build_overrides/build.gni")
 declare_args() {
   libyuv_include_tests = !build_with_chromium
   libyuv_disable_jpeg = false
+  libyuv_disable_rvv = false
   libyuv_use_neon =
       current_cpu == "arm64" ||
       (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon))
