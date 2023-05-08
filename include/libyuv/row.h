@@ -657,13 +657,24 @@ extern "C" {
 #define HAS_ARGBSETROW_LSX
 #define HAS_ARGBTOUVJROW_LSX
 #define HAS_ARGBTOYJROW_LSX
+#define HAS_ARGBMIRRORROW_LSX
 #define HAS_BGRATOUVROW_LSX
 #define HAS_BGRATOYROW_LSX
 #define HAS_I400TOARGBROW_LSX
 #define HAS_I444TOARGBROW_LSX
 #define HAS_INTERPOLATEROW_LSX
+#define HAS_I422ALPHATOARGBROW_LSX
+#define HAS_I422TOARGB1555ROW_LSX
+#define HAS_I422TOARGB4444ROW_LSX
+#define HAS_I422TORGB24ROW_LSX
+#define HAS_I422TORGB565ROW_LSX
+#define HAS_I422TORGBAROW_LSX
+#define HAS_I422TOUYVYROW_LSX
+#define HAS_I422TOYUY2ROW_LSX
 #define HAS_J400TOARGBROW_LSX
 #define HAS_MERGEUVROW_LSX
+#define HAS_MIRRORROW_LSX
+#define HAS_MIRRORUVROW_LSX
 #define HAS_MIRRORSPLITUVROW_LSX
 #define HAS_NV12TOARGBROW_LSX
 #define HAS_NV12TORGB565ROW_LSX
@@ -687,11 +698,18 @@ extern "C" {
 #define HAS_SPLITUVROW_LSX
 #define HAS_UYVYTOARGBROW_LSX
 #define HAS_YUY2TOARGBROW_LSX
+#define HAS_YUY2TOUVROW_LSX
+#define HAS_YUY2TOUV422ROW_LSX
+#define HAS_YUY2TOYROW_LSX
 #define HAS_ARGBTOYROW_LSX
 #define HAS_ABGRTOYJROW_LSX
 #define HAS_RGBATOYJROW_LSX
 #define HAS_RGB24TOYJROW_LSX
 #define HAS_RAWTOYJROW_LSX
+#endif
+
+#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#define HAS_I422TOARGBROW_LSX
 #endif
 
 #if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_asx)
@@ -1060,6 +1078,12 @@ void I422ToARGBRow_MSA(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I422ToARGBRow_LSX(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I422ToARGBRow_LASX(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -1072,6 +1096,12 @@ void I422ToRGBARow_MSA(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I422ToRGBARow_LSX(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I422ToRGBARow_LASX(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -1079,6 +1109,13 @@ void I422ToRGBARow_LASX(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I422AlphaToARGBRow_MSA(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            const uint8_t* src_a,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void I422AlphaToARGBRow_LSX(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
                             const uint8_t* src_a,
@@ -1098,6 +1135,12 @@ void I422ToRGB24Row_MSA(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToRGB24Row_LSX(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void I422ToRGB24Row_LASX(const uint8_t* src_y,
                          const uint8_t* src_u,
                          const uint8_t* src_v,
@@ -1105,6 +1148,12 @@ void I422ToRGB24Row_LASX(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants,
                          int width);
 void I422ToRGB565Row_MSA(const uint8_t* src_y,
+                         const uint8_t* src_u,
+                         const uint8_t* src_v,
+                         uint8_t* dst_rgb565,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void I422ToRGB565Row_LSX(const uint8_t* src_y,
                          const uint8_t* src_u,
                          const uint8_t* src_v,
                          uint8_t* dst_rgb565,
@@ -1122,6 +1171,12 @@ void I422ToARGB4444Row_MSA(const uint8_t* src_y,
                            uint8_t* dst_argb4444,
                            const struct YuvConstants* yuvconstants,
                            int width);
+void I422ToARGB4444Row_LSX(const uint8_t* src_y,
+                           const uint8_t* src_u,
+                           const uint8_t* src_v,
+                           uint8_t* dst_argb4444,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 void I422ToARGB4444Row_LASX(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
@@ -1129,6 +1184,12 @@ void I422ToARGB4444Row_LASX(const uint8_t* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width);
 void I422ToARGB1555Row_MSA(const uint8_t* src_y,
+                           const uint8_t* src_u,
+                           const uint8_t* src_v,
+                           uint8_t* dst_argb1555,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I422ToARGB1555Row_LSX(const uint8_t* src_y,
                            const uint8_t* src_u,
                            const uint8_t* src_v,
                            uint8_t* dst_argb1555,
@@ -1958,6 +2019,7 @@ void MirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_SSSE3(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_MSA(const uint8_t* src, uint8_t* dst, int width);
+void MirrorRow_LSX(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_LASX(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_C(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
@@ -1965,17 +2027,20 @@ void MirrorRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_MSA(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_LSX(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_LASX(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorUVRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 
 void MirrorSplitUVRow_SSSE3(const uint8_t* src,
@@ -2005,6 +2070,7 @@ void ARGBMirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_NEON(const uint8_t* src_argb, uint8_t* dst_argb, int width);
 void ARGBMirrorRow_MSA(const uint8_t* src, uint8_t* dst, int width);
+void ARGBMirrorRow_LSX(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_LASX(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_C(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_Any_AVX2(const uint8_t* src_ptr,
@@ -2017,6 +2083,9 @@ void ARGBMirrorRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
 void ARGBMirrorRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void ARGBMirrorRow_Any_LSX(const uint8_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           int width);
 void ARGBMirrorRow_Any_LASX(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
@@ -4731,6 +4800,12 @@ void I422ToARGBRow_Any_MSA(const uint8_t* y_buf,
                            uint8_t* dst_ptr,
                            const struct YuvConstants* yuvconstants,
                            int width);
+void I422ToARGBRow_Any_LSX(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 void I422ToARGBRow_Any_LASX(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,
@@ -4743,6 +4818,12 @@ void I422ToRGBARow_Any_MSA(const uint8_t* y_buf,
                            uint8_t* dst_ptr,
                            const struct YuvConstants* yuvconstants,
                            int width);
+void I422ToRGBARow_Any_LSX(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 void I422ToRGBARow_Any_LASX(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,
@@ -4750,6 +4831,13 @@ void I422ToRGBARow_Any_LASX(const uint8_t* y_buf,
                             const struct YuvConstants* yuvconstants,
                             int width);
 void I422AlphaToARGBRow_Any_MSA(const uint8_t* y_buf,
+                                const uint8_t* u_buf,
+                                const uint8_t* v_buf,
+                                const uint8_t* a_buf,
+                                uint8_t* dst_ptr,
+                                const struct YuvConstants* yuvconstants,
+                                int width);
+void I422AlphaToARGBRow_Any_LSX(const uint8_t* y_buf,
                                 const uint8_t* u_buf,
                                 const uint8_t* v_buf,
                                 const uint8_t* a_buf,
@@ -4769,6 +4857,12 @@ void I422ToRGB24Row_Any_MSA(const uint8_t* y_buf,
                             uint8_t* dst_ptr,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I422ToRGB24Row_Any_LSX(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I422ToRGB24Row_Any_LASX(const uint8_t* y_buf,
                              const uint8_t* u_buf,
                              const uint8_t* v_buf,
@@ -4776,6 +4870,12 @@ void I422ToRGB24Row_Any_LASX(const uint8_t* y_buf,
                              const struct YuvConstants* yuvconstants,
                              int width);
 void I422ToRGB565Row_Any_MSA(const uint8_t* y_buf,
+                             const uint8_t* u_buf,
+                             const uint8_t* v_buf,
+                             uint8_t* dst_ptr,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I422ToRGB565Row_Any_LSX(const uint8_t* y_buf,
                              const uint8_t* u_buf,
                              const uint8_t* v_buf,
                              uint8_t* dst_ptr,
@@ -4793,6 +4893,12 @@ void I422ToARGB4444Row_Any_MSA(const uint8_t* y_buf,
                                uint8_t* dst_ptr,
                                const struct YuvConstants* yuvconstants,
                                int width);
+void I422ToARGB4444Row_Any_LSX(const uint8_t* y_buf,
+                               const uint8_t* u_buf,
+                               const uint8_t* v_buf,
+                               uint8_t* dst_ptr,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
 void I422ToARGB4444Row_Any_LASX(const uint8_t* y_buf,
                                 const uint8_t* u_buf,
                                 const uint8_t* v_buf,
@@ -4800,6 +4906,12 @@ void I422ToARGB4444Row_Any_LASX(const uint8_t* y_buf,
                                 const struct YuvConstants* yuvconstants,
                                 int width);
 void I422ToARGB1555Row_Any_MSA(const uint8_t* y_buf,
+                               const uint8_t* u_buf,
+                               const uint8_t* v_buf,
+                               uint8_t* dst_ptr,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
+void I422ToARGB1555Row_Any_LSX(const uint8_t* y_buf,
                                const uint8_t* u_buf,
                                const uint8_t* v_buf,
                                uint8_t* dst_ptr,
@@ -4917,8 +5029,14 @@ void YUY2ToUV422Row_NEON(const uint8_t* src_yuy2,
                          uint8_t* dst_v,
                          int width);
 void YUY2ToYRow_MSA(const uint8_t* src_yuy2, uint8_t* dst_y, int width);
+void YUY2ToYRow_LSX(const uint8_t* src_yuy2, uint8_t* dst_y, int width);
 void YUY2ToYRow_LASX(const uint8_t* src_yuy2, uint8_t* dst_y, int width);
 void YUY2ToUVRow_MSA(const uint8_t* src_yuy2,
+                     int src_stride_yuy2,
+                     uint8_t* dst_u,
+                     uint8_t* dst_v,
+                     int width);
+void YUY2ToUVRow_LSX(const uint8_t* src_yuy2,
                      int src_stride_yuy2,
                      uint8_t* dst_u,
                      uint8_t* dst_v,
@@ -4929,6 +5047,10 @@ void YUY2ToUVRow_LASX(const uint8_t* src_yuy2,
                       uint8_t* dst_v,
                       int width);
 void YUY2ToUV422Row_MSA(const uint8_t* src_yuy2,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width);
+void YUY2ToUV422Row_LSX(const uint8_t* src_yuy2,
                         uint8_t* dst_u,
                         uint8_t* dst_v,
                         int width);
@@ -4993,8 +5115,14 @@ void YUY2ToUV422Row_Any_NEON(const uint8_t* src_ptr,
                              uint8_t* dst_v,
                              int width);
 void YUY2ToYRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void YUY2ToYRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void YUY2ToYRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void YUY2ToUVRow_Any_MSA(const uint8_t* src_ptr,
+                         int src_stride_ptr,
+                         uint8_t* dst_u,
+                         uint8_t* dst_v,
+                         int width);
+void YUY2ToUVRow_Any_LSX(const uint8_t* src_ptr,
                          int src_stride_ptr,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
@@ -5005,6 +5133,10 @@ void YUY2ToUVRow_Any_LASX(const uint8_t* src_ptr,
                           uint8_t* dst_v,
                           int width);
 void YUY2ToUV422Row_Any_MSA(const uint8_t* src_ptr,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width);
+void YUY2ToUV422Row_Any_LSX(const uint8_t* src_ptr,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
                             int width);
@@ -5243,12 +5375,22 @@ void I422ToYUY2Row_MSA(const uint8_t* src_y,
                        const uint8_t* src_v,
                        uint8_t* dst_yuy2,
                        int width);
+void I422ToYUY2Row_LSX(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_yuy2,
+                       int width);
 void I422ToYUY2Row_LASX(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
                         uint8_t* dst_yuy2,
                         int width);
 void I422ToUYVYRow_MSA(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_uyvy,
+                       int width);
+void I422ToUYVYRow_LSX(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
                        uint8_t* dst_uyvy,
@@ -5263,12 +5405,22 @@ void I422ToYUY2Row_Any_MSA(const uint8_t* y_buf,
                            const uint8_t* v_buf,
                            uint8_t* dst_ptr,
                            int width);
+void I422ToYUY2Row_Any_LSX(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           int width);
 void I422ToYUY2Row_Any_LASX(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,
                             uint8_t* dst_ptr,
                             int width);
 void I422ToUYVYRow_Any_MSA(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           int width);
+void I422ToUYVYRow_Any_LSX(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
                            uint8_t* dst_ptr,

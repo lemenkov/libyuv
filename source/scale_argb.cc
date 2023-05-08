@@ -659,6 +659,14 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
     }
   }
 #endif
+#if defined(HAS_I422TOARGBROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    I422ToARGBRow = I422ToARGBRow_Any_LSX;
+    if (IS_ALIGNED(src_width, 16)) {
+      I422ToARGBRow = I422ToARGBRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_I422TOARGBROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     I422ToARGBRow = I422ToARGBRow_Any_LASX;

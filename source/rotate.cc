@@ -178,6 +178,14 @@ void RotatePlane180(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    MirrorRow = MirrorRow_Any_LSX;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorRow = MirrorRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_MIRRORROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     MirrorRow = MirrorRow_Any_LASX;

@@ -1457,6 +1457,16 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     }
   }
 #endif
+#if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    YUY2ToYRow = YUY2ToYRow_Any_LSX;
+    YUY2ToUVRow = YUY2ToUVRow_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_LSX;
+      YUY2ToUVRow = YUY2ToUVRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_YUY2TOYROW_LASX) && defined(HAS_YUY2TOUVROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LASX;

@@ -156,6 +156,14 @@ static int ARGBRotate180(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBMIRRORROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBMirrorRow = ARGBMirrorRow_Any_LSX;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBMirrorRow = ARGBMirrorRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_ARGBMIRRORROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     ARGBMirrorRow = ARGBMirrorRow_Any_LASX;

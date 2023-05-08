@@ -2113,6 +2113,16 @@ int YUY2ToI422(const uint8_t* src_yuy2,
     }
   }
 #endif
+#if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUV422ROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    YUY2ToYRow = YUY2ToYRow_Any_LSX;
+    YUY2ToUV422Row = YUY2ToUV422Row_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_LSX;
+      YUY2ToUV422Row = YUY2ToUV422Row_LSX;
+    }
+  }
+#endif
 #if defined(HAS_YUY2TOYROW_LASX) && defined(HAS_YUY2TOUV422ROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LASX;
@@ -2414,6 +2424,14 @@ void MirrorPlane(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    MirrorRow = MirrorRow_Any_LSX;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorRow = MirrorRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_MIRRORROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     MirrorRow = MirrorRow_Any_LASX;
@@ -2477,6 +2495,14 @@ void MirrorUVPlane(const uint8_t* src_uv,
     MirrorUVRow = MirrorUVRow_Any_MSA;
     if (IS_ALIGNED(width, 8)) {
       MirrorUVRow = MirrorUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    MirrorUVRow = MirrorUVRow_Any_LSX;
+    if (IS_ALIGNED(width, 8)) {
+      MirrorUVRow = MirrorUVRow_LSX;
     }
   }
 #endif
@@ -2649,6 +2675,14 @@ int ARGBMirror(const uint8_t* src_argb,
     ARGBMirrorRow = ARGBMirrorRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       ARGBMirrorRow = ARGBMirrorRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBMIRRORROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBMirrorRow = ARGBMirrorRow_Any_LSX;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBMirrorRow = ARGBMirrorRow_LSX;
     }
   }
 #endif
@@ -5311,6 +5345,14 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
     YUY2ToYRow = YUY2ToYRow_Any_MSA;
     if (IS_ALIGNED(width, 32)) {
       YUY2ToYRow = YUY2ToYRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUV422ROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    YUY2ToYRow = YUY2ToYRow_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_LSX;
     }
   }
 #endif
