@@ -14,7 +14,9 @@
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     !defined(__clang__) && (defined(_M_IX86) || defined(_M_X64))
 
-#if defined(_M_X64)
+#if defined(_M_ARM64EC)
+#include <intrin.h>
+#elif defined(_M_X64)
 #include <emmintrin.h>
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
 #endif
