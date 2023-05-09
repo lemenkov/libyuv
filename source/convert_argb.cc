@@ -625,6 +625,11 @@ int I444ToARGBMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I444TOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I444ToARGBRow = I444ToARGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I444ToARGBRow(src_y, src_u, src_v, dst_argb, yuvconstants, width);
@@ -853,6 +858,11 @@ int I444ToRGB24Matrix(const uint8_t* src_y,
     if (IS_ALIGNED(width, 16)) {
       I444ToRGB24Row = I444ToRGB24Row_LSX;
     }
+  }
+#endif
+#if defined(HAS_I444TORGB24ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I444ToRGB24Row = I444ToRGB24Row_RVV;
   }
 #endif
 
@@ -5913,6 +5923,11 @@ static int I420ToARGBMatrixBilinear(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I444TOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I444ToARGBRow = I444ToARGBRow_RVV;
+  }
+#endif
 
 #if defined(HAS_SCALEROWUP2_BILINEAR_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
@@ -6047,6 +6062,11 @@ static int I422ToARGBMatrixLinear(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I444TOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I444ToARGBRow = I444ToARGBRow_RVV;
+  }
+#endif
 #if defined(HAS_SCALEROWUP2_LINEAR_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_SSE2;
@@ -6157,6 +6177,11 @@ static int I420ToRGB24MatrixBilinear(const uint8_t* src_y,
     if (IS_ALIGNED(width, 32)) {
       I444ToRGB24Row = I444ToRGB24Row_LASX;
     }
+  }
+#endif
+#if defined(HAS_I444TORGB24ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I444ToRGB24Row = I444ToRGB24Row_RVV;
   }
 #endif
 
@@ -7623,6 +7648,11 @@ static int I422ToRGB24MatrixLinear(const uint8_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       I444ToRGB24Row = I444ToRGB24Row_NEON;
     }
+  }
+#endif
+#if defined(HAS_I444TORGB24ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I444ToRGB24Row = I444ToRGB24Row_RVV;
   }
 #endif
 #if defined(HAS_SCALEROWUP2_LINEAR_SSE2)

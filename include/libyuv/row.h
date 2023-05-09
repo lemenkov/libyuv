@@ -785,6 +785,8 @@ extern "C" {
 #define HAS_I422TOARGBROW_RVV
 #define HAS_I422TORGB24ROW_RVV
 #define HAS_I422TORGBAROW_RVV
+#define HAS_I444TOARGBROW_RVV
+#define HAS_I444TORGB24ROW_RVV
 #define HAS_MERGEARGBROW_RVV
 #define HAS_MERGERGBROW_RVV
 #define HAS_MERGEXRGBROW_RVV
@@ -1060,6 +1062,18 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         int width);
 void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
                         uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I444ToARGBRow_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I444ToRGB24Row_RVV(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_rgb24,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I422ToARGBRow_RVV(const uint8_t* src_y,
