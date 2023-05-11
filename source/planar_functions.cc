@@ -3566,6 +3566,11 @@ int ARGBAttenuate(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBATTENUATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBAttenuateRow(src_argb, dst_argb, width);

@@ -778,6 +778,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #define HAS_AB64TOARGBROW_RVV
 #define HAS_AR64TOARGBROW_RVV
+#define HAS_ARGBATTENUATEROW_RVV
 #define HAS_ARGBTOAB64ROW_RVV
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBTORAWROW_RVV
@@ -787,9 +788,11 @@ extern "C" {
 #define HAS_ABGRTOYROW_RVV
 #define HAS_ABGRTOYJROW_RVV
 #define HAS_BGRATOYROW_RVV
+#define HAS_I422ALPHATOARGBROW_RVV
 #define HAS_I422TOARGBROW_RVV
 #define HAS_I422TORGB24ROW_RVV
 #define HAS_I422TORGBAROW_RVV
+#define HAS_I444ALPHATOARGBROW_RVV
 #define HAS_I444TOARGBROW_RVV
 #define HAS_I444TORGB24ROW_RVV
 #define HAS_MERGEARGBROW_RVV
@@ -1081,6 +1084,13 @@ void I444ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I444AlphaToARGBRow_RVV(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            const uint8_t* src_a,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I444ToRGB24Row_RVV(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -1093,6 +1103,13 @@ void I422ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I422AlphaToARGBRow_RVV(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            const uint8_t* src_a,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I422ToRGBARow_RVV(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
@@ -5503,6 +5520,9 @@ void ARGBAttenuateRow_MSA(const uint8_t* src_argb,
 void ARGBAttenuateRow_LASX(const uint8_t* src_argb,
                            uint8_t* dst_argb,
                            int width);
+void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
+                          uint8_t* dst_argb,
+                          int width);
 void ARGBAttenuateRow_Any_SSSE3(const uint8_t* src_ptr,
                                 uint8_t* dst_ptr,
                                 int width);

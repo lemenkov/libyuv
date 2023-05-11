@@ -16,7 +16,6 @@
  */
 
 #include <assert.h>
-
 #include "libyuv/row.h"
 
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
@@ -293,6 +292,38 @@ void I444ToARGBRow_RVV(const uint8_t* src_y,
   } while (w > 0);
 }
 
+void I444AlphaToARGBRow_RVV(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            const uint8_t* src_a,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width) {
+  size_t vl;
+  size_t w = (size_t)width;
+  vuint8m1_t v_u, v_v;
+  vuint8m1_t v_ub, v_vr, v_ug, v_vg;
+  vuint8m1_t v_b, v_g, v_r, v_a;
+  vuint16m2_t v_yg, v_bb, v_bg, v_br;
+  vuint16m2_t v_y_16, v_g_16, v_b_16, v_r_16;
+  YUVTORGB_SETUP(yuvconstants, vl, v_ub, v_vr, v_ug, v_vg, v_yg, v_bb, v_bg,
+                 v_br);
+  do {
+    READYUV444(vl, v_u, v_v, v_y_16);
+    v_a = __riscv_vle8_v_u8m1(src_a, vl);
+    YUVTORGB(vl, v_u, v_v, v_ub, v_vr, v_ug, v_vg, v_yg, v_bb, v_bg, v_br,
+             v_y_16, v_g_16, v_b_16, v_r_16);
+    RGBTORGB8(vl, v_g_16, v_b_16, v_r_16, v_g, v_b, v_r);
+    __riscv_vsseg4e8_v_u8m1(dst_argb, v_b, v_g, v_r, v_a, vl);
+    w -= vl;
+    src_y += vl;
+    src_a += vl;
+    src_u += vl;
+    src_v += vl;
+    dst_argb += vl * 4;
+  } while (w > 0);
+}
+
 void I444ToRGB24Row_RVV(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -346,6 +377,38 @@ void I422ToARGBRow_RVV(const uint8_t* src_y,
     __riscv_vsseg4e8_v_u8m1(dst_argb, v_b, v_g, v_r, v_a, vl);
     w -= vl;
     src_y += vl;
+    src_u += vl / 2;
+    src_v += vl / 2;
+    dst_argb += vl * 4;
+  } while (w > 0);
+}
+
+void I422AlphaToARGBRow_RVV(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            const uint8_t* src_a,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width) {
+  size_t vl;
+  size_t w = (size_t)width;
+  vuint8m1_t v_u, v_v;
+  vuint8m1_t v_ub, v_vr, v_ug, v_vg;
+  vuint8m1_t v_b, v_g, v_r, v_a;
+  vuint16m2_t v_yg, v_bb, v_bg, v_br;
+  vuint16m2_t v_y_16, v_g_16, v_b_16, v_r_16;
+  YUVTORGB_SETUP(yuvconstants, vl, v_ub, v_vr, v_ug, v_vg, v_yg, v_bb, v_bg,
+                 v_br);
+  do {
+    READYUV422(vl, v_u, v_v, v_y_16);
+    v_a = __riscv_vle8_v_u8m1(src_a, vl);
+    YUVTORGB(vl, v_u, v_v, v_ub, v_vr, v_ug, v_vg, v_yg, v_bb, v_bg, v_br,
+             v_y_16, v_g_16, v_b_16, v_r_16);
+    RGBTORGB8(vl, v_g_16, v_b_16, v_r_16, v_g, v_b, v_r);
+    __riscv_vsseg4e8_v_u8m1(dst_argb, v_b, v_g, v_r, v_a, vl);
+    w -= vl;
+    src_y += vl;
+    src_a += vl;
     src_u += vl / 2;
     src_v += vl / 2;
     dst_argb += vl * 4;
@@ -708,6 +771,31 @@ void RGB24ToYRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
 
 void RAWToYRow_RVV(const uint8_t* src_raw, uint8_t* dst_y, int width) {
   RGBToYMatrixRow_RVV(src_raw, dst_y, width, &kRawI601Constants);
+}
+
+void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
+                          uint8_t* dst_argb,
+                          int width) {
+  size_t w = (size_t)width;
+  // To match behavior on other platforms, vxrm (fixed-point rounding mode
+  // register) is set to round-to-nearest-up(0).
+  asm volatile("csrwi vxrm, 0");
+  do {
+    vuint8m2_t v_b, v_g, v_r, v_a;
+    vuint16m4_t v_ba_16, v_ga_16, v_ra_16;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    v_ba_16 = __riscv_vwmulu_vv_u16m4(v_b, v_a, vl);
+    v_ga_16 = __riscv_vwmulu_vv_u16m4(v_g, v_a, vl);
+    v_ra_16 = __riscv_vwmulu_vv_u16m4(v_r, v_a, vl);
+    v_b = __riscv_vnclipu_wx_u8m2(v_ba_16, 8, vl);
+    v_g = __riscv_vnclipu_wx_u8m2(v_ga_16, 8, vl);
+    v_r = __riscv_vnclipu_wx_u8m2(v_ra_16, 8, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_argb, v_b, v_g, v_r, v_a, vl);
+    w -= vl;
+    src_argb += vl * 4;
+    dst_argb += vl * 4;
+  } while (w > 0);
 }
 
 #ifdef __cplusplus
