@@ -2151,7 +2151,7 @@ int ARGBToJ420(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOYJROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-     ARGBToYJRow = ARGBToYJRow_RVV;
+    ARGBToYJRow = ARGBToYJRow_RVV;
   }
 #endif
 
@@ -2287,7 +2287,7 @@ int ARGBToJ422(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOYJROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-     ARGBToYJRow = ARGBToYJRow_RVV;
+    ARGBToYJRow = ARGBToYJRow_RVV;
   }
 #endif
 
@@ -2361,7 +2361,7 @@ int ARGBToJ400(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOYJROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-     ARGBToYJRow = ARGBToYJRow_RVV;
+    ARGBToYJRow = ARGBToYJRow_RVV;
   }
 #endif
 
@@ -2926,7 +2926,8 @@ int ARGBToAB64(const uint8_t* src_argb,
 }
 
 // Enabled if 1 pass is available
-#if defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || defined(HAS_RAWTOYJROW_RVV)
+#if defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || \
+    defined(HAS_RAWTOYJROW_RVV)
 #define HAS_RAWTOYJROW
 #endif
 

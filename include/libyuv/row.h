@@ -2140,9 +2140,7 @@ void ARGBMirrorRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
 void ARGBMirrorRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
-void ARGBMirrorRow_Any_LSX(const uint8_t* src_ptr,
-                           uint8_t* dst_ptr,
-                           int width);
+void ARGBMirrorRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBMirrorRow_Any_LASX(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);

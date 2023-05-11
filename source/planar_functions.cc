@@ -4711,7 +4711,7 @@ static int ARGBSobelize(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOYJROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-     ARGBToYJRow = ARGBToYJRow_RVV;
+    ARGBToYJRow = ARGBToYJRow_RVV;
   }
 #endif
 

@@ -215,8 +215,9 @@ TEST_F(LibYUVBaseTest, TestCpuId) {
     cpu_info[0] = cpu_info[1];  // Reorder output
     cpu_info[1] = cpu_info[3];
     cpu_info[3] = 0;
-    printf("Cpu Vendor: %s 0x%x 0x%x 0x%x\n", reinterpret_cast<char*>(&cpu_info[0]),
-           cpu_info[0], cpu_info[1], cpu_info[2]);
+    printf("Cpu Vendor: %s 0x%x 0x%x 0x%x\n",
+           reinterpret_cast<char*>(&cpu_info[0]), cpu_info[0], cpu_info[1],
+           cpu_info[2]);
     EXPECT_EQ(12u, strlen(reinterpret_cast<char*>(&cpu_info[0])));
 
     // CPU Family and Model

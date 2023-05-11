@@ -32,18 +32,18 @@ extern "C" {
   }
 
 // Load 32 YUV422 pixel data
-#define READYUV422_D(psrc_y, psrc_u, psrc_v, out_y, uv_l, uv_h)     \
-  {                                                                 \
-    __m128i temp0, temp1;                                           \
-                                                                    \
-    DUP2_ARG2(__lsx_vld, psrc_y, 0, psrc_u, 0, out_y, temp0);       \
-    temp1 = __lsx_vld(psrc_v, 0);                                   \
-    temp0 = __lsx_vsub_b(temp0, const_80);                          \
-    temp1 = __lsx_vsub_b(temp1, const_80);                          \
-    temp0 = __lsx_vsllwil_h_b(temp0, 0);                            \
-    temp1 = __lsx_vsllwil_h_b(temp1, 0);                            \
-    uv_l = __lsx_vilvl_h(temp0, temp1);                             \
-    uv_h = __lsx_vilvh_h(temp0, temp1);                             \
+#define READYUV422_D(psrc_y, psrc_u, psrc_v, out_y, uv_l, uv_h) \
+  {                                                             \
+    __m128i temp0, temp1;                                       \
+                                                                \
+    DUP2_ARG2(__lsx_vld, psrc_y, 0, psrc_u, 0, out_y, temp0);   \
+    temp1 = __lsx_vld(psrc_v, 0);                               \
+    temp0 = __lsx_vsub_b(temp0, const_80);                      \
+    temp1 = __lsx_vsub_b(temp1, const_80);                      \
+    temp0 = __lsx_vsllwil_h_b(temp0, 0);                        \
+    temp1 = __lsx_vsllwil_h_b(temp1, 0);                        \
+    uv_l = __lsx_vilvl_h(temp0, temp1);                         \
+    uv_h = __lsx_vilvh_h(temp0, temp1);                         \
   }
 
 // Load 16 YUV422 pixel data
@@ -60,8 +60,8 @@ extern "C" {
   }
 
 // Convert 16 pixels of YUV420 to RGB.
-#define YUVTORGB_D(in_y, in_uvl, in_uvh, ubvr, ugvg, yg, yb, b_l,           \
-                    b_h, g_l,g_h, r_l, r_h)                                 \
+#define YUVTORGB_D(in_y, in_uvl, in_uvh, ubvr, ugvg, yg, yb, b_l, b_h, g_l, \
+                   g_h, r_l, r_h)                                           \
   {                                                                         \
     __m128i u_l, u_h, v_l, v_h;                                             \
     __m128i yl_ev, yl_od, yh_ev, yh_od;                                     \
@@ -204,23 +204,22 @@ extern "C" {
   }
 
 // Pack and Store 16 ARGB values.
-#define STOREARGB_D(a_l, a_h, r_l, r_h, g_l, g_h, b_l, b_h, pdst_argb)   \
-  {                                                                      \
-                                                                         \
-    __m128i temp0, temp1, temp2, temp3;                                  \
-    temp0 = __lsx_vpackev_b(g_l, b_l);                                   \
-    temp1 = __lsx_vpackev_b(a_l, r_l);                                   \
-    temp2 = __lsx_vpackev_b(g_h, b_h);                                   \
-    temp3 = __lsx_vpackev_b(a_h, r_h);                                   \
-    r_l = __lsx_vilvl_h(temp1, temp0);                                   \
-    r_h = __lsx_vilvh_h(temp1, temp0);                                   \
-    g_l = __lsx_vilvl_h(temp3, temp2);                                   \
-    g_h = __lsx_vilvh_h(temp3, temp2);                                   \
-    __lsx_vst(r_l, pdst_argb, 0);                                        \
-    __lsx_vst(r_h, pdst_argb, 16);                                       \
-    __lsx_vst(g_l, pdst_argb, 32);                                       \
-    __lsx_vst(g_h, pdst_argb, 48);                                       \
-    pdst_argb += 64;                                                     \
+#define STOREARGB_D(a_l, a_h, r_l, r_h, g_l, g_h, b_l, b_h, pdst_argb) \
+  {                                                                    \
+    __m128i temp0, temp1, temp2, temp3;                                \
+    temp0 = __lsx_vpackev_b(g_l, b_l);                                 \
+    temp1 = __lsx_vpackev_b(a_l, r_l);                                 \
+    temp2 = __lsx_vpackev_b(g_h, b_h);                                 \
+    temp3 = __lsx_vpackev_b(a_h, r_h);                                 \
+    r_l = __lsx_vilvl_h(temp1, temp0);                                 \
+    r_h = __lsx_vilvh_h(temp1, temp0);                                 \
+    g_l = __lsx_vilvl_h(temp3, temp2);                                 \
+    g_h = __lsx_vilvh_h(temp3, temp2);                                 \
+    __lsx_vst(r_l, pdst_argb, 0);                                      \
+    __lsx_vst(r_h, pdst_argb, 16);                                     \
+    __lsx_vst(g_l, pdst_argb, 32);                                     \
+    __lsx_vst(g_h, pdst_argb, 48);                                     \
+    pdst_argb += 64;                                                   \
   }
 
 // Pack and Store 8 ARGB values.
@@ -362,11 +361,11 @@ void I422ToUYVYRow_LSX(const uint8_t* src_y,
 }
 
 void I422ToARGBRow_LSX(const uint8_t* src_y,
-                        const uint8_t* src_u,
-                        const uint8_t* src_v,
-                        uint8_t* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width) {
   int x;
   int len = width / 16;
   __m128i vec_yb, vec_yg, vec_ub, vec_ug, vec_vr, vec_vg;
@@ -492,8 +491,8 @@ void I422ToRGB24Row_LSX(const uint8_t* src_y,
                g_h, r_l, r_h);
     temp0 = __lsx_vpackev_b(g_l, b_l);
     temp1 = __lsx_vpackev_b(g_h, b_h);
-    DUP4_ARG3(__lsx_vshuf_b, r_l, temp0, shuffler1, r_h, temp1, shuffler1,
-              r_l, temp0, shuffler0, r_h, temp1, shuffler0, temp2, temp3, temp0,
+    DUP4_ARG3(__lsx_vshuf_b, r_l, temp0, shuffler1, r_h, temp1, shuffler1, r_l,
+              temp0, shuffler0, r_h, temp1, shuffler0, temp2, temp3, temp0,
               temp1);
 
     b_l = __lsx_vilvl_d(temp1, temp2);
