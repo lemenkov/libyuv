@@ -15,10 +15,10 @@
  * Contributed by Bruce Lai <bruce.lai@sifive.com>
  */
 
-#include <assert.h>
 #include "libyuv/row.h"
 
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+#include <assert.h>
 #include <riscv_vector.h>
 
 #ifdef __cplusplus

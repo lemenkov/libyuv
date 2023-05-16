@@ -1845,6 +1845,192 @@ int ARGBToI420(const uint8_t* src_argb,
   return 0;
 }
 
+#ifdef USE_EXTRACTALPHA
+// Convert ARGB to I420 with Alpha
+// The following version calls ARGBExtractAlpha on the full image.
+LIBYUV_API
+int ARGBToI420Alpha(const uint8_t* src_argb,
+                    int src_stride_argb,
+                    uint8_t* dst_y,
+                    int dst_stride_y,
+                    uint8_t* dst_u,
+                    int dst_stride_u,
+                    uint8_t* dst_v,
+                    int dst_stride_v,
+                    uint8_t* dst_a,
+                    int dst_stride_a,
+                    int width,
+                    int height) {
+  int r = ARGBToI420(src_argb, src_stride_argb, dst_y, dst_stride_y, dst_u,
+                     dst_stride_u, dst_v, dst_stride_v, width, height);
+  if (r == 0) {
+    r = ARGBExtractAlpha(src_argb, src_stride_argb, dst_a, dst_stride_a, width,
+                         height);
+  }
+  return r;
+}
+#else  // USE_EXTRACTALPHA
+// Convert ARGB to I420 with Alpha
+LIBYUV_API
+int ARGBToI420Alpha(const uint8_t* src_argb,
+                    int src_stride_argb,
+                    uint8_t* dst_y,
+                    int dst_stride_y,
+                    uint8_t* dst_u,
+                    int dst_stride_u,
+                    uint8_t* dst_v,
+                    int dst_stride_v,
+                    uint8_t* dst_a,
+                    int dst_stride_a,
+                    int width,
+                    int height) {
+  int y;
+  void (*ARGBToUVRow)(const uint8_t* src_argb0, int src_stride_argb,
+                      uint8_t* dst_u, uint8_t* dst_v, int width) =
+      ARGBToUVRow_C;
+  void (*ARGBToYRow)(const uint8_t* src_argb, uint8_t* dst_y, int width) =
+      ARGBToYRow_C;
+  void (*ARGBExtractAlphaRow)(const uint8_t* src_argb, uint8_t* dst_a,
+                              int width) = ARGBExtractAlphaRow_C;
+  if (!src_argb || !dst_y || !dst_u || !dst_v  || !dst_a || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+#if defined(HAS_ARGBTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToYRow = ARGBToYRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToUVRow = ARGBToUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBToYRow = ARGBToYRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_MSA) && defined(HAS_ARGBTOUVROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBToYRow = ARGBToYRow_Any_MSA;
+    ARGBToUVRow = ARGBToUVRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_MSA;
+    }
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBToYRow = ARGBToYRow_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_LASX) && defined(HAS_ARGBTOUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBToYRow = ARGBToYRow_Any_LASX;
+    ARGBToUVRow = ARGBToUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_LASX;
+      ARGBToUVRow = ARGBToUVRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 8) ? ARGBExtractAlphaRow_SSE2
+                                               : ARGBExtractAlphaRow_Any_SSE2;
+  }
+#endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 32) ? ARGBExtractAlphaRow_AVX2
+                                                : ARGBExtractAlphaRow_Any_AVX2;
+  }
+#endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 16) ? ARGBExtractAlphaRow_NEON
+                                                : ARGBExtractAlphaRow_Any_NEON;
+  }
+#endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 16) ? ARGBExtractAlphaRow_MSA
+                                                : ARGBExtractAlphaRow_Any_MSA;
+  }
+#endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 16) ? ARGBExtractAlphaRow_LSX
+                                                : ARGBExtractAlphaRow_Any_LSX;
+  }
+#endif
+
+  for (y = 0; y < height - 1; y += 2) {
+    ARGBToUVRow(src_argb, src_stride_argb, dst_u, dst_v, width);
+    ARGBToYRow(src_argb, dst_y, width);
+    ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
+    ARGBExtractAlphaRow(src_argb, dst_a, width);
+    ARGBExtractAlphaRow(src_argb + src_stride_argb, dst_a + dst_stride_a, width);
+    src_argb += src_stride_argb * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+    dst_a += dst_stride_a * 2;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_argb, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_argb, dst_y, width);
+    ARGBExtractAlphaRow(src_argb, dst_a, width);
+  }
+  return 0;
+}
+#endif  // USE_EXTRACTALPHA
+
 // Convert BGRA to I420.
 LIBYUV_API
 int BGRAToI420(const uint8_t* src_bgra,

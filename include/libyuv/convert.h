@@ -751,6 +751,21 @@ int ARGBToI420(const uint8_t* src_argb,
                int width,
                int height);
 
+// Convert ARGB to I420 with Alpha
+LIBYUV_API
+int ARGBToI420Alpha(const uint8_t* src_argb,
+                    int src_stride_argb,
+                    uint8_t* dst_y,
+                    int dst_stride_y,
+                    uint8_t* dst_u,
+                    int dst_stride_u,
+                    uint8_t* dst_v,
+                    int dst_stride_v,
+                    uint8_t* dst_a,
+                    int dst_stride_a,
+                    int width,
+                    int height);
+
 // BGRA little endian (argb in memory) to I420.
 LIBYUV_API
 int BGRAToI420(const uint8_t* src_bgra,
