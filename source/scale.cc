@@ -135,6 +135,14 @@ static void ScalePlaneDown2(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN2_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowDown2 = filtering == kFilterNone
+                        ? ScaleRowDown2_RVV
+                        : (filtering == kFilterLinear ? ScaleRowDown2Linear_RVV
+                                                      : ScaleRowDown2Box_RVV);
+  }
+#endif
 
   if (filtering == kFilterLinear) {
     src_stride = 0;
@@ -310,6 +318,11 @@ static void ScalePlaneDown4(int src_width,
     if (IS_ALIGNED(dst_width, 16)) {
       ScaleRowDown4 = filtering ? ScaleRowDown4Box_LSX : ScaleRowDown4_LSX;
     }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN4_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowDown4 = filtering ? ScaleRowDown4Box_RVV : ScaleRowDown4_RVV;
   }
 #endif
 
@@ -969,6 +982,11 @@ static void ScalePlaneBox(int src_width,
       if (IS_ALIGNED(src_width, 16)) {
         ScaleAddRow = ScaleAddRow_LSX;
       }
+    }
+#endif
+#if defined(HAS_SCALEADDROW_RVV)
+    if (TestCpuFlag(kCpuHasRVV)) {
+      ScaleAddRow = ScaleAddRow_RVV;
     }
 #endif
 
