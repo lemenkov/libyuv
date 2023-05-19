@@ -5742,6 +5742,14 @@ int I420ToRGB565Dither(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_LSX;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTORGB565DITHERROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_LASX;
