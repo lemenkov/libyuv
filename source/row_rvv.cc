@@ -474,6 +474,62 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
   } while (w > 0);
 }
 
+void I400ToARGBRow_RVV(const uint8_t* src_y,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width) {
+  size_t w = (size_t)width;
+  size_t vl = __riscv_vsetvl_e8m2(w);
+  const bool is_yb_positive = (yuvconstants->kRGBCoeffBias[4] >= 0);
+  vuint8m2_t v_a = __riscv_vmv_v_x_u8m2(255u, vl);
+  vuint16m4_t v_yb;
+  vuint16m4_t v_yg = __riscv_vmv_v_x_u16m4(yuvconstants->kRGBCoeffBias[0], vl);
+  // To match behavior on other platforms, vxrm (fixed-point rounding mode
+  // register) sets to round-down mode(2).
+  asm volatile("csrwi vxrm, 2");
+  if (is_yb_positive) {
+    v_yb = __riscv_vmv_v_x_u16m4(yuvconstants->kRGBCoeffBias[4], vl);
+  } else {
+    v_yb = __riscv_vmv_v_x_u16m4(-yuvconstants->kRGBCoeffBias[4], vl);
+  }
+  do {
+    vuint8m2_t v_y, v_out;
+    vuint16m4_t v_y_16, v_tmp0, v_tmp1, v_tmp2;
+    vuint32m8_t v_y1;
+    vl = __riscv_vsetvl_e8m2(w);
+    v_y = __riscv_vle8_v_u8m2(src_y, vl);
+    v_y_16 = __riscv_vwaddu_vx_u16m4(v_y, 0, vl);
+    v_tmp0 = __riscv_vmul_vx_u16m4(v_y_16, 0x0101, vl);  // 257 * v_y
+    v_y1 = __riscv_vwmulu_vv_u32m8(v_tmp0, v_yg, vl);
+    v_tmp1 = __riscv_vnsrl_wx_u16m4(v_y1, 16, vl);
+    if (is_yb_positive) {
+      v_tmp2 = __riscv_vsaddu_vv_u16m4(v_tmp1, v_yb, vl);
+    } else {
+      v_tmp2 = __riscv_vssubu_vv_u16m4(v_tmp1, v_yb, vl);
+    }
+    v_out = __riscv_vnclipu_wx_u8m2(v_tmp2, 6, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_argb, v_out, v_out, v_out, v_a, vl);
+    w -= vl;
+    src_y += vl;
+    dst_argb += vl * 4;
+  } while (w > 0);
+}
+
+void J400ToARGBRow_RVV(const uint8_t* src_y, uint8_t* dst_argb, int width) {
+  size_t w = (size_t)width;
+  size_t vl = __riscv_vsetvl_e8m2(w);
+  vuint8m2_t v_a = __riscv_vmv_v_x_u8m2(255u, vl);
+  do {
+    vuint8m2_t v_y;
+    v_y = __riscv_vle8_v_u8m2(src_y, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_argb, v_y, v_y, v_y, v_a, vl);
+    w -= vl;
+    src_y += vl;
+    dst_argb += vl * 4;
+    vl = __riscv_vsetvl_e8m2(w);
+  } while (w > 0);
+}
+
 void SplitRGBRow_RVV(const uint8_t* src_rgb,
                      uint8_t* dst_r,
                      uint8_t* dst_g,

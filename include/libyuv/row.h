@@ -807,6 +807,7 @@ extern "C" {
 #define HAS_ABGRTOYROW_RVV
 #define HAS_ABGRTOYJROW_RVV
 #define HAS_BGRATOYROW_RVV
+#define HAS_I400TOARGBROW_RVV
 #define HAS_I422ALPHATOARGBROW_RVV
 #define HAS_I422TOARGBROW_RVV
 #define HAS_I422TORGB24ROW_RVV
@@ -814,6 +815,7 @@ extern "C" {
 #define HAS_I444ALPHATOARGBROW_RVV
 #define HAS_I444TOARGBROW_RVV
 #define HAS_I444TORGB24ROW_RVV
+#define HAS_J400TOARGBROW_RVV
 #define HAS_MERGEARGBROW_RVV
 #define HAS_MERGERGBROW_RVV
 #define HAS_MERGEXRGBROW_RVV
@@ -3531,6 +3533,7 @@ void J400ToARGBRow_AVX2(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_NEON(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_LSX(const uint8_t* src_y, uint8_t* dst_argb, int width);
+void J400ToARGBRow_RVV(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_Any_SSE2(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
@@ -4457,6 +4460,10 @@ void I400ToARGBRow_MSA(const uint8_t* src_y,
                        const struct YuvConstants* yuvconstants,
                        int width);
 void I400ToARGBRow_LSX(const uint8_t* src_y,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I400ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);

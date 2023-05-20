@@ -2897,6 +2897,11 @@ int I400ToARGBMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I400TOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I400ToARGBRow = I400ToARGBRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I400ToARGBRow(src_y, dst_argb, yuvconstants, width);
@@ -2984,6 +2989,12 @@ int J400ToARGB(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_J400TOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    J400ToARGBRow = J400ToARGBRow_RVV;
+  }
+#endif
+
   for (y = 0; y < height; ++y) {
     J400ToARGBRow(src_y, dst_argb, width);
     src_y += src_stride_y;
