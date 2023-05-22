@@ -28,20 +28,20 @@ extern "C" {
 
 // Fill YUV -> RGB conversion constants into vectors
 // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-// register) is set to round-down mode(2).
+// register) is set to round-to-nearest-up mode(0).
 #define YUVTORGB_SETUP(yuvconst, vl, v_ub, v_vr, v_ug, v_vg, v_yg, v_bb, v_bg, \
                        v_br)                                                   \
   {                                                                            \
-    asm volatile("csrwi vxrm, 2");                                             \
+    asm volatile("csrwi vxrm, 0");                                             \
     vl = __riscv_vsetvl_e8m1(w);                                               \
     v_ub = __riscv_vmv_v_x_u8m1(yuvconst->kUVCoeff[0], vl);                    \
     v_vr = __riscv_vmv_v_x_u8m1(yuvconst->kUVCoeff[1], vl);                    \
     v_ug = __riscv_vmv_v_x_u8m1(yuvconst->kUVCoeff[2], vl);                    \
     v_vg = __riscv_vmv_v_x_u8m1(yuvconst->kUVCoeff[3], vl);                    \
     v_yg = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[0], vl);              \
-    v_bb = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[1], vl);              \
-    v_bg = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[2], vl);              \
-    v_br = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[3], vl);              \
+    v_bb = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[1] + 32, vl);         \
+    v_bg = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[2] - 32, vl);         \
+    v_br = __riscv_vmv_v_x_u16m2(yuvconst->kRGBCoeffBias[3] + 32, vl);         \
   }
 
 // Read [VLEN/8] Y, [VLEN/(8 * 2)] U and [VLEN/(8 * 2)] V from 422
@@ -485,23 +485,21 @@ void I400ToARGBRow_RVV(const uint8_t* src_y,
   vuint16m4_t v_yb;
   vuint16m4_t v_yg = __riscv_vmv_v_x_u16m4(yuvconstants->kRGBCoeffBias[0], vl);
   // To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) sets to round-down mode(2).
-  asm volatile("csrwi vxrm, 2");
+  // register) sets to round-to-nearest-up mode(0).
+  asm volatile("csrwi vxrm, 0");
   if (is_yb_positive) {
-    v_yb = __riscv_vmv_v_x_u16m4(yuvconstants->kRGBCoeffBias[4], vl);
+    v_yb = __riscv_vmv_v_x_u16m4(yuvconstants->kRGBCoeffBias[4] - 32, vl);
   } else {
-    v_yb = __riscv_vmv_v_x_u16m4(-yuvconstants->kRGBCoeffBias[4], vl);
+    v_yb = __riscv_vmv_v_x_u16m4(-yuvconstants->kRGBCoeffBias[4] + 32, vl);
   }
   do {
     vuint8m2_t v_y, v_out;
     vuint16m4_t v_y_16, v_tmp0, v_tmp1, v_tmp2;
-    vuint32m8_t v_y1;
     vl = __riscv_vsetvl_e8m2(w);
     v_y = __riscv_vle8_v_u8m2(src_y, vl);
     v_y_16 = __riscv_vwaddu_vx_u16m4(v_y, 0, vl);
     v_tmp0 = __riscv_vmul_vx_u16m4(v_y_16, 0x0101, vl);  // 257 * v_y
-    v_y1 = __riscv_vwmulu_vv_u32m8(v_tmp0, v_yg, vl);
-    v_tmp1 = __riscv_vnsrl_wx_u16m4(v_y1, 16, vl);
+    v_tmp1 = __riscv_vmulhu_vv_u16m4(v_tmp0, v_yg, vl);
     if (is_yb_positive) {
       v_tmp2 = __riscv_vsaddu_vv_u16m4(v_tmp1, v_yb, vl);
     } else {
