@@ -807,6 +807,7 @@ extern "C" {
 #define HAS_ABGRTOYROW_RVV
 #define HAS_ABGRTOYJROW_RVV
 #define HAS_BGRATOYROW_RVV
+#define HAS_COPYROW_RVV
 #define HAS_I400TOARGBROW_RVV
 #define HAS_I422ALPHATOARGBROW_RVV
 #define HAS_I422TOARGBROW_RVV
@@ -815,12 +816,15 @@ extern "C" {
 #define HAS_I444ALPHATOARGBROW_RVV
 #define HAS_I444TOARGBROW_RVV
 #define HAS_I444TORGB24ROW_RVV
+#define HAS_INTERPOLATEROW_RVV
 #define HAS_J400TOARGBROW_RVV
 #define HAS_MERGEARGBROW_RVV
 #define HAS_MERGERGBROW_RVV
+#define HAS_MERGEUVROW_RVV
 #define HAS_MERGEXRGBROW_RVV
 #define HAS_SPLITARGBROW_RVV
 #define HAS_SPLITRGBROW_RVV
+#define HAS_SPLITUVROW_RVV
 #define HAS_SPLITXRGBROW_RVV
 #define HAS_RAWTOARGBROW_RVV
 #define HAS_RAWTORGB24ROW_RVV
@@ -832,9 +836,6 @@ extern "C" {
 #define HAS_RGB24TOYROW_RVV
 #define HAS_RGBATOYROW_RVV
 #define HAS_RGBATOYJROW_RVV
-#define HAS_SPLITARGBROW_RVV
-#define HAS_SPLITRGBROW_RVV
-#define HAS_SPLITXRGBROW_RVV
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -2242,6 +2243,10 @@ void SplitUVRow_LSX(const uint8_t* src_uv,
                     uint8_t* dst_u,
                     uint8_t* dst_v,
                     int width);
+void SplitUVRow_RVV(const uint8_t* src_uv,
+                    uint8_t* dst_u,
+                    uint8_t* dst_v,
+                    int width);
 void SplitUVRow_Any_SSE2(const uint8_t* src_ptr,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
@@ -2400,6 +2405,10 @@ void MergeUVRow_MSA(const uint8_t* src_u,
                     uint8_t* dst_uv,
                     int width);
 void MergeUVRow_LSX(const uint8_t* src_u,
+                    const uint8_t* src_v,
+                    uint8_t* dst_uv,
+                    int width);
+void MergeUVRow_RVV(const uint8_t* src_u,
                     const uint8_t* src_v,
                     uint8_t* dst_uv,
                     int width);
@@ -3038,6 +3047,7 @@ void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_ERMS(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_MIPS(const uint8_t* src, uint8_t* dst, int count);
+void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_C(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_Any_SSE2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void CopyRow_Any_AVX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
@@ -5854,6 +5864,11 @@ void InterpolateRow_MSA(uint8_t* dst_ptr,
                         int width,
                         int source_y_fraction);
 void InterpolateRow_LSX(uint8_t* dst_ptr,
+                        const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        int width,
+                        int source_y_fraction);
+void InterpolateRow_RVV(uint8_t* dst_ptr,
                         const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
                         int width,

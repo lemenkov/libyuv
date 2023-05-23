@@ -397,6 +397,11 @@ static void ScaleUVBilinearDown(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
 #if defined(HAS_SCALEUVFILTERCOLS_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
     ScaleUVFilterCols = ScaleUVFilterCols_SSSE3;
@@ -509,6 +514,11 @@ static void ScaleUVBilinearUp(int src_width,
     if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
   }
 #endif
   if (src_width >= 32768) {

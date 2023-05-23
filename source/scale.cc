@@ -1118,6 +1118,11 @@ void ScalePlaneBilinearDown(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
 
 #if defined(HAS_SCALEFILTERCOLS_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
@@ -1311,6 +1316,11 @@ void ScalePlaneBilinearUp(int src_width,
     if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
   }
 #endif
 

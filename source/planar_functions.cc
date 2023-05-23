@@ -75,6 +75,11 @@ void CopyPlane(const uint8_t* src_y,
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
+#if defined(HAS_COPYROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    CopyRow = CopyRow_RVV;
+  }
+#endif
 
   // Copy plane
   for (y = 0; y < height; ++y) {
@@ -545,6 +550,11 @@ void SplitUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
+#if defined(HAS_SPLITUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitUVRow = SplitUVRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     // Copy a row of UV.
@@ -629,6 +639,11 @@ void MergeUVPlane(const uint8_t* src_u,
     if (IS_ALIGNED(width, 16)) {
       MergeUVRow = MergeUVRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow = MergeUVRow_RVV;
   }
 #endif
 
@@ -4348,6 +4363,11 @@ int InterpolatePlane(const uint8_t* src0,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     InterpolateRow(dst, src0, src1 - src0, width, interpolation);
@@ -5560,6 +5580,12 @@ int UYVYToNV12(const uint8_t* src_uyvy,
     }
   }
 #endif
+#if defined(HAS_SPLITUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitUVRow = SplitUVRow_RVV;
+  }
+#endif
+
 #if defined(HAS_INTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
@@ -5598,6 +5624,11 @@ int UYVYToNV12(const uint8_t* src_uyvy,
     if (IS_ALIGNED(width, 32)) {
       InterpolateRow = InterpolateRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
   }
 #endif
 
@@ -5665,6 +5696,7 @@ void HalfMergeUVPlane(const uint8_t* src_u,
     HalfMergeUVRow = HalfMergeUVRow_AVX2;
   }
 #endif
+
   for (y = 0; y < height - 1; y += 2) {
     // Merge a row of U and V into a row of UV.
     HalfMergeUVRow(src_u, src_stride_u, src_v, src_stride_v, dst_uv, width);

@@ -528,6 +528,75 @@ void J400ToARGBRow_RVV(const uint8_t* src_y, uint8_t* dst_argb, int width) {
   } while (w > 0);
 }
 
+void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m8(w);
+    vuint8m8_t v_data = __riscv_vle8_v_u8m8(src, vl);
+    __riscv_vse8_v_u8m8(dst, v_data, vl);
+    w -= vl;
+    src += vl;
+    dst += vl;
+  } while (w > 0);
+}
+
+// Bilinear filter [VLEN/8]x2 -> [VLEN/8]x1
+void InterpolateRow_RVV(uint8_t* dst_ptr,
+                        const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        int dst_width,
+                        int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  size_t dst_w = (size_t)dst_width;
+  assert(source_y_fraction >= 0);
+  assert(source_y_fraction < 256);
+  // Blend 100 / 0 - Copy row unchanged.
+  if (y1_fraction == 0) {
+    do {
+      size_t vl = __riscv_vsetvl_e8m8(dst_w);
+      __riscv_vse8_v_u8m8(dst_ptr, __riscv_vle8_v_u8m8(src_ptr, vl), vl);
+      dst_w -= vl;
+      src_ptr += vl;
+      dst_ptr += vl;
+    } while (dst_w > 0);
+    return;
+  }
+  // Blend 50 / 50.
+  if (y1_fraction == 128) {
+    do {
+      size_t vl = __riscv_vsetvl_e8m8(dst_w);
+      vuint8m8_t row0 = __riscv_vle8_v_u8m8(src_ptr, vl);
+      vuint8m8_t row1 = __riscv_vle8_v_u8m8(src_ptr1, vl);
+      // Averaging add
+      vuint8m8_t row_out = __riscv_vaaddu_vv_u8m8(row0, row1, vl);
+      __riscv_vse8_v_u8m8(dst_ptr, row_out, vl);
+      dst_w -= vl;
+      src_ptr += vl;
+      src_ptr1 += vl;
+      dst_ptr += vl;
+    } while (dst_w > 0);
+    return;
+  }
+  // General purpose row blend.
+  // To match behavior on other platforms, vxrm (fixed-point rounding mode
+  // register) is set to round-to-nearest-up(0).
+  asm volatile("csrwi vxrm, 0");
+  do {
+    size_t vl = __riscv_vsetvl_e8m4(dst_w);
+    vuint8m4_t row0 = __riscv_vle8_v_u8m4(src_ptr, vl);
+    vuint16m8_t acc = __riscv_vwmulu_vx_u16m8(row0, y0_fraction, vl);
+    vuint8m4_t row1 = __riscv_vle8_v_u8m4(src_ptr1, vl);
+    acc = __riscv_vwmaccu_vx_u16m8(acc, y1_fraction, row1, vl);
+    __riscv_vse8_v_u8m4(dst_ptr, __riscv_vnclipu_wx_u8m4(acc, 8, vl), vl);
+    dst_w -= vl;
+    src_ptr += vl;
+    src_ptr1 += vl;
+    dst_ptr += vl;
+  } while (dst_w > 0);
+}
+
 void SplitRGBRow_RVV(const uint8_t* src_rgb,
                      uint8_t* dst_r,
                      uint8_t* dst_g,
@@ -657,6 +726,42 @@ void MergeXRGBRow_RVV(const uint8_t* src_r,
     src_b += vl;
     dst_argb += vl * 4;
     vl = __riscv_vsetvl_e8m2(w);
+  } while (w > 0);
+}
+
+void SplitUVRow_RVV(const uint8_t* src_uv,
+                    uint8_t* dst_u,
+                    uint8_t* dst_v,
+                    int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    vuint8m4_t v_u, v_v;
+    __riscv_vlseg2e8_v_u8m4(&v_u, &v_v, src_uv, vl);
+    __riscv_vse8_v_u8m4(dst_u, v_u, vl);
+    __riscv_vse8_v_u8m4(dst_v, v_v, vl);
+    w -= vl;
+    dst_u += vl;
+    dst_v += vl;
+    src_uv += 2 * vl;
+  } while (w > 0);
+}
+
+void MergeUVRow_RVV(const uint8_t* src_u,
+                    const uint8_t* src_v,
+                    uint8_t* dst_uv,
+                    int width) {
+  size_t w = (size_t)width;
+  do {
+    vuint8m4_t v_u, v_v;
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    v_u = __riscv_vle8_v_u8m4(src_u, vl);
+    v_v = __riscv_vle8_v_u8m4(src_v, vl);
+    __riscv_vsseg2e8_v_u8m4(dst_uv, v_u, v_v, vl);
+    w -= vl;
+    src_u += vl;
+    src_v += vl;
+    dst_uv += 2 * vl;
   } while (w > 0);
 }
 

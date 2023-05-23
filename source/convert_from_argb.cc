@@ -454,6 +454,11 @@ int ARGBToNV12(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow_ = MergeUVRow_RVV;
+  }
+#endif
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
@@ -647,6 +652,11 @@ int ARGBToNV21(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow_ = MergeUVRow_RVV;
+  }
+#endif
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
@@ -825,6 +835,11 @@ int ABGRToNV12(const uint8_t* src_abgr,
     if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow_ = MergeUVRow_RVV;
   }
 #endif
   {
@@ -1006,6 +1021,11 @@ int ABGRToNV21(const uint8_t* src_abgr,
     if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow_ = MergeUVRow_RVV;
   }
 #endif
   {
@@ -3202,6 +3222,11 @@ int RAWToJNV21(const uint8_t* src_raw,
     if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow_ = MergeUVRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow_ = MergeUVRow_RVV;
   }
 #endif
   {

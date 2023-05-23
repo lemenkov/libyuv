@@ -955,6 +955,11 @@ int I422ToNV21(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow = MergeUVRow_RVV;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
@@ -993,6 +998,11 @@ int I422ToNV21(const uint8_t* src_y,
     if (IS_ALIGNED(width, 32)) {
       InterpolateRow = InterpolateRow_LSX;
     }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
   }
 #endif
 

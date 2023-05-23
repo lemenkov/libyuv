@@ -192,6 +192,11 @@ static int ARGBRotate180(const uint8_t* src_argb,
     CopyRow = IS_ALIGNED(width * 4, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
+#if defined(HAS_COPYROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    CopyRow = CopyRow_RVV;
+  }
+#endif
 
   // Odd height will harmlessly mirror the middle row twice.
   for (y = 0; y < half_height; ++y) {
