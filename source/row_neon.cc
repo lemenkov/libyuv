@@ -3845,7 +3845,7 @@ void SplitUVRow_16_NEON(const uint16_t* src_uv,
         "+r"(dst_v),   // %2
         "+r"(width)    // %3
       : "r"(shift)     // %4
-      : "cc", "memory", "q0", "q1", "q2"");
+      : "cc", "memory", "q0", "q1", "q2");
 }
 
 void MergeUVRow_16_NEON(const uint16_t* src_u,
