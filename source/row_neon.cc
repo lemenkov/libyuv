@@ -725,12 +725,12 @@ void DetileToYUY2_NEON(const uint8_t* src_y,
 void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
   asm volatile(
       "1:                                        \n"
-      "vld1.8      q14, [%0]!                    \n"  // Load lower bits.
-      "vld1.8      q9, [%0]!                     \n"  // Load upper bits row
+      "vld1.8      {q14}, [%0]!                  \n"  // Load lower bits.
+      "vld1.8      {q9}, [%0]!                   \n"  // Load upper bits row
                                                       // by row.
-      "vld1.8      q11, [%0]!                    \n"
-      "vld1.8      q13, [%0]!                    \n"
-      "vld1.8      q15, [%0]!                    \n"
+      "vld1.8      {q11}, [%0]!                  \n"
+      "vld1.8      {q13}, [%0]!                  \n"
+      "vld1.8      {q15}, [%0]!                  \n"
       "vshl.u8     q8, q14, #6                   \n"  // Shift lower bit data
                                                       // appropriately.
       "vshl.u8     q10, q14, #4                  \n"
