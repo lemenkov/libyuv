@@ -218,7 +218,14 @@ def BuildDepsentryDict(deps_dict):
       else:
         deps_url = deps_url_spec
       if not path in result:
-        url, revision = deps_url.split('@') if deps_url else (None, None)
+        if not deps_url:
+          url, revision = None, None
+        elif '@' not in deps_url:
+          # Some dependencies always pull in the latest revision and do not have
+          # a revision in the URL. Assume 'HEAD' in these cases.
+          url, revision = deps_url, 'HEAD'
+        else:
+          url, revision = deps_url.split('@')
         result[path] = DepsEntry(path, url, revision)
 
   AddDepsEntries(deps_dict['deps'])
