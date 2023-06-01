@@ -82,6 +82,7 @@ cc_library {
         "-Wno-unused-parameter",
         "-fexceptions",
         "-DHAVE_JPEG",
+        "-DLIBYUV_UNLIMITED_DATA",
     ],
 
     arch: {
