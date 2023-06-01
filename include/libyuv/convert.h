@@ -418,7 +418,6 @@ int I412ToI420(const uint16_t* src_y,
                int width,
                int height);
 
-
 #define I412ToI012 I410ToI010
 #define H410ToH010 I410ToI010
 #define H412ToH012 I410ToI010

@@ -3378,15 +3378,15 @@ void ARGBToRGB24Row_AVX512VBMI(const uint8_t* src, uint8_t* dst, int width);
 
 void ARGBToRGB565DitherRow_C(const uint8_t* src_argb,
                              uint8_t* dst_rgb,
-                             const uint32_t dither4,
+                             uint32_t dither4,
                              int width);
 void ARGBToRGB565DitherRow_SSE2(const uint8_t* src,
                                 uint8_t* dst,
-                                const uint32_t dither4,
+                                uint32_t dither4,
                                 int width);
 void ARGBToRGB565DitherRow_AVX2(const uint8_t* src,
                                 uint8_t* dst,
-                                const uint32_t dither4,
+                                uint32_t dither4,
                                 int width);
 
 void ARGBToRGB565Row_AVX2(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
@@ -3414,7 +3414,7 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
                             int width);
 void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
-                                const uint32_t dither4,
+                                uint32_t dither4,
                                 int width);
 void ARGBToRGB24Row_MSA(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToRAWRow_MSA(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
@@ -3427,15 +3427,15 @@ void ARGBToARGB4444Row_MSA(const uint8_t* src_argb,
                            int width);
 void ARGBToRGB565DitherRow_MSA(const uint8_t* src_argb,
                                uint8_t* dst_rgb,
-                               const uint32_t dither4,
+                               uint32_t dither4,
                                int width);
 void ARGBToRGB565DitherRow_LSX(const uint8_t* src_argb,
                                uint8_t* dst_rgb,
-                               const uint32_t dither4,
+                               uint32_t dither4,
                                int width);
 void ARGBToRGB565DitherRow_LASX(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
-                                const uint32_t dither4,
+                                uint32_t dither4,
                                 int width);
 
 void ARGBToRGB24Row_LSX(const uint8_t* src_argb, uint8_t* dst_rgb, int width);

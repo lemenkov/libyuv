@@ -794,10 +794,10 @@ void ARGBToUVRow_LSX(const uint8_t* src_argb0,
   __m128i const_0x12 = {0x0009000900090009, 0x0009000900090009};
   __m128i const_0x8080 = {0x8080808080808080, 0x8080808080808080};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_argb0, 0, src_argb0, 16, src_argb0, 32,
-              src_argb0, 48, src0, src1, src2, src3);
-    DUP4_ARG2(__lsx_vld, src_argb1, 0, src_argb1, 16, src_argb1, 32,
-              src_argb1, 48, src4, src5, src6, src7);
+    DUP4_ARG2(__lsx_vld, src_argb0, 0, src_argb0, 16, src_argb0, 32, src_argb0,
+              48, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_argb1, 0, src_argb1, 16, src_argb1, 32, src_argb1,
+              48, src4, src5, src6, src7);
     vec0 = __lsx_vaddwev_h_bu(src0, src4);
     vec1 = __lsx_vaddwev_h_bu(src1, src5);
     vec2 = __lsx_vaddwev_h_bu(src2, src6);
@@ -846,8 +846,8 @@ void ARGBToRGB24Row_LSX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   __m128i tmp0, tmp1, tmp2, tmp3;
   __m128i shuf = {0x0908060504020100, 0x000000000E0D0C0A};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_argb, 0, src_argb, 16, src_argb, 32, src_argb,
-              48, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_argb, 0, src_argb, 16, src_argb, 32, src_argb, 48,
+              src0, src1, src2, src3);
     tmp0 = __lsx_vshuf_b(src0, src0, shuf);
     tmp1 = __lsx_vshuf_b(src1, src1, shuf);
     tmp2 = __lsx_vshuf_b(src2, src2, shuf);
@@ -879,8 +879,8 @@ void ARGBToRAWRow_LSX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   __m128i tmp0, tmp1, tmp2, tmp3;
   __m128i shuf = {0x090A040506000102, 0x000000000C0D0E08};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_argb, 0, src_argb, 16, src_argb, 32, src_argb,
-              48, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_argb, 0, src_argb, 16, src_argb, 32, src_argb, 48,
+              src0, src1, src2, src3);
     tmp0 = __lsx_vshuf_b(src0, src0, shuf);
     tmp1 = __lsx_vshuf_b(src1, src1, shuf);
     tmp2 = __lsx_vshuf_b(src2, src2, shuf);
@@ -905,9 +905,7 @@ void ARGBToRAWRow_LSX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   __lsx_vst(tmp3, dst_rgb, 0);
 }
 
-void ARGBToRGB565Row_LSX(const uint8_t* src_argb,
-                         uint8_t* dst_rgb,
-                         int width) {
+void ARGBToRGB565Row_LSX(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   int x;
   int len = width / 8;
   __m128i zero = __lsx_vldi(0);
@@ -995,8 +993,8 @@ void ARGBToUV444Row_LSX(const uint8_t* src_argb,
   __m128i const_18 = __lsx_vldi(18);
   __m128i const_0x8080 = {0x8080808080808080, 0x8080808080808080};
   for (x = 0; x < len; x++) {
-    DUP4_ARG2(__lsx_vld, src_argb, 0, src_argb, 16, src_argb, 32, src_argb,
-              48, src0, src1, src2, src3);
+    DUP4_ARG2(__lsx_vld, src_argb, 0, src_argb, 16, src_argb, 32, src_argb, 48,
+              src0, src1, src2, src3);
     tmp0 = __lsx_vpickev_h(src1, src0);
     tmp1 = __lsx_vpickod_h(src1, src0);
     tmp2 = __lsx_vpickev_h(src3, src2);
@@ -1138,7 +1136,7 @@ void ARGBAttenuateRow_LSX(const uint8_t* src_argb,
 
 void ARGBToRGB565DitherRow_LSX(const uint8_t* src_argb,
                                uint8_t* dst_rgb,
-                               const uint32_t dither4,
+                               uint32_t dither4,
                                int width) {
   int x;
   int len = width / 8;

@@ -5645,7 +5645,7 @@ int I420ToRGB565Dither(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I422ToARGBRow_C;
   void (*ARGBToRGB565DitherRow)(const uint8_t* src_argb, uint8_t* dst_rgb,
-                                const uint32_t dither4, int width) =
+                                uint32_t dither4, int width) =
       ARGBToRGB565DitherRow_C;
   if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0) {
     return -1;

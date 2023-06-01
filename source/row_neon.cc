@@ -1753,7 +1753,7 @@ void ARGBToRGB565Row_NEON(const uint8_t* src_argb,
 
 void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
-                                const uint32_t dither4,
+                                uint32_t dither4,
                                 int width) {
   asm volatile(
       "vdup.32     d7, %2                        \n"  // dither4

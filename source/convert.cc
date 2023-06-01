@@ -2010,7 +2010,8 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
       ARGBToYRow_C;
   void (*ARGBExtractAlphaRow)(const uint8_t* src_argb, uint8_t* dst_a,
                               int width) = ARGBExtractAlphaRow_C;
-  if (!src_argb || !dst_y || !dst_u || !dst_v  || !dst_a || width <= 0 || height == 0) {
+  if (!src_argb || !dst_y || !dst_u || !dst_v || !dst_a || width <= 0 ||
+      height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -2133,7 +2134,8 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
     ARGBToYRow(src_argb, dst_y, width);
     ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
     ARGBExtractAlphaRow(src_argb, dst_a, width);
-    ARGBExtractAlphaRow(src_argb + src_stride_argb, dst_a + dst_stride_a, width);
+    ARGBExtractAlphaRow(src_argb + src_stride_argb, dst_a + dst_stride_a,
+                        width);
     src_argb += src_stride_argb * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
