@@ -367,6 +367,23 @@ int I212ToI422(const uint16_t* src_y,
                int width,
                int height);
 
+#define H212ToH420 I212ToI420
+LIBYUV_API
+int I212ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
 #define H412ToH444 I412ToI444
 LIBYUV_API
 int I412ToI444(const uint16_t* src_y,
@@ -383,6 +400,24 @@ int I412ToI444(const uint16_t* src_y,
                int dst_stride_v,
                int width,
                int height);
+
+#define H412ToH420 I412ToI420
+LIBYUV_API
+int I412ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
 
 #define I412ToI012 I410ToI010
 #define H410ToH010 I410ToI010
