@@ -3656,6 +3656,8 @@ TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
   I012ToARGBMatrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
 #define I012ToAR30(a, b, c, d, e, f, g, h, i, j) \
   I012ToAR30Matrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
+#define I012ToAB30(a, b, c, d, e, f, g, h, i, j) \
+  I012ToAB30Matrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
 
 #define I410ToARGB(a, b, c, d, e, f, g, h, i, j) \
   I410ToARGBMatrix(a, b, c, d, e, f, g, h, &kYuvI601Constants, i, j)
@@ -3798,6 +3800,7 @@ TESTPLANAR16TOB(H410, 1, 1, 0x3ff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AR30, 4, 4, 1)
 TESTPLANAR16TOB(U410, 1, 1, 0x3ff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(I012, 2, 2, 0xfff, AR30, 4, 4, 1)
+TESTPLANAR16TOB(I012, 2, 2, 0xfff, AB30, 4, 4, 1)
 TESTPLANAR16TOB(I010, 2, 2, 0x3ff, AR30Filter, 4, 4, 1)
 TESTPLANAR16TOB(I210, 2, 1, 0x3ff, AR30Filter, 4, 4, 1)
 #endif  // LITTLE_ENDIAN_ONLY_TEST
