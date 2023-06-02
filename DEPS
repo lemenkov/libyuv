@@ -186,6 +186,16 @@ deps = {
     'url': Var('chromium_git') + '/android_ndk.git' + '@' + '310956bd122ec2b96049f8d7398de6b717f3452e',
     'condition': 'checkout_android',
   },
+  'src/third_party/android_toolchain': {
+      'packages': [
+            {
+                'package': 'chromium/third_party/android_toolchain/r23c/android_toolchain',
+                'version': 'version:2@r23c.cr0',
+            },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
 
   'src/third_party/androidx': {
     'packages': [
