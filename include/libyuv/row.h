@@ -6180,7 +6180,14 @@ void ByteToFloatRow_Any_NEON(const uint8_t* src_ptr,
                              float* dst_ptr,
                              float param,
                              int width);
-
+// Convert FP16 Half Floats to FP32 Floats
+void ConvertFP16ToFP32Row_NEON(const uint16_t* src,  // fp16
+                               float* dst,
+                               int width);
+// Convert FP32 Floats to FP16 Half Floats
+void ConvertFP32ToFP16Row_NEON(const float* src,
+                               uint16_t* dst,  // fp16
+                               int width);
 void ARGBLumaColorTableRow_C(const uint8_t* src_argb,
                              uint8_t* dst_argb,
                              int width,

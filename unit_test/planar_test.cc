@@ -4468,4 +4468,46 @@ TEST_F(LibYUVPlanarTest, NV21Copy) {
   free_aligned_buffer_page_end(dst_vu);
 }
 
+#if defined(ENABLE_ROW_TESTS) && !defined(LIBYUV_DISABLE_NEON) && \
+    defined(__aarch64__)
+
+TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32) {
+  int i, j;
+  const int y_plane_size = benchmark_width_ * benchmark_height_;
+
+  align_buffer_page_end(orig_f, y_plane_size * 4);
+  align_buffer_page_end(orig_y, y_plane_size * 2);
+  align_buffer_page_end(dst_opt, y_plane_size * 4);
+  align_buffer_page_end(rec_opt, y_plane_size * 2);
+
+  for (i = 0; i < y_plane_size; ++i) {
+    ((float*)orig_f)[i] = (float)(i % 10000) * 3.14f;
+  }
+  memset(orig_y, 1, y_plane_size * 2);
+  memset(dst_opt, 2, y_plane_size * 4);
+  memset(rec_opt, 3, y_plane_size * 2);
+
+  ConvertFP32ToFP16Row_NEON((const float*)orig_f, (uint16_t*)orig_y,
+                            y_plane_size);
+
+  for (j = 0; j < benchmark_iterations_; j++) {
+    ConvertFP16ToFP32Row_NEON((const uint16_t*)orig_y, (float*)dst_opt,
+                              y_plane_size);
+  }
+
+  ConvertFP32ToFP16Row_NEON((const float*)dst_opt, (uint16_t*)rec_opt,
+                            y_plane_size);
+
+  for (i = 0; i < y_plane_size; ++i) {
+    EXPECT_EQ(((const uint16_t*)orig_y)[i], ((const uint16_t*)rec_opt)[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_f);
+  free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(rec_opt);
+}
+
+#endif  // defined(ENABLE_ROW_TESTS) && defined(__aarch64__)
+
 }  // namespace libyuv
