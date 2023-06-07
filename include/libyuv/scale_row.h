@@ -180,6 +180,7 @@ extern "C" {
 #define HAS_SCALEARGBROWDOWN2_RVV
 #define HAS_SCALEARGBROWDOWNEVEN_RVV
 #define HAS_SCALEROWDOWN2_RVV
+#define HAS_SCALEROWDOWN34_RVV
 #define HAS_SCALEROWDOWN4_RVV
 #define HAS_SCALEUVROWDOWN2_RVV
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
@@ -1822,6 +1823,18 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst_ptr,
                           int dst_width);
+void ScaleRowDown34_RVV(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst_ptr,
+                        int dst_width);
+void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width);
+void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width);
 
 #ifdef __cplusplus
 }  // extern "C"

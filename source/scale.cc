@@ -485,6 +485,17 @@ static void ScalePlaneDown34(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN34_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    if (!filtering) {
+      ScaleRowDown34_0 = ScaleRowDown34_RVV;
+      ScaleRowDown34_1 = ScaleRowDown34_RVV;
+    } else {
+      ScaleRowDown34_0 = ScaleRowDown34_0_Box_RVV;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Box_RVV;
+    }
+  }
+#endif
 
   for (y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown34_0(src_ptr, filter_stride, dst_ptr, dst_width);

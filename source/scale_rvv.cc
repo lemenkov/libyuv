@@ -330,6 +330,142 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
   } while (w > 0);
 }
 
+void ScaleRowDown34_RVV(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst_ptr,
+                        int dst_width) {
+  size_t w = (size_t)dst_width / 3u;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_s0, v_s1, v_s2, v_s3;
+    __riscv_vlseg4e8_v_u8m2(&v_s0, &v_s1, &v_s2, &v_s3, src_ptr, vl);
+    __riscv_vsseg3e8_v_u8m2(dst_ptr, v_s0, v_s1, v_s3, vl);
+    w -= vl;
+    src_ptr += 4 * vl;
+    dst_ptr += 3 * vl;
+  } while (w > 0);
+}
+
+void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width) {
+  size_t w = (size_t)dst_width / 3u;
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
+  // register) is set to round-to-nearest-up mode(0).
+  asm volatile("csrwi vxrm, 0");
+  do {
+    vuint8m2_t v_s0, v_s1, v_s2, v_s3;
+    vuint16m4_t v_t0_u16, v_t1_u16, v_t2_u16, v_t3_u16;
+    vuint8m2_t v_u0, v_u1, v_u2, v_u3;
+    vuint16m4_t v_u1_u16;
+    vuint8m2_t v_a0, v_a1, v_a2;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_s0, &v_s1, &v_s2, &v_s3, s, vl);
+
+    if (src_stride == 0) {
+      v_t0_u16 = __riscv_vwaddu_vx_u16m4(v_s0, 2, vl);
+      v_t1_u16 = __riscv_vwaddu_vx_u16m4(v_s1, 2, vl);
+      v_t2_u16 = __riscv_vwaddu_vx_u16m4(v_s2, 2, vl);
+      v_t3_u16 = __riscv_vwaddu_vx_u16m4(v_s3, 2, vl);
+    } else {
+      vuint8m2_t v_t0, v_t1, v_t2, v_t3;
+      __riscv_vlseg4e8_v_u8m2(&v_t0, &v_t1, &v_t2, &v_t3, t, vl);
+      v_t0_u16 = __riscv_vwaddu_vx_u16m4(v_t0, 0, vl);
+      v_t1_u16 = __riscv_vwaddu_vx_u16m4(v_t1, 0, vl);
+      v_t2_u16 = __riscv_vwaddu_vx_u16m4(v_t2, 0, vl);
+      v_t3_u16 = __riscv_vwaddu_vx_u16m4(v_t3, 0, vl);
+      t += 4 * vl;
+    }
+
+    v_t0_u16 = __riscv_vwmaccu_vx_u16m4(v_t0_u16, 3, v_s0, vl);
+    v_t1_u16 = __riscv_vwmaccu_vx_u16m4(v_t1_u16, 3, v_s1, vl);
+    v_t2_u16 = __riscv_vwmaccu_vx_u16m4(v_t2_u16, 3, v_s2, vl);
+    v_t3_u16 = __riscv_vwmaccu_vx_u16m4(v_t3_u16, 3, v_s3, vl);
+
+    // Use round-to-nearest-up mode for vnclip & averaging add
+    v_u0 = __riscv_vnclipu_wx_u8m2(v_t0_u16, 2, vl);
+    v_u1 = __riscv_vnclipu_wx_u8m2(v_t1_u16, 2, vl);
+    v_u2 = __riscv_vnclipu_wx_u8m2(v_t2_u16, 2, vl);
+    v_u3 = __riscv_vnclipu_wx_u8m2(v_t3_u16, 2, vl);
+
+    // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
+    v_u1_u16 = __riscv_vwaddu_vx_u16m4(v_u1, 0, vl);
+    v_u1_u16 = __riscv_vwmaccu_vx_u16m4(v_u1_u16, 3, v_u0, vl);
+    v_a0 = __riscv_vnclipu_wx_u8m2(v_u1_u16, 2, vl);
+
+    // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
+    v_a1 = __riscv_vaaddu_vv_u8m2(v_u1, v_u2, vl);
+
+    // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
+    v_u1_u16 = __riscv_vwaddu_vx_u16m4(v_u2, 0, vl);
+    v_u1_u16 = __riscv_vwmaccu_vx_u16m4(v_u1_u16, 3, v_u3, vl);
+    v_a2 = __riscv_vnclipu_wx_u8m2(v_u1_u16, 2, vl);
+
+    __riscv_vsseg3e8_v_u8m2(dst_ptr, v_a0, v_a1, v_a2, vl);
+
+    w -= vl;
+    s += 4 * vl;
+    dst_ptr += 3 * vl;
+  } while (w > 0);
+}
+
+void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width) {
+  size_t w = (size_t)dst_width / 3u;
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
+  // register) is set to round-to-nearest-up mode(0).
+  asm volatile("csrwi vxrm, 0");
+  do {
+    vuint8m2_t v_s0, v_s1, v_s2, v_s3;
+    vuint8m2_t v_ave0, v_ave1, v_ave2, v_ave3;
+    vuint16m4_t v_u1_u16;
+    vuint8m2_t v_a0, v_a1, v_a2;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_s0, &v_s1, &v_s2, &v_s3, s, vl);
+
+    // Use round-to-nearest-up mode for vnclip & averaging add
+    if (src_stride == 0) {
+      v_ave0 = __riscv_vaaddu_vv_u8m2(v_s0, v_s0, vl);
+      v_ave1 = __riscv_vaaddu_vv_u8m2(v_s1, v_s1, vl);
+      v_ave2 = __riscv_vaaddu_vv_u8m2(v_s2, v_s2, vl);
+      v_ave3 = __riscv_vaaddu_vv_u8m2(v_s3, v_s3, vl);
+    } else {
+      vuint8m2_t v_t0, v_t1, v_t2, v_t3;
+      __riscv_vlseg4e8_v_u8m2(&v_t0, &v_t1, &v_t2, &v_t3, t, vl);
+      v_ave0 = __riscv_vaaddu_vv_u8m2(v_s0, v_t0, vl);
+      v_ave1 = __riscv_vaaddu_vv_u8m2(v_s1, v_t1, vl);
+      v_ave2 = __riscv_vaaddu_vv_u8m2(v_s2, v_t2, vl);
+      v_ave3 = __riscv_vaaddu_vv_u8m2(v_s3, v_t3, vl);
+      t += 4 * vl;
+    }
+    // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
+    v_u1_u16 = __riscv_vwaddu_vx_u16m4(v_ave1, 0, vl);
+    v_u1_u16 = __riscv_vwmaccu_vx_u16m4(v_u1_u16, 3, v_ave0, vl);
+    v_a0 = __riscv_vnclipu_wx_u8m2(v_u1_u16, 2, vl);
+
+    // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
+    v_a1 = __riscv_vaaddu_vv_u8m2(v_ave1, v_ave2, vl);
+
+    // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
+    v_u1_u16 = __riscv_vwaddu_vx_u16m4(v_ave2, 0, vl);
+    v_u1_u16 = __riscv_vwmaccu_vx_u16m4(v_u1_u16, 3, v_ave3, vl);
+    v_a2 = __riscv_vnclipu_wx_u8m2(v_u1_u16, 2, vl);
+
+    __riscv_vsseg3e8_v_u8m2(dst_ptr, v_a0, v_a1, v_a2, vl);
+
+    w -= vl;
+    s += 4 * vl;
+    dst_ptr += 3 * vl;
+  } while (w > 0);
+}
+
 void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
                          ptrdiff_t src_stride,
                          uint8_t* dst_uv,
