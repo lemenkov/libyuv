@@ -463,6 +463,113 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
   } while (w > 0);
 }
 
+// ScaleUVRowUp2_(Bi)linear_RVV function is equal to other platforms'
+// ScaleRowUp2_(Bi)linear_Any_XXX. We process entire row in this function. Other
+// platforms only implement non-edge part of image and process edge with scalar.
+void ScaleRowUp2_Linear_RVV(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int dst_width) {
+  size_t work_width = (size_t)dst_width - 1u;
+  size_t src_width = work_width >> 1u;
+  const uint8_t* work_src_ptr = src_ptr;
+  uint8_t* work_dst_ptr = dst_ptr + 1;
+  size_t vl = __riscv_vsetvlmax_e8m4();
+  vuint8m4_t v_3 = __riscv_vmv_v_x_u8m4(3, vl);
+  dst_ptr[0] = src_ptr[0];
+  while (src_width > 0) {
+    vuint8m4_t v_src0, v_src1, v_dst_odd, v_dst_even;
+    vuint16m8_t v_src0_u16, v_src1_u16;
+    size_t vl = __riscv_vsetvl_e8m4(src_width);
+    v_src0 = __riscv_vle8_v_u8m4(work_src_ptr, vl);
+    v_src1 = __riscv_vle8_v_u8m4(work_src_ptr + 1, vl);
+
+    v_src0_u16 = __riscv_vwaddu_vx_u16m8(v_src0, 2, vl);
+    v_src1_u16 = __riscv_vwaddu_vx_u16m8(v_src1, 2, vl);
+    v_src0_u16 = __riscv_vwmaccu_vv_u16m8(v_src0_u16, v_3, v_src1, vl);
+    v_src1_u16 = __riscv_vwmaccu_vv_u16m8(v_src1_u16, v_3, v_src0, vl);
+
+    v_dst_odd = __riscv_vnsrl_wx_u8m4(v_src0_u16, 2, vl);
+    v_dst_even = __riscv_vnsrl_wx_u8m4(v_src1_u16, 2, vl);
+
+    __riscv_vsseg2e8_v_u8m4(work_dst_ptr, v_dst_even, v_dst_odd, vl);
+
+    src_width -= vl;
+    work_src_ptr += vl;
+    work_dst_ptr += 2 * vl;
+  }
+  dst_ptr[dst_width - 1] = src_ptr[(dst_width - 1) / 2];
+}
+
+void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              ptrdiff_t dst_stride,
+                              int dst_width) {
+  size_t work_width = ((size_t)dst_width - 1u) & ~1u;
+  size_t src_width = work_width >> 1u;
+  const uint8_t* work_s = src_ptr;
+  const uint8_t* work_t = src_ptr + src_stride;
+  const uint8_t* s = work_s;
+  const uint8_t* t = work_t;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  uint8_t* work_d = d + 1;
+  uint8_t* work_e = e + 1;
+  size_t vl = __riscv_vsetvlmax_e16m4();
+  vuint16m4_t v_3_u16 = __riscv_vmv_v_x_u16m4(3, vl);
+  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vl);
+  d[0] = (3 * s[0] + t[0] + 2) >> 2;
+  e[0] = (s[0] + 3 * t[0] + 2) >> 2;
+  while (src_width > 0) {
+    vuint8m2_t v_s0, v_s1, v_t0, v_t1;
+    vuint16m4_t v_s0_u16, v_s1_u16, v_t0_u16, v_t1_u16;
+    vuint16m4_t v_t0_u16_, v_t1_u16_;
+    vuint8m2_t v_dst0_even, v_dst0_odd, v_dst1_even, v_dst1_odd;
+    size_t vl = __riscv_vsetvl_e8m2(src_width);
+    v_s0 = __riscv_vle8_v_u8m2(work_s, vl);
+    v_s1 = __riscv_vle8_v_u8m2(work_s + 1, vl);
+
+    v_s0_u16 = __riscv_vwaddu_vx_u16m4(v_s0, 2, vl);
+    v_s1_u16 = __riscv_vwaddu_vx_u16m4(v_s1, 2, vl);
+    v_s0_u16 = __riscv_vwmaccu_vv_u16m4(v_s0_u16, v_3_u8, v_s1, vl);
+    v_s1_u16 = __riscv_vwmaccu_vv_u16m4(v_s1_u16, v_3_u8, v_s0, vl);
+
+    v_t0 = __riscv_vle8_v_u8m2(work_t, vl);
+    v_t1 = __riscv_vle8_v_u8m2(work_t + 1, vl);
+
+    v_t0_u16 = __riscv_vwaddu_vx_u16m4(v_t0, 2, vl);
+    v_t1_u16 = __riscv_vwaddu_vx_u16m4(v_t1, 2, vl);
+    v_t0_u16 = __riscv_vwmaccu_vv_u16m4(v_t0_u16, v_3_u8, v_t1, vl);
+    v_t1_u16 = __riscv_vwmaccu_vv_u16m4(v_t1_u16, v_3_u8, v_t0, vl);
+
+    v_t0_u16_ = __riscv_vmv_v_v_u16m4(v_t0_u16, vl);
+    v_t1_u16_ = __riscv_vmv_v_v_u16m4(v_t1_u16, vl);
+
+    v_t0_u16 = __riscv_vmacc_vv_u16m4(v_t0_u16, v_3_u16, v_s0_u16, vl);
+    v_t1_u16 = __riscv_vmacc_vv_u16m4(v_t1_u16, v_3_u16, v_s1_u16, vl);
+    v_s0_u16 = __riscv_vmacc_vv_u16m4(v_s0_u16, v_3_u16, v_t0_u16_, vl);
+    v_s1_u16 = __riscv_vmacc_vv_u16m4(v_s1_u16, v_3_u16, v_t1_u16_, vl);
+
+    v_dst0_odd = __riscv_vnsrl_wx_u8m2(v_t0_u16, 4, vl);
+    v_dst0_even = __riscv_vnsrl_wx_u8m2(v_t1_u16, 4, vl);
+    v_dst1_odd = __riscv_vnsrl_wx_u8m2(v_s0_u16, 4, vl);
+    v_dst1_even = __riscv_vnsrl_wx_u8m2(v_s1_u16, 4, vl);
+
+    __riscv_vsseg2e8_v_u8m2(work_d, v_dst0_even, v_dst0_odd, vl);
+    __riscv_vsseg2e8_v_u8m2(work_e, v_dst1_even, v_dst1_odd, vl);
+
+    src_width -= vl;
+    work_s += vl;
+    work_t += vl;
+    work_d += 2 * vl;
+    work_e += 2 * vl;
+  }
+  d[dst_width - 1] =
+      (3 * s[(dst_width - 1) / 2] + t[(dst_width - 1) / 2] + 2) >> 2;
+  e[dst_width - 1] =
+      (s[(dst_width - 1) / 2] + 3 * t[(dst_width - 1) / 2] + 2) >> 2;
+}
+
 void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
                          ptrdiff_t src_stride,
                          uint8_t* dst_uv,
@@ -593,6 +700,135 @@ void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
     src += vl * src_stepx;
     dst += vl;
   } while (w > 0);
+}
+
+// ScaleUVRowUp2_(Bi)linear_RVV function is equal to other platforms'
+// ScaleUVRowUp2_(Bi)linear_Any_XXX. We process entire row in this function.
+// Other platforms only implement non-edge part of image and process edge with
+// scalar.
+void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
+                              uint8_t* dst_ptr,
+                              int dst_width) {
+  size_t work_width = ((size_t)dst_width - 1u) & ~1u;
+  uint16_t* work_dst_ptr = (uint16_t*)dst_ptr + 1;
+  const uint8_t* work_src_ptr = src_ptr;
+  size_t vl = __riscv_vsetvlmax_e8m4();
+  vuint8m4_t v_3_u8 = __riscv_vmv_v_x_u8m4(3, vl);
+  dst_ptr[0] = src_ptr[0];
+  dst_ptr[1] = src_ptr[1];
+  while (work_width > 0) {
+    vuint8m4_t v_uv0, v_uv1, v_dst_odd_u8, v_dst_even_u8;
+    vuint16m4_t v_dst_odd, v_dst_even;
+    vuint16m8_t v_uv0_u16, v_uv1_u16;
+    size_t vl = __riscv_vsetvl_e8m4(work_width);
+    v_uv0 = __riscv_vle8_v_u8m4(work_src_ptr, vl);
+    v_uv1 = __riscv_vle8_v_u8m4(work_src_ptr + 2, vl);
+
+    v_uv0_u16 = __riscv_vwaddu_vx_u16m8(v_uv0, 2, vl);
+    v_uv1_u16 = __riscv_vwaddu_vx_u16m8(v_uv1, 2, vl);
+
+    v_uv0_u16 = __riscv_vwmaccu_vv_u16m8(v_uv0_u16, v_3_u8, v_uv1, vl);
+    v_uv1_u16 = __riscv_vwmaccu_vv_u16m8(v_uv1_u16, v_3_u8, v_uv0, vl);
+
+    v_dst_odd_u8 = __riscv_vnsrl_wx_u8m4(v_uv0_u16, 2, vl);
+    v_dst_even_u8 = __riscv_vnsrl_wx_u8m4(v_uv1_u16, 2, vl);
+
+    v_dst_even = __riscv_vreinterpret_v_u8m4_u16m4(v_dst_even_u8);
+    v_dst_odd = __riscv_vreinterpret_v_u8m4_u16m4(v_dst_odd_u8);
+
+    __riscv_vsseg2e16_v_u16m4(work_dst_ptr, v_dst_even, v_dst_odd, vl / 2);
+
+    work_width -= vl;
+    work_src_ptr += vl;
+    work_dst_ptr += vl;
+  }
+  dst_ptr[2 * dst_width - 2] = src_ptr[((dst_width + 1) & ~1) - 2];
+  dst_ptr[2 * dst_width - 1] = src_ptr[((dst_width + 1) & ~1) - 1];
+}
+
+void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                ptrdiff_t dst_stride,
+                                int dst_width) {
+  size_t work_width = ((size_t)dst_width - 1u) & ~1u;
+  const uint8_t* work_s = src_ptr;
+  const uint8_t* work_t = src_ptr + src_stride;
+  const uint8_t* s = work_s;
+  const uint8_t* t = work_t;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  uint16_t* work_d = (uint16_t*)d + 1;
+  uint16_t* work_e = (uint16_t*)e + 1;
+  size_t vl = __riscv_vsetvlmax_e16m4();
+  vuint16m4_t v_3_u16 = __riscv_vmv_v_x_u16m4(3, vl);
+  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vl);
+  d[0] = (3 * s[0] + t[0] + 2) >> 2;
+  e[0] = (s[0] + 3 * t[0] + 2) >> 2;
+  d[1] = (3 * s[1] + t[1] + 2) >> 2;
+  e[1] = (s[1] + 3 * t[1] + 2) >> 2;
+  while (work_width > 0) {
+    vuint8m2_t v_s0, v_s1, v_t0, v_t1;
+    vuint16m4_t v_s0_u16, v_s1_u16, v_t0_u16, v_t1_u16;
+    vuint16m4_t v_t0_u16_, v_t1_u16_;
+    vuint8m2_t v_dst0_odd_u8, v_dst0_even_u8, v_dst1_odd_u8, v_dst1_even_u8;
+    vuint16m2_t v_dst0_even, v_dst0_odd, v_dst1_even, v_dst1_odd;
+    size_t vl = __riscv_vsetvl_e8m2(work_width);
+    v_s0 = __riscv_vle8_v_u8m2(work_s, vl);
+    v_s1 = __riscv_vle8_v_u8m2(work_s + 2, vl);
+
+    v_s0_u16 = __riscv_vwaddu_vx_u16m4(v_s0, 2, vl);
+    v_s1_u16 = __riscv_vwaddu_vx_u16m4(v_s1, 2, vl);
+    v_s0_u16 = __riscv_vwmaccu_vv_u16m4(v_s0_u16, v_3_u8, v_s1, vl);
+    v_s1_u16 = __riscv_vwmaccu_vv_u16m4(v_s1_u16, v_3_u8, v_s0, vl);
+
+    v_t0 = __riscv_vle8_v_u8m2(work_t, vl);
+    v_t1 = __riscv_vle8_v_u8m2(work_t + 2, vl);
+
+    v_t0_u16 = __riscv_vwaddu_vx_u16m4(v_t0, 2, vl);
+    v_t1_u16 = __riscv_vwaddu_vx_u16m4(v_t1, 2, vl);
+    v_t0_u16 = __riscv_vwmaccu_vv_u16m4(v_t0_u16, v_3_u8, v_t1, vl);
+    v_t1_u16 = __riscv_vwmaccu_vv_u16m4(v_t1_u16, v_3_u8, v_t0, vl);
+
+    v_t0_u16_ = __riscv_vmv_v_v_u16m4(v_t0_u16, vl);
+    v_t1_u16_ = __riscv_vmv_v_v_u16m4(v_t1_u16, vl);
+
+    v_t0_u16 = __riscv_vmacc_vv_u16m4(v_t0_u16, v_3_u16, v_s0_u16, vl);
+    v_t1_u16 = __riscv_vmacc_vv_u16m4(v_t1_u16, v_3_u16, v_s1_u16, vl);
+    v_s0_u16 = __riscv_vmacc_vv_u16m4(v_s0_u16, v_3_u16, v_t0_u16_, vl);
+    v_s1_u16 = __riscv_vmacc_vv_u16m4(v_s1_u16, v_3_u16, v_t1_u16_, vl);
+
+    v_dst0_odd_u8 = __riscv_vnsrl_wx_u8m2(v_t0_u16, 4, vl);
+    v_dst0_even_u8 = __riscv_vnsrl_wx_u8m2(v_t1_u16, 4, vl);
+    v_dst1_odd_u8 = __riscv_vnsrl_wx_u8m2(v_s0_u16, 4, vl);
+    v_dst1_even_u8 = __riscv_vnsrl_wx_u8m2(v_s1_u16, 4, vl);
+
+    v_dst0_even = __riscv_vreinterpret_v_u8m2_u16m2(v_dst0_even_u8);
+    v_dst0_odd = __riscv_vreinterpret_v_u8m2_u16m2(v_dst0_odd_u8);
+    v_dst1_even = __riscv_vreinterpret_v_u8m2_u16m2(v_dst1_even_u8);
+    v_dst1_odd = __riscv_vreinterpret_v_u8m2_u16m2(v_dst1_odd_u8);
+
+    __riscv_vsseg2e16_v_u16m2(work_d, v_dst0_even, v_dst0_odd, vl / 2);
+    __riscv_vsseg2e16_v_u16m2(work_e, v_dst1_even, v_dst1_odd, vl / 2);
+
+    work_width -= vl;
+    work_s += vl;
+    work_t += vl;
+    work_d += vl;
+    work_e += vl;
+  }
+  d[2 * dst_width - 2] =
+      (3 * s[((dst_width + 1) & ~1) - 2] + t[((dst_width + 1) & ~1) - 2] + 2) >>
+      2;
+  e[2 * dst_width - 2] =
+      (s[((dst_width + 1) & ~1) - 2] + 3 * t[((dst_width + 1) & ~1) - 2] + 2) >>
+      2;
+  d[2 * dst_width - 1] =
+      (3 * s[((dst_width + 1) & ~1) - 1] + t[((dst_width + 1) & ~1) - 1] + 2) >>
+      2;
+  e[2 * dst_width - 1] =
+      (s[((dst_width + 1) & ~1) - 1] + 3 * t[((dst_width + 1) & ~1) - 1] + 2) >>
+      2;
 }
 
 #ifdef __cplusplus

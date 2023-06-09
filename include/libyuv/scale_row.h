@@ -182,10 +182,14 @@ extern "C" {
 #define HAS_SCALEROWDOWN2_RVV
 #define HAS_SCALEROWDOWN34_RVV
 #define HAS_SCALEROWDOWN4_RVV
+#define HAS_SCALEROWUP2_LINEAR_RVV
+#define HAS_SCALEROWUP2_BILINEAR_RVV
 #define HAS_SCALEUVROWDOWN2_RVV
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
 #define HAS_SCALEUVROWDOWN2BOX_RVV
 #define HAS_SCALEUVROWDOWNEVEN_RVV
+#define HAS_SCALEUVROWUP2_LINEAR_RVV
+#define HAS_SCALEUVROWUP2_BILINEAR_RVV
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.
@@ -1349,6 +1353,14 @@ void ScaleUVRowUp2_Bilinear_Any_NEON(const uint8_t* src_ptr,
                                      uint8_t* dst_ptr,
                                      ptrdiff_t dst_stride,
                                      int dst_width);
+void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
+                              uint8_t* dst_ptr,
+                              int dst_width);
+void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                ptrdiff_t dst_stride,
+                                int dst_width);
 void ScaleUVRowUp2_Linear_16_SSE41(const uint16_t* src_ptr,
                                    uint16_t* dst_ptr,
                                    int dst_width);
@@ -1835,7 +1847,14 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
                               int dst_width);
-
+void ScaleRowUp2_Linear_RVV(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int dst_width);
+void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              ptrdiff_t dst_stride,
+                              int dst_width);
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

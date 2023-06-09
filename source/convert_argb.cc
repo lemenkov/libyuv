@@ -6040,6 +6040,12 @@ static int I420ToARGBMatrixBilinear(const uint8_t* src_y,
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_NEON;
   }
 #endif
+#if defined(HAS_SCALEROWUP2_BILINEAR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    Scale2RowUp_Bilinear = ScaleRowUp2_Bilinear_RVV;
+    ScaleRowUp2_Linear = ScaleRowUp2_Linear_RVV;
+  }
+#endif
 
   // alloc 4 lines temp
   const int row_size = (width + 31) & ~31;
@@ -6171,6 +6177,11 @@ static int I422ToARGBMatrixLinear(const uint8_t* src_y,
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_NEON;
   }
 #endif
+#if defined(HAS_SCALEROWUP2_LINEAR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowUp2_Linear = ScaleRowUp2_Linear_RVV;
+  }
+#endif
 
   // alloc 2 lines temp
   const int row_size = (width + 31) & ~31;
@@ -6294,6 +6305,12 @@ static int I420ToRGB24MatrixBilinear(const uint8_t* src_y,
   if (TestCpuFlag(kCpuHasNEON)) {
     Scale2RowUp_Bilinear = ScaleRowUp2_Bilinear_Any_NEON;
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_NEON;
+  }
+#endif
+#if defined(HAS_SCALEROWUP2_BILINEAR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    Scale2RowUp_Bilinear = ScaleRowUp2_Bilinear_RVV;
+    ScaleRowUp2_Linear = ScaleRowUp2_Linear_RVV;
   }
 #endif
 
@@ -6857,6 +6874,12 @@ static int I420AlphaToARGBMatrixBilinear(
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_NEON;
   }
 #endif
+#if defined(HAS_SCALEROWUP2_BILINEAR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    Scale2RowUp_Bilinear = ScaleRowUp2_Bilinear_RVV;
+    ScaleRowUp2_Linear = ScaleRowUp2_Linear_RVV;
+  }
+#endif
 
   // alloc 4 lines temp
   const int row_size = (width + 31) & ~31;
@@ -7050,6 +7073,11 @@ static int I422AlphaToARGBMatrixLinear(const uint8_t* src_y,
 #if defined(HAS_SCALEROWUP2_LINEAR_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_NEON;
+  }
+#endif
+#if defined(HAS_SCALEROWUP2_LINEAR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowUp2_Linear = ScaleRowUp2_Linear_RVV;
   }
 #endif
 
@@ -7788,6 +7816,11 @@ static int I422ToRGB24MatrixLinear(const uint8_t* src_y,
 #if defined(HAS_SCALEROWUP2_LINEAR_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleRowUp2_Linear = ScaleRowUp2_Linear_Any_NEON;
+  }
+#endif
+#if defined(HAS_SCALEROWUP2_LINEAR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowUp2_Linear = ScaleRowUp2_Linear_RVV;
   }
 #endif
 

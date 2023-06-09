@@ -692,6 +692,12 @@ static void ScaleUVLinearUp2(int src_width,
   }
 #endif
 
+#ifdef HAS_SCALEUVROWUP2_LINEAR_RVV
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowUp = ScaleUVRowUp2_Linear_RVV;
+  }
+#endif
+
   if (dst_height == 1) {
     ScaleRowUp(src_uv + ((src_height - 1) / 2) * (intptr_t)src_stride, dst_uv,
                dst_width);
@@ -742,6 +748,12 @@ static void ScaleUVBilinearUp2(int src_width,
 #ifdef HAS_SCALEUVROWUP2_BILINEAR_NEON
   if (TestCpuFlag(kCpuHasNEON)) {
     Scale2RowUp = ScaleUVRowUp2_Bilinear_Any_NEON;
+  }
+#endif
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_RVV
+  if (TestCpuFlag(kCpuHasRVV)) {
+    Scale2RowUp = ScaleUVRowUp2_Bilinear_RVV;
   }
 #endif
 
