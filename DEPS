@@ -17,7 +17,7 @@ vars = {
   'generate_location_tags': True,
 
   # By default, download the fuchsia sdk from the public sdk directory.
-  'fuchsia_sdk_cipd_prefix': 'fuchsia/sdk/gn/',
+  'fuchsia_sdk_cipd_prefix': 'fuchsia/sdk/core/',
   'fuchsia_version': 'version:12.20230607.1.1',
   # By default, download the fuchsia images from the fuchsia GCS bucket.
   'fuchsia_images_bucket': 'fuchsia',
@@ -103,6 +103,10 @@ deps = {
     Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '3cf9180560c89b0a62e930c0f457b77efb5e9869',
   'src/third_party/freetype/src':
     Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + '4e1c0e8fba456b2050c672c9c2c876987f03a3e6',
+  'third_party/fuchsia-gn-sdk': {
+    'url': Var('chromium_git') + '/chromium/src/third_party/fuchsia-gn-sdk.git' + '@' + '0d6902558d92fe3d49ba9a8f638ddea829be595b',
+    'condition': 'checkout_fuchsia',
+  },
   'src/third_party/googletest/src':
     Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + 'af29db7ec28d6df1c7f0f745186884091e602e07',
   'src/third_party/harfbuzz-ng/src':
