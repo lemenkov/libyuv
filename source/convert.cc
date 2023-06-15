@@ -2128,6 +2128,11 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
                                                 : ARGBExtractAlphaRow_Any_LSX;
   }
 #endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBExtractAlphaRow = ARGBExtractAlphaRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height - 1; y += 2) {
     ARGBToUVRow(src_argb, src_stride_argb, dst_u, dst_v, width);

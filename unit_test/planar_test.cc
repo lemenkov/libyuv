@@ -2749,12 +2749,23 @@ TEST_F(LibYUVPlanarTest, TestARGBExtractAlpha) {
   MaskCpuFlags(disable_cpu_flags_);
   ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_c,
                    benchmark_width_, benchmark_width_, benchmark_height_);
-  MaskCpuFlags(benchmark_cpu_info_);
+  double c_time = get_time();
+  ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_c,
+                   benchmark_width_, benchmark_width_, benchmark_height_);
+  c_time = (get_time() - c_time);
 
+  MaskCpuFlags(benchmark_cpu_info_);
+  ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_opt,
+                  benchmark_width_, benchmark_width_, benchmark_height_);
+  double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i) {
     ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_opt,
                      benchmark_width_, benchmark_width_, benchmark_height_);
   }
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  // Report performance of C vs OPT
+  printf("%8d us C - %8d us OPT\n",
+         static_cast<int>(c_time * 1e6), static_cast<int>(opt_time * 1e6));
   for (int i = 0; i < kPixels; ++i) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
@@ -2777,12 +2788,24 @@ TEST_F(LibYUVPlanarTest, TestARGBCopyYToAlpha) {
   MaskCpuFlags(disable_cpu_flags_);
   ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_c,
                    benchmark_width_ * 4, benchmark_width_, benchmark_height_);
-  MaskCpuFlags(benchmark_cpu_info_);
+  double c_time = get_time();
+  ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_c,
+                   benchmark_width_ * 4, benchmark_width_, benchmark_height_);
+  c_time = (get_time() - c_time);
 
+  MaskCpuFlags(benchmark_cpu_info_);
+  ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_opt,
+                   benchmark_width_ * 4, benchmark_width_, benchmark_height_);
+  double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i) {
     ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_opt,
                      benchmark_width_ * 4, benchmark_width_, benchmark_height_);
   }
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+
+  // Report performance of C vs OPT
+  printf("%8d us C - %8d us OPT\n",
+         static_cast<int>(c_time * 1e6), static_cast<int>(opt_time * 1e6));
   for (int i = 0; i < kPixels * 4; ++i) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }

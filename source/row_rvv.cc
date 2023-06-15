@@ -948,6 +948,35 @@ void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
   } while (w > 0);
 }
 
+void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
+                             uint8_t* dst_a,
+                             int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_b, v_g, v_r, v_a;
+    __riscv_vlseg4e8_v_u8m2(&v_r, &v_g, &v_b, &v_a, src_argb, vl);
+    __riscv_vse8_v_u8m2(dst_a, v_a, vl);
+    w -= vl;
+    src_argb += vl * 4;
+    dst_a += vl;
+  } while (w > 0);
+}
+
+void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
+  size_t w = (size_t)width;
+  const ptrdiff_t dst_stride = 4;
+  dst += 3;
+  do {
+    size_t vl = __riscv_vsetvl_e8m8(w);
+    vuint8m8_t v_a = __riscv_vle8_v_u8m8(src, vl);
+    __riscv_vsse8_v_u8m8(dst, dst_stride, v_a, vl);
+    w -= vl;
+    src += vl;
+    dst += vl * dst_stride;
+  } while (w > 0);
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
