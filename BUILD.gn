@@ -36,6 +36,12 @@ config("libyuv_config") {
   if (libyuv_disable_rvv) {
     defines += [ "LIBYUV_DISABLE_RVV" ]
   }
+  if (!libyuv_use_lsx) {
+    defines += [ "LIBYUV_DISABLE_LSX" ]
+  }
+  if (!libyuv_use_lasx) {
+    defines += [ "LIBYUV_DISABLE_LASX" ]
+  }
 }
 
 # This target is built when no specific target is specified on the command line.
@@ -72,6 +78,14 @@ group("libyuv") {
 
   if (libyuv_use_msa) {
     deps += [ ":libyuv_msa" ]
+  }
+
+  if (libyuv_use_lsx) {
+    deps += [ ":libyuv_lsx"]
+  }
+
+  if (libyuv_use_lasx) {
+    deps += [ ":libyuv_lasx"]
   }
 
   if (!is_ios && !libyuv_disable_jpeg) {
@@ -228,6 +242,44 @@ if (libyuv_use_msa) {
       "source/rotate_msa.cc",
       "source/row_msa.cc",
       "source/scale_msa.cc",
+    ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+  }
+}
+
+if (libyuv_use_lsx) {
+  static_library("libyuv_lsx") {
+    sources = [
+      # LSX Source Files
+      "source/row_lsx.cc",
+      "source/rotate_lsx.cc",
+      "source/scale_lsx.cc",
+    ]
+
+    cflags_cc = [
+      "-mlsx",
+      "-Wno-c++11-narrowing",
+    ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+  }
+}
+
+if (libyuv_use_lasx) {
+  static_library("libyuv_lasx") {
+    sources = [
+      # LASX Source Files
+      "source/row_lasx.cc",
+    ]
+
+    cflags_cc = [
+      "-mlasx",
+      "-Wno-c++11-narrowing",
     ]
 
     deps = [ ":libyuv_internal" ]
