@@ -17,7 +17,8 @@
 
 #include "libyuv/row.h"
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+// This module is for clang rvv. GCC hasn't supported segment load & store.
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
 #include <assert.h>
 #include <riscv_vector.h>
 
@@ -29,17 +30,17 @@ extern "C" {
 // Fill YUV -> RGB conversion constants into vectors
 // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
 // register) is set to round-to-nearest-up mode(0).
-#define YUVTORGB_SETUP(vl, yuvconst, ub, vr, ug, vg, yg, bb, bg, br) \
-  {                                                                  \
-    asm volatile("csrwi vxrm, 0");                                   \
-    ub = yuvconst->kUVCoeff[0];                                      \
-    vr = yuvconst->kUVCoeff[1];                                      \
-    ug = yuvconst->kUVCoeff[2];                                      \
-    vg = yuvconst->kUVCoeff[3];                                      \
-    yg = yuvconst->kRGBCoeffBias[0];                                 \
-    bb = yuvconst->kRGBCoeffBias[1] + 32;                            \
-    bg = yuvconst->kRGBCoeffBias[2] - 32;                            \
-    br = yuvconst->kRGBCoeffBias[3] + 32;                            \
+#define YUVTORGB_SETUP(yuvconst, ub, vr, ug, vg, yg, bb, bg, br) \
+  {                                                              \
+    asm volatile("csrwi vxrm, 0");                               \
+    ub = yuvconst->kUVCoeff[0];                                  \
+    vr = yuvconst->kUVCoeff[1];                                  \
+    ug = yuvconst->kUVCoeff[2];                                  \
+    vg = yuvconst->kUVCoeff[3];                                  \
+    yg = yuvconst->kRGBCoeffBias[0];                             \
+    bb = yuvconst->kRGBCoeffBias[1] + 32;                        \
+    bg = yuvconst->kRGBCoeffBias[2] - 32;                        \
+    br = yuvconst->kRGBCoeffBias[3] + 32;                        \
   }
 
 // Read [VLEN/8] Y, [VLEN/(8 * 2)] U and [VLEN/(8 * 2)] V from 422
@@ -266,14 +267,14 @@ void I444ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
-  size_t vl;
   size_t w = (size_t)width;
+  size_t vl = __riscv_vsetvl_e8m2(w);
   uint8_t ub, vr, ug, vg;
   int16_t yg, bb, bg, br;
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r, v_a;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   v_a = __riscv_vmv_v_x_u8m2(255u, vl);
   do {
     READYUV444(vl, v_u, v_v, v_y_16);
@@ -303,7 +304,7 @@ void I444AlphaToARGBRow_RVV(const uint8_t* src_y,
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r, v_a;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   do {
     READYUV444(vl, v_u, v_v, v_y_16);
     v_a = __riscv_vle8_v_u8m2(src_a, vl);
@@ -333,7 +334,7 @@ void I444ToRGB24Row_RVV(const uint8_t* src_y,
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   do {
     READYUV444(vl, v_u, v_v, v_y_16);
     YUVTORGB(vl, v_u, v_v, ub, vr, ug, vg, yg, bb, bg, br, v_y_16, v_g_16,
@@ -354,14 +355,14 @@ void I422ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
-  size_t vl;
   size_t w = (size_t)width;
+  size_t vl = __riscv_vsetvl_e8m2(w);
   uint8_t ub, vr, ug, vg;
   int16_t yg, bb, bg, br;
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r, v_a;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   v_a = __riscv_vmv_v_x_u8m2(255u, vl);
   do {
     READYUV422(vl, v_u, v_v, v_y_16);
@@ -391,7 +392,7 @@ void I422AlphaToARGBRow_RVV(const uint8_t* src_y,
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r, v_a;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   do {
     READYUV422(vl, v_u, v_v, v_y_16);
     v_a = __riscv_vle8_v_u8m2(src_a, vl);
@@ -414,14 +415,14 @@ void I422ToRGBARow_RVV(const uint8_t* src_y,
                        uint8_t* dst_rgba,
                        const struct YuvConstants* yuvconstants,
                        int width) {
-  size_t vl;
   size_t w = (size_t)width;
+  size_t vl = __riscv_vsetvl_e8m2(w);
   uint8_t ub, vr, ug, vg;
   int16_t yg, bb, bg, br;
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r, v_a;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   v_a = __riscv_vmv_v_x_u8m2(255u, vl);
   do {
     READYUV422(vl, v_u, v_v, v_y_16);
@@ -450,7 +451,7 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
   vuint8m2_t v_u, v_v;
   vuint8m2_t v_b, v_g, v_r;
   vuint16m4_t v_y_16, v_g_16, v_b_16, v_r_16;
-  YUVTORGB_SETUP(vl, yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
+  YUVTORGB_SETUP(yuvconstants, ub, vr, ug, vg, yg, bb, bg, br);
   do {
     READYUV422(vl, v_u, v_v, v_y_16);
     YUVTORGB(vl, v_u, v_v, ub, vr, ug, vg, yg, bb, bg, br, v_y_16, v_g_16,
@@ -982,4 +983,4 @@ void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
 }  // namespace libyuv
 #endif
 
-#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)

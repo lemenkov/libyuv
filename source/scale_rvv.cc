@@ -18,8 +18,8 @@
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h"
 
-// This module is for gcc/clang rvv.
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+// This module is for clang rvv. GCC hasn't supported segment load & store.
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
 #include <riscv_vector.h>
 
 #ifdef __cplusplus
@@ -51,11 +51,9 @@ void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
   const uint64_t* src = (const uint64_t*)(src_argb);
   uint32_t* dst = (uint32_t*)(dst_argb);
   do {
-    vuint64m8_t v_data;
-    vuint32m4_t v_dst;
     size_t vl = __riscv_vsetvl_e64m8(w);
-    v_data = __riscv_vle64_v_u64m8(src, vl);
-    v_dst = __riscv_vnsrl_wx_u32m4(v_data, 32, vl);
+    vuint64m8_t v_data = __riscv_vle64_v_u64m8(src, vl);
+    vuint32m4_t v_dst = __riscv_vnsrl_wx_u32m4(v_data, 32, vl);
     __riscv_vse32_v_u32m4(dst, v_dst, vl);
     w -= vl;
     src += vl;
@@ -133,9 +131,8 @@ void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
   uint32_t* dst = (uint32_t*)(dst_argb);
   const int stride_byte = src_stepx * 4;
   do {
-    vuint32m8_t v_row;
     size_t vl = __riscv_vsetvl_e32m8(w);
-    v_row = __riscv_vlse32_v_u32m8(src, stride_byte, vl);
+    vuint32m8_t v_row = __riscv_vlse32_v_u32m8(src, stride_byte, vl);
     __riscv_vse32_v_u32m8(dst, v_row, vl);
     w -= vl;
     src += vl * src_stepx;
@@ -602,4 +599,4 @@ void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
 }  // namespace libyuv
 #endif
 
-#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
