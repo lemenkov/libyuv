@@ -48,7 +48,6 @@ extern "C" {
                                    defined(__i386__) || defined(_M_IX86))
 #define LIBYUV_ARGBTOUV_PAVGB 1
 #define LIBYUV_RGBTOU_TRUNCATE 1
-#define LIBYUV_ATTENUATE_DUP 1
 #endif
 #if defined(LIBYUV_BIT_EXACT)
 #define LIBYUV_UNATTENUATE_DUP 1
@@ -3369,12 +3368,7 @@ void BlendPlaneRow_C(const uint8_t* src0,
 }
 #undef UBLEND
 
-#if LIBYUV_ATTENUATE_DUP
-// This code mimics the SSSE3 version for better testability.
-#define ATTENUATE(f, a) (a | (a << 8)) * (f | (f << 8)) >> 24
-#else
-#define ATTENUATE(f, a) (f * a + 128) >> 8
-#endif
+#define ATTENUATE(f, a) (f * a + 255) >> 8
 
 // Multiply source RGB by alpha and store to destination.
 void ARGBAttenuateRow_C(const uint8_t* src_argb, uint8_t* dst_argb, int width) {

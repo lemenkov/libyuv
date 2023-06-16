@@ -75,7 +75,6 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
   asm volatile("csrwi vxrm, 0");
   do {
     vuint8m4_t v_odd, v_even, v_dst;
-    vuint16m8_t v_sum;
     vuint32m4_t v_odd_32, v_even_32;
     size_t vl = __riscv_vsetvl_e32m4(w);
     __riscv_vlseg2e32_v_u32m4(&v_even_32, &v_odd_32, src, vl);
@@ -499,7 +498,7 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
     vuint8m4_t v_u0v0, v_u1v1, v_avg;
     vuint16m4_t v_u0v0_16, v_u1v1_16;
     size_t vl = __riscv_vsetvl_e16m4(w);
-    vlseg2e16_v_u16m4(&v_u0v0_16, &v_u1v1_16, src, vl);
+    __riscv_vlseg2e16_v_u16m4(&v_u0v0_16, &v_u1v1_16, src, vl);
     v_u0v0 = __riscv_vreinterpret_v_u16m4_u8m4(v_u0v0_16);
     v_u1v1 = __riscv_vreinterpret_v_u16m4_u8m4(v_u1v1_16);
     // Use round-to-nearest-up mode for averaging add

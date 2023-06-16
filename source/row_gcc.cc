@@ -7441,93 +7441,106 @@ void BlendPlaneRow_AVX2(const uint8_t* src0,
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha.
-static const uvec8 kShuffleAlpha0 = {3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u,
-                                     7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u};
-static const uvec8 kShuffleAlpha1 = {11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
-                                     15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u};
+static const vec8 kAttenuateShuffle = {6,    -128, 6,    -128, 6,  -128,
+                                       -128, -128, 14,   -128, 14, -128,
+                                       14,   -128, -128, -128};
+
 // Attenuate 4 pixels at a time.
 void ARGBAttenuateRow_SSSE3(const uint8_t* src_argb,
                             uint8_t* dst_argb,
                             int width) {
   asm volatile(
-      "pcmpeqb     %%xmm3,%%xmm3                 \n"
-      "pslld       $0x18,%%xmm3                  \n"
       "movdqa      %3,%%xmm4                     \n"
-      "movdqa      %4,%%xmm5                     \n"
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "pslld       $0x18,%%xmm5                  \n"
+      "pxor        %%xmm6,%%xmm6                 \n"
+      "pcmpeqb     %%xmm7,%%xmm7                 \n"
+      "punpcklbw   %%xmm6,%%xmm7                 \n"
+      "sub         %0,%1                         \n"
 
       // 4 pixel loop.
       LABELALIGN
       "1:                                        \n"
-      "movdqu      (%0),%%xmm0                   \n"
-      "pshufb      %%xmm4,%%xmm0                 \n"
-      "movdqu      (%0),%%xmm1                   \n"
-      "punpcklbw   %%xmm1,%%xmm1                 \n"
-      "pmulhuw     %%xmm1,%%xmm0                 \n"
-      "movdqu      (%0),%%xmm1                   \n"
-      "pshufb      %%xmm5,%%xmm1                 \n"
-      "movdqu      (%0),%%xmm2                   \n"
-      "punpckhbw   %%xmm2,%%xmm2                 \n"
-      "pmulhuw     %%xmm2,%%xmm1                 \n"
-      "movdqu      (%0),%%xmm2                   \n"
-      "lea         0x10(%0),%0                   \n"
-      "pand        %%xmm3,%%xmm2                 \n"
+      "movdqu      (%0),%%xmm6                   \n"
+      "movdqa      %%xmm6,%%xmm0                 \n"
+      "movdqa      %%xmm6,%%xmm1                 \n"
+      "punpcklbw   %%xmm5,%%xmm0                 \n"
+      "punpckhbw   %%xmm5,%%xmm1                 \n"
+      "movdqa      %%xmm0,%%xmm2                 \n"
+      "movdqa      %%xmm1,%%xmm3                 \n"
+      "pshufb      %%xmm4,%%xmm2                 \n"  // a,a,a,0
+      "pshufb      %%xmm4,%%xmm3                 \n"
+      "pmullw      %%xmm2,%%xmm0                 \n"  // rgb * alpha
+      "pmullw      %%xmm3,%%xmm1                 \n"
+      "paddw       %%xmm7,%%xmm0                 \n"  // + 255
+      "paddw       %%xmm7,%%xmm1                 \n"
       "psrlw       $0x8,%%xmm0                   \n"
       "psrlw       $0x8,%%xmm1                   \n"
       "packuswb    %%xmm1,%%xmm0                 \n"
-      "por         %%xmm2,%%xmm0                 \n"
-      "movdqu      %%xmm0,(%1)                   \n"
-      "lea         0x10(%1),%1                   \n"
+      "pand        %%xmm5,%%xmm6                 \n"
+      "por         %%xmm6,%%xmm0                 \n"
+      "movdqu      %%xmm0,(%0,%1)                \n"
+      "lea         0x10(%0),%0                   \n"
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),       // %0
-        "+r"(dst_argb),       // %1
-        "+r"(width)           // %2
-      : "m"(kShuffleAlpha0),  // %3
-        "m"(kShuffleAlpha1)   // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "+r"(src_argb),         // %0
+        "+r"(dst_argb),         // %1
+        "+r"(width)             // %2
+      : "m"(kAttenuateShuffle)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
 }
 #endif  // HAS_ARGBATTENUATEROW_SSSE3
 
 #ifdef HAS_ARGBATTENUATEROW_AVX2
+
 // Shuffle table duplicating alpha.
-static const uvec8 kShuffleAlpha_AVX2 = {6u,   7u,   6u,   7u,  6u,  7u,
-                                         128u, 128u, 14u,  15u, 14u, 15u,
-                                         14u,  15u,  128u, 128u};
+static const lvec8 kAttenuateShuffle_AVX2 = {
+    6,    -128, 6,    -128, 6,    -128, -128, -128, 14,   -128, 14,
+    -128, 14,   -128, -128, -128, 22,   -128, 22,   -128, 22,   -128,
+    -128, -128, 30,   -128, 30,   -128, 30,   -128, -128, -128};
+
 // Attenuate 8 pixels at a time.
 void ARGBAttenuateRow_AVX2(const uint8_t* src_argb,
                            uint8_t* dst_argb,
                            int width) {
   asm volatile(
-      "vbroadcastf128 %3,%%ymm4                  \n"
+      "vmovdqa     %3,%%ymm4                     \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
       "vpslld      $0x18,%%ymm5,%%ymm5           \n"
+      "vpxor       %%ymm6,%%ymm6,%%ymm6          \n"
+      "vpcmpeqb    %%ymm7,%%ymm7,%%ymm7          \n"
+      "vpunpcklbw  %%ymm6,%%ymm7,%%ymm7          \n"
       "sub         %0,%1                         \n"
 
       // 8 pixel loop.
       LABELALIGN
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm6                   \n"
-      "vpunpcklbw  %%ymm6,%%ymm6,%%ymm0          \n"
-      "vpunpckhbw  %%ymm6,%%ymm6,%%ymm1          \n"
+      "vpunpcklbw  %%ymm5,%%ymm6,%%ymm0          \n"
+      "vpunpckhbw  %%ymm5,%%ymm6,%%ymm1          \n"
       "vpshufb     %%ymm4,%%ymm0,%%ymm2          \n"
       "vpshufb     %%ymm4,%%ymm1,%%ymm3          \n"
-      "vpmulhuw    %%ymm2,%%ymm0,%%ymm0          \n"
-      "vpmulhuw    %%ymm3,%%ymm1,%%ymm1          \n"
-      "vpand       %%ymm5,%%ymm6,%%ymm6          \n"
+      "vpmullw     %%ymm2,%%ymm0,%%ymm0          \n"
+      "vpmullw     %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpaddw      %%ymm7,%%ymm0,%%ymm0          \n"
+      "vpaddw      %%ymm7,%%ymm1,%%ymm1          \n"
       "vpsrlw      $0x8,%%ymm0,%%ymm0            \n"
       "vpsrlw      $0x8,%%ymm1,%%ymm1            \n"
       "vpackuswb   %%ymm1,%%ymm0,%%ymm0          \n"
-      "vpor        %%ymm6,%%ymm0,%%ymm0          \n"
+      "vpand       %%ymm5,%%ymm6,%%ymm1          \n"
+      "vpor        %%ymm1,%%ymm0,%%ymm0          \n"
       "vmovdqu     %%ymm0,0x00(%0,%1,1)          \n"
       "lea         0x20(%0),%0                   \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
-      : "+r"(src_argb),          // %0
-        "+r"(dst_argb),          // %1
-        "+r"(width)              // %2
-      : "m"(kShuffleAlpha_AVX2)  // %3
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+      : "+r"(src_argb),              // %0
+        "+r"(dst_argb),              // %1
+        "+r"(width)                  // %2
+      : "m"(kAttenuateShuffle_AVX2)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
 }
 #endif  // HAS_ARGBATTENUATEROW_AVX2
 

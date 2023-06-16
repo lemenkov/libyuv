@@ -161,7 +161,6 @@ extern "C" {
 #define HAS_ARGBSEPIAROW_SSSE3
 #define HAS_ARGBSHADEROW_SSE2
 #define HAS_ARGBSUBTRACTROW_SSE2
-#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_BLENDPLANEROW_SSSE3
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
@@ -171,9 +170,6 @@ extern "C" {
 #define HAS_SOBELXROW_SSE2
 #define HAS_SOBELXYROW_SSE2
 #define HAS_SOBELYROW_SSE2
-#if !defined(LIBYUV_BIT_EXACT)
-#define HAS_ARGBATTENUATEROW_SSSE3
-#endif
 
 // The following functions fail on gcc/clang 32 bit with fpic and framepointer.
 // caveat: clangcl uses row_win.cc which works.
@@ -241,11 +237,7 @@ extern "C" {
 #define HAS_ARGBADDROW_AVX2
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
-#define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_BLENDPLANEROW_AVX2
-#if !defined(LIBYUV_BIT_EXACT)
-#define HAS_ARGBATTENUATEROW_AVX2
-#endif
 
 #if defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
     defined(_MSC_VER)
@@ -285,14 +277,15 @@ extern "C" {
 #define HAS_ABGRTOAR30ROW_SSSE3
 #define HAS_ABGRTOYJROW_SSSE3
 #define HAS_AR64TOARGBROW_SSSE3
+#define HAS_ARGBATTENUATEROW_SSSE3
 #define HAS_ARGBTOAB64ROW_SSSE3
 #define HAS_ARGBTOAR30ROW_SSSE3
 #define HAS_ARGBTOAR64ROW_SSSE3
+#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
-#define HAS_DETILEROW_SSE2
 #define HAS_DETILEROW_16_SSE2
-#define HAS_DETILEROW_16_AVX
+#define HAS_DETILEROW_SSE2
 #define HAS_DETILESPLITUVROW_SSSE3
 #define HAS_DETILETOYUY2_SSE2
 #define HAS_HALFMERGEUVROW_SSSE3
@@ -345,13 +338,16 @@ extern "C" {
 #define HAS_ABGRTOYJROW_AVX2
 #define HAS_ABGRTOYROW_AVX2
 #define HAS_AR64TOARGBROW_AVX2
+#define HAS_ARGBATTENUATEROW_AVX2
 #define HAS_ARGBTOAB64ROW_AVX2
 #define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_ARGBTOAR64ROW_AVX2
 #define HAS_ARGBTORAWROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
+#define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
+#define HAS_DETILEROW_16_AVX
 #define HAS_DIVIDEROW_16_AVX2
 #define HAS_HALFMERGEUVROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
@@ -6190,6 +6186,11 @@ void ByteToFloatRow_Any_NEON(const uint8_t* src_ptr,
 void ConvertFP16ToFP32Row_NEON(const uint16_t* src,  // fp16
                                float* dst,
                                int width);
+// Convert a column of FP16 Half Floats to a row of FP32 Floats
+void ConvertFP16ToFP32Column_NEON(const uint16_t* src,  // fp16
+                                  int src_stride,       // stride in elements
+                                  float* dst,
+                                  int width);
 // Convert FP32 Floats to FP16 Half Floats
 void ConvertFP32ToFP16Row_NEON(const float* src,
                                uint16_t* dst,  // fp16
