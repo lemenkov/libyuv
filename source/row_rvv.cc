@@ -924,24 +924,31 @@ void RAWToYRow_RVV(const uint8_t* src_raw, uint8_t* dst_y, int width) {
   RGBToYMatrixRow_RVV(src_raw, dst_y, width, &kRawI601Constants);
 }
 
+// Attenuate: (f * a + 255) >> 8
 void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
                           uint8_t* dst_argb,
                           int width) {
   size_t w = (size_t)width;
   // To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up(0).
-  asm volatile("csrwi vxrm, 0");
+  // register) is set to round-down(2).
+  asm volatile("csrwi vxrm, 2");
   do {
     vuint8m2_t v_b, v_g, v_r, v_a;
     vuint16m4_t v_ba_16, v_ga_16, v_ra_16;
     size_t vl = __riscv_vsetvl_e8m2(w);
     __riscv_vlseg4e8_v_u8m2(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    // f * a
     v_ba_16 = __riscv_vwmulu_vv_u16m4(v_b, v_a, vl);
     v_ga_16 = __riscv_vwmulu_vv_u16m4(v_g, v_a, vl);
     v_ra_16 = __riscv_vwmulu_vv_u16m4(v_r, v_a, vl);
-    v_b = __riscv_vnclipu_wx_u8m2(v_ba_16, 8, vl);
-    v_g = __riscv_vnclipu_wx_u8m2(v_ga_16, 8, vl);
-    v_r = __riscv_vnclipu_wx_u8m2(v_ra_16, 8, vl);
+    // f * a + 255
+    v_ba_16 = __riscv_vadd_vx_u16m4(v_ba_16, 255u, vl);
+    v_ga_16 = __riscv_vadd_vx_u16m4(v_ga_16, 255u, vl);
+    v_ra_16 = __riscv_vadd_vx_u16m4(v_ra_16, 255u, vl);
+    // (f * a + 255) >> 8
+    v_b = __riscv_vnsrl_wx_u8m2(v_ba_16, 8, vl);
+    v_g = __riscv_vnsrl_wx_u8m2(v_ga_16, 8, vl);
+    v_r = __riscv_vnsrl_wx_u8m2(v_ra_16, 8, vl);
     __riscv_vsseg4e8_v_u8m2(dst_argb, v_b, v_g, v_r, v_a, vl);
     w -= vl;
     src_argb += vl * 4;
