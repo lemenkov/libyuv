@@ -555,13 +555,16 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
     } while (dst_w > 0);
     return;
   }
+  // To match behavior on other platforms, vxrm (fixed-point rounding mode
+  // register) is set to round-to-nearest-up(0).
+  asm volatile("csrwi vxrm, 0");
   // Blend 50 / 50.
   if (y1_fraction == 128) {
     do {
       size_t vl = __riscv_vsetvl_e8m8(dst_w);
       vuint8m8_t row0 = __riscv_vle8_v_u8m8(src_ptr, vl);
       vuint8m8_t row1 = __riscv_vle8_v_u8m8(src_ptr1, vl);
-      // Averaging add
+      // Use round-to-nearest-up mode for averaging add
       vuint8m8_t row_out = __riscv_vaaddu_vv_u8m8(row0, row1, vl);
       __riscv_vse8_v_u8m8(dst_ptr, row_out, vl);
       dst_w -= vl;
@@ -572,15 +575,13 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
     return;
   }
   // General purpose row blend.
-  // To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up(0).
-  asm volatile("csrwi vxrm, 0");
   do {
     size_t vl = __riscv_vsetvl_e8m4(dst_w);
     vuint8m4_t row0 = __riscv_vle8_v_u8m4(src_ptr, vl);
     vuint16m8_t acc = __riscv_vwmulu_vx_u16m8(row0, y0_fraction, vl);
     vuint8m4_t row1 = __riscv_vle8_v_u8m4(src_ptr1, vl);
     acc = __riscv_vwmaccu_vx_u16m8(acc, y1_fraction, row1, vl);
+    // Use round-to-nearest-up mode for vnclip
     __riscv_vse8_v_u8m4(dst_ptr, __riscv_vnclipu_wx_u8m4(acc, 8, vl), vl);
     dst_w -= vl;
     src_ptr += vl;
@@ -929,9 +930,6 @@ void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
                           uint8_t* dst_argb,
                           int width) {
   size_t w = (size_t)width;
-  // To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-down(2).
-  asm volatile("csrwi vxrm, 2");
   do {
     vuint8m2_t v_b, v_g, v_r, v_a;
     vuint16m4_t v_ba_16, v_ga_16, v_ra_16;
