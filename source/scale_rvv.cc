@@ -19,7 +19,8 @@
 #include "libyuv/scale_row.h"
 
 // This module is for clang rvv. GCC hasn't supported segment load & store.
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
+    defined(__clang__)
 #include <riscv_vector.h>
 
 #ifdef __cplusplus
@@ -599,4 +600,5 @@ void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
 }  // namespace libyuv
 #endif
 
-#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
+#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) &&
+        // defined(__clang__)

@@ -18,7 +18,8 @@
 #include "libyuv/row.h"
 
 // This module is for clang rvv. GCC hasn't supported segment load & store.
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
+    defined(__clang__)
 #include <assert.h>
 #include <riscv_vector.h>
 
@@ -988,4 +989,5 @@ void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
 }  // namespace libyuv
 #endif
 
-#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && defined(__clang__)
+#endif  // !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) &&
+        // defined(__clang__)

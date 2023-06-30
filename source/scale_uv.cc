@@ -657,14 +657,14 @@ static void ScaleUVBilinearUp(int src_width,
 // This is an optimized version for scaling up a plane to 2 times of
 // its original width, using linear interpolation.
 // This is used to scale U and V planes of NV16 to NV24.
-void ScaleUVLinearUp2(int src_width,
-                      int src_height,
-                      int dst_width,
-                      int dst_height,
-                      int src_stride,
-                      int dst_stride,
-                      const uint8_t* src_uv,
-                      uint8_t* dst_uv) {
+static void ScaleUVLinearUp2(int src_width,
+                             int src_height,
+                             int dst_width,
+                             int dst_height,
+                             int src_stride,
+                             int dst_stride,
+                             const uint8_t* src_uv,
+                             uint8_t* dst_uv) {
   void (*ScaleRowUp)(const uint8_t* src_uv, uint8_t* dst_uv, int dst_width) =
       ScaleUVRowUp2_Linear_Any_C;
   int i;
@@ -710,14 +710,14 @@ void ScaleUVLinearUp2(int src_width,
 // This is an optimized version for scaling up a plane to 2 times of
 // its original size, using bilinear interpolation.
 // This is used to scale U and V planes of NV12 to NV24.
-void ScaleUVBilinearUp2(int src_width,
-                        int src_height,
-                        int dst_width,
-                        int dst_height,
-                        int src_stride,
-                        int dst_stride,
-                        const uint8_t* src_ptr,
-                        uint8_t* dst_ptr) {
+static void ScaleUVBilinearUp2(int src_width,
+                               int src_height,
+                               int dst_width,
+                               int dst_height,
+                               int src_stride,
+                               int dst_stride,
+                               const uint8_t* src_ptr,
+                               uint8_t* dst_ptr) {
   void (*Scale2RowUp)(const uint8_t* src_ptr, ptrdiff_t src_stride,
                       uint8_t* dst_ptr, ptrdiff_t dst_stride, int dst_width) =
       ScaleUVRowUp2_Bilinear_Any_C;
@@ -764,14 +764,14 @@ void ScaleUVBilinearUp2(int src_width,
 // This is an optimized version for scaling up a plane to 2 times of
 // its original width, using linear interpolation.
 // This is used to scale U and V planes of P210 to P410.
-void ScaleUVLinearUp2_16(int src_width,
-                         int src_height,
-                         int dst_width,
-                         int dst_height,
-                         int src_stride,
-                         int dst_stride,
-                         const uint16_t* src_uv,
-                         uint16_t* dst_uv) {
+static void ScaleUVLinearUp2_16(int src_width,
+                                int src_height,
+                                int dst_width,
+                                int dst_height,
+                                int src_stride,
+                                int dst_stride,
+                                const uint16_t* src_uv,
+                                uint16_t* dst_uv) {
   void (*ScaleRowUp)(const uint16_t* src_uv, uint16_t* dst_uv, int dst_width) =
       ScaleUVRowUp2_Linear_16_Any_C;
   int i;
@@ -817,14 +817,14 @@ void ScaleUVLinearUp2_16(int src_width,
 // This is an optimized version for scaling up a plane to 2 times of
 // its original size, using bilinear interpolation.
 // This is used to scale U and V planes of P010 to P410.
-void ScaleUVBilinearUp2_16(int src_width,
-                           int src_height,
-                           int dst_width,
-                           int dst_height,
-                           int src_stride,
-                           int dst_stride,
-                           const uint16_t* src_ptr,
-                           uint16_t* dst_ptr) {
+static void ScaleUVBilinearUp2_16(int src_width,
+                                  int src_height,
+                                  int dst_width,
+                                  int dst_height,
+                                  int src_stride,
+                                  int dst_stride,
+                                  const uint16_t* src_ptr,
+                                  uint16_t* dst_ptr) {
   void (*Scale2RowUp)(const uint16_t* src_ptr, ptrdiff_t src_stride,
                       uint16_t* dst_ptr, ptrdiff_t dst_stride, int dst_width) =
       ScaleUVRowUp2_Bilinear_16_Any_C;

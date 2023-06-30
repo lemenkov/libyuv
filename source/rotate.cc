@@ -489,13 +489,12 @@ int RotatePlane(const uint8_t* src,
   return -1;
 }
 
-LIBYUV_API
-void TransposePlane_16(const uint16_t* src,
-                       int src_stride,
-                       uint16_t* dst,
-                       int dst_stride,
-                       int width,
-                       int height) {
+static void TransposePlane_16(const uint16_t* src,
+                              int src_stride,
+                              uint16_t* dst,
+                              int dst_stride,
+                              int width,
+                              int height) {
   int i = height;
   // Work across the source in 8x8 tiles
   while (i >= 8) {

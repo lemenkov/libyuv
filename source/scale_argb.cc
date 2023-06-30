@@ -16,6 +16,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyARGB
 #include "libyuv/row.h"
+#include "libyuv/scale_argb.h"
 #include "libyuv/scale_row.h"
 
 #ifdef __cplusplus

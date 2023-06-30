@@ -3449,8 +3449,8 @@ void ARGBAttenuateRow_NEON(const uint8_t* src_argb,
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
       "umull       v4.8h, v0.8b, v3.8b           \n"  // b * a
       "prfm        pldl1keep, [%0, 448]          \n"
-      "umull       v5.8h, v1.8b, v3.8b           \n"  // g * a
-      "umull       v6.8h, v2.8b, v3.8b           \n"  // r * a
+      "umull       v5.8h, v1.8b, v3.8b           \n"         // g * a
+      "umull       v6.8h, v2.8b, v3.8b           \n"         // r * a
       "addhn       v0.8b, v4.8h, v7.8h           \n"         // (b + 255) >> 8
       "addhn       v1.8b, v5.8h, v7.8h           \n"         // (g + 255) >> 8
       "addhn       v2.8b, v6.8h, v7.8h           \n"         // (r + 255) >> 8

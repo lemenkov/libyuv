@@ -1217,48 +1217,6 @@ TEST_F(LibYUVScaleTest, TestScaleRowDown2Box_Odd_SSSE3) {
 }
 #endif  // HAS_SCALEROWDOWN2_SSSE3
 
-extern "C" void ScaleRowUp2_16_NEON(const uint16_t* src_ptr,
-                                    ptrdiff_t src_stride,
-                                    uint16_t* dst,
-                                    int dst_width);
-extern "C" void ScaleRowUp2_16_C(const uint16_t* src_ptr,
-                                 ptrdiff_t src_stride,
-                                 uint16_t* dst,
-                                 int dst_width);
-
-TEST_F(LibYUVScaleTest, TestScaleRowUp2_16) {
-  SIMD_ALIGNED(uint16_t orig_pixels[640 * 2 + 1]);  // 2 rows + 1 pixel overrun.
-  SIMD_ALIGNED(uint16_t dst_pixels_opt[1280]);
-  SIMD_ALIGNED(uint16_t dst_pixels_c[1280]);
-
-  memset(orig_pixels, 0, sizeof(orig_pixels));
-  memset(dst_pixels_opt, 1, sizeof(dst_pixels_opt));
-  memset(dst_pixels_c, 2, sizeof(dst_pixels_c));
-
-  for (int i = 0; i < 640 * 2 + 1; ++i) {
-    orig_pixels[i] = i;
-  }
-  ScaleRowUp2_16_C(&orig_pixels[0], 640, &dst_pixels_c[0], 1280);
-  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
-    int has_neon = TestCpuFlag(kCpuHasNEON);
-    if (has_neon) {
-      ScaleRowUp2_16_NEON(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
-    } else {
-      ScaleRowUp2_16_C(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
-    }
-#else
-    ScaleRowUp2_16_C(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
-#endif
-  }
-
-  for (int i = 0; i < 1280; ++i) {
-    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
-  }
-  EXPECT_EQ(dst_pixels_c[0], (0 * 9 + 1 * 3 + 640 * 3 + 641 * 1 + 8) / 16);
-  EXPECT_EQ(dst_pixels_c[1279], 800);
-}
-
 extern "C" void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
                                          ptrdiff_t src_stride,
                                          uint16_t* dst,
