@@ -21,8 +21,8 @@
 // This module is for clang rvv. GCC hasn't supported segment load & store.
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
     defined(__clang__)
+#include <assert.h>
 #include <riscv_vector.h>
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -459,6 +459,152 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
 
     w -= vl;
     s += 4 * vl;
+    dst_ptr += 3 * vl;
+  } while (w > 0);
+}
+
+void ScaleRowDown38_RVV(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst_ptr,
+                        int dst_width) {
+  size_t w = (size_t)dst_width / 3u;
+  (void)src_stride;
+  assert(dst_width % 3 == 0);
+  do {
+    vuint8m1_t v_s0, v_s1, v_s2, v_s3, v_s4, v_s5, v_s6, v_s7;
+    size_t vl = __riscv_vsetvl_e8m1(w);
+    __riscv_vlseg8e8_v_u8m1(&v_s0, &v_s1, &v_s2, &v_s3, &v_s4, &v_s5, &v_s6,
+                            &v_s7, src_ptr, vl);
+    __riscv_vsseg3e8_v_u8m1(dst_ptr, v_s0, v_s3, v_s6, vl);
+    w -= vl;
+    src_ptr += 8 * vl;
+    dst_ptr += 3 * vl;
+  } while (w > 0);
+}
+
+void ScaleRowDown38_2_Box_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width) {
+  size_t w = (size_t)dst_width / 3u;
+  const uint16_t coeff_a = (65536u / 6u);
+  const uint16_t coeff_b = (65536u / 4u);
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  do {
+    vuint8m1_t v_s0, v_s1, v_s2, v_s3, v_s4, v_s5, v_s6, v_s7;
+    vuint8m1_t v_t0, v_t1, v_t2, v_t3, v_t4, v_t5, v_t6, v_t7;
+    vuint16m2_t v_e0, v_e1, v_e2, v_e;
+    vuint16m2_t v_f0, v_f1, v_f2, v_f;
+    vuint16m2_t v_g0, v_g1, v_g;
+    vuint8m1_t v_dst_e, v_dst_f, v_dst_g;
+    size_t vl = __riscv_vsetvl_e8m1(w);
+    // s: e00, e10, e20, f00, f10, f20, g00, g10
+    // t: e01, e11, e21, f01, f11, f21, g01, g11
+    __riscv_vlseg8e8_v_u8m1(&v_s0, &v_s1, &v_s2, &v_s3, &v_s4, &v_s5, &v_s6,
+                            &v_s7, src_ptr, vl);
+    __riscv_vlseg8e8_v_u8m1(&v_t0, &v_t1, &v_t2, &v_t3, &v_t4, &v_t5, &v_t6,
+                            &v_t7, src_ptr + src_stride, vl);
+    // Calculate sum of [e00, e21] to v_e
+    // Calculate sum of [f00, f21] to v_f
+    // Calculate sum of [g00, g11] to v_g
+    v_e0 = __riscv_vwaddu_vv_u16m2(v_s0, v_t0, vl);
+    v_e1 = __riscv_vwaddu_vv_u16m2(v_s1, v_t1, vl);
+    v_e2 = __riscv_vwaddu_vv_u16m2(v_s2, v_t2, vl);
+    v_f0 = __riscv_vwaddu_vv_u16m2(v_s3, v_t3, vl);
+    v_f1 = __riscv_vwaddu_vv_u16m2(v_s4, v_t4, vl);
+    v_f2 = __riscv_vwaddu_vv_u16m2(v_s5, v_t5, vl);
+    v_g0 = __riscv_vwaddu_vv_u16m2(v_s6, v_t6, vl);
+    v_g1 = __riscv_vwaddu_vv_u16m2(v_s7, v_t7, vl);
+
+    v_e0 = __riscv_vadd_vv_u16m2(v_e0, v_e1, vl);
+    v_f0 = __riscv_vadd_vv_u16m2(v_f0, v_f1, vl);
+    v_e = __riscv_vadd_vv_u16m2(v_e0, v_e2, vl);
+    v_f = __riscv_vadd_vv_u16m2(v_f0, v_f2, vl);
+    v_g = __riscv_vadd_vv_u16m2(v_g0, v_g1, vl);
+
+    // Average in 16-bit fixed-point
+    v_e = __riscv_vmulhu_vx_u16m2(v_e, coeff_a, vl);
+    v_f = __riscv_vmulhu_vx_u16m2(v_f, coeff_a, vl);
+    v_g = __riscv_vmulhu_vx_u16m2(v_g, coeff_b, vl);
+
+    v_dst_e = __riscv_vnsrl_wx_u8m1(v_e, 0, vl);
+    v_dst_f = __riscv_vnsrl_wx_u8m1(v_f, 0, vl);
+    v_dst_g = __riscv_vnsrl_wx_u8m1(v_g, 0, vl);
+
+    __riscv_vsseg3e8_v_u8m1(dst_ptr, v_dst_e, v_dst_f, v_dst_g, vl);
+    w -= vl;
+    src_ptr += 8 * vl;
+    dst_ptr += 3 * vl;
+  } while (w > 0);
+}
+
+void ScaleRowDown38_3_Box_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width) {
+  size_t w = (size_t)dst_width / 3u;
+  const uint16_t coeff_a = (65536u / 9u);
+  const uint16_t coeff_b = (65536u / 6u);
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  do {
+    vuint8m1_t v_s0, v_s1, v_s2, v_s3, v_s4, v_s5, v_s6, v_s7;
+    vuint8m1_t v_t0, v_t1, v_t2, v_t3, v_t4, v_t5, v_t6, v_t7;
+    vuint8m1_t v_u0, v_u1, v_u2, v_u3, v_u4, v_u5, v_u6, v_u7;
+    vuint16m2_t v_e0, v_e1, v_e2, v_e3, v_e4, v_e;
+    vuint16m2_t v_f0, v_f1, v_f2, v_f3, v_f4, v_f;
+    vuint16m2_t v_g0, v_g1, v_g2, v_g;
+    vuint8m1_t v_dst_e, v_dst_f, v_dst_g;
+    size_t vl = __riscv_vsetvl_e8m1(w);
+    // s: e00, e10, e20, f00, f10, f20, g00, g10
+    // t: e01, e11, e21, f01, f11, f21, g01, g11
+    // u: e02, e12, e22, f02, f12, f22, g02, g12
+    __riscv_vlseg8e8_v_u8m1(&v_s0, &v_s1, &v_s2, &v_s3, &v_s4, &v_s5, &v_s6,
+                            &v_s7, src_ptr, vl);
+    __riscv_vlseg8e8_v_u8m1(&v_t0, &v_t1, &v_t2, &v_t3, &v_t4, &v_t5, &v_t6,
+                            &v_t7, src_ptr + src_stride, vl);
+    __riscv_vlseg8e8_v_u8m1(&v_u0, &v_u1, &v_u2, &v_u3, &v_u4, &v_u5, &v_u6,
+                            &v_u7, src_ptr + 2 * src_stride, vl);
+    // Calculate sum of [e00, e22]
+    v_e0 = __riscv_vwaddu_vv_u16m2(v_s0, v_t0, vl);
+    v_e1 = __riscv_vwaddu_vv_u16m2(v_s1, v_t1, vl);
+    v_e2 = __riscv_vwaddu_vv_u16m2(v_s2, v_t2, vl);
+    v_e3 = __riscv_vwaddu_vv_u16m2(v_u0, v_u1, vl);
+    v_e4 = __riscv_vwaddu_vx_u16m2(v_u2, 0, vl);
+
+    v_e0 = __riscv_vadd_vv_u16m2(v_e0, v_e1, vl);
+    v_e2 = __riscv_vadd_vv_u16m2(v_e2, v_e3, vl);
+    v_e0 = __riscv_vadd_vv_u16m2(v_e0, v_e4, vl);
+    v_e = __riscv_vadd_vv_u16m2(v_e0, v_e2, vl);
+    // Calculate sum of [f00, f22]
+    v_f0 = __riscv_vwaddu_vv_u16m2(v_s3, v_t3, vl);
+    v_f1 = __riscv_vwaddu_vv_u16m2(v_s4, v_t4, vl);
+    v_f2 = __riscv_vwaddu_vv_u16m2(v_s5, v_t5, vl);
+    v_f3 = __riscv_vwaddu_vv_u16m2(v_u3, v_u4, vl);
+    v_f4 = __riscv_vwaddu_vx_u16m2(v_u5, 0, vl);
+
+    v_f0 = __riscv_vadd_vv_u16m2(v_f0, v_f1, vl);
+    v_f2 = __riscv_vadd_vv_u16m2(v_f2, v_f3, vl);
+    v_f0 = __riscv_vadd_vv_u16m2(v_f0, v_f4, vl);
+    v_f = __riscv_vadd_vv_u16m2(v_f0, v_f2, vl);
+    // Calculate sum of [g00, g12]
+    v_g0 = __riscv_vwaddu_vv_u16m2(v_s6, v_t6, vl);
+    v_g1 = __riscv_vwaddu_vv_u16m2(v_s7, v_t7, vl);
+    v_g2 = __riscv_vwaddu_vv_u16m2(v_u6, v_u7, vl);
+
+    v_g = __riscv_vadd_vv_u16m2(v_g0, v_g1, vl);
+    v_g = __riscv_vadd_vv_u16m2(v_g, v_g2, vl);
+
+    // Average in 16-bit fixed-point
+    v_e = __riscv_vmulhu_vx_u16m2(v_e, coeff_a, vl);
+    v_f = __riscv_vmulhu_vx_u16m2(v_f, coeff_a, vl);
+    v_g = __riscv_vmulhu_vx_u16m2(v_g, coeff_b, vl);
+
+    v_dst_e = __riscv_vnsrl_wx_u8m1(v_e, 0, vl);
+    v_dst_f = __riscv_vnsrl_wx_u8m1(v_f, 0, vl);
+    v_dst_g = __riscv_vnsrl_wx_u8m1(v_g, 0, vl);
+    __riscv_vsseg3e8_v_u8m1(dst_ptr, v_dst_e, v_dst_f, v_dst_g, vl);
+    w -= vl;
+    src_ptr += 8 * vl;
     dst_ptr += 3 * vl;
   } while (w > 0);
 }

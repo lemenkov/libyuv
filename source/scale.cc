@@ -711,6 +711,17 @@ static void ScalePlaneDown38(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN38_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_RVV;
+      ScaleRowDown38_2 = ScaleRowDown38_RVV;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_RVV;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_RVV;
+    }
+  }
+#endif
 
   for (y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown38_3(src_ptr, filter_stride, dst_ptr, dst_width);
