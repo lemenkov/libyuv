@@ -2832,6 +2832,11 @@ int ARGBBlend(const uint8_t* src_argb0,
     ARGBBlendRow = ARGBBlendRow_LSX;
   }
 #endif
+#if defined(HAS_ARGBBLENDROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBBlendRow = ARGBBlendRow_RVV;
+  }
+#endif
   for (y = 0; y < height; ++y) {
     ARGBBlendRow(src_argb0, src_argb1, dst_argb, width);
     src_argb0 += src_stride_argb0;
@@ -2889,6 +2894,11 @@ int BlendPlane(const uint8_t* src_y0,
     if (IS_ALIGNED(width, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    BlendPlaneRow = BlendPlaneRow_RVV;
   }
 #endif
 
@@ -2968,6 +2978,11 @@ int I420Blend(const uint8_t* src_y0,
     }
   }
 #endif
+#if defined(HAS_BLENDPLANEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    BlendPlaneRow = BlendPlaneRow_RVV;
+  }
+#endif
   if (!IS_ALIGNED(width, 2)) {
     ScaleRowDown2 = ScaleRowDown2Box_Odd_C;
   }
@@ -3002,6 +3017,11 @@ int I420Blend(const uint8_t* src_y0,
         ScaleRowDown2 = ScaleRowDown2Box_AVX2;
       }
     }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN2_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleRowDown2 = ScaleRowDown2Box_RVV;
   }
 #endif
 

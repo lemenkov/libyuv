@@ -1070,6 +1070,81 @@ void RAWToYRow_RVV(const uint8_t* src_raw, uint8_t* dst_y, int width) {
   RGBToYMatrixRow_RVV(src_raw, dst_y, width, &kRawI601Constants);
 }
 
+// Blend src_argb over src_argb1 and store to dst_argb.
+// dst_argb may be src_argb or src_argb1.
+// src_argb: RGB values have already been pre-multiplied by the a.
+void ARGBBlendRow_RVV(const uint8_t* src_argb,
+                      const uint8_t* src_argb1,
+                      uint8_t* dst_argb,
+                      int width) {
+  size_t w = (size_t)width;
+  size_t vl = __riscv_vsetvlmax_e8m2();
+  // clamp255((((256 - a) * b) >> 8) + f)
+  // = b * (256 - a) / 256 + f
+  // = b - (b * a / 256) + f
+  vuint8m2_t v_255 = __riscv_vmv_v_x_u8m2(255, vl);
+  do {
+    vuint8m2_t v_src0_b, v_src0_g, v_src0_r, v_src0_a;
+    vuint8m2_t v_src1_b, v_src1_g, v_src1_r, v_src1_a;
+    vuint8m2_t v_tmp_b, v_tmp_g, v_tmp_r;
+    vuint8m2_t v_dst_b, v_dst_g, v_dst_r;
+    vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_src0_b, &v_src0_g, &v_src0_r, &v_src0_a,
+                            src_argb, vl);
+    __riscv_vlseg4e8_v_u8m2(&v_src1_b, &v_src1_g, &v_src1_r, &v_src1_a,
+                            src_argb1, vl);
+
+    v_tmp_b = __riscv_vmulhu_vv_u8m2(v_src1_b, v_src0_a, vl);
+    v_tmp_g = __riscv_vmulhu_vv_u8m2(v_src1_g, v_src0_a, vl);
+    v_tmp_r = __riscv_vmulhu_vv_u8m2(v_src1_r, v_src0_a, vl);
+
+    v_dst_b = __riscv_vsub_vv_u8m2(v_src1_b, v_tmp_b, vl);
+    v_dst_g = __riscv_vsub_vv_u8m2(v_src1_g, v_tmp_g, vl);
+    v_dst_r = __riscv_vsub_vv_u8m2(v_src1_r, v_tmp_r, vl);
+
+    v_dst_b = __riscv_vsaddu_vv_u8m2(v_dst_b, v_src0_b, vl);
+    v_dst_g = __riscv_vsaddu_vv_u8m2(v_dst_g, v_src0_g, vl);
+    v_dst_r = __riscv_vsaddu_vv_u8m2(v_dst_r, v_src0_r, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_argb, v_dst_b, v_dst_g, v_dst_r, v_255, vl);
+
+    w -= vl;
+    src_argb += 4 * vl;
+    src_argb1 += 4 * vl;
+    dst_argb += 4 * vl;
+  } while (w > 0);
+}
+
+void BlendPlaneRow_RVV(const uint8_t* src0,
+                       const uint8_t* src1,
+                       const uint8_t* alpha,
+                       uint8_t* dst,
+                       int width) {
+  size_t w = (size_t)width;
+  do {
+    vuint16m8_t v_dst_u16;
+    vuint8m4_t v_dst;
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    vuint8m4_t v_src0 = __riscv_vle8_v_u8m4(src0, vl);
+    vuint8m4_t v_src1 = __riscv_vle8_v_u8m4(src1, vl);
+    vuint8m4_t v_alpha = __riscv_vle8_v_u8m4(alpha, vl);
+    vuint8m4_t v_255_minus_alpha = __riscv_vrsub_vx_u8m4(v_alpha, 255u, vl);
+
+    // (a * foreground) + (1-a) * background
+    v_dst_u16 = __riscv_vwmulu_vv_u16m8(v_alpha, v_src0, vl);
+    v_dst_u16 =
+        __riscv_vwmaccu_vv_u16m8(v_dst_u16, v_255_minus_alpha, v_src1, vl);
+    v_dst_u16 = __riscv_vadd_vx_u16m8(v_dst_u16, 255u, vl);
+    v_dst = __riscv_vnsrl_wx_u8m4(v_dst_u16, 8, vl);
+
+    __riscv_vse8_v_u8m4(dst, v_dst, vl);
+    w -= vl;
+    src0 += vl;
+    src1 += vl;
+    alpha += vl;
+    dst += vl;
+  } while (w > 0);
+}
+
 // Attenuate: (f * a + 255) >> 8
 void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
                           uint8_t* dst_argb,

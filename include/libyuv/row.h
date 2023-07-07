@@ -794,6 +794,7 @@ extern "C" {
 #define HAS_AB64TOARGBROW_RVV
 #define HAS_AR64TOARGBROW_RVV
 #define HAS_ARGBATTENUATEROW_RVV
+#define HAS_ARGBBLENDROW_RVV
 #define HAS_ARGBCOPYYTOALPHAROW_RVV
 #define HAS_ARGBEXTRACTALPHAROW_RVV
 #define HAS_ARGBTOAB64ROW_RVV
@@ -805,6 +806,7 @@ extern "C" {
 #define HAS_ABGRTOYROW_RVV
 #define HAS_ABGRTOYJROW_RVV
 #define HAS_BGRATOYROW_RVV
+#define HAS_BLENDPLANEROW_RVV
 #define HAS_COPYROW_RVV
 #define HAS_I400TOARGBROW_RVV
 #define HAS_I422ALPHATOARGBROW_RVV
@@ -4541,6 +4543,10 @@ void ARGBBlendRow_LSX(const uint8_t* src_argb0,
                       const uint8_t* src_argb1,
                       uint8_t* dst_argb,
                       int width);
+void ARGBBlendRow_RVV(const uint8_t* src_argb0,
+                      const uint8_t* src_argb1,
+                      uint8_t* dst_argb,
+                      int width);
 void ARGBBlendRow_C(const uint8_t* src_argb,
                     const uint8_t* src_argb1,
                     uint8_t* dst_argb,
@@ -4567,6 +4573,11 @@ void BlendPlaneRow_Any_AVX2(const uint8_t* y_buf,
                             const uint8_t* v_buf,
                             uint8_t* dst_ptr,
                             int width);
+void BlendPlaneRow_RVV(const uint8_t* src0,
+                       const uint8_t* src1,
+                       const uint8_t* alpha,
+                       uint8_t* dst,
+                       int width);
 void BlendPlaneRow_C(const uint8_t* src0,
                      const uint8_t* src1,
                      const uint8_t* alpha,
