@@ -820,6 +820,10 @@ extern "C" {
 #define HAS_MERGERGBROW_RVV
 #define HAS_MERGEUVROW_RVV
 #define HAS_MERGEXRGBROW_RVV
+#define HAS_NV12TOARGBROW_RVV
+#define HAS_NV12TORGB24ROW_RVV
+#define HAS_NV21TOARGBROW_RVV
+#define HAS_NV21TORGB24ROW_RVV
 #define HAS_SPLITARGBROW_RVV
 #define HAS_SPLITRGBROW_RVV
 #define HAS_SPLITUVROW_RVV
@@ -1349,6 +1353,26 @@ void UYVYToARGBRow_LSX(const uint8_t* src_uyvy,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void NV12ToARGBRow_RVV(const uint8_t* src_y,
+                       const uint8_t* src_uv,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void NV21ToARGBRow_RVV(const uint8_t* src_y,
+                       const uint8_t* src_vu,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void NV12ToRGB24Row_RVV(const uint8_t* src_y,
+                        const uint8_t* src_uv,
+                        uint8_t* dst_rgb24,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void NV21ToRGB24Row_RVV(const uint8_t* src_y,
+                        const uint8_t* src_vu,
+                        uint8_t* dst_rgb24,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 
 void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
