@@ -1875,9 +1875,10 @@ static __inline void YPixel(uint8_t y,
   int yg = yuvconstants->kYToRgb[0];
 #endif
   uint32_t y1 = (uint32_t)(y * 0x0101 * yg) >> 16;
-  *b = STATIC_CAST(uint8_t, Clamp(((int32_t)(y1) + ygb) >> 6));
-  *g = STATIC_CAST(uint8_t, Clamp(((int32_t)(y1) + ygb) >> 6));
-  *r = STATIC_CAST(uint8_t, Clamp(((int32_t)(y1) + ygb) >> 6));
+  uint8_t b8 = STATIC_CAST(uint8_t, Clamp(((int32_t)(y1) + ygb) >> 6));
+  *b = b8;
+  *g = b8;
+  *r = b8;
 }
 
 void I444ToARGBRow_C(const uint8_t* src_y,
