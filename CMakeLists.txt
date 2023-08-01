@@ -29,12 +29,6 @@ endif()
 # this creates the static library (.a)
 ADD_LIBRARY				( ${ly_lib_static} STATIC ${ly_source_files} )
 
-target_compile_options(${ly_lib_static} PRIVATE
-  -Wno-sign-compare
-  -Wno-unused-function
-  -Wunused-variable
-  -Wuninitialized)
-
 # this creates the shared library (.so)
 ADD_LIBRARY				( ${ly_lib_shared} SHARED ${ly_source_files} )
 SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES OUTPUT_NAME "${ly_lib_name}" )
