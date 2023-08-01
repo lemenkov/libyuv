@@ -137,6 +137,9 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef __riscv_vector
   printf("__riscv_vector %d\n", __riscv_vector);
 #endif
+#ifdef __riscv_v_intrinsic
+  printf("__riscv_v_intrinsic %d\n", __riscv_v_intrinsic);
+#endif
 #ifdef __APPLE__
   printf("__APPLE__ %d\n", __APPLE__);
 #endif
