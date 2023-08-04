@@ -28,6 +28,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#ifdef HAS_SCALEADDROW_RVV
 void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
   size_t w = (size_t)src_width;
   do {
@@ -42,7 +43,9 @@ void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
     dst_ptr += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEARGBROWDOWN2_RVV
 void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
                            ptrdiff_t src_stride,
                            uint8_t* dst_argb,
@@ -61,7 +64,9 @@ void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEARGBROWDOWN2LINEAR_RVV
 void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
                                  ptrdiff_t src_stride,
                                  uint8_t* dst_argb,
@@ -87,7 +92,9 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEARGBROWDOWN2BOX_RVV
 void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
                               uint8_t* dst_argb,
@@ -121,6 +128,7 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
 void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
@@ -141,6 +149,7 @@ void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
   } while (w > 0);
 }
 
+#ifdef HAS_SCALEARGBROWDOWNEVENBOX_RVV
 void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
                                  ptrdiff_t src_stride,
                                  int src_stepx,
@@ -178,7 +187,9 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN2_RVV
 void ScaleRowDown2_RVV(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst,
@@ -196,7 +207,9 @@ void ScaleRowDown2_RVV(const uint8_t* src_ptr,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN2LINEAR_RVV
 void ScaleRowDown2Linear_RVV(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              uint8_t* dst,
@@ -218,7 +231,9 @@ void ScaleRowDown2Linear_RVV(const uint8_t* src_ptr,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN2BOX_RVV
 void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst,
@@ -248,7 +263,9 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN4_RVV
 void ScaleRowDown4_RVV(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst_ptr,
@@ -265,7 +282,9 @@ void ScaleRowDown4_RVV(const uint8_t* src_ptr,
     dst_ptr += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN4BOX_RVV
 void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst_ptr,
@@ -326,7 +345,9 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
     dst_ptr += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN34_RVV
 void ScaleRowDown34_RVV(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
                         uint8_t* dst_ptr,
@@ -342,7 +363,9 @@ void ScaleRowDown34_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN34_0_BOX_RVV
 void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -408,7 +431,9 @@ void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN34_1_BOX_RVV
 void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -462,7 +487,9 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN38_RVV
 void ScaleRowDown38_RVV(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
                         uint8_t* dst_ptr,
@@ -481,7 +508,9 @@ void ScaleRowDown38_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN38_2_BOX_RVV
 void ScaleRowDown38_2_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -537,7 +566,9 @@ void ScaleRowDown38_2_Box_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEROWDOWN38_3_BOX_RVV
 void ScaleRowDown38_3_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -608,10 +639,13 @@ void ScaleRowDown38_3_Box_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
+#endif
 
 // ScaleUVRowUp2_(Bi)linear_RVV function is equal to other platforms'
 // ScaleRowUp2_(Bi)linear_Any_XXX. We process entire row in this function. Other
 // platforms only implement non-edge part of image and process edge with scalar.
+
+#ifdef HAS_SCALEROWUP2_LINEAR_RVV
 void ScaleRowUp2_Linear_RVV(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int dst_width) {
@@ -645,7 +679,9 @@ void ScaleRowUp2_Linear_RVV(const uint8_t* src_ptr,
   }
   dst_ptr[dst_width - 1] = src_ptr[(dst_width - 1) / 2];
 }
+#endif
 
+#ifdef HAS_SCALEROWUP2_BILINEAR_RVV
 void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -715,7 +751,9 @@ void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
   e[dst_width - 1] =
       (s[(dst_width - 1) / 2] + 3 * t[(dst_width - 1) / 2] + 2) >> 2;
 }
+#endif
 
+#ifdef HAS_SCALEUVROWDOWN2_RVV
 void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
                          ptrdiff_t src_stride,
                          uint8_t* dst_uv,
@@ -734,7 +772,9 @@ void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEUVROWDOWN2LINEAR_RVV
 void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
                                ptrdiff_t src_stride,
                                uint8_t* dst_uv,
@@ -760,7 +800,9 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
     dst_uv += vl * 2;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEUVROWDOWN2BOX_RVV
 void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
                             ptrdiff_t src_stride,
                             uint8_t* dst_uv,
@@ -802,7 +844,9 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
     src_uv_row1 += 4 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEUVROWDOWN4_RVV
 void ScaleUVRowDown4_RVV(const uint8_t* src_uv,
                          ptrdiff_t src_stride,
                          int src_stepx,
@@ -827,7 +871,9 @@ void ScaleUVRowDown4_RVV(const uint8_t* src_uv,
     dst_uv += vl / 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SCALEUVROWDOWNEVEN_RVV
 void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
                             ptrdiff_t src_stride,
                             int src_stepx,
@@ -847,11 +893,14 @@ void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
 // ScaleUVRowUp2_(Bi)linear_RVV function is equal to other platforms'
 // ScaleUVRowUp2_(Bi)linear_Any_XXX. We process entire row in this function.
 // Other platforms only implement non-edge part of image and process edge with
 // scalar.
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_RVV
 void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
                               int dst_width) {
@@ -891,7 +940,9 @@ void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
   dst_ptr[2 * dst_width - 2] = src_ptr[((dst_width + 1) & ~1) - 2];
   dst_ptr[2 * dst_width - 1] = src_ptr[((dst_width + 1) & ~1) - 1];
 }
+#endif
 
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_RVV
 void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
                                 ptrdiff_t src_stride,
                                 uint8_t* dst_ptr,
@@ -976,6 +1027,7 @@ void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
       (s[((dst_width + 1) & ~1) - 1] + 3 * t[((dst_width + 1) & ~1) - 1] + 2) >>
       2;
 }
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -141,6 +141,7 @@ extern "C" {
     v_y_16 = __riscv_vwaddu_vx_u16m4(v_y, 0, vl);          \
   }
 
+#ifdef HAS_ARGBTOAR64ROW_RVV
 void ARGBToAR64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
   size_t avl = (size_t)4 * width;
   do {
@@ -156,7 +157,9 @@ void ARGBToAR64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ar64, int width) {
     dst_ar64 += vl;
   } while (avl > 0);
 }
+#endif
 
+#ifdef HAS_ARGBTOAB64ROW_RVV
 void ARGBToAB64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
   size_t avl = (size_t)width;
   do {
@@ -178,7 +181,9 @@ void ARGBToAB64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ab64, int width) {
     dst_ab64 += 4 * vl;
   } while (avl > 0);
 }
+#endif
 
+#ifdef HAS_AR64TOARGBROW_RVV
 void AR64ToARGBRow_RVV(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
   size_t avl = (size_t)4 * width;
   do {
@@ -193,7 +198,9 @@ void AR64ToARGBRow_RVV(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
     dst_argb += vl;
   } while (avl > 0);
 }
+#endif
 
+#ifdef HAS_AB64TOARGBROW_RVV
 void AB64ToARGBRow_RVV(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
   size_t avl = (size_t)width;
   do {
@@ -211,7 +218,9 @@ void AB64ToARGBRow_RVV(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
     dst_argb += 4 * vl;
   } while (avl > 0);
 }
+#endif
 
+#ifdef HAS_RAWTOARGBROW_RVV
 void RAWToARGBRow_RVV(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   size_t w = (size_t)width;
   size_t vl = __riscv_vsetvl_e8m2(w);
@@ -226,7 +235,9 @@ void RAWToARGBRow_RVV(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
     vl = __riscv_vsetvl_e8m2(w);
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_RAWTORGBAROW_RVV
 void RAWToRGBARow_RVV(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
   size_t w = (size_t)width;
   size_t vl = __riscv_vsetvl_e8m2(w);
@@ -241,7 +252,9 @@ void RAWToRGBARow_RVV(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
     vl = __riscv_vsetvl_e8m2(w);
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_RAWTORGB24ROW_RVV
 void RAWToRGB24Row_RVV(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
   size_t w = (size_t)width;
   do {
@@ -254,7 +267,9 @@ void RAWToRGB24Row_RVV(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
     dst_rgb24 += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_ARGBTORAWROW_RVV
 void ARGBToRAWRow_RVV(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
   size_t w = (size_t)width;
   do {
@@ -267,7 +282,9 @@ void ARGBToRAWRow_RVV(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
     dst_raw += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_ARGBTORGB24ROW_RVV
 void ARGBToRGB24Row_RVV(const uint8_t* src_argb,
                         uint8_t* dst_rgb24,
                         int width) {
@@ -282,7 +299,9 @@ void ARGBToRGB24Row_RVV(const uint8_t* src_argb,
     dst_rgb24 += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_RGB24TOARGBROW_RVV
 void RGB24ToARGBRow_RVV(const uint8_t* src_rgb24,
                         uint8_t* dst_argb,
                         int width) {
@@ -299,7 +318,9 @@ void RGB24ToARGBRow_RVV(const uint8_t* src_rgb24,
     vl = __riscv_vsetvl_e8m2(w);
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I444TOARGBROW_RVV
 void I444ToARGBRow_RVV(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
@@ -328,7 +349,9 @@ void I444ToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I444ALPHATOARGBROW_RVV
 void I444AlphaToARGBRow_RVV(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
@@ -359,7 +382,9 @@ void I444AlphaToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I444TORGB24ROW_RVV
 void I444ToRGB24Row_RVV(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -387,7 +412,9 @@ void I444ToRGB24Row_RVV(const uint8_t* src_y,
     dst_rgb24 += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I422TOARGBROW_RVV
 void I422ToARGBRow_RVV(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
@@ -416,7 +443,9 @@ void I422ToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I422ALPHATOARGBROW_RVV
 void I422AlphaToARGBRow_RVV(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
@@ -447,7 +476,9 @@ void I422AlphaToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I422TORGBAROW_RVV
 void I422ToRGBARow_RVV(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
@@ -476,7 +507,9 @@ void I422ToRGBARow_RVV(const uint8_t* src_y,
     dst_rgba += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I422TORGB24ROW_RVV
 void I422ToRGB24Row_RVV(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -504,7 +537,9 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
     dst_rgb24 += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_I400TOARGBROW_RVV
 void I400ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
@@ -543,7 +578,9 @@ void I400ToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_J400TOARGBROW_RVV
 void J400ToARGBRow_RVV(const uint8_t* src_y, uint8_t* dst_argb, int width) {
   size_t w = (size_t)width;
   size_t vl = __riscv_vsetvl_e8m2(w);
@@ -558,7 +595,9 @@ void J400ToARGBRow_RVV(const uint8_t* src_y, uint8_t* dst_argb, int width) {
     vl = __riscv_vsetvl_e8m2(w);
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_COPYROW_RVV
 void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
   size_t w = (size_t)width;
   do {
@@ -570,7 +609,9 @@ void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
     dst += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_NV12TOARGBROW_RVV
 void NV12ToARGBRow_RVV(const uint8_t* src_y,
                        const uint8_t* src_uv,
                        uint8_t* dst_argb,
@@ -597,7 +638,9 @@ void NV12ToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_NV12TORGB24ROW_RVV
 void NV12ToRGB24Row_RVV(const uint8_t* src_y,
                         const uint8_t* src_uv,
                         uint8_t* dst_rgb24,
@@ -623,7 +666,9 @@ void NV12ToRGB24Row_RVV(const uint8_t* src_y,
     dst_rgb24 += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_NV21TOARGBROW_RVV
 void NV21ToARGBRow_RVV(const uint8_t* src_y,
                        const uint8_t* src_vu,
                        uint8_t* dst_argb,
@@ -650,7 +695,9 @@ void NV21ToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_NV21TORGB24ROW_RVV
 void NV21ToRGB24Row_RVV(const uint8_t* src_y,
                         const uint8_t* src_vu,
                         uint8_t* dst_rgb24,
@@ -676,8 +723,11 @@ void NV21ToRGB24Row_RVV(const uint8_t* src_y,
     dst_rgb24 += vl * 3;
   } while (w > 0);
 }
+#endif
 
 // Bilinear filter [VLEN/8]x2 -> [VLEN/8]x1
+
+#ifdef HAS_INTERPOLATEROW_RVV
 void InterpolateRow_RVV(uint8_t* dst_ptr,
                         const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
@@ -734,7 +784,9 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
     dst_ptr += vl;
   } while (dst_w > 0);
 }
+#endif
 
+#ifdef HAS_SPLITRGBROW_RVV
 void SplitRGBRow_RVV(const uint8_t* src_rgb,
                      uint8_t* dst_r,
                      uint8_t* dst_g,
@@ -755,7 +807,9 @@ void SplitRGBRow_RVV(const uint8_t* src_rgb,
     src_rgb += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_MERGERGBROW_RVV
 void MergeRGBRow_RVV(const uint8_t* src_r,
                      const uint8_t* src_g,
                      const uint8_t* src_b,
@@ -775,7 +829,9 @@ void MergeRGBRow_RVV(const uint8_t* src_r,
     dst_rgb += vl * 3;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SPLITARGBROW_RVV
 void SplitARGBRow_RVV(const uint8_t* src_argb,
                       uint8_t* dst_r,
                       uint8_t* dst_g,
@@ -799,7 +855,9 @@ void SplitARGBRow_RVV(const uint8_t* src_argb,
     src_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_MERGEARGBROW_RVV
 void MergeARGBRow_RVV(const uint8_t* src_r,
                       const uint8_t* src_g,
                       const uint8_t* src_b,
@@ -822,7 +880,9 @@ void MergeARGBRow_RVV(const uint8_t* src_r,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SPLITXRGBROW_RVV
 void SplitXRGBRow_RVV(const uint8_t* src_argb,
                       uint8_t* dst_r,
                       uint8_t* dst_g,
@@ -843,7 +903,9 @@ void SplitXRGBRow_RVV(const uint8_t* src_argb,
     src_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_MERGEXRGBROW_RVV
 void MergeXRGBRow_RVV(const uint8_t* src_r,
                       const uint8_t* src_g,
                       const uint8_t* src_b,
@@ -866,7 +928,9 @@ void MergeXRGBRow_RVV(const uint8_t* src_r,
     vl = __riscv_vsetvl_e8m2(w);
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_SPLITUVROW_RVV
 void SplitUVRow_RVV(const uint8_t* src_uv,
                     uint8_t* dst_u,
                     uint8_t* dst_v,
@@ -884,7 +948,9 @@ void SplitUVRow_RVV(const uint8_t* src_uv,
     src_uv += 2 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_MERGEUVROW_RVV
 void MergeUVRow_RVV(const uint8_t* src_u,
                     const uint8_t* src_v,
                     uint8_t* dst_uv,
@@ -902,6 +968,7 @@ void MergeUVRow_RVV(const uint8_t* src_u,
     dst_uv += 2 * vl;
   } while (w > 0);
 }
+#endif
 
 struct RgbConstants {
   uint8_t kRGBToY[4];
@@ -934,7 +1001,8 @@ static const struct RgbConstants kRawI601Constants = {{66, 129, 25, 0},
                                                       0x1080,
                                                       0};
 
-// ARGB expects first 3 values to contain RGB and 4th value is ignored.
+// ARGB expects first 3 values to contain RGB and 4th value is ignored
+#ifdef HAS_ARGBTOYMATRIXROW_RVV
 void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
                           uint8_t* dst_y,
                           int width,
@@ -964,24 +1032,34 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
     dst_y += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_ARGBTOYROW_RVV
 void ARGBToYRow_RVV(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   ARGBToYMatrixRow_RVV(src_argb, dst_y, width, &kRgb24I601Constants);
 }
+#endif
 
+#ifdef HAS_ARGBTOYJROW_RVV
 void ARGBToYJRow_RVV(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
   ARGBToYMatrixRow_RVV(src_argb, dst_yj, width, &kRgb24JPEGConstants);
 }
+#endif
 
+#ifdef HAS_ABGRTOYROW_RVV
 void ABGRToYRow_RVV(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
   ARGBToYMatrixRow_RVV(src_abgr, dst_y, width, &kRawI601Constants);
 }
+#endif
 
+#ifdef HAS_ABGRTOYJROW_RVV
 void ABGRToYJRow_RVV(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
   ARGBToYMatrixRow_RVV(src_abgr, dst_yj, width, &kRawJPEGConstants);
 }
+#endif
 
 // RGBA expects first value to be A and ignored, then 3 values to contain RGB.
+#ifdef HAS_RGBATOYMATRIXROW_RVV
 void RGBAToYMatrixRow_RVV(const uint8_t* src_rgba,
                           uint8_t* dst_y,
                           int width,
@@ -1011,19 +1089,27 @@ void RGBAToYMatrixRow_RVV(const uint8_t* src_rgba,
     dst_y += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_RGBATOYROW_RVV
 void RGBAToYRow_RVV(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
   RGBAToYMatrixRow_RVV(src_rgba, dst_y, width, &kRgb24I601Constants);
 }
+#endif
 
+#ifdef HAS_RGBATOYJROW_RVV
 void RGBAToYJRow_RVV(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
   RGBAToYMatrixRow_RVV(src_rgba, dst_yj, width, &kRgb24JPEGConstants);
 }
+#endif
 
+#ifdef HAS_BGRATOYROW_RVV
 void BGRAToYRow_RVV(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
   RGBAToYMatrixRow_RVV(src_bgra, dst_y, width, &kRawI601Constants);
 }
+#endif
 
+#ifdef HAS_RGBTOYMATRIXROW_RVV
 void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
                          uint8_t* dst_y,
                          int width,
@@ -1053,26 +1139,36 @@ void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
     dst_y += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_RGB24TOYJROW_RVV
 void RGB24ToYJRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
   RGBToYMatrixRow_RVV(src_rgb24, dst_yj, width, &kRgb24JPEGConstants);
 }
+#endif
 
+#ifdef HAS_RAWTOYJROW_RVV
 void RAWToYJRow_RVV(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
   RGBToYMatrixRow_RVV(src_raw, dst_yj, width, &kRawJPEGConstants);
 }
+#endif
 
+#ifdef HAS_RGB24TOYROW_RVV
 void RGB24ToYRow_RVV(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
   RGBToYMatrixRow_RVV(src_rgb24, dst_y, width, &kRgb24I601Constants);
 }
+#endif
 
+#ifdef HAS_RAWTOYROW_RVV
 void RAWToYRow_RVV(const uint8_t* src_raw, uint8_t* dst_y, int width) {
   RGBToYMatrixRow_RVV(src_raw, dst_y, width, &kRawI601Constants);
 }
+#endif
 
 // Blend src_argb over src_argb1 and store to dst_argb.
 // dst_argb may be src_argb or src_argb1.
 // src_argb: RGB values have already been pre-multiplied by the a.
+#ifdef HAS_ARGBBLENDROW_RVV
 void ARGBBlendRow_RVV(const uint8_t* src_argb,
                       const uint8_t* src_argb1,
                       uint8_t* dst_argb,
@@ -1113,7 +1209,9 @@ void ARGBBlendRow_RVV(const uint8_t* src_argb,
     dst_argb += 4 * vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_BLENDPLANEROW_RVV
 void BlendPlaneRow_RVV(const uint8_t* src0,
                        const uint8_t* src1,
                        const uint8_t* alpha,
@@ -1144,8 +1242,10 @@ void BlendPlaneRow_RVV(const uint8_t* src0,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
 // Attenuate: (f * a + 255) >> 8
+#ifdef HAS_ARGBATTENUATEROW_RVV
 void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
                           uint8_t* dst_argb,
                           int width) {
@@ -1173,7 +1273,9 @@ void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
     dst_argb += vl * 4;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_RVV
 void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
                              uint8_t* dst_a,
                              int width) {
@@ -1188,7 +1290,9 @@ void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
     dst_a += vl;
   } while (w > 0);
 }
+#endif
 
+#ifdef HAS_ARGBCOPYYTOALPHAROW_RVV
 void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
   size_t w = (size_t)width;
   const ptrdiff_t dst_stride = 4;
@@ -1202,6 +1306,7 @@ void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
     dst += vl * dst_stride;
   } while (w > 0);
 }
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"
