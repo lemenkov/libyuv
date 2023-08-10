@@ -43,6 +43,7 @@ if(RISCV_COMPILER_FLAGS STREQUAL "")
     list(APPEND RISCV_COMPILER_FLAGS "-march=rv64gc")
   endif()
 endif()
+add_compile_options("-Wuninitialized")
 message(STATUS "RISCV_COMPILER_FLAGS: ${RISCV_COMPILER_FLAGS}")
 
 set(CMAKE_C_FLAGS             "${RISCV_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")

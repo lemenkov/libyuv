@@ -184,7 +184,6 @@ extern "C" {
 // #define HAS_SCALEARGBROWDOWNEVEN_RVV
 #define HAS_SCALEUVROWDOWN4_RVV
 #define HAS_SCALEUVROWDOWNEVEN_RVV
-#if __riscv_v_intrinsic == 11000
 #define HAS_SCALEARGBROWDOWN2_RVV
 #define HAS_SCALEARGBROWDOWN2BOX_RVV
 #define HAS_SCALEARGBROWDOWN2LINEAR_RVV
@@ -207,7 +206,6 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
 #define HAS_SCALEUVROWUP2_BILINEAR_RVV
 #define HAS_SCALEUVROWUP2_LINEAR_RVV
-#endif
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.
