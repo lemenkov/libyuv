@@ -200,6 +200,23 @@ void AR64ToARGBRow_RVV(const uint16_t* src_ar64, uint8_t* dst_argb, int width) {
 }
 #endif
 
+#ifdef HAS_AR64TOAB64ROW_RVV
+void AR64ToAB64Row_RVV(const uint16_t* src_ar64,
+                       uint16_t* dst_ab64,
+                       int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e16m2(w);
+    vuint16m2_t v_b, v_g, v_r, v_a;
+    __riscv_vlseg4e16_v_u16m2(&v_b, &v_g, &v_r, &v_a, src_ar64, vl);
+    __riscv_vsseg4e16_v_u16m2(dst_ab64, v_r, v_g, v_b, v_a, vl);
+    w -= vl;
+    src_ar64 += vl * 4;
+    dst_ab64 += vl * 4;
+  } while (w > 0);
+}
+#endif
+
 #ifdef HAS_AB64TOARGBROW_RVV
 void AB64ToARGBRow_RVV(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
   size_t avl = (size_t)width;
@@ -297,6 +314,66 @@ void ARGBToRGB24Row_RVV(const uint8_t* src_argb,
     w -= vl;
     src_argb += vl * 4;
     dst_rgb24 += vl * 3;
+  } while (w > 0);
+}
+#endif
+
+#ifdef HAS_ARGBTOABGRROW_RVV
+void ARGBToABGRRow_RVV(const uint8_t* src_argb, uint8_t* dst_abgr, int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_a, v_r, v_g, v_b;
+    __riscv_vlseg4e8_v_u8m2(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_abgr, v_r, v_g, v_b, v_a, vl);
+    w -= vl;
+    src_argb += vl * 4;
+    dst_abgr += vl * 4;
+  } while (w > 0);
+}
+#endif
+
+#ifdef HAS_ARGBTOBGRAROW_RVV
+void ARGBToBGRARow_RVV(const uint8_t* src_argb, uint8_t* dst_bgra, int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_a, v_r, v_g, v_b;
+    __riscv_vlseg4e8_v_u8m2(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_bgra, v_a, v_r, v_g, v_b, vl);
+    w -= vl;
+    src_argb += vl * 4;
+    dst_bgra += vl * 4;
+  } while (w > 0);
+}
+#endif
+
+#ifdef HAS_ARGBTORGBAROW_RVV
+void ARGBToRGBARow_RVV(const uint8_t* src_argb, uint8_t* dst_rgba, int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_a, v_r, v_g, v_b;
+    __riscv_vlseg4e8_v_u8m2(&v_b, &v_g, &v_r, &v_a, src_argb, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_rgba, v_a, v_b, v_g, v_r, vl);
+    w -= vl;
+    src_argb += vl * 4;
+    dst_rgba += vl * 4;
+  } while (w > 0);
+}
+#endif
+
+#ifdef HAS_RGBATOARGBROW_RVV
+void RGBAToARGBRow_RVV(const uint8_t* src_rgba, uint8_t* dst_argb, int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_a, v_r, v_g, v_b;
+    __riscv_vlseg4e8_v_u8m2(&v_a, &v_b, &v_g, &v_r, src_rgba, vl);
+    __riscv_vsseg4e8_v_u8m2(dst_argb, v_b, v_g, v_r, v_a, vl);
+    w -= vl;
+    src_rgba += vl * 4;
+    dst_argb += vl * 4;
   } while (w > 0);
 }
 #endif

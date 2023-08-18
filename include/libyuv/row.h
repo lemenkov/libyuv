@@ -800,14 +800,18 @@ extern "C" {
 #define HAS_ABGRTOYJROW_RVV
 #define HAS_ABGRTOYROW_RVV
 #define HAS_AR64TOARGBROW_RVV
+#define HAS_AR64TOAB64ROW_RVV
 #define HAS_ARGBATTENUATEROW_RVV
 #define HAS_ARGBBLENDROW_RVV
 #define HAS_ARGBCOPYYTOALPHAROW_RVV
 #define HAS_ARGBEXTRACTALPHAROW_RVV
 #define HAS_ARGBTOAB64ROW_RVV
+#define HAS_ARGBTOABGRROW_RVV
 #define HAS_ARGBTOAR64ROW_RVV
+#define HAS_ARGBTOBGRAROW_RVV
 #define HAS_ARGBTORAWROW_RVV
 #define HAS_ARGBTORGB24ROW_RVV
+#define HAS_ARGBTORGBAROW_RVV
 #define HAS_ARGBTOYJROW_RVV
 #define HAS_ARGBTOYMATRIXROW_RVV
 #define HAS_ARGBTOYROW_RVV
@@ -839,6 +843,7 @@ extern "C" {
 #define HAS_RGB24TOARGBROW_RVV
 #define HAS_RGB24TOYJROW_RVV
 #define HAS_RGB24TOYROW_RVV
+#define HAS_RGBATOARGBROW_RVV
 #define HAS_RGBATOYJROW_RVV
 #define HAS_RGBATOYMATRIXROW_RVV
 #define HAS_RGBATOYROW_RVV
@@ -3494,8 +3499,13 @@ void ARGBToARGB4444Row_LASX(const uint8_t* src_argb,
                             int width);
 
 void ARGBToRAWRow_RVV(const uint8_t* src_argb, uint8_t* dst_raw, int width);
+void ARGBToABGRRow_RVV(const uint8_t* src_argb, uint8_t* dst_abgr, int width);
+void ARGBToBGRARow_RVV(const uint8_t* src_argb, uint8_t* dst_rgba, int width);
+void ARGBToRGBARow_RVV(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToRGB24Row_RVV(const uint8_t* src_argb, uint8_t* dst_rgb24, int width);
 
+void ARGBToABGRRow_C(const uint8_t* src_argb, uint8_t* dst_abgr, int width);
+void ARGBToBGRARow_C(const uint8_t* src_argb, uint8_t* dst_bgra, int width);
 void ARGBToRGBARow_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToRGB24Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToRAWRow_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
@@ -3509,6 +3519,8 @@ void ARGBToAR64Row_C(const uint8_t* src_argb, uint16_t* dst_ar64, int width);
 void ARGBToAB64Row_C(const uint8_t* src_argb, uint16_t* dst_ab64, int width);
 void AR64ToARGBRow_C(const uint16_t* src_ar64, uint8_t* dst_argb, int width);
 void AB64ToARGBRow_C(const uint16_t* src_ab64, uint8_t* dst_argb, int width);
+void AR64ToAB64Row_C(const uint16_t* src_ar64, uint16_t* dst_ab64, int width);
+void RGBAToARGBRow_C(const uint8_t* src_rgba, uint8_t* dst_argb, int width);
 void AR64ShuffleRow_C(const uint8_t* src_ar64,
                       uint8_t* dst_ar64,
                       const uint8_t* shuffler,
@@ -3537,6 +3549,8 @@ void ARGBToAR64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ar64, int width);
 void ARGBToAB64Row_RVV(const uint8_t* src_argb, uint16_t* dst_ab64, int width);
 void AR64ToARGBRow_RVV(const uint16_t* src_ar64, uint8_t* dst_argb, int width);
 void AB64ToARGBRow_RVV(const uint16_t* src_ab64, uint8_t* dst_argb, int width);
+void AR64ToAB64Row_RVV(const uint16_t* src_ar64, uint16_t* dst_ab64, int width);
+void RGBAToARGBRow_RVV(const uint8_t* src_rgba, uint8_t* dst_argb, int width);
 void ARGBToAR64Row_Any_SSSE3(const uint8_t* src_ptr,
                              uint16_t* dst_ptr,
                              int width);

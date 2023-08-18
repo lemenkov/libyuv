@@ -281,6 +281,54 @@ void AR30ToAB30Row_C(const uint8_t* src_ar30, uint8_t* dst_ab30, int width) {
   }
 }
 
+void ARGBToABGRRow_C(const uint8_t* src_argb, uint8_t* dst_abgr, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint8_t b = src_argb[0];
+    uint8_t g = src_argb[1];
+    uint8_t r = src_argb[2];
+    uint8_t a = src_argb[3];
+    dst_abgr[0] = r;
+    dst_abgr[1] = g;
+    dst_abgr[2] = b;
+    dst_abgr[3] = a;
+    dst_abgr += 4;
+    src_argb += 4;
+  }
+}
+
+void ARGBToBGRARow_C(const uint8_t* src_argb, uint8_t* dst_bgra, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint8_t b = src_argb[0];
+    uint8_t g = src_argb[1];
+    uint8_t r = src_argb[2];
+    uint8_t a = src_argb[3];
+    dst_bgra[0] = a;
+    dst_bgra[1] = r;
+    dst_bgra[2] = g;
+    dst_bgra[3] = b;
+    dst_bgra += 4;
+    src_argb += 4;
+  }
+}
+
+void ARGBToRGBARow_C(const uint8_t* src_argb, uint8_t* dst_rgba, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint8_t b = src_argb[0];
+    uint8_t g = src_argb[1];
+    uint8_t r = src_argb[2];
+    uint8_t a = src_argb[3];
+    dst_rgba[0] = a;
+    dst_rgba[1] = b;
+    dst_rgba[2] = g;
+    dst_rgba[3] = r;
+    dst_rgba += 4;
+    src_argb += 4;
+  }
+}
+
 void ARGBToRGB24Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
@@ -306,6 +354,22 @@ void ARGBToRAWRow_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
     dst_rgb[2] = b;
     dst_rgb += 3;
     src_argb += 4;
+  }
+}
+
+void RGBAToARGBRow_C(const uint8_t* src_rgba, uint8_t* dst_argb, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint8_t a = src_rgba[0];
+    uint8_t b = src_rgba[1];
+    uint8_t g = src_rgba[2];
+    uint8_t r = src_rgba[3];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
+    dst_argb += 4;
+    src_rgba += 4;
   }
 }
 
@@ -514,6 +578,22 @@ void AB64ToARGBRow_C(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
     dst_argb[3] = a;
     dst_argb += 4;
     src_ab64 += 4;
+  }
+}
+
+void AR64ToAB64Row_C(const uint16_t* src_ar64, uint16_t* dst_ab64, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint16_t b = src_ar64[0];
+    uint16_t g = src_ar64[1];
+    uint16_t r = src_ar64[2];
+    uint16_t a = src_ar64[3];
+    dst_ab64[0] = r;
+    dst_ab64[1] = g;
+    dst_ab64[2] = b;
+    dst_ab64[3] = a;
+    dst_ab64 += 4;
+    src_ar64 += 4;
   }
 }
 

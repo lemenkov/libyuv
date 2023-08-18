@@ -3003,6 +3003,7 @@ int J400ToARGB(const uint8_t* src_y,
   return 0;
 }
 
+#ifndef __riscv
 // Shuffle table for converting BGRA to ARGB.
 static const uvec8 kShuffleMaskBGRAToARGB = {
     3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u};
@@ -3090,6 +3091,195 @@ int AR64ToAB64(const uint16_t* src_ar64,
   return AR64Shuffle(src_ar64, src_stride_ar64, dst_ab64, dst_stride_ab64,
                      (const uint8_t*)&kShuffleMaskAR64ToAB64, width, height);
 }
+#else
+// Convert BGRA to ARGB (same as ARGBToBGRA).
+LIBYUV_API
+int BGRAToARGB(const uint8_t* src_bgra,
+               int src_stride_bgra,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return ARGBToBGRA(src_bgra, src_stride_bgra, dst_argb, dst_stride_argb, width,
+                    height);
+}
+
+// Convert ARGB to BGRA.
+LIBYUV_API
+int ARGBToBGRA(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_bgra,
+               int dst_stride_bgra,
+               int width,
+               int height) {
+  int y;
+  void (*ARGBToBGRARow)(const uint8_t* src_argb, uint8_t* dst_bgra, int width) =
+      ARGBToBGRARow_C;
+  if (!src_argb || !dst_bgra || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  // Coalesce rows.
+  if (src_stride_argb == width * 4 && dst_stride_bgra == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_argb = dst_stride_bgra = 0;
+  }
+
+#if defined(HAS_ARGBTOBGRAROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBToBGRARow = ARGBToBGRARow_RVV;
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    ARGBToBGRARow(src_argb, dst_bgra, width);
+    src_argb += src_stride_argb;
+    dst_bgra += dst_stride_bgra;
+  }
+  return 0;
+}
+
+// Convert ARGB to ABGR.
+LIBYUV_API
+int ARGBToABGR(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height) {
+  int y;
+  void (*ARGBToABGRRow)(const uint8_t* src_argb, uint8_t* dst_abgr, int width) =
+      ARGBToABGRRow_C;
+  if (!src_argb || !dst_abgr || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  // Coalesce rows.
+  if (src_stride_argb == width * 4 && dst_stride_abgr == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_argb = dst_stride_abgr = 0;
+  }
+
+#if defined(HAS_ARGBTOABGRROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBToABGRRow = ARGBToABGRRow_RVV;
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    ARGBToABGRRow(src_argb, dst_abgr, width);
+    src_argb += src_stride_argb;
+    dst_abgr += dst_stride_abgr;
+  }
+  return 0;
+}
+
+// Convert ABGR to ARGB (same as ARGBToABGR).
+LIBYUV_API
+int ABGRToARGB(const uint8_t* src_abgr,
+               int src_stride_abgr,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return ARGBToABGR(src_abgr, src_stride_abgr, dst_argb, dst_stride_argb, width,
+                    height);
+}
+
+// Convert RGBA to ARGB.
+LIBYUV_API
+int RGBAToARGB(const uint8_t* src_rgba,
+               int src_stride_rgba,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  int y;
+  void (*RGBAToARGBRow)(const uint8_t* src_rgba, uint8_t* dst_argb, int width) =
+      RGBAToARGBRow_C;
+  if (!src_rgba || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_rgba = src_rgba + (height - 1) * src_stride_rgba;
+    src_stride_rgba = -src_stride_rgba;
+  }
+  // Coalesce rows.
+  if (src_stride_rgba == width * 4 && dst_stride_argb == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_rgba = dst_stride_argb = 0;
+  }
+
+#if defined(HAS_RGBATOARGBROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    RGBAToARGBRow = RGBAToARGBRow_RVV;
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    RGBAToARGBRow(src_rgba, dst_argb, width);
+    src_rgba += src_stride_rgba;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert AR64 To AB64.
+LIBYUV_API
+int AR64ToAB64(const uint16_t* src_ar64,
+               int src_stride_ar64,
+               uint16_t* dst_ab64,
+               int dst_stride_ab64,
+               int width,
+               int height) {
+  int y;
+  void (*AR64ToAB64Row)(const uint16_t* src_ar64, uint16_t* dst_ab64,
+                        int width) = AR64ToAB64Row_C;
+  if (!src_ar64 || !dst_ab64 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ar64 = src_ar64 + (height - 1) * src_stride_ar64;
+    src_stride_ar64 = -src_stride_ar64;
+  }
+  // Coalesce rows.
+  if (src_stride_ar64 == width * 4 && dst_stride_ab64 == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_ar64 = dst_stride_ab64 = 0;
+  }
+
+#if defined(HAS_AR64TOAB64ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    AR64ToAB64Row = AR64ToAB64Row_RVV;
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    AR64ToAB64Row(src_ar64, dst_ab64, width);
+    src_ar64 += src_stride_ar64;
+    dst_ab64 += dst_stride_ab64;
+  }
+  return 0;
+}
+#endif
 
 // Convert RGB24 to ARGB.
 LIBYUV_API
