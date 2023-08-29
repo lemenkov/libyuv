@@ -1,5 +1,5 @@
 package {
-    default_applicable_licenses: ["external_libyuv_files_license"],
+    default_applicable_licenses: ["external_libyuv_license"],
 }
 
 // Added automatically by a large-scale-change
@@ -10,7 +10,7 @@ package {
 // Please consider removing redundant or irrelevant files from 'license_text:'.
 // See: http://go/android-license-faq
 license {
-    name: "external_libyuv_files_license",
+    name: "external_libyuv_license",
     visibility: [":__subpackages__"],
     license_kinds: [
         "SPDX-license-identifier-BSD",
