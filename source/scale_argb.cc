@@ -284,10 +284,14 @@ static void ScaleARGBDownEven(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEARGBROWDOWNEVENBOX_RVV)
+  if (filtering && TestCpuFlag(kCpuHasRVV)) {
+    ScaleARGBRowDownEven = ScaleARGBRowDownEvenBox_RVV;
+  }
+#endif
 #if defined(HAS_SCALEARGBROWDOWNEVEN_RVV)
-  if (TestCpuFlag(kCpuHasRVV)) {
-    ScaleARGBRowDownEven =
-        filtering ? ScaleARGBRowDownEvenBox_RVV : ScaleARGBRowDownEven_RVV;
+  if (!filtering && TestCpuFlag(kCpuHasRVV)) {
+    ScaleARGBRowDownEven = ScaleARGBRowDownEven_RVV;
   }
 #endif
 

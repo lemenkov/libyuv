@@ -130,6 +130,7 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
 }
 #endif
 
+#ifdef HAS_SCALEARGBROWDOWNEVEN_RVV
 void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
                               int src_stepx,
@@ -148,6 +149,7 @@ void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
     dst += vl;
   } while (w > 0);
 }
+#endif
 
 #ifdef HAS_SCALEARGBROWDOWNEVENBOX_RVV
 void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
