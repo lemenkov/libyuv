@@ -1479,6 +1479,7 @@ static void ScalePlaneUp2_Linear(int src_width,
   int y;
   int dy;
 
+  (void)src_width;
   // This function can only scale up by 2 times horizontally.
   assert(src_width == ((dst_width + 1) / 2));
 
@@ -1542,6 +1543,7 @@ static void ScalePlaneUp2_Bilinear(int src_width,
       ScaleRowUp2_Bilinear_Any_C;
   int x;
 
+  (void)src_width;
   // This function can only scale up by 2 times.
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
@@ -1608,6 +1610,7 @@ static void ScalePlaneUp2_12_Linear(int src_width,
   int y;
   int dy;
 
+  (void)src_width;
   // This function can only scale up by 2 times horizontally.
   assert(src_width == ((dst_width + 1) / 2));
 
@@ -1661,6 +1664,7 @@ static void ScalePlaneUp2_12_Bilinear(int src_width,
       ScaleRowUp2_Bilinear_16_Any_C;
   int x;
 
+  (void)src_width;
   // This function can only scale up by 2 times.
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
@@ -1709,6 +1713,7 @@ static void ScalePlaneUp2_16_Linear(int src_width,
   int y;
   int dy;
 
+  (void)src_width;
   // This function can only scale up by 2 times horizontally.
   assert(src_width == ((dst_width + 1) / 2));
 
@@ -1757,6 +1762,7 @@ static void ScalePlaneUp2_16_Bilinear(int src_width,
       ScaleRowUp2_Bilinear_16_Any_C;
   int x;
 
+  (void)src_width;
   // This function can only scale up by 2 times.
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
