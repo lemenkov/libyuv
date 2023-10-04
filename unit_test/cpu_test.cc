@@ -47,7 +47,6 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   int has_erms = TestCpuFlag(kCpuHasERMS);
   int has_fma3 = TestCpuFlag(kCpuHasFMA3);
   int has_f16c = TestCpuFlag(kCpuHasF16C);
-  int has_gfni = TestCpuFlag(kCpuHasGFNI);
   int has_avx512bw = TestCpuFlag(kCpuHasAVX512BW);
   int has_avx512vl = TestCpuFlag(kCpuHasAVX512VL);
   int has_avx512vnni = TestCpuFlag(kCpuHasAVX512VNNI);
@@ -55,6 +54,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   int has_avx512vbmi2 = TestCpuFlag(kCpuHasAVX512VBMI2);
   int has_avx512vbitalg = TestCpuFlag(kCpuHasAVX512VBITALG);
   int has_avx512vpopcntdq = TestCpuFlag(kCpuHasAVX512VPOPCNTDQ);
+  int has_avxvnniint8 = TestCpuFlag(kCpuHasAVXVNNIINT8);
+  int has_gfni = TestCpuFlag(kCpuHasGFNI);
   printf("Has X86 0x%x\n", has_x86);
   printf("Has SSE2 0x%x\n", has_sse2);
   printf("Has SSSE3 0x%x\n", has_ssse3);
@@ -65,7 +66,6 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has ERMS 0x%x\n", has_erms);
   printf("Has FMA3 0x%x\n", has_fma3);
   printf("Has F16C 0x%x\n", has_f16c);
-  printf("Has GFNI 0x%x\n", has_gfni);
   printf("Has AVX512BW 0x%x\n", has_avx512bw);
   printf("Has AVX512VL 0x%x\n", has_avx512vl);
   printf("Has AVX512VNNI 0x%x\n", has_avx512vnni);
@@ -73,6 +73,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has AVX512VBMI2 0x%x\n", has_avx512vbmi2);
   printf("Has AVX512VBITALG 0x%x\n", has_avx512vbitalg);
   printf("Has AVX512VPOPCNTDQ 0x%x\n", has_avx512vpopcntdq);
+  printf("Has AVXVNNIINT8 0x%x\n", has_avxvnniint8);
+  printf("Has GFNI 0x%x\n", has_gfni);
 #endif
 #if defined(__mips__)
   int has_mips = TestCpuFlag(kCpuHasMIPS);

@@ -147,6 +147,9 @@ int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_AVX512VPOPCNTDQ")) {
     cpu_info &= ~libyuv::kCpuHasAVX512VPOPCNTDQ;
   }
+  if (TestEnv("LIBYUV_DISABLE_AVXVNNIINT8")) {
+    cpu_info &= ~libyuv::kCpuHasAVXVNNIINT8;
+  }
   if (TestEnv("LIBYUV_DISABLE_GFNI")) {
     cpu_info &= ~libyuv::kCpuHasGFNI;
   }
