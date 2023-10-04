@@ -103,8 +103,8 @@ int main(int argc, const char* argv[]) {
     int has_avx512vbmi2 = TestCpuFlag(kCpuHasAVX512VBMI2);
     int has_avx512vbitalg = TestCpuFlag(kCpuHasAVX512VBITALG);
     int has_avx512vpopcntdq = TestCpuFlag(kCpuHasAVX512VPOPCNTDQ);
+    int has_avxvnni = TestCpuFlag(kCpuHasAVXVNNI);
     int has_avxvnniint8 = TestCpuFlag(kCpuHasAVXVNNIINT8);
-    int has_gfni = TestCpuFlag(kCpuHasGFNI);
     printf("Has X86 0x%x\n", has_x86);
     printf("Has SSE2 0x%x\n", has_sse2);
     printf("Has SSSE3 0x%x\n", has_ssse3);
@@ -122,8 +122,8 @@ int main(int argc, const char* argv[]) {
     printf("Has AVX512VBMI2 0x%x\n", has_avx512vbmi2);
     printf("Has AVX512VBITALG 0x%x\n", has_avx512vbitalg);
     printf("Has AVX512VPOPCNTDQ 0x%x\n", has_avx512vpopcntdq);
+    printf("HAS AVXVNNI 0x%x\n", has_avxvnni);
     printf("Has AVXVNNIINT8 0x%x\n", has_avxvnniint8);
-    printf("Has GFNI 0x%x\n", has_gfni);
   }
   return 0;
 }

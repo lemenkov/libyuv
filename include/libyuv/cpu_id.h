@@ -37,14 +37,14 @@ static const int kCpuHasAVX2 = 0x400;
 static const int kCpuHasERMS = 0x800;
 static const int kCpuHasFMA3 = 0x1000;
 static const int kCpuHasF16C = 0x2000;
-static const int kCpuHasGFNI = 0x4000;  /* deprecated */
-static const int kCpuHasAVX512BW = 0x8000;
-static const int kCpuHasAVX512VL = 0x10000;
-static const int kCpuHasAVX512VNNI = 0x20000;
-static const int kCpuHasAVX512VBMI = 0x40000;
-static const int kCpuHasAVX512VBMI2 = 0x80000;
-static const int kCpuHasAVX512VBITALG = 0x100000;
-static const int kCpuHasAVX512VPOPCNTDQ = 0x200000;
+static const int kCpuHasAVX512BW = 0x4000;
+static const int kCpuHasAVX512VL = 0x8000;
+static const int kCpuHasAVX512VNNI = 0x10000;
+static const int kCpuHasAVX512VBMI = 0x20000;
+static const int kCpuHasAVX512VBMI2 = 0x40000;
+static const int kCpuHasAVX512VBITALG = 0x80000;
+static const int kCpuHasAVX512VPOPCNTDQ = 0x100000;
+static const int kCpuHasAVXVNNI = 0x200000;
 static const int kCpuHasAVXVNNIINT8 = 0x400000;
 
 // These flags are only valid on MIPS processors.

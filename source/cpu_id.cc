@@ -311,6 +311,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
     cpu_info |= kCpuHasAVX | ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                 ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
                 ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0) |
+                ((cpu_einfo7[0] & 0x00000010) ? kCpuHasAVXVNNI : 0) |
                 ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0);
 
     // Detect AVX512bw
@@ -322,7 +323,6 @@ static SAFEBUFFERS int GetCpuFlags(void) {
       cpu_info |= (cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0;
       cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0;
       cpu_info |= (cpu_info7[2] & 0x00004000) ? kCpuHasAVX512VPOPCNTDQ : 0;
-      cpu_info |= (cpu_info7[2] & 0x00000100) ? kCpuHasGFNI : 0;
     }
   }
 #endif
