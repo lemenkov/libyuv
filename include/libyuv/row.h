@@ -949,14 +949,6 @@ struct YuvConstants {
   free(var##_mem);                  \
   var = NULL
 
-#define align_buffer_64_16(var, size)                                        \
-  void* var##_mem = malloc((size)*2 + 63);                      /* NOLINT */ \
-  uint16_t* var = (uint16_t*)(((intptr_t)var##_mem + 63) & ~63) /* NOLINT */
-
-#define free_aligned_buffer_64_16(var) \
-  free(var##_mem);                     \
-  var = NULL
-
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
 #else

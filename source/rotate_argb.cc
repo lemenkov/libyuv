@@ -121,6 +121,7 @@ static int ARGBRotate180(const uint8_t* src_argb,
                          int height) {
   // Swap first and last row and mirror the content. Uses a temporary row.
   align_buffer_64(row, width * 4);
+  if (!row) return 1;
   const uint8_t* src_bot = src_argb + src_stride_argb * (height - 1);
   uint8_t* dst_bot = dst_argb + dst_stride_argb * (height - 1);
   int half_height = (height + 1) >> 1;

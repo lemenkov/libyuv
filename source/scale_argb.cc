@@ -167,6 +167,7 @@ static void ScaleARGBDown4Box(int src_width,
   // Allocate 2 rows of ARGB.
   const int row_size = (dst_width * 2 * 4 + 31) & ~31;
   align_buffer_64(row, row_size * 2);
+  if (!row) return;
   int row_stride = src_stride * (dy >> 16);
   void (*ScaleARGBRowDown2)(const uint8_t* src_argb, ptrdiff_t src_stride,
                             uint8_t* dst_argb, int dst_width) =
@@ -407,6 +408,7 @@ static void ScaleARGBBilinearDown(int src_width,
   // Allocate a row of ARGB.
   {
     align_buffer_64(row, clip_src_width * 4);
+    if (!row) return;
 
     const int max_y = (src_height - 1) << 16;
     if (y > max_y) {
@@ -581,6 +583,7 @@ static void ScaleARGBBilinearUp(int src_width,
     // Allocate 2 rows of ARGB.
     const int row_size = (dst_width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
+    if (!row) return;
 
     uint8_t* rowptr = row;
     int rowstride = row_size;
@@ -849,9 +852,11 @@ static void ScaleYUVToARGBBilinearUp(int src_width,
   // Allocate 2 rows of ARGB.
   const int row_size = (dst_width * 4 + 31) & ~31;
   align_buffer_64(row, row_size * 2);
+  if (!row) return;
 
   // Allocate 1 row of ARGB for source conversion.
   align_buffer_64(argb_row, src_width * 4);
+  if (!argb_row) return;
 
   uint8_t* rowptr = row;
   int rowstride = row_size;
@@ -1158,8 +1163,11 @@ int YUVToARGBScaleClip(const uint8_t* src_y,
                        int clip_width,
                        int clip_height,
                        enum FilterMode filtering) {
-  uint8_t* argb_buffer = (uint8_t*)malloc(src_width * src_height * 4);
   int r;
+  uint8_t* argb_buffer = (uint8_t*)malloc(src_width * src_height * 4);
+  if (!argb_buffer) {
+    return 1;  // Out of memory runtime error.
+  }
   (void)src_fourcc;  // TODO(fbarchard): implement and/or assert.
   (void)dst_fourcc;
   I420ToARGB(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,

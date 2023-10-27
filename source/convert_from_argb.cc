@@ -462,6 +462,7 @@ int ARGBToNV12(const uint8_t* src_argb,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
 
     for (y = 0; y < height - 1; y += 2) {
@@ -660,6 +661,7 @@ int ARGBToNV21(const uint8_t* src_argb,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
 
     for (y = 0; y < height - 1; y += 2) {
@@ -845,6 +847,7 @@ int ABGRToNV12(const uint8_t* src_abgr,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
 
     for (y = 0; y < height - 1; y += 2) {
@@ -1031,6 +1034,7 @@ int ABGRToNV21(const uint8_t* src_abgr,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
 
     for (y = 0; y < height - 1; y += 2) {
@@ -1230,6 +1234,7 @@ int ARGBToYUY2(const uint8_t* src_argb,
   {
     // Allocate a rows of yuv.
     align_buffer_64(row_y, ((width + 63) & ~63) * 2);
+    if (!row_y) return 1;
     uint8_t* row_u = row_y + ((width + 63) & ~63);
     uint8_t* row_v = row_u + ((width + 63) & ~63) / 2;
 
@@ -1424,6 +1429,7 @@ int ARGBToUYVY(const uint8_t* src_argb,
   {
     // Allocate a rows of yuv.
     align_buffer_64(row_y, ((width + 63) & ~63) * 2);
+    if (!row_y) return 1;
     uint8_t* row_u = row_y + ((width + 63) & ~63);
     uint8_t* row_v = row_u + ((width + 63) & ~63) / 2;
 
@@ -3274,11 +3280,13 @@ int RAWToJNV21(const uint8_t* src_raw,
   {
     // Allocate a row of uv.
     align_buffer_64(row_uj, ((halfwidth + 31) & ~31) * 2);
+    if (!row_uj) return 1;
     uint8_t* row_vj = row_uj + ((halfwidth + 31) & ~31);
 #if !defined(HAS_RAWTOYJROW)
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
+    if (!row) return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
