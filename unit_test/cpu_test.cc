@@ -185,7 +185,7 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
   printf("__pnacl__ %d\n", __pnacl__);
 #endif
 #ifdef GG_LONGLONG
-  printf("GG_LONGLONG %d\n", GG_LONGLONG);
+  printf("GG_LONGLONG %lld\n", GG_LONGLONG(1));
 #endif
 #ifdef INT_TYPES_DEFINED
   printf("INT_TYPES_DEFINED\n");
