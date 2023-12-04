@@ -204,7 +204,8 @@ static int ScaleUVDown4Box(int src_width,
   // Allocate 2 rows of UV.
   const int row_size = (dst_width * 2 * 2 + 15) & ~15;
   align_buffer_64(row, row_size * 2);
-  if (!row) return 1;
+  if (!row)
+    return 1;
   int row_stride = src_stride * (dy >> 16);
   void (*ScaleUVRowDown2)(const uint8_t* src_uv, ptrdiff_t src_stride,
                           uint8_t* dst_uv, int dst_width) =
@@ -448,10 +449,10 @@ static int ScaleUVBilinearDown(int src_width,
   // TODO(fbarchard): Consider not allocating row buffer for kFilterLinear.
   // Allocate a row of UV.
   {
-    align_buffer_64(row, clip_src_width * 2);
-    if (!row) return 1;
-
     const int max_y = (src_height - 1) << 16;
+    align_buffer_64(row, clip_src_width * 2);
+    if (!row)
+      return 1;
     if (y > max_y) {
       y = max_y;
     }
@@ -610,7 +611,8 @@ static int ScaleUVBilinearUp(int src_width,
     // Allocate 2 rows of UV.
     const int row_size = (dst_width * 2 + 15) & ~15;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 
     uint8_t* rowptr = row;
     int rowstride = row_size;

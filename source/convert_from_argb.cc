@@ -462,8 +462,9 @@ int ARGBToNV12(const uint8_t* src_argb,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
-    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
+    if (!row_u)
+      return 1;
 
     for (y = 0; y < height - 1; y += 2) {
       ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
@@ -661,8 +662,9 @@ int ARGBToNV21(const uint8_t* src_argb,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
-    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
+    if (!row_u)
+      return 1;
 
     for (y = 0; y < height - 1; y += 2) {
       ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
@@ -847,8 +849,9 @@ int ABGRToNV12(const uint8_t* src_abgr,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
-    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
+    if (!row_u)
+      return 1;
 
     for (y = 0; y < height - 1; y += 2) {
       ABGRToUVRow(src_abgr, src_stride_abgr, row_u, row_v, width);
@@ -1034,8 +1037,9 @@ int ABGRToNV21(const uint8_t* src_abgr,
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
-    if (!row_u) return 1;
     uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
+    if (!row_u)
+      return 1;
 
     for (y = 0; y < height - 1; y += 2) {
       ABGRToUVRow(src_abgr, src_stride_abgr, row_u, row_v, width);
@@ -1234,9 +1238,10 @@ int ARGBToYUY2(const uint8_t* src_argb,
   {
     // Allocate a rows of yuv.
     align_buffer_64(row_y, ((width + 63) & ~63) * 2);
-    if (!row_y) return 1;
     uint8_t* row_u = row_y + ((width + 63) & ~63);
     uint8_t* row_v = row_u + ((width + 63) & ~63) / 2;
+    if (!row_y)
+      return 1;
 
     for (y = 0; y < height; ++y) {
       ARGBToUVRow(src_argb, 0, row_u, row_v, width);
@@ -1429,9 +1434,10 @@ int ARGBToUYVY(const uint8_t* src_argb,
   {
     // Allocate a rows of yuv.
     align_buffer_64(row_y, ((width + 63) & ~63) * 2);
-    if (!row_y) return 1;
     uint8_t* row_u = row_y + ((width + 63) & ~63);
     uint8_t* row_v = row_u + ((width + 63) & ~63) / 2;
+    if (!row_y)
+      return 1;
 
     for (y = 0; y < height; ++y) {
       ARGBToUVRow(src_argb, 0, row_u, row_v, width);
@@ -3278,16 +3284,21 @@ int RAWToJNV21(const uint8_t* src_raw,
   }
 #endif
   {
+#if defined(HAS_RAWTOYJROW)
     // Allocate a row of uv.
-    align_buffer_64(row_uj, ((halfwidth + 31) & ~31) * 2);
-    if (!row_uj) return 1;
-    uint8_t* row_vj = row_uj + ((halfwidth + 31) & ~31);
-#if !defined(HAS_RAWTOYJROW)
-    // Allocate 2 rows of ARGB.
-    const int row_size = (width * 4 + 31) & ~31;
-    align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    const int row_uv_size = ((halfwidth + 31) & ~31);
+    align_buffer_64(row_uj, row_uv_size * 2);
+    uint8_t* row_vj = row_uj + row_uv_size;
+#else
+    // Allocate row of uv and 2 rows of ARGB.
+    const int row_size = ((width * 4 + 31) & ~31);
+    const int row_uv_size = ((halfwidth + 31) & ~31);
+    align_buffer_64(row_uj, row_uv_size * 2 + row_size * 2);
+    uint8_t* row_vj = row_uj + row_uv_size;
+    uint8_t* row = row_vj + row_uv_size;
 #endif
+    if (!row_uj)
+      return 1;
 
     for (y = 0; y < height - 1; y += 2) {
 #if defined(HAS_RAWTOYJROW)
@@ -3319,9 +3330,6 @@ int RAWToJNV21(const uint8_t* src_raw,
       ARGBToYJRow(row, dst_y, width);
 #endif
     }
-#if !defined(HAS_RAWTOYJROW)
-    free_aligned_buffer_64(row);
-#endif
     free_aligned_buffer_64(row_uj);
   }
   return 0;

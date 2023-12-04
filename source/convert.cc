@@ -790,8 +790,9 @@ int I422ToNV21(const uint8_t* src_y,
 
   // Allocate u and v buffers
   align_buffer_64(plane_u, halfwidth * halfheight * 2);
-  if (!plane_u) return 1;
   uint8_t* plane_v = plane_u + halfwidth * halfheight;
+  if (!plane_u)
+    return 1;
 
   I422ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
              dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth, width,
@@ -907,7 +908,8 @@ int MT2TToP010(const uint8_t* src_y,
     void (*UnpackMT2T)(const uint8_t* src, uint16_t* dst, size_t size) =
         UnpackMT2T_C;
     align_buffer_64(row_buf, row_buf_size);
-    if (!row_buf) return 1;
+    if (!row_buf)
+      return 1;
 
 #if defined(HAS_UNPACKMT2T_NEON)
     if (TestCpuFlag(kCpuHasNEON)) {
@@ -1107,8 +1109,9 @@ int I422ToNV21(const uint8_t* src_y,
     // Allocate 2 rows of vu.
     int awidth = halfwidth * 2;
     align_buffer_64(row_vu_0, awidth * 2);
-    if (!row_vu_0) return 1;
     uint8_t* row_vu_1 = row_vu_0 + awidth;
+    if (!row_vu_0)
+      return 1;
 
     for (y = 0; y < height - 1; y += 2) {
       MergeUVRow(src_v, src_u, row_vu_0, halfwidth);
@@ -2693,7 +2696,8 @@ int RGB24ToI420(const uint8_t* src_rgb24,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
@@ -2870,7 +2874,8 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
@@ -3050,7 +3055,8 @@ int RAWToI420(const uint8_t* src_raw,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
@@ -3227,7 +3233,8 @@ int RAWToJ420(const uint8_t* src_raw,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
@@ -3406,7 +3413,8 @@ int RGB565ToI420(const uint8_t* src_rgb565,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
     for (y = 0; y < height - 1; y += 2) {
 #if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || \
@@ -3587,7 +3595,8 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
@@ -3801,7 +3810,8 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
     // Allocate 2 rows of ARGB.
     const int row_size = (width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 #endif
 
     for (y = 0; y < height - 1; y += 2) {

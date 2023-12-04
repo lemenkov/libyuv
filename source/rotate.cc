@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
+
 #include "libyuv/rotate.h"
 
 #include "libyuv/convert.h"
@@ -140,7 +142,9 @@ void RotatePlane180(const uint8_t* src,
                     int height) {
   // Swap top and bottom row and mirror the content. Uses a temporary row.
   align_buffer_64(row, width);
-  if (!row) return;
+  assert(row);
+  if (!row)
+    return;
   const uint8_t* src_bot = src + src_stride * (height - 1);
   uint8_t* dst_bot = dst + dst_stride * (height - 1);
   int half_height = (height + 1) >> 1;
@@ -544,20 +548,23 @@ static void RotatePlane180_16(const uint16_t* src,
                               int dst_stride,
                               int width,
                               int height) {
-  // Swap top and bottom row and mirror the content. Uses a temporary row.
-  align_buffer_64(row, width * 2);
-  if (!row) return;
-  uint16_t* row_bot = (uint16_t*) row;
   const uint16_t* src_bot = src + src_stride * (height - 1);
   uint16_t* dst_bot = dst + dst_stride * (height - 1);
   int half_height = (height + 1) >> 1;
   int y;
 
+  // Swap top and bottom row and mirror the content. Uses a temporary row.
+  align_buffer_64(row, width * 2);
+  uint16_t* row_tmp = (uint16_t*)row;
+  assert(row);
+  if (!row)
+    return;
+
   // Odd height will harmlessly mirror the middle row twice.
   for (y = 0; y < half_height; ++y) {
-    CopyRow_16_C(src, row_bot, width);        // Copy top row into buffer
-    MirrorRow_16_C(src_bot, dst, width);  // Mirror bottom row into top row
-    MirrorRow_16_C(row_bot, dst_bot, width);  // Mirror buffer into bottom row
+    CopyRow_16_C(src, row_tmp, width);        // Copy top row into buffer
+    MirrorRow_16_C(src_bot, dst, width);      // Mirror bottom row into top row
+    MirrorRow_16_C(row_tmp, dst_bot, width);  // Mirror buffer into bottom row
     src += src_stride;
     dst += dst_stride;
     src_bot -= src_stride;

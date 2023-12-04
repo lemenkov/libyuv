@@ -170,7 +170,8 @@ static int ScaleARGBDown4Box(int src_width,
   // but implemented via a 2 pass wrapper that uses a very small array on the
   // stack with a horizontal loop.
   align_buffer_64(row, row_size * 2);
-  if (!row) return 1;
+  if (!row)
+    return 1;
   int row_stride = src_stride * (dy >> 16);
   void (*ScaleARGBRowDown2)(const uint8_t* src_argb, ptrdiff_t src_stride,
                             uint8_t* dst_argb, int dst_width) =
@@ -412,7 +413,8 @@ static int ScaleARGBBilinearDown(int src_width,
   // Allocate a row of ARGB.
   {
     align_buffer_64(row, clip_src_width * 4);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 
     const int max_y = (src_height - 1) << 16;
     if (y > max_y) {
@@ -588,7 +590,8 @@ static int ScaleARGBBilinearUp(int src_width,
     // Allocate 2 rows of ARGB.
     const int row_size = (dst_width * 4 + 31) & ~31;
     align_buffer_64(row, row_size * 2);
-    if (!row) return 1;
+    if (!row)
+      return 1;
 
     uint8_t* rowptr = row;
     int rowstride = row_size;
@@ -855,21 +858,17 @@ static int ScaleYUVToARGBBilinearUp(int src_width,
   const uint8_t* src_row_u = src_u + uv_yi * (intptr_t)src_stride_u;
   const uint8_t* src_row_v = src_v + uv_yi * (intptr_t)src_stride_v;
 
-  // Allocate 2 rows of ARGB.
+  // Allocate 1 row of ARGB for source conversion and 2 rows of ARGB
+  // scaled horizontally to the destination width.
   const int row_size = (dst_width * 4 + 31) & ~31;
-  align_buffer_64(row, row_size * 2);
-  if (!row) return 1;
+  align_buffer_64(row, row_size * 2 + src_width * 4);
 
-  // Allocate 1 row of ARGB for source conversion.
-  align_buffer_64(argb_row, src_width * 4);
-  if (!argb_row) {
-    free_aligned_buffer_64(row);
-    return 1;
-  }
-
+  uint8_t* argb_row = row + row_size * 2;
   uint8_t* rowptr = row;
   int rowstride = row_size;
   int lasty = yi;
+  if (!row)
+    return 1;
 
   // TODO(fbarchard): Convert first 2 rows of YUV to ARGB.
   ScaleARGBFilterCols(rowptr, src_row_y, dst_width, x, dx);
@@ -924,7 +923,6 @@ static int ScaleYUVToARGBBilinearUp(int src_width,
     y += dy;
   }
   free_aligned_buffer_64(row);
-  free_aligned_buffer_64(row_argb);
   return 0;
 }
 #endif
