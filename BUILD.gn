@@ -81,11 +81,11 @@ group("libyuv") {
   }
 
   if (libyuv_use_lsx) {
-    deps += [ ":libyuv_lsx"]
+    deps += [ ":libyuv_lsx" ]
   }
 
   if (libyuv_use_lasx) {
-    deps += [ ":libyuv_lasx"]
+    deps += [ ":libyuv_lasx" ]
   }
 
   if (!is_ios && !libyuv_disable_jpeg) {
@@ -254,8 +254,8 @@ if (libyuv_use_lsx) {
   static_library("libyuv_lsx") {
     sources = [
       # LSX Source Files
-      "source/row_lsx.cc",
       "source/rotate_lsx.cc",
+      "source/row_lsx.cc",
       "source/scale_lsx.cc",
     ]
 
@@ -315,6 +315,7 @@ if (libyuv_include_tests) {
       "unit_test/basictypes_test.cc",
       "unit_test/color_test.cc",
       "unit_test/compare_test.cc",
+      "unit_test/convert_argb_test.cc",
       "unit_test/convert_test.cc",
       "unit_test/cpu_test.cc",
       "unit_test/cpu_thread_test.cc",
