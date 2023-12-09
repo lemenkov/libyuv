@@ -99,6 +99,7 @@ LOCAL_SRC_FILES := \
     unit_test/rotate_argb_test.cc   \
     unit_test/rotate_test.cc        \
     unit_test/scale_argb_test.cc    \
+    unit_test/scale_plane_test.cc   \
     unit_test/scale_rgb_test.cc     \
     unit_test/scale_test.cc         \
     unit_test/scale_uv_test.cc      \

@@ -31,6 +31,13 @@
 #include "libyuv/row.h" /* For ARGBToAR30Row_AVX2 */
 #endif
 
+#if defined(__riscv) && !defined(__clang__)
+#define DISABLE_SLOW_TESTS
+#undef ENABLE_FULL_TESTS
+#undef ENABLE_ROW_TESTS
+#define LEAN_TESTS
+#endif
+
 // Some functions fail on big endian. Enable these tests on all cpus except
 // PowerPC, but they are not optimized so disabled by default.
 #if !defined(DISABLE_SLOW_TESTS) && !defined(__powerpc__)
@@ -783,6 +790,8 @@ TESTATOBP(YUY2, 2, 4, NV12, 2, 2)
 TESTATOBP(UYVY, 2, 4, NV12, 2, 2)
 TESTATOBP(AYUV, 1, 4, NV12, 2, 2)
 TESTATOBP(AYUV, 1, 4, NV21, 2, 2)
+
+#if !defined(LEAN_TESTS)
 
 #ifdef HAVE_JPEG
 TEST_F(LibYUVConvertTest, ValidateJpeg) {
@@ -2056,5 +2065,7 @@ TEST_F(LibYUVConvertTest, TestRGB24ToI420) {
   free_aligned_buffer_page_end(dest_i420);
 }
 #endif
+
+#endif  // !defined(LEAN_TESTS)
 
 }  // namespace libyuv
