@@ -147,6 +147,7 @@ namespace libyuv {
     free_aligned_buffer_page_end(src_v);                                      \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 #define TESTPLANARTOP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,           \
                       SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,               \
                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)                 \
@@ -162,6 +163,14 @@ namespace libyuv {
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
                  benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+#else
+#define TESTPLANARTOP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,           \
+                      SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,               \
+                      DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)                 \
+  TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
+                 FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
+                 benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+#endif
 
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOP(I422, uint8_t, 1, 2, 1, I420, uint8_t, 1, 2, 2, 8)
@@ -285,6 +294,7 @@ TESTPLANARTOP(I412, uint16_t, 2, 1, 1, I444, uint8_t, 1, 1, 1, 12)
     free_aligned_buffer_page_end(src_uv);                                     \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 #define TESTAPLANARTOP(SRC_FMT_PLANAR, PN, PIXEL_STRIDE, OFF_U, OFF_V,         \
                        SRC_SUBSAMP_X, SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X,    \
                        SUBSAMP_Y)                                              \
@@ -300,6 +310,14 @@ TESTPLANARTOP(I412, uint16_t, 2, 1, 1, I444, uint8_t, 1, 1, 1, 12)
   TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,  \
                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, benchmark_width_, _Opt, +, \
                   0, PN, OFF_U, OFF_V)
+#else
+#define TESTAPLANARTOP(SRC_FMT_PLANAR, PN, PIXEL_STRIDE, OFF_U, OFF_V,         \
+                       SRC_SUBSAMP_X, SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X,    \
+                       SUBSAMP_Y)                                              \
+  TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,  \
+                  FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, benchmark_width_, _Opt, +, \
+                  0, PN, OFF_U, OFF_V)
+#endif
 
 TESTAPLANARTOP(Android420, I420, 1, 0, 0, 2, 2, I420, 2, 2)
 TESTAPLANARTOP(Android420, NV12, 2, 0, 1, 2, 2, I420, 2, 2)
@@ -402,6 +420,7 @@ int I400ToNV21(const uint8_t* src_y,
     free_aligned_buffer_page_end(src_v);                                      \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 #define TESTPLANARTOBP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,         \
                        SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,             \
                        DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)               \
@@ -418,6 +437,14 @@ int I400ToNV21(const uint8_t* src_y,
   TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,              \
                   SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X,   \
                   DST_SUBSAMP_Y, benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+#else
+#define TESTPLANARTOBP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,         \
+                       SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,             \
+                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)               \
+  TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,              \
+                  SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X,   \
+                  DST_SUBSAMP_Y, benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+#endif
 
 TESTPLANARTOBP(I420, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOBP(I420, uint8_t, 1, 2, 2, NV21, uint8_t, 1, 2, 2, 8)
@@ -519,6 +546,7 @@ TESTPLANARTOBP(I212, uint16_t, 2, 2, 1, P212, uint16_t, 2, 2, 1, 12)
     free_aligned_buffer_page_end(src_uv);                                     \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 #define TESTBPTOBP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,            \
                    SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, \
                    DST_SUBSAMP_Y, SRC_DEPTH, TILE_WIDTH, TILE_HEIGHT)        \
@@ -542,6 +570,15 @@ TESTPLANARTOBP(I212, uint16_t, 2, 2, 1, P212, uint16_t, 2, 2, 1, 12)
               FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,      \
               benchmark_width_, _NullY, +, 0, 0, SRC_DEPTH, TILE_WIDTH,      \
               TILE_HEIGHT)
+#else
+#define TESTBPTOBP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,            \
+                   SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, \
+                   DST_SUBSAMP_Y, SRC_DEPTH, TILE_WIDTH, TILE_HEIGHT)        \
+  TESTBPTOBPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,  \
+              FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,      \
+              benchmark_width_, _NullY, +, 0, 0, SRC_DEPTH, TILE_WIDTH,      \
+              TILE_HEIGHT)
+#endif
 
 TESTBPTOBP(NV21, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(NV12, uint8_t, 1, 2, 2, NV12Mirror, uint8_t, 1, 2, 2, 8, 1, 1)
@@ -616,8 +653,6 @@ TESTBPTOBP(MT2T, uint8_t, 10 / 8, 2, 2, P010, uint16_t, 2, 2, 2, 10, 16, 32)
                  benchmark_width_, _Opt, +, 0)
 #else
 #define TESTATOPLANAR(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y) \
-  TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
-                 benchmark_width_ + 1, _Any, +, 0)                            \
   TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
                  benchmark_width_, _Opt, +, 0)
 #endif
@@ -717,8 +752,6 @@ TESTATOPLANAR(YUY2, 2, 1, I422, 2, 1)
 #else
 #define TESTATOPLANARA(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y) \
   TESTATOPLANARAI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
-                  benchmark_width_ + 1, _Any, +, 0)                            \
-  TESTATOPLANARAI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
                   benchmark_width_, _Opt, +, 0)
 #endif
 
@@ -771,6 +804,7 @@ TESTATOPLANARA(ARGB, 4, 1, I420Alpha, 2, 2)
     free_aligned_buffer_page_end(src_argb);                                   \
   }
 
+#if defined(ENABLE_FULL_TESTS)
 #define TESTATOBP(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y) \
   TESTATOBPI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
              benchmark_width_ + 1, _Any, +, 0)                           \
@@ -780,6 +814,11 @@ TESTATOPLANARA(ARGB, 4, 1, I420Alpha, 2, 2)
              benchmark_width_, _Invert, -, 0)                            \
   TESTATOBPI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
              benchmark_width_, _Opt, +, 0)
+#else
+#define TESTATOBP(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y) \
+  TESTATOBPI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
+             benchmark_width_, _Opt, +, 0)
+#endif
 
 TESTATOBP(ARGB, 1, 4, NV12, 2, 2)
 TESTATOBP(ARGB, 1, 4, NV21, 2, 2)
