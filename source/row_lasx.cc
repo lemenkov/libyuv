@@ -543,8 +543,7 @@ void I422ToARGB4444Row_LASX(const uint8_t* src_y,
   __m256i vec_yb, vec_yg, vec_ub, vec_vr, vec_ug, vec_vg;
   __m256i vec_ubvr, vec_ugvg;
   __m256i const_0x80 = __lasx_xvldi(0x80);
-  __m256i alpha = {0xF000F000F000F000, 0xF000F000F000F000, 0xF000F000F000F000,
-                   0xF000F000F000F000};
+  __m256i alpha = (__m256i)v4u64{0xF000F000F000F000, 0xF000F000F000F000,	                        0xF000F000F000F000, 0xF000F000F000F000};
   __m256i mask = {0x00F000F000F000F0, 0x00F000F000F000F0, 0x00F000F000F000F0,
                   0x00F000F000F000F0};
 
@@ -595,8 +594,8 @@ void I422ToARGB1555Row_LASX(const uint8_t* src_y,
   __m256i vec_yb, vec_yg, vec_ub, vec_vr, vec_ug, vec_vg;
   __m256i vec_ubvr, vec_ugvg;
   __m256i const_0x80 = __lasx_xvldi(0x80);
-  __m256i alpha = {0x8000800080008000, 0x8000800080008000, 0x8000800080008000,
-                   0x8000800080008000};
+  __m256i alpha = (__m256i)v4u64{0x8000800080008000, 0x8000800080008000,
+                   0x8000800080008000, 0x8000800080008000};
 
   YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug, vec_vg, vec_yg, vec_yb);
   vec_ubvr = __lasx_xvilvl_h(vec_ub, vec_vr);
@@ -799,7 +798,7 @@ void ARGBToUVRow_LASX(const uint8_t* src_argb0,
                         0x0009000900090009, 0x0009000900090009};
   __m256i control = {0x0000000400000000, 0x0000000500000001, 0x0000000600000002,
                      0x0000000700000003};
-  __m256i const_0x8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_0x8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                           0x8080808080808080, 0x8080808080808080};
 
   for (x = 0; x < len; x++) {
@@ -1037,7 +1036,7 @@ void ARGBToUV444Row_LASX(const uint8_t* src_argb,
   __m256i const_38 = __lasx_xvldi(38);
   __m256i const_94 = __lasx_xvldi(94);
   __m256i const_18 = __lasx_xvldi(18);
-  __m256i const_0x8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_0x8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                           0x8080808080808080, 0x8080808080808080};
   __m256i control = {0x0000000400000000, 0x0000000500000001, 0x0000000600000002,
                      0x0000000700000003};
@@ -1609,7 +1608,7 @@ void ARGB1555ToUVRow_LASX(const uint8_t* src_argb1555,
   __m256i const_38 = __lasx_xvldi(0x413);
   __m256i const_94 = __lasx_xvldi(0x42F);
   __m256i const_18 = __lasx_xvldi(0x409);
-  __m256i const_8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                         0x8080808080808080, 0x8080808080808080};
 
   for (x = 0; x < len; x++) {
@@ -1726,7 +1725,7 @@ void RGB565ToUVRow_LASX(const uint8_t* src_rgb565,
   __m256i const_38 = __lasx_xvldi(0x413);
   __m256i const_94 = __lasx_xvldi(0x42F);
   __m256i const_18 = __lasx_xvldi(0x409);
-  __m256i const_8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                         0x8080808080808080, 0x8080808080808080};
 
   for (x = 0; x < len; x++) {
@@ -1793,7 +1792,7 @@ void RGB24ToUVRow_LASX(const uint8_t* src_rgb24,
   __m256i const_38 = __lasx_xvldi(0x413);
   __m256i const_94 = __lasx_xvldi(0x42F);
   __m256i const_18 = __lasx_xvldi(0x409);
-  __m256i const_8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                         0x8080808080808080, 0x8080808080808080};
   __m256i shuff0_b = {0x15120F0C09060300, 0x00000000001E1B18,
                       0x15120F0C09060300, 0x00000000001E1B18};
@@ -1856,7 +1855,7 @@ void RAWToUVRow_LASX(const uint8_t* src_raw,
   __m256i const_38 = __lasx_xvldi(0x413);
   __m256i const_94 = __lasx_xvldi(0x42F);
   __m256i const_18 = __lasx_xvldi(0x409);
-  __m256i const_8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                         0x8080808080808080, 0x8080808080808080};
   __m256i shuff0_r = {0x15120F0C09060300, 0x00000000001E1B18,
                       0x15120F0C09060300, 0x00000000001E1B18};
@@ -2242,7 +2241,7 @@ void ARGBToUVJRow_LASX(const uint8_t* src_argb,
   __m256i const_21 = __lasx_xvldi(0x415);
   __m256i const_53 = __lasx_xvldi(0x435);
   __m256i const_10 = __lasx_xvldi(0x40A);
-  __m256i const_8080 = {0x8080808080808080, 0x8080808080808080,
+  __m256i const_8080 = (__m256i)v4u64{0x8080808080808080, 0x8080808080808080,
                         0x8080808080808080, 0x8080808080808080};
   __m256i shuff = {0x1614060412100200, 0x1E1C0E0C1A180A08, 0x1715070513110301,
                    0x1F1D0F0D1B190B09};
