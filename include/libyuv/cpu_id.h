@@ -31,7 +31,7 @@ static const int kCpuHasX86 = 0x10;
 static const int kCpuHasSSE2 = 0x20;
 static const int kCpuHasSSSE3 = 0x40;
 static const int kCpuHasSSE41 = 0x80;
-static const int kCpuHasSSE42 = 0x100;  // unused at this time.
+static const int kCpuHasSSE42 = 0x100;
 static const int kCpuHasAVX = 0x200;
 static const int kCpuHasAVX2 = 0x400;
 static const int kCpuHasERMS = 0x800;
@@ -43,7 +43,7 @@ static const int kCpuHasAVX512VNNI = 0x10000;
 static const int kCpuHasAVX512VBMI = 0x20000;
 static const int kCpuHasAVX512VBMI2 = 0x40000;
 static const int kCpuHasAVX512VBITALG = 0x80000;
-static const int kCpuHasAVX512VPOPCNTDQ = 0x100000;
+static const int kCpuHasAVX10 = 0x100000;
 static const int kCpuHasAVXVNNI = 0x200000;
 static const int kCpuHasAVXVNNIINT8 = 0x400000;
 

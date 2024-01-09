@@ -438,11 +438,11 @@ int I400ToNV21(const uint8_t* src_y,
                   SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X,   \
                   DST_SUBSAMP_Y, benchmark_width_, _Opt, +, 0, SRC_DEPTH)
 #else
-#define TESTPLANARTOBP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,         \
-                       SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,             \
-                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)               \
-  TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,              \
-                  SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X,   \
+#define TESTPLANARTOBP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,       \
+                       SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,           \
+                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)             \
+  TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,            \
+                  SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, \
                   DST_SUBSAMP_Y, benchmark_width_, _Opt, +, 0, SRC_DEPTH)
 #endif
 

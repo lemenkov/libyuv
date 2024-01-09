@@ -783,7 +783,6 @@ TESTATOA(AB64, uint16_t, 4, 4, 1, ABGR, uint8_t, 4, 4, 1)
 TESTATOA(AR64, uint16_t, 4, 4, 1, AB64, uint16_t, 4, 4, 1)
 TESTATOA(AB64, uint16_t, 4, 4, 1, AR64, uint16_t, 4, 4, 1)
 
-
 #define TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A, FMT_B, BPP_B, STRIDE_B, \
                    HEIGHT_B, W1280, N, NEG, OFF)                             \
   TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##Dither##N) {                   \
