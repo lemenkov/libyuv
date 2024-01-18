@@ -12,10 +12,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __linux__
+#include <ctype.h>
+#include <sys/utsname.h>
+#endif
+
 #include "libyuv/cpu_id.h"
 
 #ifdef __cplusplus
 using namespace libyuv;
+#endif
+
+#ifdef __linux__
+static void KernelVersion(int *version) {
+  struct utsname buffer;
+  int i = 0;
+
+  version[0] = version[1] = 0;
+  if (uname(&buffer) == 0) {
+    char *v = buffer.release;
+    for (i = 0; *v && i < 2; ++v) {
+      if (isdigit(*v)) {
+        version[i++] = (int) strtol(v, &v, 10);
+      }
+    }
+  }
+}
 #endif
 
 int main(int argc, const char* argv[]) {
@@ -28,6 +50,13 @@ int main(int argc, const char* argv[]) {
   (void)argc;
   (void)argv;
 
+#ifdef __linux__
+  {
+    int kernelversion[2];
+    KernelVersion(kernelversion);
+    printf("Kernel Version %d.%d\n", kernelversion[0], kernelversion[1]);
+  }
+#endif
 #if defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64)
   if (has_x86) {

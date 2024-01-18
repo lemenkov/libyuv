@@ -55,7 +55,9 @@ static int I4xxToI420(const uint8_t* src_y,
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
   int r;
-  if (src_uv_width <= 0 || src_uv_height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v ||
+      src_y_width <= 0 || src_y_height == 0 || src_uv_width <= 0 ||
+      src_uv_height == 0) {
     return -1;
   }
   if (dst_y) {
