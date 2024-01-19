@@ -2682,18 +2682,46 @@ TEST_F(LibYUVConvertTest, TestARGBToRGB24) {
   free_aligned_buffer_page_end(dest_rgb24);
 }
 
-TEST_F(LibYUVConvertTest, Test565) {
+TEST_F(LibYUVConvertTest, TestARGBToRGB565) {
   SIMD_ALIGNED(uint8_t orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8_t pixels565[256][2]);
+  SIMD_ALIGNED(uint8_t dest_rgb565[256][2]);
 
   for (int i = 0; i < 256; ++i) {
     for (int j = 0; j < 4; ++j) {
       orig_pixels[i][j] = i;
     }
   }
-  ARGBToRGB565(&orig_pixels[0][0], 0, &pixels565[0][0], 0, 256, 1);
-  uint32_t checksum = HashDjb2(&pixels565[0][0], sizeof(pixels565), 5381);
+  ARGBToRGB565(&orig_pixels[0][0], 0, &dest_rgb565[0][0], 0, 256, 1);
+  uint32_t checksum = HashDjb2(&dest_rgb565[0][0], sizeof(dest_rgb565), 5381);
   EXPECT_EQ(610919429u, checksum);
+}
+
+TEST_F(LibYUVConvertTest, TestYUY2ToARGB) {
+  SIMD_ALIGNED(uint8_t orig_pixels[256][2]);
+  SIMD_ALIGNED(uint8_t dest_argb[256][4]);
+
+  for (int i = 0; i < 256; ++i) {
+    for (int j = 0; j < 2; ++j) {
+      orig_pixels[i][j] = i;
+    }
+  }
+  YUY2ToARGB(&orig_pixels[0][0], 0, &dest_argb[0][0], 0, 256, 1);
+  uint32_t checksum = HashDjb2(&dest_argb[0][0], sizeof(dest_argb), 5381);
+  EXPECT_EQ(3486643515u, checksum);
+}
+
+TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
+  SIMD_ALIGNED(uint8_t orig_pixels[256][2]);
+  SIMD_ALIGNED(uint8_t dest_argb[256][4]);
+
+  for (int i = 0; i < 256; ++i) {
+    for (int j = 0; j < 2; ++j) {
+      orig_pixels[i][j] = i;
+    }
+  }
+  UYVYToARGB(&orig_pixels[0][0], 0, &dest_argb[0][0], 0, 256, 1);
+  uint32_t checksum = HashDjb2(&dest_argb[0][0], sizeof(dest_argb), 5381);
+  EXPECT_EQ(3486643515u, checksum);
 }
 #endif  // !defined(LEAN_TESTS)
 
