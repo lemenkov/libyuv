@@ -1199,29 +1199,37 @@ void ScaleARGBRowDown2Box_NEON(const uint8_t* src_ptr,
       : "memory", "cc", "v0", "v1", "v2", "v3", "v16", "v17", "v18", "v19");
 }
 
-// Reads 4 pixels at a time.
-// Alignment requirement: src_argb 4 byte aligned.
 void ScaleARGBRowDownEven_NEON(const uint8_t* src_argb,
                                ptrdiff_t src_stride,
                                int src_stepx,
                                uint8_t* dst_argb,
                                int dst_width) {
+  const uint8_t* src_argb1 = src_argb + src_stepx * 4;
+  const uint8_t* src_argb2 = src_argb + src_stepx * 8;
+  const uint8_t* src_argb3 = src_argb + src_stepx * 12;
+  int64_t i = 0;
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
-      "ld1         {v0.s}[0], [%0], %3           \n"
-      "ld1         {v0.s}[1], [%0], %3           \n"
-      "ld1         {v0.s}[2], [%0], %3           \n"
-      "ld1         {v0.s}[3], [%0], %3           \n"
-      "subs        %w2, %w2, #4                  \n"  // 4 pixels per loop.
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "st1         {v0.16b}, [%1], #16           \n"
-      "b.gt        1b                            \n"
-      : "+r"(src_argb),                // %0
-        "+r"(dst_argb),                // %1
-        "+r"(dst_width)                // %2
-      : "r"((int64_t)(src_stepx * 4))  // %3
-      : "memory", "cc", "v0");
+      "1:                                     \n"
+      "ldr      w10, [%[src], %[i]]           \n"
+      "ldr      w11, [%[src1], %[i]]          \n"
+      "ldr      w12, [%[src2], %[i]]          \n"
+      "ldr      w13, [%[src3], %[i]]          \n"
+      "add      %[i], %[i], %[step]           \n"
+      "subs     %w[width], %w[width], #4      \n"
+      "prfm     pldl1keep, [%[src], 448]      \n"
+      "stp      w10, w11, [%[dst]], #8        \n"
+      "stp      w12, w13, [%[dst]], #8        \n"
+      "b.gt     1b                            \n"
+      : [src]"+r"(src_argb),
+        [src1]"+r"(src_argb1),
+        [src2]"+r"(src_argb2),
+        [src3]"+r"(src_argb3),
+        [dst]"+r"(dst_argb),
+        [width]"+r"(dst_width),
+        [i]"+r"(i)
+      : [step]"r"((int64_t)(src_stepx * 16))
+      : "memory", "cc", "w10", "w11", "w12", "w13");
 }
 
 // Reads 4 pixels at a time.
