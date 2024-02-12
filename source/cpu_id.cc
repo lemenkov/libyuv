@@ -323,6 +323,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
       cpu_info |= (cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0;
       cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0;
       cpu_info |= (cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0;
+      cpu_info |= (cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0;
     }
   }
 #endif
