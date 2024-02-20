@@ -448,8 +448,8 @@ void J400ToARGBRow_NEON(const uint8_t* src_y, uint8_t* dst_argb, int width) {
       "1:                                        \n"
       "ld1         {v20.8b}, [%0], #8            \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "orr         v21.8b, v20.8b, v20.8b        \n"
-      "orr         v22.8b, v20.8b, v20.8b        \n"
+      "mov         v21.8b, v20.8b                \n"
+      "mov         v22.8b, v20.8b                \n"
       "subs        %w2, %w2, #8                  \n"
       "st4         {v20.8b,v21.8b,v22.8b,v23.8b}, [%1], #32 \n"
       "b.gt        1b                            \n"
@@ -1561,9 +1561,9 @@ void RAWToARGBRow_NEON(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
       "1:                                        \n"
       "ld3         {v0.8b,v1.8b,v2.8b}, [%0], #24 \n"  // read r g b
       "subs        %w2, %w2, #8                  \n"   // 8 processed per loop.
-      "orr         v3.8b, v1.8b, v1.8b           \n"   // move g
+      "mov         v3.8b, v1.8b                  \n"   // move g
       "prfm        pldl1keep, [%0, 448]          \n"
-      "orr         v4.8b, v0.8b, v0.8b           \n"         // move r
+      "mov         v4.8b, v0.8b                  \n"         // move r
       "st4         {v2.8b,v3.8b,v4.8b,v5.8b}, [%1], #32 \n"  // store b g r a
       "b.gt        1b                            \n"
       : "+r"(src_raw),   // %0
@@ -1580,9 +1580,9 @@ void RAWToRGBARow_NEON(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
       "1:                                        \n"
       "ld3         {v3.8b,v4.8b,v5.8b}, [%0], #24 \n"  // read r g b
       "subs        %w2, %w2, #8                  \n"   // 8 processed per loop.
-      "orr         v2.8b, v4.8b, v4.8b           \n"   // move g
+      "mov         v2.8b, v4.8b                  \n"   // move g
       "prfm        pldl1keep, [%0, 448]          \n"
-      "orr         v1.8b, v5.8b, v5.8b           \n"         // move r
+      "mov         v1.8b, v5.8b                  \n"         // move r
       "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%1], #32 \n"  // store a b g r
       "b.gt        1b                            \n"
       : "+r"(src_raw),   // %0
@@ -1598,9 +1598,9 @@ void RAWToRGB24Row_NEON(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
       "1:                                        \n"
       "ld3         {v0.8b,v1.8b,v2.8b}, [%0], #24 \n"  // read r g b
       "subs        %w2, %w2, #8                  \n"   // 8 processed per loop.
-      "orr         v3.8b, v1.8b, v1.8b           \n"   // move g
+      "mov         v3.8b, v1.8b                  \n"   // move g
       "prfm        pldl1keep, [%0, 448]          \n"
-      "orr         v4.8b, v0.8b, v0.8b           \n"   // move r
+      "mov         v4.8b, v0.8b                  \n"   // move r
       "st3         {v2.8b,v3.8b,v4.8b}, [%1], #24 \n"  // store b g r
       "b.gt        1b                            \n"
       : "+r"(src_raw),    // %0
@@ -1739,9 +1739,9 @@ void ARGBToRAWRow_NEON(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
       "1:                                        \n"
       "ld4         {v1.8b,v2.8b,v3.8b,v4.8b}, [%0], #32 \n"  // load b g r a
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
-      "orr         v4.8b, v2.8b, v2.8b           \n"  // mov g
+      "mov         v4.8b, v2.8b                  \n"  // mov g
       "prfm        pldl1keep, [%0, 448]          \n"
-      "orr         v5.8b, v1.8b, v1.8b           \n"   // mov b
+      "mov         v5.8b, v1.8b                  \n"   // mov b
       "st3         {v3.8b,v4.8b,v5.8b}, [%1], #24 \n"  // store r g b
       "b.gt        1b                            \n"
       : "+r"(src_argb),  // %0
@@ -1936,7 +1936,7 @@ void I422ToYUY2Row_NEON(const uint8_t* src_y,
       "1:                                        \n"
       "ld2         {v0.8b, v1.8b}, [%0], #16     \n"  // load 16 Ys
       "subs        %w4, %w4, #16                 \n"  // 16 pixels
-      "orr         v2.8b, v1.8b, v1.8b           \n"
+      "mov         v2.8b, v1.8b                  \n"
       "prfm        pldl1keep, [%0, 448]          \n"
       "ld1         {v1.8b}, [%1], #8             \n"         // load 8 Us
       "ld1         {v3.8b}, [%2], #8             \n"         // load 8 Vs
@@ -1959,7 +1959,7 @@ void I422ToUYVYRow_NEON(const uint8_t* src_y,
   asm volatile(
       "1:                                        \n"
       "ld2         {v1.8b,v2.8b}, [%0], #16      \n"  // load 16 Ys
-      "orr         v3.8b, v2.8b, v2.8b           \n"
+      "mov         v3.8b, v2.8b                  \n"
       "prfm        pldl1keep, [%0, 448]          \n"
       "ld1         {v0.8b}, [%1], #8             \n"         // load 8 Us
       "ld1         {v2.8b}, [%2], #8             \n"         // load 8 Vs
@@ -3666,8 +3666,8 @@ void ARGBGrayRow_NEON(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
       "umlal       v4.8h, v1.8b, v25.8b          \n"  // G
       "umlal       v4.8h, v2.8b, v26.8b          \n"  // R
       "uqrshrn     v0.8b, v4.8h, #8              \n"  // 16 bit to 8 bit B
-      "orr         v1.8b, v0.8b, v0.8b           \n"  // G
-      "orr         v2.8b, v0.8b, v0.8b           \n"  // R
+      "mov         v1.8b, v0.8b                  \n"  // G
+      "mov         v2.8b, v0.8b                  \n"  // R
       "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%1], #32 \n"  // store 8 pixels.
       "b.gt        1b                            \n"
       : "+r"(src_argb),  // %0
@@ -3879,9 +3879,9 @@ void SobelRow_NEON(const uint8_t* src_sobelx,
       "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
       "uqadd       v0.8b, v0.8b, v1.8b           \n"  // add
       "prfm        pldl1keep, [%0, 448]          \n"
-      "orr         v1.8b, v0.8b, v0.8b           \n"
+      "mov         v1.8b, v0.8b                  \n"
       "prfm        pldl1keep, [%1, 448]          \n"
-      "orr         v2.8b, v0.8b, v0.8b           \n"
+      "mov         v2.8b, v0.8b                  \n"
       "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32 \n"  // store 8 ARGB
       "b.gt        1b                            \n"
       : "+r"(src_sobelx),  // %0

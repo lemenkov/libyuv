@@ -163,7 +163,7 @@ void ScaleRowDown34_NEON(const uint8_t* src_ptr,
       "1:                                        \n"
       "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // src line 0
       "subs        %w2, %w2, #24                 \n"
-      "orr         v2.16b, v3.16b, v3.16b        \n"  // order v0,v1,v2
+      "mov         v2.16b, v3.16b                \n"  // order v0,v1,v2
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
       "st3         {v0.8b,v1.8b,v2.8b}, [%1], #24 \n"
       "b.gt        1b                            \n"

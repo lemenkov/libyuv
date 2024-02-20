@@ -3822,7 +3822,7 @@ void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
       "1:                                        \n"
       "vld2.8      {d0, d2}, [%0]!               \n"  // load 16 UV values
       "vld2.8      {d1, d3}, [%0]!               \n"
-      "vorr.u8     q2, q0, q0                    \n"  // move U after V
+      "vmov.u8     q2, q0                        \n"  // move U after V
       "subs        %2, %2, #16                   \n"  // 16 pixels per loop
       "vst2.8      {q1, q2}, [%1]!               \n"  // store 16 VU pixels
       "bgt         1b                            \n"
