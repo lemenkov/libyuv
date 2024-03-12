@@ -28,7 +28,7 @@ extern "C" {
 // Read 8 Y, 4 U and 4 V from 422
 #define READYUV422                               \
   "ldr        d0, [%[src_y]], #8             \n" \
-  "ld1        {v1.s}[0], [%[src_u]], #4      \n" \
+  "ldr        s1, [%[src_u]], #4             \n" \
   "ld1        {v1.s}[1], [%[src_v]], #4      \n" \
   "zip1       v0.16b, v0.16b, v0.16b         \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
@@ -39,7 +39,7 @@ extern "C" {
 // Read 8 Y, 8 U and 8 V from 444
 #define READYUV444                               \
   "ldr        d0, [%[src_y]], #8             \n" \
-  "ld1        {v1.d}[0], [%[src_u]], #8      \n" \
+  "ldr        d1, [%[src_u]], #8             \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
   "ld1        {v1.d}[1], [%[src_v]], #8      \n" \
   "prfm       pldl1keep, [%[src_u], 448]     \n" \
