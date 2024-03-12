@@ -55,8 +55,12 @@ extern "C" {
 
 static const uvec8 kNV12Table = {0, 0, 2, 2, 4, 4, 6, 6,
                                  1, 1, 3, 3, 5, 5, 7, 7};
+static const uvec8 kNV12InterleavedTable = {0, 0, 4, 4, 8,  8,  12, 12,
+                                            2, 2, 6, 6, 10, 10, 14, 14};
 static const uvec8 kNV21Table = {1, 1, 3, 3, 5, 5, 7, 7,
                                  0, 0, 2, 2, 4, 4, 6, 6};
+static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
+                                            3, 3, 7, 7, 11, 11, 15, 15};
 
 // Read 8 Y and 4 UV from NV12 or NV21
 #define READNV12                                 \
@@ -68,17 +72,17 @@ static const uvec8 kNV21Table = {1, 1, 3, 3, 5, 5, 7, 7,
   "prfm       pldl1keep, [%[src_uv], 448]    \n"
 
 // Read 8 YUY2
-#define READYUY2                                     \
-  "ld2        {v0.8b, v1.8b}, [%[src_yuy2]], #16 \n" \
-  "zip1       v0.16b, v0.16b, v0.16b         \n"     \
-  "prfm       pldl1keep, [%[src_yuy2], 448]  \n"     \
-  "tbl        v1.16b, {v1.16b}, v2.16b       \n"
+#define READYUY2                                 \
+  "ld1        {v3.16b}, [%[src_yuy2]], #16   \n" \
+  "trn1       v0.16b, v3.16b, v3.16b         \n" \
+  "prfm       pldl1keep, [%[src_yuy2], 448]  \n" \
+  "tbl        v1.16b, {v3.16b}, v2.16b       \n"
 
 // Read 8 UYVY
-#define READUYVY                                     \
-  "ld2        {v3.8b, v4.8b}, [%[src_uyvy]], #16 \n" \
-  "zip1       v0.16b, v4.16b, v4.16b         \n"     \
-  "prfm       pldl1keep, [%[src_uyvy], 448]  \n"     \
+#define READUYVY                                 \
+  "ld1        {v3.16b}, [%[src_uyvy]], #16   \n" \
+  "trn2       v0.16b, v3.16b, v3.16b         \n" \
+  "prfm       pldl1keep, [%[src_uyvy], 448]  \n" \
   "tbl        v1.16b, {v3.16b}, v2.16b       \n"
 
 // UB VR UG VG
@@ -569,18 +573,19 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "movi        v19.8b, #255                  \n"
-      "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READYUY2 YUVTORGB RGBTORGB8
-      "subs        %w[width], %w[width], #8      \n"
+      "movi        v19.8b, #255                   \n"
+      "ldr         q2, [%[kNV21InterleavedTable]] \n"
+      "1:                                         \n" READYUY2 YUVTORGB
+          RGBTORGB8
+      "subs        %w[width], %w[width], #8       \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
-      "b.gt        1b                            \n"
+      "b.gt        1b                             \n"
       : [src_yuy2] "+r"(src_yuy2),                          // %[src_yuy2]
         [dst_argb] "+r"(dst_argb),                          // %[dst_argb]
         [width] "+r"(width)                                 // %[width]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [kNV12Table] "r"(&kNV12Table)
+        [kNV21InterleavedTable] "r"(&kNV21InterleavedTable)
       : "cc", "memory", YUVTORGB_REGS, "v2", "v19");
 }
 
@@ -590,18 +595,19 @@ void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
                         int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "movi        v19.8b, #255                  \n"
-      "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READUYVY YUVTORGB RGBTORGB8
-      "subs        %w[width], %w[width], #8      \n"
+      "movi        v19.8b, #255                   \n"
+      "ldr         q2, [%[kNV12InterleavedTable]] \n"
+      "1:                                         \n" READUYVY YUVTORGB
+          RGBTORGB8
+      "subs        %w[width], %w[width], #8       \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
-      "b.gt        1b                            \n"
+      "b.gt        1b                             \n"
       : [src_uyvy] "+r"(src_uyvy),                          // %[src_yuy2]
         [dst_argb] "+r"(dst_argb),                          // %[dst_argb]
         [width] "+r"(width)                                 // %[width]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [kNV12Table] "r"(&kNV12Table)
+        [kNV12InterleavedTable] "r"(&kNV12InterleavedTable)
       : "cc", "memory", YUVTORGB_REGS, "v2", "v19");
 }
 
