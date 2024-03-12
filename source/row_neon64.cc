@@ -101,8 +101,7 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "umull      v6.8h, v1.8b, v30.8b           \n"          \
   "umull      v0.4s, v0.4h, v24.4h           \n"          \
   "umlal2     v6.8h, v1.16b, v31.16b         \n" /* DG */ \
-  "uqshrn     v0.4h, v0.4s, #16              \n"          \
-  "uqshrn2    v0.8h, v3.4s, #16              \n" /* Y */  \
+  "uzp2       v0.8h, v0.8h, v3.8h            \n" /* Y */  \
   "umull      v4.8h, v1.8b, v28.8b           \n" /* DB */ \
   "umull2     v5.8h, v1.16b, v29.16b         \n" /* DR */ \
   "add        v17.8h, v0.8h, v26.8h          \n" /* G */  \
