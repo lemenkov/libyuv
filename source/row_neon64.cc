@@ -1626,42 +1626,29 @@ void RGB565ToARGBRow_NEON(const uint8_t* src_rgb565,
   );
 }
 
-#define ARGB1555TOARGB                                                      \
-  "ushr       v2.8h, v0.8h, #10              \n" /* R xxxRRRRR           */ \
-  "shl        v2.8h, v2.8h, #3               \n" /* R RRRRR000 upper 5   */ \
-  "xtn        v3.8b, v2.8h                   \n" /* RRRRR000 AAAAAAAA    */ \
-                                                                            \
-  "sshr       v2.8h, v0.8h, #15              \n" /* A AAAAAAAA           */ \
-  "xtn2       v3.16b, v2.8h                  \n"                            \
-                                                                            \
-  "xtn        v2.8b, v0.8h                   \n" /* B xxxBBBBB           */ \
-  "shrn2      v2.16b,v0.8h, #5               \n" /* G xxxGGGGG           */ \
-                                                                            \
-  "ushr       v1.16b, v3.16b, #5             \n" /* R,A 00000RRR lower 3 */ \
-  "shl        v0.16b, v2.16b, #3             \n" /* B,G BBBBB000 upper 5 */ \
-  "ushr       v2.16b, v0.16b, #5             \n" /* B,G 00000BBB lower 3 */ \
-                                                                            \
-  "orr        v0.16b, v0.16b, v2.16b         \n" /* B,G                  */ \
-  "orr        v2.16b, v1.16b, v3.16b         \n" /* R,A                  */ \
-  "dup        v1.2D, v0.D[1]                 \n"                            \
-  "dup        v3.2D, v2.D[1]                 \n"
+#define ARGB1555TOARGB                             \
+  /* Input: ARRRRRGGGGGBBBBB */                    \
+  "xtn        v29.8b, v0.8h     \n" /* xxxBBBBB */ \
+  "shrn       v3.8b, v0.8h, #8  \n" /* Axxxxxxx */ \
+  "shrn       v2.8b, v0.8h, #7  \n" /* RRRRRxxx */ \
+  "shrn       v1.8b, v0.8h, #2  \n" /* GGGGGxxx */ \
+  "shl        v0.8b, v29.8b, #3 \n" /* BBBBB000 */ \
+  "sshr       v3.8b, v3.8b, #7  \n" /* AAAAAAAA */ \
+  "sri        v2.8b, v2.8b, #5  \n" /* RRRRRRRR */ \
+  "sri        v1.8b, v1.8b, #5  \n" /* GGGGGGGG */ \
+  "sri        v0.8b, v0.8b, #5  \n" /* BBBBBBBB */
 
 // RGB555TOARGB is same as ARGB1555TOARGB but ignores alpha.
-#define RGB555TOARGB                                                        \
-  "ushr       v2.8h, v0.8h, #10              \n" /* R xxxRRRRR           */ \
-  "shl        v2.8h, v2.8h, #3               \n" /* R RRRRR000 upper 5   */ \
-  "xtn        v3.8b, v2.8h                   \n" /* RRRRR000             */ \
-                                                                            \
-  "xtn        v2.8b, v0.8h                   \n" /* B xxxBBBBB           */ \
-  "shrn2      v2.16b,v0.8h, #5               \n" /* G xxxGGGGG           */ \
-                                                                            \
-  "ushr       v1.16b, v3.16b, #5             \n" /* R   00000RRR lower 3 */ \
-  "shl        v0.16b, v2.16b, #3             \n" /* B,G BBBBB000 upper 5 */ \
-  "ushr       v2.16b, v0.16b, #5             \n" /* B,G 00000BBB lower 3 */ \
-                                                                            \
-  "orr        v0.16b, v0.16b, v2.16b         \n" /* B,G                  */ \
-  "orr        v2.16b, v1.16b, v3.16b         \n" /* R                    */ \
-  "dup        v1.2D, v0.D[1]                 \n" /* G */
+#define RGB555TOARGB                               \
+  /* Input: xRRRRRGGGGGBBBBB */                    \
+  "xtn        v29.8b, v0.8h     \n" /* xxxBBBBB */ \
+  "shrn       v2.8b, v0.8h, #7  \n" /* RRRRRxxx */ \
+  "shrn       v1.8b, v0.8h, #2  \n" /* GGGGGxxx */ \
+  "shl        v0.8b, v29.8b, #3 \n" /* BBBBB000 */ \
+                                                   \
+  "sri        v2.8b, v2.8b, #5  \n" /* RRRRRRRR */ \
+  "sri        v1.8b, v1.8b, #5  \n" /* GGGGGGGG */ \
+  "sri        v0.8b, v0.8b, #5  \n" /* BBBBBBBB */
 
 void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
@@ -1679,7 +1666,7 @@ void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
         "+r"(dst_argb),      // %1
         "+r"(width)          // %2
       :
-      : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v29"  // Clobber List
   );
 }
 
@@ -2855,7 +2842,7 @@ void ARGB1555ToUVRow_NEON(const uint8_t* src_argb1555,
       :
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v16", "v17",
         "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
-        "v28");
+        "v28", "v29");
 }
 
 // 16x2 pixels -> 8x1.  width is number of argb pixels. e.g. 16.
@@ -2968,7 +2955,7 @@ void ARGB1555ToYRow_NEON(const uint8_t* src_argb1555,
         "+r"(dst_y),         // %1
         "+r"(width)          // %2
       :
-      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v29");
 }
 
 void ARGB4444ToYRow_NEON(const uint8_t* src_argb4444,
