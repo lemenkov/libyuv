@@ -4680,10 +4680,8 @@ void DivideRow_16_NEON(const uint16_t* src_y,
       "umull       v2.4s, v3.4h, v4.4h           \n"
       "umull2      v3.4s, v3.8h, v4.8h           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "shrn        v0.4h, v0.4s, #16             \n"
-      "shrn2       v0.8h, v1.4s, #16             \n"
-      "shrn        v1.4h, v2.4s, #16             \n"
-      "shrn2       v1.8h, v3.4s, #16             \n"
+      "uzp2        v0.8h, v0.8h, v1.8h           \n"
+      "uzp2        v1.8h, v2.8h, v3.8h           \n"
       "stp         q0, q1, [%1], #32             \n"  // store 16 pixels
       "subs        %w2, %w2, #16                 \n"  // 16 src pixels per loop
       "b.gt        1b                            \n"
