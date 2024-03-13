@@ -365,15 +365,11 @@ void I422ToARGB1555Row_NEON(const uint8_t* src_y,
       : "cc", "memory", YUVTORGB_REGS, "v19");
 }
 
-#define ARGBTOARGB4444                                                       \
-  /* Input v16.8b<=B, v17.8b<=G, v18.8b<=R, v19.8b<=A, v23.8b<=0x0f       */ \
-  "ushr       v16.8b, v16.8b, #4             \n" /* B                    */  \
-  "bic        v17.8b, v17.8b, v23.8b         \n" /* G                    */  \
-  "ushr       v18.8b, v18.8b, #4             \n" /* R                    */  \
-  "bic        v19.8b, v19.8b, v23.8b         \n" /* A                    */  \
-  "orr        v0.8b,  v16.8b, v17.8b         \n" /* BG                   */  \
-  "orr        v1.8b,  v18.8b, v19.8b         \n" /* RA                   */  \
-  "zip1       v0.16b, v0.16b, v1.16b         \n" /* BGRA                 */
+#define ARGBTOARGB4444                                   \
+  /* Input v16.8b<=B, v17.8b<=G, v18.8b<=R, v19.8b<=A */ \
+  "sri    v17.8b, v16.8b, #4       \n" /* BG */          \
+  "sri    v19.8b, v18.8b, #4       \n" /* RA */          \
+  "zip1   v0.16b, v17.16b, v19.16b \n" /* BGRA */
 
 void I422ToARGB4444Row_NEON(const uint8_t* src_y,
                             const uint8_t* src_u,
@@ -383,8 +379,6 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
                             int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "movi        v23.16b, #0x0f                \n"  // bits to clear with
-                                                      // vbic.
       "1:                                        \n" READYUV422 YUVTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
@@ -400,7 +394,7 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
         [width] "+r"(width)                                // %[width]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_REGS, "v19", "v23");
+      : "cc", "memory", YUVTORGB_REGS, "v19");
 }
 
 void I400ToARGBRow_NEON(const uint8_t* src_y,
@@ -2042,8 +2036,6 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
                             uint8_t* dst_argb4444,
                             int width) {
   asm volatile(
-      "movi        v23.16b, #0x0f                \n"  // bits to clear with
-                                                      // vbic.
       "1:                                        \n"
       "ld4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%0], #32 \n"  // load 8
                                                                  // pixels
@@ -2055,7 +2047,7 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
         "+r"(dst_argb4444),  // %1
         "+r"(width)          // %2
       :
-      : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19", "v23");
+      : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19");
 }
 
 #if LIBYUV_USE_ST2
