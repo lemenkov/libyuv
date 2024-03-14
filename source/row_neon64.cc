@@ -46,10 +46,9 @@ extern "C" {
   "zip1       v0.16b, v0.16b, v0.16b         \n" \
   "prfm       pldl1keep, [%[src_v], 448]     \n"
 
-// Read 8 Y, and set 4 U and 4 V to 128
+// Read 8 Y
 #define READYUV400                               \
   "ldr        d0, [%[src_y]], #8             \n" \
-  "movi       v1.16b, #128                   \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
   "zip1       v0.16b, v0.16b, v0.16b         \n"
 
@@ -109,6 +108,18 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "add        v18.8h, v0.8h, v5.8h           \n" /* R */  \
   "uqsub      v17.8h, v17.8h, v6.8h          \n" /* G */  \
   "uqsub      v16.8h, v16.8h, v25.8h         \n" /* B */  \
+  "uqsub      v18.8h, v18.8h, v27.8h         \n" /* R */
+
+// Convert from YUV I400 to 2.14 fixed point RGB
+#define I400TORGB                                        \
+  "umull2     v3.4s, v0.8h, v24.8h           \n"         \
+  "umull      v0.4s, v0.4h, v24.4h           \n"         \
+  "uzp2       v0.8h, v0.8h, v3.8h            \n" /* Y */ \
+  "add        v17.8h, v0.8h, v26.8h          \n" /* G */ \
+  "add        v16.8h, v0.8h, v4.8h           \n" /* B */ \
+  "add        v18.8h, v0.8h, v5.8h           \n" /* R */ \
+  "uqsub      v17.8h, v17.8h, v6.8h          \n" /* G */ \
+  "uqsub      v16.8h, v16.8h, v25.8h         \n" /* B */ \
   "uqsub      v18.8h, v18.8h, v27.8h         \n" /* R */
 
 // Convert from 2.14 fixed point RGB To 8 bit RGB
@@ -398,8 +409,13 @@ void I400ToARGBRow_NEON(const uint8_t* src_y,
                         int width) {
   asm volatile(
       YUVTORGB_SETUP
+      "movi        v1.16b, #128                  \n"
       "movi        v19.8b, #255                  \n"
-      "1:                                        \n" READYUV400 YUVTORGB
+      "umull       v6.8h, v1.8b, v30.8b          \n"
+      "umlal2      v6.8h, v1.16b, v31.16b        \n" /* DG */
+      "umull       v4.8h, v1.8b, v28.8b          \n" /* DB */
+      "umull2      v5.8h, v1.16b, v29.16b        \n" /* DR */
+      "1:                                        \n" READYUV400 I400TORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
