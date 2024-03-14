@@ -3613,36 +3613,36 @@ void ARGBQuantizeRow_NEON(uint8_t* dst_argb,
 }
 
 // Shade 8 pixels at a time by specified value.
-// NOTE vqrdmulh.s16 q10, q10, d0[0] must use a scaler register from 0 to 8.
-// Rounding in vqrdmulh does +1 to high if high bit of low s16 is set.
+// sqrdmulh is a rounding instruction, so +1 if high bit of low half of
+// multiply result is set.
 void ARGBShadeRow_NEON(const uint8_t* src_argb,
                        uint8_t* dst_argb,
                        int width,
                        uint32_t value) {
   asm volatile(
-      "dup         v0.4s, %w3                    \n"  // duplicate scale value.
-      "zip1        v0.8b, v0.8b, v0.8b           \n"  // v0.8b aarrggbb.
-      "ushr        v0.8h, v0.8h, #1              \n"  // scale / 2.
+      "dup         v0.4s, %w3               \n"  // duplicate scale value.
+      "zip1        v0.16b, v0.16b, v0.16b   \n"  // v0.16b aarrggbbaarrggbb.
+      "ushr        v0.8h, v0.8h, #1         \n"  // scale / 2.
 
       // 8 pixel loop.
-      "1:                                        \n"
-      "ld4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%0], #32 \n"  // load 8 ARGB
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
-      "uxtl        v4.8h, v4.8b                  \n"  // b (0 .. 255)
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "uxtl        v5.8h, v5.8b                  \n"
-      "uxtl        v6.8h, v6.8b                  \n"
-      "uxtl        v7.8h, v7.8b                  \n"
-      "sqrdmulh    v4.8h, v4.8h, v0.h[0]         \n"  // b * scale * 2
-      "sqrdmulh    v5.8h, v5.8h, v0.h[1]         \n"  // g
-      "sqrdmulh    v6.8h, v6.8h, v0.h[2]         \n"  // r
-      "sqrdmulh    v7.8h, v7.8h, v0.h[3]         \n"  // a
-      "uqxtn       v4.8b, v4.8h                  \n"
-      "uqxtn       v5.8b, v5.8h                  \n"
-      "uqxtn       v6.8b, v6.8h                  \n"
-      "uqxtn       v7.8b, v7.8h                  \n"
-      "st4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"  // store 8 ARGB
-      "b.gt        1b                            \n"
+      "1:                                   \n"
+      "ld1         {v4.8b,v5.8b,v6.8b,v7.8b}, [%0], #32 \n"  // load 8 ARGB
+      "subs        %w2, %w2, #8             \n"  // 8 processed per loop.
+      "uxtl        v4.8h, v4.8b             \n"
+      "prfm        pldl1keep, [%0, 448]     \n"
+      "uxtl        v5.8h, v5.8b             \n"
+      "uxtl        v6.8h, v6.8b             \n"
+      "uxtl        v7.8h, v7.8b             \n"
+      "sqrdmulh    v4.8h, v4.8h, v0.8h      \n"  // argb * scale * 2
+      "sqrdmulh    v5.8h, v5.8h, v0.8h      \n"
+      "sqrdmulh    v6.8h, v6.8h, v0.8h      \n"
+      "sqrdmulh    v7.8h, v7.8h, v0.8h      \n"
+      "uqxtn       v4.8b, v4.8h             \n"
+      "uqxtn       v5.8b, v5.8h             \n"
+      "uqxtn       v6.8b, v6.8h             \n"
+      "uqxtn       v7.8b, v7.8h             \n"
+      "st1         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"  // store 8 ARGB
+      "b.gt        1b                       \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_argb),  // %1
         "+r"(width)      // %2
