@@ -29,10 +29,11 @@ extern "C" {
 #define READYUV422                               \
   "ldr        d0, [%[src_y]], #8             \n" \
   "ldr        s1, [%[src_u]], #4             \n" \
-  "ld1        {v1.s}[1], [%[src_v]], #4      \n" \
+  "ldr        s2, [%[src_v]], #4             \n" \
   "zip1       v0.16b, v0.16b, v0.16b         \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
-  "zip1       v1.16b, v1.16b, v1.16b         \n" \
+  "zip1       v1.8b, v1.8b, v1.8b            \n" \
+  "zip1       v2.8b, v2.8b, v2.8b            \n" \
   "prfm       pldl1keep, [%[src_u], 128]     \n" \
   "prfm       pldl1keep, [%[src_v], 128]     \n"
 
@@ -40,8 +41,8 @@ extern "C" {
 #define READYUV444                               \
   "ldr        d0, [%[src_y]], #8             \n" \
   "ldr        d1, [%[src_u]], #8             \n" \
+  "ldr        d2, [%[src_v]], #8             \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
-  "ld1        {v1.d}[1], [%[src_v]], #8      \n" \
   "prfm       pldl1keep, [%[src_u], 448]     \n" \
   "zip1       v0.16b, v0.16b, v0.16b         \n" \
   "prfm       pldl1keep, [%[src_v], 448]     \n"
@@ -94,8 +95,9 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
 // v17.8h: G
 // v18.8h: R
 
-// Convert from YUV to 2.14 fixed point RGB
-#define YUVTORGB                                          \
+// Convert from YUV (NV12 or NV21) to 2.14 fixed point RGB.
+// Similar to I4XXTORGB but U/V components are in the low/high halves of v1.
+#define NVTORGB                                           \
   "umull2     v3.4s, v0.8h, v24.8h           \n"          \
   "umull      v6.8h, v1.8b, v30.8b           \n"          \
   "umull      v0.4s, v0.4h, v24.4h           \n"          \
@@ -103,6 +105,23 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "uzp2       v0.8h, v0.8h, v3.8h            \n" /* Y */  \
   "umull      v4.8h, v1.8b, v28.8b           \n" /* DB */ \
   "umull2     v5.8h, v1.16b, v29.16b         \n" /* DR */ \
+  "add        v17.8h, v0.8h, v26.8h          \n" /* G */  \
+  "add        v16.8h, v0.8h, v4.8h           \n" /* B */  \
+  "add        v18.8h, v0.8h, v5.8h           \n" /* R */  \
+  "uqsub      v17.8h, v17.8h, v6.8h          \n" /* G */  \
+  "uqsub      v16.8h, v16.8h, v25.8h         \n" /* B */  \
+  "uqsub      v18.8h, v18.8h, v27.8h         \n" /* R */
+
+// Convert from YUV (I444 or I420) to 2.14 fixed point RGB.
+// Similar to NVTORGB but U/V components are in v1/v2.
+#define I4XXTORGB                                         \
+  "umull2     v3.4s, v0.8h, v24.8h           \n"          \
+  "umull      v6.8h, v1.8b, v30.8b           \n"          \
+  "umull      v0.4s, v0.4h, v24.4h           \n"          \
+  "umlal      v6.8h, v2.8b, v31.8b           \n" /* DG */ \
+  "uzp2       v0.8h, v0.8h, v3.8h            \n" /* Y */  \
+  "umull      v4.8h, v1.8b, v28.8b           \n" /* DB */ \
+  "umull      v5.8h, v2.8b, v29.8b           \n" /* DR */ \
   "add        v17.8h, v0.8h, v26.8h          \n" /* G */  \
   "add        v16.8h, v0.8h, v4.8h           \n" /* B */  \
   "add        v18.8h, v0.8h, v5.8h           \n" /* R */  \
@@ -128,9 +147,9 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "uqshrn     v16.8b, v16.8h, #6             \n" \
   "uqshrn     v18.8b, v18.8h, #6             \n"
 
-#define YUVTORGB_REGS                                                          \
-  "v0", "v1", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18", "v24", "v25", \
-      "v26", "v27", "v28", "v29", "v30", "v31"
+#define YUVTORGB_REGS                                                         \
+  "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18", "v24", \
+      "v25", "v26", "v27", "v28", "v29", "v30", "v31"
 
 void I444ToARGBRow_NEON(const uint8_t* src_y,
                         const uint8_t* src_u,
@@ -141,7 +160,7 @@ void I444ToARGBRow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "movi        v19.8b, #255                  \n" /* A */
-      "1:                                        \n" READYUV444 YUVTORGB
+      "1:                                        \n" READYUV444 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
@@ -164,7 +183,7 @@ void I444ToRGB24Row_NEON(const uint8_t* src_y,
                          int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV444 YUVTORGB
+      "1:                                        \n" READYUV444 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st3         {v16.8b,v17.8b,v18.8b}, [%[dst_rgb24]], #24 \n"
@@ -188,7 +207,7 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "movi        v19.8b, #255                  \n" /* A */
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n" READYUV422 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
@@ -214,7 +233,7 @@ void I444AlphaToARGBRow_NEON(const uint8_t* src_y,
       YUVTORGB_SETUP
       "1:                                        \n"
       "ld1         {v19.8b}, [%[src_a]], #8      \n" READYUV444
-      "prfm        pldl1keep, [%[src_a], 448]    \n" YUVTORGB RGBTORGB8
+      "prfm        pldl1keep, [%[src_a], 448]    \n" I4XXTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                            \n"
@@ -240,7 +259,7 @@ void I422AlphaToARGBRow_NEON(const uint8_t* src_y,
       YUVTORGB_SETUP
       "1:                                        \n"
       "ld1         {v19.8b}, [%[src_a]], #8      \n" READYUV422
-      "prfm        pldl1keep, [%[src_a], 448]    \n" YUVTORGB RGBTORGB8
+      "prfm        pldl1keep, [%[src_a], 448]    \n" I4XXTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                            \n"
@@ -264,7 +283,7 @@ void I422ToRGBARow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "movi        v15.8b, #255                  \n" /* A */
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n" READYUV422 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v15.8b,v16.8b,v17.8b,v18.8b}, [%[dst_rgba]], #32 \n"
@@ -287,7 +306,7 @@ void I422ToRGB24Row_NEON(const uint8_t* src_y,
                          int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n" READYUV422 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st3         {v16.8b,v17.8b,v18.8b}, [%[dst_rgb24]], #24 \n"
@@ -317,8 +336,8 @@ void I422ToRGB565Row_NEON(const uint8_t* src_y,
                           int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
-      RGBTORGB8 "subs        %w[width], %w[width], #8      \n" ARGBTORGB565
+      "1:                                        \n" READYUV422 I4XXTORGB
+          RGBTORGB8 "subs        %w[width], %w[width], #8      \n" ARGBTORGB565
       "st1         {v18.8h}, [%[dst_rgb565]], #16 \n"  // store 8 pixels RGB565.
       "b.gt        1b                            \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
@@ -349,7 +368,7 @@ void I422ToARGB1555Row_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "movi        v19.8b, #255                  \n"
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n" READYUV422 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n" ARGBTOARGB1555
       "st1         {v0.8h}, [%[dst_argb1555]], #16 \n"  // store 8 pixels
@@ -379,7 +398,7 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
                             int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n" READYUV422 I4XXTORGB
           RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "movi        v19.8b, #255                  \n" ARGBTOARGB4444
@@ -471,7 +490,7 @@ void NV12ToARGBRow_NEON(const uint8_t* src_y,
       YUVTORGB_SETUP
       "movi        v19.8b, #255                  \n"
       "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READNV12 YUVTORGB RGBTORGB8
+      "1:                                        \n" READNV12 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                            \n"
@@ -494,7 +513,7 @@ void NV21ToARGBRow_NEON(const uint8_t* src_y,
       YUVTORGB_SETUP
       "movi        v19.8b, #255                  \n"
       "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READNV12 YUVTORGB RGBTORGB8
+      "1:                                        \n" READNV12 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                            \n"
@@ -516,7 +535,7 @@ void NV12ToRGB24Row_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READNV12 YUVTORGB RGBTORGB8
+      "1:                                        \n" READNV12 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st3         {v16.8b,v17.8b,v18.8b}, [%[dst_rgb24]], #24 \n"
       "b.gt        1b                            \n"
@@ -538,7 +557,7 @@ void NV21ToRGB24Row_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READNV12 YUVTORGB RGBTORGB8
+      "1:                                        \n" READNV12 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st3         {v16.8b,v17.8b,v18.8b}, [%[dst_rgb24]], #24 \n"
       "b.gt        1b                            \n"
@@ -560,7 +579,7 @@ void NV12ToRGB565Row_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READNV12 YUVTORGB RGBTORGB8
+      "1:                                        \n" READNV12 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n" ARGBTORGB565
       "st1         {v18.8h}, [%[dst_rgb565]], #16 \n"  // store 8
                                                        // pixels
@@ -584,8 +603,7 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
       YUVTORGB_SETUP
       "movi        v19.8b, #255                   \n"
       "ldr         q2, [%[kNV21InterleavedTable]] \n"
-      "1:                                         \n" READYUY2 YUVTORGB
-          RGBTORGB8
+      "1:                                         \n" READYUY2 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8       \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                             \n"
@@ -606,8 +624,7 @@ void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
       YUVTORGB_SETUP
       "movi        v19.8b, #255                   \n"
       "ldr         q2, [%[kNV12InterleavedTable]] \n"
-      "1:                                         \n" READUYVY YUVTORGB
-          RGBTORGB8
+      "1:                                         \n" READUYVY NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8       \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                             \n"
