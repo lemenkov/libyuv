@@ -4701,16 +4701,18 @@ void Convert16To8Row_NEON(const uint16_t* src_y,
                           uint8_t* dst_y,
                           int scale,
                           int width) {
-  int shift = 15 - __builtin_clz((int32_t)scale);  // Negative shl is shr
+  // 15 - clz(scale), + 8 to shift result into the high half of the lane to
+  // saturate, then we can just use UZP2 to narrow rather than a pair of
+  // saturating narrow instructions.
+  int shift = 23 - __builtin_clz((int32_t)scale);
   asm volatile(
       "dup         v2.8h, %w3                    \n"
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
-      "ushl        v0.8h, v0.8h, v2.8h           \n"  // shr = v2 is negative
-      "ushl        v1.8h, v1.8h, v2.8h           \n"
+      "uqshl       v0.8h, v0.8h, v2.8h           \n"
+      "uqshl       v1.8h, v1.8h, v2.8h           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "uqxtn       v0.8b, v0.8h                  \n"
-      "uqxtn2      v0.16b, v1.8h                 \n"
+      "uzp2        v0.16b, v0.16b, v1.16b        \n"
       "subs        %w2, %w2, #16                 \n"  // 16 src pixels per loop
       "str         q0, [%1], #16                 \n"  // store 16 pixels
       "b.gt        1b                            \n"
