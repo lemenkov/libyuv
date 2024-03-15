@@ -252,26 +252,43 @@ static int FileExists(const char* file_name) {
   return 1;
 }
 
-TEST_F(LibYUVBaseTest, TestLinuxNeon) {
+TEST_F(LibYUVBaseTest, TestLinuxArm) {
   if (FileExists("../../unit_test/testdata/arm_v7.txt")) {
     printf("Note: testing to load \"../../unit_test/testdata/arm_v7.txt\"\n");
 
     EXPECT_EQ(0, ArmCpuCaps("../../unit_test/testdata/arm_v7.txt"));
     EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("../../unit_test/testdata/tegra3.txt"));
-    EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("../../unit_test/testdata/juno.txt"));
   } else {
     printf("WARNING: unable to load \"../../unit_test/testdata/arm_v7.txt\"\n");
   }
-#if defined(__linux__) && defined(__ARM_NEON__)
+#if defined(__linux__) && defined(__ARM_NEON__) && !defined(__aarch64__)
   if (FileExists("/proc/cpuinfo")) {
     if (kCpuHasNEON != ArmCpuCaps("/proc/cpuinfo")) {
-      // This can happen on ARM emulator but /proc/cpuinfo is from host.
-      printf("WARNING: Neon build enabled but CPU does not have NEON\n");
+      // This can happen on Arm emulator but /proc/cpuinfo is from host.
+      printf("WARNING: Neon build enabled but CPU does not have Neon\n");
     }
   } else {
     printf("WARNING: unable to load \"/proc/cpuinfo\"\n");
   }
 #endif
+}
+
+TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
+  if (FileExists("../../unit_test/testdata/juno.txt")) {
+    printf("Note: testing to load \"../../unit_test/testdata/juno.txt\"\n");
+
+    EXPECT_EQ(kCpuHasNEON, AArch64CpuCaps("../../unit_test/testdata/juno.txt"));
+    int v9_expected = kCpuHasNEON | kCpuHasNeonDotProd | kCpuHasNeonI8MM |
+                      kCpuHasSVE | kCpuHasSVE2;
+    EXPECT_EQ(v9_expected,
+              AArch64CpuCaps("../../unit_test/testdata/cortex_a510.txt"));
+    EXPECT_EQ(v9_expected,
+              AArch64CpuCaps("../../unit_test/testdata/cortex_a715.txt"));
+    EXPECT_EQ(v9_expected,
+              AArch64CpuCaps("../../unit_test/testdata/cortex_x3.txt"));
+  } else {
+    printf("WARNING: unable to load \"../../unit_test/testdata/juno.txt\"\n");
+  }
 }
 
 TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {

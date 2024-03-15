@@ -95,8 +95,16 @@ int main(int argc, const char* argv[]) {
   printf("Cpu Flags 0x%x\n", cpu_flags);
   if (has_arm) {
     int has_neon = TestCpuFlag(kCpuHasNEON);
-    printf("Has ARM 0x%x\n", has_arm);
-    printf("Has NEON 0x%x\n", has_neon);
+    int has_neon_dotprod = TestCpuFlag(kCpuHasNeonDotProd);
+    int has_neon_i8mm = TestCpuFlag(kCpuHasNeonI8MM);
+    int has_sve = TestCpuFlag(kCpuHasSVE);
+    int has_sve2 = TestCpuFlag(kCpuHasSVE2);
+    printf("Has Arm 0x%x\n", has_arm);
+    printf("Has Neon 0x%x\n", has_neon);
+    printf("Has Neon DotProd 0x%x\n", has_neon_dotprod);
+    printf("Has Neon I8MM 0x%x\n", has_neon_i8mm);
+    printf("Has SVE 0x%x\n", has_sve);
+    printf("Has SVE2 0x%x\n", has_sve2);
   }
   if (has_riscv) {
     int has_rvv = TestCpuFlag(kCpuHasRVV);

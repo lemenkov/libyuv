@@ -132,6 +132,13 @@ static int GetXCR0() {
 #pragma optimize("g", on)
 #endif
 
+static int cpuinfo_search(const char* cpuinfo_line,
+                          const char* needle,
+                          int needle_len) {
+  const char* p = strstr(cpuinfo_line, needle);
+  return p && (p[needle_len] == ' ' || p[needle_len] == '\n');
+}
+
 // Based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
 LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
@@ -143,23 +150,48 @@ LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
     return kCpuHasNEON;
   }
   memset(cpuinfo_line, 0, sizeof(cpuinfo_line));
+  int features = 0;
   while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f)) {
     if (memcmp(cpuinfo_line, "Features", 8) == 0) {
-      char* p = strstr(cpuinfo_line, " neon");
-      if (p && (p[5] == ' ' || p[5] == '\n')) {
-        fclose(f);
-        return kCpuHasNEON;
-      }
-      // aarch64 uses asimd for Neon.
-      p = strstr(cpuinfo_line, " asimd");
-      if (p) {
-        fclose(f);
-        return kCpuHasNEON;
+      if (cpuinfo_search(cpuinfo_line, " neon", 5)) {
+        features |= kCpuHasNEON;
       }
     }
   }
   fclose(f);
-  return 0;
+  return features;
+}
+
+// For AArch64, but public to allow testing on any CPU.
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(const char* cpuinfo_name) {
+  char cpuinfo_line[512];
+  FILE* f = fopen(cpuinfo_name, "re");
+  if (!f) {
+    // Assume Neon if /proc/cpuinfo is unavailable.
+    // This will occur for Chrome sandbox for Pepper or Render process.
+    return kCpuHasNEON;
+  }
+  memset(cpuinfo_line, 0, sizeof(cpuinfo_line));
+  // Neon is mandatory on AArch64.
+  int features = kCpuHasNEON;
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f)) {
+    if (memcmp(cpuinfo_line, "Features", 8) == 0) {
+      if (cpuinfo_search(cpuinfo_line, " asimddp", 8)) {
+        features |= kCpuHasNeonDotProd;
+      }
+      if (cpuinfo_search(cpuinfo_line, " i8mm", 5)) {
+        features |= kCpuHasNeonI8MM;
+      }
+      if (cpuinfo_search(cpuinfo_line, " sve", 4)) {
+        features |= kCpuHasSVE;
+      }
+      if (cpuinfo_search(cpuinfo_line, " sve2", 5)) {
+        features |= kCpuHasSVE2;
+      }
+    }
+  }
+  fclose(f);
+  return features;
 }
 
 LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
@@ -346,7 +378,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 // So for aarch64, neon enabling is hard coded here.
 #endif
 #if defined(__aarch64__)
-  cpu_info = kCpuHasNEON;
+  cpu_info = AArch64CpuCaps("/proc/cpuinfo");
 #else
   // Linux arm parse text file for neon detect.
   cpu_info = ArmCpuCaps("/proc/cpuinfo");

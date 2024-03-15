@@ -21,9 +21,14 @@ extern "C" {
 // Internal flag to indicate cpuid requires initialization.
 static const int kCpuInitialized = 0x1;
 
-// These flags are only valid on ARM processors.
+// These flags are only valid on Arm processors.
 static const int kCpuHasARM = 0x2;
 static const int kCpuHasNEON = 0x4;
+// Leave a gap to avoid setting kCpuHasX86.
+static const int kCpuHasNeonDotProd = 0x10;
+static const int kCpuHasNeonI8MM = 0x20;
+static const int kCpuHasSVE = 0x40;
+static const int kCpuHasSVE2 = 0x80;
 
 // These flags are only valid on x86 processors.
 static const int kCpuHasX86 = 0x8;
@@ -82,6 +87,8 @@ static __inline int TestCpuFlag(int test_flag) {
 // Internal function for parsing /proc/cpuinfo.
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name);
+LIBYUV_API
+int AArch64CpuCaps(const char* cpuinfo_name);
 LIBYUV_API
 int MipsCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
