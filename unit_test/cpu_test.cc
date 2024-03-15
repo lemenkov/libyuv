@@ -274,21 +274,20 @@ TEST_F(LibYUVBaseTest, TestLinuxArm) {
 }
 
 TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
-  if (FileExists("../../unit_test/testdata/juno.txt")) {
-    printf("Note: testing to load \"../../unit_test/testdata/juno.txt\"\n");
+  // Values taken from a Cortex-A57 machine, only Neon available.
+  EXPECT_EQ(kCpuHasNEON, AArch64CpuCaps(0xffU, 0x0U));
 
-    EXPECT_EQ(kCpuHasNEON, AArch64CpuCaps("../../unit_test/testdata/juno.txt"));
-    int v9_expected = kCpuHasNEON | kCpuHasNeonDotProd | kCpuHasNeonI8MM |
-                      kCpuHasSVE | kCpuHasSVE2;
-    EXPECT_EQ(v9_expected,
-              AArch64CpuCaps("../../unit_test/testdata/cortex_a510.txt"));
-    EXPECT_EQ(v9_expected,
-              AArch64CpuCaps("../../unit_test/testdata/cortex_a715.txt"));
-    EXPECT_EQ(v9_expected,
-              AArch64CpuCaps("../../unit_test/testdata/cortex_x3.txt"));
-  } else {
-    printf("WARNING: unable to load \"../../unit_test/testdata/juno.txt\"\n");
-  }
+  // Values taken from a Google Pixel 7.
+  int expected = kCpuHasNEON | kCpuHasNeonDotProd;
+  EXPECT_EQ(expected, AArch64CpuCaps(0x119fffU, 0x0U));
+
+  // Values taken from a Google Pixel 8.
+  expected = kCpuHasNEON | kCpuHasNeonDotProd | kCpuHasNeonI8MM | kCpuHasSVE |
+             kCpuHasSVE2;
+  EXPECT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x2f33fU));
+
+  // Values taken from a Neoverse N2 machine.
+  EXPECT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x2f3ffU));
 }
 
 TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {
