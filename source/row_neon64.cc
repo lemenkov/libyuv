@@ -3029,12 +3029,49 @@ void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
         "v17");
 }
 
+void
+ARGBToYMatrixRow_NEON_DotProd(const uint8_t* src_argb,
+                              uint8_t* dst_y,
+                              int width,
+                              const struct RgbConstants* rgbconstants) {
+  asm volatile(
+      "ldr         d0, [%3]                      \n"  // load rgbconstants
+      "dup         v16.4s, v0.s[0]               \n"
+      "dup         v17.8h,  v0.h[2]              \n"
+      "1:                                        \n"
+      "ld1         {v4.16b, v5.16b, v6.16b, v7.16b}, [%0], #64 \n"  // load 16
+                                                                    // pixels.
+      "subs        %w2, %w2, #16                 \n"  // 16 processed per loop.
+      "movi        v0.16b, #0                    \n"
+      "movi        v1.16b, #0                    \n"
+      "movi        v2.16b, #0                    \n"
+      "movi        v3.16b, #0                    \n"
+      "udot        v0.4s, v4.16b, v16.16b        \n"
+      "udot        v1.4s, v5.16b, v16.16b        \n"
+      "udot        v2.4s, v6.16b, v16.16b        \n"
+      "udot        v3.4s, v7.16b, v16.16b        \n"
+      "uzp1        v0.8h, v0.8h, v1.8h           \n"
+      "uzp1        v1.8h, v2.8h, v3.8h           \n"
+      "addhn       v0.8b, v0.8h, v17.8h          \n"
+      "addhn       v1.8b, v1.8h, v17.8h          \n"
+      "st1         {v0.8b, v1.8b}, [%1], #16     \n"  // store 16 pixels Y.
+      "b.gt        1b                            \n"
+      : "+r"(src_argb),    // %0
+        "+r"(dst_y),       // %1
+        "+r"(width)        // %2
+      : "r"(rgbconstants)  // %3
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17");
+}
+
 // RGB to JPeg coefficients
 // B * 0.1140 coefficient = 29
 // G * 0.5870 coefficient = 150
 // R * 0.2990 coefficient = 77
 // Add 0.5 = 0x80
 static const struct RgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0}, 128};
+static const struct RgbConstants kRgb24JPEGDotProdConstants = {{0, 29, 150, 77},
+                                                               128};
 
 static const struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128};
 
@@ -3046,8 +3083,12 @@ static const struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 128};
 
 static const struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0},
                                                         0x1080};
+static const struct RgbConstants kRgb24I601DotProdConstants = {{0, 25, 129, 66},
+                                                               0x1080};
 
 static const struct RgbConstants kRawI601Constants = {{66, 129, 25, 0}, 0x1080};
+static const struct RgbConstants kRawI601DotProdConstants = {{0, 66, 129, 25},
+                                                             0x1080};
 
 void ARGBToYRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   ARGBToYMatrixRow_NEON(src_argb, dst_y, width, &kRgb24I601Constants);
@@ -3063,6 +3104,30 @@ void ABGRToYRow_NEON(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
 
 void ABGRToYJRow_NEON(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
   ARGBToYMatrixRow_NEON(src_abgr, dst_yj, width, &kRawJPEGConstants);
+}
+
+void ARGBToYRow_NEON_DotProd(const uint8_t* src_argb,
+                             uint8_t* dst_y,
+                             int width) {
+  ARGBToYMatrixRow_NEON_DotProd(src_argb, dst_y, width, &kRgb24I601Constants);
+}
+
+void ARGBToYJRow_NEON_DotProd(const uint8_t* src_argb,
+                              uint8_t* dst_yj,
+                              int width) {
+  ARGBToYMatrixRow_NEON_DotProd(src_argb, dst_yj, width, &kRgb24JPEGConstants);
+}
+
+void ABGRToYRow_NEON_DotProd(const uint8_t* src_abgr,
+                             uint8_t* dst_y,
+                             int width) {
+  ARGBToYMatrixRow_NEON_DotProd(src_abgr, dst_y, width, &kRawI601Constants);
+}
+
+void ABGRToYJRow_NEON_DotProd(const uint8_t* src_abgr,
+                              uint8_t* dst_yj,
+                              int width) {
+  ARGBToYMatrixRow_NEON_DotProd(src_abgr, dst_yj, width, &kRawJPEGConstants);
 }
 
 // RGBA expects first value to be A and ignored, then 3 values to contain RGB.
@@ -3110,6 +3175,33 @@ void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
 
 void BGRAToYRow_NEON(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
   RGBAToYMatrixRow_NEON(src_bgra, dst_y, width, &kRawI601Constants);
+}
+
+void RGBAToYRow_NEON_DotProd(const uint8_t* src_rgba,
+                             uint8_t* dst_y,
+                             int width) {
+  // No need for a separate implementation for RGBA inputs, just permute the
+  // RGB constants.
+  ARGBToYMatrixRow_NEON_DotProd(src_rgba, dst_y, width,
+                                &kRgb24I601DotProdConstants);
+}
+
+void RGBAToYJRow_NEON_DotProd(const uint8_t* src_rgba,
+                              uint8_t* dst_yj,
+                              int width) {
+  // No need for a separate implementation for RGBA inputs, just permute the
+  // RGB constants.
+  ARGBToYMatrixRow_NEON_DotProd(src_rgba, dst_yj, width,
+                                &kRgb24JPEGDotProdConstants);
+}
+
+void BGRAToYRow_NEON_DotProd(const uint8_t* src_bgra,
+                             uint8_t* dst_y,
+                             int width) {
+  // No need for a separate implementation for RGBA inputs, just permute the
+  // RGB constants.
+  ARGBToYMatrixRow_NEON_DotProd(src_bgra, dst_y, width,
+                                &kRawI601DotProdConstants);
 }
 
 void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,

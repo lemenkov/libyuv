@@ -1904,6 +1904,14 @@ int ARGBToI420(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    ARGBToYRow = ARGBToYRow_Any_NEON_DotProd;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_NEON_DotProd;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToUVRow = ARGBToUVRow_Any_NEON;
@@ -2063,6 +2071,14 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    ARGBToYRow = ARGBToYRow_Any_NEON_DotProd;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_NEON_DotProd;
     }
   }
 #endif
@@ -2229,6 +2245,14 @@ int BGRAToI420(const uint8_t* src_bgra,
     }
   }
 #endif
+#if defined(HAS_BGRATOYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    BGRAToYRow = BGRAToYRow_Any_NEON_DotProd;
+    if (IS_ALIGNED(width, 16)) {
+      BGRAToYRow = BGRAToYRow_NEON_DotProd;
+    }
+  }
+#endif
 #if defined(HAS_BGRATOUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     BGRAToUVRow = BGRAToUVRow_Any_NEON;
@@ -2388,6 +2412,14 @@ int ABGRToI420(const uint8_t* src_abgr,
     }
   }
 #endif
+#if defined(HAS_ABGRTOYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    ABGRToYRow = ABGRToYRow_Any_NEON_DotProd;
+    if (IS_ALIGNED(width, 16)) {
+      ABGRToYRow = ABGRToYRow_NEON_DotProd;
+    }
+  }
+#endif
 #if defined(HAS_ABGRTOUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ABGRToUVRow = ABGRToUVRow_Any_NEON;
@@ -2494,6 +2526,14 @@ int RGBAToI420(const uint8_t* src_rgba,
     RGBAToYRow = RGBAToYRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       RGBAToYRow = RGBAToYRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    RGBAToYRow = RGBAToYRow_Any_NEON_DotProd;
+    if (IS_ALIGNED(width, 16)) {
+      RGBAToYRow = RGBAToYRow_NEON_DotProd;
     }
   }
 #endif
