@@ -88,11 +88,18 @@ static __inline int TestCpuFlag(int test_flag) {
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
-int AArch64CpuCaps(const char* cpuinfo_name);
-LIBYUV_API
 int MipsCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
 int RiscvCpuCaps(const char* cpuinfo_name);
+
+#if __linux__
+// On Linux, parse AArch64 features from getauxval(AT_HWCAP{,2}).
+LIBYUV_API
+int AArch64CpuCaps(unsigned long hwcap, unsigned long hwcap2);
+#else
+LIBYUV_API
+int AArch64CpuCaps();
+#endif
 
 // For testing, allow CPU flags to be disabled.
 // ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.
