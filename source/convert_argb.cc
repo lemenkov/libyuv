@@ -609,6 +609,11 @@ int I444ToARGBMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I444TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I444ToARGBRow = I444ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_I444TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I444ToARGBRow = I444ToARGBRow_Any_MSA;
@@ -6212,6 +6217,11 @@ static int I420ToARGBMatrixBilinear(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I444TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I444ToARGBRow = I444ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_I444TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I444ToARGBRow = I444ToARGBRow_Any_MSA;
@@ -6357,6 +6367,11 @@ static int I422ToARGBMatrixLinear(const uint8_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       I444ToARGBRow = I444ToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_I444TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I444ToARGBRow = I444ToARGBRow_SVE2;
   }
 #endif
 #if defined(HAS_I444TOARGBROW_MSA)
