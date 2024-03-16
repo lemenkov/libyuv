@@ -1684,19 +1684,25 @@ void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
   );
 }
 
-// Convert v0.8h to b = v0.8b g = v1.8b r = v2.8b
-// clobbers v3
-#define ARGB4444TOARGB                                                      \
-  "shrn       v1.8b,  v0.8h, #8              \n" /* v1(l) AR             */ \
-  "xtn2       v1.16b, v0.8h                  \n" /* v1(h) GB             */ \
-  "shl        v2.16b, v1.16b, #4             \n" /* B,R BBBB0000         */ \
-  "ushr       v3.16b, v1.16b, #4             \n" /* G,A 0000GGGG         */ \
-  "ushr       v0.16b, v2.16b, #4             \n" /* B,R 0000BBBB         */ \
-  "shl        v1.16b, v3.16b, #4             \n" /* G,A GGGG0000         */ \
-  "orr        v2.16b, v0.16b, v2.16b         \n" /* B,R BBBBBBBB         */ \
-  "orr        v3.16b, v1.16b, v3.16b         \n" /* G,A GGGGGGGG         */ \
-  "dup        v0.2D, v2.D[1]                 \n"                            \
-  "dup        v1.2D, v3.D[1]                 \n"
+#define ARGB4444TOARGB                               \
+  /* Input: v0.8h = AAAARRRRGGGGBBBB */              \
+  "xtn        v1.8b, v0.8h        \n" /* GGGGBBBB */ \
+  "shrn       v2.8b, v0.8h, #4    \n" /* RRRRxxxx */ \
+  "shrn       v3.8b, v0.8h, #8    \n" /* AAAAxxxx */ \
+  "shl        v0.8b, v1.8b, #4    \n" /* BBBB0000 */ \
+  "sri        v1.8b, v1.8b, #4    \n" /* GGGGGGGG */ \
+  "sri        v2.8b, v2.8b, #4    \n" /* RRRRRRRR */ \
+  "sri        v3.8b, v3.8b, #4    \n" /* AAAAAAAA */ \
+  "sri        v0.8b, v0.8b, #4    \n" /* BBBBBBBB */
+
+#define ARGB4444TORGB                                \
+  /* Input: v0.8h = xxxxRRRRGGGGBBBB */              \
+  "xtn        v1.8b, v0.8h        \n" /* GGGGBBBB */ \
+  "shrn       v2.8b, v0.8h, #4    \n" /* RRRRxxxx */ \
+  "shl        v0.8b, v1.8b, #4    \n" /* BBBB0000 */ \
+  "sri        v1.8b, v1.8b, #4    \n" /* GGGGGGGG */ \
+  "sri        v2.8b, v2.8b, #4    \n" /* RRRRRRRR */ \
+  "sri        v0.8b, v0.8b, #4    \n" /* BBBBBBBB */
 
 void ARGB4444ToARGBRow_NEON(const uint8_t* src_argb4444,
                             uint8_t* dst_argb,
@@ -2870,25 +2876,25 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
       RGBTOUV_SETUP_REG  // sets v20-v25
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB4444 pixels.
-      ARGB4444TOARGB
+      ARGB4444TORGB
       "uaddlp      v16.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
       "prfm        pldl1keep, [%0, 448]          \n"
       "uaddlp      v17.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
       "uaddlp      v18.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
       "ld1         {v0.16b}, [%0], #16           \n"  // next 8 ARGB4444 pixels.
-      ARGB4444TOARGB
+      ARGB4444TORGB
       "uaddlp      v26.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
       "uaddlp      v27.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
       "uaddlp      v28.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
 
       "ld1         {v0.16b}, [%1], #16           \n"  // load 8 ARGB4444 pixels.
-      ARGB4444TOARGB
+      ARGB4444TORGB
       "uadalp      v16.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
       "prfm        pldl1keep, [%1, 448]          \n"
       "uadalp      v17.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
       "uadalp      v18.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
       "ld1         {v0.16b}, [%1], #16           \n"  // next 8 ARGB4444 pixels.
-      ARGB4444TOARGB
+      ARGB4444TORGB
       "uadalp      v26.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
       "uadalp      v27.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
       "uadalp      v28.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
@@ -2983,7 +2989,7 @@ void ARGB4444ToYRow_NEON(const uint8_t* src_argb4444,
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB4444 pixels.
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
-      ARGB4444TOARGB
+      ARGB4444TORGB
       "umull       v3.8h, v0.8b, v24.8b          \n"  // B
       "prfm        pldl1keep, [%0, 448]          \n"
       "umlal       v3.8h, v1.8b, v25.8b          \n"  // G
