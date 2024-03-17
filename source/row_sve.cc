@@ -29,6 +29,20 @@ extern "C" {
   "trn1       z0.b, z0.b, z0.b               \n" \
   "prfm       pldl1keep, [%[src_v], 448]     \n"
 
+#define READYUV422_SVE                           \
+  "ld1b       {z0.h}, p1/z, [%[src_y]]       \n" \
+  "ld1b       {z1.s}, p1/z, [%[src_u]]       \n" \
+  "ld1b       {z2.s}, p1/z, [%[src_v]]       \n" \
+  "inch       %[src_y]                       \n" \
+  "incw       %[src_u]                       \n" \
+  "incw       %[src_v]                       \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "prfm       pldl1keep, [%[src_u], 128]     \n" \
+  "prfm       pldl1keep, [%[src_v], 128]     \n" \
+  "trn1       z0.b, z0.b, z0.b               \n" \
+  "trn1       z1.h, z1.h, z1.h               \n" \
+  "trn1       z2.h, z2.h, z2.h               \n"
+
 #define YUVTORGB_SVE_SETUP                          \
   "ld1rb  {z28.h}, p0/z, [%[kUVCoeff], #0]      \n" \
   "ld1rb  {z29.h}, p0/z, [%[kUVCoeff], #1]      \n" \
@@ -92,6 +106,48 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
       // Calculate a predicate for the final iteration to deal with the tail.
       "2:                                               \n"
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV444_SVE
+          I4XXTORGB_SVE RGBTORGBA8_SVE
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width),                               // %[width]
+        [vl] "=&r"(vl)                                     // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
+void I422ToARGBRow_SVE2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm volatile(
+      "cnth     %[vl]                                   \n"
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n" /* A */
+      "cmp      %w[width], %w[vl]                       \n"
+      "b.le     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "sub      %w[width], %w[width], %w[vl]            \n"
+      "1:                                               \n" READYUV422_SVE
+          I4XXTORGB_SVE RGBTORGBA8_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
+      "b.gt     1b                                      \n"
+      "add      %w[width], %w[width], %w[vl]            \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "2:                                               \n"
+      "whilelt  p1.h, wzr, %w[width]                    \n" READYUV422_SVE
           I4XXTORGB_SVE RGBTORGBA8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       : [src_y] "+r"(src_y),                               // %[src_y]

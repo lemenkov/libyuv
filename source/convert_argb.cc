@@ -112,6 +112,11 @@ int I420ToARGBMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToARGBRow = I422ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_I422TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I422ToARGBRow = I422ToARGBRow_Any_MSA;
@@ -364,6 +369,11 @@ int I422ToARGBMatrix(const uint8_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       I422ToARGBRow = I422ToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToARGBRow = I422ToARGBRow_SVE2;
   }
 #endif
 #if defined(HAS_I422TOARGBROW_MSA)
@@ -5934,6 +5944,11 @@ int I420ToRGB565Dither(const uint8_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       I422ToARGBRow = I422ToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToARGBRow = I422ToARGBRow_SVE2;
   }
 #endif
 #if defined(HAS_I422TOARGBROW_MSA)
