@@ -29,7 +29,9 @@ config("libyuv_config") {
       ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64" ]
     }
   }
-  defines = []
+
+  # Define CHROMIUM to tell cpu_id to avoid sandbox unsafe system calls.
+  defines = [ "CHROMIUM" ]
   if (!libyuv_use_neon) {
     defines += [ "LIBYUV_DISABLE_NEON" ]
   }
