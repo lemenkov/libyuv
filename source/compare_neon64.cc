@@ -47,7 +47,7 @@ uint32_t HammingDistance_NEON(const uint8_t* src_a,
       "fmov        %w3, s4                       \n"
       : "+r"(src_a), "+r"(src_b), "+r"(count), "=r"(diff)
       :
-      : "cc", "v0", "v1", "v2", "v3", "v4");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4");
   return diff;
 }
 
@@ -56,10 +56,10 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
                              int count) {
   uint32_t sse;
   asm volatile(
-      "eor         v16.16b, v16.16b, v16.16b     \n"
-      "eor         v18.16b, v18.16b, v18.16b     \n"
-      "eor         v17.16b, v17.16b, v17.16b     \n"
-      "eor         v19.16b, v19.16b, v19.16b     \n"
+      "movi        v16.16b, #0                   \n"
+      "movi        v17.16b, #0                   \n"
+      "movi        v18.16b, #0                   \n"
+      "movi        v19.16b, #0                   \n"
 
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], #16           \n"
@@ -82,7 +82,7 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
       "fmov        %w3, s0                       \n"
       : "+r"(src_a), "+r"(src_b), "+r"(count), "=r"(sse)
       :
-      : "cc", "v0", "v1", "v2", "v3", "v16", "v17", "v18", "v19");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v16", "v17", "v18", "v19");
   return sse;
 }
 
