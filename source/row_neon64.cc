@@ -147,6 +147,13 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "uqshrn     v16.8b, v16.8h, #6             \n" \
   "uqshrn     v18.8b, v18.8h, #6             \n"
 
+// Convert from 2.14 fixed point RGB to 8 bit RGB, placing the results in the
+// top half of each lane.
+#define RGBTORGB8_TOP                            \
+  "uqshl      v17.8h, v17.8h, #2             \n" \
+  "uqshl      v16.8h, v16.8h, #2             \n" \
+  "uqshl      v18.8h, v18.8h, #2             \n"
+
 #define YUVTORGB_REGS                                                         \
   "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18", "v24", \
       "v25", "v26", "v27", "v28", "v29", "v30", "v31"
@@ -321,12 +328,24 @@ void I422ToRGB24Row_NEON(const uint8_t* src_y,
       : "cc", "memory", YUVTORGB_REGS);
 }
 
-#define ARGBTORGB565                                                        \
-  "shll       v18.8h, v18.8b, #8             \n" /* R                    */ \
-  "shll       v17.8h, v17.8b, #8             \n" /* G                    */ \
-  "shll       v16.8h, v16.8b, #8             \n" /* B                    */ \
-  "sri        v18.8h, v17.8h, #5             \n" /* RG                   */ \
-  "sri        v18.8h, v16.8h, #11            \n" /* RGB                  */
+#define ARGBTORGB565                                                \
+  /* Inputs:                                                        \
+   * v16: bbbbbxxx                                                  \
+   * v17: ggggggxx                                                  \
+   * v18: rrrrrxxx */                                               \
+  "shll       v18.8h, v18.8b, #8     \n" /* rrrrrrxx00000000     */ \
+  "shll       v17.8h, v17.8b, #8     \n" /* gggggxxx00000000     */ \
+  "shll       v16.8h, v16.8b, #8     \n" /* bbbbbbxx00000000     */ \
+  "sri        v18.8h, v17.8h, #5     \n" /* rrrrrgggggg00000     */ \
+  "sri        v18.8h, v16.8h, #11    \n" /* rrrrrggggggbbbbb     */
+
+#define ARGBTORGB565_FROM_TOP                                       \
+  /* Inputs:                                                        \
+   * v16: bbbbbxxxxxxxxxxx                                          \
+   * v17: ggggggxxxxxxxxxx                                          \
+   * v18: rrrrrxxxxxxxxxxx */                                       \
+  "sri        v18.8h, v17.8h, #5     \n" /* rrrrrgggggg00000     */ \
+  "sri        v18.8h, v16.8h, #11    \n" /* rrrrrggggggbbbbb     */
 
 void I422ToRGB565Row_NEON(const uint8_t* src_y,
                           const uint8_t* src_u,
@@ -337,7 +356,8 @@ void I422ToRGB565Row_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "1:                                        \n" READYUV422 I4XXTORGB
-          RGBTORGB8 "subs        %w[width], %w[width], #8      \n" ARGBTORGB565
+          RGBTORGB8_TOP
+      "subs        %w[width], %w[width], #8      \n" ARGBTORGB565_FROM_TOP
       "st1         {v18.8h}, [%[dst_rgb565]], #16 \n"  // store 8 pixels RGB565.
       "b.gt        1b                            \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
@@ -579,8 +599,9 @@ void NV12ToRGB565Row_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "ldr         q2, [%[kNV12Table]]           \n"
-      "1:                                        \n" READNV12 NVTORGB RGBTORGB8
-      "subs        %w[width], %w[width], #8      \n" ARGBTORGB565
+      "1:                                        \n" READNV12 NVTORGB
+          RGBTORGB8_TOP
+      "subs        %w[width], %w[width], #8      \n" ARGBTORGB565_FROM_TOP
       "st1         {v18.8h}, [%[dst_rgb565]], #16 \n"  // store 8
                                                        // pixels
                                                        // RGB565.
