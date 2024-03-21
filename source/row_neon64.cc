@@ -1293,33 +1293,31 @@ void MergeARGB16To8Row_NEON(const uint16_t* src_r,
                             uint8_t* dst_argb,
                             int depth,
                             int width) {
-  int shift = 8 - depth;
+  // Shift is 8 - depth, +8 so the result is in the top half of each lane.
+  int shift = 16 - depth;
   asm volatile(
-
       "dup         v31.8h, %w6                   \n"
       "1:                                        \n"
-      "ldr         q2, [%0], #16                 \n"  // R
+      "ldr         q0, [%0], #16                 \n"  // B
       "ldr         q1, [%1], #16                 \n"  // G
-      "ldr         q0, [%2], #16                 \n"  // B
+      "ldr         q2, [%2], #16                 \n"  // R
       "ldr         q3, [%3], #16                 \n"  // A
-      "ushl        v2.8h, v2.8h, v31.8h          \n"
+      "uqshl       v0.8h, v0.8h, v31.8h          \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "ushl        v1.8h, v1.8h, v31.8h          \n"
+      "uqshl       v1.8h, v1.8h, v31.8h          \n"
       "prfm        pldl1keep, [%1, 448]          \n"
-      "ushl        v0.8h, v0.8h, v31.8h          \n"
+      "uqshl       v2.8h, v2.8h, v31.8h          \n"
       "prfm        pldl1keep, [%2, 448]          \n"
-      "ushl        v3.8h, v3.8h, v31.8h          \n"
+      "uqshl       v3.8h, v3.8h, v31.8h          \n"
       "prfm        pldl1keep, [%3, 448]          \n"
-      "uqxtn       v2.8b, v2.8h                  \n"
-      "uqxtn       v1.8b, v1.8h                  \n"
-      "uqxtn       v0.8b, v0.8h                  \n"
-      "uqxtn       v3.8b, v3.8h                  \n"
+      "trn2        v0.16b, v0.16b, v1.16b        \n"
+      "trn2        v1.16b, v2.16b, v3.16b        \n"
       "subs        %w5, %w5, #8                  \n"
-      "st4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%4], #32 \n"
+      "st2         {v0.8h, v1.8h}, [%4], #32     \n"
       "b.gt        1b                            \n"
-      : "+r"(src_r),     // %0
+      : "+r"(src_b),     // %0
         "+r"(src_g),     // %1
-        "+r"(src_b),     // %2
+        "+r"(src_r),     // %2
         "+r"(src_a),     // %3
         "+r"(dst_argb),  // %4
         "+r"(width)      // %5
@@ -1333,30 +1331,29 @@ void MergeXRGB16To8Row_NEON(const uint16_t* src_r,
                             uint8_t* dst_argb,
                             int depth,
                             int width) {
-  int shift = 8 - depth;
+  // Shift is 8 - depth, +8 so the result is in the top half of each lane.
+  int shift = 16 - depth;
   asm volatile(
-
       "dup         v31.8h, %w5                   \n"
-      "movi        v3.8b, #0xff                  \n"  // A (0xff)
+      "movi        v3.16b, #0xff                 \n"  // A (0xff)
       "1:                                        \n"
-      "ldr         q2, [%0], #16                 \n"  // R
+      "ldr         q0, [%0], #16                 \n"  // B
       "ldr         q1, [%1], #16                 \n"  // G
-      "ldr         q0, [%2], #16                 \n"  // B
-      "ushl        v2.8h, v2.8h, v31.8h          \n"
+      "ldr         q2, [%2], #16                 \n"  // R
+      "uqshl       v0.8h, v0.8h, v31.8h          \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "ushl        v1.8h, v1.8h, v31.8h          \n"
+      "uqshl       v1.8h, v1.8h, v31.8h          \n"
       "prfm        pldl1keep, [%1, 448]          \n"
-      "ushl        v0.8h, v0.8h, v31.8h          \n"
+      "uqshl       v2.8h, v2.8h, v31.8h          \n"
       "prfm        pldl1keep, [%2, 448]          \n"
-      "uqxtn       v2.8b, v2.8h                  \n"
-      "uqxtn       v1.8b, v1.8h                  \n"
-      "uqxtn       v0.8b, v0.8h                  \n"
+      "trn2        v0.16b, v0.16b, v1.16b        \n"
+      "trn2        v1.16b, v2.16b, v3.16b        \n"
       "subs        %w4, %w4, #8                  \n"
-      "st4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%3], #32 \n"
+      "st2         {v0.8h, v1.8h}, [%3], #32     \n"
       "b.gt        1b                            \n"
-      : "+r"(src_r),     // %0
+      : "+r"(src_b),     // %0
         "+r"(src_g),     // %1
-        "+r"(src_b),     // %2
+        "+r"(src_r),     // %2
         "+r"(dst_argb),  // %3
         "+r"(width)      // %4
       : "r"(shift)       // %5
