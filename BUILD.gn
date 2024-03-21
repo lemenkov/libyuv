@@ -35,6 +35,9 @@ config("libyuv_config") {
   if (!libyuv_use_neon) {
     defines += [ "LIBYUV_DISABLE_NEON" ]
   }
+  if (!libyuv_use_sve) {
+    defines += [ "LIBYUV_DISABLE_SVE" ]
+  }
   if (libyuv_disable_rvv) {
     defines += [ "LIBYUV_DISABLE_RVV" ]
   }
@@ -76,6 +79,10 @@ group("libyuv") {
 
   if (libyuv_use_neon) {
     deps += [ ":libyuv_neon" ]
+  }
+
+  if (libyuv_use_sve) {
+    deps += [ ":libyuv_sve" ]
   }
 
   if (libyuv_use_msa) {
@@ -238,6 +245,31 @@ if (libyuv_use_neon) {
       configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
+  }
+}
+
+if (libyuv_use_sve) {
+  static_library("libyuv_sve") {
+    sources = [
+      "source/row_sve.cc",
+    ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+
+    # Always enable optimization for Release and NaCl builds (to workaround
+    # crbug.com/538243).
+    if (!is_debug) {
+      configs -= [ "//build/config/compiler:default_optimization" ]
+
+      # Enable optimize for speed (-O2) over size (-Os).
+      # TODO(fbarchard): Consider optimize_speed which is O3.
+      configs += [ "//build/config/compiler:optimize_max" ]
+    }
+
+    # SVE2 is an Armv9-A feature.
+    cflags = [ "-march=armv9-a+sve2" ]
   }
 }
 
