@@ -528,7 +528,7 @@ ANY31PT(MergeXR30Row_10_Any_NEON,
         2,
         uint8_t,
         4,
-        3)
+        7)
 #endif
 
 #ifdef HAS_MERGEXR64ROW_AVX2

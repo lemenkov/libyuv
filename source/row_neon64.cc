@@ -1195,32 +1195,34 @@ void MergeXR30Row_10_NEON(const uint16_t* src_r,
                           uint8_t* dst_ar30,
                           int /* depth */,
                           int width) {
+  // Neon has no "shift left and accumulate/orr", so use a multiply-add to
+  // perform the shift instead.
+  int limit = 1023;
   asm volatile(
-      "movi        v30.16b, #255                 \n"
-      "ushr        v30.4s, v30.4s, #22           \n"  // 1023
-      "1:                                        \n"
-      "ldr         d2, [%2], #8                  \n"  // B
-      "ldr         d1, [%1], #8                  \n"  // G
-      "ldr         d0, [%0], #8                  \n"  // R
-      "ushll       v2.4s, v2.4h, #0              \n"  // 000B
-      "ushll       v1.4s, v1.4h, #0              \n"  // G
-      "ushll       v0.4s, v0.4h, #0              \n"  // R
-      "umin        v2.4s, v2.4s, v30.4s          \n"
-      "umin        v1.4s, v1.4s, v30.4s          \n"
-      "umin        v0.4s, v0.4s, v30.4s          \n"
-      "sli         v2.4s, v1.4s, #10             \n"  // 00GB
-      "sli         v2.4s, v0.4s, #20             \n"  // 0RGB
-      "orr         v2.4s, #0xc0, lsl #24         \n"  // ARGB (AR30)
-      "subs        %w4, %w4, #4                  \n"
-      "str         q2, [%3], #16                 \n"
-      "b.gt        1b                            \n"
+      "dup    v5.8h, %w[limit]          \n"
+      "movi   v6.8h, #16                \n"  // 1 << 4
+      "movi   v7.8h, #4, lsl #8         \n"  // 1 << 10
+      "1:                               \n"
+      "ldr    q0, [%0], #16             \n"  // xxxxxxRrrrrrrrrr
+      "ldr    q1, [%1], #16             \n"  // xxxxxxGggggggggg
+      "ldr    q2, [%2], #16             \n"  // xxxxxxBbbbbbbbbb
+      "umin   v0.8h, v0.8h, v5.8h       \n"  // 000000Rrrrrrrrrr
+      "umin   v1.8h, v1.8h, v5.8h       \n"  // 000000Gggggggggg
+      "movi   v4.8h, #0xc0, lsl #8      \n"  // 1100000000000000
+      "umin   v3.8h, v2.8h, v5.8h       \n"  // 000000Bbbbbbbbbb
+      "mla    v4.8h, v0.8h, v6.8h       \n"  // 11Rrrrrrrrrr0000
+      "mla    v3.8h, v1.8h, v7.8h       \n"  // ggggggBbbbbbbbbb
+      "usra   v4.8h, v1.8h, #6          \n"  // 11RrrrrrrrrrGggg
+      "subs   %w4, %w4, #8              \n"
+      "st2    {v3.8h, v4.8h}, [%3], #32 \n"
+      "b.gt   1b                        \n"
       : "+r"(src_r),     // %0
         "+r"(src_g),     // %1
         "+r"(src_b),     // %2
         "+r"(dst_ar30),  // %3
         "+r"(width)      // %4
-      :
-      : "memory", "cc", "v0", "v1", "v2", "v30");
+      : [limit] "r"(limit)
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
 void MergeAR64Row_NEON(const uint16_t* src_r,
