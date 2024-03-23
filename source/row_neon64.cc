@@ -3012,7 +3012,7 @@ void ARGB1555ToYRow_NEON(const uint8_t* src_argb1555,
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB1555 pixels.
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
-      ARGB1555TOARGB
+      RGB555TOARGB
       "umull       v3.8h, v0.8b, v4.8b           \n"  // B
       "prfm        pldl1keep, [%0, 448]          \n"
       "umlal       v3.8h, v1.8b, v5.8b           \n"  // G
