@@ -1911,16 +1911,11 @@ void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
   );
 }
 
-#define ARGB4444TOARGB                               \
-  /* Input: v0.8h = AAAARRRRGGGGBBBB */              \
-  "xtn        v1.8b, v0.8h        \n" /* GGGGBBBB */ \
-  "shrn       v2.8b, v0.8h, #4    \n" /* RRRRxxxx */ \
-  "shrn       v3.8b, v0.8h, #8    \n" /* AAAAxxxx */ \
-  "shl        v0.8b, v1.8b, #4    \n" /* BBBB0000 */ \
-  "sri        v1.8b, v1.8b, #4    \n" /* GGGGGGGG */ \
-  "sri        v2.8b, v2.8b, #4    \n" /* RRRRRRRR */ \
-  "sri        v3.8b, v3.8b, #4    \n" /* AAAAAAAA */ \
-  "sri        v0.8b, v0.8b, #4    \n" /* BBBBBBBB */
+#define ARGB4444TOARGB                                        \
+  /* Input: v1.8h = AAAARRRR_GGGGBBBB */                      \
+  "shl        v0.16b, v1.16b, #4  \n" /* RRRR0000_BBBB0000 */ \
+  "sri        v1.16b, v1.16b, #4  \n" /* AAAAAAAA_GGGGGGGG */ \
+  "sri        v0.16b, v0.16b, #4  \n" /* RRRRRRRR_BBBBBBBB */
 
 #define ARGB4444TORGB                                \
   /* Input: v0.8h = xxxxRRRRGGGGBBBB */              \
@@ -1936,10 +1931,10 @@ void ARGB4444ToARGBRow_NEON(const uint8_t* src_argb4444,
                             int width) {
   asm volatile(
       "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB4444 pixels.
+      "ld1         {v1.16b}, [%0], #16           \n"  // load 8 ARGB4444 pixels.
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
       "prfm        pldl1keep, [%0, 448]          \n" ARGB4444TOARGB
-      "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%1], #32 \n"  // store 8 ARGB
+      "st2         {v0.16b, v1.16b}, [%1], #32   \n"  // store 8 ARGB.
       "b.gt        1b                            \n"
       : "+r"(src_argb4444),  // %0
         "+r"(dst_argb),      // %1
