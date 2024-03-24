@@ -3779,8 +3779,8 @@ void ARGBMultiplyRow_NEON(const uint8_t* src_argb,
   asm volatile(
       // 8 pixel loop.
       "1:                                        \n"
-      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load 8 ARGB
-      "ld4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"  // load 8 more
+      "ld1         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load 8 ARGB
+      "ld1         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"  // load 8 more
       "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
       "umull       v0.8h, v0.8b, v4.8b           \n"  // multiply B
       "prfm        pldl1keep, [%0, 448]          \n"
@@ -3792,7 +3792,7 @@ void ARGBMultiplyRow_NEON(const uint8_t* src_argb,
       "rshrn       v1.8b, v1.8h, #8              \n"  // 16 bit to 8 bit G
       "rshrn       v2.8b, v2.8h, #8              \n"  // 16 bit to 8 bit R
       "rshrn       v3.8b, v3.8h, #8              \n"  // 16 bit to 8 bit A
-      "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32 \n"  // store 8 ARGB
+      "st1         {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32 \n"  // store 8 ARGB
       "b.gt        1b                            \n"
       : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
