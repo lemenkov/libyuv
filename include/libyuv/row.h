@@ -4983,46 +4983,6 @@ void UYVYToARGBRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             const struct YuvConstants* yuvconstants,
                             int width);
-void P210ToARGBRow_NEON(const uint16_t* y_buf,
-                        const uint16_t* uv_buf,
-                        uint8_t* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
-void P410ToARGBRow_NEON(const uint16_t* y_buf,
-                        const uint16_t* uv_buf,
-                        uint8_t* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
-void P210ToAR30Row_NEON(const uint16_t* y_buf,
-                        const uint16_t* uv_buf,
-                        uint8_t* dst_ar30,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
-void P410ToAR30Row_NEON(const uint16_t* y_buf,
-                        const uint16_t* uv_buf,
-                        uint8_t* dst_ar30,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
-void P210ToARGBRow_Any_NEON(const uint16_t* y_buf,
-                            const uint16_t* uv_buf,
-                            uint8_t* dst_argb,
-                            const struct YuvConstants* yuvconstants,
-                            int width);
-void P410ToARGBRow_Any_NEON(const uint16_t* y_buf,
-                            const uint16_t* uv_buf,
-                            uint8_t* dst_argb,
-                            const struct YuvConstants* yuvconstants,
-                            int width);
-void P210ToAR30Row_Any_NEON(const uint16_t* y_buf,
-                            const uint16_t* uv_buf,
-                            uint8_t* dst_ar30,
-                            const struct YuvConstants* yuvconstants,
-                            int width);
-void P410ToAR30Row_Any_NEON(const uint16_t* y_buf,
-                            const uint16_t* uv_buf,
-                            uint8_t* dst_ar30,
-                            const struct YuvConstants* yuvconstants,
-                            int width);
 void I444ToARGBRow_Any_MSA(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
