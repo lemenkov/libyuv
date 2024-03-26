@@ -4560,28 +4560,23 @@ void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
-// Shuffle table for swapping UV bytes.
-static const uvec8 kShuffleSwapUV = {1u, 0u, 3u,  2u,  5u,  4u,  7u,  6u,
-                                     9u, 8u, 11u, 10u, 13u, 12u, 15u, 14u};
-
 // Convert UV plane of NV12 to VU of NV21.
 void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile(
-      "ld1         {v2.16b}, [%3]                \n"  // shuffler
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], 16            \n"  // load 16 UV values
       "ld1         {v1.16b}, [%0], 16            \n"
       "subs        %w2, %w2, #16                 \n"  // 16 pixels per loop
-      "tbl         v0.16b, {v0.16b}, v2.16b      \n"
+      "rev16       v0.16b, v0.16b                \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "tbl         v1.16b, {v1.16b}, v2.16b      \n"
+      "rev16       v1.16b, v1.16b                \n"
       "stp         q0, q1, [%1], 32              \n"  // store 16 VU pixels
       "b.gt        1b                            \n"
-      : "+r"(src_uv),         // %0
-        "+r"(dst_vu),         // %1
-        "+r"(width)           // %2
-      : "r"(&kShuffleSwapUV)  // %3
-      : "cc", "memory", "v0", "v1", "v2");
+      : "+r"(src_uv),  // %0
+        "+r"(dst_vu),  // %1
+        "+r"(width)    // %2
+      :
+      : "cc", "memory", "v0", "v1");
 }
 
 void HalfMergeUVRow_NEON(const uint8_t* src_u,
