@@ -2315,16 +2315,6 @@ deps = {
   # === ANDROID_DEPS Generated Code End ===
 }
 
-pre_deps_hooks = [
-  {
-    # Remove any symlinks from before 177567c518b121731e507e9b9c4049c4dc96e4c8.
-    # TODO(kjellander): Remove this in March 2017.
-    'name': 'cleanup_links',
-    'pattern': '.',
-    'action': ['python3', 'src/cleanup_links.py'],
-  },
-]
-
 hooks = [
   {
     # This clobbers when necessary (based on get_landmines.py). It should be
