@@ -14,8 +14,58 @@ SET ( ly_lib_name	yuv )
 SET ( ly_lib_static	${ly_lib_name} )
 SET ( ly_lib_shared	${ly_lib_name}_shared )
 
-FILE ( GLOB_RECURSE	ly_source_files ${ly_src_dir}/*.cc )
-LIST ( SORT			ly_source_files )
+# We cannot use GLOB here since we want to be able to separate out files that
+# need particular flags to enable architecture extensions like AArch64's SVE.
+# TODO: More of these files could be separated out for different architectures.
+SET ( ly_common_source_files
+  ${ly_src_dir}/compare.cc
+  ${ly_src_dir}/compare_common.cc
+  ${ly_src_dir}/compare_gcc.cc
+  ${ly_src_dir}/compare_msa.cc
+  ${ly_src_dir}/compare_neon.cc
+  ${ly_src_dir}/compare_win.cc
+  ${ly_src_dir}/convert_argb.cc
+  ${ly_src_dir}/convert.cc
+  ${ly_src_dir}/convert_from_argb.cc
+  ${ly_src_dir}/convert_from.cc
+  ${ly_src_dir}/convert_jpeg.cc
+  ${ly_src_dir}/convert_to_argb.cc
+  ${ly_src_dir}/convert_to_i420.cc
+  ${ly_src_dir}/cpu_id.cc
+  ${ly_src_dir}/mjpeg_decoder.cc
+  ${ly_src_dir}/mjpeg_validate.cc
+  ${ly_src_dir}/planar_functions.cc
+  ${ly_src_dir}/rotate_any.cc
+  ${ly_src_dir}/rotate_argb.cc
+  ${ly_src_dir}/rotate.cc
+  ${ly_src_dir}/rotate_common.cc
+  ${ly_src_dir}/rotate_gcc.cc
+  ${ly_src_dir}/rotate_lsx.cc
+  ${ly_src_dir}/rotate_msa.cc
+  ${ly_src_dir}/rotate_neon.cc
+  ${ly_src_dir}/rotate_win.cc
+  ${ly_src_dir}/row_any.cc
+  ${ly_src_dir}/row_common.cc
+  ${ly_src_dir}/row_gcc.cc
+  ${ly_src_dir}/row_lasx.cc
+  ${ly_src_dir}/row_lsx.cc
+  ${ly_src_dir}/row_msa.cc
+  ${ly_src_dir}/row_neon.cc
+  ${ly_src_dir}/row_rvv.cc
+  ${ly_src_dir}/row_win.cc
+  ${ly_src_dir}/scale_any.cc
+  ${ly_src_dir}/scale_argb.cc
+  ${ly_src_dir}/scale.cc
+  ${ly_src_dir}/scale_common.cc
+  ${ly_src_dir}/scale_gcc.cc
+  ${ly_src_dir}/scale_lsx.cc
+  ${ly_src_dir}/scale_msa.cc
+  ${ly_src_dir}/scale_neon.cc
+  ${ly_src_dir}/scale_rgb.cc
+  ${ly_src_dir}/scale_rvv.cc
+  ${ly_src_dir}/scale_uv.cc
+  ${ly_src_dir}/scale_win.cc
+  ${ly_src_dir}/video_common.cc)
 
 FILE ( GLOB_RECURSE	ly_unittest_sources ${ly_tst_dir}/*.cc )
 LIST ( SORT			ly_unittest_sources )
@@ -26,15 +76,44 @@ if(MSVC)
   ADD_DEFINITIONS ( -D_CRT_SECURE_NO_WARNINGS )
 endif()
 
+# Need to set PIC to allow creating shared libraries from object file libraries.
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Build the set of objects that do not need to be compiled with flags to enable
+# particular architecture features.
+ADD_LIBRARY( ${ly_lib_name}_common_objects OBJECT ${ly_common_source_files} )
+SET(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_static}_common_objects>)
+
+if(NOT MSVC)
+  STRING(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" arch_lowercase)
+
+  if(arch_lowercase STREQUAL "aarch64")
+    # Enable AArch64 Neon dot-product and i8mm kernels.
+    ADD_LIBRARY(${ly_lib_name}_neon64 OBJECT
+      ${ly_src_dir}/compare_neon64.cc
+      ${ly_src_dir}/rotate_neon64.cc
+      ${ly_src_dir}/row_neon64.cc
+      ${ly_src_dir}/scale_neon64.cc)
+    TARGET_COMPILE_OPTIONS(${ly_lib_name}_neon64 PRIVATE -march=armv8-a+dotprod+i8mm)
+    LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon64>)
+
+    # Enable AArch64 SVE kernels.
+    ADD_LIBRARY(${ly_lib_name}_sve OBJECT
+      ${ly_src_dir}/row_sve.cc)
+    TARGET_COMPILE_OPTIONS(${ly_lib_name}_sve PRIVATE -march=armv9-a+sve2)
+    LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
+  endif()
+endif()
+
 # this creates the static library (.a)
-ADD_LIBRARY				( ${ly_lib_static} STATIC ${ly_source_files} )
+ADD_LIBRARY( ${ly_lib_static} STATIC ${ly_lib_parts})
 
 # this creates the shared library (.so)
-ADD_LIBRARY				( ${ly_lib_shared} SHARED ${ly_source_files} )
-SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES OUTPUT_NAME "${ly_lib_name}" )
-SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES PREFIX "lib" )
+ADD_LIBRARY( ${ly_lib_shared} SHARED ${ly_lib_parts})
+SET_TARGET_PROPERTIES( ${ly_lib_shared} PROPERTIES OUTPUT_NAME "${ly_lib_name}" )
+SET_TARGET_PROPERTIES( ${ly_lib_shared} PROPERTIES PREFIX "lib" )
 if(WIN32)
-  SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES IMPORT_PREFIX "lib" )
+  SET_TARGET_PROPERTIES( ${ly_lib_shared} PROPERTIES IMPORT_PREFIX "lib" )
 endif()
 
 # this creates the cpuid tool
