@@ -1138,6 +1138,14 @@ int I012ToAR30Matrix(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I212TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I212ToAR30Row = I212ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I212ToAR30Row = I212ToAR30Row_NEON;
+    }
+  }
+#endif
   for (y = 0; y < height; ++y) {
     I212ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
     dst_ar30 += dst_stride_ar30;
@@ -1590,6 +1598,14 @@ int I012ToARGBMatrix(const uint16_t* src_y,
     I212ToARGBRow = I212ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       I212ToARGBRow = I212ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I212TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I212ToARGBRow = I212ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I212ToARGBRow = I212ToARGBRow_NEON;
     }
   }
 #endif

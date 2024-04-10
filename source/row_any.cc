@@ -528,6 +528,12 @@ ANY31CT(I210ToAR30Row_Any_NEON, I210ToAR30Row_NEON, 1, 0, uint16_t, 2, 4, 7)
 #ifdef HAS_I410TOAR30ROW_NEON
 ANY31CT(I410ToAR30Row_Any_NEON, I410ToAR30Row_NEON, 0, 0, uint16_t, 2, 4, 7)
 #endif
+#ifdef HAS_I212TOARGBROW_NEON
+ANY31CT(I212ToARGBRow_Any_NEON, I212ToARGBRow_NEON, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I212TOAR30ROW_NEON
+ANY31CT(I212ToAR30Row_Any_NEON, I212ToAR30Row_NEON, 1, 0, uint16_t, 2, 4, 7)
+#endif
 #undef ANY31CT
 
 // Any 3 planes to 1 plane with parameter
