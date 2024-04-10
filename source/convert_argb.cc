@@ -954,6 +954,14 @@ int I010ToAR30Matrix(const uint16_t* src_y,
     dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
+#if defined(HAS_I210TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I210ToAR30Row = I210ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I210ToAR30Row = I210ToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_I210TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I210ToAR30Row = I210ToAR30Row_Any_SSSE3;
@@ -1172,6 +1180,14 @@ int I210ToAR30Matrix(const uint16_t* src_y,
     dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
+#if defined(HAS_I210TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I210ToAR30Row = I210ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I210ToAR30Row = I210ToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_I210TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I210ToAR30Row = I210ToAR30Row_Any_SSSE3;
@@ -1327,6 +1343,14 @@ int I410ToAR30Matrix(const uint16_t* src_y,
     dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
+#if defined(HAS_I410TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I410ToAR30Row = I410ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I410ToAR30Row = I410ToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_I410TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I410ToAR30Row = I410ToAR30Row_Any_SSSE3;
@@ -6699,6 +6723,14 @@ static int I010ToAR30MatrixBilinear(const uint16_t* src_y,
     dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
+#if defined(HAS_I410TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I410ToAR30Row = I410ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I410ToAR30Row = I410ToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_I410TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I410ToAR30Row = I410ToAR30Row_Any_SSSE3;
@@ -6805,6 +6837,14 @@ static int I210ToAR30MatrixLinear(const uint16_t* src_y,
     dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
+#if defined(HAS_I410TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I410ToAR30Row = I410ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I410ToAR30Row = I410ToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_I410TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I410ToAR30Row = I410ToAR30Row_Any_SSSE3;

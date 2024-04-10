@@ -182,6 +182,24 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "uqshl      v16.8h, v16.8h, #2             \n" \
   "uqshl      v18.8h, v18.8h, #2             \n"
 
+// Store 2.14 fixed point RGB as AR30 elements
+#define STOREAR30                                                         \
+  /* Inputs:                                                              \
+   *   v16.8h: xxbbbbbbbbbbxxxx                                           \
+   *   v17.8h: xxggggggggggxxxx                                           \
+   *   v18.8h: xxrrrrrrrrrrxxxx                                           \
+   *   v22.8h: 0011111111110000 (umin limit)                              \
+   *   v23.8h: 1100000000000000 (alpha)                                   \
+   */                                                                     \
+  "uqshl    v0.8h, v16.8h, #2                  \n" /* bbbbbbbbbbxxxxxx */ \
+  "uqshl    v1.8h, v17.8h, #2                  \n" /* ggggggggggxxxxxx */ \
+  "umin     v2.8h, v18.8h, v22.8h              \n" /* 00rrrrrrrrrrxxxx */ \
+  "shl      v4.8h, v1.8h, #4                   \n" /* ggggggxxxxxx0000 */ \
+  "orr      v5.16b, v2.16b, v23.16b            \n" /* 11rrrrrrrrrrxxxx */ \
+  "sri      v4.8h, v0.8h, #6                   \n" /* ggggggbbbbbbbbbb */ \
+  "sri      v5.8h, v1.8h, #12                  \n" /* 11rrrrrrrrrrgggg */ \
+  "st2      {v4.8h, v5.8h}, [%[dst_ar30]], #32 \n"
+
 #define YUVTORGB_REGS                                                         \
   "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18", "v24", \
       "v25", "v26", "v27", "v28", "v29", "v30", "v31"
@@ -231,6 +249,62 @@ void I444ToRGB24Row_NEON(const uint8_t* src_y,
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
       : "cc", "memory", YUVTORGB_REGS);
+}
+
+void I210ToAR30Row_NEON(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  uint16_t limit = 0x3ff0;
+  uint16_t alpha = 0xc000;
+  asm(YUVTORGB_SETUP
+      "dup      v22.8h, %w[limit]                  \n"
+      "dup      v23.8h, %w[alpha]                  \n"
+      "1:                                          \n" READYUV210 NVTORGB
+      "subs     %w[width], %w[width], #8           \n" STOREAR30
+      "b.gt     1b                                 \n"
+      : [src_y] "+r"(src_y),             // %[src_y]
+        [src_u] "+r"(src_u),             // %[src_u]
+        [src_v] "+r"(src_v),             // %[src_v]
+        [dst_ar30] "+r"(dst_ar30),       // %[dst_ar30]
+        [width] "+r"(width)              // %[width]
+      : [kUVCoeff] "r"(uv_coeff),        // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(rgb_coeff),  // %[kRGBCoeffBias]
+        [limit] "r"(limit),              // %[limit]
+        [alpha] "r"(alpha)               // %[alpha]
+      : "cc", "memory", YUVTORGB_REGS, "v22", "v23");
+}
+
+void I410ToAR30Row_NEON(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  uint16_t limit = 0x3ff0;
+  uint16_t alpha = 0xc000;
+  asm(YUVTORGB_SETUP
+      "dup      v22.8h, %w[limit]                  \n"
+      "dup      v23.8h, %w[alpha]                  \n"
+      "1:                                          \n" READYUV410 NVTORGB
+      "subs     %w[width], %w[width], #8           \n" STOREAR30
+      "b.gt     1b                                 \n"
+      : [src_y] "+r"(src_y),             // %[src_y]
+        [src_u] "+r"(src_u),             // %[src_u]
+        [src_v] "+r"(src_v),             // %[src_v]
+        [dst_ar30] "+r"(dst_ar30),       // %[dst_ar30]
+        [width] "+r"(width)              // %[width]
+      : [kUVCoeff] "r"(uv_coeff),        // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(rgb_coeff),  // %[kRGBCoeffBias]
+        [limit] "r"(limit),              // %[limit]
+        [alpha] "r"(alpha)               // %[alpha]
+      : "cc", "memory", YUVTORGB_REGS, "v22", "v23");
 }
 
 void I210ToARGBRow_NEON(const uint16_t* src_y,
