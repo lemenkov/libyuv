@@ -52,6 +52,13 @@ extern "C" {
   "prfm       pldl1keep, [%[src_u], 128]     \n" \
   "prfm       pldl1keep, [%[src_v], 128]     \n"
 
+// Read 8 Y, 4 U and 4 V interleaved from 210
+#define READYUVP210                              \
+  "ldr        q0, [%[src_y]], #16            \n" \
+  "ldr        q1, [%[src_uv]], #16           \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "tbl        v1.16b, {v1.16b}, v2.16b       \n"
+
 // Read 8 Y, 4 U and 4 V from 212
 #define READYUV212                               \
   "ldr        q2, [%[src_y]], #16            \n" \
@@ -79,6 +86,13 @@ extern "C" {
   "uqshrn2    v1.16b, v3.8h, #2              \n" \
   "prfm       pldl1keep, [%[src_u], 128]     \n" \
   "prfm       pldl1keep, [%[src_v], 128]     \n"
+
+// Read 8 Y, 8 U and 8 V interleaved from 410
+#define READYUVP410                                \
+  "ldr        q0, [%[src_y]], #16              \n" \
+  "ldp        q4, q5, [%[src_uv]], #32         \n" \
+  "prfm       pldl1keep, [%[src_y], 448]       \n" \
+  "tbl        v1.16b, {v4.16b, v5.16b}, v2.16b \n"
 
 // Read 8 Y, 8 U and 8 V from 444
 #define READYUV444                               \
@@ -208,9 +222,9 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
    */                                                                     \
   "uqshl    v0.8h, v16.8h, #2                  \n" /* bbbbbbbbbbxxxxxx */ \
   "uqshl    v1.8h, v17.8h, #2                  \n" /* ggggggggggxxxxxx */ \
-  "umin     v2.8h, v18.8h, v22.8h              \n" /* 00rrrrrrrrrrxxxx */ \
+  "umin     v6.8h, v18.8h, v22.8h              \n" /* 00rrrrrrrrrrxxxx */ \
   "shl      v4.8h, v1.8h, #4                   \n" /* ggggggxxxxxx0000 */ \
-  "orr      v5.16b, v2.16b, v23.16b            \n" /* 11rrrrrrrrrrxxxx */ \
+  "orr      v5.16b, v6.16b, v23.16b            \n" /* 11rrrrrrrrrrxxxx */ \
   "sri      v4.8h, v0.8h, #6                   \n" /* ggggggbbbbbbbbbb */ \
   "sri      v5.8h, v1.8h, #12                  \n" /* 11rrrrrrrrrrgggg */ \
   "st2      {v4.8h, v5.8h}, [%[dst_ar30]], #32 \n"
@@ -440,6 +454,117 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
       : "cc", "memory", YUVTORGB_REGS, "v19");
+}
+
+uint8_t kP210LoadShuffleIndices[] = {1, 1, 5, 5, 9,  9,  13, 13,
+                                     3, 3, 7, 7, 11, 11, 15, 15};
+
+void P210ToARGBRow_NEON(const uint16_t* src_y,
+                        const uint16_t* src_uv,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  asm volatile(
+      YUVTORGB_SETUP
+      "movi         v19.8b, #255                       \n"
+      "ldr          q2, [%[kIndices]]                  \n"
+      "1:                                              \n"  //
+      READYUVP210 NVTORGB RGBTORGB8
+      "subs         %w[width], %w[width], #8           \n"
+      "st4          {v16.8b, v17.8b, v18.8b, v19.8b}, [%[dst_argb]], #32 \n"
+      "b.gt         1b                                 \n"
+      : [src_y] "+r"(src_y),                     // %[src_y]
+        [src_uv] "+r"(src_uv),                   // %[src_uv]
+        [dst_argb] "+r"(dst_argb),               // %[dst_argb]
+        [width] "+r"(width)                      // %[width]
+      : [kUVCoeff] "r"(uv_coeff),                // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(rgb_coeff),          // %[kRGBCoeffBias]
+        [kIndices] "r"(kP210LoadShuffleIndices)  // %[kIndices]
+      : "cc", "memory", YUVTORGB_REGS, "v19");
+}
+
+uint8_t kP410LoadShuffleIndices[] = {1, 5, 9,  13, 17, 21, 25, 29,
+                                     3, 7, 11, 15, 19, 23, 27, 31};
+
+void P410ToARGBRow_NEON(const uint16_t* src_y,
+                        const uint16_t* src_uv,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  asm volatile(
+      YUVTORGB_SETUP
+      "movi         v19.8b, #255               \n"
+      "ldr          q2, [%[kIndices]]   \n"
+      "1:                                      \n"  //
+      READYUVP410 NVTORGB RGBTORGB8
+      "subs         %w[width], %w[width], #8   \n"
+      "st4          {v16.8b, v17.8b, v18.8b, v19.8b}, [%[dst_argb]], #32 \n"
+      "b.gt         1b                         \n"
+      : [src_y] "+r"(src_y),                     // %[src_y]
+        [src_uv] "+r"(src_uv),                   // %[src_uv]
+        [dst_argb] "+r"(dst_argb),               // %[dst_argb]
+        [width] "+r"(width)                      // %[width]
+      : [kUVCoeff] "r"(uv_coeff),                // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(rgb_coeff),          // %[kRGBCoeffBias]
+        [kIndices] "r"(kP410LoadShuffleIndices)  // %[kIndices]
+      : "cc", "memory", YUVTORGB_REGS, "v19");
+}
+
+void P210ToAR30Row_NEON(const uint16_t* src_y,
+                        const uint16_t* src_uv,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  const uint16_t limit = 0x3ff0;
+  asm volatile(YUVTORGB_SETUP
+               "dup          v22.8h, %w[limit]          \n"
+               "movi         v23.8h, #0xc0, lsl #8      \n"  // A
+               "ldr          q2, [%[kIndices]]          \n"
+               "1:                                      \n" READYUVP210 NVTORGB
+               "subs         %w[width], %w[width], #8   \n" STOREAR30
+               "b.gt         1b                         \n"
+               : [src_y] "+r"(src_y),                     // %[src_y]
+                 [src_uv] "+r"(src_uv),                   // %[src_uv]
+                 [dst_ar30] "+r"(dst_ar30),               // %[dst_ar30]
+                 [width] "+r"(width)                      // %[width]
+               : [kUVCoeff] "r"(uv_coeff),                // %[kUVCoeff]
+                 [kRGBCoeffBias] "r"(rgb_coeff),          // %[kRGBCoeffBias]
+                 [limit] "r"(limit),                      // %[limit]
+                 [kIndices] "r"(kP210LoadShuffleIndices)  // %[kIndices]
+               : "cc", "memory", YUVTORGB_REGS, "v22", "v23");
+}
+
+void P410ToAR30Row_NEON(const uint16_t* src_y,
+                        const uint16_t* src_uv,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  uint16_t limit = 0x3ff0;
+  uint16_t alpha = 0xc000;
+  asm volatile(YUVTORGB_SETUP
+               "dup          v22.8h, %w[limit]          \n"
+               "movi         v23.8h, #0xc0, lsl #8      \n"  // A
+               "ldr          q2, [%[kIndices]]          \n"
+               "1:                                      \n" READYUVP410 NVTORGB
+               "subs         %w[width], %w[width], #8   \n" STOREAR30
+               "b.gt         1b                         \n"
+               : [src_y] "+r"(src_y),                     // %[src_y]
+                 [src_uv] "+r"(src_uv),                   // %[src_uv]
+                 [dst_ar30] "+r"(dst_ar30),               // %[dst_ar30]
+                 [width] "+r"(width)                      // %[width]
+               : [kUVCoeff] "r"(uv_coeff),                // %[kUVCoeff]
+                 [kRGBCoeffBias] "r"(rgb_coeff),          // %[kRGBCoeffBias]
+                 [limit] "r"(limit),                      // %[limit]
+                 [kIndices] "r"(kP410LoadShuffleIndices)  // %[kIndices]
+               : "cc", "memory", YUVTORGB_REGS, "v22", "v23");
 }
 
 void I422ToAR30Row_NEON(const uint8_t* src_y,
