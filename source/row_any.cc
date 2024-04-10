@@ -516,6 +516,12 @@ ANY31CT(I212ToARGBRow_Any_AVX2, I212ToARGBRow_AVX2, 1, 0, uint16_t, 2, 4, 15)
 #ifdef HAS_I212TOAR30ROW_AVX2
 ANY31CT(I212ToAR30Row_Any_AVX2, I212ToAR30Row_AVX2, 1, 0, uint16_t, 2, 4, 15)
 #endif
+#ifdef HAS_I210TOARGBROW_NEON
+ANY31CT(I210ToARGBRow_Any_NEON, I210ToARGBRow_NEON, 1, 0, uint16_t, 2, 4, 7)
+#endif
+#ifdef HAS_I410TOARGBROW_NEON
+ANY31CT(I410ToARGBRow_Any_NEON, I410ToARGBRow_NEON, 0, 0, uint16_t, 2, 4, 7)
+#endif
 #undef ANY31CT
 
 // Any 3 planes to 1 plane with parameter
