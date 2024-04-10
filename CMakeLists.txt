@@ -22,7 +22,6 @@ SET ( ly_common_source_files
   ${ly_src_dir}/compare_common.cc
   ${ly_src_dir}/compare_gcc.cc
   ${ly_src_dir}/compare_msa.cc
-  ${ly_src_dir}/compare_neon.cc
   ${ly_src_dir}/compare_win.cc
   ${ly_src_dir}/convert_argb.cc
   ${ly_src_dir}/convert.cc
@@ -42,7 +41,6 @@ SET ( ly_common_source_files
   ${ly_src_dir}/rotate_gcc.cc
   ${ly_src_dir}/rotate_lsx.cc
   ${ly_src_dir}/rotate_msa.cc
-  ${ly_src_dir}/rotate_neon.cc
   ${ly_src_dir}/rotate_win.cc
   ${ly_src_dir}/row_any.cc
   ${ly_src_dir}/row_common.cc
@@ -50,7 +48,6 @@ SET ( ly_common_source_files
   ${ly_src_dir}/row_lasx.cc
   ${ly_src_dir}/row_lsx.cc
   ${ly_src_dir}/row_msa.cc
-  ${ly_src_dir}/row_neon.cc
   ${ly_src_dir}/row_rvv.cc
   ${ly_src_dir}/row_win.cc
   ${ly_src_dir}/scale_any.cc
@@ -60,7 +57,6 @@ SET ( ly_common_source_files
   ${ly_src_dir}/scale_gcc.cc
   ${ly_src_dir}/scale_lsx.cc
   ${ly_src_dir}/scale_msa.cc
-  ${ly_src_dir}/scale_neon.cc
   ${ly_src_dir}/scale_rgb.cc
   ${ly_src_dir}/scale_rvv.cc
   ${ly_src_dir}/scale_uv.cc
@@ -82,10 +78,22 @@ SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Build the set of objects that do not need to be compiled with flags to enable
 # particular architecture features.
 ADD_LIBRARY( ${ly_lib_name}_common_objects OBJECT ${ly_common_source_files} )
-SET(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_static}_common_objects>)
+SET(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_common_objects>)
 
 if(NOT MSVC)
   STRING(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" arch_lowercase)
+
+  if(arch_lowercase STREQUAL "arm")
+    # Enable Arm Neon kernels.
+    ADD_DEFINITIONS(-DLIBYUV_NEON=1)
+    ADD_LIBRARY(${ly_lib_name}_neon OBJECT
+      ${ly_src_dir}/compare_neon.cc
+      ${ly_src_dir}/rotate_neon.cc
+      ${ly_src_dir}/row_neon.cc
+      ${ly_src_dir}/scale_neon.cc)
+    TARGET_COMPILE_OPTIONS(${ly_lib_name}_neon PRIVATE -mfpu=neon)
+    LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon>)
+  endif()
 
   if(arch_lowercase STREQUAL "aarch64")
     # Enable AArch64 Neon dot-product and i8mm kernels.
