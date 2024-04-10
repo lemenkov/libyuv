@@ -440,6 +440,32 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
       : "cc", "memory", YUVTORGB_REGS, "v19");
 }
 
+void I422ToAR30Row_NEON(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  const uint16_t limit = 0x3ff0;
+  asm(YUVTORGB_SETUP
+      "dup      v22.8h, %w[limit]                  \n"
+      "movi     v23.8h, #0xc0, lsl #8              \n"  // A
+      "1:                                          \n" READYUV422 I4XXTORGB
+      "subs     %w[width], %w[width], #8           \n" STOREAR30
+      "b.gt     1b                                 \n"
+      : [src_y] "+r"(src_y),             // %[src_y]
+        [src_u] "+r"(src_u),             // %[src_u]
+        [src_v] "+r"(src_v),             // %[src_v]
+        [dst_ar30] "+r"(dst_ar30),       // %[dst_ar30]
+        [width] "+r"(width)              // %[width]
+      : [kUVCoeff] "r"(uv_coeff),        // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(rgb_coeff),  // %[kRGBCoeffBias]
+        [limit] "r"(limit)               // %[limit]
+      : "cc", "memory", YUVTORGB_REGS, "v22", "v23");
+}
+
 void I444AlphaToARGBRow_NEON(const uint8_t* src_y,
                              const uint8_t* src_u,
                              const uint8_t* src_v,

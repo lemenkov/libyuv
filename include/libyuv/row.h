@@ -563,6 +563,7 @@ extern "C" {
 #define HAS_I410TOAR30ROW_NEON
 #define HAS_I212TOARGBROW_NEON
 #define HAS_I212TOAR30ROW_NEON
+#define HAS_I422TOAR30ROW_NEON
 
 #define HAS_ABGRTOYJROW_NEON_DOTPROD
 #define HAS_ABGRTOYROW_NEON_DOTPROD
@@ -1143,6 +1144,12 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I422ToARGBRow_SVE2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I422ToAR30Row_NEON(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
                         uint8_t* dst_argb,
@@ -5267,6 +5274,12 @@ void I422ToRGB565Row_Any_NEON(const uint8_t* y_buf,
                               uint8_t* dst_ptr,
                               const struct YuvConstants* yuvconstants,
                               int width);
+void I422ToAR30Row_Any_NEON(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void NV12ToARGBRow_Any_NEON(const uint8_t* y_buf,
                             const uint8_t* uv_buf,
                             uint8_t* dst_ptr,

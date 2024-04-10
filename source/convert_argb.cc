@@ -6241,6 +6241,14 @@ int I420ToAR30Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToAR30Row = I422ToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToAR30Row = I422ToAR30Row_NEON;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
