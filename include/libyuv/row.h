@@ -555,6 +555,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_ARGBTOAR30ROW_NEON
 #define HAS_ABGRTOAR30ROW_NEON
+#define HAS_I210ALPHATOARGBROW_NEON
+#define HAS_I410ALPHATOARGBROW_NEON
 
 #define HAS_ABGRTOYJROW_NEON_DOTPROD
 #define HAS_ABGRTOYROW_NEON_DOTPROD
@@ -1041,6 +1043,20 @@ struct YuvConstants {
     IACA_UD_BYTES      \
   }
 
+void I210AlphaToARGBRow_NEON(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             const uint16_t* src_a,
+                             uint8_t* rgb_buf,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I410AlphaToARGBRow_NEON(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             const uint16_t* src_a,
+                             uint8_t* rgb_buf,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void I444ToARGBRow_NEON(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -5069,6 +5085,20 @@ void I422AlphaToARGBRow_Any_NEON(const uint8_t* y_buf,
                                  const uint8_t* u_buf,
                                  const uint8_t* v_buf,
                                  const uint8_t* a_buf,
+                                 uint8_t* dst_ptr,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
+void I410AlphaToARGBRow_Any_NEON(const uint16_t* y_buf,
+                                 const uint16_t* u_buf,
+                                 const uint16_t* v_buf,
+                                 const uint16_t* a_buf,
+                                 uint8_t* dst_ptr,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
+void I210AlphaToARGBRow_Any_NEON(const uint16_t* y_buf,
+                                 const uint16_t* u_buf,
+                                 const uint16_t* v_buf,
+                                 const uint16_t* a_buf,
                                  uint8_t* dst_ptr,
                                  const struct YuvConstants* yuvconstants,
                                  int width);

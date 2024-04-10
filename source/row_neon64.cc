@@ -37,6 +37,34 @@ extern "C" {
   "prfm       pldl1keep, [%[src_u], 128]     \n" \
   "prfm       pldl1keep, [%[src_v], 128]     \n"
 
+// Read 8 Y, 4 U and 4 V from 210
+#define READYUV210                               \
+  "ldr        q2, [%[src_y]], #16            \n" \
+  "ldr        d1, [%[src_u]], #8             \n" \
+  "ldr        d3, [%[src_v]], #8             \n" \
+  "shl        v0.8h, v2.8h, #6               \n" \
+  "usra       v0.8h, v2.8h, #4               \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "zip1       v2.8h, v3.8h, v3.8h            \n" \
+  "zip1       v3.8h, v1.8h, v1.8h            \n" \
+  "uqshrn     v1.8b, v3.8h, #2               \n" \
+  "uqshrn2    v1.16b, v2.8h, #2              \n" \
+  "prfm       pldl1keep, [%[src_u], 128]     \n" \
+  "prfm       pldl1keep, [%[src_v], 128]     \n"
+
+// Read 8 Y, 8 U and 8 V from 410
+#define READYUV410                               \
+  "ldr        q1, [%[src_y]], #16            \n" \
+  "ldr        q2, [%[src_u]], #16            \n" \
+  "ldr        q3, [%[src_v]], #16            \n" \
+  "shl        v0.8h, v1.8h, #6               \n" \
+  "usra       v0.8h, v1.8h, #4               \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "uqshrn     v1.8b, v2.8h, #2               \n" \
+  "uqshrn2    v1.16b, v3.8h, #2              \n" \
+  "prfm       pldl1keep, [%[src_u], 128]     \n" \
+  "prfm       pldl1keep, [%[src_v], 128]     \n"
+
 // Read 8 Y, 8 U and 8 V from 444
 #define READYUV444                               \
   "ldr        d0, [%[src_y]], #8             \n" \
@@ -241,6 +269,62 @@ void I444AlphaToARGBRow_NEON(const uint8_t* src_y,
       "1:                                        \n"
       "ld1         {v19.8b}, [%[src_a]], #8      \n" READYUV444
       "prfm        pldl1keep, [%[src_a], 448]    \n" I4XXTORGB RGBTORGB8
+      "subs        %w[width], %w[width], #8      \n"
+      "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
+      "b.gt        1b                            \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [src_a] "+r"(src_a),                               // %[src_a]
+        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width)                                // %[width]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_REGS, "v19");
+}
+
+void I410AlphaToARGBRow_NEON(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             const uint16_t* src_a,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  asm volatile(
+      YUVTORGB_SETUP
+      "1:                                     \n"
+      "ld1        {v19.16b}, [%[src_a]], #16  \n" READYUV410
+      "uqshrn     v19.8b, v19.8h, #2          \n" NVTORGB RGBTORGB8
+      "subs       %w[width], %w[width], #8    \n"
+      "st4        {v16.8b, v17.8b, v18.8b, v19.8b}, [%[dst_argb]], #32 \n"
+      "b.gt       1b                          \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [src_a] "+r"(src_a),                               // %[src_a]
+        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width)                                // %[width]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_REGS, "v19");
+}
+
+void I210AlphaToARGBRow_NEON(const uint16_t* src_y,
+                             const uint16_t* src_u,
+                             const uint16_t* src_v,
+                             const uint16_t* src_a,
+                             uint8_t* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width) {
+  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
+  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
+  asm volatile(
+      YUVTORGB_SETUP
+      "1:                                        \n"
+      "ld1         {v19.16b}, [%[src_a]], #16    \n" READYUV210
+      "uqshrn      v19.8b, v19.8h, #2            \n" NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8      \n"
       "st4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%[dst_argb]], #32 \n"
       "b.gt        1b                            \n"

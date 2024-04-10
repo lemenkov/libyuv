@@ -142,6 +142,27 @@ ANY41C(I422AlphaToARGBRow_Any_LASX, I422AlphaToARGBRow_LASX, 1, 0, 4, 15)
     memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, vout, SS(r, DUVSHIFT) * BPP);      \
   }
 
+#ifdef HAS_I210ALPHATOARGBROW_NEON
+ANY41CT(I210AlphaToARGBRow_Any_NEON,
+        I210AlphaToARGBRow_NEON,
+        1,
+        0,
+        uint16_t,
+        2,
+        4,
+        7);
+#endif
+#ifdef HAS_I410ALPHATOARGBROW_NEON
+ANY41CT(I410AlphaToARGBRow_Any_NEON,
+        I410AlphaToARGBRow_NEON,
+        0,
+        0,
+        uint16_t,
+        2,
+        4,
+        7);
+#endif
+
 #ifdef HAS_I210ALPHATOARGBROW_SSSE3
 ANY41CT(I210AlphaToARGBRow_Any_SSSE3,
         I210AlphaToARGBRow_SSSE3,
