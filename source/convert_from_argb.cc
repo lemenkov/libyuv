@@ -2268,6 +2268,14 @@ int ABGRToAR30(const uint8_t* src_abgr,
     height = 1;
     src_stride_abgr = dst_stride_ar30 = 0;
   }
+#if defined(HAS_ABGRTOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ABGRToAR30Row = ABGRToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ABGRToAR30Row = ABGRToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_ABGRTOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ABGRToAR30Row = ABGRToAR30Row_Any_SSSE3;
@@ -2317,6 +2325,14 @@ int ARGBToAR30(const uint8_t* src_argb,
     height = 1;
     src_stride_argb = dst_stride_ar30 = 0;
   }
+#if defined(HAS_ARGBTOAR30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToAR30Row = ARGBToAR30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToAR30Row = ARGBToAR30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToAR30Row = ARGBToAR30Row_Any_SSSE3;

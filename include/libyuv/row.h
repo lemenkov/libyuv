@@ -553,6 +553,9 @@ extern "C" {
 
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_ARGBTOAR30ROW_NEON
+#define HAS_ABGRTOAR30ROW_NEON
+
 #define HAS_ABGRTOYJROW_NEON_DOTPROD
 #define HAS_ABGRTOYROW_NEON_DOTPROD
 #define HAS_ARGBTOYJROW_NEON_DOTPROD
@@ -5135,6 +5138,14 @@ void YUY2ToARGBRow_Any_NEON(const uint8_t* src_ptr,
 void UYVYToARGBRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             const struct YuvConstants* yuvconstants,
+                            int width);
+void ARGBToAR30Row_NEON(const uint8_t* src, uint8_t* dst, int width);
+void ABGRToAR30Row_NEON(const uint8_t* src, uint8_t* dst, int width);
+void ABGRToAR30Row_Any_NEON(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void ARGBToAR30Row_Any_NEON(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
                             int width);
 void I444ToARGBRow_Any_MSA(const uint8_t* y_buf,
                            const uint8_t* u_buf,

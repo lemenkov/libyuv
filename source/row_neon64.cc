@@ -1722,6 +1722,59 @@ void ARGB4444ToARGBRow_NEON(const uint8_t* src_argb4444,
   );
 }
 
+static const int16_t kAR30Row_BoxShifts[] = {0, -6, 0, -6, 0, -6, 0, -6};
+
+static const uint8_t kABGRToAR30Row_BoxIndices[] = {
+    2, 2, 1, 1, 6, 6, 5, 5, 10, 10, 9,  9,  14, 14, 13, 13,
+    0, 0, 3, 3, 4, 4, 7, 7, 8,  8,  11, 11, 12, 12, 15, 15};
+static const uint8_t kARGBToAR30Row_BoxIndices[] = {
+    0, 0, 1, 1, 4, 4, 5, 5, 8,  8,  9,  9,  12, 12, 13, 13,
+    2, 2, 3, 3, 6, 6, 7, 7, 10, 10, 11, 11, 14, 14, 15, 15};
+
+// ARGB or ABGR as input, reordering based on TBL indices parameter.
+static void ABCDToAR30Row_NEON(const uint8_t* src_abcd,
+                               uint8_t* dst_ar30,
+                               int width,
+                               const uint8_t* indices) {
+  asm volatile(
+      "movi      v2.4s, #0xf, msl 16             \n"  // 0xfffff
+      "ldr       q3, [%[kAR30Row_BoxShifts]]     \n"
+      "ldp       q4, q5, [%[indices]]            \n"
+      "1:                                        \n"
+      "ldp       q0, q20, [%[src]], #32          \n"
+      "subs      %w[width], %w[width], #8        \n"
+      "tbl       v1.16b, {v0.16b}, v5.16b        \n"
+      "tbl       v21.16b, {v20.16b}, v5.16b      \n"
+      "tbl       v0.16b, {v0.16b}, v4.16b        \n"
+      "tbl       v20.16b, {v20.16b}, v4.16b      \n"
+      "ushl      v0.8h, v0.8h, v3.8h             \n"
+      "ushl      v20.8h, v20.8h, v3.8h           \n"
+      "ushl      v1.8h, v1.8h, v3.8h             \n"
+      "ushl      v21.8h, v21.8h, v3.8h           \n"
+      "ushr      v0.4s, v0.4s, #6                \n"
+      "ushr      v20.4s, v20.4s, #6              \n"
+      "shl       v1.4s, v1.4s, #14               \n"
+      "shl       v21.4s, v21.4s, #14             \n"
+      "bif       v0.16b, v1.16b, v2.16b          \n"
+      "bif       v20.16b, v21.16b, v2.16b        \n"
+      "stp       q0, q20, [%[dst]], #32          \n"
+      "b.gt      1b                              \n"
+      : [src] "+r"(src_abcd),                          // %[src]
+        [dst] "+r"(dst_ar30),                          // %[dst]
+        [width] "+r"(width)                            // %[width]
+      : [kAR30Row_BoxShifts] "r"(kAR30Row_BoxShifts),  // %[kAR30Row_BoxShifts]
+        [indices] "r"(indices)                         // %[indices]
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v20", "v21");
+}
+
+void ABGRToAR30Row_NEON(const uint8_t* src_abgr, uint8_t* dst_ar30, int width) {
+  ABCDToAR30Row_NEON(src_abgr, dst_ar30, width, kABGRToAR30Row_BoxIndices);
+}
+
+void ARGBToAR30Row_NEON(const uint8_t* src_argb, uint8_t* dst_ar30, int width) {
+  ABCDToAR30Row_NEON(src_argb, dst_ar30, width, kARGBToAR30Row_BoxIndices);
+}
+
 void ARGBToRGB24Row_NEON(const uint8_t* src_argb,
                          uint8_t* dst_rgb24,
                          int width) {
