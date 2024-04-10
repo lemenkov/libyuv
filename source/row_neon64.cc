@@ -1896,7 +1896,6 @@ void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
                             int width) {
   asm volatile(
-      "movi        v3.8b, #255                   \n"  // Alpha
       "1:                                        \n"
       "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB1555 pixels.
       "prfm        pldl1keep, [%0, 448]          \n"
