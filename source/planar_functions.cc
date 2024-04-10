@@ -3907,6 +3907,11 @@ int ARGBColorMatrix(const uint8_t* src_argb,
     ARGBColorMatrixRow = ARGBColorMatrixRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBCOLORMATRIXROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM) && IS_ALIGNED(width, 8)) {
+    ARGBColorMatrixRow = ARGBColorMatrixRow_NEON_I8MM;
+  }
+#endif
 #if defined(HAS_ARGBCOLORMATRIXROW_MSA)
   if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 8)) {
     ARGBColorMatrixRow = ARGBColorMatrixRow_MSA;

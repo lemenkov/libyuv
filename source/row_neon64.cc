@@ -4039,6 +4039,62 @@ void ARGBColorMatrixRow_NEON(const uint8_t* src_argb,
         "v17", "v18", "v19", "v22", "v23", "v24", "v25");
 }
 
+void ARGBColorMatrixRow_NEON_I8MM(const uint8_t* src_argb,
+                                  uint8_t* dst_argb,
+                                  const int8_t* matrix_argb,
+                                  int width) {
+  asm("ld1        {v31.16b}, [%[matrix_argb]]           \n"
+
+      "1:                                               \n"
+      "ld1        {v0.16b, v1.16b}, [%[src_argb]], #32  \n"
+
+      "movi       v16.4s, #0                            \n"
+      "movi       v17.4s, #0                            \n"
+      "movi       v18.4s, #0                            \n"
+      "movi       v19.4s, #0                            \n"
+      "movi       v20.4s, #0                            \n"
+      "movi       v21.4s, #0                            \n"
+      "movi       v22.4s, #0                            \n"
+      "movi       v23.4s, #0                            \n"
+
+      // 8 processed per loop.
+      "subs       %w2, %w2, #8                          \n"
+      "prfm       pldl1keep, [%[src_argb], 448]         \n"
+
+      "sudot      v16.4s, v31.16b, v0.4b[0]             \n"
+      "sudot      v17.4s, v31.16b, v0.4b[1]             \n"
+      "sudot      v18.4s, v31.16b, v0.4b[2]             \n"
+      "sudot      v19.4s, v31.16b, v0.4b[3]             \n"
+      "sudot      v20.4s, v31.16b, v1.4b[0]             \n"
+      "sudot      v21.4s, v31.16b, v1.4b[1]             \n"
+      "sudot      v22.4s, v31.16b, v1.4b[2]             \n"
+      "sudot      v23.4s, v31.16b, v1.4b[3]             \n"
+
+      "shrn       v16.4h, v16.4s, #6                    \n"
+      "shrn       v18.4h, v18.4s, #6                    \n"
+      "shrn       v20.4h, v20.4s, #6                    \n"
+      "shrn       v22.4h, v22.4s, #6                    \n"
+      "shrn2      v16.8h, v17.4s, #6                    \n"
+      "shrn2      v18.8h, v19.4s, #6                    \n"
+      "shrn2      v20.8h, v21.4s, #6                    \n"
+      "shrn2      v22.8h, v23.4s, #6                    \n"
+
+      "uqxtn      v16.8b, v16.8h                        \n"
+      "uqxtn      v18.8b, v18.8h                        \n"
+      "uqxtn      v20.8b, v20.8h                        \n"
+      "uqxtn      v22.8b, v22.8h                        \n"
+
+      "stp        d16, d18, [%[dst_argb]], #16          \n"
+      "stp        d20, d22, [%[dst_argb]], #16          \n"
+      "b.gt       1b                                    \n"
+      : [src_argb] "+r"(src_argb),      // %[src_argb]
+        [dst_argb] "+r"(dst_argb),      // %[dst_argb]
+        [width] "+r"(width)             // %[width]
+      : [matrix_argb] "r"(matrix_argb)  // %[matrix_argb]
+      : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19", "v20", "v21",
+        "v22", "v23", "v31");
+}
+
 // Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
 void ARGBMultiplyRow_NEON(const uint8_t* src_argb,
                           const uint8_t* src_argb1,

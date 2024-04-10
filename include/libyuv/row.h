@@ -569,6 +569,8 @@ extern "C" {
 #define HAS_BGRATOYROW_NEON_DOTPROD
 #define HAS_RGBATOYJROW_NEON_DOTPROD
 #define HAS_RGBATOYROW_NEON_DOTPROD
+
+#define HAS_ARGBCOLORMATRIXROW_NEON_I8MM
 #endif
 
 // The following are available on AArch64 SVE platforms:
@@ -6022,6 +6024,10 @@ void ARGBColorMatrixRow_NEON(const uint8_t* src_argb,
                              uint8_t* dst_argb,
                              const int8_t* matrix_argb,
                              int width);
+void ARGBColorMatrixRow_NEON_I8MM(const uint8_t* src_argb,
+                                  uint8_t* dst_argb,
+                                  const int8_t* matrix_argb,
+                                  int width);
 void ARGBColorMatrixRow_MSA(const uint8_t* src_argb,
                             uint8_t* dst_argb,
                             const int8_t* matrix_argb,
