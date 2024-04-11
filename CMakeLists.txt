@@ -83,7 +83,7 @@ SET(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_common_objects>)
 if(NOT MSVC)
   STRING(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" arch_lowercase)
 
-  if(arch_lowercase STREQUAL "arm")
+  if(arch_lowercase MATCHES "^arm" AND NOT arch_lowercase STREQUAL "arm64")
     # Enable Arm Neon kernels.
     ADD_DEFINITIONS(-DLIBYUV_NEON=1)
     ADD_LIBRARY(${ly_lib_name}_neon OBJECT
@@ -95,7 +95,7 @@ if(NOT MSVC)
     LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon>)
   endif()
 
-  if(arch_lowercase STREQUAL "aarch64")
+  if(arch_lowercase STREQUAL "aarch64" OR arch_lowercase STREQUAL "arm64")
     # Enable AArch64 Neon dot-product and i8mm kernels.
     ADD_LIBRARY(${ly_lib_name}_neon64 OBJECT
       ${ly_src_dir}/compare_neon64.cc
