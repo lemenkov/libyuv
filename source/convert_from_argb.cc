@@ -255,6 +255,14 @@ int ARGBToI422(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVRow = ARGBToUVRow_SVE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYROW_MSA) && defined(HAS_ARGBTOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToYRow = ARGBToYRow_Any_MSA;
@@ -360,6 +368,14 @@ int ARGBToNV12(const uint8_t* src_argb,
     ARGBToUVRow = ARGBToUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVRow = ARGBToUVRow_SVE2;
     }
   }
 #endif
@@ -593,6 +609,14 @@ int ARGBToNV21(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVRow = ARGBToUVRow_SVE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYROW_MSA) && defined(HAS_ARGBTOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToYRow = ARGBToYRow_Any_MSA;
@@ -800,6 +824,14 @@ int ABGRToNV12(const uint8_t* src_abgr,
     }
   }
 #endif
+#if defined(HAS_ABGRTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ABGRToUVRow = ABGRToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ABGRToUVRow = ABGRToUVRow_SVE2;
+    }
+  }
+#endif
 #if defined(HAS_ABGRTOYROW_MSA) && defined(HAS_ABGRTOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ABGRToYRow = ABGRToYRow_Any_MSA;
@@ -993,6 +1025,14 @@ int ABGRToNV21(const uint8_t* src_abgr,
     ABGRToUVRow = ABGRToUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ABGRToUVRow = ABGRToUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ABGRTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ABGRToUVRow = ABGRToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ABGRToUVRow = ABGRToUVRow_SVE2;
     }
   }
 #endif
@@ -1197,6 +1237,14 @@ int ARGBToYUY2(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVRow = ARGBToUVRow_SVE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYROW_MSA) && defined(HAS_ARGBTOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToYRow = ARGBToYRow_Any_MSA;
@@ -1398,6 +1446,14 @@ int ARGBToUYVY(const uint8_t* src_argb,
     ARGBToUVRow = ARGBToUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVRow = ARGBToUVRow_SVE2;
     }
   }
 #endif
@@ -2336,6 +2392,14 @@ int ARGBToJ420(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUVJROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVJRow = ARGBToUVJRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVJRow = ARGBToUVJRow_SVE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYJROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
@@ -2509,6 +2573,14 @@ int ARGBToJ422(const uint8_t* src_argb,
     ARGBToUVJRow = ARGBToUVJRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVJRow = ARGBToUVJRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVJROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToUVJRow = ARGBToUVJRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ARGBToUVJRow = ARGBToUVJRow_SVE2;
     }
   }
 #endif
@@ -2818,6 +2890,14 @@ int ABGRToJ420(const uint8_t* src_abgr,
     }
   }
 #endif
+#if defined(HAS_ABGRTOUVJROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ABGRToUVJRow = ABGRToUVJRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ABGRToUVJRow = ABGRToUVJRow_SVE2;
+    }
+  }
+#endif
 #if defined(HAS_ABGRTOYJROW_MSA) && defined(HAS_ABGRTOUVJROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ABGRToYJRow = ABGRToYJRow_Any_MSA;
@@ -2953,6 +3033,14 @@ int ABGRToJ422(const uint8_t* src_abgr,
     ABGRToUVJRow = ABGRToUVJRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ABGRToUVJRow = ABGRToUVJRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ABGRTOUVJROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ABGRToUVJRow = ABGRToUVJRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      ABGRToUVJRow = ABGRToUVJRow_SVE2;
     }
   }
 #endif
