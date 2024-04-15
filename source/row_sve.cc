@@ -499,6 +499,57 @@ void RGBAToUVRow_SVE2(const uint8_t* src_rgba,
                          kRGBAToUVCoefficients);
 }
 
+#define ARGBTORGB565_SVE                    \
+  /* Inputs:                                \
+   * z0: rrrrrxxxbbbbbxxx                   \
+   * z1: xxxxxxxxggggggxx                   \
+   * z3: 0000000000000011 (3, 0, 3, 0, ...) \
+   * z4: 0000011111100000                   \
+   */                                       \
+  "lsr     z0.b, p0/m, z0.b, z3.b       \n" \
+  "lsl     z1.h, z1.h, #3               \n" \
+  "bsl     z1.d, z1.d, z0.d, z4.d       \n"
+
+void ARGBToRGB565Row_SVE2(const uint8_t* src_argb,
+                          uint8_t* dst_rgb,
+                          int width) {
+  unsigned bsl_mask = 0x7e0;
+  uint64_t vl;
+  width *= 2;
+  asm("mov     z3.h, #3                     \n"
+      "dup     z4.h, %w[bsl_mask]           \n"
+
+      "cntb    %[vl]                        \n"
+      "subs    %w[width], %w[width], %w[vl] \n"
+      "b.lt    2f                           \n"
+
+      "ptrue   p0.b                         \n"
+      "1:                                   \n"
+      "ld2b    {z0.b, z1.b}, p0/z, [%[src]] \n"  // BR, GA
+      "incb    %[src], all, mul #2          \n"
+      "subs    %w[width], %w[width], %w[vl] \n" ARGBTORGB565_SVE
+      "st1b    {z1.b}, p0, [%[dst]]         \n"
+      "incb    %[dst]                       \n"
+      "b.ge    1b                           \n"
+
+      "2:                                   \n"
+      "adds    %w[width], %w[width], %w[vl] \n"
+      "b.eq    99f                          \n"
+
+      "whilelt p0.b, wzr, %w[width]         \n"
+      "ld2b    {z0.b, z1.b}, p0/z, [%[src]] \n"  // BR, GA
+      ARGBTORGB565_SVE
+      "st1b    {z1.b}, p0, [%[dst]]         \n"
+
+      "99:                                  \n"
+      : [src] "+r"(src_argb),     // %[src]
+        [dst] "+r"(dst_rgb),      // %[dst]
+        [width] "+r"(width),      // %[width]
+        [vl] "=&r"(vl)            // %[vl]
+      : [bsl_mask] "r"(bsl_mask)  // %[bsl_mask]
+      : "cc", "memory", "z0", "z1", "z3", "z4", "p0");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

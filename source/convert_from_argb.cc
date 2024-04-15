@@ -2045,6 +2045,11 @@ int ARGBToRGB565(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToRGB565Row = ARGBToRGB565Row_SVE2;
+  }
+#endif
 #if defined(HAS_ARGBTORGB565ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToRGB565Row = ARGBToRGB565Row_Any_MSA;
