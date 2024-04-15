@@ -1960,6 +1960,11 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_SVE2;
+  }
+#endif
 #if defined(HAS_ARGBTORGB565DITHERROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_MSA;

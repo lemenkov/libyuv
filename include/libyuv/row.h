@@ -575,6 +575,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 #define HAS_ABGRTOUVJROW_SVE2
 #define HAS_ABGRTOUVROW_SVE2
+#define HAS_ARGBTORGB565DITHERROW_SVE2
 #define HAS_ARGBTORGB565ROW_SVE2
 #define HAS_ARGBTOUVJROW_SVE2
 #define HAS_ARGBTOUVROW_SVE2
@@ -3650,6 +3651,10 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
                             uint8_t* dst_argb4444,
                             int width);
 void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
+                                uint8_t* dst_rgb,
+                                uint32_t dither4,
+                                int width);
+void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
                                 uint32_t dither4,
                                 int width);

@@ -550,6 +550,53 @@ void ARGBToRGB565Row_SVE2(const uint8_t* src_argb,
       : "cc", "memory", "z0", "z1", "z3", "z4", "p0");
 }
 
+void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
+                                uint8_t* dst_rgb,
+                                uint32_t dither4,
+                                int width) {
+  unsigned bsl_mask = 0x7e0;
+  uint64_t vl;
+  width *= 2;
+  asm("mov     z3.h, #3                     \n"
+      "dup     z4.h, %w[bsl_mask]           \n"
+      "dup     z2.s, %w[dither4]            \n"
+      "zip1    z2.b, z2.b, z2.b             \n"
+
+      "cntb    %[vl]                        \n"
+      "subs    %w[width], %w[width], %w[vl] \n"
+      "b.lt    2f                           \n"
+
+      "ptrue   p0.b                         \n"
+      "1:                                   \n"
+      "ld2b    {z0.b, z1.b}, p0/z, [%[src]] \n"  // BR, GA
+      "incb    %[src], all, mul #2          \n"
+      "uqadd   z0.b, z0.b, z2.b             \n"
+      "uqadd   z1.b, z1.b, z2.b             \n"
+      "subs    %w[width], %w[width], %w[vl] \n" ARGBTORGB565_SVE
+      "st1b    {z1.b}, p0, [%[dst]]         \n"
+      "incb    %[dst]                       \n"
+      "b.ge    1b                           \n"
+
+      "2:                                   \n"
+      "adds    %w[width], %w[width], %w[vl] \n"
+      "b.eq    99f                          \n"
+
+      "whilelt p0.b, wzr, %w[width]         \n"
+      "ld2b    {z0.b, z1.b}, p0/z, [%[src]] \n"  // BR, GA
+      "uqadd   z0.b, z0.b, z2.b             \n"
+      "uqadd   z1.b, z1.b, z2.b             \n" ARGBTORGB565_SVE
+      "st1b    {z1.b}, p0, [%[dst]]         \n"
+
+      "99:                                  \n"
+      : [src] "+r"(src_argb),      // %[src]
+        [dst] "+r"(dst_rgb),       // %[dst]
+        [width] "+r"(width),       // %[width]
+        [vl] "=&r"(vl)             // %[vl]
+      : [bsl_mask] "r"(bsl_mask),  // %[bsl_mask]
+        [dither4] "r"(dither4)     // %[dither4]
+      : "cc", "memory", "z0", "z1", "z3", "z4", "p0");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus
