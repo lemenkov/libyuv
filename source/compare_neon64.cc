@@ -86,6 +86,31 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
   return sse;
 }
 
+uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
+                                     const uint8_t* src_b,
+                                     int count) {
+  uint32_t sse;
+  asm volatile(
+      "movi        v2.16b, #0                    \n"
+
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], #16           \n"
+      "ld1         {v1.16b}, [%1], #16           \n"
+      "subs        %w2, %w2, #16                 \n"
+      "uabd        v0.16b, v0.16b, v1.16b        \n"
+      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+      "udot        v2.4s, v0.16b, v0.16b         \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "b.gt        1b                            \n"
+
+      "addv        s0, v2.4s                     \n"
+      "fmov        %w3, s0                       \n"
+      : "+r"(src_a), "+r"(src_b), "+r"(count), "=r"(sse)
+      :
+      : "memory", "cc", "v0", "v1", "v2");
+  return sse;
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

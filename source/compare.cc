@@ -194,6 +194,11 @@ uint64_t ComputeSumSquareError(const uint8_t* src_a,
     SumSquareError = SumSquareError_NEON;
   }
 #endif
+#if defined(HAS_SUMSQUAREERROR_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    SumSquareError = SumSquareError_NEON_DotProd;
+  }
+#endif
 #if defined(HAS_SUMSQUAREERROR_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     // Note only used for multiples of 16 so count is not checked.

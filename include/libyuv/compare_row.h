@@ -82,6 +82,11 @@ extern "C" {
 #define HAS_HAMMINGDISTANCE_NEON
 #endif
 
+// The following are available for AArch64 Neon:
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_SUMSQUAREERROR_NEON_DOTPROD
+#endif
+
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #define HAS_HAMMINGDISTANCE_MSA
 #define HAS_SUMSQUAREERROR_MSA
@@ -117,6 +122,9 @@ uint32_t SumSquareError_AVX2(const uint8_t* src_a,
 uint32_t SumSquareError_NEON(const uint8_t* src_a,
                              const uint8_t* src_b,
                              int count);
+uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
+                                     const uint8_t* src_b,
+                                     int count);
 uint32_t SumSquareError_MSA(const uint8_t* src_a,
                             const uint8_t* src_b,
                             int count);
