@@ -3819,16 +3819,14 @@ void ARGBAddRow_NEON(const uint8_t* src_argb,
   asm volatile(
       // 8 pixel loop.
       "1:                                        \n"
-      "ld1         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load 8 ARGB
-      "ld1         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"  // load 8 more
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 ARGB
+      "ldp         q4, q5, [%1], #32             \n"  // load 8 more
       "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
-      "uqadd       v0.8b, v0.8b, v4.8b           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "uqadd       v1.8b, v1.8b, v5.8b           \n"
       "prfm        pldl1keep, [%1, 448]          \n"
-      "uqadd       v2.8b, v2.8b, v6.8b           \n"
-      "uqadd       v3.8b, v3.8b, v7.8b           \n"
-      "st1         {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32 \n"  // store 8 ARGB
+      "uqadd       v0.16b, v0.16b, v4.16b        \n"
+      "uqadd       v1.16b, v1.16b, v5.16b        \n"
+      "stp         q0, q1, [%2], #32             \n"  // store 8 ARGB
       "b.gt        1b                            \n"
       : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
@@ -3846,16 +3844,14 @@ void ARGBSubtractRow_NEON(const uint8_t* src_argb,
   asm volatile(
       // 8 pixel loop.
       "1:                                        \n"
-      "ld1         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load 8 ARGB
-      "ld1         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"  // load 8 more
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 ARGB
+      "ldp         q4, q5, [%1], #32             \n"  // load 8 more
       "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
-      "uqsub       v0.8b, v0.8b, v4.8b           \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "uqsub       v1.8b, v1.8b, v5.8b           \n"
       "prfm        pldl1keep, [%1, 448]          \n"
-      "uqsub       v2.8b, v2.8b, v6.8b           \n"
-      "uqsub       v3.8b, v3.8b, v7.8b           \n"
-      "st1         {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32 \n"  // store 8 ARGB
+      "uqsub       v0.16b, v0.16b, v4.16b        \n"
+      "uqsub       v1.16b, v1.16b, v5.16b        \n"
+      "stp         q0, q1, [%2], #32             \n"  // store 8 ARGB
       "b.gt        1b                            \n"
       : "+r"(src_argb),   // %0
         "+r"(src_argb1),  // %1
