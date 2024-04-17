@@ -2096,16 +2096,18 @@ void RGB565ToARGBRow_NEON(const uint8_t* src_rgb565,
   "sri        v0.8b, v0.8b, #5  \n" /* BBBBBBBB */
 
 // RGB555TOARGB is same as ARGB1555TOARGB but ignores alpha.
-#define RGB555TOARGB                               \
-  /* Input: xRRRRRGGGGGBBBBB */                    \
-  "xtn        v29.8b, v0.8h     \n" /* xxxBBBBB */ \
-  "shrn       v2.8b, v0.8h, #7  \n" /* RRRRRxxx */ \
-  "shrn       v1.8b, v0.8h, #2  \n" /* GGGGGxxx */ \
-  "shl        v0.8b, v29.8b, #3 \n" /* BBBBB000 */ \
-                                                   \
-  "sri        v2.8b, v2.8b, #5  \n" /* RRRRRRRR */ \
-  "sri        v1.8b, v1.8b, #5  \n" /* GGGGGGGG */ \
-  "sri        v0.8b, v0.8b, #5  \n" /* BBBBBBBB */
+#define RGB555TOARGB                                         \
+  /* Input: xRRRRRGGGGGBBBBB */                              \
+  "uzp1       v29.16b, v0.16b, v3.16b     \n" /* xxxBBBBB */ \
+  "shrn       v2.8b, v0.8h, #7            \n" /* RRRRRxxx */ \
+  "shrn       v1.8b, v0.8h, #2            \n" /* GGGGGxxx */ \
+  "shl        v0.16b, v29.16b, #3         \n" /* BBBBB000 */ \
+  "shrn2      v2.16b, v3.8h, #7           \n" /* RRRRRxxx */ \
+  "shrn2      v1.16b, v3.8h, #2           \n" /* GGGGGxxx */ \
+                                                             \
+  "sri        v0.16b, v0.16b, #5          \n" /* BBBBBBBB */ \
+  "sri        v2.16b, v2.16b, #5          \n" /* RRRRRRRR */ \
+  "sri        v1.16b, v1.16b, #5          \n" /* GGGGGGGG */
 
 void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
@@ -3285,46 +3287,32 @@ void ARGB1555ToUVRow_NEON(const uint8_t* src_argb1555,
                           uint8_t* dst_v,
                           int width) {
   const uint8_t* src_argb1555_1 = src_argb1555 + src_stride_argb1555;
-  asm volatile (
+  asm volatile(
       RGBTOUV_SETUP_REG
-      "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB1555 pixels.
+      "1:                                    \n"
+      "ldp         q0, q3, [%0], #32         \n"  // load 16 ARGB1555 pixels.
       RGB555TOARGB
-      "uaddlp      v16.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "uaddlp      v17.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uaddlp      v18.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
-      "ld1         {v0.16b}, [%0], #16           \n"  // next 8 ARGB1555 pixels.
+      "uaddlp      v16.8h, v0.16b            \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%0, 448]      \n"
+      "uaddlp      v17.8h, v1.16b            \n"  // G 16 bytes -> 8 shorts.
+      "uaddlp      v18.8h, v2.16b            \n"  // R 16 bytes -> 8 shorts.
+
+      "ldp         q0, q3, [%1], #32         \n"  // load 16 ARGB1555 pixels.
       RGB555TOARGB
-      "uaddlp      v26.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "uaddlp      v27.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uaddlp      v28.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
+      "uadalp      v16.8h, v0.16b            \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]      \n"
+      "uadalp      v17.8h, v1.16b            \n"  // G 16 bytes -> 8 shorts.
+      "uadalp      v18.8h, v2.16b            \n"  // R 16 bytes -> 8 shorts.
 
-      "ld1         {v0.16b}, [%1], #16           \n"  // load 8 ARGB1555 pixels.
-      RGB555TOARGB
-      "uadalp      v16.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "prfm        pldl1keep, [%1, 448]          \n"
-      "uadalp      v17.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uadalp      v18.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
-      "ld1         {v0.16b}, [%1], #16           \n"  // next 8 ARGB1555 pixels.
-      RGB555TOARGB
-      "uadalp      v26.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "uadalp      v27.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uadalp      v28.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
+      "urshr       v0.8h, v16.8h, #1         \n"  // 2x average
+      "urshr       v1.8h, v17.8h, #1         \n"
+      "urshr       v2.8h, v18.8h, #1         \n"
 
-      "ins         v16.D[1], v26.D[0]            \n"
-      "ins         v17.D[1], v27.D[0]            \n"
-      "ins         v18.D[1], v28.D[0]            \n"
-
-      "urshr       v0.8h, v16.8h, #1             \n"  // 2x average
-      "urshr       v1.8h, v17.8h, #1             \n"
-      "urshr       v2.8h, v18.8h, #1             \n"
-
-      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
+      "subs        %w4, %w4, #16             \n"  // 16 processed per loop.
       RGBTOUV(v0.8h, v1.8h, v2.8h)
-      "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
-      "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
-      "b.gt        1b                            \n"
+      "st1         {v0.8b}, [%2], #8         \n"  // store 8 pixels U.
+      "st1         {v1.8b}, [%3], #8         \n"  // store 8 pixels V.
+      "b.gt        1b                        \n"
       : "+r"(src_argb1555),    // %0
         "+r"(src_argb1555_1),  // %1
         "+r"(dst_u),           // %2
@@ -3425,28 +3413,33 @@ void RGB565ToYRow_NEON(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
 void ARGB1555ToYRow_NEON(const uint8_t* src_argb1555,
                          uint8_t* dst_y,
                          int width) {
-  asm volatile (
-      "movi        v4.8b, #25                    \n"  // B * 0.1016 coefficient
-      "movi        v5.8b, #129                   \n"  // G * 0.5078 coefficient
-      "movi        v6.8b, #66                    \n"  // R * 0.2578 coefficient
-      "movi        v7.8b, #16                    \n"  // Add 16 constant
-      "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB1555 pixels.
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
+  asm volatile(
+      "movi        v4.16b, #25              \n"  // B * 0.1016 coefficient
+      "movi        v5.16b, #129             \n"  // G * 0.5078 coefficient
+      "movi        v6.16b, #66              \n"  // R * 0.2578 coefficient
+      "movi        v7.16b, #16              \n"  // Add 16 constant
+      "1:                                   \n"
+      "ldp         q0, q3, [%0], #32        \n"  // load 16 ARGB1555 pixels.
+      "subs        %w2, %w2, #16            \n"  // 16 processed per loop.
       RGB555TOARGB
-      "umull       v3.8h, v0.8b, v4.8b           \n"  // B
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "umlal       v3.8h, v1.8b, v5.8b           \n"  // G
-      "umlal       v3.8h, v2.8b, v6.8b           \n"  // R
-      "uqrshrn     v0.8b, v3.8h, #8              \n"  // 16 bit to 8 bit Y
-      "uqadd       v0.8b, v0.8b, v7.8b           \n"
-      "st1         {v0.8b}, [%1], #8             \n"  // store 8 pixels Y.
-      "b.gt        1b                            \n"
+      "umull       v16.8h, v0.8b, v4.8b     \n"  // B
+      "umull2      v17.8h, v0.16b, v4.16b   \n"  // B
+      "prfm        pldl1keep, [%0, 448]     \n"
+      "umlal       v16.8h, v1.8b, v5.8b     \n"  // G
+      "umlal2      v17.8h, v1.16b, v5.16b   \n"  // G
+      "umlal       v16.8h, v2.8b, v6.8b     \n"  // R
+      "umlal2      v17.8h, v2.16b, v6.16b   \n"  // R
+      "uqrshrn     v0.8b, v16.8h, #8        \n"  // 16 bit to 8 bit Y
+      "uqrshrn2    v0.16b, v17.8h, #8       \n"  // 16 bit to 8 bit Y
+      "uqadd       v0.16b, v0.16b, v7.16b   \n"
+      "str         q0, [%1], #16            \n"  // store  pixels Y.
+      "b.gt        1b                       \n"
       : "+r"(src_argb1555),  // %0
         "+r"(dst_y),         // %1
         "+r"(width)          // %2
       :
-      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v29");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v29");
 }
 
 void ARGB4444ToYRow_NEON(const uint8_t* src_argb4444,
