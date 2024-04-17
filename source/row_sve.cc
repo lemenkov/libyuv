@@ -597,6 +597,60 @@ void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
       : "cc", "memory", "z0", "z1", "z3", "z4", "p0");
 }
 
+#define ARGB1555TOARGB                                        \
+  /* Input: z1/z3.h = arrrrrgggggbbbbb */                     \
+  "lsl     z0.h, z1.h, #3          \n" /* rrrgggggbbbbb000 */ \
+  "lsl     z2.h, z3.h, #3          \n" /* rrrgggggbbbbb000 */ \
+  "asr     z1.h, z1.h, #7          \n" /* aaaaaaaarrrrrggg */ \
+  "asr     z3.h, z3.h, #7          \n" /* aaaaaaaarrrrrggg */ \
+  "lsl     z0.b, p0/m, z0.b, z4.b  \n" /* ggggg000bbbbb000 */ \
+  "lsl     z2.b, p0/m, z2.b, z4.b  \n" /* ggggg000bbbbb000 */ \
+  "sri     z1.b, z1.b, #5          \n" /* aaaaaaaarrrrrrrr */ \
+  "sri     z3.b, z3.b, #5          \n" /* aaaaaaaarrrrrrrr */ \
+  "sri     z0.b, z0.b, #5          \n" /* ggggggggbbbbbbbb */ \
+  "sri     z2.b, z2.b, #5          \n" /* ggggggggbbbbbbbb */
+
+void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
+                            uint8_t* dst_argb,
+                            int width) {
+  uint64_t vl;
+  asm("mov     z4.h, #0x0300                           \n"
+      "ptrue   p0.b                                    \n"
+
+      "cnth    %x[vl]                                  \n"
+      "subs    %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.lt    2f                                      \n"
+
+      "1:                                              \n"
+      "ld1h    {z1.h}, p0/z, [%[src]]                  \n"
+      "ld1h    {z3.h}, p0/z, [%[src], #1, mul vl]      \n"
+      "incb    %[src], all, mul #2                     \n" ARGB1555TOARGB
+      "subs    %w[width], %w[width], %w[vl], lsl #1    \n"
+      "st2h    {z0.h, z1.h}, p0, [%[dst]]              \n"
+      "st2h    {z2.h, z3.h}, p0, [%[dst], #2, mul vl]  \n"
+      "incb    %[dst], all, mul #4                     \n"
+      "b.ge    1b                                      \n"
+
+      "2:                                              \n"
+      "adds    %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.eq    99f                                     \n"
+
+      "whilelt p1.h, wzr, %w[width]                    \n"
+      "whilelt p2.h, %w[vl], %w[width]                 \n"
+      "ld1h    {z1.h}, p1/z, [%[src]]                  \n"
+      "ld1h    {z3.h}, p2/z, [%[src], #1, mul vl]      \n" ARGB1555TOARGB
+      "st2h    {z0.h, z1.h}, p1, [%[dst]]              \n"
+      "st2h    {z2.h, z3.h}, p2, [%[dst], #2, mul vl]  \n"
+
+      "99:                                             \n"
+      : [src] "+r"(src_argb1555),  // %[src]
+        [dst] "+r"(dst_argb),      // %[dst]
+        [width] "+r"(width),       // %[width]
+        [vl] "=&r"(vl)             // %[vl]
+      :
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0", "p1", "p2");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

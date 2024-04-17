@@ -575,6 +575,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 #define HAS_ABGRTOUVJROW_SVE2
 #define HAS_ABGRTOUVROW_SVE2
+#define HAS_ARGB1555TOARGBROW_SVE2
 #define HAS_ARGBTORGB565DITHERROW_SVE2
 #define HAS_ARGBTORGB565ROW_SVE2
 #define HAS_ARGBTOUVJROW_SVE2
@@ -3467,6 +3468,9 @@ void RGB565ToARGBRow_LASX(const uint8_t* src_rgb565,
                           uint8_t* dst_argb,
                           int width);
 void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
+                            uint8_t* dst_argb,
+                            int width);
+void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
                             int width);
 void ARGB1555ToARGBRow_MSA(const uint8_t* src_argb1555,

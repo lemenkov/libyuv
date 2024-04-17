@@ -3729,6 +3729,11 @@ int ARGB1555ToARGB(const uint8_t* src_argb1555,
     }
   }
 #endif
+#if defined(HAS_ARGB1555TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_ARGB1555TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_MSA;
