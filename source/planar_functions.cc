@@ -3751,6 +3751,11 @@ int ARGBGrayTo(const uint8_t* src_argb,
     ARGBGrayRow = ARGBGrayRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBGRAYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd) && IS_ALIGNED(width, 8)) {
+    ARGBGrayRow = ARGBGrayRow_NEON_DotProd;
+  }
+#endif
 #if defined(HAS_ARGBGRAYROW_MSA)
   if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_MSA;
@@ -3804,6 +3809,11 @@ int ARGBGray(uint8_t* dst_argb,
 #if defined(HAS_ARGBGRAYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_NEON;
+  }
+#endif
+#if defined(HAS_ARGBGRAYROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd) && IS_ALIGNED(width, 8)) {
+    ARGBGrayRow = ARGBGrayRow_NEON_DotProd;
   }
 #endif
 #if defined(HAS_ARGBGRAYROW_MSA)

@@ -4192,6 +4192,38 @@ void ARGBGrayRow_NEON(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v24", "v25", "v26");
 }
 
+static const uvec8 kARGBGrayRowCoeffs = {29, 150, 77, 0};
+static const uvec8 kARGBGrayRowIndices = {0, 0, 0, 19, 2, 2, 2, 23,
+                                          4, 4, 4, 27, 6, 6, 6, 31};
+
+void ARGBGrayRow_NEON_DotProd(const uint8_t* src_argb,
+                              uint8_t* dst_argb,
+                              int width) {
+  asm volatile(
+      "ld1r     {v24.4s}, [%[coeffs]]             \n"
+      "ldr      q25, [%[indices]]                 \n"
+      "1:                                         \n"
+      "ldp      q1, q3, [%[src]], #32             \n"  // load 8 ARGB
+      "movi     v0.4s, #0                         \n"
+      "movi     v2.4s, #0                         \n"
+      "subs     %w[width], %w[width], #8          \n"  // 8 processed per loop
+      "udot     v0.4s, v1.16b, v24.16b            \n"
+      "udot     v2.4s, v3.16b, v24.16b            \n"
+      "prfm     pldl1keep, [%[src], 448]          \n"
+      "uqrshrn  v0.8b, v0.8h, #8                  \n"
+      "uqrshrn  v2.8b, v2.8h, #8                  \n"
+      "tbl      v0.16b, {v0.16b, v1.16b}, v25.16b \n"  // merge in alpha
+      "tbl      v1.16b, {v2.16b, v3.16b}, v25.16b \n"
+      "stp      q0, q1, [%[dst]], #32             \n"  // store 8 pixels
+      "b.gt     1b                                \n"
+      : [src] "+r"(src_argb),                // %[src]
+        [dst] "+r"(dst_argb),                // %[dst]
+        [width] "+r"(width)                  // %[width]
+      : [coeffs] "r"(&kARGBGrayRowCoeffs),   // %[coeffs]
+        [indices] "r"(&kARGBGrayRowIndices)  // %[indices]
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v24", "v25");
+}
+
 // Convert 8 ARGB pixels (32 bytes) to 8 Sepia ARGB pixels.
 //    b = (r * 35 + g * 68 + b * 17) >> 7
 //    g = (r * 45 + g * 88 + b * 22) >> 7
