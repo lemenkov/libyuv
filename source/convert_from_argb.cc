@@ -68,6 +68,14 @@ int ARGBToI444(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUV444ROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    ARGBToUV444Row = ARGBToUV444Row_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToUV444Row = ARGBToUV444Row_NEON_I8MM;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUV444ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToUV444Row = ARGBToUV444Row_Any_MSA;
