@@ -1885,31 +1885,12 @@ void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
 static const struct RgbUVConstants kRgb24I601UVConstants = {{112, 74, 38, 0},
                                                             {18, 94, 112, 0}};
 
-// RGB to JPeg coefficients
-// UB coeff 0.500    = 127
-// UG coeff -0.33126 = 84
-// UR coeff -0.16874 = 43
-// VB coeff -0.08131 = 20
-// VG coeff -0.41869 = 107
-// VR coeff 0.500    = 127 (ignored)
-
-static const struct RgbUVConstants kRgb24JPegUVConstants = {{127, 84, 43, 0},
-                                                            {20, 107, 127, 0}};
-
 void ARGBToUV444Row_NEON(const uint8_t* src_argb,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
                          int width) {
   ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width,
                             &kRgb24I601UVConstants);
-}
-
-void ARGBToUVJ444Row_NEON(const uint8_t* src_argb,
-                          uint8_t* dst_u,
-                          uint8_t* dst_v,
-                          int width) {
-  ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width,
-                            &kRgb24JPegUVConstants);
 }
 
 // clang-format off
