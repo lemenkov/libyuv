@@ -3869,6 +3869,11 @@ int ARGBSepia(uint8_t* dst_argb,
     ARGBSepiaRow = ARGBSepiaRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBSEPIAROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd) && IS_ALIGNED(width, 8)) {
+    ARGBSepiaRow = ARGBSepiaRow_NEON_DotProd;
+  }
+#endif
 #if defined(HAS_ARGBSEPIAROW_MSA)
   if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 8)) {
     ARGBSepiaRow = ARGBSepiaRow_MSA;

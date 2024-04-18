@@ -4265,6 +4265,47 @@ void ARGBSepiaRow_NEON(uint8_t* dst_argb, int width) {
         "v21", "v22", "v24", "v25", "v26", "v28", "v29", "v30");
 }
 
+static const uvec8 kARGBSepiaRowCoeffs = {17, 68, 35, 0,  22, 88,
+                                          45, 0,  24, 98, 50, 0};
+static const uvec8 kARGBSepiaRowAlphaIndices = {3, 7, 11, 15, 19, 23, 27, 31};
+
+void ARGBSepiaRow_NEON_DotProd(uint8_t* dst_argb, int width) {
+  asm volatile(
+      "ld3r        {v20.4s, v21.4s, v22.4s}, [%[coeffs]] \n"
+      "ldr         d23, [%[indices]]            \n"
+      "1:                                       \n"
+      "ldp         q0, q1, [%[dst]]             \n"
+      "movi        v2.4s, #0                    \n"
+      "movi        v3.4s, #0                    \n"
+      "movi        v4.4s, #0                    \n"
+      "movi        v5.4s, #0                    \n"
+      "movi        v6.4s, #0                    \n"
+      "movi        v7.4s, #0                    \n"
+      "udot        v2.4s, v0.16b, v20.16b       \n"
+      "udot        v3.4s, v1.16b, v20.16b       \n"
+      "udot        v4.4s, v0.16b, v21.16b       \n"
+      "udot        v5.4s, v1.16b, v21.16b       \n"
+      "udot        v6.4s, v0.16b, v22.16b       \n"
+      "udot        v7.4s, v1.16b, v22.16b       \n"
+      "subs        %w1, %w1, #8                 \n"
+      "prfm        pldl1keep, [%[dst], 448]     \n"
+      "uzp1        v6.8h, v6.8h, v7.8h          \n"
+      "uzp1        v5.8h, v4.8h, v5.8h          \n"
+      "uzp1        v4.8h, v2.8h, v3.8h          \n"
+      "tbl         v3.16b, {v0.16b, v1.16b}, v23.16b \n"
+      "uqshrn      v0.8b, v4.8h, #7             \n"
+      "uqshrn      v1.8b, v5.8h, #7             \n"
+      "uqshrn      v2.8b, v6.8h, #7             \n"
+      "st4         {v0.8b, v1.8b, v2.8b, v3.8b}, [%[dst]], #32 \n"
+      "b.gt        1b                           \n"
+      : [dst] "+r"(dst_argb),                      // %[dst]
+        [width] "+r"(width)                        // %[width]
+      : [coeffs] "r"(&kARGBSepiaRowCoeffs),        // %[coeffs]
+        [indices] "r"(&kARGBSepiaRowAlphaIndices)  // %[indices]
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+        "v21", "v22", "v24", "v25", "v26", "v28", "v29", "v30");
+}
+
 // Tranform 8 ARGB pixels (32 bytes) with color matrix.
 // TODO(fbarchard): Was same as Sepia except matrix is provided.  This function
 // needs to saturate.  Consider doing a non-saturating version.
