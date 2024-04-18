@@ -2134,14 +2134,15 @@ void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
   "sri        v1.16b, v1.16b, #4  \n" /* AAAAAAAA_GGGGGGGG */ \
   "sri        v0.16b, v0.16b, #4  \n" /* RRRRRRRR_BBBBBBBB */
 
-#define ARGB4444TORGB                                \
-  /* Input: v0.8h = xxxxRRRRGGGGBBBB */              \
-  "xtn        v1.8b, v0.8h        \n" /* GGGGBBBB */ \
-  "shrn       v2.8b, v0.8h, #4    \n" /* RRRRxxxx */ \
-  "shl        v0.8b, v1.8b, #4    \n" /* BBBB0000 */ \
-  "sri        v1.8b, v1.8b, #4    \n" /* GGGGGGGG */ \
-  "sri        v2.8b, v2.8b, #4    \n" /* RRRRRRRR */ \
-  "sri        v0.8b, v0.8b, #4    \n" /* BBBBBBBB */
+#define ARGB4444TORGB                                    \
+  /* Input: v0.8h = xxxxRRRRGGGGBBBB */                  \
+  "uzp1       v1.16b, v0.16b, v3.16b  \n" /* GGGGBBBB */ \
+  "shrn       v2.8b, v0.8h, #4        \n" /* RRRRxxxx */ \
+  "shl        v0.16b, v1.16b, #4      \n" /* BBBB0000 */ \
+  "shrn2      v2.16b, v3.8h, #4       \n" /* RRRRxxxx */ \
+  "sri        v1.16b, v1.16b, #4      \n" /* GGGGGGGG */ \
+  "sri        v2.16b, v2.16b, #4      \n" /* RRRRRRRR */ \
+  "sri        v0.16b, v0.16b, #4      \n" /* BBBBBBBB */
 
 void ARGB4444ToARGBRow_NEON(const uint8_t* src_argb4444,
                             uint8_t* dst_argb,
@@ -3331,46 +3332,32 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
                           uint8_t* dst_v,
                           int width) {
   const uint8_t* src_argb4444_1 = src_argb4444 + src_stride_argb4444;
-  asm volatile (
+  asm volatile(
       RGBTOUV_SETUP_REG  // sets v20-v25
-      "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB4444 pixels.
+      "1:                                    \n"
+      "ldp         q0, q3, [%0], #32         \n"  // load 16 ARGB4444 pixels.
       ARGB4444TORGB
-      "uaddlp      v16.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "uaddlp      v17.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uaddlp      v18.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
-      "ld1         {v0.16b}, [%0], #16           \n"  // next 8 ARGB4444 pixels.
+      "uaddlp      v16.8h, v0.16b            \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%0, 448]      \n"
+      "uaddlp      v17.8h, v1.16b            \n"  // G 16 bytes -> 8 shorts.
+      "uaddlp      v18.8h, v2.16b            \n"  // R 16 bytes -> 8 shorts.
+
+      "ldp         q0, q3, [%1], #32         \n"  // load 16 ARGB4444 pixels.
       ARGB4444TORGB
-      "uaddlp      v26.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "uaddlp      v27.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uaddlp      v28.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
+      "uadalp      v16.8h, v0.16b            \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]      \n"
+      "uadalp      v17.8h, v1.16b            \n"  // G 16 bytes -> 8 shorts.
+      "uadalp      v18.8h, v2.16b            \n"  // R 16 bytes -> 8 shorts.
 
-      "ld1         {v0.16b}, [%1], #16           \n"  // load 8 ARGB4444 pixels.
-      ARGB4444TORGB
-      "uadalp      v16.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "prfm        pldl1keep, [%1, 448]          \n"
-      "uadalp      v17.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uadalp      v18.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
-      "ld1         {v0.16b}, [%1], #16           \n"  // next 8 ARGB4444 pixels.
-      ARGB4444TORGB
-      "uadalp      v26.4h, v0.8b                 \n"  // B 8 bytes -> 4 shorts.
-      "uadalp      v27.4h, v1.8b                 \n"  // G 8 bytes -> 4 shorts.
-      "uadalp      v28.4h, v2.8b                 \n"  // R 8 bytes -> 4 shorts.
+      "urshr       v0.8h, v16.8h, #1         \n"  // 2x average
+      "urshr       v1.8h, v17.8h, #1         \n"
+      "urshr       v2.8h, v18.8h, #1         \n"
 
-      "ins         v16.D[1], v26.D[0]            \n"
-      "ins         v17.D[1], v27.D[0]            \n"
-      "ins         v18.D[1], v28.D[0]            \n"
-
-      "urshr       v0.8h, v16.8h, #1             \n"  // 2x average
-      "urshr       v1.8h, v17.8h, #1             \n"
-      "urshr       v2.8h, v18.8h, #1             \n"
-
-      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
+      "subs        %w4, %w4, #16             \n"  // 16 processed per loop.
       RGBTOUV(v0.8h, v1.8h, v2.8h)
-      "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
-      "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
-      "b.gt        1b                            \n"
+      "st1         {v0.8b}, [%2], #8         \n"  // store 8 pixels U.
+      "st1         {v1.8b}, [%3], #8         \n"  // store 8 pixels V.
+      "b.gt        1b                        \n"
       : "+r"(src_argb4444),    // %0
         "+r"(src_argb4444_1),  // %1
         "+r"(dst_u),           // %2
@@ -3445,23 +3432,27 @@ void ARGB1555ToYRow_NEON(const uint8_t* src_argb1555,
 void ARGB4444ToYRow_NEON(const uint8_t* src_argb4444,
                          uint8_t* dst_y,
                          int width) {
-  asm volatile (
-      "movi        v24.8b, #25                   \n"  // B * 0.1016 coefficient
-      "movi        v25.8b, #129                  \n"  // G * 0.5078 coefficient
-      "movi        v26.8b, #66                   \n"  // R * 0.2578 coefficient
-      "movi        v27.8b, #16                   \n"  // Add 16 constant
-      "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB4444 pixels.
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
+  asm volatile(
+      "movi        v24.16b, #25              \n"  // B * 0.1016 coefficient
+      "movi        v25.16b, #129             \n"  // G * 0.5078 coefficient
+      "movi        v26.16b, #66              \n"  // R * 0.2578 coefficient
+      "movi        v27.16b, #16              \n"  // Add 16 constant
+      "1:                                    \n"
+      "ldp         q0, q3, [%0], #32         \n"  // load 16 ARGB4444 pixels.
+      "subs        %w2, %w2, #16             \n"  // 16 processed per loop.
       ARGB4444TORGB
-      "umull       v3.8h, v0.8b, v24.8b          \n"  // B
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "umlal       v3.8h, v1.8b, v25.8b          \n"  // G
-      "umlal       v3.8h, v2.8b, v26.8b          \n"  // R
-      "uqrshrn     v0.8b, v3.8h, #8              \n"  // 16 bit to 8 bit Y
-      "uqadd       v0.8b, v0.8b, v27.8b          \n"
-      "st1         {v0.8b}, [%1], #8             \n"  // store 8 pixels Y.
-      "b.gt        1b                            \n"
+      "umull       v16.8h, v0.8b, v24.8b     \n"  // B
+      "umull2      v17.8h, v0.16b, v24.16b   \n"  // B
+      "prfm        pldl1keep, [%0, 448]      \n"
+      "umlal       v16.8h, v1.8b, v25.8b     \n"  // G
+      "umlal2      v17.8h, v1.16b, v25.16b   \n"  // G
+      "umlal       v16.8h, v2.8b, v26.8b     \n"  // R
+      "umlal2      v17.8h, v2.16b, v26.16b   \n"  // R
+      "uqrshrn     v0.8b, v16.8h, #8         \n"  // 16 bit to 8 bit Y
+      "uqrshrn2    v0.16b, v17.8h, #8        \n"  // 16 bit to 8 bit Y
+      "uqadd       v0.16b, v0.16b, v27.16b   \n"
+      "str         q0, [%1], #16             \n"  // store 8 pixels Y.
+      "b.gt        1b                        \n"
       : "+r"(src_argb4444),  // %0
         "+r"(dst_y),         // %1
         "+r"(width)          // %2
