@@ -566,14 +566,24 @@ void I422ToRGB565Row_NEON(const uint8_t* src_y,
       : "cc", "memory", YUVTORGB_REGS);
 }
 
-#define ARGBTOARGB1555                                                      \
-  "shll       v0.8h,  v19.8b, #8             \n" /* A                    */ \
-  "shll       v18.8h, v18.8b, #8             \n" /* R                    */ \
-  "shll       v17.8h, v17.8b, #8             \n" /* G                    */ \
-  "shll       v16.8h, v16.8b, #8             \n" /* B                    */ \
-  "sri        v0.8h,  v18.8h, #1             \n" /* AR                   */ \
-  "sri        v0.8h,  v17.8h, #6             \n" /* ARG                  */ \
-  "sri        v0.8h,  v16.8h, #11            \n" /* ARGB                 */
+#define ARGBTOARGB1555                                                  \
+  /* Inputs:                                                            \
+   * v16: bbbbbxxx  v17: gggggxxx  v18: rrrrrxxx  v19: axxxxxxx */      \
+  "shll       v0.8h,  v19.8b, #8             \n" /* axxxxxxx00000000 */ \
+  "shll       v18.8h, v18.8b, #8             \n" /* rrrrrxxx00000000 */ \
+  "shll       v17.8h, v17.8b, #8             \n" /* gggggxxx00000000 */ \
+  "shll       v16.8h, v16.8b, #8             \n" /* bbbbbxxx00000000 */ \
+  "sri        v0.8h,  v18.8h, #1             \n" /* arrrrrxxx0000000 */ \
+  "sri        v0.8h,  v17.8h, #6             \n" /* arrrrrgggggxxx00 */ \
+  "sri        v0.8h,  v16.8h, #11            \n" /* arrrrrgggggbbbbb */
+
+#define ARGBTOARGB1555_FROM_TOP                                         \
+  /* Inputs:                                                            \
+   * v16: bbbbbxxxxxxxxxxx  v17: gggggxxxxxxxxxxx                       \
+   * v18: rrrrrxxxxxxxxxxx  v19: axxxxxxxxxxxxxxx */                    \
+  "sri        v19.8h,  v18.8h, #1            \n" /* arrrrrxxxxxxxxxx */ \
+  "sri        v19.8h,  v17.8h, #6            \n" /* arrrrrgggggxxxxx */ \
+  "sri        v19.8h,  v16.8h, #11           \n" /* arrrrrgggggbbbbb */
 
 void I422ToARGB1555Row_NEON(const uint8_t* src_y,
                             const uint8_t* src_u,
@@ -581,15 +591,14 @@ void I422ToARGB1555Row_NEON(const uint8_t* src_y,
                             uint8_t* dst_argb1555,
                             const struct YuvConstants* yuvconstants,
                             int width) {
-  asm volatile(
-      YUVTORGB_SETUP
-      "movi        v19.8b, #255                  \n"
-      "1:                                        \n" READYUV422 I4XXTORGB
-          RGBTORGB8
-      "subs        %w[width], %w[width], #8      \n" ARGBTOARGB1555
-      "st1         {v0.8h}, [%[dst_argb1555]], #16 \n"  // store 8 pixels
-                                                        // RGB565.
-      "b.gt        1b                            \n"
+  asm(YUVTORGB_SETUP
+      "movi    v19.8h, #0x80, lsl #8             \n"
+      "1:                                        \n"  //
+      READYUV422 I4XXTORGB RGBTORGB8_TOP
+      "subs    %w[width], %w[width], #8          \n"  //
+      ARGBTOARGB1555_FROM_TOP
+      "st1     {v19.8h}, [%[dst_argb1555]], #16  \n"  // store 8 pixels RGB1555.
+      "b.gt    1b                                \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
