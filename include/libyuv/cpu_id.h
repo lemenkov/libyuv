@@ -88,7 +88,7 @@ static __inline int TestCpuFlag(int test_flag) {
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
-int AArch64CpuCaps(unsigned long hwcap, unsigned long hwcap2);
+int AArch64CpuCaps(const char* cpuinfo_name);
 LIBYUV_API
 int MipsCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
