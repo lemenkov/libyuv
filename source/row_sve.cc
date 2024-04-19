@@ -85,29 +85,32 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm volatile(
-      "cnth     %[vl]                                   \n"
+  asm("cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n" /* A */
-      "cmp      %w[width], %w[vl]                       \n"
-      "b.le     2f                                      \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.h                                    \n"
       "1:                                               \n" READYUV444_SVE
           I4XXTORGB_SVE RGBTORGBA8_SVE
-      "sub      %w[width], %w[width], %w[vl]            \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
-      "cmp      %w[width], %w[vl]                       \n"
-      "b.gt     1b                                      \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "2:                                               \n"
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV444_SVE
           I4XXTORGB_SVE RGBTORGBA8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+
+      "99:                                              \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
@@ -126,30 +129,32 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm volatile(
-      "cnth     %[vl]                                   \n"
+  asm("cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n" /* A */
-      "cmp      %w[width], %w[vl]                       \n"
-      "b.le     2f                                      \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.h                                    \n"
-      "sub      %w[width], %w[width], %w[vl]            \n"
       "1:                                               \n" READYUV422_SVE
           I4XXTORGB_SVE RGBTORGBA8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
-      "b.gt     1b                                      \n"
-      "add      %w[width], %w[width], %w[vl]            \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "2:                                               \n"
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV422_SVE
           I4XXTORGB_SVE RGBTORGBA8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+
+      "99:                                              \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
