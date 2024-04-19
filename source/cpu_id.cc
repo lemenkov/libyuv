@@ -23,8 +23,20 @@
 #include <stdio.h>  // For fopen()
 #include <string.h>
 
-#ifdef __linux__
+#if defined(__linux__) && defined(__aarch64__)
 #include <sys/auxv.h>  // For getauxval()
+#endif
+
+#if defined(_WIN32) && defined(__aarch64__)
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#undef WIN32_EXTRA_LEAN
+#define WIN32_EXTRA_LEAN
+#include <windows.h>  // For IsProcessorFeaturePresent()
+#endif
+
+#if defined(__APPLE__) && defined(__aarch64__)
+#include <sys/sysctl.h>  // For sysctlbyname()
 #endif
 
 #ifdef __cplusplus
@@ -166,6 +178,7 @@ LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
   return features;
 }
 
+#ifdef __aarch64__
 #ifdef __linux__
 // Define hwcap values ourselves: building with an old auxv header where these
 // hwcap values are not defined should not prevent features from being enabled.
@@ -194,17 +207,63 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
   }
   return features;
 }
-#else  // !defined(__linux__)
+
+#elif defined(_WIN32)
 // For AArch64, but public to allow testing on any CPU.
 LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
   // Neon is mandatory on AArch64, so enable unconditionally.
   int features = kCpuHasNEON;
 
-  // TODO(libyuv:980) support feature detection on non-Linux platforms.
+  // For more information on IsProcessorFeaturePresent(), see:
+  // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-isprocessorfeaturepresent#parameters
+#ifdef PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE
+  if (IsProcessorFeaturePresent(PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE)) {
+    features |= kCpuHasNeonDotProd;
+  }
+#endif
+  // No Neon I8MM or SVE feature detection available here at time of writing.
+  return features;
+}
+
+#elif defined(__APPLE__)
+static bool have_feature(const char* feature) {
+  // For more information on sysctlbyname(), see:
+  // https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics
+  int64_t feature_present = 0;
+  size_t size = sizeof(feature_present);
+  if (sysctlbyname(feature, &feature_present, &size, NULL, 0) != 0) {
+    return false;
+  }
+  return feature_present;
+}
+
+// For AArch64, but public to allow testing on any CPU.
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+  // Neon is mandatory on AArch64, so enable unconditionally.
+  int features = kCpuHasNEON;
+
+  if (have_feature("hw.optional.arm.FEAT_DotProd")) {
+    features |= kCpuHasNeonDotProd;
+  }
+  if (have_feature("hw.optional.arm.FEAT_I8MM")) {
+    features |= kCpuHasNeonI8MM;
+  }
+  // No SVE feature detection available here at time of writing.
+  return features;
+}
+
+#else  // !defined(__linux__) && !defined(_WIN32) && !defined(__APPLE__)
+// For AArch64, but public to allow testing on any CPU.
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+  // Neon is mandatory on AArch64, so enable unconditionally.
+  int features = kCpuHasNEON;
+
+  // TODO(libyuv:980) support feature detection on other platforms.
 
   return features;
 }
 #endif
+#endif  // defined(__aarch64__)
 
 LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
   char cpuinfo_line[512];

@@ -273,7 +273,7 @@ TEST_F(LibYUVBaseTest, TestLinuxArm) {
 #endif
 }
 
-#ifdef __linux__
+#if defined(__linux__) && defined(__aarch64__)
 TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
   // Values taken from a Cortex-A57 machine, only Neon available.
   EXPECT_EQ(kCpuHasNEON, AArch64CpuCaps(0xffU, 0x0U));
