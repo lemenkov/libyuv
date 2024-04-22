@@ -193,17 +193,23 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
   // Neon is mandatory on AArch64, so enable regardless of hwcaps.
   int features = kCpuHasNEON;
 
+  // Don't try to enable later extensions unless earlier extensions are also
+  // reported available. Some of these constraints aren't strictly required by
+  // the architecture, but are satisfied by all micro-architectures of
+  // interest. This also avoids an issue on some emulators where true
+  // architectural constraints are not satisfied, e.g. SVE2 may be reported as
+  // available while SVE is not.
   if (hwcap & YUV_AARCH64_HWCAP_ASIMDDP) {
     features |= kCpuHasNeonDotProd;
-  }
-  if (hwcap2 & YUV_AARCH64_HWCAP2_I8MM) {
-    features |= kCpuHasNeonI8MM;
-  }
-  if (hwcap & YUV_AARCH64_HWCAP_SVE) {
-    features |= kCpuHasSVE;
-  }
-  if (hwcap2 & YUV_AARCH64_HWCAP2_SVE2) {
-    features |= kCpuHasSVE2;
+    if (hwcap2 & YUV_AARCH64_HWCAP2_I8MM) {
+      features |= kCpuHasNeonI8MM;
+      if (hwcap & YUV_AARCH64_HWCAP_SVE) {
+        features |= kCpuHasSVE;
+        if (hwcap2 & YUV_AARCH64_HWCAP2_SVE2) {
+          features |= kCpuHasSVE2;
+        }
+      }
+    }
   }
   return features;
 }
@@ -244,9 +250,9 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
 
   if (have_feature("hw.optional.arm.FEAT_DotProd")) {
     features |= kCpuHasNeonDotProd;
-  }
-  if (have_feature("hw.optional.arm.FEAT_I8MM")) {
-    features |= kCpuHasNeonI8MM;
+    if (have_feature("hw.optional.arm.FEAT_I8MM")) {
+      features |= kCpuHasNeonI8MM;
+    }
   }
   // No SVE feature detection available here at time of writing.
   return features;
