@@ -1784,6 +1784,14 @@ int AYUVToNV12(const uint8_t* src_ayuv,
     }
   }
 #endif
+#if defined(HAS_AYUVTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    AYUVToUVRow = AYUVToUVRow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      AYUVToUVRow = AYUVToUVRow_SVE2;
+    }
+  }
+#endif
 
   for (y = 0; y < height - 1; y += 2) {
     AYUVToUVRow(src_ayuv, src_stride_ayuv, dst_uv, width);
@@ -1850,6 +1858,14 @@ int AYUVToNV21(const uint8_t* src_ayuv,
     if (IS_ALIGNED(width, 16)) {
       AYUVToYRow = AYUVToYRow_NEON;
       AYUVToVURow = AYUVToVURow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_AYUVTOVUROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    AYUVToVURow = AYUVToVURow_Any_SVE2;
+    if (IS_ALIGNED(width, 2)) {
+      AYUVToVURow = AYUVToVURow_SVE2;
     }
   }
 #endif

@@ -651,6 +651,106 @@ void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
       : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0", "p1", "p2");
 }
 
+// clang-format off
+#define AYUVTOUV_SVE(zU0, zV0, zU1, zV1)                   /* e.g. */          \
+  "ld2h     {z0.h, z1.h}, p0/z, [%[src0]]              \n" /* VUVU.. YAYA.. */ \
+  "ld2h     {z1.h, z2.h}, p1/z, [%[src0], #2, mul vl]  \n" /* VUVU.. YAYA.. */ \
+  "ld2h     {z2.h, z3.h}, p0/z, [%[src1]]              \n" /* VUVU.. YAYA.. */ \
+  "ld2h     {z3.h, z4.h}, p1/z, [%[src1], #2, mul vl]  \n" /* VUVU.. YAYA.. */ \
+  "incb     %[src0], all, mul #4                       \n"                     \
+  "incb     %[src1], all, mul #4                       \n"                     \
+  "uaddlb   z4.h, z0.b, z2.b                           \n" /* V */             \
+  "uaddlt   z5.h, z0.b, z2.b                           \n" /* U */             \
+  "uaddlb   z6.h, z1.b, z3.b                           \n" /* V */             \
+  "uaddlt   z7.h, z1.b, z3.b                           \n" /* U */             \
+  "addp   " #zU0 ".h, p0/m, " #zU0 ".h, " #zV0 ".h     \n" /* UV */            \
+  "addp   " #zU1 ".h, p1/m, " #zU1 ".h, " #zV1 ".h     \n" /* UV */            \
+  "subs     %w[width], %w[width], %w[vl]               \n"                     \
+  "urshr  " #zU0 ".h, p0/m, " #zU0 ".h, #2             \n" /* U0V0 */          \
+  "urshr  " #zU1 ".h, p1/m, " #zU1 ".h, #2             \n" /* U0V0 */          \
+  "st1b     {" #zU0 ".h}, p0, [%[dst]]                 \n"                     \
+  "st1b     {" #zU1 ".h}, p1, [%[dst], #1, mul vl]     \n"                     \
+  "incb     %[dst]                                     \n"
+// clang-format on
+
+// Filter 2 rows of AYUV UV's (444) into UV (420).
+// AYUV is VUYA in memory.  UV for NV12 is UV order in memory.
+void AYUVToUVRow_SVE2(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_uv,
+                      int width) {
+  // Output a row of UV values, filtering 2x2 rows of AYUV.
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  int vl;
+  asm("cntb    %x[vl]                            \n"
+      "subs    %w[width], %w[width], %w[vl]      \n"
+      "b.lt    2f                                \n"
+
+      "ptrue   p0.h                              \n"
+      "ptrue   p1.h                              \n"
+      "1:                                        \n"
+      AYUVTOUV_SVE(z5, z4, z7, z6)
+      "b.ge    1b                                \n"
+
+      "2:                                        \n"
+      "adds    %w[width], %w[width], %w[vl]      \n"
+      "b.eq    99f                               \n"
+
+      "cnth    %x[vl]                            \n"
+      "whilelt p0.h, wzr, %w[width]              \n" // first row
+      "whilelt p1.h, %w[vl], %w[width]           \n" // second row
+      AYUVTOUV_SVE(z5, z4, z7, z6)
+
+      "99:                                       \n"
+      : [src0]"+r"(src_ayuv),   // %[src0]
+        [src1]"+r"(src_ayuv1),  // %[src1]
+        [dst]"+r"(dst_uv),      // %[dst]
+        [width]"+r"(width),     // %[width]
+        [vl]"=&r"(vl)           // %[vl]
+      :
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
+        "p1");
+}
+
+// Filter 2 rows of AYUV UV's (444) into VU (420).
+void AYUVToVURow_SVE2(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_vu,
+                      int width) {
+  // Output a row of VU values, filtering 2x2 rows of AYUV.
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  int vl;
+  asm("cntb    %x[vl]                            \n"
+      "cmp     %w[width], %w[vl]                 \n"
+      "subs    %w[width], %w[width], %w[vl]      \n"
+      "b.lt    2f                                \n"
+
+      "ptrue   p0.h                              \n"
+      "ptrue   p1.h                              \n"
+      "1:                                        \n"
+      AYUVTOUV_SVE(z4, z5, z6, z7)
+      "b.ge    1b                                \n"
+
+      "2:                                        \n"
+      "adds    %w[width], %w[width], %w[vl]      \n"
+      "b.eq    99f                               \n"
+
+      "cnth    %x[vl]                            \n"
+      "whilelt p0.h, wzr, %w[width]              \n" // first row
+      "whilelt p1.h, %w[vl], %w[width]           \n" // second row
+      AYUVTOUV_SVE(z4, z5, z6, z7)
+
+      "99:                                       \n"
+      : [src0]"+r"(src_ayuv),   // %[src0]
+        [src1]"+r"(src_ayuv1),  // %[src1]
+        [dst]"+r"(dst_vu),      // %[dst]
+        [width]"+r"(width),     // %[width]
+        [vl]"=&r"(vl)           // %[vl]
+      :
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
+        "p1");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

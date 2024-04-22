@@ -580,6 +580,8 @@ extern "C" {
 #define HAS_ARGBTORGB565ROW_SVE2
 #define HAS_ARGBTOUVJROW_SVE2
 #define HAS_ARGBTOUVROW_SVE2
+#define HAS_AYUVTOUVROW_SVE2
+#define HAS_AYUVTOVUROW_SVE2
 #define HAS_BGRATOUVROW_SVE2
 #define HAS_I422ALPHATOARGBROW_SVE2
 #define HAS_I422TOARGBROW_SVE2
@@ -5766,7 +5768,15 @@ void AYUVToUVRow_NEON(const uint8_t* src_ayuv,
                       int src_stride_ayuv,
                       uint8_t* dst_uv,
                       int width);
+void AYUVToUVRow_SVE2(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_uv,
+                      int width);
 void AYUVToVURow_NEON(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_vu,
+                      int width);
+void AYUVToVURow_SVE2(const uint8_t* src_ayuv,
                       int src_stride_ayuv,
                       uint8_t* dst_vu,
                       int width);
@@ -5775,7 +5785,15 @@ void AYUVToUVRow_Any_NEON(const uint8_t* src_ptr,
                           int src_stride,
                           uint8_t* dst_vu,
                           int width);
+void AYUVToUVRow_Any_SVE2(const uint8_t* src_ptr,
+                          int src_stride,
+                          uint8_t* dst_vu,
+                          int width);
 void AYUVToVURow_Any_NEON(const uint8_t* src_ptr,
+                          int src_stride,
+                          uint8_t* dst_vu,
+                          int width);
+void AYUVToVURow_Any_SVE2(const uint8_t* src_ptr,
                           int src_stride,
                           uint8_t* dst_vu,
                           int width);
