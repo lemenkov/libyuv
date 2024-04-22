@@ -2083,17 +2083,19 @@ void RGB565ToARGBRow_NEON(const uint8_t* src_rgb565,
   );
 }
 
-#define ARGB1555TOARGB                             \
-  /* Input: ARRRRRGGGGGBBBBB */                    \
-  "xtn        v29.8b, v0.8h     \n" /* xxxBBBBB */ \
-  "shrn       v3.8b, v0.8h, #8  \n" /* Axxxxxxx */ \
-  "shrn       v2.8b, v0.8h, #7  \n" /* RRRRRxxx */ \
-  "shrn       v1.8b, v0.8h, #2  \n" /* GGGGGxxx */ \
-  "shl        v0.8b, v29.8b, #3 \n" /* BBBBB000 */ \
-  "sshr       v3.8b, v3.8b, #7  \n" /* AAAAAAAA */ \
-  "sri        v2.8b, v2.8b, #5  \n" /* RRRRRRRR */ \
-  "sri        v1.8b, v1.8b, #5  \n" /* GGGGGGGG */ \
-  "sri        v0.8b, v0.8b, #5  \n" /* BBBBBBBB */
+#define ARGB1555TOARGB                                   \
+  /* Input: ARRRRRGGGGGBBBBB */                          \
+  "shrn       v2.8b, v0.8h, #7        \n" /* RRRRRxxx */ \
+  "uzp1       v29.16b, v0.16b, v4.16b \n" /* xxxBBBBB */ \
+  "shrn       v1.8b, v0.8h, #2        \n" /* GGGGGxxx */ \
+  "uzp2       v3.16b, v0.16b, v4.16b  \n" /* Axxxxxxx */ \
+  "shrn2      v2.16b, v4.8h, #7       \n" /* RRRRRxxx */ \
+  "shl        v0.16b, v29.16b, #3     \n" /* BBBBB000 */ \
+  "shrn2      v1.16b, v4.8h, #2       \n" /* GGGGGxxx */ \
+  "sshr       v3.16b, v3.16b, #7      \n" /* AAAAAAAA */ \
+  "sri        v2.16b, v2.16b, #5      \n" /* RRRRRRRR */ \
+  "sri        v1.16b, v1.16b, #5      \n" /* GGGGGGGG */ \
+  "sri        v0.16b, v0.16b, #5      \n" /* BBBBBBBB */
 
 // RGB555TOARGB is same as ARGB1555TOARGB but ignores alpha.
 #define RGB555TOARGB                                         \
@@ -2112,14 +2114,15 @@ void RGB565ToARGBRow_NEON(const uint8_t* src_rgb565,
 void ARGB1555ToARGBRow_NEON(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
                             int width) {
-  asm volatile (
-      "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 8 ARGB1555 pixels.
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
+  asm volatile(
+      "1:                            \n"
+      "ldp   q0, q4, [%0], #32       \n"  // load 16 ARGB1555 pixels
+      "prfm  pldl1keep, [%0, 448]    \n"
+      "subs  %w2, %w2, #16           \n"  // 16 processed per loop
       ARGB1555TOARGB
-      "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%1], #32 \n"  // store 8 ARGB
-      "b.gt        1b                            \n"
+      "st4   {v0.16b,v1.16b,v2.16b,v3.16b}, [%1] \n"  // store 16 ARGB
+      "add   %1, %1, #64             \n"
+      "b.gt  1b                      \n"
       : "+r"(src_argb1555),  // %0
         "+r"(dst_argb),      // %1
         "+r"(width)          // %2
