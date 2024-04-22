@@ -786,14 +786,12 @@ void I422ToRGB565Row_NEON(const uint8_t* src_y,
 
 #define ARGBTOARGB1555                                                  \
   /* Inputs:                                                            \
-   * v16: bbbbbxxx  v17: gggggxxx  v18: rrrrrxxx  v19: axxxxxxx */      \
-  "shll       v0.8h,  v19.8b, #8             \n" /* axxxxxxx00000000 */ \
-  "shll       v18.8h, v18.8b, #8             \n" /* rrrrrxxx00000000 */ \
-  "shll       v17.8h, v17.8b, #8             \n" /* gggggxxx00000000 */ \
-  "shll       v16.8h, v16.8b, #8             \n" /* bbbbbxxx00000000 */ \
-  "sri        v0.8h,  v18.8h, #1             \n" /* arrrrrxxx0000000 */ \
-  "sri        v0.8h,  v17.8h, #6             \n" /* arrrrrgggggxxx00 */ \
-  "sri        v0.8h,  v16.8h, #11            \n" /* arrrrrgggggbbbbb */
+   * v16: gggggxxxbbbbbxxx  v17: axxxxxxxrrrrrxxx  */                   \
+  "shl        v1.8h, v16.8h, #8              \n" /* bbbbbxxx00000000 */ \
+  "shl        v2.8h, v17.8h, #8              \n" /* rrrrrxxx00000000 */ \
+  "sri        v17.8h, v2.8h, #1              \n" /* arrrrrxxxrrrrxxx */ \
+  "sri        v17.8h, v16.8h, #6             \n" /* arrrrrgggggxxxbb */ \
+  "sri        v17.8h, v1.8h, #11             \n" /* arrrrrgggggbbbbb */
 
 #define ARGBTOARGB1555_FROM_TOP                                         \
   /* Inputs:                                                            \
@@ -2517,19 +2515,18 @@ void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
 void ARGBToARGB1555Row_NEON(const uint8_t* src_argb,
                             uint8_t* dst_argb1555,
                             int width) {
-  asm volatile (
+  asm volatile(
       "1:                                        \n"
-      "ld4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%0], #32 \n"  // load 8
-                                                                 // pixels
+      "ld2         {v16.8h,v17.8h}, [%0], #32    \n"  // load 8 pixels
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
       "prfm        pldl1keep, [%0, 448]          \n" ARGBTOARGB1555
-      "st1         {v0.16b}, [%1], #16           \n"  // store 8 pixels
+      "st1         {v17.16b}, [%1], #16          \n"  // store 8 pixels
       "b.gt        1b                            \n"
       : "+r"(src_argb),      // %0
         "+r"(dst_argb1555),  // %1
         "+r"(width)          // %2
       :
-      : "cc", "memory", "v0", "v16", "v17", "v18", "v19");
+      : "cc", "memory", "v1", "v2", "v16", "v17");
 }
 
 void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
