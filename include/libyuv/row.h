@@ -590,6 +590,8 @@ extern "C" {
 #define HAS_I422TORGBAROW_SVE2
 #define HAS_I444ALPHATOARGBROW_SVE2
 #define HAS_I444TOARGBROW_SVE2
+#define HAS_NV12TOARGBROW_SVE2
+#define HAS_NV21TOARGBROW_SVE2
 #define HAS_RGBATOUVROW_SVE2
 #endif
 
@@ -1192,12 +1194,22 @@ void NV12ToARGBRow_NEON(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void NV12ToARGBRow_SVE2(const uint8_t* src_y,
+                        const uint8_t* src_uv,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void NV12ToRGB565Row_NEON(const uint8_t* src_y,
                           const uint8_t* src_uv,
                           uint8_t* dst_rgb565,
                           const struct YuvConstants* yuvconstants,
                           int width);
 void NV21ToARGBRow_NEON(const uint8_t* src_y,
+                        const uint8_t* src_vu,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void NV21ToARGBRow_SVE2(const uint8_t* src_y,
                         const uint8_t* src_vu,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
