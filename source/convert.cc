@@ -3565,11 +3565,9 @@ int RGB565ToI420(const uint8_t* src_rgb565,
   if (TestCpuFlag(kCpuHasNEON)) {
     RGB565ToUVRow = RGB565ToUVRow_Any_NEON;
     RGB565ToYRow = RGB565ToYRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       RGB565ToYRow = RGB565ToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        RGB565ToUVRow = RGB565ToUVRow_NEON;
-      }
+      RGB565ToUVRow = RGB565ToUVRow_NEON;
     }
   }
 // MSA version does direct RGB565 to YUV.
