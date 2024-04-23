@@ -2980,6 +2980,11 @@ int I400ToARGBMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I400TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I400ToARGBRow = I400ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_I400TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I400ToARGBRow = I400ToARGBRow_Any_MSA;

@@ -43,6 +43,12 @@ extern "C" {
   "trn1       z1.h, z1.h, z1.h               \n" \
   "trn1       z2.h, z2.h, z2.h               \n"
 
+#define READYUV400_SVE                           \
+  "ld1b       {z0.h}, p1/z, [%[src_y]]       \n" \
+  "inch       %[src_y]                       \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "trn1       z0.b, z0.b, z0.b               \n"
+
 // We need a different predicate for the UV component to handle the tail.
 // If there is a single element remaining then we want to load one Y element
 // but two UV elements.
@@ -79,6 +85,14 @@ extern "C" {
   "uqsub      z17.h, z17.h, z6.h             \n" /* G */  \
   "uqsub      z16.h, z16.h, z25.h            \n" /* B */  \
   "uqsub      z18.h, z18.h, z27.h            \n" /* R */
+
+#define I400TORGB_SVE                                    \
+  "umulh      z18.h, z24.h, z0.h             \n" /* Y */ \
+  "movprfx    z16, z18                       \n"         \
+  "usqadd     z16.h, p0/m, z16.h, z4.h       \n" /* B */ \
+  "movprfx    z17, z18                       \n"         \
+  "usqadd     z17.h, p0/m, z17.h, z6.h       \n" /* G */ \
+  "usqadd     z18.h, p0/m, z18.h, z5.h       \n" /* R */
 
 // Convert from 2.14 fixed point RGB to 8 bit ARGB, interleaving as BG and RA
 // pairs to allow us to use ST2 for storing rather than ST4.
@@ -138,6 +152,52 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
+        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width),                               // %[width]
+        [vl] "=&r"(vl)                                     // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
+void I400ToARGBRow_SVE2(const uint8_t* src_y,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm("cnth     %[vl]                                   \n"
+      "ptrue    p0.b                                    \n"
+      "dup      z19.b, #255                             \n"  // A
+      YUVTORGB_SVE_SETUP
+      "cmp      %w[width], %w[vl]                       \n"
+      "mov      z1.h, #128                              \n"  // U/V
+      "mul      z6.h, z30.h, z1.h                       \n"
+      "mul      z4.h, z28.h, z1.h                       \n"  // DB
+      "mul      z5.h, z29.h, z1.h                       \n"  // DR
+      "mla      z6.h, p0/m, z31.h, z1.h                 \n"  // DG
+      "sub      z4.h, z4.h, z25.h                       \n"
+      "sub      z5.h, z5.h, z27.h                       \n"
+      "sub      z6.h, z26.h, z6.h                       \n"
+      "b.le     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "sub      %w[width], %w[width], %w[vl]            \n"
+      "1:                                               \n"  //
+      READYUV400_SVE I400TORGB_SVE RGBTOARGB8_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
+      "b.gt     1b                                      \n"
+      "add      %w[width], %w[width], %w[vl]            \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "2:                                               \n"
+      "whilelt  p1.h, wzr, %w[width]                    \n"  //
+      READYUV400_SVE I400TORGB_SVE RGBTOARGB8_SVE
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
         [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
         [width] "+r"(width),                               // %[width]
         [vl] "=&r"(vl)                                     // %[vl]
