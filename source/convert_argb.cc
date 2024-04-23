@@ -4906,6 +4906,11 @@ int I422ToRGBAMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TORGBAROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToRGBARow = I422ToRGBARow_SVE2;
+  }
+#endif
 #if defined(HAS_I422TORGBAROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I422ToRGBARow = I422ToRGBARow_Any_MSA;
@@ -5132,6 +5137,11 @@ int I420ToRGBAMatrix(const uint8_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       I422ToRGBARow = I422ToRGBARow_NEON;
     }
+  }
+#endif
+#if defined(HAS_I422TORGBAROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToRGBARow = I422ToRGBARow_SVE2;
   }
 #endif
 #if defined(HAS_I422TORGBAROW_MSA)

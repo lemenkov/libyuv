@@ -66,17 +66,27 @@ extern "C" {
   "uqsub      z16.h, z16.h, z25.h            \n" /* B */  \
   "uqsub      z18.h, z18.h, z27.h            \n" /* R */
 
-// Convert from 2.14 fixed point RGB to 8 bit RGBA, interleaving as BG and RA
+// Convert from 2.14 fixed point RGB to 8 bit ARGB, interleaving as BG and RA
 // pairs to allow us to use ST2 for storing rather than ST4.
-#define RGBTORGBA8_SVE                  \
-  "uqshrnb     z16.b, z16.h, #6     \n" \
-  "uqshrnb     z18.b, z18.h, #6     \n" \
-  "uqshrnt     z16.b, z17.h, #6     \n" \
-  "trn1        z17.b, z18.b, z19.b  \n"
+#define RGBTOARGB8_SVE                                    \
+  /* Inputs: B: z16.h,  G: z17.h,  R: z18.h,  A: z19.b */ \
+  "uqshrnb     z16.b, z16.h, #6     \n" /* B0 */          \
+  "uqshrnb     z18.b, z18.h, #6     \n" /* R0 */          \
+  "uqshrnt     z16.b, z17.h, #6     \n" /* BG */          \
+  "trn1        z17.b, z18.b, z19.b  \n" /* RA */
+
+// Convert from 2.14 fixed point RGB to 8 bit RGBA, interleaving as AB and GR
+// pairs to allow us to use ST2 for storing rather than ST4.
+#define RGBTORGBA8_SVE                                    \
+  /* Inputs: B: z16.h,  G: z17.h,  R: z18.h,  A: z19.b */ \
+  "uqshrnt     z19.b, z16.h, #6     \n" /* AB */          \
+  "uqshrnb     z20.b, z17.h, #6     \n" /* G0 */          \
+  "uqshrnt     z20.b, z18.h, #6     \n" /* GR */
 
 #define YUVTORGB_SVE_REGS                                                     \
   "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16", "z17", "z18", "z19", \
-      "z24", "z25", "z26", "z27", "z28", "z29", "z30", "z31", "p0", "p1"
+      "z20", "z24", "z25", "z26", "z27", "z28", "z29", "z30", "z31", "p0",    \
+      "p1"
 
 void I444ToARGBRow_SVE2(const uint8_t* src_y,
                         const uint8_t* src_u,
@@ -95,7 +105,7 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
       // generation overhead.
       "ptrue    p1.h                                    \n"
       "1:                                               \n" READYUV444_SVE
-          I4XXTORGB_SVE RGBTORGBA8_SVE
+          I4XXTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -107,7 +117,7 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV444_SVE
-          I4XXTORGB_SVE RGBTORGBA8_SVE
+          I4XXTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -139,7 +149,7 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
       // generation overhead.
       "ptrue    p1.h                                    \n"
       "1:                                               \n" READYUV422_SVE
-          I4XXTORGB_SVE RGBTORGBA8_SVE
+          I4XXTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -151,8 +161,52 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV422_SVE
-          I4XXTORGB_SVE RGBTORGBA8_SVE
+          I4XXTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width),                               // %[width]
+        [vl] "=&r"(vl)                                     // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
+void I422ToRGBARow_SVE2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm("cnth     %[vl]                                   \n"
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // A
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.le     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "1:                                               \n"  //
+      READYUV422_SVE I4XXTORGB_SVE RGBTORGBA8_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st2h     {z19.h, z20.h}, p1, [%[dst_argb]]       \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
+      "b.gt     1b                                      \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "2:                                               \n"
+      "adds    %w[width], %w[width], %w[vl]             \n"
+      "b.eq    99f                                      \n"
+
+      "whilelt  p1.h, wzr, %w[width]                    \n"  //
+      READYUV422_SVE I4XXTORGB_SVE RGBTORGBA8_SVE
+      "st2h     {z19.h, z20.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
@@ -183,9 +237,9 @@ void I444AlphaToARGBRow_SVE2(const uint8_t* src_y,
       // generation overhead.
       "ptrue    p1.h                                    \n"
       "1:                                               \n" READYUV444_SVE
-      "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"  // A
-      "add      %[src_a], %[src_a], %[vl]               \n" I4XXTORGB_SVE
-          RGBTORGBA8_SVE
+      "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"
+      "add      %[src_a], %[src_a], %[vl]               \n"  // A
+      I4XXTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -198,7 +252,7 @@ void I444AlphaToARGBRow_SVE2(const uint8_t* src_y,
       // Calculate a predicate for the final iteration to deal with the tail.
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV444_SVE
       "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"  // A
-      I4XXTORGB_SVE RGBTORGBA8_SVE
+      I4XXTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -231,9 +285,9 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
       // generation overhead.
       "ptrue    p1.h                                    \n"
       "1:                                               \n" READYUV422_SVE
-      "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"  // A
-      "add      %[src_a], %[src_a], %[vl]               \n" I4XXTORGB_SVE
-          RGBTORGBA8_SVE
+      "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"
+      "add      %[src_a], %[src_a], %[vl]               \n"  // A
+      I4XXTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -246,7 +300,7 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
       // Calculate a predicate for the final iteration to deal with the tail.
       "whilelt  p1.h, wzr, %w[width]                    \n" READYUV422_SVE
       "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"  // A
-      I4XXTORGB_SVE RGBTORGBA8_SVE
+      I4XXTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"

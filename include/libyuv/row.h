@@ -585,6 +585,7 @@ extern "C" {
 #define HAS_BGRATOUVROW_SVE2
 #define HAS_I422ALPHATOARGBROW_SVE2
 #define HAS_I422TOARGBROW_SVE2
+#define HAS_I422TORGBAROW_SVE2
 #define HAS_I444ALPHATOARGBROW_SVE2
 #define HAS_I444TOARGBROW_SVE2
 #define HAS_RGBATOUVROW_SVE2
@@ -1149,6 +1150,12 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
                              const struct YuvConstants* yuvconstants,
                              int width);
 void I422ToRGBARow_NEON(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_rgba,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I422ToRGBARow_SVE2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
                         uint8_t* dst_rgba,
