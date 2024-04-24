@@ -63,11 +63,27 @@ extern "C" {
   "tbl        z2.h, {z1.h}, z23.h            \n" /* V0V0 */         \
   "tbl        z1.h, {z1.h}, z22.h            \n" /* U0U0 */
 
+#define READYUY2_SVE                                        \
+  "ld1w       {z0.s}, p2/z, [%[src_yuy2]]    \n" /* YUYV */ \
+  "incb       %[src_yuy2]                    \n"            \
+  "prfm       pldl1keep, [%[src_yuy2], 448]  \n"            \
+  "tbl        z2.b, {z0.b}, z23.b            \n" /* V0V0 */ \
+  "tbl        z1.b, {z0.b}, z22.b            \n" /* U0U0 */ \
+  "trn1       z0.b, z0.b, z0.b               \n" /* YYYY */
+
+#define READUYVY_SVE                                        \
+  "ld1w       {z0.s}, p2/z, [%[src_uyvy]]    \n" /* UYVY */ \
+  "incb       %[src_uyvy]                    \n"            \
+  "prfm       pldl1keep, [%[src_uyvy], 448]  \n"            \
+  "tbl        z2.b, {z0.b}, z23.b            \n" /* V0V0 */ \
+  "tbl        z1.b, {z0.b}, z22.b            \n" /* U0U0 */ \
+  "trn2       z0.b, z0.b, z0.b               \n" /* YYYY */
+
 #define YUVTORGB_SVE_SETUP                          \
-  "ld1rb  {z28.h}, p0/z, [%[kUVCoeff], #0]      \n" \
-  "ld1rb  {z29.h}, p0/z, [%[kUVCoeff], #1]      \n" \
-  "ld1rb  {z30.h}, p0/z, [%[kUVCoeff], #2]      \n" \
-  "ld1rb  {z31.h}, p0/z, [%[kUVCoeff], #3]      \n" \
+  "ld1rb  {z28.b}, p0/z, [%[kUVCoeff], #0]      \n" \
+  "ld1rb  {z29.b}, p0/z, [%[kUVCoeff], #1]      \n" \
+  "ld1rb  {z30.b}, p0/z, [%[kUVCoeff], #2]      \n" \
+  "ld1rb  {z31.b}, p0/z, [%[kUVCoeff], #3]      \n" \
   "ld1rh  {z24.h}, p0/z, [%[kRGBCoeffBias], #0] \n" \
   "ld1rh  {z25.h}, p0/z, [%[kRGBCoeffBias], #2] \n" \
   "ld1rh  {z26.h}, p0/z, [%[kRGBCoeffBias], #4] \n" \
@@ -75,10 +91,10 @@ extern "C" {
 
 #define I4XXTORGB_SVE                                     \
   "umulh      z0.h, z24.h, z0.h              \n" /* Y */  \
-  "mul        z6.h, z30.h, z1.h              \n"          \
-  "mul        z4.h, z28.h, z1.h              \n" /* DB */ \
-  "mul        z5.h, z29.h, z2.h              \n" /* DR */ \
-  "mla        z6.h, p0/m, z31.h, z2.h        \n" /* DG */ \
+  "umullb     z6.h, z30.b, z1.b              \n"          \
+  "umullb     z4.h, z28.b, z1.b              \n" /* DB */ \
+  "umullb     z5.h, z29.b, z2.b              \n" /* DR */ \
+  "umlalb     z6.h, z31.b, z2.b              \n" /* DG */ \
   "add        z17.h, z0.h, z26.h             \n" /* G */  \
   "add        z16.h, z0.h, z4.h              \n" /* B */  \
   "add        z18.h, z0.h, z5.h              \n" /* R */  \
@@ -171,9 +187,9 @@ void I400ToARGBRow_SVE2(const uint8_t* src_y,
       YUVTORGB_SVE_SETUP
       "cmp      %w[width], %w[vl]                       \n"
       "mov      z1.h, #128                              \n"  // U/V
-      "mul      z6.h, z30.h, z1.h                       \n"
-      "mul      z4.h, z28.h, z1.h                       \n"  // DB
-      "mul      z5.h, z29.h, z1.h                       \n"  // DR
+      "umullb   z6.h, z30.b, z1.b                       \n"
+      "umullb   z4.h, z28.b, z1.b                       \n"  // DB
+      "umullb   z5.h, z29.b, z1.b                       \n"  // DR
       "mla      z6.h, p0/m, z31.h, z1.h                 \n"  // DG
       "sub      z4.h, z4.h, z25.h                       \n"
       "sub      z5.h, z5.h, z27.h                       \n"
@@ -963,6 +979,121 @@ void AYUVToVURow_SVE2(const uint8_t* src_ayuv,
       :
       : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
         "p1");
+}
+
+void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint32_t nv_u_start = 0x0001'0001U;
+  uint32_t nv_u_step = 0x0004'0004U;
+  uint32_t nv_v_start = 0x0003'0003U;
+  uint32_t nv_v_step = 0x0004'0004U;
+  uint64_t vl;
+  asm("cnth %0" : "=r"(vl));
+  int width_last_y = width & (vl - 1);
+  int width_last_uv = width_last_y + (width_last_y & 1);
+  asm("ptrue    p0.b                                    \n"
+      "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
+      "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
+      "dup      z19.b, #255                             \n"  // A
+      YUVTORGB_SVE_SETUP
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "ptrue    p2.h                                    \n"
+      "1:                                               \n"  //
+      READYUY2_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p1.h, wzr, %w[width_last_y]             \n"
+      "whilelt  p2.h, wzr, %w[width_last_uv]            \n"  //
+      READYUY2_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+
+      "99:                                              \n"
+      : [src_yuy2] "+r"(src_yuy2),                          // %[src_yuy2]
+        [dst_argb] "+r"(dst_argb),                          // %[dst_argb]
+        [width] "+r"(width)                                 // %[width]
+      : [vl] "r"(vl),                                       // %[vl]
+        [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
+        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
+        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
+        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
+        [width_last_y] "r"(width_last_y),                   // %[width_last_y]
+        [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
+      : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
+}
+
+void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint32_t nv_u_start = 0x0000'0000U;
+  uint32_t nv_u_step = 0x0004'0004U;
+  uint32_t nv_v_start = 0x0002'0002U;
+  uint32_t nv_v_step = 0x0004'0004U;
+  uint64_t vl;
+  asm("cnth %0" : "=r"(vl));
+  int width_last_y = width & (vl - 1);
+  int width_last_uv = width_last_y + (width_last_y & 1);
+  asm("ptrue    p0.b                                    \n"
+      "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
+      "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
+      "dup      z19.b, #255                             \n"  // A
+      YUVTORGB_SVE_SETUP
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "ptrue    p2.h                                    \n"
+      "1:                                               \n"  //
+      READUYVY_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "2:                                               \n"
+      "whilelt  p1.h, wzr, %w[width_last_y]             \n"
+      "whilelt  p2.h, wzr, %w[width_last_uv]            \n"  //
+      READUYVY_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+
+      "99:                                              \n"
+      : [src_uyvy] "+r"(src_uyvy),                          // %[src_yuy2]
+        [dst_argb] "+r"(dst_argb),                          // %[dst_argb]
+        [width] "+r"(width)                                 // %[width]
+      : [vl] "r"(vl),                                       // %[vl]
+        [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
+        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
+        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
+        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
+        [width_last_y] "r"(width_last_y),                   // %[width_last_y]
+        [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
+      : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
 }
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)

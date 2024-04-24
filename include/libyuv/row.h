@@ -594,6 +594,8 @@ extern "C" {
 #define HAS_NV12TOARGBROW_SVE2
 #define HAS_NV21TOARGBROW_SVE2
 #define HAS_RGBATOUVROW_SVE2
+#define HAS_UYVYTOARGBROW_SVE2
+#define HAS_YUY2TOARGBROW_SVE2
 #endif
 
 // The following are available on AArch64 platforms:
@@ -1233,7 +1235,15 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);

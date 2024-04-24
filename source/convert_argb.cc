@@ -4626,6 +4626,11 @@ int YUY2ToARGBMatrix(const uint8_t* src_yuy2,
     }
   }
 #endif
+#if defined(HAS_YUY2TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    YUY2ToARGBRow = YUY2ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_YUY2TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     YUY2ToARGBRow = YUY2ToARGBRow_Any_MSA;
@@ -4712,6 +4717,11 @@ int UYVYToARGBMatrix(const uint8_t* src_uyvy,
     if (IS_ALIGNED(width, 8)) {
       UYVYToARGBRow = UYVYToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_UYVYTOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    UYVYToARGBRow = UYVYToARGBRow_SVE2;
   }
 #endif
 #if defined(HAS_UYVYTOARGBROW_MSA)
