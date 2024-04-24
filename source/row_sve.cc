@@ -58,25 +58,22 @@ extern "C" {
   "inch       %[src_y]                       \n"                    \
   "inch       %[src_uv]                      \n"                    \
   "prfm       pldl1keep, [%[src_y], 448]     \n"                    \
-  "prfm       pldl1keep, [%[src_uv], 448]    \n"                    \
+  "prfm       pldl1keep, [%[src_uv], 256]    \n"                    \
   "trn1       z0.b, z0.b, z0.b               \n" /* YYYY */         \
-  "tbl        z2.h, {z1.h}, z23.h            \n" /* V0V0 */         \
-  "tbl        z1.h, {z1.h}, z22.h            \n" /* U0U0 */
+  "tbl        z1.b, {z1.b}, z22.b            \n" /* UVUV */
 
 #define READYUY2_SVE                                        \
   "ld1w       {z0.s}, p2/z, [%[src_yuy2]]    \n" /* YUYV */ \
   "incb       %[src_yuy2]                    \n"            \
   "prfm       pldl1keep, [%[src_yuy2], 448]  \n"            \
-  "tbl        z2.b, {z0.b}, z23.b            \n" /* V0V0 */ \
-  "tbl        z1.b, {z0.b}, z22.b            \n" /* U0U0 */ \
+  "tbl        z1.b, {z0.b}, z22.b            \n" /* UVUV */ \
   "trn1       z0.b, z0.b, z0.b               \n" /* YYYY */
 
 #define READUYVY_SVE                                        \
   "ld1w       {z0.s}, p2/z, [%[src_uyvy]]    \n" /* UYVY */ \
   "incb       %[src_uyvy]                    \n"            \
   "prfm       pldl1keep, [%[src_uyvy], 448]  \n"            \
-  "tbl        z2.b, {z0.b}, z23.b            \n" /* V0V0 */ \
-  "tbl        z1.b, {z0.b}, z22.b            \n" /* U0U0 */ \
+  "tbl        z1.b, {z0.b}, z22.b            \n" /* UVUV */ \
   "trn2       z0.b, z0.b, z0.b               \n" /* YYYY */
 
 #define YUVTORGB_SVE_SETUP                          \
@@ -89,6 +86,23 @@ extern "C" {
   "ld1rh  {z26.h}, p0/z, [%[kRGBCoeffBias], #4] \n" \
   "ld1rh  {z27.h}, p0/z, [%[kRGBCoeffBias], #6] \n"
 
+// Like I4XXTORGB_SVE but U/V components are stored in even/odd .b lanes of z1
+// rather than widened .h elements of z1/z2.
+#define NVTORGB_SVE                                       \
+  "umulh      z0.h, z24.h, z0.h              \n" /* Y */  \
+  "umullb     z6.h, z30.b, z1.b              \n"          \
+  "umullb     z4.h, z28.b, z1.b              \n" /* DB */ \
+  "umullt     z5.h, z29.b, z1.b              \n" /* DR */ \
+  "umlalt     z6.h, z31.b, z1.b              \n" /* DG */ \
+  "add        z17.h, z0.h, z26.h             \n" /* G */  \
+  "add        z16.h, z0.h, z4.h              \n" /* B */  \
+  "add        z18.h, z0.h, z5.h              \n" /* R */  \
+  "uqsub      z17.h, z17.h, z6.h             \n" /* G */  \
+  "uqsub      z16.h, z16.h, z25.h            \n" /* B */  \
+  "uqsub      z18.h, z18.h, z27.h            \n" /* R */
+
+// Like NVTORGB_SVE but U/V components are stored in widened .h elements of
+// z1/z2 rather than even/odd .b lanes of z1.
 #define I4XXTORGB_SVE                                     \
   "umulh      z0.h, z24.h, z0.h              \n" /* Y */  \
   "umullb     z6.h, z30.b, z1.b              \n"          \
@@ -417,20 +431,18 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
                                     uint8_t* dst_argb,
                                     const struct YuvConstants* yuvconstants,
                                     int width,
-                                    uint32_t nv_u_start,
-                                    uint32_t nv_u_step,
-                                    uint32_t nv_v_start,
-                                    uint32_t nv_v_step) {
+                                    uint32_t nv_uv_start,
+                                    uint32_t nv_uv_step) {
   uint64_t vl;
   asm volatile (
       "cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   width_last_y = width_last_y == 0 ? vl : width_last_y;
   int width_last_uv = width_last_y + (width_last_y & 1);
-  asm volatile (
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
-      "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
+  asm volatile(
+      YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"
+      "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
       "dup      z19.b, #255                             \n"  // A
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.le     2f                                      \n"
@@ -440,7 +452,7 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
       "ptrue    p1.h                                    \n"
       "ptrue    p2.h                                    \n"
       "1:                                               \n" READNV_SVE
-          I4XXTORGB_SVE RGBTOARGB8_SVE
+          NVTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -454,7 +466,7 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
       "3:                                               \n"
       "whilelt  p1.h, wzr, %w[width_last_y]             \n"
       "whilelt  p2.h, wzr, %w[width_last_uv]            \n" READNV_SVE
-          I4XXTORGB_SVE RGBTOARGB8_SVE
+          NVTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -465,10 +477,8 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
+        [nv_uv_start] "r"(nv_uv_start),                     // %[nv_uv_start]
+        [nv_uv_step] "r"(nv_uv_step),                       // %[nv_uv_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS);
@@ -479,12 +489,10 @@ void NV12ToARGBRow_SVE2(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_u_start = 0x0000'0000U;
-  uint32_t nv_u_step = 0x0002'0002U;
-  uint32_t nv_v_start = 0x0001'0001U;
-  uint32_t nv_v_step = 0x0002'0002U;
-  NVToARGBRow_SVE2(src_y, src_uv, dst_argb, yuvconstants, width, nv_u_start,
-                   nv_u_step, nv_v_start, nv_v_step);
+  uint32_t nv_uv_start = 0x0200'0200U;
+  uint32_t nv_uv_step = 0x0404'0404U;
+  NVToARGBRow_SVE2(src_y, src_uv, dst_argb, yuvconstants, width, nv_uv_start,
+                   nv_uv_step);
 }
 
 void NV21ToARGBRow_SVE2(const uint8_t* src_y,
@@ -492,12 +500,10 @@ void NV21ToARGBRow_SVE2(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_u_start = 0x0001'0001U;
-  uint32_t nv_u_step = 0x0002'0002U;
-  uint32_t nv_v_start = 0x0000'0000U;
-  uint32_t nv_v_step = 0x0002'0002U;
-  NVToARGBRow_SVE2(src_y, src_vu, dst_argb, yuvconstants, width, nv_u_start,
-                   nv_u_step, nv_v_start, nv_v_step);
+  uint32_t nv_uv_start = 0x0002'0002U;
+  uint32_t nv_uv_step = 0x0404'0404U;
+  NVToARGBRow_SVE2(src_y, src_vu, dst_argb, yuvconstants, width, nv_uv_start,
+                   nv_uv_step);
 }
 
 // Dot-product constants are stored as four-tuples with the two innermost
@@ -998,19 +1004,15 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_u_start = 0x0001'0001U;
-  uint32_t nv_u_step = 0x0004'0004U;
-  uint32_t nv_v_start = 0x0003'0003U;
-  uint32_t nv_v_step = 0x0004'0004U;
+  uint32_t nv_uv_start = 0x0301'0301U;
+  uint32_t nv_uv_step = 0x0404'0404U;
   uint64_t vl;
-  asm volatile (
-      "cnth %0" : "=r"(vl));
+  asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   int width_last_uv = width_last_y + (width_last_y & 1);
-  asm volatile (
+  asm volatile(
       "ptrue    p0.b                                    \n"
-      "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
-      "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
+      "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
       "dup      z19.b, #255                             \n"  // A
       YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -1021,7 +1023,7 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
       "ptrue    p1.h                                    \n"
       "ptrue    p2.h                                    \n"
       "1:                                               \n"  //
-      READYUY2_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      READYUY2_SVE NVTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -1034,7 +1036,7 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
       // Calculate a predicate for the final iteration to deal with the tail.
       "whilelt  p1.h, wzr, %w[width_last_y]             \n"
       "whilelt  p2.h, wzr, %w[width_last_uv]            \n"  //
-      READYUY2_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      READYUY2_SVE NVTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -1044,10 +1046,8 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
+        [nv_uv_start] "r"(nv_uv_start),                     // %[nv_uv_start]
+        [nv_uv_step] "r"(nv_uv_step),                       // %[nv_uv_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
@@ -1057,19 +1057,15 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_u_start = 0x0000'0000U;
-  uint32_t nv_u_step = 0x0004'0004U;
-  uint32_t nv_v_start = 0x0002'0002U;
-  uint32_t nv_v_step = 0x0004'0004U;
+  uint32_t nv_uv_start = 0x0200'0200U;
+  uint32_t nv_uv_step = 0x0404'0404U;
   uint64_t vl;
-  asm volatile (
-      "cnth %0" : "=r"(vl));
+  asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   int width_last_uv = width_last_y + (width_last_y & 1);
-  asm volatile (
+  asm volatile(
       "ptrue    p0.b                                    \n"
-      "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
-      "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
+      "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
       "dup      z19.b, #255                             \n"  // A
       YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -1080,7 +1076,7 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
       "ptrue    p1.h                                    \n"
       "ptrue    p2.h                                    \n"
       "1:                                               \n"  //
-      READUYVY_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      READUYVY_SVE NVTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -1094,7 +1090,7 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
       "2:                                               \n"
       "whilelt  p1.h, wzr, %w[width_last_y]             \n"
       "whilelt  p2.h, wzr, %w[width_last_uv]            \n"  //
-      READUYVY_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      READUYVY_SVE NVTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -1104,10 +1100,8 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
+        [nv_uv_start] "r"(nv_uv_start),                     // %[nv_uv_start]
+        [nv_uv_step] "r"(nv_uv_step),                       // %[nv_uv_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
