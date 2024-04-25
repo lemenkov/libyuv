@@ -134,6 +134,11 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
     HammingDistance = HammingDistance_NEON;
   }
 #endif
+#if defined(HAS_HAMMINGDISTANCE_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    HammingDistance = HammingDistance_NEON_DotProd;
+  }
+#endif
 #if defined(HAS_HAMMINGDISTANCE_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     HammingDistance = HammingDistance_SSSE3;

@@ -78,12 +78,13 @@ extern "C" {
 // The following are available for Neon:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
-#define HAS_SUMSQUAREERROR_NEON
 #define HAS_HAMMINGDISTANCE_NEON
+#define HAS_SUMSQUAREERROR_NEON
 #endif
 
 // The following are available for AArch64 Neon:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_HAMMINGDISTANCE_NEON_DOTPROD
 #define HAS_SUMSQUAREERROR_NEON_DOTPROD
 #endif
 
@@ -107,6 +108,9 @@ uint32_t HammingDistance_AVX2(const uint8_t* src_a,
 uint32_t HammingDistance_NEON(const uint8_t* src_a,
                               const uint8_t* src_b,
                               int count);
+uint32_t HammingDistance_NEON_DotProd(const uint8_t* src_a,
+                                      const uint8_t* src_b,
+                                      int count);
 uint32_t HammingDistance_MSA(const uint8_t* src_a,
                              const uint8_t* src_b,
                              int count);
