@@ -601,6 +601,7 @@ extern "C" {
 #define HAS_NV12TOARGBROW_SVE2
 #define HAS_NV21TOARGBROW_SVE2
 #define HAS_RAWTOARGBROW_SVE2
+#define HAS_RAWTORGB24ROW_SVE2
 #define HAS_RAWTORGBAROW_SVE2
 #define HAS_RGBATOUVROW_SVE2
 #define HAS_UYVYTOARGBROW_SVE2
@@ -3521,6 +3522,7 @@ void RAWToARGBRow_LASX(const uint8_t* src_raw, uint8_t* dst_argb, int width);
 void RAWToARGBRow_RVV(const uint8_t* src_raw, uint8_t* dst_argb, int width);
 void RAWToRGBARow_RVV(const uint8_t* src_raw, uint8_t* dst_rgba, int width);
 void RAWToRGB24Row_NEON(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
+void RAWToRGB24Row_SVE2(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RAWToRGB24Row_MSA(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RAWToRGB24Row_LSX(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RAWToRGB24Row_RVV(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);

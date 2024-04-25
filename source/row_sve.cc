@@ -1178,6 +1178,69 @@ void RAWToRGBARow_SVE2(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
                     0x000000ffU);
 }
 
+static const uint8_t kRAWToRGB24Indices[] = {
+    2,   1,   0,   5,   4,   3,   8,   7,   6,   11,  10,  9,   14,  13,  12,
+    17,  16,  15,  20,  19,  18,  23,  22,  21,  26,  25,  24,  29,  28,  27,
+    32,  31,  30,  35,  34,  33,  38,  37,  36,  41,  40,  39,  44,  43,  42,
+    47,  46,  45,  50,  49,  48,  53,  52,  51,  56,  55,  54,  59,  58,  57,
+    62,  61,  60,  65,  64,  63,  68,  67,  66,  71,  70,  69,  74,  73,  72,
+    77,  76,  75,  80,  79,  78,  83,  82,  81,  86,  85,  84,  89,  88,  87,
+    92,  91,  90,  95,  94,  93,  98,  97,  96,  101, 100, 99,  104, 103, 102,
+    107, 106, 105, 110, 109, 108, 113, 112, 111, 116, 115, 114, 119, 118, 117,
+    122, 121, 120, 125, 124, 123, 128, 127, 126, 131, 130, 129, 134, 133, 132,
+    137, 136, 135, 140, 139, 138, 143, 142, 141, 146, 145, 144, 149, 148, 147,
+    152, 151, 150, 155, 154, 153, 158, 157, 156, 161, 160, 159, 164, 163, 162,
+    167, 166, 165, 170, 169, 168, 173, 172, 171, 176, 175, 174, 179, 178, 177,
+    182, 181, 180, 185, 184, 183, 188, 187, 186, 191, 190, 189, 194, 193, 192,
+    197, 196, 195, 200, 199, 198, 203, 202, 201, 206, 205, 204, 209, 208, 207,
+    212, 211, 210, 215, 214, 213, 218, 217, 216, 221, 220, 219, 224, 223, 222,
+    227, 226, 225, 230, 229, 228, 233, 232, 231, 236, 235, 234, 239, 238, 237,
+    242, 241, 240, 245, 244, 243, 248, 247, 246, 251, 250, 249, 254, 253, 252};
+
+void RAWToRGB24Row_SVE2(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
+  // width is in elements, convert to bytes.
+  width *= 3;
+  // we use the mul3 predicate pattern throughout to use the largest multiple
+  // of three number of lanes, for instance with a vector length of 16 bytes
+  // only the first 15 bytes will be used for load/store instructions.
+  uint32_t vl;
+  asm volatile(
+      "cntb    %x[vl], mul3                              \n"
+      "ptrue   p0.b, mul3                                \n"
+      "ld1b    {z31.b}, p0/z, [%[kIndices]]              \n"
+      "subs    %w[width], %w[width], %w[vl]              \n"
+      "b.lt    2f                                        \n"
+
+      // Run bulk of computation with the same predicate to avoid predicate
+      // generation overhead.
+      "1:                                                \n"
+      "ld1b    {z0.b}, p0/z, [%[src]]                    \n"
+      "add     %[src], %[src], %x[vl]                    \n"
+      "tbl     z0.b, {z0.b}, z31.b                       \n"
+      "subs    %w[width], %w[width], %w[vl]              \n"
+      "st1b    {z0.b}, p0, [%[dst]]                      \n"
+      "add     %[dst], %[dst], %x[vl]                    \n"
+      "b.ge    1b                                        \n"
+
+      "2:                                                \n"
+      "adds    %w[width], %w[width], %w[vl]              \n"
+      "b.eq    99f                                       \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt p0.b, wzr, %w[width]                      \n"
+      "ld1b    {z0.b}, p0/z, [%[src]]                    \n"
+      "tbl     z0.b, {z0.b}, z31.b                       \n"
+      "st1b    {z0.b}, p0, [%[dst]]                      \n"
+
+      "99:                                               \n"
+      : [src] "+r"(src_raw),                // %[src]
+        [dst] "+r"(dst_rgb24),              // %[dst]
+        [width] "+r"(width),                // %[width]
+        [vl] "=&r"(vl)                      // %[vl]
+      : [kIndices] "r"(kRAWToRGB24Indices)  // %[kIndices]
+      : "cc", "memory", "z0", "z31", "p0");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus
