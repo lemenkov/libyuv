@@ -1113,6 +1113,71 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
 }
 
+static inline void RAWToWXYZRow_SVE2(const uint8_t* src_raw,
+                                     uint8_t* dst_wxyz,
+                                     int width,
+                                     uint32_t idx_start,
+                                     uint32_t idx_step,
+                                     uint32_t alpha) {
+  uint32_t vl;
+  asm("cntw %x0" : "=r"(vl));
+  uint32_t vl_mul3 = vl * 3;
+  asm volatile(
+      "index   z31.s, %w[idx_start], %w[idx_step]        \n"
+      "dup     z30.s, %w[alpha]                          \n"
+      "subs     %w[width], %w[width], %w[vl]             \n"
+      "b.lt     2f                                       \n"
+
+      // Run bulk of computation with the same predicates to avoid predicate
+      // generation overhead. We set up p1 to only load 3/4 of a vector.
+      "ptrue   p0.s                                      \n"
+      "whilelt p1.b, wzr, %w[vl_mul3]                    \n"
+      "1:                                                \n"
+      "ld1b    {z0.b}, p1/z, [%[src]]                    \n"
+      "add     %[src], %[src], %x[vl_mul3]               \n"
+      "tbl     z0.b, {z0.b}, z31.b                       \n"
+      "subs    %w[width], %w[width], %w[vl]              \n"
+      "orr     z0.d, z0.d, z30.d                         \n"
+      "st1w    {z0.s}, p0, [%[dst]]                      \n"
+      "incb    %[dst]                                    \n"
+      "b.ge    1b                                        \n"
+
+      "2:                                                \n"
+      "adds     %w[width], %w[width], %w[vl]             \n"
+      "b.eq     99f                                      \n"
+
+      // Calculate a pair of predicates for the final iteration to deal with
+      // the tail.
+      "add     %w[vl_mul3], %w[width], %w[width], lsl #1 \n"
+      "whilelt p0.s, wzr, %w[width]                      \n"
+      "whilelt p1.b, wzr, %w[vl_mul3]                    \n"
+      "ld1b    {z0.b}, p1/z, [%[src]]                    \n"
+      "tbl     z0.b, {z0.b}, z31.b                       \n"
+      "orr     z0.d, z0.d, z30.d                         \n"
+      "st1w    {z0.s}, p0, [%[dst]]                      \n"
+
+      "99:                                               \n"
+      : [src] "+r"(src_raw),         // %[src]
+        [dst] "+r"(dst_wxyz),        // %[dst]
+        [width] "+r"(width),         // %[width]
+        [vl_mul3] "+r"(vl_mul3)      // %[vl_mul3]
+      : [idx_start] "r"(idx_start),  // %[idx_start]
+        [idx_step] "r"(idx_step),    // %[idx_step]
+        [alpha] "r"(alpha),          // %[alpha]
+        [vl] "r"(vl)                 // %[vl]
+      : "cc", "memory", "z0", "z30", "z31", "p0", "p1");
+}
+
+void RAWToARGBRow_SVE2(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
+  RAWToWXYZRow_SVE2(src_raw, dst_argb, width, 0xff000102U, 0x00030303U,
+                    0xff000000U);
+}
+
+void RAWToRGBARow_SVE2(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
+  RAWToWXYZRow_SVE2(src_raw, dst_rgba, width, 0x000102ffU, 0x03030300U,
+                    0x000000ffU);
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

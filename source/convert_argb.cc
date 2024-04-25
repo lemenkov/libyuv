@@ -3555,6 +3555,11 @@ int RAWToARGB(const uint8_t* src_raw,
     }
   }
 #endif
+#if defined(HAS_RAWTOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    RAWToARGBRow = RAWToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_RAWTOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RAWToARGBRow = RAWToARGBRow_Any_MSA;
@@ -3633,6 +3638,11 @@ int RAWToRGBA(const uint8_t* src_raw,
     if (IS_ALIGNED(width, 8)) {
       RAWToRGBARow = RAWToRGBARow_NEON;
     }
+  }
+#endif
+#if defined(HAS_RAWTORGBAROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    RAWToRGBARow = RAWToRGBARow_SVE2;
   }
 #endif
 #if defined(HAS_RAWTORGBAROW_RVV)
