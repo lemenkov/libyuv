@@ -44,6 +44,11 @@ uint32_t HashDjb2(const uint8_t* src, uint64_t count, uint32_t seed) {
     HashDjb2_SSE = HashDjb2_AVX2;
   }
 #endif
+#if defined(HAS_HASHDJB2_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    HashDjb2_SSE = HashDjb2_NEON;
+  }
+#endif
 
   while (count >= (uint64_t)kBlockSize) {
     seed = HashDjb2_SSE(src, kBlockSize, seed);

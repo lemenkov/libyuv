@@ -84,6 +84,8 @@ extern "C" {
 
 // The following are available for AArch64 Neon:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_HASHDJB2_NEON
+
 #define HAS_HAMMINGDISTANCE_NEON_DOTPROD
 #define HAS_SUMSQUAREERROR_NEON_DOTPROD
 #endif
@@ -136,6 +138,7 @@ uint32_t SumSquareError_MSA(const uint8_t* src_a,
 uint32_t HashDjb2_C(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed);
+uint32_t HashDjb2_NEON(const uint8_t* src, int count, uint32_t seed);
 
 #ifdef __cplusplus
 }  // extern "C"
