@@ -266,32 +266,32 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
 // elements flipped to account for the interleaving nature of the widening
 // addition instructions.
 
-static const int16_t kArgbToUvArr[] = {
+static const int16_t kARGBToUVCoefficients[] = {
     // UB, -UR, -UG, 0, -VB, VR, -VG, 0
     56, -19, -37, 0, -9, 56, -47, 0,
 };
 
-static const int16_t kRgbaToUvArr[] = {
+static const int16_t kRGBAToUVCoefficients[] = {
     // 0, -UG, UB, -UR, 0, -VG, -VB, VR
     0, -37, 56, -19, 0, -47, -9, 56,
 };
 
-static const int16_t kBgraToUvArr[] = {
+static const int16_t kBGRAToUVCoefficients[] = {
     // 0, -UG, -UR, UB, 0, -VG, VR, -VB
     0, -37, -19, 56, 0, -47, 56, -9,
 };
 
-static const int16_t kAbgrToUvArr[] = {
+static const int16_t kABGRToUVCoefficients[] = {
     // -UR, UB, -UG, 0, VR, -VB, -VG, 0
     -19, 56, -37, 0, 56, -9, -47, 0,
 };
 
-static const int16_t kArgbToUvjArr[] = {
+static const int16_t kARGBToUVJCoefficients[] = {
     // UB, -UR, -UG, 0, -VB, VR, -VG, 0
     63, -21, -42, 0, -10, 63, -53, 0,
 };
 
-static const int16_t kAbgrToUvjArr[] = {
+static const int16_t kABGRToUVJCoefficients[] = {
     // -UR, UB, -UG, 0, VR, -VB, -VG, 0
     -21, 63, -42, 0, 63, -10, -53, 0,
 };
@@ -451,7 +451,7 @@ void ARGBToUVRow_SVE2(const uint8_t* src_argb,
                       uint8_t* dst_v,
                       int width) {
   ARGBToUVMatrixRow_SVE2(src_argb, src_stride_argb, dst_u, dst_v, width,
-                         kArgbToUvArr);
+                         kARGBToUVCoefficients);
 }
 
 void ARGBToUVJRow_SVE2(const uint8_t* src_argb,
@@ -460,7 +460,7 @@ void ARGBToUVJRow_SVE2(const uint8_t* src_argb,
                        uint8_t* dst_v,
                        int width) {
   ARGBToUVMatrixRow_SVE2(src_argb, src_stride_argb, dst_u, dst_v, width,
-                         kArgbToUvjArr);
+                         kARGBToUVJCoefficients);
 }
 
 void ABGRToUVJRow_SVE2(const uint8_t* src_abgr,
@@ -469,7 +469,7 @@ void ABGRToUVJRow_SVE2(const uint8_t* src_abgr,
                        uint8_t* dst_vj,
                        int width) {
   ARGBToUVMatrixRow_SVE2(src_abgr, src_stride_abgr, dst_uj, dst_vj, width,
-                         kAbgrToUvjArr);
+                         kABGRToUVJCoefficients);
 }
 
 void BGRAToUVRow_SVE2(const uint8_t* src_bgra,
@@ -478,7 +478,7 @@ void BGRAToUVRow_SVE2(const uint8_t* src_bgra,
                       uint8_t* dst_v,
                       int width) {
   ARGBToUVMatrixRow_SVE2(src_bgra, src_stride_bgra, dst_u, dst_v, width,
-                         kBgraToUvArr);
+                         kBGRAToUVCoefficients);
 }
 
 void ABGRToUVRow_SVE2(const uint8_t* src_abgr,
@@ -487,7 +487,7 @@ void ABGRToUVRow_SVE2(const uint8_t* src_abgr,
                       uint8_t* dst_v,
                       int width) {
   ARGBToUVMatrixRow_SVE2(src_abgr, src_stride_abgr, dst_u, dst_v, width,
-                         kAbgrToUvArr);
+                         kABGRToUVCoefficients);
 }
 
 void RGBAToUVRow_SVE2(const uint8_t* src_rgba,
@@ -496,7 +496,7 @@ void RGBAToUVRow_SVE2(const uint8_t* src_rgba,
                       uint8_t* dst_v,
                       int width) {
   ARGBToUVMatrixRow_SVE2(src_rgba, src_stride_rgba, dst_u, dst_v, width,
-                         kRgbaToUvArr);
+                         kRGBAToUVCoefficients);
 }
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
