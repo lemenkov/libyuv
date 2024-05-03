@@ -332,6 +332,51 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 
+void I422ToRGB24Row_SVE2(const uint8_t* src_y,
+                         const uint8_t* src_u,
+                         const uint8_t* src_v,
+                         uint8_t* dst_argb,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
+  uint64_t vl;
+  asm volatile(
+      "cntb     %[vl]                                   \n"
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.b                                    \n"
+      "1:                                               \n" READYUV422_SVE_2X
+          I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_argb]] \n"
+      "incb     %[dst_argb], all, mul #3                \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "cnth     %[vl]                                   \n"
+      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
+          I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_argb]] \n"
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width),                               // %[width]
+        [vl] "=&r"(vl)                                     // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
 void I422ToRGBARow_SVE2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
