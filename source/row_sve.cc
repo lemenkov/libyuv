@@ -181,6 +181,15 @@ extern "C" {
   "uqshrnt     z17.b, z21.h, #6     \n" /* G1 */          \
   "uqshrnt     z18.b, z22.h, #6     \n" /* R1 */
 
+#define RGBTOARGB8_SVE_TOP_2X                        \
+  /* Inputs: B: z16.h,  G: z17.h,  R: z18.h */       \
+  "uqshl     z16.h, p0/m, z16.h, #2     \n" /* B0 */ \
+  "uqshl     z17.h, p0/m, z17.h, #2     \n" /* G0 */ \
+  "uqshl     z18.h, p0/m, z18.h, #2     \n" /* R0 */ \
+  "uqshl     z20.h, p0/m, z20.h, #2     \n" /* B1 */ \
+  "uqshl     z21.h, p0/m, z21.h, #2     \n" /* G1 */ \
+  "uqshl     z22.h, p0/m, z22.h, #2     \n" /* R1 */
+
 // Convert from 2.14 fixed point RGB to 8 bit RGBA, interleaving as AB and GR
 // pairs to allow us to use ST2 for storing rather than ST4.
 #define RGBTORGBA8_SVE                                    \
@@ -370,6 +379,59 @@ void I422ToRGB24Row_SVE2(const uint8_t* src_y,
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
         [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
+        [width] "+r"(width),                               // %[width]
+        [vl] "=&r"(vl)                                     // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
+#define RGB8TORGB565_SVE_FROM_TOP_2X                        \
+  "sri      z18.h, z17.h, #5     \n" /* rrrrrgggggg00000 */ \
+  "sri      z22.h, z21.h, #5     \n" /* rrrrrgggggg00000 */ \
+  "sri      z18.h, z16.h, #11    \n" /* rrrrrggggggbbbbb */ \
+  "sri      z22.h, z20.h, #11    \n" /* rrrrrggggggbbbbb */ \
+  "mov      z19.d, z22.d         \n"
+
+void I422ToRGB565Row_SVE2(const uint8_t* src_y,
+                          const uint8_t* src_u,
+                          const uint8_t* src_v,
+                          uint8_t* dst_rgb565,
+                          const struct YuvConstants* yuvconstants,
+                          int width) {
+  uint64_t vl;
+  asm volatile(
+      "cntb     %[vl]                                   \n"
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.b                                    \n"
+      "1:                                               \n" READYUV422_SVE_2X
+          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
+      "subs     %w[width], %w[width], %w[vl]            \n"  //
+      RGB8TORGB565_SVE_FROM_TOP_2X
+      "st2h     {z18.h, z19.h}, p1, [%[dst]] \n"
+      "incb     %[dst], all, mul #2                     \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "cnth     %[vl]                                   \n"
+      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
+          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X RGB8TORGB565_SVE_FROM_TOP_2X
+      "st2h     {z18.h, z19.h}, p1, [%[dst]] \n"
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [dst] "+r"(dst_rgb565),                            // %[dst]
         [width] "+r"(width),                               // %[width]
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
