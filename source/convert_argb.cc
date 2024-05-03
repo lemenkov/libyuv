@@ -3475,6 +3475,11 @@ int RGB24ToARGB(const uint8_t* src_rgb24,
     }
   }
 #endif
+#if defined(HAS_RGB24TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    RGB24ToARGBRow = RGB24ToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_RGB24TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB24ToARGBRow = RGB24ToARGBRow_Any_MSA;

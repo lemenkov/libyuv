@@ -1178,6 +1178,13 @@ void RAWToRGBARow_SVE2(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
                     0x000000ffU);
 }
 
+void RGB24ToARGBRow_SVE2(const uint8_t* src_rgb24,
+                         uint8_t* dst_argb,
+                         int width) {
+  RAWToWXYZRow_SVE2(src_rgb24, dst_argb, width, 0xff020100U, 0x00030303U,
+                    0xff000000U);
+}
+
 static const uint8_t kRAWToRGB24Indices[] = {
     2,   1,   0,   5,   4,   3,   8,   7,   6,   11,  10,  9,   14,  13,  12,
     17,  16,  15,  20,  19,  18,  23,  22,  21,  26,  25,  24,  29,  28,  27,
