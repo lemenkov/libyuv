@@ -1164,11 +1164,12 @@ static inline void RAWToWXYZRow_SVE2(const uint8_t* src_raw,
   uint32_t vl;
   asm("cntw %x0" : "=r"(vl));
   uint32_t vl_mul3 = vl * 3;
+  uint32_t rem_mul3;
   asm volatile(
       "index   z31.s, %w[idx_start], %w[idx_step]        \n"
       "dup     z30.s, %w[alpha]                          \n"
-      "subs     %w[width], %w[width], %w[vl]             \n"
-      "b.lt     2f                                       \n"
+      "subs    %w[width], %w[width], %w[vl], lsl #1      \n"
+      "b.lt    2f                                        \n"
 
       // Run bulk of computation with the same predicates to avoid predicate
       // generation overhead. We set up p1 to only load 3/4 of a vector.
@@ -1177,37 +1178,48 @@ static inline void RAWToWXYZRow_SVE2(const uint8_t* src_raw,
       "1:                                                \n"
       "ld1b    {z0.b}, p1/z, [%[src]]                    \n"
       "add     %[src], %[src], %x[vl_mul3]               \n"
+      "ld1b    {z1.b}, p1/z, [%[src]]                    \n"
+      "add     %[src], %[src], %x[vl_mul3]               \n"
+      "tbl     z0.b, {z0.b}, z31.b                       \n"
+      "tbl     z1.b, {z1.b}, z31.b                       \n"
+      "subs    %w[width], %w[width], %w[vl], lsl #1      \n"
+      "orr     z0.d, z0.d, z30.d                         \n"
+      "orr     z1.d, z1.d, z30.d                         \n"
+      "st1w    {z0.s}, p0, [%[dst]]                      \n"
+      "st1w    {z1.s}, p0, [%[dst], #1, mul vl]          \n"
+      "incb    %[dst], all, mul #2                       \n"
+      "b.ge    1b                                        \n"
+
+      "2:                                                \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #1     \n"
+      "b.eq     99f                                      \n"
+
+      // Calculate a pair of predicates for the final iteration to deal with
+      // the tail.
+      "3:                                                \n"
+      "add     %w[rem_mul3], %w[width], %w[width], lsl #1 \n"
+      "whilelt p0.s, wzr, %w[width]                      \n"
+      "whilelt p1.b, wzr, %w[rem_mul3]                    \n"
+      "ld1b    {z0.b}, p1/z, [%[src]]                    \n"
+      "add     %[src], %[src], %x[vl_mul3]               \n"
       "tbl     z0.b, {z0.b}, z31.b                       \n"
       "subs    %w[width], %w[width], %w[vl]              \n"
       "orr     z0.d, z0.d, z30.d                         \n"
       "st1w    {z0.s}, p0, [%[dst]]                      \n"
       "incb    %[dst]                                    \n"
-      "b.ge    1b                                        \n"
-
-      "2:                                                \n"
-      "adds     %w[width], %w[width], %w[vl]             \n"
-      "b.eq     99f                                      \n"
-
-      // Calculate a pair of predicates for the final iteration to deal with
-      // the tail.
-      "add     %w[vl_mul3], %w[width], %w[width], lsl #1 \n"
-      "whilelt p0.s, wzr, %w[width]                      \n"
-      "whilelt p1.b, wzr, %w[vl_mul3]                    \n"
-      "ld1b    {z0.b}, p1/z, [%[src]]                    \n"
-      "tbl     z0.b, {z0.b}, z31.b                       \n"
-      "orr     z0.d, z0.d, z30.d                         \n"
-      "st1w    {z0.s}, p0, [%[dst]]                      \n"
+      "b.gt    3b                                        \n"
 
       "99:                                               \n"
       : [src] "+r"(src_raw),         // %[src]
         [dst] "+r"(dst_wxyz),        // %[dst]
         [width] "+r"(width),         // %[width]
-        [vl_mul3] "+r"(vl_mul3)      // %[vl_mul3]
+        [vl_mul3] "+r"(vl_mul3),     // %[vl_mul3]
+        [rem_mul3] "=&r"(rem_mul3)   // %[rem_mul3]
       : [idx_start] "r"(idx_start),  // %[idx_start]
         [idx_step] "r"(idx_step),    // %[idx_step]
         [alpha] "r"(alpha),          // %[alpha]
         [vl] "r"(vl)                 // %[vl]
-      : "cc", "memory", "z0", "z30", "z31", "p0", "p1");
+      : "cc", "memory", "z0", "z1", "z30", "z31", "p0", "p1");
 }
 
 void RAWToARGBRow_SVE2(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
