@@ -5701,6 +5701,11 @@ int I420ToARGB1555(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOARGB1555ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToARGB1555Row = I422ToARGB1555Row_SVE2;
+  }
+#endif
 #if defined(HAS_I422TOARGB1555ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I422ToARGB1555Row = I422ToARGB1555Row_Any_MSA;
