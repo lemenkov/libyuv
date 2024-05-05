@@ -1620,6 +1620,56 @@ void ARGBToRAWRow_SVE2(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   ARGBToXYZRow_SVE2(src_argb, dst_rgb, width, kARGBToRAWRowIndices);
 }
 
+void DivideRow_16_SVE2(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width) {
+  uint64_t vl;
+  asm volatile(
+      "cnth   %x[vl]                                     \n"
+      "dup    z0.h, %w[scale]                            \n"
+      "subs   %w[width], %w[width], %w[vl], lsl #1       \n"
+      "b.le    2f                                        \n"
+
+      // Run bulk of computation with the same predicates to avoid predicate
+      // generation overhead.
+      "ptrue   p0.h                                      \n"
+      "1:                                                \n"
+      "ld1h   {z1.h}, p0/z, [%[src]]                     \n"
+      "ld1h   {z2.h}, p0/z, [%[src], #1, mul vl]         \n"
+      "incb   %[src], all, mul #2                        \n"
+      "umulh  z1.h, z1.h, z0.h                           \n"
+      "umulh  z2.h, z2.h, z0.h                           \n"
+      "subs   %w[width], %w[width], %w[vl], lsl #1       \n"
+      "st1h   {z1.h}, p0, [%[dst]]                       \n"
+      "st1h   {z2.h}, p0, [%[dst], #1, mul vl]           \n"
+      "incb   %[dst], all, mul #2                        \n"
+      "b.gt    1b                                        \n"
+
+      "2:                                                \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #1     \n"
+      "b.eq     99f                                      \n"
+
+      // Calculate a pair of predicates for the final iteration to deal with
+      // the tail.
+      "whilelt p0.h, wzr, %w[width]                      \n"
+      "whilelt p1.h, %w[vl], %w[width]                   \n"
+      "ld1h   {z1.h}, p0/z, [%[src]]                     \n"
+      "ld1h   {z2.h}, p1/z, [%[src], #1, mul vl]         \n"
+      "umulh  z1.h, z1.h, z0.h                           \n"
+      "umulh  z2.h, z2.h, z0.h                           \n"
+      "st1h   {z1.h}, p0, [%[dst]]                       \n"
+      "st1h   {z2.h}, p1, [%[dst], #1, mul vl]           \n"
+
+      "99:                                               \n"
+      : [src] "+r"(src_y),    // %[src]
+        [dst] "+r"(dst_y),    // %[dst]
+        [width] "+r"(width),  // %[width]
+        [vl] "=&r"(vl)        // %[vl]
+      : [scale] "r"(scale)    // %[scale]
+      : "cc", "memory", "z0", "z1", "z2", "p0", "p1");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

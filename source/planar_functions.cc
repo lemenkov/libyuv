@@ -877,6 +877,11 @@ void ConvertToLSBPlane_16(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_DIVIDEROW_16_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    DivideRow = DivideRow_16_SVE2;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     DivideRow(src_y, dst_y, scale, width);

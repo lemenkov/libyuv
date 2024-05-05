@@ -548,6 +548,7 @@ extern "C" {
 #define HAS_AYUVTOUVROW_SVE2
 #define HAS_AYUVTOVUROW_SVE2
 #define HAS_BGRATOUVROW_SVE2
+#define HAS_DIVIDEROW_16_SVE2
 #define HAS_I400TOARGBROW_SVE2
 #define HAS_I422ALPHATOARGBROW_SVE2
 #define HAS_I422TOARGB1555ROW_SVE2
@@ -3299,6 +3300,10 @@ void DivideRow_16_Any_AVX2(const uint16_t* src_ptr,
                            int scale,
                            int width);
 void DivideRow_16_NEON(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width);
+void DivideRow_16_SVE2(const uint16_t* src_y,
                        uint16_t* dst_y,
                        int scale,
                        int width);
