@@ -5795,6 +5795,11 @@ int I420ToARGB4444(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOARGB4444ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToARGB4444Row = I422ToARGB4444Row_SVE2;
+  }
+#endif
 #if defined(HAS_I422TOARGB4444ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I422ToARGB4444Row = I422ToARGB4444Row_Any_MSA;
