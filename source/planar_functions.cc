@@ -5184,9 +5184,9 @@ int HalfFloatPlane(const uint16_t* src_y,
 #if defined(HAS_HALFFLOATROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     HalfFloatRow =
-        (scale == 1.0f) ? HalfFloat1Row_Any_NEON : HalfFloatRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      HalfFloatRow = (scale == 1.0f) ? HalfFloat1Row_NEON : HalfFloatRow_NEON;
+        scale == 1.0f ? HalfFloat1Row_Any_NEON : HalfFloatRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      HalfFloatRow = scale == 1.0f ? HalfFloat1Row_NEON : HalfFloatRow_NEON;
     }
   }
 #endif

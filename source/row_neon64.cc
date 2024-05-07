@@ -4669,50 +4669,64 @@ void HalfFloat1Row_NEON(const uint16_t* src,
                         uint16_t* dst,
                         float /*unused*/,
                         int width) {
-  asm volatile (
+  asm volatile(
       "1:                                        \n"
-      "ld1         {v1.16b}, [%0], #16           \n"  // load 8 shorts
-      "subs        %w2, %w2, #8                  \n"  // 8 pixels per loop
-      "uxtl        v2.4s, v1.4h                  \n"  // 8 int's
+      "ldp         q0, q1, [%0], #32             \n"  // load 16 shorts
+      "subs        %w2, %w2, #16                 \n"  // 16 pixels per loop
+      "uxtl        v2.4s, v0.4h                  \n"
+      "uxtl        v4.4s, v1.4h                  \n"
+      "uxtl2       v3.4s, v0.8h                  \n"
+      "uxtl2       v5.4s, v1.8h                  \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "uxtl2       v3.4s, v1.8h                  \n"
-      "scvtf       v2.4s, v2.4s                  \n"  // 8 floats
+      "scvtf       v2.4s, v2.4s                  \n"
+      "scvtf       v4.4s, v4.4s                  \n"
       "scvtf       v3.4s, v3.4s                  \n"
-      "fcvtn       v1.4h, v2.4s                  \n"  // 8 half floats
-      "fcvtn2      v1.8h, v3.4s                  \n"
-      "st1         {v1.16b}, [%1], #16           \n"  // store 8 shorts
+      "scvtf       v5.4s, v5.4s                  \n"
+      "fcvtn       v0.4h, v2.4s                  \n"
+      "fcvtn       v1.4h, v4.4s                  \n"
+      "fcvtn2      v0.8h, v3.4s                  \n"
+      "fcvtn2      v1.8h, v5.4s                  \n"
+      "stp         q0, q1, [%1], #32             \n"  // store 16 shorts
       "b.gt        1b                            \n"
       : "+r"(src),   // %0
         "+r"(dst),   // %1
         "+r"(width)  // %2
       :
-      : "cc", "memory", "v1", "v2", "v3");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
 }
 
 void HalfFloatRow_NEON(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
                        int width) {
-  asm volatile (
+  asm volatile(
       "1:                                        \n"
-      "ld1         {v1.16b}, [%0], #16           \n"  // load 8 shorts
-      "subs        %w2, %w2, #8                  \n"  // 8 pixels per loop
-      "uxtl        v2.4s, v1.4h                  \n"  // 8 int's
+      "ldp         q0, q1, [%0], #32             \n"  // load 16 shorts
+      "subs        %w2, %w2, #16                 \n"  // 16 pixels per loop
+      "uxtl        v2.4s, v0.4h                  \n"
+      "uxtl        v4.4s, v1.4h                  \n"
+      "uxtl2       v3.4s, v0.8h                  \n"
+      "uxtl2       v5.4s, v1.8h                  \n"
       "prfm        pldl1keep, [%0, 448]          \n"
-      "uxtl2       v3.4s, v1.8h                  \n"
-      "scvtf       v2.4s, v2.4s                  \n"  // 8 floats
+      "scvtf       v2.4s, v2.4s                  \n"
+      "scvtf       v4.4s, v4.4s                  \n"
       "scvtf       v3.4s, v3.4s                  \n"
+      "scvtf       v5.4s, v5.4s                  \n"
       "fmul        v2.4s, v2.4s, %3.s[0]         \n"  // adjust exponent
+      "fmul        v4.4s, v4.4s, %3.s[0]         \n"
       "fmul        v3.4s, v3.4s, %3.s[0]         \n"
-      "uqshrn      v1.4h, v2.4s, #13             \n"  // isolate halffloat
-      "uqshrn2     v1.8h, v3.4s, #13             \n"
-      "st1         {v1.16b}, [%1], #16           \n"  // store 8 shorts
+      "fmul        v5.4s, v5.4s, %3.s[0]         \n"
+      "uqshrn      v0.4h, v2.4s, #13             \n"  // isolate halffloat
+      "uqshrn      v1.4h, v4.4s, #13             \n"  // isolate halffloat
+      "uqshrn2     v0.8h, v3.4s, #13             \n"
+      "uqshrn2     v1.8h, v5.4s, #13             \n"
+      "stp         q0, q1, [%1], #32             \n"  // store 16 shorts
       "b.gt        1b                            \n"
       : "+r"(src),                      // %0
         "+r"(dst),                      // %1
         "+r"(width)                     // %2
       : "w"(scale * 1.9259299444e-34f)  // %3
-      : "cc", "memory", "v1", "v2", "v3");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
 }
 
 void ByteToFloatRow_NEON(const uint8_t* src,

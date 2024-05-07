@@ -1810,6 +1810,16 @@ ANY11P16(HalfFloat1Row_Any_F16C,
          15)
 #endif
 #ifdef HAS_HALFFLOATROW_NEON
+#ifdef __aarch64__
+ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, uint16_t, uint16_t, 2, 2, 15)
+ANY11P16(HalfFloat1Row_Any_NEON,
+         HalfFloat1Row_NEON,
+         uint16_t,
+         uint16_t,
+         2,
+         2,
+         15)
+#else
 ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, uint16_t, uint16_t, 2, 2, 7)
 ANY11P16(HalfFloat1Row_Any_NEON,
          HalfFloat1Row_NEON,
@@ -1818,6 +1828,7 @@ ANY11P16(HalfFloat1Row_Any_NEON,
          2,
          2,
          7)
+#endif
 #endif
 #ifdef HAS_HALFFLOATROW_MSA
 ANY11P16(HalfFloatRow_Any_MSA, HalfFloatRow_MSA, uint16_t, uint16_t, 2, 2, 31)
