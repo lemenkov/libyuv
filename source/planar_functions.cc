@@ -5195,6 +5195,11 @@ int HalfFloatPlane(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_HALFFLOATROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    HalfFloatRow = scale == 1.0f ? HalfFloat1Row_SVE2 : HalfFloatRow_SVE2;
+  }
+#endif
 #if defined(HAS_HALFFLOATROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     HalfFloatRow = HalfFloatRow_Any_MSA;

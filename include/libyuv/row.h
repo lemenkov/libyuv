@@ -549,6 +549,7 @@ extern "C" {
 #define HAS_AYUVTOVUROW_SVE2
 #define HAS_BGRATOUVROW_SVE2
 #define HAS_DIVIDEROW_16_SVE2
+#define HAS_HALFFLOATROW_SVE2
 #define HAS_I400TOARGBROW_SVE2
 #define HAS_I422ALPHATOARGBROW_SVE2
 #define HAS_I422TOARGB1555ROW_SVE2
@@ -6609,6 +6610,10 @@ void HalfFloatRow_Any_NEON(const uint16_t* src_ptr,
                            uint16_t* dst_ptr,
                            float param,
                            int width);
+void HalfFloatRow_SVE2(const uint16_t* src,
+                       uint16_t* dst,
+                       float scale,
+                       int width);
 void HalfFloat1Row_NEON(const uint16_t* src,
                         uint16_t* dst,
                         float scale,
@@ -6617,6 +6622,10 @@ void HalfFloat1Row_Any_NEON(const uint16_t* src_ptr,
                             uint16_t* dst_ptr,
                             float param,
                             int width);
+void HalfFloat1Row_SVE2(const uint16_t* src,
+                        uint16_t* dst,
+                        float scale,
+                        int width);
 void HalfFloatRow_MSA(const uint16_t* src,
                       uint16_t* dst,
                       float scale,

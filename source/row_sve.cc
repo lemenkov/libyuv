@@ -1670,6 +1670,125 @@ void DivideRow_16_SVE2(const uint16_t* src_y,
       : "cc", "memory", "z0", "z1", "z2", "p0", "p1");
 }
 
+#define HALFFLOAT_SVE                                    \
+  "scvtf       z0.s, p0/m, z0.s                      \n" \
+  "scvtf       z1.s, p0/m, z1.s                      \n" \
+  "scvtf       z2.s, p0/m, z2.s                      \n" \
+  "scvtf       z3.s, p0/m, z3.s                      \n" \
+  "fmul        z0.s, z0.s, z4.s                      \n" \
+  "fmul        z1.s, z1.s, z4.s                      \n" \
+  "fmul        z2.s, z2.s, z4.s                      \n" \
+  "fmul        z3.s, z3.s, z4.s                      \n" \
+  "uqshrnb     z0.h, z0.s, #13                       \n" \
+  "uqshrnb     z1.h, z1.s, #13                       \n" \
+  "uqshrnb     z2.h, z2.s, #13                       \n" \
+  "uqshrnb     z3.h, z3.s, #13                       \n"
+
+void HalfFloatRow_SVE2(const uint16_t* src,
+                       uint16_t* dst,
+                       float scale,
+                       int width) {
+  uint64_t vl;
+  asm("cntw %x0" : "=r"(vl));
+  asm volatile(
+      "mov         z4.s, %s[scale]                       \n"
+      "subs        %w[width], %w[width], %w[vl], lsl #2  \n"
+      "b.lt        2f                                    \n"
+
+      // Run bulk of computation with all-true predicates to avoid predicate
+      // generation overhead.
+      "ptrue       p0.s                                  \n"
+      "1:                                                \n"
+      "ld1h        {z0.s}, p0/z, [%[src]]                \n"
+      "ld1h        {z1.s}, p0/z, [%[src], #1, mul vl]    \n"
+      "ld1h        {z2.s}, p0/z, [%[src], #2, mul vl]    \n"
+      "ld1h        {z3.s}, p0/z, [%[src], #3, mul vl]    \n"
+      "incb        %[src], all, mul #2                   \n" HALFFLOAT_SVE
+      "subs        %w[width], %w[width], %w[vl], lsl #2  \n"
+      "st1h        {z0.s}, p0, [%[dst]]                  \n"
+      "st1h        {z1.s}, p0, [%[dst], #1, mul vl]      \n"
+      "st1h        {z2.s}, p0, [%[dst], #2, mul vl]      \n"
+      "st1h        {z3.s}, p0, [%[dst], #3, mul vl]      \n"
+      "incb        %[dst], all, mul #2                   \n"
+      "b.ge        1b                                    \n"
+
+      "2:                                                \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #2     \n"
+      "b.eq     99f                                      \n"
+
+      // Calculate predicates for the final iteration to deal with the tail.
+      "whilelt     p0.s, wzr, %w[width]                  \n"
+      "whilelt     p1.s, %w[vl], %w[width]               \n"
+      "whilelt     p2.s, %w[vl2], %w[width]              \n"
+      "whilelt     p3.s, %w[vl3], %w[width]              \n"
+      "ld1h        {z0.s}, p0/z, [%[src]]                \n"
+      "ld1h        {z1.s}, p1/z, [%[src], #1, mul vl]    \n"
+      "ld1h        {z2.s}, p2/z, [%[src], #2, mul vl]    \n"
+      "ld1h        {z3.s}, p3/z, [%[src], #3, mul vl]    \n" HALFFLOAT_SVE
+      "st1h        {z0.s}, p0, [%[dst]]                  \n"
+      "st1h        {z1.s}, p1, [%[dst], #1, mul vl]      \n"
+      "st1h        {z2.s}, p2, [%[dst], #2, mul vl]      \n"
+      "st1h        {z3.s}, p3, [%[dst], #3, mul vl]      \n"
+
+      "99:                                               \n"
+      : [src] "+r"(src),                        // %[src]
+        [dst] "+r"(dst),                        // %[dst]
+        [width] "+r"(width)                     // %[width]
+      : [vl] "r"(vl),                           // %[vl]
+        [vl2] "r"(vl * 2),                      // %[vl2]
+        [vl3] "r"(vl * 3),                      // %[vl3]
+        [scale] "w"(scale * 1.9259299444e-34f)  // %[scale]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0", "p1", "p2", "p3");
+}
+
+void HalfFloat1Row_SVE2(const uint16_t* src,
+                        uint16_t* dst,
+                        float scale,
+                        int width) {
+  uint64_t vl;
+  asm volatile(
+      "cnth        %x[vl]                                \n"
+      "subs        %w[width], %w[width], %w[vl], lsl #1  \n"
+      "b.lt        2f                                    \n"
+
+      // Run bulk of computation with all-true predicates to avoid predicate
+      // generation overhead.
+      "ptrue       p0.h                                  \n"
+      "1:                                                \n"
+      "ld1h        {z0.h}, p0/z, [%[src]]                \n"
+      "ld1h        {z1.h}, p0/z, [%[src], #1, mul vl]    \n"
+      "incb        %[src], all, mul #2                   \n"
+      "ucvtf       z0.h, p0/m, z0.h                      \n"
+      "ucvtf       z1.h, p0/m, z1.h                      \n"
+      "subs        %w[width], %w[width], %w[vl], lsl #1  \n"
+      "st1h        {z0.h}, p0, [%[dst]]                  \n"
+      "st1h        {z1.h}, p0, [%[dst], #1, mul vl]      \n"
+      "incb        %[dst], all, mul #2                   \n"
+      "b.ge        1b                                    \n"
+
+      "2:                                                \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #1     \n"
+      "b.eq     99f                                      \n"
+
+      // Calculate predicates for the final iteration to deal with the tail.
+      "whilelt     p0.h, wzr, %w[width]                  \n"
+      "whilelt     p1.h, %w[vl], %w[width]               \n"
+      "ld1h        {z0.h}, p0/z, [%[src]]                \n"
+      "ld1h        {z1.h}, p1/z, [%[src], #1, mul vl]    \n"
+      "ucvtf       z0.h, p0/m, z0.h                      \n"
+      "ucvtf       z1.h, p0/m, z1.h                      \n"
+      "st1h        {z0.h}, p0, [%[dst]]                  \n"
+      "st1h        {z1.h}, p1, [%[dst], #1, mul vl]      \n"
+
+      "99:                                               \n"
+      : [src] "+r"(src),      // %[src]
+        [dst] "+r"(dst),      // %[dst]
+        [width] "+r"(width),  // %[width]
+        [vl] "=&r"(vl)        // %[vl]
+      :
+      : "cc", "memory", "z0", "z1", "p0", "p1");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus
