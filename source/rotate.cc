@@ -31,7 +31,8 @@ void TransposePlane(const uint8_t* src,
                     int width,
                     int height) {
   int i = height;
-#if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX)
+#if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX) || \
+    defined(HAS_TRANSPOSEWX16_NEON)
   void (*TransposeWx16)(const uint8_t* src, int src_stride, uint8_t* dst,
                         int dst_stride, int width) = TransposeWx16_C;
 #else
@@ -44,6 +45,14 @@ void TransposePlane(const uint8_t* src,
     TransposeWx8 = TransposeWx8_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       TransposeWx8 = TransposeWx8_NEON;
+    }
+  }
+#endif
+#if defined(HAS_TRANSPOSEWX16_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    TransposeWx16 = TransposeWx16_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx16 = TransposeWx16_NEON;
     }
   }
 #endif
@@ -80,7 +89,8 @@ void TransposePlane(const uint8_t* src,
   }
 #endif
 
-#if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX)
+#if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX) || \
+    defined(HAS_TRANSPOSEWX16_NEON)
   // Work across the source in 16x16 tiles
   while (i >= 16) {
     TransposeWx16(src, src_stride, dst, dst_stride, width);

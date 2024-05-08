@@ -57,7 +57,11 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
+#if defined(__aarch64__)
+#define HAS_TRANSPOSEWX16_NEON
+#else
 #define HAS_TRANSPOSEWX8_NEON
+#endif
 #define HAS_TRANSPOSEUVWX8_NEON
 #define HAS_TRANSPOSE4X4_32_NEON
 #endif
@@ -94,6 +98,11 @@ void TransposeWx8_NEON(const uint8_t* src,
                        uint8_t* dst,
                        int dst_stride,
                        int width);
+void TransposeWx16_NEON(const uint8_t* src,
+                        int src_stride,
+                        uint8_t* dst,
+                        int dst_stride,
+                        int width);
 void TransposeWx8_SSSE3(const uint8_t* src,
                         int src_stride,
                         uint8_t* dst,
@@ -120,6 +129,11 @@ void TransposeWx8_Any_NEON(const uint8_t* src,
                            uint8_t* dst,
                            int dst_stride,
                            int width);
+void TransposeWx16_Any_NEON(const uint8_t* src,
+                            int src_stride,
+                            uint8_t* dst,
+                            int dst_stride,
+                            int width);
 void TransposeWx8_Any_SSSE3(const uint8_t* src,
                             int src_stride,
                             uint8_t* dst,
