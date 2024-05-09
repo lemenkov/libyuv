@@ -14,9 +14,6 @@
 
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
-#ifdef HAVE_JPEG
-#include "libyuv/mjpeg_decoder.h"
-#endif
 #include "libyuv/planar_functions.h"  // For CopyPlane and ARGBShuffle.
 #include "libyuv/rotate_argb.h"
 #include "libyuv/row.h"

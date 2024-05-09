@@ -14,9 +14,6 @@
 #include <string.h>  // for memset()
 
 #include "libyuv/cpu_id.h"
-#ifdef HAVE_JPEG
-#include "libyuv/mjpeg_decoder.h"
-#endif
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h"  // for ScaleRowDown2
 

@@ -19,9 +19,6 @@
 #include "libyuv/convert_from.h"
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
-#ifdef HAVE_JPEG
-#include "libyuv/mjpeg_decoder.h"
-#endif
 #include "../unit_test/unit_test.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
