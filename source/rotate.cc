@@ -289,7 +289,10 @@ void SplitTransposeUV(const uint8_t* src,
 #else
 #if defined(HAS_TRANSPOSEUVWX8_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    TransposeUVWx8 = TransposeUVWx8_NEON;
+    TransposeUVWx8 = TransposeUVWx8_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeUVWx8 = TransposeUVWx8_NEON;
+    }
   }
 #endif
 #if defined(HAS_TRANSPOSEUVWX8_SSE2)
