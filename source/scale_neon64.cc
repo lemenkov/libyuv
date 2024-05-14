@@ -1316,13 +1316,14 @@ void ScaleARGBCols_NEON(uint8_t* dst_argb,
 
 #undef LOAD1_DATA32_LANE
 
-// TODO(Yang Zhang): Investigate less load instructions for
-// the x/dx stepping
-#define LOAD2_DATA32_LANE(vn1, vn2, n)                  \
-  "lsr        %5, %3, #16                           \n" \
-  "add        %6, %1, %5, lsl #2                    \n" \
-  "add        %3, %3, %4                            \n" \
-  "ld2        {" #vn1 ".s, " #vn2 ".s}[" #n "], [%6]  \n"
+static const uvec8 kScaleARGBFilterColsShuffleIndices = {
+    0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
+};
+
+#define SCALE_ARGB_FILTER_COLS_STEP_ADDR         \
+  "lsr        %5, %3, #16                    \n" \
+  "add        %6, %1, %5, lsl #2             \n" \
+  "add        %3, %3, %4                     \n"
 
 void ScaleARGBFilterCols_NEON(uint8_t* dst_argb,
                               const uint8_t* src_argb,
@@ -1330,64 +1331,64 @@ void ScaleARGBFilterCols_NEON(uint8_t* dst_argb,
                               int x,
                               int dx) {
   int dx_offset[4] = {0, 1, 2, 3};
-  int* tmp = dx_offset;
+  int64_t tmp;
   const uint8_t* src_tmp = src_argb;
-  int64_t x64 = (int64_t)x;    // NOLINT
-  int64_t dx64 = (int64_t)dx;  // NOLINT
-  asm volatile (
-      "dup         v0.4s, %w3                    \n"  // x
-      "dup         v1.4s, %w4                    \n"  // dx
-      "ld1         {v2.4s}, [%5]                 \n"  // 0 1 2 3
-      "shl         v6.4s, v1.4s, #2              \n"  // 4 * dx
+  int64_t x64 = (int64_t)x;
+  int64_t dx64 = (int64_t)dx;
+  asm volatile(
+      "dup         v0.4s, %w3                    \n"
+      "dup         v1.4s, %w4                    \n"
+      "ld1         {v2.4s}, [%[kOffsets]]        \n"
+      "shl         v6.4s, v1.4s, #2              \n"
       "mul         v1.4s, v1.4s, v2.4s           \n"
-      "movi        v3.16b, #0x7f                 \n"  // 0x7F
-      "movi        v4.8h, #0x7f                  \n"  // 0x7F
-    // x         , x + 1 * dx, x + 2 * dx, x + 3 * dx
+      "movi        v3.16b, #0x7f                 \n"
+
       "add         v5.4s, v1.4s, v0.4s           \n"
-      "1:                                        \n"
-    // d0, d1: a
-    // d2, d3: b
-    LOAD2_DATA32_LANE(v0, v1, 0)
-    LOAD2_DATA32_LANE(v0, v1, 1)
-    LOAD2_DATA32_LANE(v0, v1, 2)
-    LOAD2_DATA32_LANE(v0, v1, 3)
-    "shrn       v2.4h, v5.4s, #9               \n"
-    "and        v2.8b, v2.8b, v4.8b            \n"
-    "dup        v16.8b, v2.b[0]                \n"
-    "dup        v17.8b, v2.b[2]                \n"
-    "dup        v18.8b, v2.b[4]                \n"
-    "dup        v19.8b, v2.b[6]                \n"
-    "ext        v2.8b, v16.8b, v17.8b, #4      \n"
-    "ext        v17.8b, v18.8b, v19.8b, #4     \n"
-    "ins        v2.d[1], v17.d[0]              \n"  // f
-    "eor        v7.16b, v2.16b, v3.16b         \n"  // 0x7f ^ f
-    "umull      v16.8h, v0.8b, v7.8b           \n"
-    "umull2     v17.8h, v0.16b, v7.16b         \n"
-    "umull      v18.8h, v1.8b, v2.8b           \n"
-    "umull2     v19.8h, v1.16b, v2.16b         \n"
-    "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
-    "add        v16.8h, v16.8h, v18.8h         \n"
-    "add        v17.8h, v17.8h, v19.8h         \n"
-    "shrn       v0.8b, v16.8h, #7              \n"
-    "shrn2      v0.16b, v17.8h, #7             \n"
-    "st1     {v0.4s}, [%0], #16                \n"  // store pixels
-    "add     v5.4s, v5.4s, v6.4s               \n"
-    "subs    %w2, %w2, #4                      \n"  // 4 processed per loop
-    "b.gt       1b                             \n"
-  : "+r"(dst_argb),         // %0
-    "+r"(src_argb),         // %1
-    "+r"(dst_width),        // %2
-    "+r"(x64),              // %3
-    "+r"(dx64),             // %4
-    "+r"(tmp),              // %5
-    "+r"(src_tmp)           // %6
-  :
-  : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5",
-    "v6", "v7", "v16", "v17", "v18", "v19"
-  );
+      "ldr         q18, [%[kIndices]]            \n"
+
+      "1:                                        \n"  //
+      SCALE_ARGB_FILTER_COLS_STEP_ADDR
+      "ldr        d1, [%6]                       \n"  //
+      SCALE_ARGB_FILTER_COLS_STEP_ADDR
+      "ldr        d2, [%6]                       \n"
+      "shrn       v4.4h, v5.4s, #9               \n"  //
+      SCALE_ARGB_FILTER_COLS_STEP_ADDR
+      "ld1        {v1.d}[1], [%6]                \n"  //
+      SCALE_ARGB_FILTER_COLS_STEP_ADDR
+      "ld1        {v2.d}[1], [%6]                \n"
+
+      "subs       %w2, %w2, #4                   \n"  // 4 processed per loop
+      "and        v4.8b, v4.8b, v3.8b            \n"
+      "trn1       v0.4s, v1.4s, v2.4s            \n"
+      "tbl        v4.16b, {v4.16b}, v18.16b      \n"  // f
+      "trn2       v1.4s, v1.4s, v2.4s            \n"
+      "eor        v7.16b, v4.16b, v3.16b         \n"  // 0x7f ^ f
+
+      "umull      v16.8h, v1.8b, v4.8b           \n"
+      "umull2     v17.8h, v1.16b, v4.16b         \n"
+      "umlal      v16.8h, v0.8b, v7.8b           \n"
+      "umlal2     v17.8h, v0.16b, v7.16b         \n"
+
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
+      "shrn       v0.8b, v16.8h, #7              \n"
+      "shrn       v1.8b, v17.8h, #7              \n"
+      "add        v5.4s, v5.4s, v6.4s            \n"
+      "stp        d0, d1, [%0], #16              \n"  // store pixels
+      "b.gt       1b                             \n"
+      : "+r"(dst_argb),                                       // %0
+        "+r"(src_argb),                                       // %1
+        "+r"(dst_width),                                      // %2
+        "+r"(x64),                                            // %3
+        "+r"(dx64),                                           // %4
+        "=&r"(tmp),                                           // %5
+        "+r"(src_tmp)                                         // %6
+      : [kIndices] "r"(&kScaleARGBFilterColsShuffleIndices),  // %[kIndices]
+        [kOffsets] "r"(dx_offset)                             // %[kOffsets]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19");
 }
 
-#undef LOAD2_DATA32_LANE
+#undef SCALE_ARGB_FILTER_COLS_STEP_ADDR
 
 // Read 16x2 average down and write 8x1.
 void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
