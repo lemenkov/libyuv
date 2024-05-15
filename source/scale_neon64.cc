@@ -155,27 +155,42 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
       : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
-// Down scale from 4 to 3 pixels. Use the neon multilane read/write
-// to load up the every 4th pixel into a 4 different registers.
-// Point samples 32 pixels to 24 pixels.
+static const uvec8 kShuf34_0 = {
+    0, 1, 3, 4, 5, 7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20,
+};
+static const uvec8 kShuf34_1 = {
+    5, 7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21, 23, 24, 25,
+};
+static const uvec8 kShuf34_2 = {
+    11, 12, 13, 15, 16, 17, 19, 20, 21, 23, 24, 25, 27, 28, 29, 31,
+};
+
+// Down scale from 4 to 3 pixels. Point samples 64 pixels to 48 pixels.
 void ScaleRowDown34_NEON(const uint8_t* src_ptr,
                          ptrdiff_t src_stride,
                          uint8_t* dst_ptr,
                          int dst_width) {
   (void)src_stride;
-  asm volatile (
-      "1:                                        \n"
-      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // src line 0
-      "subs        %w2, %w2, #24                 \n"
-      "mov         v2.16b, v3.16b                \n"  // order v0,v1,v2
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "st3         {v0.8b,v1.8b,v2.8b}, [%1], #24 \n"
-      "b.gt        1b                            \n"
-      : "+r"(src_ptr),   // %0
-        "+r"(dst_ptr),   // %1
-        "+r"(dst_width)  // %2
-      :
-      : "memory", "cc", "v0", "v1", "v2", "v3");
+  asm volatile(
+      "ld1         {v29.16b}, [%[kShuf34_0]]                        \n"
+      "ld1         {v30.16b}, [%[kShuf34_1]]                        \n"
+      "ld1         {v31.16b}, [%[kShuf34_2]]                        \n"
+      "1:                                                           \n"
+      "ld1         {v0.16b,v1.16b,v2.16b,v3.16b}, [%[src_ptr]], #64 \n"
+      "subs        %w[width], %w[width], #48                        \n"
+      "tbl         v0.16b, {v0.16b, v1.16b}, v29.16b                \n"
+      "prfm        pldl1keep, [%[src_ptr], 448]                     \n"
+      "tbl         v1.16b, {v1.16b, v2.16b}, v30.16b                \n"
+      "tbl         v2.16b, {v2.16b, v3.16b}, v31.16b                \n"
+      "st1         {v0.16b,v1.16b,v2.16b}, [%[dst_ptr]], #48        \n"
+      "b.gt        1b                                               \n"
+      : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
+        [dst_ptr] "+r"(dst_ptr),      // %[dst_ptr]
+        [width] "+r"(dst_width)       // %[width]
+      : [kShuf34_0] "r"(&kShuf34_0),  // %[kShuf34_0]
+        [kShuf34_1] "r"(&kShuf34_1),  // %[kShuf34_1]
+        [kShuf34_2] "r"(&kShuf34_2)   // %[kShuf34_2]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v29", "v30", "v31");
 }
 
 void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
