@@ -122,24 +122,28 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
   const uint8_t* src_ptr1 = src_ptr + src_stride;
   const uint8_t* src_ptr2 = src_ptr + src_stride * 2;
   const uint8_t* src_ptr3 = src_ptr + src_stride * 3;
-  asm volatile (
+  asm volatile(
       "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load up 16x4
-      "ld1         {v1.16b}, [%2], #16           \n"
-      "ld1         {v2.16b}, [%3], #16           \n"
-      "ld1         {v3.16b}, [%4], #16           \n"
-      "subs        %w5, %w5, #4                  \n"
+      "ldp         q0, q4, [%0], #32             \n"  // load up 16x8
+      "ldp         q1, q5, [%2], #32             \n"
+      "ldp         q2, q6, [%3], #32             \n"
+      "ldp         q3, q7, [%4], #32             \n"
+      "subs        %w5, %w5, #8                  \n"
       "uaddlp      v0.8h, v0.16b                 \n"
+      "uaddlp      v4.8h, v4.16b                 \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
       "uadalp      v0.8h, v1.16b                 \n"
+      "uadalp      v4.8h, v5.16b                 \n"
       "prfm        pldl1keep, [%2, 448]          \n"
       "uadalp      v0.8h, v2.16b                 \n"
+      "uadalp      v4.8h, v6.16b                 \n"
       "prfm        pldl1keep, [%3, 448]          \n"
       "uadalp      v0.8h, v3.16b                 \n"
+      "uadalp      v4.8h, v7.16b                 \n"
       "prfm        pldl1keep, [%4, 448]          \n"
-      "addp        v0.8h, v0.8h, v0.8h           \n"
+      "addp        v0.8h, v0.8h, v4.8h           \n"
       "rshrn       v0.8b, v0.8h, #4              \n"  // divide by 16 w/rounding
-      "st1         {v0.s}[0], [%1], #4           \n"
+      "str         d0, [%1], #8                  \n"
       "b.gt        1b                            \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
@@ -148,7 +152,7 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
         "+r"(src_ptr3),  // %4
         "+r"(dst_width)  // %5
       :
-      : "memory", "cc", "v0", "v1", "v2", "v3");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
 // Down scale from 4 to 3 pixels. Use the neon multilane read/write
