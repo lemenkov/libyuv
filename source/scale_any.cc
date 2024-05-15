@@ -261,12 +261,21 @@ SDANY(ScaleRowDown34_0_Box_Any_NEON,
       4 / 3,
       1,
       23)
+#ifdef __aarch64__
+SDANY(ScaleRowDown34_1_Box_Any_NEON,
+      ScaleRowDown34_1_Box_NEON,
+      ScaleRowDown34_1_Box_C,
+      4 / 3,
+      1,
+      47)
+#else
 SDANY(ScaleRowDown34_1_Box_Any_NEON,
       ScaleRowDown34_1_Box_NEON,
       ScaleRowDown34_1_Box_C,
       4 / 3,
       1,
       23)
+#endif
 #endif
 #ifdef HAS_SCALEROWDOWN34_MSA
 SDANY(ScaleRowDown34_Any_MSA,

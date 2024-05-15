@@ -237,35 +237,42 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
                                int dst_width) {
-  asm volatile (
-      "movi        v20.8b, #3                    \n"
+  asm volatile(
+      "movi        v20.16b, #3                   \n"
       "add         %3, %3, %0                    \n"
+
       "1:                                        \n"
-      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // src line 0
-      "ld4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%3], #32 \n"  // src line 1
-      "subs        %w2, %w2, #24                 \n"
+      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // src line 0
+      "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%3], #64 \n"  // src line 1
+      "subs        %w2, %w2, #48                 \n"
       // average src line 0 with src line 1
-      "urhadd      v0.8b, v0.8b, v4.8b           \n"
-      "urhadd      v1.8b, v1.8b, v5.8b           \n"
-      "urhadd      v2.8b, v2.8b, v6.8b           \n"
-      "urhadd      v3.8b, v3.8b, v7.8b           \n"
+      "urhadd      v0.16b, v0.16b, v4.16b        \n"
+      "urhadd      v1.16b, v1.16b, v5.16b        \n"
+      "urhadd      v2.16b, v2.16b, v6.16b        \n"
+      "urhadd      v3.16b, v3.16b, v7.16b        \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
 
       // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "ushll       v4.8h, v1.8b, #0              \n"
+      "ushll2      v5.8h, v1.16b, #0             \n"
       "umlal       v4.8h, v0.8b, v20.8b          \n"
+      "umlal2      v5.8h, v0.16b, v20.16b        \n"
       "uqrshrn     v0.8b, v4.8h, #2              \n"
+      "uqrshrn2    v0.16b, v5.8h, #2             \n"
       "prfm        pldl1keep, [%3, 448]          \n"
 
       // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
-      "urhadd      v1.8b, v1.8b, v2.8b           \n"
+      "urhadd      v1.16b, v1.16b, v2.16b        \n"
 
       // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
       "ushll       v4.8h, v2.8b, #0              \n"
+      "ushll2      v5.8h, v2.16b, #0             \n"
       "umlal       v4.8h, v3.8b, v20.8b          \n"
+      "umlal2      v5.8h, v3.16b, v20.16b        \n"
       "uqrshrn     v2.8b, v4.8h, #2              \n"
+      "uqrshrn2    v2.16b, v5.8h, #2             \n"
 
-      "st3         {v0.8b,v1.8b,v2.8b}, [%1], #24 \n"
+      "st3         {v0.16b,v1.16b,v2.16b}, [%1], #48 \n"
       "b.gt        1b                            \n"
       : "+r"(src_ptr),    // %0
         "+r"(dst_ptr),    // %1
