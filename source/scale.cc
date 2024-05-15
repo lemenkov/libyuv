@@ -279,7 +279,7 @@ static void ScalePlaneDown4(int src_width,
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleRowDown4 =
         filtering ? ScaleRowDown4Box_Any_NEON : ScaleRowDown4_Any_NEON;
-    if (IS_ALIGNED(dst_width, 8)) {
+    if (IS_ALIGNED(dst_width, 16)) {
       ScaleRowDown4 = filtering ? ScaleRowDown4Box_NEON : ScaleRowDown4_NEON;
     }
   }

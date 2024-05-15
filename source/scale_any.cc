@@ -202,7 +202,7 @@ SDANY(ScaleRowDown4Box_Any_AVX2,
       15)
 #endif
 #ifdef HAS_SCALEROWDOWN4_NEON
-SDANY(ScaleRowDown4_Any_NEON, ScaleRowDown4_NEON, ScaleRowDown4_C, 4, 1, 7)
+SDANY(ScaleRowDown4_Any_NEON, ScaleRowDown4_NEON, ScaleRowDown4_C, 4, 1, 15)
 SDANY(ScaleRowDown4Box_Any_NEON,
       ScaleRowDown4Box_NEON,
       ScaleRowDown4Box_C,

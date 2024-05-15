@@ -101,12 +101,12 @@ void ScaleRowDown4_NEON(const uint8_t* src_ptr,
                         uint8_t* dst_ptr,
                         int dst_width) {
   (void)src_stride;
-  asm volatile (
+  asm volatile(
       "1:                                        \n"
-      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // src line 0
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop
+      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // src line 0
+      "subs        %w2, %w2, #16                 \n"  // 16 processed per loop
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "st1         {v2.8b}, [%1], #8             \n"
+      "st1         {v2.16b}, [%1], #16           \n"
       "b.gt        1b                            \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
