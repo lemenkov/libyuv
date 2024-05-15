@@ -255,13 +255,13 @@ SDANY(ScaleRowDown34_Any_NEON,
       4 / 3,
       1,
       23)
+#ifdef __aarch64__
 SDANY(ScaleRowDown34_0_Box_Any_NEON,
       ScaleRowDown34_0_Box_NEON,
       ScaleRowDown34_0_Box_C,
       4 / 3,
       1,
-      23)
-#ifdef __aarch64__
+      47)
 SDANY(ScaleRowDown34_1_Box_Any_NEON,
       ScaleRowDown34_1_Box_NEON,
       ScaleRowDown34_1_Box_C,
@@ -269,6 +269,12 @@ SDANY(ScaleRowDown34_1_Box_Any_NEON,
       1,
       47)
 #else
+SDANY(ScaleRowDown34_0_Box_Any_NEON,
+      ScaleRowDown34_0_Box_NEON,
+      ScaleRowDown34_0_Box_C,
+      4 / 3,
+      1,
+      23)
 SDANY(ScaleRowDown34_1_Box_Any_NEON,
       ScaleRowDown34_1_Box_NEON,
       ScaleRowDown34_1_Box_C,

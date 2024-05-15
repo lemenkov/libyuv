@@ -178,13 +178,14 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
                                int dst_width) {
-  asm volatile (
-      "movi        v20.8b, #3                    \n"
+  asm volatile(
+      "movi        v24.16b, #3                   \n"
       "add         %3, %3, %0                    \n"
+
       "1:                                        \n"
-      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // src line 0
-      "ld4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%3], #32 \n"  // src line 1
-      "subs        %w2, %w2, #24                 \n"
+      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // src line 0
+      "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%3], #64 \n"  // src line 1
+      "subs        %w2, %w2, #48                 \n"
 
       // filter src line 0 with src line 1
       // expand chars to shorts to allow for room
@@ -193,12 +194,20 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "ushll       v17.8h, v5.8b, #0             \n"
       "ushll       v18.8h, v6.8b, #0             \n"
       "ushll       v19.8h, v7.8b, #0             \n"
+      "ushll2      v20.8h, v4.16b, #0            \n"
+      "ushll2      v21.8h, v5.16b, #0            \n"
+      "ushll2      v22.8h, v6.16b, #0            \n"
+      "ushll2      v23.8h, v7.16b, #0            \n"
 
       // 3 * line_0 + line_1
-      "umlal       v16.8h, v0.8b, v20.8b         \n"
-      "umlal       v17.8h, v1.8b, v20.8b         \n"
-      "umlal       v18.8h, v2.8b, v20.8b         \n"
-      "umlal       v19.8h, v3.8b, v20.8b         \n"
+      "umlal       v16.8h, v0.8b, v24.8b         \n"
+      "umlal       v17.8h, v1.8b, v24.8b         \n"
+      "umlal       v18.8h, v2.8b, v24.8b         \n"
+      "umlal       v19.8h, v3.8b, v24.8b         \n"
+      "umlal2      v20.8h, v0.16b, v24.16b       \n"
+      "umlal2      v21.8h, v1.16b, v24.16b       \n"
+      "umlal2      v22.8h, v2.16b, v24.16b       \n"
+      "umlal2      v23.8h, v3.16b, v24.16b       \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
 
       // (3 * line_0 + line_1 + 2) >> 2
@@ -206,22 +215,32 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "uqrshrn     v1.8b, v17.8h, #2             \n"
       "uqrshrn     v2.8b, v18.8h, #2             \n"
       "uqrshrn     v3.8b, v19.8h, #2             \n"
+      "uqrshrn2    v0.16b, v20.8h, #2            \n"
+      "uqrshrn2    v1.16b, v21.8h, #2            \n"
+      "uqrshrn2    v2.16b, v22.8h, #2            \n"
+      "uqrshrn2    v3.16b, v23.8h, #2            \n"
       "prfm        pldl1keep, [%3, 448]          \n"
 
       // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "ushll       v16.8h, v1.8b, #0             \n"
-      "umlal       v16.8h, v0.8b, v20.8b         \n"
+      "ushll2      v17.8h, v1.16b, #0            \n"
+      "umlal       v16.8h, v0.8b, v24.8b         \n"
+      "umlal2      v17.8h, v0.16b, v24.16b       \n"
       "uqrshrn     v0.8b, v16.8h, #2             \n"
+      "uqrshrn2    v0.16b, v17.8h, #2            \n"
 
       // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
-      "urhadd      v1.8b, v1.8b, v2.8b           \n"
+      "urhadd      v1.16b, v1.16b, v2.16b        \n"
 
       // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
       "ushll       v16.8h, v2.8b, #0             \n"
-      "umlal       v16.8h, v3.8b, v20.8b         \n"
+      "ushll2      v17.8h, v2.16b, #0            \n"
+      "umlal       v16.8h, v3.8b, v24.8b         \n"
+      "umlal2      v17.8h, v3.16b, v24.16b       \n"
       "uqrshrn     v2.8b, v16.8h, #2             \n"
+      "uqrshrn2    v2.16b, v17.8h, #2            \n"
 
-      "st3         {v0.8b,v1.8b,v2.8b}, [%1], #24 \n"
+      "st3         {v0.16b,v1.16b,v2.16b}, [%1], #48 \n"
 
       "b.gt        1b                            \n"
       : "+r"(src_ptr),    // %0
@@ -230,7 +249,7 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
         "+r"(src_stride)  // %3
       :
       : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
-        "v17", "v18", "v19", "v20");
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24");
 }
 
 void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
