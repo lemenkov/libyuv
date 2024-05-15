@@ -539,32 +539,39 @@ void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int dst_width) {
   const uint8_t* src_temp = src_ptr + 1;
-  asm volatile (
-      "movi        v31.8b, #3                    \n"
+  asm volatile(
+      "movi        v31.16b, #3                   \n"
 
       "1:                                        \n"
-      "ldr         d0, [%0], #8                  \n"  // 01234567
-      "ldr         d1, [%1], #8                  \n"  // 12345678
+      "ldr         q0, [%0], #16                 \n"  // 0123456789abcdef
+      "ldr         q1, [%1], #16                 \n"  // 123456789abcdefg
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
 
       "ushll       v2.8h, v0.8b, #0              \n"  // 01234567 (16b)
       "ushll       v3.8h, v1.8b, #0              \n"  // 12345678 (16b)
+      "ushll2      v4.8h, v0.16b, #0             \n"  // 89abcdef (16b)
+      "ushll2      v5.8h, v1.16b, #0             \n"  // 9abcdefg (16b)
 
       "umlal       v2.8h, v1.8b, v31.8b          \n"  // 3*near+far (odd)
       "umlal       v3.8h, v0.8b, v31.8b          \n"  // 3*near+far (even)
+      "umlal2      v4.8h, v1.16b, v31.16b        \n"  // 3*near+far (odd)
+      "umlal2      v5.8h, v0.16b, v31.16b        \n"  // 3*near+far (even)
 
       "rshrn       v2.8b, v2.8h, #2              \n"  // 3/4*near+1/4*far (odd)
       "rshrn       v1.8b, v3.8h, #2              \n"  // 3/4*near+1/4*far (even)
+      "rshrn2      v2.16b, v4.8h, #2             \n"  // 3/4*near+1/4*far (odd)
+      "rshrn2      v1.16b, v5.8h, #2             \n"  // 3/4*near+1/4*far (even)
 
-      "st2         {v1.8b, v2.8b}, [%2], #16     \n"  // store
-      "subs        %w3, %w3, #16                 \n"  // 8 sample -> 16 sample
+      "st2         {v1.16b, v2.16b}, [%2], #32   \n"
+      "subs        %w3, %w3, #32                 \n"
       "b.gt        1b                            \n"
       : "+r"(src_ptr),   // %0
         "+r"(src_temp),  // %1
         "+r"(dst_ptr),   // %2
         "+r"(dst_width)  // %3
       :
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v31"  // Clobber List
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v31"  // Clobber List
   );
 }
 

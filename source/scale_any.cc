@@ -749,11 +749,19 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_AVX2,
 #endif
 
 #ifdef HAS_SCALEROWUP2_LINEAR_NEON
+#ifdef __aarch64__
+SUH2LANY(ScaleRowUp2_Linear_Any_NEON,
+         ScaleRowUp2_Linear_NEON,
+         ScaleRowUp2_Linear_C,
+         31,
+         uint8_t)
+#else
 SUH2LANY(ScaleRowUp2_Linear_Any_NEON,
          ScaleRowUp2_Linear_NEON,
          ScaleRowUp2_Linear_C,
          15,
          uint8_t)
+#endif
 #endif
 
 #ifdef HAS_SCALEROWUP2_LINEAR_12_NEON
