@@ -1103,15 +1103,12 @@ void ScaleAddRow_NEON(const uint8_t* src_ptr,
   );
 }
 
-// TODO(Yang Zhang): Investigate less load instructions for
-// the x/dx stepping
-#define LOAD2_DATA8_LANE(n)                      \
-  "lsr        %5, %3, #16                    \n" \
-  "add        %6, %1, %5                     \n" \
-  "add        %3, %3, %4                     \n" \
-  "ld2        {v4.b, v5.b}[" #n "], [%6]     \n"
+#define SCALE_FILTER_COLS_STEP_ADDR                         \
+  "lsr        %[tmp_offset], %x[x], #16                 \n" \
+  "add        %[tmp_ptr], %[src_ptr], %[tmp_offset]     \n" \
+  "add        %x[x], %x[x], %x[dx]                      \n"
 
-// The NEON version mimics this formula (from row_common.cc):
+// The Neon version mimics this formula (from scale_common.cc):
 // #define BLENDER(a, b, f) (uint8_t)((int)(a) +
 //    ((((int)((f)) * ((int)(b) - (int)(a))) + 0x8000) >> 16))
 
@@ -1121,65 +1118,69 @@ void ScaleFilterCols_NEON(uint8_t* dst_ptr,
                           int x,
                           int dx) {
   int dx_offset[4] = {0, 1, 2, 3};
-  int* tmp = dx_offset;
-  const uint8_t* src_tmp = src_ptr;
-  int64_t x64 = (int64_t)x;    // NOLINT
-  int64_t dx64 = (int64_t)dx;  // NOLINT
-  asm volatile (
-      "dup         v0.4s, %w3                    \n"  // x
-      "dup         v1.4s, %w4                    \n"  // dx
-      "ld1         {v2.4s}, [%5]                 \n"  // 0 1 2 3
+  int64_t tmp_offset;
+  uint8_t* tmp_ptr;
+  asm volatile(
+      "dup         v0.4s, %w[x]                  \n"
+      "dup         v1.4s, %w[dx]                 \n"
+      "ld1         {v2.4s}, [%[dx_offset]]       \n"  // 0 1 2 3
       "shl         v3.4s, v1.4s, #2              \n"  // 4 * dx
+      "shl         v22.4s, v1.4s, #3             \n"  // 8 * dx
+
       "mul         v1.4s, v1.4s, v2.4s           \n"
-    // x         , x + 1 * dx, x + 2 * dx, x + 3 * dx
+      // x         , x + 1 * dx, x + 2 * dx, x + 3 * dx
       "add         v1.4s, v1.4s, v0.4s           \n"
-    // x + 4 * dx, x + 5 * dx, x + 6 * dx, x + 7 * dx
+      // x + 4 * dx, x + 5 * dx, x + 6 * dx, x + 7 * dx
       "add         v2.4s, v1.4s, v3.4s           \n"
-      "shl         v0.4s, v3.4s, #1              \n"  // 8 * dx
-      "1:                                        \n"
-    LOAD2_DATA8_LANE(0)
-    LOAD2_DATA8_LANE(1)
-    LOAD2_DATA8_LANE(2)
-    LOAD2_DATA8_LANE(3)
-    LOAD2_DATA8_LANE(4)
-    LOAD2_DATA8_LANE(5)
-    LOAD2_DATA8_LANE(6)
-    LOAD2_DATA8_LANE(7)
-      "mov         v6.16b, v1.16b                \n"
-      "mov         v7.16b, v2.16b                \n"
-      "uzp1        v6.8h, v6.8h, v7.8h           \n"
-      "ushll       v4.8h, v4.8b, #0              \n"
-      "ushll       v5.8h, v5.8b, #0              \n"
+
+      "movi        v0.8h, #0                     \n"
+
+      // truncate to uint16_t
+      "trn1        v22.8h, v22.8h, v0.8h         \n"
+      "trn1        v20.8h, v1.8h, v0.8h          \n"
+      "trn1        v21.8h, v2.8h, v0.8h          \n"
+
+      "1:                                        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ldr        h6, [%[tmp_ptr]]               \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[1], [%[tmp_ptr]]        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[2], [%[tmp_ptr]]        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[3], [%[tmp_ptr]]        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[4], [%[tmp_ptr]]        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[5], [%[tmp_ptr]]        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[6], [%[tmp_ptr]]        \n" SCALE_FILTER_COLS_STEP_ADDR
+      "ld1        {v6.h}[7], [%[tmp_ptr]]        \n"
+
+      "subs        %w[width], %w[width], #8      \n"  // 8 processed per loop
+      "trn1        v4.16b, v6.16b, v0.16b        \n"
+      "trn2        v5.16b, v6.16b, v0.16b        \n"
+
       "ssubl       v16.4s, v5.4h, v4.4h          \n"
       "ssubl2      v17.4s, v5.8h, v4.8h          \n"
-      "ushll       v7.4s, v6.4h, #0              \n"
-      "ushll2      v6.4s, v6.8h, #0              \n"
-      "mul         v16.4s, v16.4s, v7.4s         \n"
-      "mul         v17.4s, v17.4s, v6.4s         \n"
+      "mul         v16.4s, v16.4s, v20.4s        \n"
+      "mul         v17.4s, v17.4s, v21.4s        \n"
       "rshrn       v6.4h, v16.4s, #16            \n"
       "rshrn2      v6.8h, v17.4s, #16            \n"
       "add         v4.8h, v4.8h, v6.8h           \n"
       "xtn         v4.8b, v4.8h                  \n"
 
-      "st1         {v4.8b}, [%0], #8             \n"  // store pixels
-      "add         v1.4s, v1.4s, v0.4s           \n"
-      "add         v2.4s, v2.4s, v0.4s           \n"
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop
+      "add         v20.8h, v20.8h, v22.8h        \n"
+      "add         v21.8h, v21.8h, v22.8h        \n"
+
+      "st1         {v4.8b}, [%[dst_ptr]], #8     \n"  // store pixels
       "b.gt        1b                            \n"
-  : "+r"(dst_ptr),          // %0
-    "+r"(src_ptr),          // %1
-    "+r"(dst_width),        // %2
-    "+r"(x64),              // %3
-    "+r"(dx64),             // %4
-    "+r"(tmp),              // %5
-    "+r"(src_tmp)           // %6
-  :
-  : "memory", "cc", "v0", "v1", "v2", "v3",
-    "v4", "v5", "v6", "v7", "v16", "v17"
-  );
+      : [src_ptr] "+r"(src_ptr),         // %[src_ptr]
+        [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
+        [width] "+r"(dst_width),         // %[width]
+        [x] "+r"(x),                     // %[x]
+        [dx] "+r"(dx),                   // %[dx]
+        [tmp_offset] "=&r"(tmp_offset),  // %[tmp_offset]
+        [tmp_ptr] "=&r"(tmp_ptr)         // %[tmp_ptr]
+      : [dx_offset] "r"(dx_offset)       // %[dx_offset]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v16", "v17",
+        "v20", "v21", "v22");
 }
 
-#undef LOAD2_DATA8_LANE
+#undef SCALE_FILTER_COLS_STEP_ADDR
 
 void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
