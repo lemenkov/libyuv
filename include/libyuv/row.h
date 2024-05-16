@@ -563,7 +563,9 @@ extern "C" {
 #define HAS_I444TOARGBROW_SVE2
 #define HAS_NV12TOARGBROW_SVE2
 #define HAS_NV21TOARGBROW_SVE2
+#define HAS_P210TOAR30ROW_SVE2
 #define HAS_P210TOARGBROW_SVE2
+#define HAS_P410TOAR30ROW_SVE2
 #define HAS_P410TOARGBROW_SVE2
 #define HAS_RAWTOARGBROW_SVE2
 #define HAS_RAWTORGB24ROW_SVE2
@@ -5405,7 +5407,17 @@ void P210ToAR30Row_NEON(const uint16_t* y_buf,
                         uint8_t* dst_ar30,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void P210ToAR30Row_SVE2(const uint16_t* y_buf,
+                        const uint16_t* uv_buf,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void P410ToAR30Row_NEON(const uint16_t* y_buf,
+                        const uint16_t* uv_buf,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void P410ToAR30Row_SVE2(const uint16_t* y_buf,
                         const uint16_t* uv_buf,
                         uint8_t* dst_ar30,
                         const struct YuvConstants* yuvconstants,

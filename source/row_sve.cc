@@ -241,6 +241,18 @@ extern "C" {
       "z20", "z22", "z23", "z24", "z25", "z26", "z27", "z28", "z29", "z30",   \
       "z31", "p0", "p1", "p2", "p3"
 
+// Store AR30 elements
+#define STOREAR30_SVE                                                    \
+  "uqshl    z16.h, p0/m, z16.h, #2            \n" /* bbbbbbbbbbxxxxxx */ \
+  "uqshl    z17.h, p0/m, z17.h, #2            \n" /* ggggggggggxxxxxx */ \
+  "umin     z18.h, p0/m, z18.h, z23.h         \n" /* 00rrrrrrrrrrxxxx */ \
+  "orr      z18.h, z18.h, #0xc000             \n" /* 11rrrrrrrrrrxxxx */ \
+  "sri      z18.h, z17.h, #12                 \n" /* 11rrrrrrrrrrgggg */ \
+  "lsl      z17.h, z17.h, #4                  \n" /* ggggggxxxxxx0000 */ \
+  "sri      z17.h, z16.h, #6                  \n" /* ggggggbbbbbbbbbb */ \
+  "st2h     {z17.h, z18.h}, p1, [%[dst_ar30]] \n"                        \
+  "incb     %[dst_ar30], all, mul #2          \n"
+
 void I444ToARGBRow_SVE2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
@@ -1931,6 +1943,61 @@ void P210ToARGBRow_SVE2(const uint16_t* src_y,
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 
+void P210ToAR30Row_SVE2(const uint16_t* src_y,
+                        const uint16_t* src_uv,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm("cnth %0" : "=r"(vl));
+  int width_last_y = width & (vl - 1);
+  width_last_y = width_last_y == 0 ? vl : width_last_y;
+  int width_last_uv = width_last_y + (width_last_y & 1);
+  uint32_t nv_uv_start = 0x03010301U;
+  uint32_t nv_uv_step = 0x04040404U;
+  uint16_t limit = 0x3ff0;
+  asm volatile(
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
+      "dup      z23.h, %w[limit]                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "ptrue    p2.h                                    \n"
+      "1:                                               \n"  //
+      READP210_SVE NVTORGB_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"  //
+      STOREAR30_SVE
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p1.h, wzr, %w[width_last_y]             \n"
+      "whilelt  p2.h, wzr, %w[width_last_uv]            \n"  //
+      READP210_SVE NVTORGB_SVE STOREAR30_SVE
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                                // %[src_y]
+        [src_uv] "+r"(src_uv),                              // %[src_uv]
+        [dst_ar30] "+r"(dst_ar30),                          // %[dst_ar30]
+        [width] "+r"(width)                                 // %[width]
+      : [vl] "r"(vl),                                       // %[vl]
+        [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [nv_uv_start] "r"(nv_uv_start),                     // %[nv_uv_start]
+        [nv_uv_step] "r"(nv_uv_step),                       // %[nv_uv_step]
+        [width_last_y] "r"(width_last_y),                   // %[width_last_y]
+        [width_last_uv] "r"(width_last_uv),                 // %[width_last_uv]
+        [limit] "r"(limit)                                  // %[limit]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
 void P410ToARGBRow_SVE2(const uint16_t* src_y,
                         const uint16_t* src_uv,
                         uint8_t* dst_argb,
@@ -1979,6 +2046,57 @@ void P410ToARGBRow_SVE2(const uint16_t* src_y,
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
         [width_last_y] "r"(width_last_y)                    // %[width_last_y]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
+void P410ToAR30Row_SVE2(const uint16_t* src_y,
+                        const uint16_t* src_uv,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm("cnth %0" : "=r"(vl));
+  int width_last_y = width & (vl - 1);
+  width_last_y = width_last_y == 0 ? vl : width_last_y;
+  uint16_t limit = 0x3ff0;
+  asm volatile(
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "dup      z23.h, %w[limit]                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "ptrue    p2.s                                    \n"
+      "ptrue    p3.s                                    \n"
+      "1:                                               \n"  //
+      READP410_SVE NVTORGB_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"  //
+      STOREAR30_SVE
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p1.h, wzr, %w[width_last_y]             \n"
+      "whilelt  p2.s, wzr, %w[width_last_y]             \n"
+      "cntw     %x[vl]                                  \n"
+      "whilelt  p3.s, %w[vl], %w[width_last_y]          \n"  //
+      READP410_SVE NVTORGB_SVE STOREAR30_SVE
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                                // %[src_y]
+        [src_uv] "+r"(src_uv),                              // %[src_uv]
+        [dst_ar30] "+r"(dst_ar30),                          // %[dst_ar30]
+        [width] "+r"(width)                                 // %[width]
+      : [vl] "r"(vl),                                       // %[vl]
+        [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [width_last_y] "r"(width_last_y),                   // %[width_last_y]
+        [limit] "r"(limit)                                  // %[limit]
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 

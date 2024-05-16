@@ -2051,6 +2051,11 @@ int P010ToAR30Matrix(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_P210TOAR30ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P210ToAR30Row = P210ToAR30Row_SVE2;
+  }
+#endif
   for (y = 0; y < height; ++y) {
     P210ToAR30Row(src_y, src_uv, dst_ar30, yuvconstants, width);
     dst_ar30 += dst_stride_ar30;
@@ -2108,6 +2113,11 @@ int P210ToAR30Matrix(const uint16_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       P210ToAR30Row = P210ToAR30Row_NEON;
     }
+  }
+#endif
+#if defined(HAS_P210TOAR30ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P210ToAR30Row = P210ToAR30Row_SVE2;
   }
 #endif
   for (y = 0; y < height; ++y) {
@@ -8264,6 +8274,11 @@ static int P010ToAR30MatrixBilinear(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_P410TOAR30ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P410ToAR30Row = P410ToAR30Row_SVE2;
+  }
+#endif
 
 #ifdef HAS_SCALEUVROWUP2_BILINEAR_16_SSE41
   if (TestCpuFlag(kCpuHasSSE41)) {
@@ -8363,6 +8378,11 @@ static int P210ToAR30MatrixLinear(const uint16_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       P410ToAR30Row = P410ToAR30Row_NEON;
     }
+  }
+#endif
+#if defined(HAS_P410TOAR30ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P410ToAR30Row = P410ToAR30Row_SVE2;
   }
 #endif
 
