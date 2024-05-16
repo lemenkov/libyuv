@@ -8056,6 +8056,11 @@ static int P010ToARGBMatrixBilinear(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_P410TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P410ToARGBRow = P410ToARGBRow_SVE2;
+  }
+#endif
 
 #ifdef HAS_SCALEUVROWUP2_BILINEAR_16_SSE41
   if (TestCpuFlag(kCpuHasSSE41)) {
@@ -8155,6 +8160,11 @@ static int P210ToARGBMatrixLinear(const uint16_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       P410ToARGBRow = P410ToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_P410TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P410ToARGBRow = P410ToARGBRow_SVE2;
   }
 #endif
 
