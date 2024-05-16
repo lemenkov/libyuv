@@ -1160,21 +1160,20 @@ void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
                             uint8_t* dst,
                             int dst_width) {
   (void)src_stride;
-  asm volatile (
-      "1:                                        \n"
-      // load 16 ARGB pixels with even pixels into q0/q2, odd into q1/q3
-      "ld4         {v0.4s,v1.4s,v2.4s,v3.4s}, [%0], #64 \n"
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop
-      "mov         v2.16b, v3.16b                \n"
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "st2         {v1.4s,v2.4s}, [%1], #32      \n"  // store 8 odd pixels
-      "b.gt        1b                            \n"
-      : "+r"(src_ptr),   // %0
-        "+r"(dst),       // %1
-        "+r"(dst_width)  // %2
+  asm volatile(
+      "1:                                                      \n"
+      "ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [%[src]], #64 \n"
+      "subs        %w[width], %w[width], #8                    \n"
+      "prfm        pldl1keep, [%[src], 448]                    \n"
+      "uzp2        v0.4s, v0.4s, v1.4s                         \n"
+      "uzp2        v1.4s, v2.4s, v3.4s                         \n"
+      "st1         {v0.4s, v1.4s}, [%[dst]], #32               \n"
+      "b.gt        1b                                          \n"
+      : [src] "+r"(src_ptr),     // %[src]
+        [dst] "+r"(dst),         // %[dst]
+        [width] "+r"(dst_width)  // %[width]
       :
-      : "memory", "cc", "v0", "v1", "v2", "v3"  // Clobber List
-  );
+      : "memory", "cc", "v0", "v1", "v2", "v3");
 }
 
 void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
