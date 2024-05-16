@@ -2735,6 +2735,11 @@ int I010AlphaToARGBMatrix(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I210ALPHATOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I210AlphaToARGBRow = I210AlphaToARGBRow_SVE2;
+  }
+#endif
 #if defined(HAS_I210ALPHATOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I210AlphaToARGBRow = I210AlphaToARGBRow_Any_SSSE3;
@@ -2847,6 +2852,11 @@ int I210AlphaToARGBMatrix(const uint16_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       I210AlphaToARGBRow = I210AlphaToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_I210ALPHATOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I210AlphaToARGBRow = I210AlphaToARGBRow_SVE2;
   }
 #endif
 #if defined(HAS_I210ALPHATOARGBROW_SSSE3)
