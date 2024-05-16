@@ -1181,23 +1181,24 @@ void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
                                   uint8_t* dst_argb,
                                   int dst_width) {
   (void)src_stride;
-  asm volatile (
+  const uint8_t* src_argb1 = src_argb + 32;
+  asm volatile(
       "1:                                        \n"
-      // load 16 ARGB pixels with even pixels into q0/q2, odd into q1/q3
-      "ld4         {v0.4s,v1.4s,v2.4s,v3.4s}, [%0], #64 \n"
-      "subs        %w2, %w2, #8                  \n"  // 8 processed per loop
-
-      "urhadd      v0.16b, v0.16b, v1.16b        \n"  // rounding half add
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "urhadd      v1.16b, v2.16b, v3.16b        \n"
-      "st2         {v0.4s,v1.4s}, [%1], #32      \n"  // store 8 pixels
-      "b.gt        1b                            \n"
-      : "+r"(src_argb),  // %0
-        "+r"(dst_argb),  // %1
-        "+r"(dst_width)  // %2
+      "ld2     {v0.4s, v1.4s}, [%[src]]          \n"
+      "add     %[src], %[src], #64               \n"
+      "ld2     {v2.4s, v3.4s}, [%[src1]]         \n"
+      "add     %[src1], %[src1], #64             \n"
+      "urhadd  v0.16b, v0.16b, v1.16b            \n"
+      "urhadd  v1.16b, v2.16b, v3.16b            \n"
+      "subs    %w[width], %w[width], #8          \n"
+      "st1     {v0.16b, v1.16b}, [%[dst]], #32   \n"
+      "b.gt    1b                                \n"
+      : [src] "+r"(src_argb),    // %[src]
+        [src1] "+r"(src_argb1),  // %[src1]
+        [dst] "+r"(dst_argb),    // %[dst]
+        [width] "+r"(dst_width)  // %[width]
       :
-      : "memory", "cc", "v0", "v1", "v2", "v3"  // Clobber List
-  );
+      : "memory", "cc", "v0", "v1", "v2", "v3");
 }
 
 void ScaleARGBRowDown2Box_NEON(const uint8_t* src_ptr,
