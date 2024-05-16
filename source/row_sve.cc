@@ -1242,6 +1242,105 @@ void RAWToRGB24Row_SVE2(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
       : "cc", "memory", "z0", "z31", "p0");
 }
 
+static inline void ARGBToXYZRow_SVE2(const uint8_t* src_argb,
+                                     uint8_t* dst_xyz,
+                                     int width,
+                                     const uint8_t* indices) {
+  uint32_t vl;
+  asm("cntw %x0" : "=r"(vl));
+  uint32_t vl_mul3 = vl * 3;
+  uint32_t rem_mul3;
+  asm volatile(
+      "whilelt p1.b, wzr, %w[vl_mul3]                     \n"
+      "ld1b    {z31.b}, p1/z, [%[indices]]                \n"
+      "subs    %w[width], %w[width], %w[vl], lsl #1       \n"
+      "b.lt    2f                                         \n"
+
+      // Run bulk of computation with the same predicates to avoid predicate
+      // generation overhead. We set up p1 to only store 3/4 of a vector.
+      "ptrue   p0.s                                       \n"
+      "1:                                                 \n"
+      "ld1w    {z0.s}, p0/z, [%[src]]                     \n"
+      "ld1w    {z1.s}, p0/z, [%[src], #1, mul vl]         \n"
+      "incb    %[src], all, mul #2                        \n"
+      "tbl     z0.b, {z0.b}, z31.b                        \n"
+      "tbl     z1.b, {z1.b}, z31.b                        \n"
+      "subs    %w[width], %w[width], %w[vl], lsl #1       \n"
+      "st1b    {z0.b}, p1, [%[dst]]                       \n"
+      "add     %[dst], %[dst], %x[vl_mul3]                \n"
+      "st1b    {z1.b}, p1, [%[dst]]                       \n"
+      "add     %[dst], %[dst], %x[vl_mul3]                \n"
+      "b.ge    1b                                         \n"
+
+      "2:                                                 \n"
+      "adds    %w[width], %w[width], %w[vl], lsl #1       \n"
+      "b.eq    99f                                        \n"
+
+      // Calculate predicates for the final iteration to deal with the tail.
+      "add     %w[rem_mul3], %w[width], %w[width], lsl #1 \n"
+      "whilelt p0.s, wzr, %w[width]                       \n"
+      "whilelt p1.b, wzr, %w[rem_mul3]                    \n"
+      "whilelt p2.s, %w[vl], %w[width]                    \n"
+      "whilelt p3.b, %w[vl_mul3], %w[rem_mul3]            \n"
+      "ld1w    {z0.s}, p0/z, [%[src]]                     \n"
+      "ld1w    {z1.s}, p2/z, [%[src], #1, mul vl]         \n"
+      "tbl     z0.b, {z0.b}, z31.b                        \n"
+      "tbl     z1.b, {z1.b}, z31.b                        \n"
+      "st1b    {z0.b}, p1, [%[dst]]                       \n"
+      "add     %[dst], %[dst], %x[vl_mul3]                \n"
+      "st1b    {z1.b}, p3, [%[dst]]                       \n"
+
+      "99:                                                \n"
+      : [src] "+r"(src_argb),       // %[src]
+        [dst] "+r"(dst_xyz),        // %[dst]
+        [width] "+r"(width),        // %[width]
+        [rem_mul3] "=&r"(rem_mul3)  // %[rem_mul3]
+      : [indices] "r"(indices),     // %[indices]
+        [vl_mul3] "r"(vl_mul3),     // %[vl_mul3]
+        [vl] "r"(vl)                // %[vl]
+      : "cc", "memory", "z0", "z1", "z31", "p0", "p1", "p2", "p3");
+}
+
+static const uint8_t kARGBToRGB24RowIndices[] = {
+    0,   1,   2,   4,   5,   6,   8,   9,   10,  12,  13,  14,  16,  17,  18,
+    20,  21,  22,  24,  25,  26,  28,  29,  30,  32,  33,  34,  36,  37,  38,
+    40,  41,  42,  44,  45,  46,  48,  49,  50,  52,  53,  54,  56,  57,  58,
+    60,  61,  62,  64,  65,  66,  68,  69,  70,  72,  73,  74,  76,  77,  78,
+    80,  81,  82,  84,  85,  86,  88,  89,  90,  92,  93,  94,  96,  97,  98,
+    100, 101, 102, 104, 105, 106, 108, 109, 110, 112, 113, 114, 116, 117, 118,
+    120, 121, 122, 124, 125, 126, 128, 129, 130, 132, 133, 134, 136, 137, 138,
+    140, 141, 142, 144, 145, 146, 148, 149, 150, 152, 153, 154, 156, 157, 158,
+    160, 161, 162, 164, 165, 166, 168, 169, 170, 172, 173, 174, 176, 177, 178,
+    180, 181, 182, 184, 185, 186, 188, 189, 190, 192, 193, 194, 196, 197, 198,
+    200, 201, 202, 204, 205, 206, 208, 209, 210, 212, 213, 214, 216, 217, 218,
+    220, 221, 222, 224, 225, 226, 228, 229, 230, 232, 233, 234, 236, 237, 238,
+    240, 241, 242, 244, 245, 246, 248, 249, 250, 252, 253, 254,
+};
+
+static const uint8_t kARGBToRAWRowIndices[] = {
+    2,   1,   0,   6,   5,   4,   10,  9,   8,   14,  13,  12,  18,  17,  16,
+    22,  21,  20,  26,  25,  24,  30,  29,  28,  34,  33,  32,  38,  37,  36,
+    42,  41,  40,  46,  45,  44,  50,  49,  48,  54,  53,  52,  58,  57,  56,
+    62,  61,  60,  66,  65,  64,  70,  69,  68,  74,  73,  72,  78,  77,  76,
+    82,  81,  80,  86,  85,  84,  90,  89,  88,  94,  93,  92,  98,  97,  96,
+    102, 101, 100, 106, 105, 104, 110, 109, 108, 114, 113, 112, 118, 117, 116,
+    122, 121, 120, 126, 125, 124, 130, 129, 128, 134, 133, 132, 138, 137, 136,
+    142, 141, 140, 146, 145, 144, 150, 149, 148, 154, 153, 152, 158, 157, 156,
+    162, 161, 160, 166, 165, 164, 170, 169, 168, 174, 173, 172, 178, 177, 176,
+    182, 181, 180, 186, 185, 184, 190, 189, 188, 194, 193, 192, 198, 197, 196,
+    202, 201, 200, 206, 205, 204, 210, 209, 208, 214, 213, 212, 218, 217, 216,
+    222, 221, 220, 226, 225, 224, 230, 229, 228, 234, 233, 232, 238, 237, 236,
+    242, 241, 240, 246, 245, 244, 250, 249, 248, 254, 253, 252,
+};
+
+void ARGBToRGB24Row_SVE2(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
+  ARGBToXYZRow_SVE2(src_argb, dst_rgb, width, kARGBToRGB24RowIndices);
+}
+
+void ARGBToRAWRow_SVE2(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
+  ARGBToXYZRow_SVE2(src_argb, dst_rgb, width, kARGBToRAWRowIndices);
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

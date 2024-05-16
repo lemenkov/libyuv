@@ -1782,6 +1782,11 @@ int ARGBToRGB24(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB24ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_SVE2;
+  }
+#endif
 #if defined(HAS_ARGBTORGB24ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToRGB24Row = ARGBToRGB24Row_Any_MSA;
@@ -1867,6 +1872,11 @@ int ARGBToRAW(const uint8_t* src_argb,
     if (IS_ALIGNED(width, 8)) {
       ARGBToRAWRow = ARGBToRAWRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_ARGBTORAWROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBToRAWRow = ARGBToRAWRow_SVE2;
   }
 #endif
 #if defined(HAS_ARGBTORAWROW_MSA)

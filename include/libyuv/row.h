@@ -585,6 +585,8 @@ extern "C" {
 #define HAS_ABGRTOUVJROW_SVE2
 #define HAS_ABGRTOUVROW_SVE2
 #define HAS_ARGB1555TOARGBROW_SVE2
+#define HAS_ARGBTORAWROW_SVE2
+#define HAS_ARGBTORGB24ROW_SVE2
 #define HAS_ARGBTORGB565DITHERROW_SVE2
 #define HAS_ARGBTORGB565ROW_SVE2
 #define HAS_ARGBTOUVJROW_SVE2
@@ -3716,7 +3718,11 @@ void ARGBToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToRGB24Row_NEON(const uint8_t* src_argb,
                          uint8_t* dst_rgb24,
                          int width);
+void ARGBToRGB24Row_SVE2(const uint8_t* src_argb,
+                         uint8_t* dst_rgb24,
+                         int width);
 void ARGBToRAWRow_NEON(const uint8_t* src_argb, uint8_t* dst_raw, int width);
+void ARGBToRAWRow_SVE2(const uint8_t* src_argb, uint8_t* dst_raw, int width);
 void ARGBToRGB565Row_NEON(const uint8_t* src_argb,
                           uint8_t* dst_rgb565,
                           int width);
