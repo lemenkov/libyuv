@@ -1915,6 +1915,11 @@ int P010ToARGBMatrix(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_P210TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P210ToARGBRow = P210ToARGBRow_SVE2;
+  }
+#endif
   for (y = 0; y < height; ++y) {
     P210ToARGBRow(src_y, src_uv, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
@@ -1972,6 +1977,11 @@ int P210ToARGBMatrix(const uint16_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       P210ToARGBRow = P210ToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_P210TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    P210ToARGBRow = P210ToARGBRow_SVE2;
   }
 #endif
   for (y = 0; y < height; ++y) {
