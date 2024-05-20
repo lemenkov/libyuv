@@ -29,6 +29,7 @@ static const int kCpuHasNeonDotProd = 0x10;
 static const int kCpuHasNeonI8MM = 0x20;
 static const int kCpuHasSVE = 0x40;
 static const int kCpuHasSVE2 = 0x80;
+static const int kCpuHasSME = 0x100;
 
 // These flags are only valid on x86 processors.
 static const int kCpuHasX86 = 0x8;

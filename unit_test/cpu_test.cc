@@ -289,6 +289,10 @@ TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
 
   // Values taken from a Neoverse N2 machine.
   EXPECT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x2f3ffU));
+
+  // Check for SME feature detection.
+  expected |= kCpuHasSME;
+  EXPECT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x82f3ffU));
 }
 #endif
 

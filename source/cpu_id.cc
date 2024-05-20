@@ -186,6 +186,7 @@ LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
 #define YUV_AARCH64_HWCAP_SVE (1 << 22)
 #define YUV_AARCH64_HWCAP2_SVE2 (1 << 1)
 #define YUV_AARCH64_HWCAP2_I8MM (1 << 13)
+#define YUV_AARCH64_HWCAP2_SME (1 << 23)
 
 // For AArch64, but public to allow testing on any CPU.
 LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
@@ -207,6 +208,9 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
         features |= kCpuHasSVE;
         if (hwcap2 & YUV_AARCH64_HWCAP2_SVE2) {
           features |= kCpuHasSVE2;
+          if (hwcap2 & YUV_AARCH64_HWCAP2_SME) {
+            features |= kCpuHasSME;
+          }
         }
       }
     }
