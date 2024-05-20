@@ -554,6 +554,7 @@ extern "C" {
 #define HAS_DIVIDEROW_16_SVE2
 #define HAS_HALFFLOATROW_SVE2
 #define HAS_I210ALPHATOARGBROW_SVE2
+#define HAS_I210TOAR30ROW_SVE2
 #define HAS_I210TOARGBROW_SVE2
 #define HAS_I212TOAR30ROW_SVE2
 #define HAS_I212TOARGBROW_SVE2
@@ -1124,6 +1125,12 @@ void I410ToARGBRow_NEON(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I210ToAR30Row_NEON(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I210ToAR30Row_SVE2(const uint16_t* src_y,
                         const uint16_t* src_u,
                         const uint16_t* src_v,
                         uint8_t* rgb_buf,

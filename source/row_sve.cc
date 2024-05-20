@@ -1962,6 +1962,53 @@ void I210AlphaToARGBRow_SVE2(const uint16_t* src_y,
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 
+void I210ToAR30Row_SVE2(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm("cnth %0" : "=r"(vl));
+  int width_last_y = width & (vl - 1);
+  width_last_y = width_last_y == 0 ? vl : width_last_y;
+  uint16_t limit = 0x3ff0;
+  asm volatile(
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "dup      z23.h, %w[limit]                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "1:                                               \n"  //
+      READI210_SVE I4XXTORGB_SVE STOREAR30_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p1.h, wzr, %w[width_last_y]             \n"  //
+      READI210_SVE I4XXTORGB_SVE STOREAR30_SVE
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                                // %[src_y]
+        [src_u] "+r"(src_u),                                // %[src_u]
+        [src_v] "+r"(src_v),                                // %[src_v]
+        [dst_ar30] "+r"(dst_ar30),                          // %[dst_ar30]
+        [width] "+r"(width)                                 // %[width]
+      : [vl] "r"(vl),                                       // %[vl]
+        [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [width_last_y] "r"(width_last_y),                   // %[width_last_y]
+        [limit] "r"(limit)                                  // %[limit]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
 // P210 has 10 bits in msb of 16 bit NV12 style layout.
 void P210ToARGBRow_SVE2(const uint16_t* src_y,
                         const uint16_t* src_uv,
