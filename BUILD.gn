@@ -38,6 +38,9 @@ config("libyuv_config") {
   if (!libyuv_use_sve) {
     defines += [ "LIBYUV_DISABLE_SVE" ]
   }
+  if (!libyuv_use_sme) {
+    defines += [ "LIBYUV_DISABLE_SME" ]
+  }
   if (libyuv_disable_rvv) {
     defines += [ "LIBYUV_DISABLE_RVV" ]
   }
@@ -270,6 +273,31 @@ if (libyuv_use_sve) {
 
     # SVE2 is an Armv9-A feature.
     cflags = [ "-march=armv9-a+sve2" ]
+  }
+}
+
+if (libyuv_use_sme) {
+  static_library("libyuv_sme") {
+    sources = [
+      "source/rotate_sme.cc",
+    ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+
+    # Always enable optimization for Release and NaCl builds (to workaround
+    # crbug.com/538243).
+    if (!is_debug) {
+      configs -= [ "//build/config/compiler:default_optimization" ]
+
+      # Enable optimize for speed (-O2) over size (-Os).
+      # TODO(fbarchard): Consider optimize_speed which is O3.
+      configs += [ "//build/config/compiler:optimize_max" ]
+    }
+
+    # SME is an Armv9-A feature.
+    cflags = [ "-march=armv9-a+sme" ]
   }
 }
 

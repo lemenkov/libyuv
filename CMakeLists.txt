@@ -110,6 +110,12 @@ if(NOT MSVC)
       ${ly_src_dir}/row_sve.cc)
     TARGET_COMPILE_OPTIONS(${ly_lib_name}_sve PRIVATE -march=armv9-a+sve2)
     LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
+
+    # Enable AArch64 SME kernels.
+    ADD_LIBRARY(${ly_lib_name}_sme OBJECT
+      ${ly_src_dir}/rotate_sme.cc)
+    TARGET_COMPILE_OPTIONS(${ly_lib_name}_sme PRIVATE -march=armv9-a+sme)
+    LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
   endif()
 endif()
 

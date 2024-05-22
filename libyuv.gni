@@ -19,6 +19,7 @@ declare_args() {
       current_cpu == "arm64" ||
       (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon))
   libyuv_use_sve = current_cpu == "arm64"
+  libyuv_use_sme = current_cpu == "arm64"
   libyuv_use_msa =
       (current_cpu == "mips64el" || current_cpu == "mipsel") && mips_use_msa
   libyuv_use_mmi =
