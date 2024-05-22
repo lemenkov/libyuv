@@ -18,7 +18,7 @@ Neon is available and mandatory in AArch64 from the base Armv8.0-A
 architecture. Neon can be used even if later extensions like the Scalable
 Vector Extension (SVE) are also present. The exception to this is if the CPU is
 currently operating in streaming mode as introduced by the Scalable Matrix
-Extension, which is not currently used in libyuv.
+Extension, described later.
 
 There are also a couple of architecture extensions present for Neon that we can
 take advantage of in libyuv:
@@ -63,6 +63,27 @@ the I8MM extension is not mandatory since it only becomes mandatory from
 Armv8.6-A or Armv9.1-A, however there is no micro-architecture at time of
 writing where SVE2 is implemented without all previously-mentioned features
 also being implemented.
+
+### The Scalable Matrix Extension (SME)
+
+The Scalable Matrix Extension (SME) is an optional feature introduced from
+Armv9.2-A. SME exists alongside SVE and introduces new execution modes for
+applications performing extended periods of data processing. In particular SME
+introduces a few new components of interest:
+
+* Access to a scalable two-dimensional ZA tile register and new instructions to
+  interact with rows and columns of the ZA tiles. This can be useful for data
+  transformations like transposes.
+
+* A streaming SVE (SSVE) mode, during which the SVE vector length matches the
+  ZA tile register width. In typical systems where the ZA tile register width
+  is longer than the core SVE vector length, SSVE processing allows for faster
+  data processing, even if the ZA tile register is unused.  While the CPU is
+  executing in streaming mode, Neon instructions are unavailable.
+
+* When both SSVE and the ZA tile registers are enabled there are additional
+  outer-product instructions accumulating into a whole ZA tile, suitable for
+  accelerating matrix arithmetic. This is likely less useful in libyuv.
 
 ## Linux and Android
 
