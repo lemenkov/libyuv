@@ -273,6 +273,11 @@ void SplitTransposeUV(const uint8_t* src,
                       int width,
                       int height) {
   int i = height;
+#if defined(HAS_TRANSPOSEUVWXH_SME)
+  void (*TransposeUVWxH)(const uint8_t* src, int src_stride, uint8_t* dst_a,
+                         int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
+                         int width, int height) = TransposeUVWxH_C;
+#endif
 #if defined(HAS_TRANSPOSEUVWX16_MSA)
   void (*TransposeUVWx16)(const uint8_t* src, int src_stride, uint8_t* dst_a,
                           int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
@@ -310,6 +315,11 @@ void SplitTransposeUV(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_TRANSPOSEUVWXH_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    TransposeUVWxH = TransposeUVWxH_SME;
+  }
+#endif
 #if defined(HAS_TRANSPOSEUVWX8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     TransposeUVWx8 = TransposeUVWx8_Any_SSE2;
@@ -320,6 +330,13 @@ void SplitTransposeUV(const uint8_t* src,
 #endif
 #endif /* defined(HAS_TRANSPOSEUVWX16_MSA) */
 
+#if defined(HAS_TRANSPOSEUVWXH_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    TransposeUVWxH(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                   width, i);
+    return;
+  }
+#endif
 #if defined(HAS_TRANSPOSEUVWX16_MSA)
   // Work through the source in 8x8 tiles.
   while (i >= 16) {

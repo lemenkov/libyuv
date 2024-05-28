@@ -76,6 +76,7 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__)
 #define HAS_TRANSPOSEWXH_SME
+#define HAS_TRANSPOSEUVWXH_SME
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -210,6 +211,14 @@ void TransposeUVWx8_NEON(const uint8_t* src,
                          uint8_t* dst_b,
                          int dst_stride_b,
                          int width);
+void TransposeUVWxH_SME(const uint8_t* src,
+                        int src_stride,
+                        uint8_t* dst_a,
+                        int dst_stride_a,
+                        uint8_t* dst_b,
+                        int dst_stride_b,
+                        int width,
+                        int height);
 void TransposeUVWx16_MSA(const uint8_t* src,
                          int src_stride,
                          uint8_t* dst_a,
