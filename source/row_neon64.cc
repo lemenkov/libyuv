@@ -313,10 +313,7 @@ void I210ToARGBRow_NEON(const uint16_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
-  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
-  asm volatile(
-      YUVTORGB_SETUP
+  asm(YUVTORGB_SETUP
       "movi        v19.8b, #255             \n"
       "1:                                   \n" READYUV210 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8 \n"
@@ -338,10 +335,7 @@ void I410ToARGBRow_NEON(const uint16_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
-  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
-  asm volatile(
-      YUVTORGB_SETUP
+  asm(YUVTORGB_SETUP
       "movi        v19.8b, #255             \n"
       "1:                                   \n" READYUV410 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8 \n"
@@ -414,10 +408,7 @@ void I410AlphaToARGBRow_NEON(const uint16_t* src_y,
                              uint8_t* dst_argb,
                              const struct YuvConstants* yuvconstants,
                              int width) {
-  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
-  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
-  asm volatile(
-      YUVTORGB_SETUP
+  asm(YUVTORGB_SETUP
       "1:                                     \n"
       "ld1        {v19.16b}, [%[src_a]], #16  \n" READYUV410
       "uqshrn     v19.8b, v19.8h, #2          \n" NVTORGB RGBTORGB8
@@ -442,10 +433,7 @@ void I210AlphaToARGBRow_NEON(const uint16_t* src_y,
                              uint8_t* dst_argb,
                              const struct YuvConstants* yuvconstants,
                              int width) {
-  const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
-  const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
-  asm volatile(
-      YUVTORGB_SETUP
+  asm(YUVTORGB_SETUP
       "1:                                        \n"
       "ld1         {v19.16b}, [%[src_a]], #16    \n" READYUV210
       "uqshrn      v19.8b, v19.8h, #2            \n" NVTORGB RGBTORGB8
