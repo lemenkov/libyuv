@@ -182,7 +182,9 @@ extern "C" {
 #define HAS_SCALEADDROW_RVV
 // TODO: Test ScaleARGBRowDownEven_RVV and enable it
 // #define HAS_SCALEARGBROWDOWNEVEN_RVV
+#if defined(__riscv_zve64x)
 #define HAS_SCALEUVROWDOWN4_RVV
+#endif
 #define HAS_SCALEUVROWDOWNEVEN_RVV
 #define HAS_SCALEARGBROWDOWN2_RVV
 #define HAS_SCALEARGBROWDOWN2BOX_RVV

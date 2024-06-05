@@ -144,6 +144,9 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef __riscv_v_intrinsic
   printf("__riscv_v_intrinsic %d\n", __riscv_v_intrinsic);
 #endif
+#ifdef __riscv_zve64x
+  printf("__riscv_zve64x %d\n", __riscv_zve64x);
+#endif
 #ifdef __APPLE__
   printf("__APPLE__ %d\n", __APPLE__);
 #endif
