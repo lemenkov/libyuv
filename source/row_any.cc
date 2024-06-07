@@ -150,7 +150,7 @@ ANY41CT(I210AlphaToARGBRow_Any_NEON,
         uint16_t,
         2,
         4,
-        7);
+        7)
 #endif
 #ifdef HAS_I410ALPHATOARGBROW_NEON
 ANY41CT(I410AlphaToARGBRow_Any_NEON,
@@ -160,7 +160,7 @@ ANY41CT(I410AlphaToARGBRow_Any_NEON,
         uint16_t,
         2,
         4,
-        7);
+        7)
 #endif
 
 #ifdef HAS_I210ALPHATOARGBROW_SSSE3
