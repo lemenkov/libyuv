@@ -1161,6 +1161,11 @@ int I012ToAR30Matrix(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I212TOAR30ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I212ToAR30Row = I212ToAR30Row_SVE2;
+  }
+#endif
   for (y = 0; y < height; ++y) {
     I212ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
     dst_ar30 += dst_stride_ar30;
