@@ -1629,6 +1629,11 @@ int I012ToARGBMatrix(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I212TOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I212ToARGBRow = I212ToARGBRow_SVE2;
+  }
+#endif
   for (y = 0; y < height; ++y) {
     I212ToARGBRow(src_y, src_u, src_v, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;

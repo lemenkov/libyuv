@@ -95,6 +95,23 @@ extern "C" {
   "uqshrnb    z1.b, z1.h, #2                 \n" \
   "uqshrnb    z2.b, z2.h, #2                 \n"
 
+#define READI212_SVE                             \
+  "ld1h       {z3.h}, p1/z, [%[src_y]]       \n" \
+  "lsl        z0.h, z3.h, #4                 \n" \
+  "usra       z0.h, z3.h, #8                 \n" \
+  "ld1h       {z1.s}, p1/z, [%[src_u]]       \n" \
+  "ld1h       {z2.s}, p1/z, [%[src_v]]       \n" \
+  "incb       %[src_y]                       \n" \
+  "inch       %[src_u]                       \n" \
+  "inch       %[src_v]                       \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "prfm       pldl1keep, [%[src_u], 128]     \n" \
+  "prfm       pldl1keep, [%[src_v], 128]     \n" \
+  "trn1       z1.h, z1.h, z1.h               \n" \
+  "trn1       z2.h, z2.h, z2.h               \n" \
+  "uqshrnb    z1.b, z1.h, #4                 \n" \
+  "uqshrnb    z2.b, z2.h, #4                 \n"
+
 #define READP210_SVE                             \
   "ld1h       {z0.h}, p1/z, [%[src_y]]       \n" \
   "ld1h       {z1.h}, p2/z, [%[src_uv]]      \n" \
@@ -2097,6 +2114,54 @@ void P410ToAR30Row_SVE2(const uint16_t* src_y,
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [limit] "r"(limit)                                  // %[limit]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
+void I212ToARGBRow_SVE2(const uint16_t* src_y,
+                        const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  uint64_t vl;
+  asm("cnth %0" : "=r"(vl));
+  int width_last_y = width & (vl - 1);
+  width_last_y = width_last_y == 0 ? vl : width_last_y;
+  asm volatile(
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // A
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "1:                                               \n"  //
+      READI212_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p1.h, wzr, %w[width_last_y]             \n"  //
+      READI212_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                                // %[src_y]
+        [src_u] "+r"(src_u),                                // %[src_u]
+        [src_v] "+r"(src_v),                                // %[src_v]
+        [dst_argb] "+r"(dst_argb),                          // %[dst_argb]
+        [width] "+r"(width)                                 // %[width]
+      : [vl] "r"(vl),                                       // %[vl]
+        [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [width_last_y] "r"(width_last_y)                    // %[width_last_y]
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 
