@@ -73,6 +73,23 @@ int TestCpuEnv(int cpu_info) {
     cpu_info &= ~libyuv::kCpuHasNEON;
   }
 #endif
+#if defined(__aarch64__)
+  if (TestEnv("LIBYUV_DISABLE_NEON_DOTPROD")) {
+    cpu_info &= ~libyuv::kCpuHasNeonDotProd;
+  }
+  if (TestEnv("LIBYUV_DISABLE_NEON_I8MM")) {
+    cpu_info &= ~libyuv::kCpuHasNeonI8MM;
+  }
+  if (TestEnv("LIBYUV_DISABLE_SVE")) {
+    cpu_info &= ~libyuv::kCpuHasSVE;
+  }
+  if (TestEnv("LIBYUV_DISABLE_SVE2")) {
+    cpu_info &= ~libyuv::kCpuHasSVE2;
+  }
+  if (TestEnv("LIBYUV_DISABLE_SME")) {
+    cpu_info &= ~libyuv::kCpuHasSME;
+  }
+#endif
 #if defined(__mips__) && defined(__linux__)
   if (TestEnv("LIBYUV_DISABLE_MSA")) {
     cpu_info &= ~libyuv::kCpuHasMSA;
