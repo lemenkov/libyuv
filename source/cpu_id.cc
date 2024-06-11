@@ -256,6 +256,9 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
     features |= kCpuHasNeonDotProd;
     if (have_feature("hw.optional.arm.FEAT_I8MM")) {
       features |= kCpuHasNeonI8MM;
+      if (have_feature("hw.optional.arm.FEAT_SME2")) {
+        features |= kCpuHasSME;
+      }
     }
   }
   // No SVE feature detection available here at time of writing.
