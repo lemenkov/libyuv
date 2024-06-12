@@ -232,16 +232,6 @@ if (libyuv_use_neon) {
 
     public_configs = [ ":libyuv_config" ]
 
-    # Always enable optimization for Release and NaCl builds (to workaround
-    # crbug.com/538243).
-    if (!is_debug) {
-      configs -= [ "//build/config/compiler:default_optimization" ]
-
-      # Enable optimize for speed (-O2) over size (-Os).
-      # TODO(fbarchard): Consider optimize_speed which is O3.
-      configs += [ "//build/config/compiler:optimize_max" ]
-    }
-
     if (current_cpu == "arm64") {
       cflags = [ "-march=armv8-a+dotprod+i8mm" ]
     } else {
@@ -261,16 +251,6 @@ if (libyuv_use_sve) {
 
     public_configs = [ ":libyuv_config" ]
 
-    # Always enable optimization for Release and NaCl builds (to workaround
-    # crbug.com/538243).
-    if (!is_debug) {
-      configs -= [ "//build/config/compiler:default_optimization" ]
-
-      # Enable optimize for speed (-O2) over size (-Os).
-      # TODO(fbarchard): Consider optimize_speed which is O3.
-      configs += [ "//build/config/compiler:optimize_max" ]
-    }
-
     # SVE2 is an Armv9-A feature.
     cflags = [ "-march=armv9-a+sve2" ]
   }
@@ -285,16 +265,6 @@ if (libyuv_use_sme) {
     deps = [ ":libyuv_internal" ]
 
     public_configs = [ ":libyuv_config" ]
-
-    # Always enable optimization for Release and NaCl builds (to workaround
-    # crbug.com/538243).
-    if (!is_debug) {
-      configs -= [ "//build/config/compiler:default_optimization" ]
-
-      # Enable optimize for speed (-O2) over size (-Os).
-      # TODO(fbarchard): Consider optimize_speed which is O3.
-      configs += [ "//build/config/compiler:optimize_max" ]
-    }
 
     # SME is an Armv9-A feature.
     cflags = [ "-march=armv9-a+sme" ]
