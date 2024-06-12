@@ -569,6 +569,12 @@ extern "C" {
 #define HAS_YUY2TOARGBROW_SVE2
 #endif
 
+// The following are available on AArch64 SME platforms:
+#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
+    defined(__aarch64__)
+#define HAS_I422TOARGBROW_SME
+#endif
+
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_GAUSSCOL_F32_NEON
@@ -1120,6 +1126,12 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToARGBRow_SME(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I422ToAR30Row_NEON(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,

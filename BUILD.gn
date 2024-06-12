@@ -260,7 +260,10 @@ if (libyuv_use_sve) {
 
 if (libyuv_use_sme) {
   static_library("libyuv_sme") {
-    sources = [ "source/rotate_sme.cc" ]
+    sources = [
+      "source/rotate_sme.cc",
+      "source/row_sme.cc",
+    ]
 
     deps = [ ":libyuv_internal" ]
 

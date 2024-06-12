@@ -706,6 +706,11 @@ static int ScaleYUVToARGBBilinearUp(int src_width,
     I422ToARGBRow = I422ToARGBRow_SVE2;
   }
 #endif
+#if defined(HAS_I422TOARGBROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    I422ToARGBRow = I422ToARGBRow_SME;
+  }
+#endif
 #if defined(HAS_I422TOARGBROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     I422ToARGBRow = I422ToARGBRow_Any_MSA;
