@@ -497,7 +497,6 @@ void ARGBToRAWRow_RVV(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
     vuint8m2_t v_b = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 0);
     vuint8m2_t v_g = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 1);
     vuint8m2_t v_r = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 2);
-    vuint8m2_t v_a = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 3);
     vuint8m2x3_t v_dst_bgr = __riscv_vcreate_v_u8m2x3(v_r, v_g, v_b);
     __riscv_vsseg3e8_v_u8m2x3(dst_raw, v_dst_bgr, vl);
     w -= vl;
@@ -2101,7 +2100,6 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
     vuint8m2_t v_b = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 0);
     vuint8m2_t v_g = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 1);
     vuint8m2_t v_r = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 2);
-    vuint8m2_t v_a = __riscv_vget_v_u8m2x4_u8m2(v_src_argb, 3);
     v_y_u16 = __riscv_vwmulu_vv_u16m4(v_r, v_ry, vl);
     v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_gy, v_g, vl);
     v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_by, v_b, vl);
@@ -2191,7 +2189,6 @@ void RGBAToYMatrixRow_RVV(const uint8_t* src_rgba,
     vuint16m4_t v_y_u16;
     size_t vl = __riscv_vsetvl_e8m2(w);
     vuint8m2x4_t v_src_rgba = __riscv_vlseg4e8_v_u8m2x4(src_rgba, vl);
-    vuint8m2_t v_a = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 0);
     vuint8m2_t v_b = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 1);
     vuint8m2_t v_g = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 2);
     vuint8m2_t v_r = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 3);
