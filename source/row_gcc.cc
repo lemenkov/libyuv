@@ -1090,7 +1090,7 @@ static const uvec8 kShuffleARGBToAB64Hi = {10, 10, 9,  9,  8,  8,  11, 11,
 void ARGBToAR64Row_SSSE3(const uint8_t* src_argb,
                          uint16_t* dst_ar64,
                          int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqa      %%xmm0,%%xmm1                 \n"
@@ -1137,7 +1137,7 @@ void ARGBToAB64Row_SSSE3(const uint8_t* src_argb,
 void AR64ToARGBRow_SSSE3(const uint16_t* src_ar64,
                          uint8_t* dst_argb,
                          int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -1186,7 +1186,7 @@ void AB64ToARGBRow_SSSE3(const uint16_t* src_ab64,
 void ARGBToAR64Row_AVX2(const uint8_t* src_argb,
                         uint16_t* dst_ar64,
                         int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
@@ -1239,7 +1239,7 @@ void ARGBToAB64Row_AVX2(const uint8_t* src_argb,
 void AR64ToARGBRow_AVX2(const uint16_t* src_ar64,
                         uint8_t* dst_argb,
                         int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
@@ -5428,7 +5428,7 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
                        uint8_t* dst_g,
                        uint8_t* dst_b,
                        int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -5502,7 +5502,7 @@ void MergeRGBRow_SSSE3(const uint8_t* src_r,
                        const uint8_t* src_b,
                        uint8_t* dst_rgb,
                        int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      (%1),%%xmm1                   \n"
@@ -5598,7 +5598,7 @@ void MergeXRGBRow_SSE2(const uint8_t* src_r,
                        const uint8_t* src_b,
                        uint8_t* dst_argb,
                        int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
 
       "movq        (%2),%%xmm0                   \n"  // B
@@ -5776,7 +5776,7 @@ void SplitXRGBRow_SSE2(const uint8_t* src_argb,
                        uint8_t* dst_g,
                        uint8_t* dst_b,
                        int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
 
       "movdqu      (%0),%%xmm0                   \n"  // 00-0F
@@ -6350,7 +6350,7 @@ void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width) {
 
 #ifdef HAS_COPYROW_AVX
 void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
@@ -6451,7 +6451,7 @@ void ARGBCopyAlphaRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 void ARGBExtractAlphaRow_SSE2(const uint8_t* src_argb,
                               uint8_t* dst_a,
                               int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0), %%xmm0                  \n"
       "movdqu      0x10(%0), %%xmm1              \n"
@@ -6642,7 +6642,7 @@ void YUY2ToNVUVRow_SSE2(const uint8_t* src_yuy2,
                         int stride_yuy2,
                         uint8_t* dst_uv,
                         int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -6741,7 +6741,7 @@ void YUY2ToUV422Row_SSE2(const uint8_t* src_yuy2,
 }
 
 void UYVYToYRow_SSE2(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -6867,7 +6867,7 @@ void YUY2ToNVUVRow_AVX2(const uint8_t* src_yuy2,
                         int stride_yuy2,
                         uint8_t* dst_uv,
                         int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
@@ -6970,7 +6970,7 @@ void YUY2ToUV422Row_AVX2(const uint8_t* src_yuy2,
 }
 
 void UYVYToYRow_AVX2(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
-  asm volatile (LABELALIGN
+  asm volatile (
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
