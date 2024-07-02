@@ -27,7 +27,7 @@ void TransposeWx8_NEON(const uint8_t* src,
                        int dst_stride,
                        int width) {
   const uint8_t* temp;
-  asm(
+  asm volatile (
       // loops are on blocks of 8. loop will stop when
       // counter gets to or below 0. starting the counter
       // at w-8 allow for this
@@ -95,7 +95,7 @@ void TransposeUVWx8_NEON(const uint8_t* src,
                          int dst_stride_b,
                          int width) {
   const uint8_t* temp;
-  asm(
+  asm volatile (
       // loops are on blocks of 8. loop will stop when
       // counter gets to or below 0. starting the counter
       // at w-8 allow for this
@@ -184,7 +184,7 @@ void Transpose4x4_32_NEON(const uint8_t* src,
   uint8_t* dst1 = dst + dst_stride;
   uint8_t* dst2 = dst1 + dst_stride;
   uint8_t* dst3 = dst2 + dst_stride;
-  asm volatile(
+  asm volatile (
       // Main loop transpose 4x4.  Read a column, write a row.
       "1:                                        \n"
       "vld4.32     {d0[0], d2[0], d4[0], d6[0]}, [%0], %9 \n"

@@ -193,7 +193,7 @@ void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
                         uint8_t* dst_ptr,
                         int dst_width) {
   (void)src_stride;
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
@@ -472,7 +472,7 @@ void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
         "m"(kShuf1),  // %1
         "m"(kShuf2)   // %2
   );
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm2               \n"
@@ -515,7 +515,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kMadd11),  // %1
         "m"(kRound34)  // %2
   );
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm6                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm7          \n"
@@ -578,7 +578,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kRound34)  // %2
   );
 
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm6                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm7          \n"
@@ -667,7 +667,7 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kShufAb2),  // %2
         "m"(kScaleAb2)  // %3
   );
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm1          \n"
@@ -708,7 +708,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kShufAc3),   // %1
         "m"(kScaleAc33)  // %2
   );
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm6          \n"
@@ -821,7 +821,7 @@ void ScaleRowUp2_Bilinear_SSE2(const uint8_t* src_ptr,
                                uint8_t* dst_ptr,
                                ptrdiff_t dst_stride,
                                int dst_width) {
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "pxor        %%xmm0,%%xmm0                 \n"  // 0
       // above line
@@ -1900,7 +1900,7 @@ void ScaleColsUp2_SSE2(uint8_t* dst_ptr,
                        int dx) {
   (void)x;
   (void)dx;
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%1),%%xmm0                   \n"
       "lea         0x10(%1),%1                   \n"
@@ -1925,7 +1925,7 @@ void ScaleARGBRowDown2_SSE2(const uint8_t* src_argb,
                             uint8_t* dst_argb,
                             int dst_width) {
   (void)src_stride;
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -1947,7 +1947,7 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8_t* src_argb,
                                   uint8_t* dst_argb,
                                   int dst_width) {
   (void)src_stride;
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -1971,7 +1971,7 @@ void ScaleARGBRowDown2Box_SSE2(const uint8_t* src_argb,
                                ptrdiff_t src_stride,
                                uint8_t* dst_argb,
                                int dst_width) {
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
@@ -2153,7 +2153,7 @@ void ScaleARGBColsUp2_SSE2(uint8_t* dst_argb,
                            int dx) {
   (void)x;
   (void)dx;
-  asm(LABELALIGN
+  asm volatile (LABELALIGN
       "1:                                        \n"
       "movdqu      (%1),%%xmm0                   \n"
       "lea         0x10(%1),%1                   \n"

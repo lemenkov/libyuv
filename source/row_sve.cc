@@ -139,7 +139,8 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm("cnth     %[vl]                                   \n"
+  asm volatile (
+      "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n" /* A */
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -181,7 +182,8 @@ void I400ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm("cnth     %[vl]                                   \n"
+  asm volatile (
+      "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n"
       "dup      z19.b, #255                             \n"  // A
       YUVTORGB_SVE_SETUP
@@ -229,7 +231,8 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm("cnth     %[vl]                                   \n"
+  asm volatile (
+      "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n" /* A */
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -273,7 +276,8 @@ void I422ToRGBARow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm("cnth     %[vl]                                   \n"
+  asm volatile (
+      "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n"  // A
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -318,7 +322,8 @@ void I444AlphaToARGBRow_SVE2(const uint8_t* src_y,
                              const struct YuvConstants* yuvconstants,
                              int width) {
   uint64_t vl;
-  asm("cnth     %[vl]                                   \n"
+  asm volatile (
+      "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -366,7 +371,8 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
                              const struct YuvConstants* yuvconstants,
                              int width) {
   uint64_t vl;
-  asm("cnth     %[vl]                                   \n"
+  asm volatile (
+      "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -416,11 +422,13 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
                                     uint32_t nv_v_start,
                                     uint32_t nv_v_step) {
   uint64_t vl;
-  asm("cnth %0" : "=r"(vl));
+  asm volatile (
+      "cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   width_last_y = width_last_y == 0 ? vl : width_last_y;
   int width_last_uv = width_last_y + (width_last_y & 1);
-  asm("ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+  asm volatile (
+      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
       "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
       "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
       "dup      z19.b, #255                             \n"  // A
@@ -534,7 +542,7 @@ void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
                             const int16_t* uvconstants) {
   const uint8_t* src_argb_1 = src_argb + src_stride_argb;
   uint64_t vl;
-  asm volatile(
+  asm volatile (
       "ptrue    p0.b                                \n"
       "ld1rd    {z24.d}, p0/z, [%[uvconstants]]     \n"
       "ld1rd    {z25.d}, p0/z, [%[uvconstants], #8] \n"
@@ -746,7 +754,8 @@ void ARGBToRGB565Row_SVE2(const uint8_t* src_argb,
   unsigned bsl_mask = 0x7e0;
   uint64_t vl;
   width *= 2;
-  asm("mov     z3.h, #3                     \n"
+  asm volatile (
+      "mov     z3.h, #3                     \n"
       "dup     z4.h, %w[bsl_mask]           \n"
 
       "cntb    %[vl]                        \n"
@@ -787,7 +796,8 @@ void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
   unsigned bsl_mask = 0x7e0;
   uint64_t vl;
   width *= 2;
-  asm("mov     z3.h, #3                     \n"
+  asm volatile (
+      "mov     z3.h, #3                     \n"
       "dup     z4.h, %w[bsl_mask]           \n"
       "dup     z2.s, %w[dither4]            \n"
       "zip1    z2.b, z2.b, z2.b             \n"
@@ -844,7 +854,8 @@ void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
                             int width) {
   uint64_t vl;
-  asm("mov     z4.h, #0x0300                           \n"
+  asm volatile (
+      "mov     z4.h, #0x0300                           \n"
       "ptrue   p0.b                                    \n"
 
       "cnth    %x[vl]                                  \n"
@@ -912,7 +923,8 @@ void AYUVToUVRow_SVE2(const uint8_t* src_ayuv,
   // Output a row of UV values, filtering 2x2 rows of AYUV.
   const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
   int vl;
-  asm("cntb    %x[vl]                            \n"
+  asm volatile (
+      "cntb    %x[vl]                            \n"
       "subs    %w[width], %w[width], %w[vl]      \n"
       "b.lt    2f                                \n"
 
@@ -950,7 +962,8 @@ void AYUVToVURow_SVE2(const uint8_t* src_ayuv,
   // Output a row of VU values, filtering 2x2 rows of AYUV.
   const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
   int vl;
-  asm("cntb    %x[vl]                            \n"
+  asm volatile (
+      "cntb    %x[vl]                            \n"
       "cmp     %w[width], %w[vl]                 \n"
       "subs    %w[width], %w[width], %w[vl]      \n"
       "b.lt    2f                                \n"
@@ -990,10 +1003,12 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
   uint32_t nv_v_start = 0x0003'0003U;
   uint32_t nv_v_step = 0x0004'0004U;
   uint64_t vl;
-  asm("cnth %0" : "=r"(vl));
+  asm volatile (
+      "cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   int width_last_uv = width_last_y + (width_last_y & 1);
-  asm("ptrue    p0.b                                    \n"
+  asm volatile (
+      "ptrue    p0.b                                    \n"
       "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
       "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
       "dup      z19.b, #255                             \n"  // A
@@ -1047,10 +1062,12 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
   uint32_t nv_v_start = 0x0002'0002U;
   uint32_t nv_v_step = 0x0004'0004U;
   uint64_t vl;
-  asm("cnth %0" : "=r"(vl));
+  asm volatile (
+      "cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   int width_last_uv = width_last_y + (width_last_y & 1);
-  asm("ptrue    p0.b                                    \n"
+  asm volatile (
+      "ptrue    p0.b                                    \n"
       "index    z22.s, %w[nv_u_start], %w[nv_u_step]    \n"
       "index    z23.s, %w[nv_v_start], %w[nv_v_step]    \n"
       "dup      z19.b, #255                             \n"  // A

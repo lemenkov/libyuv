@@ -2037,7 +2037,7 @@ static void ARGBToYMatrixRow_LASX(const uint8_t* src_argb,
                                   int width,
                                   const struct RgbConstants* rgbconstants) {
   int32_t shuff[8] = {0, 4, 1, 5, 2, 6, 3, 7};
-  asm volatile(
+  asm volatile (
       "xvldrepl.b      $xr0,  %3,    0             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr1,  %3,    1             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr2,  %3,    2             \n\t"  // load rgbconstants
@@ -2099,7 +2099,7 @@ static void RGBAToYMatrixRow_LASX(const uint8_t* src_rgba,
                                   int width,
                                   const struct RgbConstants* rgbconstants) {
   int32_t shuff[8] = {0, 4, 1, 5, 2, 6, 3, 7};
-  asm volatile(
+  asm volatile (
       "xvldrepl.b      $xr0,  %3,    0             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr1,  %3,    1             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr2,  %3,    2             \n\t"  // load rgbconstants
@@ -2163,7 +2163,7 @@ static void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
       1,  0,  4,  0,  7,  0, 10, 0,  13, 0,  16, 0,  19, 0,  22, 0,
       25, 0,  28, 0,  31, 0, 2,  0,  5,  0,  8,  0,  11, 0,  14, 0,
       25, 0,  28, 0,  31, 0, 2,  0,  5,  0,  8,  0,  11, 0,  14, 0};
-  asm volatile(
+  asm volatile (
       "xvldrepl.b      $xr0,  %3,    0             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr1,  %3,    1             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr2,  %3,    2             \n\t"  // load rgbconstants

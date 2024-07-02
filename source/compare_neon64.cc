@@ -26,7 +26,7 @@ uint32_t HammingDistance_NEON(const uint8_t* src_a,
                               const uint8_t* src_b,
                               int count) {
   uint32_t diff;
-  asm volatile(
+  asm volatile (
       "movi        v4.8h, #0                     \n"
 
       "1:                                        \n"
@@ -55,7 +55,7 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
                              const uint8_t* src_b,
                              int count) {
   uint32_t sse;
-  asm volatile(
+  asm volatile (
       "movi        v16.16b, #0                   \n"
       "movi        v17.16b, #0                   \n"
       "movi        v18.16b, #0                   \n"
@@ -157,7 +157,7 @@ uint32_t HammingDistance_NEON_DotProd(const uint8_t* src_a,
                                       const uint8_t* src_b,
                                       int count) {
   uint32_t diff;
-  asm volatile(
+  asm volatile (
       "movi        v4.4s, #0                     \n"
       "movi        v5.4s, #0                     \n"
       "movi        v6.16b, #1                    \n"
@@ -190,7 +190,7 @@ uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
                                      int count) {
   // count is guaranteed to be a multiple of 32.
   uint32_t sse;
-  asm volatile(
+  asm volatile (
       "movi        v4.4s, #0                     \n"
       "movi        v5.4s, #0                     \n"
 
