@@ -331,7 +331,8 @@ void I212ToAR30Row_NEON(const uint16_t* src_y,
   const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
   const uint16_t limit = 0x3ff0;
-  asm(YUVTORGB_SETUP
+  asm volatile (
+      YUVTORGB_SETUP
       "dup      v22.8h, %w[limit]                  \n"
       "movi     v23.8h, #0xc0, lsl #8              \n"  // A
       "1:                                          \n" READYUV212 NVTORGB
@@ -400,7 +401,8 @@ void I212ToARGBRow_NEON(const uint16_t* src_y,
                         int width) {
   const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
-  asm(YUVTORGB_SETUP
+  asm volatile (
+      YUVTORGB_SETUP
       "movi        v19.8b, #255             \n"
       "1:                                   \n" READYUV212 NVTORGB RGBTORGB8
       "subs        %w[width], %w[width], #8 \n"
@@ -449,7 +451,8 @@ void I422ToAR30Row_NEON(const uint8_t* src_y,
   const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
   const uint16_t limit = 0x3ff0;
-  asm(YUVTORGB_SETUP
+  asm volatile (
+      YUVTORGB_SETUP
       "dup      v22.8h, %w[limit]                  \n"
       "movi     v23.8h, #0xc0, lsl #8              \n"  // A
       "1:                                          \n" READYUV422 I4XXTORGB
@@ -4134,7 +4137,8 @@ void ARGBColorMatrixRow_NEON_I8MM(const uint8_t* src_argb,
                                   uint8_t* dst_argb,
                                   const int8_t* matrix_argb,
                                   int width) {
-  asm("ld1        {v31.16b}, [%[matrix_argb]]           \n"
+  asm volatile (
+      "ld1        {v31.16b}, [%[matrix_argb]]           \n"
 
       "1:                                               \n"
       "ld1        {v0.16b, v1.16b}, [%[src_argb]], #32  \n"
