@@ -548,7 +548,6 @@ void P410ToAR30Row_NEON(const uint16_t* src_y,
   const uvec8* uv_coeff = &yuvconstants->kUVCoeff;
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
   uint16_t limit = 0x3ff0;
-  uint16_t alpha = 0xc000;
   asm volatile(YUVTORGB_SETUP
                "dup          v22.8h, %w[limit]          \n"
                "movi         v23.8h, #0xc0, lsl #8      \n"  // A
