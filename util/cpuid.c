@@ -73,7 +73,7 @@ int main(int argc, const char* argv[]) {
     // Read and print the SVE and SME vector lengths.
     if (has_sve) {
       int sve_vl;
-      asm(".inst 0x04bf5020    \n"  // rdvl x0, #1
+      __asm__(".inst 0x04bf5020    \n"  // rdvl x0, #1
           "mov %w[sve_vl], w0  \n"
           : [sve_vl] "=r"(sve_vl)  // %[sve_vl]
           :
@@ -82,7 +82,7 @@ int main(int argc, const char* argv[]) {
     }
     if (has_sme) {
       int sme_vl;
-      asm(".inst 0x04bf5820    \n"  // rdsvl x0, #1
+      __asm__(".inst 0x04bf5820    \n"  // rdsvl x0, #1
           "mov %w[sme_vl], w0  \n"
           : [sme_vl] "=r"(sme_vl)  // %[sme_vl]
           :
