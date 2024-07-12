@@ -434,29 +434,27 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
                                     uint32_t nv_uv_start,
                                     uint32_t nv_uv_step) {
   uint64_t vl;
-  asm volatile (
-      "cnth %0" : "=r"(vl));
+  asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
-  width_last_y = width_last_y == 0 ? vl : width_last_y;
   int width_last_uv = width_last_y + (width_last_y & 1);
   asm volatile(
+      "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
-      "ptrue    p0.b                                    \n"
       "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
       "dup      z19.b, #255                             \n"  // A
       "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.le     2f                                      \n"
+      "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.h                                    \n"
       "ptrue    p2.h                                    \n"
-      "1:                                               \n" READNV_SVE
-          NVTORGB_SVE RGBTOARGB8_SVE
+      "1:                                               \n"  //
+      READNV_SVE NVTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
-      "b.gt     1b                                      \n"
+      "b.ge     1b                                      \n"
 
       "2:                                               \n"
       "adds     %w[width], %w[width], %w[vl]            \n"
@@ -465,8 +463,8 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
       // Calculate a predicate for the final iteration to deal with the tail.
       "3:                                               \n"
       "whilelt  p1.h, wzr, %w[width_last_y]             \n"
-      "whilelt  p2.h, wzr, %w[width_last_uv]            \n" READNV_SVE
-          NVTORGB_SVE RGBTOARGB8_SVE
+      "whilelt  p2.h, wzr, %w[width_last_uv]            \n"  //
+      READNV_SVE NVTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -481,7 +479,7 @@ static inline void NVToARGBRow_SVE2(const uint8_t* src_y,
         [nv_uv_step] "r"(nv_uv_step),                       // %[nv_uv_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
 }
 
 void NV12ToARGBRow_SVE2(const uint8_t* src_y,
@@ -489,8 +487,8 @@ void NV12ToARGBRow_SVE2(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_uv_start = 0x0200'0200U;
-  uint32_t nv_uv_step = 0x0404'0404U;
+  uint32_t nv_uv_start = 0x02000200U;
+  uint32_t nv_uv_step = 0x04040404U;
   NVToARGBRow_SVE2(src_y, src_uv, dst_argb, yuvconstants, width, nv_uv_start,
                    nv_uv_step);
 }
@@ -500,8 +498,8 @@ void NV21ToARGBRow_SVE2(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_uv_start = 0x0002'0002U;
-  uint32_t nv_uv_step = 0x0404'0404U;
+  uint32_t nv_uv_start = 0x00020002U;
+  uint32_t nv_uv_step = 0x04040404U;
   NVToARGBRow_SVE2(src_y, src_vu, dst_argb, yuvconstants, width, nv_uv_start,
                    nv_uv_step);
 }
