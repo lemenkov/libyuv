@@ -2,6 +2,8 @@
 # Originally created for "roxlu build system" to compile libyuv on windows
 # Run with -DTEST=ON to build unit tests
 
+include(CheckCSourceCompiles)
+
 PROJECT ( YUV C CXX )	# "C" is required even for C++ projects
 CMAKE_MINIMUM_REQUIRED( VERSION 2.8.12 )
 OPTION( UNIT_TEST "Built unit tests" OFF )
@@ -111,11 +113,28 @@ if(NOT MSVC)
     TARGET_COMPILE_OPTIONS(${ly_lib_name}_sve PRIVATE -march=armv9-a+sve2)
     LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
 
-    # Enable AArch64 SME kernels.
-    ADD_LIBRARY(${ly_lib_name}_sme OBJECT
-      ${ly_src_dir}/rotate_sme.cc)
-    TARGET_COMPILE_OPTIONS(${ly_lib_name}_sme PRIVATE -march=armv9-a+sme)
-    LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
+    set(OLD_CMAKE_REQURED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+sme")
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+    # Check whether the compiler can compile SME functions; this fails
+    # with Clang for Windows.
+    check_c_source_compiles("
+__arm_locally_streaming void func(void) { }
+int main(void) { return 0; }
+    " CAN_COMPILE_SME)
+    set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQURED_FLAGS})
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE ${OLD_CMAKE_TRY_COMPILE_TARGET_TYPE})
+
+    if (CAN_COMPILE_SME)
+      # Enable AArch64 SME kernels.
+      ADD_LIBRARY(${ly_lib_name}_sme OBJECT
+        ${ly_src_dir}/rotate_sme.cc)
+      TARGET_COMPILE_OPTIONS(${ly_lib_name}_sme PRIVATE -march=armv9-a+sme)
+      LIST(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
+    else()
+      ADD_DEFINITIONS(-DLIBYUV_DISABLE_SME)
+    endif()
   endif()
 endif()
 
