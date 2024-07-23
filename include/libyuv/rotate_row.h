@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 // clang >= 19.0.0 required for SME
-#if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_SME)
+#if !defined(LIBYUV_DISABLE_SME) && defined(__clang__) && defined(__aarch64__)
 #if __clang_major__ < 19
 #define LIBYUV_DISABLE_SME
 #endif

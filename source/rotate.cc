@@ -33,7 +33,7 @@ void TransposePlane(const uint8_t* src,
   int i = height;
 #if defined(HAS_TRANSPOSEWXH_SME)
   void (*TransposeWxH)(const uint8_t* src, int src_stride, uint8_t* dst,
-                       int dst_stride, int width, int height) = nullptr;
+                       int dst_stride, int width, int height) = NULL;
 #endif
 #if defined(HAS_TRANSPOSEWX16_MSA) || defined(HAS_TRANSPOSEWX16_LSX) || \
     defined(HAS_TRANSPOSEWX16_NEON)
