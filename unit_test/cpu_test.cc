@@ -67,7 +67,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     printf("Has SVE2 0x%x\n", has_sve2);
     printf("Has SME 0x%x\n", has_sme);
 
-#if __aarch64__
+#if defined(__aarch64__)
     // Read and print the SVE and SME vector lengths.
     if (has_sve) {
       int sve_vl;

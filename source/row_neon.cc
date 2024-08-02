@@ -667,7 +667,7 @@ void DetileSplitUVRow_NEON(const uint8_t* src_uv,
   );
 }
 
-#if LIBYUV_USE_ST2
+#if defined(LIBYUV_USE_ST2)
 // Read 16 Y, 8 UV, and write 8 YUYV.
 void DetileToYUY2_NEON(const uint8_t* src_y,
                        ptrdiff_t src_y_tile_stride,
