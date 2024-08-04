@@ -202,8 +202,10 @@ static int Planar16bitTo8bit(const uint16_t* src_y,
   }
 
   // Convert Y plane.
-  Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
-                    height);
+  if (dst_y) {
+    Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
+                      height);
+  }
   // Convert UV planes.
   Convert16To8Plane(src_u, src_stride_u, dst_u, dst_stride_u, scale, uv_width,
                     uv_height);
@@ -4145,6 +4147,66 @@ int Android420ToI420(const uint8_t* src_y,
                                 src_stride_v, src_pixel_stride_uv, dst_y,
                                 dst_stride_y, dst_u, dst_stride_u, dst_v,
                                 dst_stride_v, width, height, kRotate0);
+}
+
+// depth is source bits measured from lsb; For msb use 16
+static int Biplanar16bitTo8bit(const uint16_t* src_y,
+                               int src_stride_y,
+                               const uint16_t* src_uv,
+                               int src_stride_uv,
+                               uint8_t* dst_y,
+                               int dst_stride_y,
+                               uint8_t* dst_uv,
+                               int dst_stride_uv,
+                               int width,
+                               int height,
+                               int subsample_x,
+                               int subsample_y,
+                               int depth) {
+  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  int scale = 1 << (24 - depth);
+  if ((!src_y && dst_y) || !src_uv || !dst_uv || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    uv_height = -uv_height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_uv = src_uv + (uv_height - 1) * src_stride_uv;
+    src_stride_y = -src_stride_y;
+    src_stride_uv = -src_stride_uv;
+  }
+
+  // Convert Y plane.
+  if (dst_y) {
+    Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
+                      height);
+  }
+  // Convert UV planes.
+  Convert16To8Plane(src_uv, src_stride_uv, dst_uv, dst_stride_uv, scale,
+                    uv_width * 2, uv_height);
+  return 0;
+}
+
+// Convert 10 bit P010 to 8 bit NV12.
+// Depth set to 16 because P010 uses 10 msb and this function keeps the upper 8
+// bits of the specified number of bits.
+LIBYUV_API
+int P010ToNV12(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  return Biplanar16bitTo8bit(src_y, src_stride_y, src_uv, src_stride_uv, dst_y,
+                             dst_stride_y, dst_uv, dst_stride_uv, width, height,
+                             1, 1, 16);
 }
 
 #ifdef __cplusplus
