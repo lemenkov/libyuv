@@ -646,6 +646,55 @@ int I010ToP010(const uint16_t* src_y,
 }
 
 LIBYUV_API
+int I010ToNV12(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  // Allocate temporary buffers for 3 planes in 8 bit.
+  uint8_t* temp_y = (uint8_t*)malloc(width * height);
+  uint8_t* temp_u = (uint8_t*)malloc((width / 2) * (height / 2));
+  uint8_t* temp_v = (uint8_t*)malloc((width / 2) * (height / 2));
+  int temp_stride_y = width;
+  int temp_stride_u = width / 2;
+  int temp_stride_v = width / 2;
+
+  // The first step is to convert 10 bit YUV I010 to 8 bit I420 with 3 planes.
+  if (I010ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
+                 temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
+                 temp_stride_v, width, height) == -1) {
+    free(temp_y);
+    free(temp_u);
+    free(temp_v);
+    return -1;
+  }
+
+  // The second step is to convert 8 bit I420 with 3 planes to 8 bit NV12 with 2 planes.
+  if (I420ToNV12(temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
+                 temp_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
+                 width, height) == -1) {
+    free(temp_y);
+    free(temp_u);
+    free(temp_v);
+    return -1;
+  }
+
+  // Free temporary buffers.
+  free(temp_y);
+  free(temp_u);
+  free(temp_v);
+
+  return 0;
+}
+
+LIBYUV_API
 int I210ToP210(const uint16_t* src_y,
                int src_stride_y,
                const uint16_t* src_u,

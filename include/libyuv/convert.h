@@ -525,6 +525,21 @@ int I010ToP010(const uint16_t* src_y,
                int width,
                int height);
 
+// Convert 10 bit YUV I010 to NV12
+LIBYUV_API
+int I010ToNV12(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
 // Convert I210 to P210
 LIBYUV_API
 int I210ToP210(const uint16_t* src_y,
