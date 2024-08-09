@@ -467,7 +467,13 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   // __ARM_NEON__ generates code that requires Neon.  NaCL also requires Neon.
   // For Linux, /proc/cpuinfo can be tested but without that assume Neon.
   // Linux arm parse text file for neon detect.
+#if defined(__linux__)
   cpu_info = ArmCpuCaps("/proc/cpuinfo");
+#elif defined(__ARM_NEON__)
+  cpu_info = kCpuHasNEON;
+#else
+  cpu_info = 0;
+#endif
 #endif
   cpu_info |= kCpuHasARM;
 #endif  // __arm__
