@@ -247,9 +247,7 @@ if (libyuv_use_neon) {
 
 if (libyuv_use_sve) {
   static_library("libyuv_sve") {
-    sources = [
-      "source/row_sve.cc",
-    ]
+    sources = [ "source/row_sve.cc" ]
 
     deps = [ ":libyuv_internal" ]
 
@@ -262,9 +260,7 @@ if (libyuv_use_sve) {
 
 if (libyuv_use_sme) {
   static_library("libyuv_sme") {
-    sources = [
-      "source/rotate_sme.cc",
-    ]
+    sources = [ "source/rotate_sme.cc" ]
 
     deps = [ ":libyuv_internal" ]
 
