@@ -2722,11 +2722,12 @@ struct RgbUVConstantsI8 {
 };
 
 // 8x1 pixels.
-void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
-                               uint8_t* dst_u,
-                               uint8_t* dst_v,
-                               int width,
-                               const struct RgbUVConstantsU8* rgbuvconstants) {
+static void ARGBToUV444MatrixRow_NEON(
+    const uint8_t* src_argb,
+    uint8_t* dst_u,
+    uint8_t* dst_v,
+    int width,
+    const struct RgbUVConstantsU8* rgbuvconstants) {
   asm volatile(
       "ldr         d0, [%4]                      \n"  // load rgbuvconstants
       "dup         v24.16b, v0.b[0]              \n"  // UB  0.875 coefficient
@@ -2763,7 +2764,7 @@ void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
         "v27", "v28", "v29");
 }
 
-void ARGBToUV444MatrixRow_NEON_I8MM(
+static void ARGBToUV444MatrixRow_NEON_I8MM(
     const uint8_t* src_argb,
     uint8_t* dst_u,
     uint8_t* dst_v,
@@ -3519,10 +3520,10 @@ struct RgbConstants {
 };
 
 // ARGB expects first 3 values to contain RGB and 4th value is ignored.
-void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
-                           uint8_t* dst_y,
-                           int width,
-                           const struct RgbConstants* rgbconstants) {
+static void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
+                                  uint8_t* dst_y,
+                                  int width,
+                                  const struct RgbConstants* rgbconstants) {
   asm volatile (
       "ldr         d0, [%3]                      \n"  // load rgbconstants
       "dup         v6.16b, v0.b[0]               \n"
@@ -3552,11 +3553,11 @@ void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
         "v17");
 }
 
-void
-ARGBToYMatrixRow_NEON_DotProd(const uint8_t* src_argb,
-                              uint8_t* dst_y,
-                              int width,
-                              const struct RgbConstants* rgbconstants) {
+static void ARGBToYMatrixRow_NEON_DotProd(
+    const uint8_t* src_argb,
+    uint8_t* dst_y,
+    int width,
+    const struct RgbConstants* rgbconstants) {
   asm volatile (
       "ldr         d0, [%3]                      \n"  // load rgbconstants
       "dup         v16.4s, v0.s[0]               \n"
@@ -3655,10 +3656,10 @@ void ABGRToYJRow_NEON_DotProd(const uint8_t* src_abgr,
 
 // RGBA expects first value to be A and ignored, then 3 values to contain RGB.
 // Same code as ARGB, except the LD4
-void RGBAToYMatrixRow_NEON(const uint8_t* src_rgba,
-                           uint8_t* dst_y,
-                           int width,
-                           const struct RgbConstants* rgbconstants) {
+static void RGBAToYMatrixRow_NEON(const uint8_t* src_rgba,
+                                  uint8_t* dst_y,
+                                  int width,
+                                  const struct RgbConstants* rgbconstants) {
   asm volatile (
       "ldr         d0, [%3]                      \n"  // load rgbconstants
       "dup         v6.16b, v0.b[0]               \n"
@@ -3727,10 +3728,10 @@ void BGRAToYRow_NEON_DotProd(const uint8_t* src_bgra,
                                 &kRawI601DotProdConstants);
 }
 
-void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
-                          uint8_t* dst_y,
-                          int width,
-                          const struct RgbConstants* rgbconstants) {
+static void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
+                                 uint8_t* dst_y,
+                                 int width,
+                                 const struct RgbConstants* rgbconstants) {
   asm volatile (
       "ldr         d0, [%3]                      \n"  // load rgbconstants
       "dup         v5.16b, v0.b[0]               \n"

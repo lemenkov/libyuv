@@ -1458,58 +1458,6 @@ void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
   );
 }
 
-// Read 8x2 upsample with filtering and write 16x1.
-// Actually reads an extra pixel, so 9x2.
-void ScaleRowUp2_16_NEON(const uint16_t* src_ptr,
-                         ptrdiff_t src_stride,
-                         uint16_t* dst,
-                         int dst_width) {
-  asm volatile (
-      "add         %1, %0, %1, lsl #1            \n"  // ptr + stide * 2
-      "movi        v0.8h, #9                     \n"  // constants
-      "movi        v1.4s, #3                     \n"
-
-      "1:                                        \n"
-      "ld1         {v3.8h}, [%0], %4             \n"  // TL read first 8
-      "ld1         {v4.8h}, [%0], %5             \n"  // TR read 8 offset by 1
-      "ld1         {v5.8h}, [%1], %4             \n"  // BL read 8 from next row
-      "ld1         {v6.8h}, [%1], %5             \n"  // BR offset by 1
-      "subs        %w3, %w3, #16                 \n"  // 16 dst pixels per loop
-      "umull       v16.4s, v3.4h, v0.4h          \n"
-      "umull2      v7.4s, v3.8h, v0.8h           \n"
-      "umull       v18.4s, v4.4h, v0.4h          \n"
-      "umull2      v17.4s, v4.8h, v0.8h          \n"
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "uaddw       v16.4s, v16.4s, v6.4h         \n"
-      "uaddl2      v19.4s, v6.8h, v3.8h          \n"
-      "uaddl       v3.4s, v6.4h, v3.4h           \n"
-      "uaddw2      v6.4s, v7.4s, v6.8h           \n"
-      "uaddl2      v7.4s, v5.8h, v4.8h           \n"
-      "uaddl       v4.4s, v5.4h, v4.4h           \n"
-      "uaddw       v18.4s, v18.4s, v5.4h         \n"
-      "prfm        pldl1keep, [%1, 448]          \n"
-      "mla         v16.4s, v4.4s, v1.4s          \n"
-      "mla         v18.4s, v3.4s, v1.4s          \n"
-      "mla         v6.4s, v7.4s, v1.4s           \n"
-      "uaddw2      v4.4s, v17.4s, v5.8h          \n"
-      "uqrshrn     v16.4h,  v16.4s, #4           \n"
-      "mla         v4.4s, v19.4s, v1.4s          \n"
-      "uqrshrn2    v16.8h, v6.4s, #4             \n"
-      "uqrshrn     v17.4h, v18.4s, #4            \n"
-      "uqrshrn2    v17.8h, v4.4s, #4             \n"
-      "st2         {v16.8h-v17.8h}, [%2], #32    \n"
-      "b.gt        1b                            \n"
-      : "+r"(src_ptr),     // %0
-        "+r"(src_stride),  // %1
-        "+r"(dst),         // %2
-        "+r"(dst_width)    // %3
-      : "r"(2LL),          // %4
-        "r"(14LL)          // %5
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
-        "v17", "v18", "v19"  // Clobber List
-  );
-}
-
 void ScaleUVRowDown2_NEON(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst,

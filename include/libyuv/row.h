@@ -6679,6 +6679,7 @@ void GaussCol_F32_C(const float* src0,
                     int width);
 
 void GaussRow_C(const uint32_t* src, uint16_t* dst, int width);
+void GaussRow_NEON(const uint32_t* src, uint16_t* dst, int width);
 void GaussCol_C(const uint16_t* src0,
                 const uint16_t* src1,
                 const uint16_t* src2,
@@ -6686,6 +6687,13 @@ void GaussCol_C(const uint16_t* src0,
                 const uint16_t* src4,
                 uint32_t* dst,
                 int width);
+void GaussCol_NEON(const uint16_t* src0,
+                   const uint16_t* src1,
+                   const uint16_t* src2,
+                   const uint16_t* src3,
+                   const uint16_t* src4,
+                   uint32_t* dst,
+                   int width);
 
 void ClampFloatToZero_SSE2(const float* src_x, float* dst_y, int width);
 

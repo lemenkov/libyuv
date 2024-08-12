@@ -2496,13 +2496,13 @@ TEST_F(LibYUVPlanarTest, DISABLED_ARM(TestARGBPolynomial)) {
   }
 }
 
-int TestHalfFloatPlane(int benchmark_width,
-                       int benchmark_height,
-                       int benchmark_iterations,
-                       int disable_cpu_flags,
-                       int benchmark_cpu_info,
-                       float scale,
-                       int mask) {
+static int TestHalfFloatPlane(int benchmark_width,
+                              int benchmark_height,
+                              int benchmark_iterations,
+                              int disable_cpu_flags,
+                              int benchmark_cpu_info,
+                              float scale,
+                              int mask) {
   int i, j;
   const int y_plane_size = benchmark_width * benchmark_height * 2;
 
@@ -2631,12 +2631,12 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_12bit_One) {
   EXPECT_LE(diff, 1);
 }
 
-float TestByteToFloat(int benchmark_width,
-                      int benchmark_height,
-                      int benchmark_iterations,
-                      int disable_cpu_flags,
-                      int benchmark_cpu_info,
-                      float scale) {
+static float TestByteToFloat(int benchmark_width,
+                             int benchmark_height,
+                             int benchmark_iterations,
+                             int disable_cpu_flags,
+                             int benchmark_cpu_info,
+                             float scale) {
   int i, j;
   const int y_plane_size = benchmark_width * benchmark_height;
 

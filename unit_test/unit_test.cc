@@ -67,7 +67,7 @@ static LIBYUV_BOOL TestEnv(const char*) {
 }
 #endif
 
-int TestCpuEnv(int cpu_info) {
+static int TestCpuEnv(int cpu_info) {
 #if defined(__arm__) || defined(__aarch64__)
   if (TestEnv("LIBYUV_DISABLE_NEON")) {
     cpu_info &= ~libyuv::kCpuHasNEON;

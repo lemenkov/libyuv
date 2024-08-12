@@ -369,26 +369,25 @@ TEST_SCALESWAPXY1(ARGBScale, Bilinear, 0)
 
 // Scale with YUV conversion to ARGB and clipping.
 // TODO(fbarchard): Add fourcc support.  All 4 ARGB formats is easy to support.
-LIBYUV_API
-int YUVToARGBScaleReference2(const uint8_t* src_y,
-                             int src_stride_y,
-                             const uint8_t* src_u,
-                             int src_stride_u,
-                             const uint8_t* src_v,
-                             int src_stride_v,
-                             uint32_t /* src_fourcc */,
-                             int src_width,
-                             int src_height,
-                             uint8_t* dst_argb,
-                             int dst_stride_argb,
-                             uint32_t /* dst_fourcc */,
-                             int dst_width,
-                             int dst_height,
-                             int clip_x,
-                             int clip_y,
-                             int clip_width,
-                             int clip_height,
-                             enum FilterMode filtering) {
+static int YUVToARGBScaleReference2(const uint8_t* src_y,
+                                    int src_stride_y,
+                                    const uint8_t* src_u,
+                                    int src_stride_u,
+                                    const uint8_t* src_v,
+                                    int src_stride_v,
+                                    uint32_t /* src_fourcc */,
+                                    int src_width,
+                                    int src_height,
+                                    uint8_t* dst_argb,
+                                    int dst_stride_argb,
+                                    uint32_t /* dst_fourcc */,
+                                    int dst_width,
+                                    int dst_height,
+                                    int clip_x,
+                                    int clip_y,
+                                    int clip_width,
+                                    int clip_height,
+                                    enum FilterMode filtering) {
   uint8_t* argb_buffer =
       static_cast<uint8_t*>(malloc(src_width * src_height * 4));
   int r;

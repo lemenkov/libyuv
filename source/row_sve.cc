@@ -588,12 +588,12 @@ static const int16_t kABGRToUVJCoefficients[] = {
     -21, 63, -42, 0, 63, -10, -53, 0,
 };
 
-void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
-                            int src_stride_argb,
-                            uint8_t* dst_u,
-                            uint8_t* dst_v,
-                            int width,
-                            const int16_t* uvconstants) {
+static void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
+                                   int src_stride_argb,
+                                   uint8_t* dst_u,
+                                   uint8_t* dst_v,
+                                   int width,
+                                   const int16_t* uvconstants) {
   const uint8_t* src_argb_1 = src_argb + src_stride_argb;
   uint64_t vl;
   asm volatile (

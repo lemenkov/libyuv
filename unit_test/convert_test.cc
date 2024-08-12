@@ -326,18 +326,18 @@ TESTAPLANARTOP(Android420, NV21, 2, 1, 0, 2, 2, I420, 2, 2)
 #undef TESTAPLANARTOPI
 
 // wrapper to keep API the same
-int I400ToNV21(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* /* src_u */,
-               int /* src_stride_u */,
-               const uint8_t* /* src_v */,
-               int /* src_stride_v */,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_vu,
-               int dst_stride_vu,
-               int width,
-               int height) {
+static int I400ToNV21(const uint8_t* src_y,
+                      int src_stride_y,
+                      const uint8_t* /* src_u */,
+                      int /* src_stride_u */,
+                      const uint8_t* /* src_v */,
+                      int /* src_stride_v */,
+                      uint8_t* dst_y,
+                      int dst_stride_y,
+                      uint8_t* dst_vu,
+                      int dst_stride_vu,
+                      int width,
+                      int height) {
   return I400ToNV21(src_y, src_stride_y, dst_y, dst_stride_y, dst_vu,
                     dst_stride_vu, width, height);
 }

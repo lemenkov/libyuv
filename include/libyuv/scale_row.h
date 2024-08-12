@@ -347,6 +347,10 @@ void ScaleRowDown2Box_16_C(const uint16_t* src_ptr,
                            ptrdiff_t src_stride,
                            uint16_t* dst,
                            int dst_width);
+void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint16_t* dst,
+                              int dst_width);
 void ScaleRowDown2Box_16To8_C(const uint16_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst,
