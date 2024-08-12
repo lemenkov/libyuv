@@ -11,6 +11,7 @@
 #include "libyuv/convert.h"
 
 #include "libyuv/basic_types.h"
+#include "libyuv/convert_from.h"  // For I420ToNV12()
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
@@ -658,40 +659,45 @@ int I010ToNV12(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
+  int r;
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
   // Allocate temporary buffers for 3 planes in 8 bit.
-  uint8_t* temp_y = (uint8_t*)malloc(width * height);
-  uint8_t* temp_u = (uint8_t*)malloc((width / 2) * (height / 2));
-  uint8_t* temp_v = (uint8_t*)malloc((width / 2) * (height / 2));
-  int temp_stride_y = width;
-  int temp_stride_u = width / 2;
-  int temp_stride_v = width / 2;
+  {
+    align_buffer_64(temp_y, width * height);
+    align_buffer_64(temp_u, ((width + 1) / 2) * ((height + 1) / 2));
+    align_buffer_64(temp_v, ((width + 1) / 2) * ((height + 1) / 2));
 
-  // The first step is to convert 10 bit YUV I010 to 8 bit I420 with 3 planes.
-  if (I010ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
-                 temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
-                 temp_stride_v, width, height) == -1) {
-    free(temp_y);
-    free(temp_u);
-    free(temp_v);
-    return -1;
+    int temp_stride_y = width;
+    int temp_stride_u = (width + 1) / 2;
+    int temp_stride_v = (width + 1) / 2;
+
+    // The first step is to convert 10 bit YUV I010 to 8 bit I420 with 3 planes.
+    r = I010ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
+                   temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
+                   temp_stride_v, width, height);
+    if (!r) {
+       // The second step is to convert 8 bit I420 with 3 planes to 8 bit NV12 with 2 planes.
+      r = I420ToNV12(temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
+                     temp_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
+                     width, height);
+    }
+
+    // Free temporary buffers.
+    free_aligned_buffer_64(temp_y);
+    free_aligned_buffer_64(temp_u);
+    free_aligned_buffer_64(temp_v);
   }
-
-  // The second step is to convert 8 bit I420 with 3 planes to 8 bit NV12 with 2 planes.
-  if (I420ToNV12(temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
-                 temp_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
-                 width, height) == -1) {
-    free(temp_y);
-    free(temp_u);
-    free(temp_v);
-    return -1;
-  }
-
-  // Free temporary buffers.
-  free(temp_y);
-  free(temp_u);
-  free(temp_v);
-
-  return 0;
+  return r;
 }
 
 LIBYUV_API
