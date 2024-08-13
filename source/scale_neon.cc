@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
