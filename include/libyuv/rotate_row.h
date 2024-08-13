@@ -27,11 +27,9 @@ extern "C" {
 #define LIBYUV_DISABLE_NEON
 #endif
 
-// clang >= 19.0.0 required for SME
-#if !defined(LIBYUV_DISABLE_SME) && defined(__clang__) && defined(__aarch64__)
-#if __clang_major__ < 19
+// temporary disable SME
+#if !defined(LIBYUV_DISABLE_SME)
 #define LIBYUV_DISABLE_SME
-#endif
 #endif
 
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505

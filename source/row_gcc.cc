@@ -5202,8 +5202,7 @@ void MultiplyRow_16_AVX2(const uint16_t* src_y,
                          int width) {
   asm volatile (
       "vmovd       %3,%%xmm3                     \n"
-      "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
-      "vbroadcastss %%xmm3,%%ymm3                \n"
+      "vpbroadcastw %%xmm3,%%ymm3                \n"
       "sub         %0,%1                         \n"
 
       // 32 pixels per loop.
@@ -5239,8 +5238,7 @@ void DivideRow_16_AVX2(const uint16_t* src_y,
                        int width) {
   asm volatile (
       "vmovd       %3,%%xmm3                     \n"
-      "vpunpcklwd  %%xmm3,%%xmm3,%%xmm3          \n"
-      "vbroadcastss %%xmm3,%%ymm3                \n"
+      "vpbroadcastw %%xmm3,%%ymm3                \n"
       "sub         %0,%1                         \n"
 
       // 32 pixels per loop.
@@ -5306,8 +5304,7 @@ void Convert16To8Row_AVX2(const uint16_t* src_y,
                           int width) {
   asm volatile (
       "vmovd       %3,%%xmm2                     \n"
-      "vpunpcklwd  %%xmm2,%%xmm2,%%xmm2          \n"
-      "vbroadcastss %%xmm2,%%ymm2                \n"
+      "vpbroadcastw %%xmm2,%%ymm2                \n"
 
       // 32 pixels per loop.
       LABELALIGN
@@ -5322,6 +5319,38 @@ void Convert16To8Row_AVX2(const uint16_t* src_y,
       "vmovdqu     %%ymm0,(%1)                   \n"
       "add         $0x20,%1                      \n"
       "sub         $0x20,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      : "r"(scale)    // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+}
+#endif  // HAS_CONVERT16TO8ROW_AVX2
+
+#ifdef HAS_CONVERT16TO8ROW_AVX512BW
+void Convert16To8Row_AVX512BW(const uint16_t* src_y,
+                              uint8_t* dst_y,
+                              int scale,
+                              int width) {
+  asm volatile (
+      "vpbroadcastw %3,%%zmm2                    \n"
+
+      // 64 pixels per loop.
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu8    (%0),%%zmm0                   \n"
+      "vmovdqu8    0x40(%0),%%zmm1               \n"
+      "add         $0x80,%0                      \n"
+      "vpmulhuw    %%zmm2,%%zmm0,%%zmm0          \n"
+      "vpmulhuw    %%zmm2,%%zmm1,%%zmm1          \n"
+      "vpmovuswb   %%zmm0,%%ymm0                 \n"
+      "vpmovuswb   %%zmm1,%%ymm1                 \n"
+      "vmovdqu8    %%ymm0,(%1)                   \n"
+      "vmovdqu8    %%ymm1,0x20(%1)               \n"
+      "add         $0x40,%1                      \n"
+      "sub         $0x40,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper                                \n"
       : "+r"(src_y),  // %0
@@ -5374,8 +5403,7 @@ void Convert8To16Row_AVX2(const uint8_t* src_y,
                           int width) {
   asm volatile (
       "vmovd       %3,%%xmm2                     \n"
-      "vpunpcklwd  %%xmm2,%%xmm2,%%xmm2          \n"
-      "vbroadcastss %%xmm2,%%ymm2                \n"
+      "vpbroadcastw %%xmm2,%%ymm2                \n"
 
       // 32 pixels per loop.
       LABELALIGN

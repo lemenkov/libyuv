@@ -400,10 +400,11 @@ extern "C" {
 
 // The following are available for AVX512 clang x86 platforms:
 // TODO(fbarchard): Port to GCC and Visual C
-// TODO(fbarchard): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI. Issue libyuv:789
+// TODO(b/42280744): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI.
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || defined(__i386__)) && defined(CLANG_HAS_AVX512)
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
+#define HAS_CONVERT16TO8ROW_AVX512BW
 #define HAS_MERGEUVROW_AVX512BW
 #endif
 
@@ -3337,6 +3338,10 @@ void Convert16To8Row_AVX2(const uint16_t* src_y,
                           uint8_t* dst_y,
                           int scale,
                           int width);
+void Convert16To8Row_AVX512BW(const uint16_t* src_y,
+                             uint8_t* dst_y,
+                             int scale,
+                             int width);
 void Convert16To8Row_Any_SSSE3(const uint16_t* src_ptr,
                                uint8_t* dst_ptr,
                                int scale,
@@ -3345,6 +3350,10 @@ void Convert16To8Row_Any_AVX2(const uint16_t* src_ptr,
                               uint8_t* dst_ptr,
                               int scale,
                               int width);
+void Convert16To8Row_Any_AVX512BW(const uint16_t* src_ptr,
+                                  uint8_t* dst_ptr,
+                                  int scale,
+                                  int width);
 void Convert16To8Row_NEON(const uint16_t* src_y,
                           uint8_t* dst_y,
                           int scale,

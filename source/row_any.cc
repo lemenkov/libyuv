@@ -1684,8 +1684,8 @@ ANY11T(AB64ToARGBRow_Any_NEON, AB64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
 // Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
 #define ANY11C(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)             \
   void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int width) { \
-    SIMD_ALIGNED(STYPE vin[32]);                                             \
-    SIMD_ALIGNED(DTYPE vout[32]);                                            \
+    SIMD_ALIGNED(STYPE vin[64]);                                             \
+    SIMD_ALIGNED(DTYPE vout[64]);                                            \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
@@ -1714,6 +1714,15 @@ ANY11C(Convert16To8Row_Any_AVX2,
        uint16_t,
        uint8_t,
        31)
+#endif
+#ifdef HAS_CONVERT16TO8ROW_AVX512BW
+ANY11C(Convert16To8Row_Any_AVX512BW,
+       Convert16To8Row_AVX512BW,
+       2,
+       1,
+       uint16_t,
+       uint8_t,
+       63)
 #endif
 #ifdef HAS_CONVERT16TO8ROW_NEON
 ANY11C(Convert16To8Row_Any_NEON,
