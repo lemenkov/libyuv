@@ -11,7 +11,6 @@
 #include "libyuv/convert.h"
 
 #include "libyuv/basic_types.h"
-#include "libyuv/convert_from.h"  // For I420ToNV12()
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
@@ -659,10 +658,22 @@ int I010ToNV12(const uint16_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  int r;
+  int y;
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  const int scale = 16385;  // 16384 for 10 bits
+  void (*Convert16To8Row)(const uint16_t* src_y, uint8_t* dst_y, int scale,
+                          int width) = Convert16To8Row_C;
+  void (*MergeUVRow)(const uint8_t* src_u, const uint8_t* src_v,
+                      uint8_t* dst_uv, int width) = MergeUVRow_C;
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_uv || width <= 0 ||
+      height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    int halfheight = (height + 1) >> 1;
+    halfheight = (height + 1) >> 1;
     src_y = src_y + (height - 1) * src_stride_y;
     src_u = src_u + (halfheight - 1) * src_stride_u;
     src_v = src_v + (halfheight - 1) * src_stride_v;
@@ -670,34 +681,109 @@ int I010ToNV12(const uint16_t* src_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-
-  // Allocate temporary buffers for 3 planes in 8 bit.
-  {
-    align_buffer_64(temp_y, width * height);
-    align_buffer_64(temp_u, ((width + 1) / 2) * ((height + 1) / 2));
-    align_buffer_64(temp_v, ((width + 1) / 2) * ((height + 1) / 2));
-
-    int temp_stride_y = width;
-    int temp_stride_u = (width + 1) / 2;
-    int temp_stride_v = (width + 1) / 2;
-
-    // The first step is to convert 10 bit YUV I010 to 8 bit I420 with 3 planes.
-    r = I010ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
-                   temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
-                   temp_stride_v, width, height);
-    if (!r) {
-       // The second step is to convert 8 bit I420 with 3 planes to 8 bit NV12 with 2 planes.
-      r = I420ToNV12(temp_y, temp_stride_y, temp_u, temp_stride_u, temp_v,
-                     temp_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
-                     width, height);
+#if defined(HAS_CONVERT16TO8ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    Convert16To8Row = Convert16To8Row_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      Convert16To8Row = Convert16To8Row_NEON;
     }
-
-    // Free temporary buffers.
-    free_aligned_buffer_64(temp_y);
-    free_aligned_buffer_64(temp_u);
-    free_aligned_buffer_64(temp_v);
   }
-  return r;
+#endif
+#if defined(HAS_CONVERT16TO8ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    Convert16To8Row = Convert16To8Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      Convert16To8Row = Convert16To8Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_CONVERT16TO8ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    Convert16To8Row = Convert16To8Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      Convert16To8Row = Convert16To8Row_AVX2;
+    }
+  }
+#endif
+
+#if defined(HAS_MERGEUVROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    MergeUVRow = MergeUVRow_Any_SSE2;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    MergeUVRow = MergeUVRow_Any_AVX2;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MergeUVRow = MergeUVRow_Any_AVX512BW;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      MergeUVRow = MergeUVRow_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MergeUVRow = MergeUVRow_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MergeUVRow = MergeUVRow_Any_MSA;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    MergeUVRow = MergeUVRow_Any_LSX;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow = MergeUVRow_RVV;
+  }
+#endif
+
+  // Convert Y plane.
+  if (dst_y) {
+    Convert16To8Plane(src_y, src_stride_y, dst_y, dst_stride_y, scale, width,
+                      height);
+  }
+
+  {
+    // Allocate a row of uv.
+    align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
+    if (!row_u)
+      return 1;
+
+    for (y = 0; y < halfheight; ++y) {
+      Convert16To8Row(src_u, row_u, scale, halfwidth);
+      Convert16To8Row(src_v, row_v, scale, halfwidth);
+      MergeUVRow(row_u, row_v, dst_uv, halfwidth);
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+      dst_uv += dst_stride_uv;
+    }
+    free_aligned_buffer_64(row_u);
+  }
+  return 0;
 }
 
 LIBYUV_API
