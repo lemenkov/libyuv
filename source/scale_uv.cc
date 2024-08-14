@@ -686,6 +686,7 @@ static void ScaleUVLinearUp2(int src_width,
   int dy;
 
   // This function can only scale up by 2 times horizontally.
+  (void)src_width;
   assert(src_width == ((dst_width + 1) / 2));
 
 #ifdef HAS_SCALEUVROWUP2_LINEAR_SSSE3
@@ -744,6 +745,7 @@ static void ScaleUVBilinearUp2(int src_width,
   int x;
 
   // This function can only scale up by 2 times.
+  (void)src_width;
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
 
@@ -805,6 +807,7 @@ static void ScaleUVLinearUp2_16(int src_width,
   int dy;
 
   // This function can only scale up by 2 times horizontally.
+  (void)src_width;
   assert(src_width == ((dst_width + 1) / 2));
 
 #ifdef HAS_SCALEUVROWUP2_LINEAR_16_SSE41
@@ -857,6 +860,7 @@ static void ScaleUVBilinearUp2_16(int src_width,
   int x;
 
   // This function can only scale up by 2 times.
+  (void)src_width;
   assert(src_width == ((dst_width + 1) / 2));
   assert(src_height == ((dst_height + 1) / 2));
 
