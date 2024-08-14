@@ -1052,8 +1052,8 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_uv_start = 0x0301'0301U;
-  uint32_t nv_uv_step = 0x0404'0404U;
+  uint32_t nv_uv_start = 0x03010301U;
+  uint32_t nv_uv_step = 0x04040404U;
   uint64_t vl;
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
@@ -1105,8 +1105,8 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  uint32_t nv_uv_start = 0x0200'0200U;
-  uint32_t nv_uv_step = 0x0404'0404U;
+  uint32_t nv_uv_start = 0x02000200U;
+  uint32_t nv_uv_step = 0x04040404U;
   uint64_t vl;
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
