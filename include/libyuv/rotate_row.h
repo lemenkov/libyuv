@@ -12,35 +12,13 @@
 #define INCLUDE_LIBYUV_ROTATE_ROW_H_
 
 #include "libyuv/basic_types.h"
+#include "libyuv/cpu_support.h"
 
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
 
-#if defined(__pnacl__) || defined(__CLR_VER) ||            \
-    (defined(__native_client__) && defined(__x86_64__)) || \
-    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
-#define LIBYUV_DISABLE_X86
-#endif
-#if defined(__native_client__)
-#define LIBYUV_DISABLE_NEON
-#endif
-
-// temporary disable SME
-#if !defined(LIBYUV_DISABLE_SME)
-#define LIBYUV_DISABLE_SME
-#endif
-
-// MemorySanitizer does not support assembly code yet. http://crbug.com/344505
-#if defined(__has_feature)
-#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_NEON)
-#define LIBYUV_DISABLE_NEON
-#endif
-#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_X86)
-#define LIBYUV_DISABLE_X86
-#endif
-#endif
 // The following are available for Visual C 32 bit:
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER) && \
     !defined(__clang__)
