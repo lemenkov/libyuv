@@ -18,7 +18,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
+    defined(__aarch64__)
 
 __arm_locally_streaming __arm_new("za") void TransposeWxH_SME(
     const uint8_t* src,
@@ -164,7 +165,8 @@ __arm_locally_streaming __arm_new("za") void TransposeUVWxH_SME(
   } while (height > 0);
 }
 
-#endif  // !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__)
+#endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
+        // defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"

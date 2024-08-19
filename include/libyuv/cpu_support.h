@@ -72,9 +72,11 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
-// Temporary disable SME.
-#if !defined(LIBYUV_DISABLE_SME)
-#define LIBYUV_DISABLE_SME
+// Clang 19 required for SME due to needing __arm_tpidr2_save from compiler-rt,
+// only enabled on Linux for now.
+#if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__) && \
+    defined(__gnu_linux__) && defined(__clang__) && (__clang_major__ >= 19)
+#define CLANG_HAS_SME 1
 #endif
 
 #ifdef __cplusplus
