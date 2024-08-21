@@ -82,6 +82,14 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library( ${ly_lib_name}_common_objects OBJECT ${ly_common_source_files} )
 set(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_common_objects>)
 
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSPROC)
+set(LOONGARCH64_ALIASES loongarch64)
+list(FIND LOONGARCH64_ALIASES "${SYSPROC}" LOONGARCH64MATCH)
+
+if(LOONGARCH64MATCH GREATER "-1")
+  set(LOONGARCH64 1)
+endif()
+
 if(NOT MSVC)
   string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" arch_lowercase)
 
@@ -137,6 +145,31 @@ int main(void) { return 0; }
     else()
       add_definitions(-DLIBYUV_DISABLE_SME)
     endif()
+  endif()
+endif()
+
+if(LOONGARCH64)
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-narrowing")
+  check_cxx_source_compiles("
+    int main(int argc, char **argv) {
+      __asm__ volatile (
+         \"vadd.w $vr0, $vr1, $vr1\"
+      );
+    return 0; }" SUPPORTS_LSX)
+
+  check_cxx_source_compiles("
+    int main(int argc, char **argv) {
+      __asm__ volatile (
+         \"xvadd.w $xr0, $xr1, $xr1\"
+      );
+    return 0; }" SUPPORTS_LASX)
+
+  if(SUPPORTS_LSX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlsx")
+  endif()
+  if(SUPPORTS_LASX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlasx")
   endif()
 endif()
 
