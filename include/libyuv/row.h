@@ -573,6 +573,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 #define HAS_I422TOARGBROW_SME
+#define HAS_I444TOARGBROW_SME
 #endif
 
 // The following are available on AArch64 platforms:
@@ -1072,6 +1073,12 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I444ToARGBRow_SME(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I444ToRGB24Row_NEON(const uint8_t* src_y,
                          const uint8_t* src_u,
                          const uint8_t* src_v,
