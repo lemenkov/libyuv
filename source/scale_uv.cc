@@ -104,14 +104,6 @@ static void ScaleUVDown2(int src_width,
     }
   }
 #endif
-#if defined(HAS_SCALEUVROWDOWN2BOX_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && filtering) {
-    ScaleUVRowDown2 = ScaleUVRowDown2Box_Any_NEON;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleUVRowDown2 = ScaleUVRowDown2Box_NEON;
-    }
-  }
-#endif
 #if defined(HAS_SCALEUVROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleUVRowDown2 =
