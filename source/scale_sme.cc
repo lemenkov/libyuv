@@ -283,6 +283,139 @@ __arm_locally_streaming void ScaleUVRowDown2Box_SME(const uint8_t* src_uv,
 
 #undef SCALEUVROWDOWN2BOX_SVE
 
+__arm_locally_streaming void ScaleARGBRowDown2_SME(const uint8_t* src_argb,
+                                                   ptrdiff_t src_stride,
+                                                   uint8_t* dst_argb,
+                                                   int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  (void)src_stride;
+  int vl;
+  asm volatile(
+      "cntw     %x[vl]                                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "1:                                                    \n"
+      "ptrue    p0.b                                         \n"
+      "ld2w     {z0.s, z1.s}, p0/z, [%[src_argb]]            \n"
+      "incb     %[src_argb], all, mul #2                     \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "st1w     {z1.s}, p0, [%[dst_argb]]                    \n"
+      "incb     %[dst_argb]                                  \n"
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.s, wzr, %w[dst_width]                     \n"
+      "ld2w     {z0.s, z1.s}, p0/z, [%[src_argb]]            \n"
+      "st1w     {z1.s}, p0, [%[dst_argb]]                    \n"
+
+      "99:                                                   \n"
+      : [src_argb] "+r"(src_argb),    // %[src_argb]
+        [dst_argb] "+r"(dst_argb),    // %[dst_argb]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "p0");
+}
+
+__arm_locally_streaming void ScaleARGBRowDown2Linear_SME(
+    const uint8_t* src_argb,
+    ptrdiff_t src_stride,
+    uint8_t* dst_argb,
+    int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  (void)src_stride;
+  int vl;
+  asm volatile(
+      "cntw     %x[vl]                                       \n"
+      "ptrue    p1.b                                         \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "ptrue    p0.s                                         \n"
+      "1:                                                    \n"
+      "ld2w     {z0.s, z1.s}, p0/z, [%[src_argb]]            \n"
+      "incb     %[src_argb], all, mul #2                     \n"
+      "urhadd   z0.b, p1/m, z0.b, z1.b                       \n"
+      "st1w     {z0.s}, p0, [%[dst_argb]]                    \n"
+      "incb     %[dst_argb], all, mul #1                     \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.s, wzr, %w[dst_width]                     \n"
+      "ld2w     {z0.s, z1.s}, p0/z, [%[src_argb]]            \n"
+      "urhadd   z0.b, p1/m, z0.b, z1.b                       \n"
+      "st1w     {z0.s}, p0, [%[dst_argb]]                    \n"
+
+      "99:                                                   \n"
+      : [src_argb] "+r"(src_argb),    // %[src_argb]
+        [dst_argb] "+r"(dst_argb),    // %[dst_argb]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "p0", "p1");
+}
+
+#define SCALEARGBROWDOWN2BOX_SVE                               \
+  "ld2w     {z0.s, z1.s}, p0/z, [%[src_argb]]              \n" \
+  "ld2w     {z2.s, z3.s}, p0/z, [%[src2_argb]]             \n" \
+  "incb     %[src_argb], all, mul #2                       \n" \
+  "incb     %[src2_argb], all, mul #2                      \n" \
+  "uaddlb   z4.h, z0.b, z1.b                               \n" \
+  "uaddlt   z5.h, z0.b, z1.b                               \n" \
+  "uaddlb   z6.h, z2.b, z3.b                               \n" \
+  "uaddlt   z7.h, z2.b, z3.b                               \n" \
+  "add      z4.h, z4.h, z6.h                               \n" \
+  "add      z5.h, z5.h, z7.h                               \n" \
+  "rshrnb   z0.b, z4.h, #2                                 \n" \
+  "rshrnt   z0.b, z5.h, #2                                 \n" \
+  "st1w     {z0.s}, p0, [%[dst_argb]]                      \n" \
+  "incb     %[dst_argb], all, mul #1                       \n"
+
+__arm_locally_streaming void ScaleARGBRowDown2Box_SME(const uint8_t* src_argb,
+                                                      ptrdiff_t src_stride,
+                                                      uint8_t* dst_argb,
+                                                      int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  const uint8_t* src2_argb = src_argb + src_stride;
+  int vl;
+  asm volatile(
+      "cntw     %x[vl]                                       \n"
+      "ptrue    p1.b                                         \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "ptrue    p0.s                                         \n"
+      "1:                                                    \n"  //
+      SCALEARGBROWDOWN2BOX_SVE
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.s, wzr, %w[dst_width]                     \n"  //
+      SCALEARGBROWDOWN2BOX_SVE
+
+      "99:                                                   \n"
+      : [src_argb] "+r"(src_argb),    // %[src_argb]
+        [src2_argb] "+r"(src2_argb),  // %[src2_argb]
+        [dst_argb] "+r"(dst_argb),    // %[dst_argb]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
+        "p1");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 

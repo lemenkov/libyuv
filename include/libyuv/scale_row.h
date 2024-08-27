@@ -128,6 +128,7 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2_SME
 #define HAS_SCALEUVROWDOWN2LINEAR_SME
 #define HAS_SCALEUVROWDOWN2BOX_SME
+#define HAS_SCALEARGBROWDOWN2_SME
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -958,14 +959,26 @@ void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
                             uint8_t* dst,
                             int dst_width);
+void ScaleARGBRowDown2_SME(const uint8_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst,
+                           int dst_width);
 void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
                                   ptrdiff_t src_stride,
                                   uint8_t* dst_argb,
                                   int dst_width);
+void ScaleARGBRowDown2Linear_SME(const uint8_t* src_argb,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_argb,
+                                 int dst_width);
 void ScaleARGBRowDown2Box_NEON(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst,
                                int dst_width);
+void ScaleARGBRowDown2Box_SME(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst,
+                              int dst_width);
 void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
                            ptrdiff_t src_stride,
                            uint8_t* dst_argb,
