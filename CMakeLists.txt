@@ -130,7 +130,8 @@ int main(void) { return 0; }
       # Enable AArch64 SME kernels.
       add_library(${ly_lib_name}_sme OBJECT
         ${ly_src_dir}/rotate_sme.cc
-        ${ly_src_dir}/row_sme.cc)
+        ${ly_src_dir}/row_sme.cc
+        ${ly_src_dir}/scale_sme.cc)
       target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+sme)
       list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
     else()

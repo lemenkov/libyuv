@@ -116,6 +116,12 @@ extern "C" {
 #define HAS_SCALEUVROWUP2_BILINEAR_16_NEON
 #endif
 
+// The following are available on AArch64 SME platforms:
+#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
+    defined(__aarch64__)
+#define HAS_SCALEROWDOWN2_SME
+#endif
+
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #define HAS_SCALEADDROW_MSA
 #define HAS_SCALEARGBCOLS_MSA
@@ -1397,13 +1403,15 @@ void ScaleUVRowUp2_Bilinear_16_Any_NEON(const uint16_t* src_ptr,
                                         int dst_width);
 
 // ScaleRowDown2Box also used by planar functions
-// NEON downscalers with interpolation.
-
-// Note - not static due to reuse in convert for 444 to 420.
+// NEON/SME downscalers with interpolation.
 void ScaleRowDown2_NEON(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
                         uint8_t* dst,
                         int dst_width);
+void ScaleRowDown2_SME(const uint8_t* src_ptr,
+                       ptrdiff_t src_stride,
+                       uint8_t* dst,
+                       int dst_width);
 void ScaleRowDown2Linear_NEON(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst,

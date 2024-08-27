@@ -74,6 +74,13 @@ static void ScalePlaneDown2(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN2_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    if (filtering == kFilterNone) {
+      ScaleRowDown2 = ScaleRowDown2_SME;
+    }
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN2_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ScaleRowDown2 =
