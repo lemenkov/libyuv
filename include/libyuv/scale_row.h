@@ -120,6 +120,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 #define HAS_SCALEROWDOWN2_SME
+#define HAS_SCALEUVROWDOWN2_SME
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -1154,6 +1155,10 @@ void ScaleUVRowDown2_NEON(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst,
                           int dst_width);
+void ScaleUVRowDown2_SME(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst,
+                         int dst_width);
 void ScaleUVRowDown2Linear_NEON(const uint8_t* src_ptr,
                                 ptrdiff_t src_stride,
                                 uint8_t* dst_uv,

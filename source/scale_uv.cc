@@ -120,6 +120,11 @@ static void ScaleUVDown2(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEUVROWDOWN2_SME)
+  if (TestCpuFlag(kCpuHasSME) && filtering == kFilterNone) {
+    ScaleUVRowDown2 = ScaleUVRowDown2_SME;
+  }
+#endif
 #if defined(HAS_SCALEUVROWDOWN2_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     ScaleUVRowDown2 =
