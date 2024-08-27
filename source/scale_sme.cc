@@ -96,6 +96,59 @@ __arm_locally_streaming void ScaleRowDown2Linear_SME(const uint8_t* src_ptr,
       : "memory", "cc", "z0", "z1", "p0");
 }
 
+#define SCALEROWDOWN2BOX_SVE                                 \
+  "ld2b     {z0.b, z1.b}, p0/z, [%[src_ptr]]             \n" \
+  "ld2b     {z2.b, z3.b}, p0/z, [%[src2_ptr]]            \n" \
+  "incb     %[src_ptr], all, mul #2                      \n" \
+  "incb     %[src2_ptr], all, mul #2                     \n" \
+  "uaddlb   z4.h, z0.b, z1.b                             \n" \
+  "uaddlt   z5.h, z0.b, z1.b                             \n" \
+  "uaddlb   z6.h, z2.b, z3.b                             \n" \
+  "uaddlt   z7.h, z2.b, z3.b                             \n" \
+  "add      z4.h, z4.h, z6.h                             \n" \
+  "add      z5.h, z5.h, z7.h                             \n" \
+  "rshrnb   z0.b, z4.h, #2                               \n" \
+  "rshrnt   z0.b, z5.h, #2                               \n" \
+  "subs     %w[dst_width], %w[dst_width], %w[vl]         \n" \
+  "st1b     {z0.b}, p0, [%[dst_ptr]]                     \n" \
+  "incb     %[dst_ptr]                                   \n"
+
+__arm_locally_streaming void ScaleRowDown2Box_SME(const uint8_t* src_ptr,
+                                                  ptrdiff_t src_stride,
+                                                  uint8_t* dst,
+                                                  int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  const uint8_t* src2_ptr = src_ptr + src_stride;
+  int vl;
+  asm volatile(
+      "cntb     %x[vl]                                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "ptrue    p0.b                                         \n"
+      "1:                                                    \n"  //
+      SCALEROWDOWN2BOX_SVE
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.b, wzr, %w[dst_width]                     \n"  //
+      SCALEROWDOWN2BOX_SVE
+
+      "99:                                                   \n"
+      : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
+        [src2_ptr] "+r"(src2_ptr),    // %[src2_ptr]
+        [dst_ptr] "+r"(dst),          // %[dst_ptr]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
+}
+
+#undef SCALEROWDOWN2BOX_SVE
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 
