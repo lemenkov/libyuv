@@ -4610,6 +4610,11 @@ int NV12ToRGB24Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_NV12TORGB24ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    NV12ToRGB24Row = NV12ToRGB24Row_SVE2;
+  }
+#endif
 #if defined(HAS_NV12TORGB24ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     NV12ToRGB24Row = NV12ToRGB24Row_Any_SSSE3;
@@ -4674,6 +4679,11 @@ int NV21ToRGB24Matrix(const uint8_t* src_y,
     if (IS_ALIGNED(width, 8)) {
       NV21ToRGB24Row = NV21ToRGB24Row_NEON;
     }
+  }
+#endif
+#if defined(HAS_NV21TORGB24ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    NV21ToRGB24Row = NV21ToRGB24Row_SVE2;
   }
 #endif
 #if defined(HAS_NV21TORGB24ROW_SSSE3)
