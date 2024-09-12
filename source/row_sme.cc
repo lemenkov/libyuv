@@ -216,6 +216,102 @@ __arm_locally_streaming void I422ToARGBRow_SME(
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 
+__arm_locally_streaming void MultiplyRow_16_SME(const uint16_t* src_y,
+                                                uint16_t* dst_y,
+                                                int scale,
+                                                int width) {
+  // Streaming-SVE only, no use of ZA tile.
+  int vl;
+  asm volatile(
+      "cnth    %x[vl]                                   \n"
+      "mov     z0.h, %w[scale]                          \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "b.lt    2f                                       \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue   p0.h                                     \n"
+      "1:                                               \n"
+      "ld1h    {z1.h}, p0/z, [%[src_y]]                 \n"
+      "incb    %[src_y]                                 \n"
+      "mul     z1.h, z0.h, z1.h                         \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "st1h    {z1.h}, p0, [%[dst_y]]                   \n"
+      "incb    %[dst_y]                                 \n"
+      "b.ge    1b                                       \n"
+
+      "2:                                               \n"
+      "adds    %w[width], %w[width], %w[vl]             \n"
+      "b.eq    99f                                      \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt p0.h, wzr, %w[width]                     \n"
+      "ld1h    {z1.h}, p0/z, [%[src_y]]                 \n"
+      "mul     z1.h, z0.h, z1.h                         \n"
+      "st1h    {z1.h}, p0, [%[dst_y]]                   \n"
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),  // %[src_y]
+        [dst_y] "+r"(dst_y),  // %[dst_y]
+        [width] "+r"(width),  // %[width]
+        [vl] "=&r"(vl)        // %[vl]
+      : [scale] "r"(scale)    // %[scale]
+      : "memory", "cc", "z0", "z1", "p0");
+}
+
+__arm_locally_streaming void ARGBMultiplyRow_SME(const uint8_t* src_argb,
+                                                 const uint8_t* src_argb1,
+                                                 uint8_t* dst_argb,
+                                                 int width) {
+  // Streaming-SVE only, no use of ZA tile.
+  width *= 4;
+  int vl;
+  asm volatile(
+      "cntb    %x[vl]                                   \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "b.lt    2f                                       \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue   p0.b                                     \n"
+      "1:                                               \n"
+      "ld1b    {z0.b}, p0/z, [%[src_argb]]              \n"
+      "ld1b    {z1.b}, p0/z, [%[src_argb1]]             \n"
+      "incb    %[src_argb]                              \n"
+      "incb    %[src_argb1]                             \n"
+      "umullb  z2.h, z0.b, z1.b                         \n"
+      "umullt  z1.h, z0.b, z1.b                         \n"
+      "rshrnb  z0.b, z2.h, #8                           \n"
+      "rshrnt  z0.b, z1.h, #8                           \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "st1b    {z0.b}, p0, [%[dst_argb]]                \n"
+      "incb    %[dst_argb]                              \n"
+      "b.ge    1b                                       \n"
+
+      "2:                                               \n"
+      "adds    %w[width], %w[width], %w[vl]             \n"
+      "b.eq    99f                                      \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt p0.b, wzr, %w[width]                     \n"
+      "ld1b    {z0.b}, p0/z, [%[src_argb]]              \n"
+      "ld1b    {z1.b}, p0/z, [%[src_argb1]]             \n"
+      "umullb  z2.h, z0.b, z1.b                         \n"
+      "umullt  z1.h, z0.b, z1.b                         \n"
+      "rshrnb  z0.b, z2.h, #8                           \n"
+      "rshrnt  z0.b, z1.h, #8                           \n"
+      "st1b    {z0.b}, p0, [%[dst_argb]]                \n"
+
+      "99:                                              \n"
+      : [src_argb] "+r"(src_argb),    // %[src_argb]
+        [src_argb1] "+r"(src_argb1),  // %[src_argb1]
+        [dst_argb] "+r"(dst_argb),    // %[dst_argb]
+        [width] "+r"(width),          // %[width]
+        [vl] "=&r"(vl)                // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "z2", "p0", "p1");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 

@@ -829,6 +829,11 @@ void ConvertToMSBPlane_16(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MULTIPLYROW_16_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MultiplyRow_16 = MultiplyRow_16_SME;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     MultiplyRow_16(src_y, dst_y, scale, width);
@@ -3132,6 +3137,11 @@ int ARGBMultiply(const uint8_t* src_argb0,
     if (IS_ALIGNED(width, 8)) {
       ARGBMultiplyRow = ARGBMultiplyRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_ARGBMULTIPLYROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBMultiplyRow = ARGBMultiplyRow_SME;
   }
 #endif
 #if defined(HAS_ARGBMULTIPLYROW_MSA)

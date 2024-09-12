@@ -589,8 +589,10 @@ extern "C" {
 // The following are available on AArch64 SME platforms:
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
+#define HAS_ARGBMULTIPLYROW_SME
 #define HAS_I422TOARGBROW_SME
 #define HAS_I444TOARGBROW_SME
+#define HAS_MULTIPLYROW_16_SME
 #endif
 
 // The following are available on AArch64 platforms:
@@ -3372,6 +3374,10 @@ void MultiplyRow_16_Any_NEON(const uint16_t* src_ptr,
                              uint16_t* dst_ptr,
                              int scale,
                              int width);
+void MultiplyRow_16_SME(const uint16_t* src_y,
+                        uint16_t* dst_y,
+                        int scale,
+                        int width);
 
 void DivideRow_16_C(const uint16_t* src_y,
                     uint16_t* dst_y,
@@ -5039,6 +5045,10 @@ void ARGBMultiplyRow_Any_NEON(const uint8_t* y_buf,
                               const uint8_t* uv_buf,
                               uint8_t* dst_ptr,
                               int width);
+void ARGBMultiplyRow_SME(const uint8_t* src_argb,
+                         const uint8_t* src_argb1,
+                         uint8_t* dst_argb,
+                         int width);
 void ARGBMultiplyRow_MSA(const uint8_t* src_argb0,
                          const uint8_t* src_argb1,
                          uint8_t* dst_argb,
