@@ -1284,7 +1284,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8_t* src_argb,
                                   int src_stepx,
                                   uint8_t* dst_argb,
                                   int dst_width) {
-  asm volatile (
+  asm volatile(
       "add         %1, %1, %0                    \n"
       "1:                                        \n"
       "ld1         {v0.8b}, [%0], %4             \n"  // Read 4 2x2 -> 2x1
@@ -1300,26 +1300,24 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8_t* src_argb,
       "uaddl       v4.8h, v4.8b, v5.8b           \n"
       "uaddl       v6.8h, v6.8b, v7.8b           \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "mov         v16.d[1], v0.d[1]             \n"  // ab_cd -> ac_bd
-      "mov         v0.d[1], v2.d[0]              \n"
-      "mov         v2.d[0], v16.d[1]             \n"
-      "mov         v16.d[1], v4.d[1]             \n"  // ef_gh -> eg_fh
-      "mov         v4.d[1], v6.d[0]              \n"
-      "mov         v6.d[0], v16.d[1]             \n"
+      "zip1        v1.2d, v0.2d, v2.2d           \n"
+      "zip2        v2.2d, v0.2d, v2.2d           \n"
+      "zip1        v5.2d, v4.2d, v6.2d           \n"
+      "zip2        v6.2d, v4.2d, v6.2d           \n"
       "prfm        pldl1keep, [%1, 448]          \n"
-      "add         v0.8h, v0.8h, v2.8h           \n"  // (a+b)_(c+d)
-      "add         v4.8h, v4.8h, v6.8h           \n"  // (e+f)_(g+h)
+      "add         v0.8h, v1.8h, v2.8h           \n"  // (a+b)_(c+d)
+      "add         v4.8h, v5.8h, v6.8h           \n"  // (e+f)_(g+h)
       "rshrn       v0.8b, v0.8h, #2              \n"  // first 2 pixels.
-      "rshrn2      v0.16b, v4.8h, #2             \n"  // next 2 pixels.
+      "rshrn       v1.8b, v4.8h, #2              \n"  // next 2 pixels.
       "subs        %w3, %w3, #4                  \n"  // 4 pixels per loop.
-      "st1         {v0.16b}, [%2], #16           \n"
+      "stp         d0, d1, [%2], #16             \n"
       "b.gt        1b                            \n"
       : "+r"(src_argb),                // %0
         "+r"(src_stride),              // %1
         "+r"(dst_argb),                // %2
         "+r"(dst_width)                // %3
       : "r"((int64_t)(src_stepx * 4))  // %4
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
 // TODO(Yang Zhang): Investigate less load instructions for
