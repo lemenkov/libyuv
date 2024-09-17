@@ -380,46 +380,49 @@ void ScaleRowDown38_3_Box_NEON(const uint8_t* src_ptr,
   const uint8_t* src_ptr1 = src_ptr + src_stride;
   const uint8_t* src_ptr2 = src_ptr + src_stride * 2;
   asm volatile(
-      "ld1         {v27.16b}, [%[tblArray1]]              \n"
-      "ld1         {v28.16b}, [%[tblArray2]]              \n"
-      "ld1         {v29.16b}, [%[tblArray3]]              \n"
-      "ld1         {v31.16b}, [%[tblArray4]]              \n"
-      "ld1         {v30.16b}, [%[div996]]                 \n"
+      "ld1       {v27.16b}, [%[tblArray1]]              \n"
+      "ld1       {v28.16b}, [%[tblArray2]]              \n"
+      "ld1       {v29.16b}, [%[tblArray3]]              \n"
+      "ld1       {v31.16b}, [%[tblArray4]]              \n"
+      "ld1       {v30.16b}, [%[div996]]                 \n"
 
-      "1:                                                 \n"
-      "ldp         q20, q0, [%[src_ptr]], #32             \n"
-      "ldp         q21, q1, [%[src_ptr1]], #32            \n"
-      "ldp         q22, q2, [%[src_ptr2]], #32            \n"
+      "1:                                               \n"
+      "ldp       q20, q0, [%[src_ptr]], #32             \n"
+      "ldp       q21, q1, [%[src_ptr1]], #32            \n"
+      "ldp       q22, q2, [%[src_ptr2]], #32            \n"
 
-      "subs        %w[width], %w[width], #12              \n"
+      "subs      %w[width], %w[width], #12              \n"
 
-      "uaddl       v23.8h, v20.8b, v21.8b                 \n"
-      "uaddl       v3.8h, v0.8b, v1.8b                    \n"
-      "uaddl2      v24.8h, v20.16b, v21.16b               \n"
-      "uaddl2      v4.8h, v0.16b, v1.16b                  \n"
+      // Add across strided rows first.
+      "uaddl     v23.8h, v20.8b, v21.8b                 \n"
+      "uaddl     v3.8h, v0.8b, v1.8b                    \n"
+      "uaddl2    v24.8h, v20.16b, v21.16b               \n"
+      "uaddl2    v4.8h, v0.16b, v1.16b                  \n"
 
-      "uaddw       v23.8h, v23.8h, v22.8b                 \n"
-      "uaddw       v3.8h, v3.8h, v2.8b                    \n"
-      "uaddw2      v24.8h, v24.8h, v22.16b                \n"
-      "uaddw2      v4.8h, v4.8h, v2.16b                   \n"
+      "uaddw     v23.8h, v23.8h, v22.8b                 \n"
+      "uaddw     v3.8h, v3.8h, v2.8b                    \n"
+      "uaddw2    v24.8h, v24.8h, v22.16b                \n"  // abcdefgh ...
+      "uaddw2    v4.8h, v4.8h, v2.16b                   \n"
 
-      "tbl         v20.16b, {v23.16b, v24.16b}, v27.16b   \n"
-      "tbl         v0.16b, {v3.16b, v4.16b}, v27.16b      \n"
-      "tbl         v21.16b, {v23.16b, v24.16b}, v28.16b   \n"
-      "tbl         v1.16b, {v3.16b, v4.16b}, v28.16b      \n"
-      "tbl         v22.16b, {v23.16b, v24.16b}, v29.16b   \n"
-      "tbl         v2.16b, {v3.16b, v4.16b}, v29.16b      \n"
+      // Permute groups of {three,three,two} into separate vectors to sum.
+      "tbl       v20.16b, {v23.16b, v24.16b}, v27.16b   \n"  // a d g ...
+      "tbl       v0.16b, {v3.16b, v4.16b}, v27.16b      \n"
+      "tbl       v21.16b, {v23.16b, v24.16b}, v28.16b   \n"  // b e h ...
+      "tbl       v1.16b, {v3.16b, v4.16b}, v28.16b      \n"
+      "tbl       v22.16b, {v23.16b, v24.16b}, v29.16b   \n"  // c f 0...
+      "tbl       v2.16b, {v3.16b, v4.16b}, v29.16b      \n"
 
-      "add         v23.8h, v20.8h, v21.8h                 \n"
-      "add         v3.8h, v0.8h, v1.8h                    \n"
-      "add         v24.8h, v23.8h, v22.8h                 \n"
-      "add         v4.8h, v3.8h, v2.8h                    \n"
-      "sqrdmulh    v24.8h, v24.8h, v30.8h                 \n"
-      "sqrdmulh    v25.8h, v4.8h, v30.8h                  \n"
-      "tbl         v21.16b, {v24.16b, v25.16b}, v31.16b   \n"
-      "st1         {v21.d}[0], [%[dst_ptr]], #8           \n"
-      "st1         {v21.s}[2], [%[dst_ptr]], #4           \n"
-      "b.gt        1b                                     \n"
+      "add       v23.8h, v20.8h, v21.8h                 \n"
+      "add       v3.8h, v0.8h, v1.8h                    \n"
+      "add       v24.8h, v23.8h, v22.8h                 \n"  // a+b+c d+e+f g+h
+      "add       v4.8h, v3.8h, v2.8h                    \n"
+
+      "sqrdmulh  v24.8h, v24.8h, v30.8h                 \n"  // v /= {9,9,6}
+      "sqrdmulh  v25.8h, v4.8h, v30.8h                  \n"
+      "tbl       v21.16b, {v24.16b, v25.16b}, v31.16b   \n"  // Narrow.
+      "st1       {v21.d}[0], [%[dst_ptr]], #8           \n"
+      "st1       {v21.s}[2], [%[dst_ptr]], #4           \n"
+      "b.gt      1b                                     \n"
       : [src_ptr] "+r"(src_ptr),                         // %[src_ptr]
         [dst_ptr] "+r"(dst_ptr),                         // %[dst_ptr]
         [src_ptr1] "+r"(src_ptr1),                       // %[src_ptr1]
@@ -445,40 +448,41 @@ void ScaleRowDown38_2_Box_NEON(const uint8_t* src_ptr,
                                int dst_width) {
   const uint8_t* src_ptr1 = src_ptr + src_stride;
   asm volatile(
-      "ld1         {v28.16b}, [%[tblArray1]]              \n"
-      "ld1         {v29.16b}, [%[tblArray2]]              \n"
-      "ld1         {v31.16b}, [%[tblArray3]]              \n"
-      "ld1         {v30.8h}, [%[div664]]                  \n"
+      "ld1       {v28.16b}, [%[tblArray1]]             \n"
+      "ld1       {v29.16b}, [%[tblArray2]]             \n"
+      "ld1       {v31.16b}, [%[tblArray3]]             \n"
+      "ld1       {v30.8h}, [%[div664]]                 \n"
 
-      "1:                                                 \n"
-      "ldp         q20, q0, [%[src_ptr]], #32             \n"
-      "ldp         q21, q1, [%[src_ptr1]], #32            \n"
-      "subs        %w[width], %w[width], #12              \n"
+      "1:                                              \n"
+      "ldp       q20, q0, [%[src_ptr]], #32            \n"  // abcdefgh ...
+      "ldp       q21, q1, [%[src_ptr1]], #32           \n"  // ijklmnop ...
+      "subs      %w[width], %w[width], #12             \n"
 
-      "tbl         v22.16b, {v20.16b}, v28.16b            \n"
-      "tbl         v2.16b, {v0.16b}, v28.16b              \n"
-      "tbl         v23.16b, {v21.16b}, v28.16b            \n"
-      "tbl         v3.16b, {v1.16b}, v28.16b              \n"
-      "tbl         v24.16b, {v20.16b, v21.16b}, v29.16b   \n"
-      "tbl         v4.16b, {v0.16b, v1.16b}, v29.16b      \n"
+      // Permute into groups of six values (three pairs) to be summed.
+      "tbl       v22.16b, {v20.16b}, v28.16b           \n"  // abdegh ...
+      "tbl       v2.16b, {v0.16b}, v28.16b             \n"
+      "tbl       v23.16b, {v21.16b}, v28.16b           \n"  // ijlmop ...
+      "tbl       v3.16b, {v1.16b}, v28.16b             \n"
+      "tbl       v24.16b, {v20.16b, v21.16b}, v29.16b  \n"  // ckfn00 ...
+      "tbl       v4.16b, {v0.16b, v1.16b}, v29.16b     \n"
 
-      "uaddlp      v22.8h, v22.16b                        \n"
-      "uaddlp      v2.8h, v2.16b                          \n"
-      "uaddlp      v23.8h, v23.16b                        \n"
-      "uaddlp      v3.8h, v3.16b                          \n"
-      "uaddlp      v24.8h, v24.16b                        \n"
-      "uaddlp      v4.8h, v4.16b                          \n"
-      "add         v20.8h, v22.8h, v23.8h                 \n"
-      "add         v0.8h, v2.8h, v3.8h                    \n"
-      "add         v21.8h, v20.8h, v24.8h                 \n"
-      "add         v1.8h, v0.8h, v4.8h                    \n"
+      "uaddlp    v22.8h, v22.16b                       \n"  // a+b d+e g+h ...
+      "uaddlp    v2.8h, v2.16b                         \n"
+      "uaddlp    v23.8h, v23.16b                       \n"  // i+j l+m o+p ...
+      "uaddlp    v3.8h, v3.16b                         \n"
+      "uaddlp    v24.8h, v24.16b                       \n"  // c+k f+n   0 ...
+      "uaddlp    v4.8h, v4.16b                         \n"
+      "add       v20.8h, v22.8h, v23.8h                \n"
+      "add       v0.8h, v2.8h, v3.8h                   \n"
+      "add       v21.8h, v20.8h, v24.8h                \n"  // a+b+i+j+c+k ...
+      "add       v1.8h, v0.8h, v4.8h                   \n"
 
-      "sqrdmulh    v21.8h, v21.8h, v30.8h                 \n"
-      "sqrdmulh    v22.8h, v1.8h, v30.8h                  \n"
-      "tbl         v21.16b, {v21.16b, v22.16b}, v31.16b   \n"
-      "st1         {v21.d}[0], [%[dst_ptr]], #8           \n"
-      "st1         {v21.s}[2], [%[dst_ptr]], #4           \n"
-      "b.gt        1b                                     \n"
+      "sqrdmulh  v21.8h, v21.8h, v30.8h                \n"  // v /= {6,6,4}
+      "sqrdmulh  v22.8h, v1.8h, v30.8h                 \n"
+      "tbl       v21.16b, {v21.16b, v22.16b}, v31.16b  \n"  // Narrow.
+      "st1       {v21.d}[0], [%[dst_ptr]], #8          \n"
+      "st1       {v21.s}[2], [%[dst_ptr]], #4          \n"
+      "b.gt      1b                                    \n"
       : [src_ptr] "+r"(src_ptr),                         // %[src_ptr]
         [dst_ptr] "+r"(dst_ptr),                         // %[dst_ptr]
         [src_ptr1] "+r"(src_ptr1),                       // %[src_ptr1]
