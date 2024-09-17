@@ -1375,34 +1375,29 @@ void ARGBShadeRow_C(const uint8_t* src_argb,
 #undef REPEAT8
 #undef SHADE
 
-#define REPEAT8(v) (v) | ((v) << 8)
-#define SHADE(f, v) v* f >> 16
-
 void ARGBMultiplyRow_C(const uint8_t* src_argb,
                        const uint8_t* src_argb1,
                        uint8_t* dst_argb,
                        int width) {
   int i;
   for (i = 0; i < width; ++i) {
-    const uint32_t b = REPEAT8(src_argb[0]);
-    const uint32_t g = REPEAT8(src_argb[1]);
-    const uint32_t r = REPEAT8(src_argb[2]);
-    const uint32_t a = REPEAT8(src_argb[3]);
+    const uint32_t b = src_argb[0];
+    const uint32_t g = src_argb[1];
+    const uint32_t r = src_argb[2];
+    const uint32_t a = src_argb[3];
     const uint32_t b_scale = src_argb1[0];
     const uint32_t g_scale = src_argb1[1];
     const uint32_t r_scale = src_argb1[2];
     const uint32_t a_scale = src_argb1[3];
-    dst_argb[0] = STATIC_CAST(uint8_t, SHADE(b, b_scale));
-    dst_argb[1] = STATIC_CAST(uint8_t, SHADE(g, g_scale));
-    dst_argb[2] = STATIC_CAST(uint8_t, SHADE(r, r_scale));
-    dst_argb[3] = STATIC_CAST(uint8_t, SHADE(a, a_scale));
+    dst_argb[0] = STATIC_CAST(uint8_t, (b * b_scale + 128) >> 8);
+    dst_argb[1] = STATIC_CAST(uint8_t, (g * g_scale + 128) >> 8);
+    dst_argb[2] = STATIC_CAST(uint8_t, (r * r_scale + 128) >> 8);
+    dst_argb[3] = STATIC_CAST(uint8_t, (a * a_scale + 128) >> 8);
     src_argb += 4;
     src_argb1 += 4;
     dst_argb += 4;
   }
 }
-#undef REPEAT8
-#undef SHADE
 
 #define SHADE(f, v) clamp255(v + f)
 
