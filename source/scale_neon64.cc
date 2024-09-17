@@ -330,6 +330,8 @@ static const vec16 kMult38_Div6 = {65536 / 12, 65536 / 12, 65536 / 12,
 static const vec16 kMult38_Div9 = {65536 / 18, 65536 / 18, 65536 / 18,
                                    65536 / 18, 65536 / 18, 65536 / 18,
                                    65536 / 18, 65536 / 18};
+static const vec16 kMult38_Div664 = {
+    65536 / 12, 65536 / 12, 65536 / 8, 65536 / 12, 65536 / 12, 65536 / 8, 0, 0};
 
 // 32 -> 12
 void ScaleRowDown38_NEON(const uint8_t* src_ptr,
@@ -488,107 +490,63 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8_t* src_ptr,
         "v30", "v31");
 }
 
-// 32x2 -> 12x1
+static const uvec8 kScaleRowDown38_2_BoxIndices1[] = {
+    0, 1, 3, 4, 6, 7, 8, 9, 11, 12, 14, 15, 255, 255, 255, 255};
+static const uvec8 kScaleRowDown38_2_BoxIndices2[] = {
+    2, 18, 5, 21, 255, 255, 10, 26, 13, 29, 255, 255, 255, 255, 255, 255};
+static const uvec8 kScaleRowDown38_NarrowIndices[] = {
+    0, 2, 4, 6, 8, 10, 16, 18, 20, 22, 24, 26, 255, 255, 255, 255};
+
 void ScaleRowDown38_2_Box_NEON(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
                                int dst_width) {
-  // TODO(fbarchard): use src_stride directly for clang 3.5+.
-  ptrdiff_t tmp_src_stride = src_stride;
-  asm volatile (
-      "ld1         {v30.8h}, [%4]                \n"
-      "ld1         {v31.16b}, [%5]               \n"
-      "add         %2, %2, %0                    \n"
-      "1:                                        \n"
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  asm volatile(
+      "ld1         {v28.16b}, [%[tblArray1]]              \n"
+      "ld1         {v29.16b}, [%[tblArray2]]              \n"
+      "ld1         {v31.16b}, [%[tblArray3]]              \n"
+      "ld1         {v30.8h}, [%[div664]]                  \n"
 
-      // 00 40 01 41 02 42 03 43
-      // 10 50 11 51 12 52 13 53
-      // 20 60 21 61 22 62 23 63
-      // 30 70 31 71 32 72 33 73
-      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"
-      "ld4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%2], #32 \n"
-      "subs        %w3, %w3, #12                 \n"
+      "1:                                                 \n"
+      "ldp         q20, q0, [%[src_ptr]], #32             \n"
+      "ldp         q21, q1, [%[src_ptr1]], #32            \n"
+      "subs        %w[width], %w[width], #12              \n"
 
-      // Shuffle the input data around to get align the data
-      //  so adjacent data can be added. 0,1 - 2,3 - 4,5 - 6,7
-      // 00 10 01 11 02 12 03 13
-      // 40 50 41 51 42 52 43 53
-      "trn1        v16.8b, v0.8b, v1.8b          \n"
-      "trn2        v17.8b, v0.8b, v1.8b          \n"
-      "trn1        v18.8b, v4.8b, v5.8b          \n"
-      "trn2        v19.8b, v4.8b, v5.8b          \n"
+      "tbl         v22.16b, {v20.16b}, v28.16b            \n"
+      "tbl         v2.16b, {v0.16b}, v28.16b              \n"
+      "tbl         v23.16b, {v21.16b}, v28.16b            \n"
+      "tbl         v3.16b, {v1.16b}, v28.16b              \n"
+      "tbl         v24.16b, {v20.16b, v21.16b}, v29.16b   \n"
+      "tbl         v4.16b, {v0.16b, v1.16b}, v29.16b      \n"
 
-      // 20 30 21 31 22 32 23 33
-      // 60 70 61 71 62 72 63 73
-      "trn1        v0.8b, v2.8b, v3.8b           \n"
-      "trn2        v1.8b, v2.8b, v3.8b           \n"
-      "trn1        v4.8b, v6.8b, v7.8b           \n"
-      "trn2        v5.8b, v6.8b, v7.8b           \n"
+      "uaddlp      v22.8h, v22.16b                        \n"
+      "uaddlp      v2.8h, v2.16b                          \n"
+      "uaddlp      v23.8h, v23.16b                        \n"
+      "uaddlp      v3.8h, v3.16b                          \n"
+      "uaddlp      v24.8h, v24.16b                        \n"
+      "uaddlp      v4.8h, v4.16b                          \n"
+      "add         v20.8h, v22.8h, v23.8h                 \n"
+      "add         v0.8h, v2.8h, v3.8h                    \n"
+      "add         v21.8h, v20.8h, v24.8h                 \n"
+      "add         v1.8h, v0.8h, v4.8h                    \n"
 
-      // 00+10 01+11 02+12 03+13
-      // 40+50 41+51 42+52 43+53
-      "uaddlp      v16.4h, v16.8b                \n"
-      "uaddlp      v17.4h, v17.8b                \n"
-      "uaddlp      v18.4h, v18.8b                \n"
-      "uaddlp      v19.4h, v19.8b                \n"
-
-      // 60+70 61+71 62+72 63+73
-      "uaddlp      v1.4h, v1.8b                  \n"
-      "uaddlp      v5.4h, v5.8b                  \n"
-
-      // combine source lines
-      "add         v16.4h, v16.4h, v18.4h        \n"
-      "add         v17.4h, v17.4h, v19.4h        \n"
-      "add         v2.4h, v1.4h, v5.4h           \n"
-
-      // dst_ptr[3] = (s[6] + s[7] + s[6+st] + s[7+st]) / 4
-      "uqrshrn     v2.8b, v2.8h, #2              \n"
-
-      // Shuffle 2,3 reg around so that 2 can be added to the
-      //  0,1 reg and 3 can be added to the 4,5 reg. This
-      //  requires expanding from u8 to u16 as the 0,1 and 4,5
-      //  registers are already expanded. Then do transposes
-      //  to get aligned.
-      // xx 20 xx 30 xx 21 xx 31 xx 22 xx 32 xx 23 xx 33
-
-      // combine source lines
-      "uaddl       v0.8h, v0.8b, v4.8b           \n"
-
-      // xx 20 xx 21 xx 22 xx 23
-      // xx 30 xx 31 xx 32 xx 33
-      "trn1        v1.8h, v0.8h, v0.8h           \n"
-      "trn2        v4.8h, v0.8h, v0.8h           \n"
-      "xtn         v0.4h, v1.4s                  \n"
-      "xtn         v4.4h, v4.4s                  \n"
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-
-      // 0+1+2, 3+4+5
-      "add         v16.8h, v16.8h, v0.8h         \n"
-      "add         v17.8h, v17.8h, v4.8h         \n"
-      "prfm        pldl1keep, [%2, 448]          \n"
-
-      // Need to divide, but can't downshift as the the value
-      //  isn't a power of 2. So multiply by 65536 / n
-      //  and take the upper 16 bits.
-      "sqrdmulh    v0.8h, v16.8h, v30.8h         \n"
-      "sqrdmulh    v1.8h, v17.8h, v30.8h         \n"
-
-      // Align for table lookup, vtbl requires registers to
-      //  be adjacent
-
-      "tbl         v3.16b, {v0.16b, v1.16b, v2.16b}, v31.16b \n"
-
-      "st1         {v3.8b}, [%1], #8             \n"
-      "st1         {v3.s}[2], [%1], #4           \n"
-      "b.gt        1b                            \n"
-      : "+r"(src_ptr),         // %0
-        "+r"(dst_ptr),         // %1
-        "+r"(tmp_src_stride),  // %2
-        "+r"(dst_width)        // %3
-      : "r"(&kMult38_Div6),    // %4
-        "r"(&kShuf38_2)        // %5
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
-        "v17", "v18", "v19", "v30", "v31");
+      "sqrdmulh    v21.8h, v21.8h, v30.8h                 \n"
+      "sqrdmulh    v22.8h, v1.8h, v30.8h                  \n"
+      "tbl         v21.16b, {v21.16b, v22.16b}, v31.16b   \n"
+      "st1         {v21.d}[0], [%[dst_ptr]], #8           \n"
+      "st1         {v21.s}[2], [%[dst_ptr]], #4           \n"
+      "b.gt        1b                                     \n"
+      : [src_ptr] "+r"(src_ptr),                         // %[src_ptr]
+        [dst_ptr] "+r"(dst_ptr),                         // %[dst_ptr]
+        [src_ptr1] "+r"(src_ptr1),                       // %[src_ptr1]
+        [width] "+r"(dst_width)                          // %[width]
+      : [div664] "r"(&kMult38_Div664),                   // %[div664]
+        [tblArray1] "r"(kScaleRowDown38_2_BoxIndices1),  // %[tblArray1]
+        [tblArray2] "r"(kScaleRowDown38_2_BoxIndices2),  // %[tblArray2]
+        [tblArray3] "r"(kScaleRowDown38_NarrowIndices)   // %[tblArray3]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v20", "v21", "v22",
+        "v23", "v24", "v28", "v29", "v30", "v31");
 }
 
 void ScaleRowUp2_Linear_NEON(const uint8_t* src_ptr,
