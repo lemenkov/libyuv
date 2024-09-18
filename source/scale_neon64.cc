@@ -337,20 +337,31 @@ void ScaleRowDown38_NEON(const uint8_t* src_ptr,
                          uint8_t* dst_ptr,
                          int dst_width) {
   (void)src_stride;
-  asm volatile (
-      "ld1         {v3.16b}, [%3]                \n"
-      "1:                                        \n"
-      "ld1         {v0.16b,v1.16b}, [%0], #32    \n"
-      "subs        %w2, %w2, #12                 \n"
-      "tbl         v2.16b, {v0.16b,v1.16b}, v3.16b \n"
-      "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
-      "st1         {v2.8b}, [%1], #8             \n"
-      "st1         {v2.s}[2], [%1], #4           \n"
-      "b.gt        1b                            \n"
-      : "+r"(src_ptr),   // %0
-        "+r"(dst_ptr),   // %1
-        "+r"(dst_width)  // %2
-      : "r"(&kShuf38)    // %3
+  asm volatile(
+      "ld1     {v3.16b}, [%[kShuf38]]             \n"
+      "subs    %w[width], %w[width], #12          \n"
+      "b.eq    2f                                 \n"
+
+      "1:                                         \n"
+      "ldp     q0, q1, [%[src_ptr]], #32          \n"
+      "subs    %w[width], %w[width], #12          \n"
+      "tbl     v2.16b, {v0.16b, v1.16b}, v3.16b   \n"
+      "prfm    pldl1keep, [%[src_ptr], 448]       \n"  // prefetch 7 lines ahead
+      "str     q2, [%[dst_ptr]]                   \n"
+      "add     %[dst_ptr], %[dst_ptr], #12        \n"
+      "b.gt    1b                                 \n"
+
+      // Store exactly 12 bytes on the final iteration to avoid writing past
+      // the end of the array.
+      "2:                                         \n"
+      "ldp     q0, q1, [%[src_ptr]]               \n"
+      "tbl     v2.16b, {v0.16b, v1.16b}, v3.16b   \n"
+      "st1     {v2.8b}, [%[dst_ptr]], #8          \n"
+      "st1     {v2.s}[2], [%[dst_ptr]]            \n"
+      : [src_ptr] "+r"(src_ptr),  // %[src_ptr]
+        [dst_ptr] "+r"(dst_ptr),  // %[dst_ptr]
+        [width] "+r"(dst_width)   // %[width]
+      : [kShuf38] "r"(&kShuf38)   // %[kShuf38]
       : "memory", "cc", "v0", "v1", "v2", "v3");
 }
 
