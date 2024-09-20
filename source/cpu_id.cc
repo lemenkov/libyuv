@@ -451,8 +451,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   cpu_info = LoongarchCpuCaps();
   cpu_info |= kCpuHasLOONGARCH;
 #endif
-#if defined(__arm__) || defined(__aarch64__)
-#if defined(__aarch64__) && defined(__linux__)
+#if defined(__aarch64__)
+#if defined(__linux__)
   // getauxval is supported since Android SDK version 18, minimum at time of
   // writing is 21, so should be safe to always use this. If getauxval is
   // somehow disabled then getauxval returns 0, which will leave Neon enabled
@@ -460,9 +460,12 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   unsigned long hwcap = getauxval(AT_HWCAP);
   unsigned long hwcap2 = getauxval(AT_HWCAP2);
   cpu_info = AArch64CpuCaps(hwcap, hwcap2);
-#elif defined(__aarch64__)
-  cpu_info = AArch64CpuCaps();
 #else
+  cpu_info = AArch64CpuCaps();
+#endif
+  cpu_info |= kCpuHasARM;
+#endif  // __aarch64__
+#if defined(__arm__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // __ARM_NEON__ generates code that requires Neon.  NaCL also requires Neon.
   // For Linux, /proc/cpuinfo can be tested but without that assume Neon.
@@ -473,7 +476,6 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   cpu_info = kCpuHasNEON;
 #else
   cpu_info = 0;
-#endif
 #endif
   cpu_info |= kCpuHasARM;
 #endif  // __arm__
