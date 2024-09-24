@@ -1055,7 +1055,7 @@ static int ScaleUV(const uint8_t* src,
       // Optimized even scale down. ie 2, 4, 6, 8, 10x.
       if (!(dx & 0x10000) && !(dy & 0x10000)) {
 #if HAS_SCALEUVDOWN2
-        if (dx == 0x20000) {
+        if (dx == 0x20000 && dy == 0x20000) {
           // Optimized 1/2 downsample.
           ScaleUVDown2(src_width, src_height, clip_width, clip_height,
                        src_stride, dst_stride, src, dst, x, dx, y, dy,
@@ -1064,7 +1064,7 @@ static int ScaleUV(const uint8_t* src,
         }
 #endif
 #if HAS_SCALEUVDOWN4BOX
-        if (dx == 0x40000 && filtering == kFilterBox) {
+        if (dx == 0x40000 && dy == 0x40000 && filtering == kFilterBox) {
           // Optimized 1/4 box downsample.
           return ScaleUVDown4Box(src_width, src_height, clip_width, clip_height,
                                  src_stride, dst_stride, src, dst, x, dx, y,

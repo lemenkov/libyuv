@@ -1059,14 +1059,14 @@ static int ScaleARGB(const uint8_t* src,
     } else {
       // Optimized even scale down. ie 2, 4, 6, 8, 10x.
       if (!(dx & 0x10000) && !(dy & 0x10000)) {
-        if (dx == 0x20000) {
+        if (dx == 0x20000 && dy == 0x20000) {
           // Optimized 1/2 downsample.
           ScaleARGBDown2(src_width, src_height, clip_width, clip_height,
                          src_stride, dst_stride, src, dst, x, dx, y, dy,
                          filtering);
           return 0;
         }
-        if (dx == 0x40000 && filtering == kFilterBox) {
+        if (dx == 0x40000 && dy == 0x40000 && filtering == kFilterBox) {
           // Optimized 1/4 box downsample.
           return ScaleARGBDown4Box(src_width, src_height, clip_width,
                                    clip_height, src_stride, dst_stride, src,

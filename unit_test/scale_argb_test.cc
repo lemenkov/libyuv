@@ -323,13 +323,15 @@ TEST_FACTOR(3, 1, 3)
 #define TEST_SCALETO(name, width, height)         \
   TEST_SCALETO1(, name, width, height, None, 0)   \
   TEST_SCALETO1(, name, width, height, Linear, 3) \
-  TEST_SCALETO1(, name, width, height, Bilinear, 3)
+  TEST_SCALETO1(, name, width, height, Bilinear, 3) \
+  TEST_SCALETO1(, name, width, height, Box, 3)
 #else
 #if defined(ENABLE_FULL_TESTS)
 #define TEST_SCALETO(name, width, height)                  \
   TEST_SCALETO1(DISABLED_, name, width, height, None, 0)   \
   TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3) \
-  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3)
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3) \
+  TEST_SCALETO1(DISABLED_, name, width, height, Box, 3)
 #else
 #define TEST_SCALETO(name, width, height) \
   TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3)
@@ -340,6 +342,7 @@ TEST_SCALETO(ARGBScale, 1, 1)
 TEST_SCALETO(ARGBScale, 569, 480)
 TEST_SCALETO(ARGBScale, 640, 360)
 #ifndef DISABLE_SLOW_TESTS
+TEST_SCALETO(ARGBScale, 50, 1)
 TEST_SCALETO(ARGBScale, 256, 144) /* 128x72 * 2 */
 TEST_SCALETO(ARGBScale, 320, 240)
 TEST_SCALETO(ARGBScale, 1280, 720)
