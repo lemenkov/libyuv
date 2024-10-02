@@ -73,9 +73,9 @@ extern "C" {
 #endif  // VisualStudio >= 2012
 
 // Clang 19 required for SME due to needing __arm_tpidr2_save from compiler-rt,
-// only enabled on Linux for now.
+// only enabled on Linux and Android (both define __linux__) for now.
 #if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__) && \
-    defined(__gnu_linux__) && defined(__clang__) && (__clang_major__ >= 19)
+    defined(__linux__) && defined(__clang__) && (__clang_major__ >= 19)
 #define CLANG_HAS_SME 1
 #endif
 
