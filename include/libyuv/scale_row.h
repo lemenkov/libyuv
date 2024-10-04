@@ -122,6 +122,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN2_SME
 #define HAS_SCALEUVROWDOWN2_SME
 #define HAS_SCALEUVROWDOWN2LINEAR_SME
+#define HAS_SCALEUVROWDOWN2BOX_SME
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -1172,6 +1173,10 @@ void ScaleUVRowDown2Box_NEON(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              uint8_t* dst,
                              int dst_width);
+void ScaleUVRowDown2Box_SME(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst,
+                            int dst_width);
 void ScaleUVRowDown2_MSA(const uint8_t* src_ptr,
                          ptrdiff_t src_stride,
                          uint8_t* dst_uv,
