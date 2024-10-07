@@ -1178,12 +1178,16 @@ int YUVToARGBScaleClip(const uint8_t* src_y,
                        int clip_height,
                        enum FilterMode filtering) {
   int r;
-  uint8_t* argb_buffer = (uint8_t*)malloc(src_width * src_height * 4);
+  (void)src_fourcc;  // TODO(fbarchard): implement and/or assert.
+  (void)dst_fourcc;
+  const uint64_t argb_buffer_size = (uint64_t)src_width * src_height * 4;
+  if (argb_buffer_size > SIZE_MAX) {
+    return -1;  // Invalid size.
+  }
+  uint8_t* argb_buffer = (uint8_t*)malloc((size_t)argb_buffer_size);
   if (!argb_buffer) {
     return 1;  // Out of memory runtime error.
   }
-  (void)src_fourcc;  // TODO(fbarchard): implement and/or assert.
-  (void)dst_fourcc;
   I420ToARGB(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
              argb_buffer, src_width * 4, src_width, src_height);
 

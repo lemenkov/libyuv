@@ -75,8 +75,11 @@ int ConvertToARGB(const uint8_t* sample,
   }
 
   if (need_buf) {
-    int argb_size = crop_width * 4 * abs_crop_height;
-    rotate_buffer = (uint8_t*)malloc(argb_size); /* NOLINT */
+    const uint64_t rotate_buffer_size = (uint64_t)crop_width * 4 * abs_crop_height;
+    if (rotate_buffer_size > SIZE_MAX) {
+      return -1;  // Invalid size.
+    }
+    rotate_buffer = (uint8_t*)malloc((size_t)rotate_buffer_size);
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
     }

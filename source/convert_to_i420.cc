@@ -76,7 +76,11 @@ int ConvertToI420(const uint8_t* sample,
   if (need_buf) {
     int y_size = crop_width * abs_crop_height;
     int uv_size = ((crop_width + 1) / 2) * ((abs_crop_height + 1) / 2);
-    rotate_buffer = (uint8_t*)malloc(y_size + uv_size * 2); /* NOLINT */
+    const uint64_t rotate_buffer_size = (uint64_t)y_size + (uint64_t)uv_size * 2;
+    if (rotate_buffer_size > SIZE_MAX) {
+      return -1;  // Invalid size.
+    }
+    rotate_buffer = (uint8_t*)malloc((size_t)rotate_buffer_size);
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
     }
