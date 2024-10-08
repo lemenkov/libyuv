@@ -8,9 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdlib.h>
-
 #include "libyuv/convert.h"
+
+#include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "libyuv/video_common.h"
 
@@ -46,7 +49,6 @@ int ConvertToI420(const uint8_t* sample,
   const uint8_t* src;
   const uint8_t* src_uv;
   const int abs_src_height = (src_height < 0) ? -src_height : src_height;
-  // TODO(nisse): Why allow crop_height < 0?
   const int abs_crop_height = (crop_height < 0) ? -crop_height : crop_height;
   int r = 0;
   LIBYUV_BOOL need_buf =
@@ -63,7 +65,7 @@ int ConvertToI420(const uint8_t* sample,
   const int inv_crop_height =
       (src_height < 0) ? -abs_crop_height : abs_crop_height;
 
-  if (!dst_y || !dst_u || !dst_v || !sample || src_width <= 0 ||
+  if (!dst_y || !dst_u || !dst_v || !sample || src_width <= 0 || src_width > INT_MAX / 4 ||
       crop_width <= 0 || src_height == 0 || crop_height == 0) {
     return -1;
   }

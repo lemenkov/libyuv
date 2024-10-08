@@ -10,7 +10,10 @@
 
 #include "libyuv/scale.h"
 
+#include <limits.h>
 #include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "libyuv/cpu_id.h"
@@ -1180,7 +1183,14 @@ int YUVToARGBScaleClip(const uint8_t* src_y,
   int r;
   (void)src_fourcc;  // TODO(fbarchard): implement and/or assert.
   (void)dst_fourcc;
-  const uint64_t argb_buffer_size = (uint64_t)src_width * src_height * 4;
+  const int abs_src_height = (src_height < 0) ? -src_height : src_height;
+  if (!src_y || !src_u || !src_v || !dst_argb ||
+      src_width <= 0 || src_width > INT_MAX / 4 || src_height == 0 ||
+      dst_width <= 0 || dst_height <= 0 ||
+      clip_width <= 0 || clip_height <= 0) {
+    return -1;
+  }
+  const uint64_t argb_buffer_size = (uint64_t)src_width * abs_src_height * 4;
   if (argb_buffer_size > SIZE_MAX) {
     return -1;  // Invalid size.
   }
@@ -1191,7 +1201,7 @@ int YUVToARGBScaleClip(const uint8_t* src_y,
   I420ToARGB(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
              argb_buffer, src_width * 4, src_width, src_height);
 
-  r = ARGBScaleClip(argb_buffer, src_width * 4, src_width, src_height, dst_argb,
+  r = ARGBScaleClip(argb_buffer, src_width * 4, src_width, abs_src_height, dst_argb,
                     dst_stride_argb, dst_width, dst_height, clip_x, clip_y,
                     clip_width, clip_height, filtering);
   free(argb_buffer);

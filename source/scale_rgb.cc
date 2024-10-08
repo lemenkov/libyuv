@@ -10,7 +10,10 @@
 
 #include "libyuv/scale.h" /* For FilterMode */
 
+#include <limits.h>
 #include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "libyuv/convert_argb.h"
@@ -38,7 +41,13 @@ int RGBScale(const uint8_t* src_rgb,
              int dst_height,
              enum FilterMode filtering) {
   int r;
-  const uint64_t src_argb_size = (uint64_t)src_width * src_height * 4;
+  if (!src_rgb || !dst_rgb ||
+      src_width <= 0 || src_width > INT_MAX / 4 || src_height == 0 ||
+      dst_width <= 0 || dst_width > INT_MAX / 4 || dst_height <= 0) {
+    return -1;
+  }
+  const int abs_src_height = (src_height < 0) ? -src_height : src_height;
+  const uint64_t src_argb_size = (uint64_t)src_width * abs_src_height * 4;
   const uint64_t dst_argb_size = (uint64_t)dst_width * dst_height * 4;
   if (src_argb_size > (UINT64_MAX - dst_argb_size)) {
     return -1;  // Invalid size.
@@ -56,7 +65,7 @@ int RGBScale(const uint8_t* src_rgb,
   r = RGB24ToARGB(src_rgb, src_stride_rgb, src_argb, src_width * 4, src_width,
                   src_height);
   if (!r) {
-    r = ARGBScale(src_argb, src_width * 4, src_width, src_height, dst_argb,
+    r = ARGBScale(src_argb, src_width * 4, src_width, abs_src_height, dst_argb,
                   dst_width * 4, dst_width, dst_height, filtering);
     if (!r) {
       r = ARGBToRGB24(dst_argb, dst_width * 4, dst_rgb, dst_stride_rgb,
