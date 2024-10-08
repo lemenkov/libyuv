@@ -44,7 +44,7 @@ int RGBScale(const uint8_t* src_rgb,
     return -1;  // Invalid size.
   }
   const uint64_t argb_size = src_argb_size + dst_argb_size;
-  if (argb_size < src_argb_size || argb_size < dst_argb_size || argb_size > SIZE_MAX) {
+  if (argb_size > SIZE_MAX) {
     return -1;  // Invalid size.
   }
   uint8_t* src_argb = (uint8_t*)malloc((size_t)argb_size);
