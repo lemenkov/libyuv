@@ -113,7 +113,7 @@ if(NOT MSVC)
     target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv9-a+sve2)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
 
-    set(OLD_CMAKE_REQURED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
     set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+sme")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
@@ -123,7 +123,7 @@ if(NOT MSVC)
 __arm_locally_streaming void func(void) { }
 int main(void) { return 0; }
     " CAN_COMPILE_SME)
-    set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQURED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
     set(CMAKE_TRY_COMPILE_TARGET_TYPE ${OLD_CMAKE_TRY_COMPILE_TARGET_TYPE})
 
     if (CAN_COMPILE_SME)
