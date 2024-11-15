@@ -5503,6 +5503,98 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
 }
 #endif  // HAS_SPLITRGBROW_SSSE3
 
+#ifdef HAS_SPLITRGBROW_SSE41
+// Shuffle table for converting RGB to Planar, SSE4.1.
+alignas(16) static const uvec8 kSplitRGBShuffleSSE41[4] = {
+    {1u, 128u, 0u, 1u, 128u, 0u, 1u, 128u, 0u, 1u, 128u, 0u, 1u, 128u, 0u, 1u},
+    {0u, 3u, 6u, 9u, 12u, 15u, 2u, 5u, 8u, 11u, 14u, 1u, 4u, 7u, 10u, 13u},
+    {1u, 4u, 7u, 10u, 13u, 0u, 3u, 6u, 9u, 12u, 15u, 2u, 5u, 8u, 11u, 14u},
+    {2u, 5u, 8u, 11u, 14u, 1u, 4u, 7u, 10u, 13u, 0u, 3u, 6u, 9u, 12u, 15u}};
+
+void SplitRGBRow_SSE41(const uint8_t* src_rgb, uint8_t* dst_r,
+                       uint8_t* dst_g, uint8_t* dst_b, int width) {
+  asm volatile(
+      "movdqa      0(%5), %%xmm0                \n"
+      "1:                                       \n"
+      "movdqu      (%0),%%xmm1                  \n"
+      "movdqu      0x10(%0),%%xmm2              \n"
+      "movdqu      0x20(%0),%%xmm3              \n"
+      "lea         0x30(%0),%0                  \n"
+      "movdqa      %%xmm1, %%xmm4               \n"
+      "pblendvb    %%xmm3, %%xmm1               \n"
+      "pblendvb    %%xmm2, %%xmm3               \n"
+      "pblendvb    %%xmm4, %%xmm2               \n"
+      "psrlq       $0x1, %%xmm0                 \n"
+      "pblendvb    %%xmm2, %%xmm1               \n"
+      "pblendvb    %%xmm3, %%xmm2               \n"
+      "pblendvb    %%xmm4, %%xmm3               \n"
+      "psllq       $0x1, %%xmm0                 \n"
+      "pshufb      16(%5), %%xmm1               \n"
+      "pshufb      32(%5), %%xmm2               \n"
+      "pshufb      48(%5), %%xmm3               \n"
+      "movdqu      %%xmm1,(%1)                  \n"
+      "lea         0x10(%1),%1                  \n"
+      "movdqu      %%xmm2,(%2)                  \n"
+      "lea         0x10(%2),%2                  \n"
+      "movdqu      %%xmm3,(%3)                  \n"
+      "lea         0x10(%3),%3                  \n"
+      "sub         $0x10,%4                     \n"
+      "jg          1b                           \n"
+      : "+r"(src_rgb),                 // %0
+        "+r"(dst_r),                   // %1
+        "+r"(dst_g),                   // %2
+        "+r"(dst_b),                   // %3
+        "+r"(width)                    // %4
+      : "r"(&kSplitRGBShuffleSSE41[0])  // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
+}
+#endif  // HAS_SPLITRGBROW_SSE41
+
+#ifdef HAS_SPLITRGBROW_AVX2
+void SplitRGBRow_AVX2(const uint8_t* src_rgb, uint8_t* dst_r,
+                      uint8_t* dst_g, uint8_t* dst_b, int width) {
+  asm volatile(
+      "vbroadcasti128        0(%5), %%ymm0                         \n"
+      "vpsrlq                $0x1,%%ymm0,%%ymm7                    \n"
+      "1:                                                          \n"
+      "vmovdqu               (%0),%%ymm4                           \n"
+      "vmovdqu               0x20(%0),%%ymm5                       \n"
+      "vmovdqu               0x40(%0),%%ymm6                       \n"
+      "lea                   0x60(%0),%0                           \n"
+      "vpblendd              $240, %%ymm5, %%ymm4, %%ymm1          \n"
+      "vperm2i128            $33, %%ymm6, %%ymm4, %%ymm2           \n"
+      "vpblendd              $240, %%ymm6, %%ymm5, %%ymm3          \n"
+      "vpblendvb             %%ymm0, %%ymm3, %%ymm1, %%ymm4        \n"
+      "vpblendvb             %%ymm0, %%ymm1, %%ymm2, %%ymm5        \n"
+      "vpblendvb             %%ymm0, %%ymm2, %%ymm3, %%ymm6        \n"
+      "vpblendvb             %%ymm7, %%ymm5, %%ymm4, %%ymm1        \n"
+      "vpblendvb             %%ymm7, %%ymm6, %%ymm5, %%ymm2        \n"
+      "vpblendvb             %%ymm7, %%ymm4, %%ymm6, %%ymm3        \n"
+      "vbroadcasti128        16(%5), %%ymm4                        \n"
+      "vbroadcasti128        32(%5), %%ymm5                        \n"
+      "vbroadcasti128        48(%5), %%ymm6                        \n"
+      "vpshufb               %%ymm4, %%ymm1, %%ymm1                \n"
+      "vpshufb               %%ymm5, %%ymm2, %%ymm2                \n"
+      "vpshufb               %%ymm6, %%ymm3, %%ymm3                \n"
+      "vmovdqu               %%ymm1,(%1)                           \n"
+      "lea                   0x20(%1),%1                           \n"
+      "vmovdqu               %%ymm2,(%2)                           \n"
+      "lea                   0x20(%2),%2                           \n"
+      "vmovdqu               %%ymm3,(%3)                           \n"
+      "lea                   0x20(%3),%3                           \n"
+      "sub                   $0x20,%4                              \n"
+      "jg                    1b                                    \n"
+      : "+r"(src_rgb),                  // %0
+        "+r"(dst_r),                    // %1
+        "+r"(dst_g),                    // %2
+        "+r"(dst_b),                    // %3
+        "+r"(width)                     // %4
+      : "r"(&kSplitRGBShuffleSSE41[0])  // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif  // HAS_SPLITRGBROW_AVX2
+
 #ifdef HAS_MERGERGBROW_SSSE3
 // Shuffle table for converting Planar to RGB.
 static const uvec8 kMergeRGBShuffle[9] = {

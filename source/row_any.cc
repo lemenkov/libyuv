@@ -2205,6 +2205,12 @@ ANY12PT(SplitUVRow_16_Any_NEON, SplitUVRow_16_NEON, uint16_t, 2, 7)
 #ifdef HAS_SPLITRGBROW_SSSE3
 ANY13(SplitRGBRow_Any_SSSE3, SplitRGBRow_SSSE3, 3, 15)
 #endif
+#ifdef HAS_SPLITRGBROW_SSE41
+ANY13(SplitRGBRow_Any_SSE41, SplitRGBRow_SSE41, 3, 15)
+#endif
+#ifdef HAS_SPLITRGBROW_AVX2
+ANY13(SplitRGBRow_Any_AVX2, SplitRGBRow_AVX2, 3, 31)
+#endif
 #ifdef HAS_SPLITRGBROW_NEON
 ANY13(SplitRGBRow_Any_NEON, SplitRGBRow_NEON, 3, 15)
 #endif

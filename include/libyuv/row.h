@@ -265,6 +265,7 @@ extern "C" {
 #define HAS_SPLITARGBROW_SSE2
 #define HAS_SPLITARGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
+#define HAS_SPLITRGBROW_SSE41
 #define HAS_SPLITXRGBROW_SSE2
 #define HAS_SPLITXRGBROW_SSSE3
 #define HAS_SWAPUVROW_SSSE3
@@ -330,6 +331,7 @@ extern "C" {
 #define HAS_P410TOAR30ROW_AVX2
 #define HAS_P410TOARGBROW_AVX2
 #define HAS_RGBATOYJROW_AVX2
+#define HAS_SPLITRGBROW_AVX2
 #define HAS_SPLITARGBROW_AVX2
 #define HAS_SPLITUVROW_16_AVX2
 #define HAS_SPLITXRGBROW_AVX2
@@ -2803,6 +2805,16 @@ void SplitRGBRow_SSSE3(const uint8_t* src_rgb,
                        uint8_t* dst_g,
                        uint8_t* dst_b,
                        int width);
+void SplitRGBRow_SSE41(const uint8_t* src_rgb,
+                       uint8_t* dst_r,
+                       uint8_t* dst_g,
+                       uint8_t* dst_b,
+                       int width);
+void SplitRGBRow_AVX2(const uint8_t* src_rgb,
+                      uint8_t* dst_r,
+                      uint8_t* dst_g,
+                      uint8_t* dst_b,
+                      int width);
 void SplitRGBRow_NEON(const uint8_t* src_rgb,
                       uint8_t* dst_r,
                       uint8_t* dst_g,
@@ -2818,6 +2830,16 @@ void SplitRGBRow_Any_SSSE3(const uint8_t* src_ptr,
                            uint8_t* dst_g,
                            uint8_t* dst_b,
                            int width);
+void SplitRGBRow_Any_SSE41(const uint8_t* src_ptr,
+                           uint8_t* dst_r,
+                           uint8_t* dst_g,
+                           uint8_t* dst_b,
+                           int width);
+void SplitRGBRow_Any_AVX2(const uint8_t* src_ptr,
+                          uint8_t* dst_r,
+                          uint8_t* dst_g,
+                          uint8_t* dst_b,
+                          int width);
 void SplitRGBRow_Any_NEON(const uint8_t* src_ptr,
                           uint8_t* dst_r,
                           uint8_t* dst_g,

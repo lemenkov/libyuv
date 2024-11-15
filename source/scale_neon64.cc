@@ -322,8 +322,6 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
 
 static const uvec8 kShuf38 = {0,  3,  6,  8,  11, 14, 16, 19,
                               22, 24, 27, 30, 0,  0,  0,  0};
-static const uvec8 kShuf38_2 = {0,  16, 32, 2,  18, 33, 4, 20,
-                                34, 6,  22, 35, 0,  0,  0, 0};
 static const vec16 kMult38_Div664 = {
     65536 / 12, 65536 / 12, 65536 / 8, 65536 / 12, 65536 / 12, 65536 / 8, 0, 0};
 static const vec16 kMult38_Div996 = {65536 / 18, 65536 / 18, 65536 / 12,

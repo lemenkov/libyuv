@@ -1285,6 +1285,22 @@ void SplitRGBPlane(const uint8_t* src_rgb,
     }
   }
 #endif
+#if defined(HAS_SPLITRGBROW_SSE41)
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    SplitRGBRow = SplitRGBRow_Any_SSE41;
+    if (IS_ALIGNED(width, 16)) {
+      SplitRGBRow = SplitRGBRow_SSE41;
+    }
+  }
+#endif
+#if defined(HAS_SPLITRGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SplitRGBRow = SplitRGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      SplitRGBRow = SplitRGBRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_SPLITRGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SplitRGBRow = SplitRGBRow_Any_NEON;
