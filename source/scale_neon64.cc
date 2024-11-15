@@ -1354,6 +1354,51 @@ void ScaleARGBFilterCols_NEON(uint8_t* dst_argb,
 
 #undef SCALE_ARGB_FILTER_COLS_STEP_ADDR
 
+void ScaleRowDown2_16_NEON(const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint16_t* dst,
+                           int dst_width) {
+
+  (void)src_stride;
+  asm volatile(
+    "subs  %w[dst_width], %w[dst_width], #32   \n"
+    "b.lt  2f                                  \n"
+
+    "1:                                        \n"
+    "ldp   q0, q1, [%[src_ptr]]                \n"
+    "ldp   q2, q3, [%[src_ptr], #32]           \n"
+    "ldp   q4, q5, [%[src_ptr], #64]           \n"
+    "ldp   q6, q7, [%[src_ptr], #96]           \n"
+    "add   %[src_ptr], %[src_ptr], #128        \n"
+    "uzp2  v0.8h, v0.8h, v1.8h                 \n"
+    "uzp2  v1.8h, v2.8h, v3.8h                 \n"
+    "uzp2  v2.8h, v4.8h, v5.8h                 \n"
+    "uzp2  v3.8h, v6.8h, v7.8h                 \n"
+    "subs  %w[dst_width], %w[dst_width], #32   \n"  // 32 elems per iteration.
+    "stp   q0, q1, [%[dst_ptr]]                \n"
+    "stp   q2, q3, [%[dst_ptr], #32]           \n"
+    "add   %[dst_ptr], %[dst_ptr], #64         \n"
+    "b.ge  1b                                  \n"
+
+    "2:                                        \n"
+    "adds  %w[dst_width], %w[dst_width], #32   \n"
+    "b.eq  99f                                 \n"
+
+    "ldp   q0, q1, [%[src_ptr]]                \n"
+    "ldp   q2, q3, [%[src_ptr], #32]           \n"
+    "add   %[src_ptr], %[src_ptr], #64         \n"
+    "uzp2  v0.8h, v0.8h, v1.8h                 \n"
+    "uzp2  v1.8h, v2.8h, v3.8h                 \n"
+    "stp   q0, q1, [%[dst_ptr]], #32           \n"
+
+    "99:                                       \n"
+    : [src_ptr]"+r"(src_ptr),
+      [dst_ptr]"+r"(dst),
+      [dst_width]"+r"(dst_width)
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+}
+
 // Read 16x2 average down and write 8x1.
 void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
                               ptrdiff_t src_stride,

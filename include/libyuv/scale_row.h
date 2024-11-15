@@ -1428,6 +1428,10 @@ void ScaleRowDown2_NEON(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
                         uint8_t* dst,
                         int dst_width);
+void ScaleRowDown2_16_NEON(const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint16_t* dst,
+                           int dst_width);
 void ScaleRowDown2_SME(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst,
