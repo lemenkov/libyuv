@@ -116,6 +116,11 @@ extern "C" {
 #define HAS_SCALEUVROWUP2_BILINEAR_16_NEON
 #endif
 
+// The following are available on AArch64 Neon platforms:
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_SCALEROWDOWN2_16_NEON
+#endif
+
 // The following are available on AArch64 SME platforms:
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)

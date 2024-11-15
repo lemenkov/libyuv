@@ -187,9 +187,8 @@ static void ScalePlaneDown2_16(int src_width,
   }
 
 #if defined(HAS_SCALEROWDOWN2_16_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 =
-        filtering ? ScaleRowDown2Box_16_NEON : ScaleRowDown2_16_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 16) && filtering) {
+    ScaleRowDown2 = ScaleRowDown2Box_16_NEON;
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_16_SSE2)
