@@ -1399,6 +1399,28 @@ void ScaleRowDown2_16_NEON(const uint16_t* src_ptr,
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
+void ScaleRowDown2Linear_16_NEON(const uint16_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint16_t* dst,
+                                 int dst_width) {
+  (void)src_stride;
+  asm volatile(
+      "1:                                                \n"
+      "ld2         {v0.8h, v1.8h}, [%[src_ptr]], #32     \n"
+      "ld2         {v2.8h, v3.8h}, [%[src_ptr]], #32     \n"
+      "subs        %w[dst_width], %w[dst_width], #16     \n"
+      "urhadd      v0.8h, v0.8h, v1.8h                   \n"
+      "urhadd      v1.8h, v2.8h, v3.8h                   \n"
+      "prfm        pldl1keep, [%[src_ptr], 448]          \n"
+      "stp         q0, q1, [%[dst_ptr]], #32             \n"
+      "b.gt        1b                                    \n"
+      : [src_ptr] "+r"(src_ptr),     // %[src_ptr]
+        [dst_ptr] "+r"(dst),         // %[dst_ptr]
+        [dst_width] "+r"(dst_width)  // %[dst_width]
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+}
+
 // Read 16x2 average down and write 8x1.
 void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
                               ptrdiff_t src_stride,
