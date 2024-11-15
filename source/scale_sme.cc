@@ -57,6 +57,44 @@ __arm_locally_streaming void ScaleRowDown2_SME(const uint8_t* src_ptr,
       : "memory", "cc", "z0", "z1", "p0");
 }
 
+__arm_locally_streaming void ScaleRowDown2_16_SME(const uint16_t* src_ptr,
+                                                  ptrdiff_t src_stride,
+                                                  uint16_t* dst,
+                                                  int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  (void)src_stride;
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "1:                                                    \n"
+      "ptrue    p0.h                                         \n"
+      "ld2h     {z0.h, z1.h}, p0/z, [%[src_ptr]]             \n"
+      "incb     %[src_ptr], all, mul #2                      \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "st1h     {z1.h}, p0, [%[dst_ptr]]                     \n"
+      "incb     %[dst_ptr]                                   \n"
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.h, wzr, %w[dst_width]                     \n"
+      "ld2h     {z0.h, z1.h}, p0/z, [%[src_ptr]]             \n"
+      "st1h     {z1.h}, p0, [%[dst_ptr]]                     \n"
+
+      "99:                                                   \n"
+      : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
+        [dst_ptr] "+r"(dst),          // %[dst_ptr]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "p0");
+}
+
 __arm_locally_streaming void ScaleRowDown2Linear_SME(const uint8_t* src_ptr,
                                                      ptrdiff_t src_stride,
                                                      uint8_t* dst,
@@ -87,6 +125,46 @@ __arm_locally_streaming void ScaleRowDown2Linear_SME(const uint8_t* src_ptr,
       "ld2b     {z0.b, z1.b}, p0/z, [%[src_ptr]]             \n"
       "urhadd   z0.b, p0/m, z0.b, z1.b                       \n"
       "st1b     {z0.b}, p0, [%[dst_ptr]]                     \n"
+
+      "99:                                                   \n"
+      : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
+        [dst_ptr] "+r"(dst),          // %[dst_ptr]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "p0");
+}
+
+__arm_locally_streaming void ScaleRowDown2Linear_16_SME(const uint16_t* src_ptr,
+                                                        ptrdiff_t src_stride,
+                                                        uint16_t* dst,
+                                                        int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  (void)src_stride;
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "1:                                                    \n"
+      "ptrue    p0.h                                         \n"
+      "ld2h     {z0.h, z1.h}, p0/z, [%[src_ptr]]             \n"
+      "incb     %[src_ptr], all, mul #2                      \n"
+      "urhadd   z0.h, p0/m, z0.h, z1.h                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "st1h     {z0.h}, p0, [%[dst_ptr]]                     \n"
+      "incb     %[dst_ptr]                                   \n"
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.h, wzr, %w[dst_width]                     \n"
+      "ld2h     {z0.h, z1.h}, p0/z, [%[src_ptr]]             \n"
+      "urhadd   z0.h, p0/m, z0.h, z1.h                       \n"
+      "st1h     {z0.h}, p0, [%[dst_ptr]]                     \n"
 
       "99:                                                   \n"
       : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
@@ -149,6 +227,59 @@ __arm_locally_streaming void ScaleRowDown2Box_SME(const uint8_t* src_ptr,
 }
 
 #undef SCALEROWDOWN2BOX_SVE
+
+#define SCALEROWDOWN2BOX_16_SVE                              \
+  "ld2h     {z0.h, z1.h}, p0/z, [%[src_ptr]]             \n" \
+  "ld2h     {z2.h, z3.h}, p0/z, [%[src2_ptr]]            \n" \
+  "incb     %[src_ptr], all, mul #2                      \n" \
+  "incb     %[src2_ptr], all, mul #2                     \n" \
+  "uaddlb   z4.s, z0.h, z1.h                             \n" \
+  "uaddlt   z5.s, z0.h, z1.h                             \n" \
+  "uaddlb   z6.s, z2.h, z3.h                             \n" \
+  "uaddlt   z7.s, z2.h, z3.h                             \n" \
+  "add      z4.s, z4.s, z6.s                             \n" \
+  "add      z5.s, z5.s, z7.s                             \n" \
+  "rshrnb   z0.h, z4.s, #2                               \n" \
+  "rshrnt   z0.h, z5.s, #2                               \n" \
+  "subs     %w[dst_width], %w[dst_width], %w[vl]         \n" \
+  "st1h     {z0.h}, p0, [%[dst_ptr]]                     \n" \
+  "incb     %[dst_ptr]                                   \n"
+
+__arm_locally_streaming void ScaleRowDown2Box_16_SME(const uint16_t* src_ptr,
+                                                     ptrdiff_t src_stride,
+                                                     uint16_t* dst,
+                                                     int dst_width) {
+  // Streaming-SVE only, no use of ZA tile.
+  const uint16_t* src2_ptr = src_ptr + src_stride;
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "ptrue    p0.h                                         \n"
+      "1:                                                    \n"  //
+      SCALEROWDOWN2BOX_16_SVE
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.h, wzr, %w[dst_width]                     \n"  //
+      SCALEROWDOWN2BOX_16_SVE
+
+      "99:                                                   \n"
+      : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
+        [src2_ptr] "+r"(src2_ptr),    // %[src2_ptr]
+        [dst_ptr] "+r"(dst),          // %[dst_ptr]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=r"(vl)                 // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
+}
+
+#undef SCALEROWDOWN2BOX_16_SVE
 
 __arm_locally_streaming void ScaleUVRowDown2_SME(const uint8_t* src_uv,
                                                  ptrdiff_t src_stride,

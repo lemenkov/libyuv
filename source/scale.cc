@@ -193,6 +193,13 @@ static void ScalePlaneDown2_16(int src_width,
                                                  : ScaleRowDown2Box_16_NEON;
   }
 #endif
+#if defined(HAS_SCALEROWDOWN2_16_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ScaleRowDown2 = filtering == kFilterNone     ? ScaleRowDown2_16_SME
+                    : filtering == kFilterLinear ? ScaleRowDown2Linear_16_SME
+                                                 : ScaleRowDown2Box_16_SME;
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN2_16_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
     ScaleRowDown2 =
