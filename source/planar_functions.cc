@@ -635,6 +635,11 @@ void MergeUVPlane(const uint8_t* src_u,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MergeUVRow = MergeUVRow_SME;
+  }
+#endif
 #if defined(HAS_MERGEUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     MergeUVRow = MergeUVRow_Any_MSA;
@@ -772,6 +777,11 @@ void MergeUVPlane_16(const uint16_t* src_u,
     if (IS_ALIGNED(width, 8)) {
       MergeUVRow_16 = MergeUVRow_16_NEON;
     }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_16_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MergeUVRow_16 = MergeUVRow_16_SME;
   }
 #endif
 

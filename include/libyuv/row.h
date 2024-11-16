@@ -594,6 +594,8 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_SME
 #define HAS_I422TOARGBROW_SME
 #define HAS_I444TOARGBROW_SME
+#define HAS_MERGEUVROW_16_SME
+#define HAS_MERGEUVROW_SME
 #define HAS_MULTIPLYROW_16_SME
 #endif
 
@@ -2796,6 +2798,10 @@ void MergeUVRow_NEON(const uint8_t* src_u,
                      const uint8_t* src_v,
                      uint8_t* dst_uv,
                      int width);
+void MergeUVRow_SME(const uint8_t* src_u,
+                    const uint8_t* src_v,
+                    uint8_t* dst_uv,
+                    int width);
 void MergeUVRow_MSA(const uint8_t* src_u,
                     const uint8_t* src_v,
                     uint8_t* dst_uv,
@@ -3339,6 +3345,11 @@ void MergeUVRow_16_Any_NEON(const uint16_t* src_u,
                             uint16_t* dst_uv,
                             int depth,
                             int width);
+void MergeUVRow_16_SME(const uint16_t* src_u,
+                       const uint16_t* src_v,
+                       uint16_t* dst_uv,
+                       int depth,
+                       int width);
 
 void SplitUVRow_16_C(const uint16_t* src_uv,
                      uint16_t* dst_u,

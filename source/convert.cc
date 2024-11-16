@@ -746,6 +746,11 @@ int I010ToNV12(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MergeUVRow = MergeUVRow_SME;
+  }
+#endif
 #if defined(HAS_MERGEUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     MergeUVRow = MergeUVRow_Any_MSA;
@@ -1186,6 +1191,11 @@ int I422ToNV21(const uint8_t* src_y,
     if (IS_ALIGNED(halfwidth, 16)) {
       MergeUVRow = MergeUVRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MergeUVRow = MergeUVRow_SME;
   }
 #endif
 #if defined(HAS_MERGEUVROW_MSA)
