@@ -24,6 +24,48 @@
 
 namespace libyuv {
 
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+    defined(_M_X64)
+TEST_F(LibYUVBaseTest, TestCpuId) {
+  int has_x86 = TestCpuFlag(kCpuHasX86);
+  if (has_x86) {
+    int cpu_info[4];
+    // Vendor ID:
+    // AuthenticAMD AMD processor
+    // CentaurHauls Centaur processor
+    // CyrixInstead Cyrix processor
+    // GenuineIntel Intel processor
+    // GenuineTMx86 Transmeta processor
+    // Geode by NSC National Semiconductor processor
+    // NexGenDriven NexGen processor
+    // RiseRiseRise Rise Technology processor
+    // SiS SiS SiS  SiS processor
+    // UMC UMC UMC  UMC processor
+    CpuId(0, 0, cpu_info);
+    cpu_info[0] = cpu_info[1];  // Reorder output
+    cpu_info[1] = cpu_info[3];
+    cpu_info[3] = 0;
+    printf("Cpu Vendor: %s 0x%x 0x%x 0x%x\n",
+           reinterpret_cast<char*>(&cpu_info[0]), cpu_info[0], cpu_info[1],
+           cpu_info[2]);
+    EXPECT_EQ(12u, strlen(reinterpret_cast<char*>(&cpu_info[0])));
+
+    // CPU Family and Model
+    // 3:0 - Stepping
+    // 7:4 - Model
+    // 11:8 - Family
+    // 13:12 - Processor Type
+    // 19:16 - Extended Model
+    // 27:20 - Extended Family
+    CpuId(1, 0, cpu_info);
+    int family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
+    int model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
+    printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family, model,
+           model);
+  }
+}
+#endif
+
 #ifdef __linux__
 static void KernelVersion(int *version) {
   struct utsname buffer;
@@ -131,37 +173,6 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     defined(_M_IX86) || defined(_M_X64)
   int has_x86 = TestCpuFlag(kCpuHasX86);
   if (has_x86) {
-    int family, model, cpu_info[4];
-    // Vendor ID:
-    // AuthenticAMD AMD processor
-    // CentaurHauls Centaur processor
-    // CyrixInstead Cyrix processor
-    // GenuineIntel Intel processor
-    // GenuineTMx86 Transmeta processor
-    // Geode by NSC National Semiconductor processor
-    // NexGenDriven NexGen processor
-    // RiseRiseRise Rise Technology processor
-    // SiS SiS SiS  SiS processor
-    // UMC UMC UMC  UMC processor
-    CpuId(0, 0, &cpu_info[0]);
-    cpu_info[0] = cpu_info[1];  // Reorder output
-    cpu_info[1] = cpu_info[3];
-    cpu_info[3] = 0;
-    printf("Cpu Vendor: %s\n", (char*)(&cpu_info[0]));
-
-    // CPU Family and Model
-    // 3:0 - Stepping
-    // 7:4 - Model
-    // 11:8 - Family
-    // 13:12 - Processor Type
-    // 19:16 - Extended Model
-    // 27:20 - Extended Family
-    CpuId(1, 0, &cpu_info[0]);
-    family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
-    model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
-    printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family,
-           model, model);
-
     int has_sse2 = TestCpuFlag(kCpuHasSSE2);
     int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
     int has_sse41 = TestCpuFlag(kCpuHasSSE41);
@@ -169,6 +180,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     int has_avx = TestCpuFlag(kCpuHasAVX);
     int has_avx2 = TestCpuFlag(kCpuHasAVX2);
     int has_erms = TestCpuFlag(kCpuHasERMS);
+    int has_fsmr = TestCpuFlag(kCpuHasFSMR);
     int has_fma3 = TestCpuFlag(kCpuHasFMA3);
     int has_f16c = TestCpuFlag(kCpuHasF16C);
     int has_avx512bw = TestCpuFlag(kCpuHasAVX512BW);
@@ -189,6 +201,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     printf("Has AVX 0x%x\n", has_avx);
     printf("Has AVX2 0x%x\n", has_avx2);
     printf("Has ERMS 0x%x\n", has_erms);
+    printf("Has FSMR 0x%x\n", has_fsmr);
     printf("Has FMA3 0x%x\n", has_fma3);
     printf("Has F16C 0x%x\n", has_f16c);
     printf("Has AVX512BW 0x%x\n", has_avx512bw);
@@ -314,48 +327,6 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #endif
 #endif
 }
-
-#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
-    defined(_M_X64)
-TEST_F(LibYUVBaseTest, TestCpuId) {
-  int has_x86 = TestCpuFlag(kCpuHasX86);
-  if (has_x86) {
-    int cpu_info[4];
-    // Vendor ID:
-    // AuthenticAMD AMD processor
-    // CentaurHauls Centaur processor
-    // CyrixInstead Cyrix processor
-    // GenuineIntel Intel processor
-    // GenuineTMx86 Transmeta processor
-    // Geode by NSC National Semiconductor processor
-    // NexGenDriven NexGen processor
-    // RiseRiseRise Rise Technology processor
-    // SiS SiS SiS  SiS processor
-    // UMC UMC UMC  UMC processor
-    CpuId(0, 0, cpu_info);
-    cpu_info[0] = cpu_info[1];  // Reorder output
-    cpu_info[1] = cpu_info[3];
-    cpu_info[3] = 0;
-    printf("Cpu Vendor: %s 0x%x 0x%x 0x%x\n",
-           reinterpret_cast<char*>(&cpu_info[0]), cpu_info[0], cpu_info[1],
-           cpu_info[2]);
-    EXPECT_EQ(12u, strlen(reinterpret_cast<char*>(&cpu_info[0])));
-
-    // CPU Family and Model
-    // 3:0 - Stepping
-    // 7:4 - Model
-    // 11:8 - Family
-    // 13:12 - Processor Type
-    // 19:16 - Extended Model
-    // 27:20 - Extended Family
-    CpuId(1, 0, cpu_info);
-    int family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
-    int model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
-    printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family, model,
-           model);
-  }
-}
-#endif
 
 static int FileExists(const char* file_name) {
   FILE* f = fopen(file_name, "r");

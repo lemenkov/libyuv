@@ -355,6 +355,7 @@ extern "C" {
 // TODO(b/42280744): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI.
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || defined(__i386__)) && defined(CLANG_HAS_AVX512)
+#define HAS_COPYROW_AVX512BW
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_CONVERT16TO8ROW_AVX512BW
 #define HAS_MERGEUVROW_AVX512BW
@@ -3406,6 +3407,7 @@ void Convert16To8Row_Any_NEON(const uint16_t* src_ptr,
 
 void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);
+void CopyRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_ERMS(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_MIPS(const uint8_t* src, uint8_t* dst, int count);
@@ -3413,6 +3415,7 @@ void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_C(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_Any_SSE2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void CopyRow_Any_AVX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void CopyRow_Any_AVX512BW(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void CopyRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 
 void CopyRow_16_C(const uint16_t* src, uint16_t* dst, int count);

@@ -967,6 +967,9 @@ ANY21PT(MergeUVRow_16_Any_NEON, MergeUVRow_16_NEON, uint16_t, 2, 7)
     memcpy(dst_ptr + n * BPP, vout, r * BPP);                            \
   }
 
+#ifdef HAS_COPYROW_AVX512BW
+ANY11(CopyRow_Any_AVX512BW, CopyRow_AVX512BW, 0, 1, 1, 127)
+#endif
 #ifdef HAS_COPYROW_AVX
 ANY11(CopyRow_Any_AVX, CopyRow_AVX, 0, 1, 1, 63)
 #endif

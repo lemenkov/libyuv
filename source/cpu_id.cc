@@ -419,7 +419,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
              ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
              ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
-             ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0);
+             ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
+             ((cpu_info7[3] & 0x00000010) ? kCpuHasFSMR : 0);
 
   // AVX requires OS saves YMM registers.
   if (((cpu_info1[2] & 0x1c000000) == 0x1c000000) &&  // AVX and OSXSave
@@ -432,14 +433,14 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 
     // Detect AVX512bw
     if ((GetXCR0() & 0xe0) == 0xe0) {
-      cpu_info |= (cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0;
-      cpu_info |= (cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0;
-      cpu_info |= (cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0;
-      cpu_info |= (cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0;
-      cpu_info |= (cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0;
-      cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0;
-      cpu_info |= (cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0;
-      cpu_info |= (cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0;
+      cpu_info |= ((cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0) |
+                  ((cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0) |
+                  ((cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0) |
+                  ((cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0) |
+                  ((cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0) |
+                  ((cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0) |
+                  ((cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0) |
+                  ((cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0);
     }
   }
 #endif

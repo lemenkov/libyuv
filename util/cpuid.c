@@ -171,6 +171,7 @@ int main(int argc, const char* argv[]) {
     int has_avx = TestCpuFlag(kCpuHasAVX);
     int has_avx2 = TestCpuFlag(kCpuHasAVX2);
     int has_erms = TestCpuFlag(kCpuHasERMS);
+    int has_fsmr = TestCpuFlag(kCpuHasFSMR);
     int has_fma3 = TestCpuFlag(kCpuHasFMA3);
     int has_f16c = TestCpuFlag(kCpuHasF16C);
     int has_avx512bw = TestCpuFlag(kCpuHasAVX512BW);
