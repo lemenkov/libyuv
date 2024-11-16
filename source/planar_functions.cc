@@ -138,6 +138,11 @@ void Convert16To8Plane(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_CONVERT16TO8ROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    Convert16To8Row = Convert16To8Row_SME;
+  }
+#endif
 #if defined(HAS_CONVERT16TO8ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     Convert16To8Row = Convert16To8Row_Any_SSSE3;
