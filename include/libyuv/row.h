@@ -596,6 +596,9 @@ extern "C" {
 #define HAS_COPYROW_SME
 #define HAS_I422TOARGBROW_SME
 #define HAS_I444TOARGBROW_SME
+#define HAS_INTERPOLATEROW_16_SME
+#define HAS_INTERPOLATEROW_16TO8_SME
+#define HAS_INTERPOLATEROW_SME
 #define HAS_MERGEUVROW_16_SME
 #define HAS_MERGEUVROW_SME
 #define HAS_MULTIPLYROW_16_SME
@@ -6468,6 +6471,11 @@ void InterpolateRow_NEON(uint8_t* dst_ptr,
                          ptrdiff_t src_stride,
                          int dst_width,
                          int source_y_fraction);
+void InterpolateRow_SME(uint8_t* dst_ptr,
+                        const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        int dst_width,
+                        int source_y_fraction);
 void InterpolateRow_MSA(uint8_t* dst_ptr,
                         const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
@@ -6524,6 +6532,11 @@ void InterpolateRow_16_Any_NEON(uint16_t* dst_ptr,
                                 ptrdiff_t src_stride,
                                 int width,
                                 int source_y_fraction);
+void InterpolateRow_16_SME(uint16_t* dst_ptr,
+                           const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           int width,
+                           int source_y_fraction);
 
 void InterpolateRow_16To8_C(uint8_t* dst_ptr,
                             const uint16_t* src_ptr,
@@ -6543,6 +6556,12 @@ void InterpolateRow_16To8_Any_NEON(uint8_t* dst_ptr,
                                    int scale,
                                    int width,
                                    int source_y_fraction);
+void InterpolateRow_16To8_SME(uint8_t* dst_ptr,
+                              const uint16_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              int scale,
+                              int width,
+                              int source_y_fraction);
 void InterpolateRow_16To8_AVX2(uint8_t* dst_ptr,
                                const uint16_t* src_ptr,
                                ptrdiff_t src_stride,

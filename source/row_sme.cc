@@ -510,6 +510,408 @@ __arm_locally_streaming void CopyRow_SME(const uint8_t* src,
       : "memory", "cc", "z0", "p0");
 }
 
+__arm_locally_streaming static void HalfRow_SME(uint8_t* dst_ptr,
+                                                const uint8_t* src_ptr,
+                                                ptrdiff_t src_stride,
+                                                int width) {
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+
+  int vl;
+  asm volatile(
+      "cntb     %x[vl]                                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p0.b                                    \n"
+      "1:                                               \n"
+      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
+      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
+      "incb     %[src_ptr]                              \n"
+      "incb     %[src_ptr1]                             \n"
+      "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
+      "incb     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p0.b, wzr, %w[width]                    \n"
+      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
+      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
+      "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_ptr),    // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),  // %[src_ptr1]
+        [dst_ptr] "+r"(dst_ptr),    // %[dst_ptr]
+        [width] "+r"(width),        // %[width]
+        [vl] "=&r"(vl)              // %[vl]
+      :
+      : "cc", "memory", "z0", "z1", "z2", "z3", "p0");
+}
+
+__arm_locally_streaming void InterpolateRow_SME(uint8_t* dst_ptr,
+                                                const uint8_t* src_ptr,
+                                                ptrdiff_t src_stride,
+                                                int width,
+                                                int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+
+  if (y0_fraction == 0) {
+    CopyRow_SME(src_ptr1, dst_ptr, width);
+    return;
+  }
+  if (y0_fraction == 128) {
+    HalfRow_SME(dst_ptr, src_ptr, src_stride, width);
+    return;
+  }
+  if (y0_fraction == 256) {
+    CopyRow_SME(src_ptr, dst_ptr, width);
+    return;
+  }
+
+  int vl;
+  asm volatile(
+      "cntb     %x[vl]                                  \n"
+      "dup      z0.b, %w[y0_fraction]                   \n"
+      "dup      z1.b, %w[y1_fraction]                   \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p0.b                                    \n"
+      "1:                                               \n"
+      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
+      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
+      "incb     %[src_ptr]                              \n"
+      "incb     %[src_ptr1]                             \n"
+      "umullb   z4.h, z2.b, z0.b                        \n"
+      "umullt   z2.h, z2.b, z0.b                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "umlalb   z4.h, z3.b, z1.b                        \n"
+      "umlalt   z2.h, z3.b, z1.b                        \n"
+      "rshrnb   z3.b, z4.h, #8                          \n"
+      "rshrnt   z3.b, z2.h, #8                          \n"
+      "st1b     {z3.b}, p0, [%[dst_ptr]]                \n"
+      "incb     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p0.b, wzr, %w[width]                    \n"
+      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
+      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
+      "umullb   z4.h, z2.b, z0.b                        \n"
+      "umullt   z2.h, z2.b, z0.b                        \n"
+      "umlalb   z4.h, z3.b, z1.b                        \n"
+      "umlalt   z2.h, z3.b, z1.b                        \n"
+      "rshrnb   z3.b, z4.h, #8                          \n"
+      "rshrnt   z3.b, z2.h, #8                          \n"
+      "st1b     {z3.b}, p0, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_ptr),         // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
+        [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
+        [width] "+r"(width),             // %[width]
+        [vl] "=&r"(vl)                   // %[vl]
+      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
+        [y1_fraction] "r"(y1_fraction)   // %[y1_fraction]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0");
+}
+
+__arm_locally_streaming static void HalfRow_16_SME(uint16_t* dst_ptr,
+                                                   const uint16_t* src_ptr,
+                                                   ptrdiff_t src_stride,
+                                                   int width) {
+  int y1_fraction = 128;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p0.h                                    \n"
+      "1:                                               \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "incb     %[src_ptr]                              \n"
+      "incb     %[src_ptr1]                             \n"
+      "urhadd   z2.h, p0/m, z2.h, z3.h                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st1h     {z2.h}, p0, [%[dst_ptr]]                \n"
+      "incb     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p0.h, wzr, %w[width]                    \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "urhadd   z2.h, p0/m, z2.h, z3.h                  \n"
+      "st1h     {z2.h}, p0, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_ptr),    // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),  // %[src_ptr1]
+        [dst_ptr] "+r"(dst_ptr),    // %[dst_ptr]
+        [width] "+r"(width),        // %[width]
+        [vl] "=&r"(vl)              // %[vl]
+      :
+      : "cc", "memory", "z0", "z1", "z2", "z3", "p0");
+}
+
+__arm_locally_streaming void InterpolateRow_16_SME(uint16_t* dst_ptr,
+                                                   const uint16_t* src_ptr,
+                                                   ptrdiff_t src_stride,
+                                                   int width,
+                                                   int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+
+  if (y0_fraction == 0) {
+    CopyRow_SME((const uint8_t*)src_ptr1, (uint8_t*)dst_ptr,
+                width * sizeof(uint16_t));
+    return;
+  }
+  if (y0_fraction == 128) {
+    HalfRow_16_SME(dst_ptr, src_ptr, src_stride, width);
+    return;
+  }
+  if (y0_fraction == 256) {
+    CopyRow_SME((const uint8_t*)src_ptr, (uint8_t*)dst_ptr,
+                width * sizeof(uint16_t));
+    return;
+  }
+
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "dup      z0.h, %w[y0_fraction]                   \n"
+      "dup      z1.h, %w[y1_fraction]                   \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p0.h                                    \n"
+      "1:                                               \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "incb     %[src_ptr]                              \n"
+      "incb     %[src_ptr1]                             \n"
+      "umullb   z4.s, z2.h, z0.h                        \n"
+      "umullt   z2.s, z2.h, z0.h                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "umlalb   z4.s, z3.h, z1.h                        \n"
+      "umlalt   z2.s, z3.h, z1.h                        \n"
+      "rshrnb   z3.h, z4.s, #8                          \n"
+      "rshrnt   z3.h, z2.s, #8                          \n"
+      "st1h     {z3.h}, p0, [%[dst_ptr]]                \n"
+      "incb     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p0.h, wzr, %w[width]                    \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "umullb   z4.s, z2.h, z0.h                        \n"
+      "umullt   z2.s, z2.h, z0.h                        \n"
+      "umlalb   z4.s, z3.h, z1.h                        \n"
+      "umlalt   z2.s, z3.h, z1.h                        \n"
+      "rshrnb   z3.h, z4.s, #8                          \n"
+      "rshrnt   z3.h, z2.s, #8                          \n"
+      "st1h     {z3.h}, p0, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_ptr),         // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
+        [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
+        [width] "+r"(width),             // %[width]
+        [vl] "=&r"(vl)                   // %[vl]
+      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
+        [y1_fraction] "r"(y1_fraction)   // %[y1_fraction]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0");
+}
+
+__arm_locally_streaming static void HalfRow_16To8_SME(uint8_t* dst_ptr,
+                                                      const uint16_t* src_ptr,
+                                                      ptrdiff_t src_stride,
+                                                      int scale,
+                                                      int width) {
+  int y1_fraction = 128;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+
+  // 15 - clz(scale), + 8 to shift result into the high half of the lane to
+  // saturate, then we can just use UZP2 to narrow rather than a pair of
+  // saturating narrow instructions.
+  int shift = 23 - __builtin_clz((int32_t)scale);
+
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                  \n"
+      "dup      z31.h, %w[shift]                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p0.h                                    \n"
+      "1:                                               \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "incb     %[src_ptr]                              \n"
+      "incb     %[src_ptr1]                             \n"
+      "urhadd   z2.h, p0/m, z2.h, z3.h                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "uqshl    z2.h, p0/m, z2.h, z31.h                 \n"
+      "shrnb    z2.b, z2.h, #8                          \n"
+      "st1b     {z2.h}, p0, [%[dst_ptr]]                \n"
+      "inch     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p0.h, wzr, %w[width]                    \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "urhadd   z2.h, p0/m, z2.h, z3.h                  \n"
+      "uqshl    z2.h, p0/m, z2.h, z31.h                 \n"
+      "shrnb    z2.b, z2.h, #8                          \n"
+      "st1b     {z2.h}, p0, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_ptr),    // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),  // %[src_ptr1]
+        [dst_ptr] "+r"(dst_ptr),    // %[dst_ptr]
+        [width] "+r"(width),        // %[width]
+        [vl] "=&r"(vl)              // %[vl]
+      : [shift] "r"(shift)          // %[shift]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z31", "p0");
+}
+
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 32768 = 9 bits
+// 16384 = 10 bits
+// 4096 = 12 bits
+// 256 = 16 bits
+// TODO(fbarchard): change scale to bits
+__arm_locally_streaming void InterpolateRow_16To8_SME(uint8_t* dst_ptr,
+                                                      const uint16_t* src_ptr,
+                                                      ptrdiff_t src_stride,
+                                                      int scale,
+                                                      int width,
+                                                      int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+
+  // y0_fraction == 0 is never called here.
+  if (y0_fraction == 128) {
+    HalfRow_16To8_SME(dst_ptr, src_ptr, src_stride, scale, width);
+    return;
+  }
+  if (y0_fraction == 256) {
+    Convert16To8Row_SME(src_ptr, dst_ptr, scale, width);
+    return;
+  }
+
+  // 15 - clz(scale), + 8 to shift result into the high half of the lane to
+  // saturate, then we can just use UZP2 to narrow rather than a pair of
+  // saturating narrow instructions.
+  int shift = 23 - __builtin_clz((int32_t)scale);
+
+  int vl;
+  asm volatile(
+      "cnth     %x[vl]                                  \n"
+      "dup      z31.h, %w[shift]                        \n"
+      "dup      z0.h, %w[y0_fraction]                   \n"
+      "dup      z1.h, %w[y1_fraction]                   \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p0.h                                    \n"
+      "1:                                               \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "incb     %[src_ptr]                              \n"
+      "incb     %[src_ptr1]                             \n"
+      "umullb   z4.s, z2.h, z0.h                        \n"
+      "umullt   z2.s, z2.h, z0.h                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "umlalb   z4.s, z3.h, z1.h                        \n"
+      "umlalt   z2.s, z3.h, z1.h                        \n"
+      "rshrnb   z3.h, z4.s, #8                          \n"
+      "rshrnt   z3.h, z2.s, #8                          \n"
+      "uqshl    z3.h, p0/m, z3.h, z31.h                 \n"
+      "shrnb    z3.b, z3.h, #8                          \n"
+      "st1b     {z3.h}, p0, [%[dst_ptr]]                \n"
+      "inch     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt  p0.h, wzr, %w[width]                    \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
+      "umullb   z4.s, z2.h, z0.h                        \n"
+      "umullt   z2.s, z2.h, z0.h                        \n"
+      "umlalb   z4.s, z3.h, z1.h                        \n"
+      "umlalt   z2.s, z3.h, z1.h                        \n"
+      "rshrnb   z3.h, z4.s, #8                          \n"
+      "rshrnt   z3.h, z2.s, #8                          \n"
+      "uqshl    z3.h, p0/m, z3.h, z31.h                 \n"
+      "shrnb    z3.b, z3.h, #8                          \n"
+      "st1b     {z3.h}, p0, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_ptr),         // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
+        [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
+        [width] "+r"(width),             // %[width]
+        [vl] "=&r"(vl)                   // %[vl]
+      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
+        [y1_fraction] "r"(y1_fraction),  // %[y1_fraction]
+        [shift] "r"(shift)               // %[shift]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z31", "p0");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 
