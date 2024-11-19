@@ -409,11 +409,13 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info1[4] = {0, 0, 0, 0};
   int cpu_info7[4] = {0, 0, 0, 0};
   int cpu_einfo7[4] = {0, 0, 0, 0};
+  int cpu_amdinfo21[4] = {0, 0, 0, 0};
   CpuId(0, 0, cpu_info0);
   CpuId(1, 0, cpu_info1);
   if (cpu_info0[0] >= 7) {
     CpuId(7, 0, cpu_info7);
     CpuId(7, 1, cpu_einfo7);
+    CpuId(0x80000021, 0, cpu_amdinfo21);
   }
   cpu_info = kCpuHasX86 | ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
@@ -430,6 +432,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
                 ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0) |
                 ((cpu_einfo7[0] & 0x00000010) ? kCpuHasAVXVNNI : 0) |
                 ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0);
+
+    cpu_info |= ((cpu_amdinfo21[0] & 0x00008000) ? kCpuHasERMS : 0);
 
     // Detect AVX512bw
     if ((GetXCR0() & 0xe0) == 0xe0) {

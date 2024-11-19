@@ -1551,98 +1551,75 @@ TEST_F(LibYUVPlanarTest, TestAffine) {
 #endif
 }
 
-TEST_F(LibYUVPlanarTest, TestCopyPlane) {
-  int err = 0;
-  int yw = benchmark_width_;
-  int yh = benchmark_height_;
-  int b = 12;
-  int i, j;
-
-  int y_plane_size = (yw + b * 2) * (yh + b * 2);
-  align_buffer_page_end(orig_y, y_plane_size);
+static int TestCopyPlane(int width,
+                         int height,
+                         int benchmark_iterations,
+                         int disable_cpu_flags,
+                         int benchmark_cpu_info,
+                         int invert,
+                         int off) {
+  int y_plane_size = width * height;
+  align_buffer_page_end(orig_y, y_plane_size + off);
   align_buffer_page_end(dst_c, y_plane_size);
   align_buffer_page_end(dst_opt, y_plane_size);
 
-  memset(orig_y, 0, y_plane_size);
-  memset(dst_c, 0, y_plane_size);
-  memset(dst_opt, 0, y_plane_size);
-
-  // Fill image buffers with random data.
-  for (i = b; i < (yh + b); ++i) {
-    for (j = b; j < (yw + b); ++j) {
-      orig_y[i * (yw + b * 2) + j] = fastrand() & 0xff;
-    }
-  }
-
-  // Fill destination buffers with random data.
-  for (i = 0; i < y_plane_size; ++i) {
-    uint8_t random_number = fastrand() & 0x7f;
-    dst_c[i] = random_number;
-    dst_opt[i] = dst_c[i];
-  }
-
-  int y_off = b * (yw + b * 2) + b;
-
-  int y_st = yw + b * 2;
-  int stride = 8;
-
-  // Disable all optimizations.
-  MaskCpuFlags(disable_cpu_flags_);
-  for (j = 0; j < benchmark_iterations_; j++) {
-    CopyPlane(orig_y + y_off, y_st, dst_c + y_off, stride, yw, yh);
-  }
-
-  // Enable optimizations.
-  MaskCpuFlags(benchmark_cpu_info_);
-  for (j = 0; j < benchmark_iterations_; j++) {
-    CopyPlane(orig_y + y_off, y_st, dst_opt + y_off, stride, yw, yh);
-  }
-
-  for (i = 0; i < y_plane_size; ++i) {
-    if (dst_c[i] != dst_opt[i]) {
-      ++err;
-    }
-  }
-
-  free_aligned_buffer_page_end(orig_y);
-  free_aligned_buffer_page_end(dst_c);
-  free_aligned_buffer_page_end(dst_opt);
-
-  EXPECT_EQ(0, err);
-}
-
-TEST_F(LibYUVPlanarTest, CopyPlane_Opt) {
-  int i;
-  int y_plane_size = benchmark_width_ * benchmark_height_;
-  align_buffer_page_end(orig_y, y_plane_size);
-  align_buffer_page_end(dst_c, y_plane_size);
-  align_buffer_page_end(dst_opt, y_plane_size);
-
-  MemRandomize(orig_y, y_plane_size);
+  MemRandomize(orig_y + off, y_plane_size);
   memset(dst_c, 1, y_plane_size);
   memset(dst_opt, 2, y_plane_size);
 
   // Disable all optimizations.
-  MaskCpuFlags(disable_cpu_flags_);
-  for (i = 0; i < benchmark_iterations_; i++) {
-    CopyPlane(orig_y, benchmark_width_, dst_c, benchmark_width_,
-              benchmark_width_, benchmark_height_);
+  MaskCpuFlags(disable_cpu_flags);
+  for (int i = 0; i < benchmark_iterations; i++) {
+    CopyPlane(orig_y + off, width, dst_c, width, width, height * invert);
   }
 
   // Enable optimizations.
-  MaskCpuFlags(benchmark_cpu_info_);
-  for (i = 0; i < benchmark_iterations_; i++) {
-    CopyPlane(orig_y, benchmark_width_, dst_opt, benchmark_width_,
-              benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; i++) {
+    CopyPlane(orig_y + off, width, dst_opt, width, width, height * invert);
   }
 
-  for (i = 0; i < y_plane_size; ++i) {
-    EXPECT_EQ(dst_c[i], dst_opt[i]);
+  int max_diff = 0;
+  for (int i = 0; i < y_plane_size; ++i) {
+    int abs_diff = abs(static_cast<int>(dst_c[i]) - static_cast<int>(dst_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
   }
 
   free_aligned_buffer_page_end(orig_y);
   free_aligned_buffer_page_end(dst_c);
   free_aligned_buffer_page_end(dst_opt);
+
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_Any) {
+  int max_diff = TestCopyPlane(benchmark_width_ + 1, benchmark_height_,
+                              benchmark_iterations_, disable_cpu_flags_,
+                              benchmark_cpu_info_, +1, 0);
+  EXPECT_LE(max_diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_Unaligned) {
+  int max_diff =
+      TestCopyPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                   disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
+  EXPECT_LE(max_diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_Invert) {
+  int max_diff =
+      TestCopyPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                   disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
+  EXPECT_LE(max_diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_Opt) {
+  int max_diff =
+      TestCopyPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                   disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
+  EXPECT_LE(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, TestCopyPlaneZero) {

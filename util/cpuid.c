@@ -192,6 +192,7 @@ int main(int argc, const char* argv[]) {
     printf("Has AVX 0x%x\n", has_avx);
     printf("Has AVX2 0x%x\n", has_avx2);
     printf("Has ERMS 0x%x\n", has_erms);
+    printf("Has FSMR 0x%x\n", has_fsmr);
     printf("Has FMA3 0x%x\n", has_fma3);
     printf("Has F16C 0x%x\n", has_f16c);
     printf("Has AVX512BW 0x%x\n", has_avx512bw);
