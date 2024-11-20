@@ -249,6 +249,11 @@ void RotatePlane180(const uint8_t* src,
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
+#if defined(HAS_COPYROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    CopyRow = CopyRow_SME;
+  }
+#endif
 #if defined(HAS_COPYROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     CopyRow = CopyRow_RVV;

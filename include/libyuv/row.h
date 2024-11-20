@@ -592,12 +592,13 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 #define HAS_ARGBMULTIPLYROW_SME
+#define HAS_CONVERT16TO8ROW_SME
+#define HAS_COPYROW_SME
 #define HAS_I422TOARGBROW_SME
 #define HAS_I444TOARGBROW_SME
 #define HAS_MERGEUVROW_16_SME
 #define HAS_MERGEUVROW_SME
 #define HAS_MULTIPLYROW_16_SME
-#define HAS_CONVERT16TO8ROW_SME
 #endif
 
 // The following are available on AArch64 platforms:
@@ -3495,6 +3496,7 @@ void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_ERMS(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width);
+void CopyRow_SME(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_MIPS(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_C(const uint8_t* src, uint8_t* dst, int count);

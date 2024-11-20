@@ -471,6 +471,45 @@ __arm_locally_streaming void Convert16To8Row_SME(const uint16_t* src_y,
       : "cc", "memory", "z0", "z1", "z2", "p0", "p1", "p2");
 }
 
+__arm_locally_streaming void CopyRow_SME(const uint8_t* src,
+                                         uint8_t* dst,
+                                         int width) {
+  // Streaming-SVE only, no use of ZA tile.
+  int vl;
+  asm volatile(
+      "cntb    %x[vl]                                   \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "b.lt    2f                                       \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue   p0.b                                     \n"
+      "1:                                               \n"
+      "ld1b    {z0.b}, p0/z, [%[src]]                   \n"
+      "incb    %[src]                                   \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "st1b    {z0.b}, p0, [%[dst]]                     \n"
+      "incb    %[dst]                                   \n"
+      "b.ge    1b                                       \n"
+
+      "2:                                               \n"
+      "adds    %w[width], %w[width], %w[vl]             \n"
+      "b.eq    99f                                      \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "whilelt p0.b, wzr, %w[width]                     \n"
+      "ld1b    {z0.b}, p0/z, [%[src]]                   \n"
+      "st1b    {z0.b}, p0, [%[dst]]                     \n"
+
+      "99:                                              \n"
+      : [src] "+r"(src),      // %[src]
+        [dst] "+r"(dst),      // %[dst]
+        [width] "+r"(width),  // %[width]
+        [vl] "=&r"(vl)        // %[vl]
+      :
+      : "memory", "cc", "z0", "p0");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 
