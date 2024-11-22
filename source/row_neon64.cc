@@ -4664,37 +4664,6 @@ void SobelYRow_NEON(const uint8_t* src_y0,
   );
 }
 
-// Caveat - rounds float to half float whereas scaling version truncates.
-void HalfFloat1Row_NEON(const uint16_t* src,
-                        uint16_t* dst,
-                        float /*unused*/,
-                        int width) {
-  asm volatile(
-      "1:                                        \n"
-      "ldp         q0, q1, [%0], #32             \n"  // load 16 shorts
-      "subs        %w2, %w2, #16                 \n"  // 16 pixels per loop
-      "uxtl        v2.4s, v0.4h                  \n"
-      "uxtl        v4.4s, v1.4h                  \n"
-      "uxtl2       v3.4s, v0.8h                  \n"
-      "uxtl2       v5.4s, v1.8h                  \n"
-      "prfm        pldl1keep, [%0, 448]          \n"
-      "scvtf       v2.4s, v2.4s                  \n"
-      "scvtf       v4.4s, v4.4s                  \n"
-      "scvtf       v3.4s, v3.4s                  \n"
-      "scvtf       v5.4s, v5.4s                  \n"
-      "fcvtn       v0.4h, v2.4s                  \n"
-      "fcvtn       v1.4h, v4.4s                  \n"
-      "fcvtn2      v0.8h, v3.4s                  \n"
-      "fcvtn2      v1.8h, v5.4s                  \n"
-      "stp         q0, q1, [%1], #32             \n"  // store 16 shorts
-      "b.gt        1b                            \n"
-      : "+r"(src),   // %0
-        "+r"(dst),   // %1
-        "+r"(width)  // %2
-      :
-      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
-}
-
 void HalfFloatRow_NEON(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
@@ -4717,10 +4686,10 @@ void HalfFloatRow_NEON(const uint16_t* src,
       "fmul        v3.4s, v3.4s, %3.s[0]         \n"
       "fmul        v5.4s, v5.4s, %3.s[0]         \n"
       "uqshrn      v0.4h, v2.4s, #13             \n"  // isolate halffloat
-      "uqshrn      v1.4h, v4.4s, #13             \n"  // isolate halffloat
+      "uqshrn      v1.4h, v4.4s, #13             \n"
       "uqshrn2     v0.8h, v3.4s, #13             \n"
       "uqshrn2     v1.8h, v5.4s, #13             \n"
-      "stp         q0, q1, [%1], #32             \n"  // store 16 shorts
+      "stp         q0, q1, [%1], #32             \n"  // store 16 fp16
       "b.gt        1b                            \n"
       : "+r"(src),                      // %0
         "+r"(dst),                      // %1

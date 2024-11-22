@@ -3536,59 +3536,41 @@ void SobelYRow_NEON(const uint8_t* src_y0,
 }
 
 // %y passes a float as a scalar vector for vector * scalar multiply.
-// the regoster must be d0 to d15 and indexed with [0] or [1] to access
+// the register must be d0 to d15 and indexed with [0] or [1] to access
 // the float in the first or second float of the d-reg
-
-void HalfFloat1Row_NEON(const uint16_t* src,
-                        uint16_t* dst,
-                        float /*unused*/,
-                        int width) {
-  asm volatile (
-
-      "1:                                        \n"
-      "vld1.8      {q1}, [%0]!                   \n"  // load 8 shorts
-      "subs        %2, %2, #8                    \n"  // 8 pixels per loop
-      "vmovl.u16   q2, d2                        \n"  // 8 int's
-      "vmovl.u16   q3, d3                        \n"
-      "vcvt.f32.u32 q2, q2                       \n"  // 8 floats
-      "vcvt.f32.u32 q3, q3                       \n"
-      "vmul.f32    q2, q2, %y3                   \n"  // adjust exponent
-      "vmul.f32    q3, q3, %y3                   \n"
-      "vqshrn.u32  d2, q2, #13                   \n"  // isolate halffloat
-      "vqshrn.u32  d3, q3, #13                   \n"
-      "vst1.8      {q1}, [%1]!                   \n"
-      "bgt         1b                            \n"
-      : "+r"(src),              // %0
-        "+r"(dst),              // %1
-        "+r"(width)             // %2
-      : "w"(1.9259299444e-34f)  // %3
-      : "cc", "memory", "q1", "q2", "q3");
-}
 
 void HalfFloatRow_NEON(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
                        int width) {
-  asm volatile (
+    asm volatile (
 
       "1:                                        \n"
-      "vld1.8      {q1}, [%0]!                   \n"  // load 8 shorts
-      "subs        %2, %2, #8                    \n"  // 8 pixels per loop
-      "vmovl.u16   q2, d2                        \n"  // 8 int's
-      "vmovl.u16   q3, d3                        \n"
-      "vcvt.f32.u32 q2, q2                       \n"  // 8 floats
-      "vcvt.f32.u32 q3, q3                       \n"
-      "vmul.f32    q2, q2, %y3                   \n"  // adjust exponent
-      "vmul.f32    q3, q3, %y3                   \n"
-      "vqshrn.u32  d2, q2, #13                   \n"  // isolate halffloat
-      "vqshrn.u32  d3, q3, #13                   \n"
-      "vst1.8      {q1}, [%1]!                   \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"  // load 16 shorts
+      "subs        %2, %2, #16                   \n"  // 16 pixels per loop
+      "vmovl.u16   q8, d0                        \n"
+      "vmovl.u16   q9, d1                        \n"
+      "vmovl.u16   q10, d2                       \n"
+      "vmovl.u16   q11, d3                       \n"
+      "vcvt.f32.u32 q8, q8                       \n"
+      "vcvt.f32.u32 q9, q9                       \n"
+      "vcvt.f32.u32 q10, q10                     \n"
+      "vcvt.f32.u32 q11, q11                     \n"
+      "vmul.f32    q8, q8, %y3                   \n"  // adjust exponent
+      "vmul.f32    q9, q9, %y3                   \n"
+      "vmul.f32    q10, q10, %y3                 \n"
+      "vmul.f32    q11, q11, %y3                 \n"
+      "vqshrn.u32  d0, q8, #13                   \n"  // isolate halffloat
+      "vqshrn.u32  d1, q9, #13                   \n"
+      "vqshrn.u32  d2, q10, #13                  \n"
+      "vqshrn.u32  d3, q11, #13                  \n"
+      "vst1.16     {q0, q1}, [%1]!               \n" // store 16 fp16
       "bgt         1b                            \n"
-      : "+r"(src),                      // %0
-        "+r"(dst),                      // %1
-        "+r"(width)                     // %2
+      : "+r"(src),              // %0
+        "+r"(dst),              // %1
+        "+r"(width)             // %2
       : "w"(scale * 1.9259299444e-34f)  // %3
-      : "cc", "memory", "q1", "q2", "q3");
+      : "cc", "memory", "q0", "q1", "q8", "q9", "q10", "q11");
 }
 
 void ByteToFloatRow_NEON(const uint8_t* src,

@@ -6670,14 +6670,6 @@ void HalfFloatRow_SVE2(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
                        int width);
-void HalfFloat1Row_NEON(const uint16_t* src,
-                        uint16_t* dst,
-                        float scale,
-                        int width);
-void HalfFloat1Row_Any_NEON(const uint16_t* src_ptr,
-                            uint16_t* dst_ptr,
-                            float param,
-                            int width);
 void HalfFloat1Row_SVE2(const uint16_t* src,
                         uint16_t* dst,
                         float scale,
