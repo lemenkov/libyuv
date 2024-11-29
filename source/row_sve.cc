@@ -80,35 +80,35 @@ extern "C" {
 
 #define READI210_SVE                             \
   "ld1h       {z3.h}, p1/z, [%[src_y]]       \n" \
-  "lsl        z0.h, z3.h, #6                 \n" \
-  "usra       z0.h, z3.h, #4                 \n" \
   "ld1h       {z1.s}, p1/z, [%[src_u]]       \n" \
   "ld1h       {z2.s}, p1/z, [%[src_v]]       \n" \
   "incb       %[src_y]                       \n" \
   "inch       %[src_u]                       \n" \
   "inch       %[src_v]                       \n" \
+  "lsl        z0.h, z3.h, #6                 \n" \
+  "trn1       z1.h, z1.h, z1.h               \n" \
+  "trn1       z2.h, z2.h, z2.h               \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
   "prfm       pldl1keep, [%[src_u], 128]     \n" \
   "prfm       pldl1keep, [%[src_v], 128]     \n" \
-  "trn1       z1.h, z1.h, z1.h               \n" \
-  "trn1       z2.h, z2.h, z2.h               \n" \
+  "usra       z0.h, z3.h, #4                 \n" \
   "uqshrnb    z1.b, z1.h, #2                 \n" \
   "uqshrnb    z2.b, z2.h, #2                 \n"
 
 #define READI212_SVE                             \
   "ld1h       {z3.h}, p1/z, [%[src_y]]       \n" \
-  "lsl        z0.h, z3.h, #4                 \n" \
-  "usra       z0.h, z3.h, #8                 \n" \
   "ld1h       {z1.s}, p1/z, [%[src_u]]       \n" \
   "ld1h       {z2.s}, p1/z, [%[src_v]]       \n" \
   "incb       %[src_y]                       \n" \
   "inch       %[src_u]                       \n" \
   "inch       %[src_v]                       \n" \
+  "lsl        z0.h, z3.h, #4                 \n" \
+  "trn1       z1.h, z1.h, z1.h               \n" \
+  "trn1       z2.h, z2.h, z2.h               \n" \
   "prfm       pldl1keep, [%[src_y], 448]     \n" \
   "prfm       pldl1keep, [%[src_u], 128]     \n" \
   "prfm       pldl1keep, [%[src_v], 128]     \n" \
-  "trn1       z1.h, z1.h, z1.h               \n" \
-  "trn1       z2.h, z2.h, z2.h               \n" \
+  "usra       z0.h, z3.h, #8                 \n" \
   "uqshrnb    z1.b, z1.h, #4                 \n" \
   "uqshrnb    z2.b, z2.h, #4                 \n"
 
