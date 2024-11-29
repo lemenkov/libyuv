@@ -320,18 +320,19 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm volatile (
+  asm volatile(
       "cnth     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n" /* A */
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.h                                    \n"
-      "1:                                               \n" READYUV444_SVE
-          I4XXTORGB_SVE RGBTOARGB8_SVE
+      "1:                                               \n"  //
+      READYUV444_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
       "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
@@ -342,8 +343,8 @@ void I444ToARGBRow_SVE2(const uint8_t* src_y,
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p1.h, wzr, %w[width]                    \n" READYUV444_SVE
-          I4XXTORGB_SVE RGBTOARGB8_SVE
+      "whilelt  p1.h, wzr, %w[width]                    \n"  //
+      READYUV444_SVE I4XXTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
       "99:                                              \n"
@@ -363,10 +364,10 @@ void I400ToARGBRow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm volatile (
+  asm volatile(
       "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n"
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       YUVTORGB_SVE_SETUP
       "cmp      %w[width], %w[vl]                       \n"
       "mov      z1.h, #128                              \n"  // U/V
@@ -414,16 +415,17 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
   uint64_t vl;
   asm volatile(
       "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n" /* A0 */
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.b                                    \n"
-      "1:                                               \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "1:                                               \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
       "incb     %[dst_argb], all, mul #4                \n"
@@ -435,8 +437,8 @@ void I422ToARGBRow_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "cnth     %[vl]                                   \n"
-      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "whilelt  p1.b, wzr, %w[width]                    \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
 
       "99:                                              \n"
@@ -460,15 +462,16 @@ void I422ToRGB24Row_SVE2(const uint8_t* src_y,
   uint64_t vl;
   asm volatile(
       "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.b                                    \n"
-      "1:                                               \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "1:                                               \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_argb]] \n"
       "incb     %[dst_argb], all, mul #3                \n"
@@ -480,8 +483,8 @@ void I422ToRGB24Row_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "cnth     %[vl]                                   \n"
-      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "whilelt  p1.b, wzr, %w[width]                    \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_argb]] \n"
 
       "99:                                              \n"
@@ -512,15 +515,16 @@ void I422ToRGB565Row_SVE2(const uint8_t* src_y,
   uint64_t vl;
   asm volatile(
       "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.b                                    \n"
-      "1:                                               \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
+      "1:                                               \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
       "subs     %w[width], %w[width], %w[vl]            \n"  //
       RGB8TORGB565_SVE_FROM_TOP_2X
       "st2h     {z18.h, z19.h}, p1, [%[dst]] \n"
@@ -533,8 +537,9 @@ void I422ToRGB565Row_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "cnth     %[vl]                                   \n"
-      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X RGB8TORGB565_SVE_FROM_TOP_2X
+      "whilelt  p1.b, wzr, %w[width]                    \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X
+          RGBTOARGB8_SVE_TOP_2X RGB8TORGB565_SVE_FROM_TOP_2X
       "st2h     {z18.h, z19.h}, p1, [%[dst]] \n"
 
       "99:                                              \n"
@@ -568,15 +573,16 @@ void I422ToARGB1555Row_SVE2(const uint8_t* src_y,
   uint64_t vl;
   asm volatile(
       "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.b                                    \n"
-      "1:                                               \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
+      "1:                                               \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
       "subs     %w[width], %w[width], %w[vl]            \n"  //
       RGB8TOARGB1555_SVE_FROM_TOP_2X
       "st2h     {z0.h, z1.h}, p1, [%[dst]] \n"
@@ -589,8 +595,9 @@ void I422ToARGB1555Row_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "cnth     %[vl]                                   \n"
-      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X RGB8TOARGB1555_SVE_FROM_TOP_2X
+      "whilelt  p1.b, wzr, %w[width]                    \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X
+          RGBTOARGB8_SVE_TOP_2X RGB8TOARGB1555_SVE_FROM_TOP_2X
       "st2h     {z0.h, z1.h}, p1, [%[dst]] \n"
 
       "99:                                              \n"
@@ -624,15 +631,16 @@ void I422ToARGB4444Row_SVE2(const uint8_t* src_y,
   uint64_t vl;
   asm volatile(
       "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.b                                    \n"
-      "1:                                               \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
+      "1:                                               \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
       "subs     %w[width], %w[width], %w[vl]            \n"  //
       RGB8TOARGB4444_SVE_FROM_TOP_2X
       "st2h     {z0.h, z1.h}, p1, [%[dst]] \n"
@@ -645,8 +653,9 @@ void I422ToARGB4444Row_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "cnth     %[vl]                                   \n"
-      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
-          I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X RGB8TOARGB4444_SVE_FROM_TOP_2X
+      "whilelt  p1.b, wzr, %w[width]                    \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X
+          RGBTOARGB8_SVE_TOP_2X RGB8TOARGB4444_SVE_FROM_TOP_2X
       "st2h     {z0.h, z1.h}, p1, [%[dst]] \n"
 
       "99:                                              \n"
@@ -668,10 +677,11 @@ void I422ToRGBARow_SVE2(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   uint64_t vl;
-  asm volatile (
+  asm volatile(
       "cnth     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.le     2f                                      \n"
 
@@ -714,18 +724,20 @@ void I444AlphaToARGBRow_SVE2(const uint8_t* src_y,
                              const struct YuvConstants* yuvconstants,
                              int width) {
   uint64_t vl;
-  asm volatile (
+  asm volatile(
       "cnth     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.h                                    \n"
-      "1:                                               \n" READYUV444_SVE
+      "1:                                               \n"  //
+      READYUV444_SVE
       "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"
-      "add      %[src_a], %[src_a], %[vl]               \n"  // A
+      "add      %[src_a], %[src_a], %[vl]               \n"  // Alpha
       I4XXTORGB_SVE RGBTOARGB8_SVE
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
@@ -737,8 +749,9 @@ void I444AlphaToARGBRow_SVE2(const uint8_t* src_y,
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p1.h, wzr, %w[width]                    \n" READYUV444_SVE
-      "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"  // A
+      "whilelt  p1.h, wzr, %w[width]                    \n"  //
+      READYUV444_SVE
+      "ld1b     {z19.h}, p1/z, [%[src_a]]               \n"  // Alpha
       I4XXTORGB_SVE RGBTOARGB8_SVE
       "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
 
@@ -765,16 +778,18 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
   uint64_t vl;
   asm volatile(
       "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.b                                    \n"
-      "1:                                               \n" READYUV422_SVE_2X
+      "1:                                               \n"  //
+      READYUV422_SVE_2X
       "ld1b     {z19.b}, p1/z, [%[src_a]]               \n"
-      "add      %[src_a], %[src_a], %[vl]               \n"  // A
+      "add      %[src_a], %[src_a], %[vl]               \n"  // Alpha
       I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
@@ -787,8 +802,9 @@ void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "cnth     %[vl]                                   \n"
-      "whilelt  p1.b, wzr, %w[width]                    \n" READYUV422_SVE_2X
-      "ld1b     {z19.b}, p1/z, [%[src_a]]               \n"  // A
+      "whilelt  p1.b, wzr, %w[width]                    \n"  //
+      READYUV422_SVE_2X
+      "ld1b     {z19.b}, p1/z, [%[src_a]]               \n"  // Alpha
       I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
 
@@ -821,7 +837,7 @@ void NV12ToARGBRow_SVE2(const uint8_t* src_y,
   asm volatile(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
       "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -881,7 +897,7 @@ void NV21ToARGBRow_SVE2(const uint8_t* src_y,
   asm volatile(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
       "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -941,7 +957,7 @@ void NV12ToRGB24Row_SVE2(const uint8_t* src_y,
   asm volatile(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
       "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -1001,7 +1017,7 @@ void NV21ToRGB24Row_SVE2(const uint8_t* src_y,
   asm volatile(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
       "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -1299,7 +1315,7 @@ void ARGBToRGB565Row_SVE2(const uint8_t* src_argb,
   unsigned bsl_mask = 0x7e0;
   uint64_t vl;
   width *= 2;
-  asm volatile (
+  asm volatile(
       "mov     z3.h, #3                     \n"
       "dup     z4.h, %w[bsl_mask]           \n"
 
@@ -1311,7 +1327,8 @@ void ARGBToRGB565Row_SVE2(const uint8_t* src_argb,
       "1:                                   \n"
       "ld2b    {z0.b, z1.b}, p0/z, [%[src]] \n"  // BR, GA
       "incb    %[src], all, mul #2          \n"
-      "subs    %w[width], %w[width], %w[vl] \n" ARGBTORGB565_SVE
+      "subs    %w[width], %w[width], %w[vl] \n"  //
+      ARGBTORGB565_SVE
       "st1b    {z1.b}, p0, [%[dst]]         \n"
       "incb    %[dst]                       \n"
       "b.ge    1b                           \n"
@@ -1341,7 +1358,7 @@ void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
   unsigned bsl_mask = 0x7e0;
   uint64_t vl;
   width *= 2;
-  asm volatile (
+  asm volatile(
       "mov     z3.h, #3                     \n"
       "dup     z4.h, %w[bsl_mask]           \n"
       "dup     z2.s, %w[dither4]            \n"
@@ -1357,7 +1374,8 @@ void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
       "incb    %[src], all, mul #2          \n"
       "uqadd   z0.b, z0.b, z2.b             \n"
       "uqadd   z1.b, z1.b, z2.b             \n"
-      "subs    %w[width], %w[width], %w[vl] \n" ARGBTORGB565_SVE
+      "subs    %w[width], %w[width], %w[vl] \n"  //
+      ARGBTORGB565_SVE
       "st1b    {z1.b}, p0, [%[dst]]         \n"
       "incb    %[dst]                       \n"
       "b.ge    1b                           \n"
@@ -1369,7 +1387,8 @@ void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
       "whilelt p0.b, wzr, %w[width]         \n"
       "ld2b    {z0.b, z1.b}, p0/z, [%[src]] \n"  // BR, GA
       "uqadd   z0.b, z0.b, z2.b             \n"
-      "uqadd   z1.b, z1.b, z2.b             \n" ARGBTORGB565_SVE
+      "uqadd   z1.b, z1.b, z2.b             \n"  //
+      ARGBTORGB565_SVE
       "st1b    {z1.b}, p0, [%[dst]]         \n"
 
       "99:                                  \n"
@@ -1399,7 +1418,7 @@ void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
                             uint8_t* dst_argb,
                             int width) {
   uint64_t vl;
-  asm volatile (
+  asm volatile(
       "mov     z4.h, #0x0300                           \n"
       "ptrue   p0.b                                    \n"
 
@@ -1410,7 +1429,8 @@ void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
       "1:                                              \n"
       "ld1h    {z1.h}, p0/z, [%[src]]                  \n"
       "ld1h    {z3.h}, p0/z, [%[src], #1, mul vl]      \n"
-      "incb    %[src], all, mul #2                     \n" ARGB1555TOARGB
+      "incb    %[src], all, mul #2                     \n"  //
+      ARGB1555TOARGB
       "subs    %w[width], %w[width], %w[vl], lsl #1    \n"
       "st2h    {z0.h, z1.h}, p0, [%[dst]]              \n"
       "st2h    {z2.h, z3.h}, p0, [%[dst], #2, mul vl]  \n"
@@ -1424,7 +1444,8 @@ void ARGB1555ToARGBRow_SVE2(const uint8_t* src_argb1555,
       "whilelt p1.h, wzr, %w[width]                    \n"
       "whilelt p2.h, %w[vl], %w[width]                 \n"
       "ld1h    {z1.h}, p1/z, [%[src]]                  \n"
-      "ld1h    {z3.h}, p2/z, [%[src], #1, mul vl]      \n" ARGB1555TOARGB
+      "ld1h    {z3.h}, p2/z, [%[src], #1, mul vl]      \n"  //
+      ARGB1555TOARGB
       "st2h    {z0.h, z1.h}, p1, [%[dst]]              \n"
       "st2h    {z2.h, z3.h}, p2, [%[dst], #2, mul vl]  \n"
 
@@ -1552,7 +1573,7 @@ void YUY2ToARGBRow_SVE2(const uint8_t* src_yuy2,
   asm volatile(
       "ptrue    p0.b                                    \n"
       "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -1605,7 +1626,7 @@ void UYVYToARGBRow_SVE2(const uint8_t* src_uyvy,
   asm volatile(
       "ptrue    p0.b                                    \n"
       "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       YUVTORGB_SVE_SETUP
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -1975,7 +1996,8 @@ void HalfFloatRow_SVE2(const uint16_t* src,
       "ld1h        {z1.s}, p0/z, [%[src], #1, mul vl]    \n"
       "ld1h        {z2.s}, p0/z, [%[src], #2, mul vl]    \n"
       "ld1h        {z3.s}, p0/z, [%[src], #3, mul vl]    \n"
-      "incb        %[src], all, mul #2                   \n" HALFFLOAT_SVE
+      "incb        %[src], all, mul #2                   \n"  //
+      HALFFLOAT_SVE
       "subs        %w[width], %w[width], %w[vl], lsl #2  \n"
       "st1h        {z0.s}, p0, [%[dst]]                  \n"
       "st1h        {z1.s}, p0, [%[dst], #1, mul vl]      \n"
@@ -1996,7 +2018,8 @@ void HalfFloatRow_SVE2(const uint16_t* src,
       "ld1h        {z0.s}, p0/z, [%[src]]                \n"
       "ld1h        {z1.s}, p1/z, [%[src], #1, mul vl]    \n"
       "ld1h        {z2.s}, p2/z, [%[src], #2, mul vl]    \n"
-      "ld1h        {z3.s}, p3/z, [%[src], #3, mul vl]    \n" HALFFLOAT_SVE
+      "ld1h        {z3.s}, p3/z, [%[src], #3, mul vl]    \n"  //
+      HALFFLOAT_SVE
       "st1h        {z0.s}, p0, [%[dst]]                  \n"
       "st1h        {z1.s}, p1, [%[dst], #1, mul vl]      \n"
       "st1h        {z2.s}, p2, [%[dst], #2, mul vl]      \n"
@@ -2071,8 +2094,9 @@ void I210ToARGBRow_SVE2(const uint16_t* src_y,
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -2119,32 +2143,37 @@ void I210AlphaToARGBRow_SVE2(const uint16_t* src_y,
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.lt     2f                                      \n"
+      "ptrue    p0.b                                               \n"  //
+      YUVTORGB_SVE_SETUP
+      "subs     %w[width], %w[width], %w[vl]                       \n"
+      "b.lt     2f                                                 \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
-      "ptrue    p1.h                                    \n"
-      "1:                                               \n" READI210_SVE
-      "ld1h     {z19.h}, p1/z, [%[src_a]]               \n" I4XXTORGB_SVE
-      "incb     %[src_a]                                \n" RGBATOARGB8_SVE
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
-      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
-      "b.ge     1b                                      \n"
+      "ptrue    p1.h                                               \n"
+      "1:                                                          \n"  //
+      READI210_SVE
+      "ld1h     {z19.h}, p1/z, [%[src_a]]                          \n"  //
+      I4XXTORGB_SVE
+      "incb     %[src_a]                                           \n"  //
+      RGBATOARGB8_SVE
+      "subs     %w[width], %w[width], %w[vl]                       \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]                  \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2            \n"
+      "b.ge     1b                                                 \n"
 
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
+      "2:                                                          \n"
+      "adds     %w[width], %w[width], %w[vl]                       \n"
+      "b.eq     99f                                                \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p1.h, wzr, %w[width_last_y]             \n" READI210_SVE
-      "ld1h     {z19.h}, p1/z, [%[src_a]]               \n"  //
+      "whilelt  p1.h, wzr, %w[width_last_y]                        \n"  //
+      READI210_SVE
+      "ld1h     {z19.h}, p1/z, [%[src_a]]                          \n"  //
       I4XXTORGB_SVE RGBATOARGB8_SVE
-      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]                  \n"
 
-      "99:                                              \n"
+      "99:                                                         \n"
       : [src_y] "+r"(src_y),                                // %[src_y]
         [src_u] "+r"(src_u),                                // %[src_u]
         [src_v] "+r"(src_v),                                // %[src_v]
@@ -2169,7 +2198,8 @@ void I210ToAR30Row_SVE2(const uint16_t* src_y,
   int width_last_y = width & (vl - 1);
   uint16_t limit = 0x3ff0;
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "dup      z23.h, %w[limit]                        \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -2217,9 +2247,10 @@ void P210ToARGBRow_SVE2(const uint16_t* src_y,
   uint32_t nv_uv_start = 0x03010301U;
   uint32_t nv_uv_step = 0x04040404U;
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
-      "dup      z19.b, #255                             \n"  // A
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -2272,7 +2303,8 @@ void P210ToAR30Row_SVE2(const uint16_t* src_y,
   uint32_t nv_uv_step = 0x04040404U;
   uint16_t limit = 0x3ff0;
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "index    z22.s, %w[nv_uv_start], %w[nv_uv_step]  \n"
       "dup      z23.h, %w[limit]                        \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
@@ -2323,8 +2355,9 @@ void I410ToARGBRow_SVE2(const uint16_t* src_y,
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -2371,33 +2404,38 @@ void I410AlphaToARGBRow_SVE2(const uint16_t* src_y,
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "cmp      %w[width], %w[vl]                       \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.lt     2f                                      \n"
+      "ptrue    p0.b                                             \n"  //
+      YUVTORGB_SVE_SETUP
+      "cmp      %w[width], %w[vl]                                \n"
+      "subs     %w[width], %w[width], %w[vl]                     \n"
+      "b.lt     2f                                               \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
-      "ptrue    p1.h                                    \n"
-      "1:                                               \n" READI410_SVE
-      "ld1h     {z19.h}, p1/z, [%[src_a]]               \n" I4XXTORGB_SVE
-      "incb     %[src_a]                                \n" RGBATOARGB8_SVE
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
-      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2 \n"
-      "b.ge     1b                                      \n"
+      "ptrue    p1.h                                             \n"
+      "1:                                                        \n"  //
+      READI410_SVE
+      "ld1h     {z19.h}, p1/z, [%[src_a]]                        \n"  //
+      I4XXTORGB_SVE
+      "incb     %[src_a]                                         \n"  //
+      RGBATOARGB8_SVE
+      "subs     %w[width], %w[width], %w[vl]                     \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]                \n"
+      "add      %[dst_argb], %[dst_argb], %[vl], lsl #2          \n"
+      "b.ge     1b                                               \n"
 
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
+      "2:                                                        \n"
+      "adds     %w[width], %w[width], %w[vl]                     \n"
+      "b.eq     99f                                              \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p1.h, wzr, %w[width_last_y]             \n" READI410_SVE
-      "ld1h     {z19.h}, p1/z, [%[src_a]]               \n"  //
+      "whilelt  p1.h, wzr, %w[width_last_y]                      \n"  //
+      READI410_SVE
+      "ld1h     {z19.h}, p1/z, [%[src_a]]                        \n"  //
       I4XXTORGB_SVE RGBATOARGB8_SVE
-      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]       \n"
+      "st2h     {z16.h, z17.h}, p1, [%[dst_argb]]                \n"
 
-      "99:                                              \n"
+      "99:                                                       \n"
       : [src_y] "+r"(src_y),                                // %[src_y]
         [src_u] "+r"(src_u),                                // %[src_u]
         [src_v] "+r"(src_v),                                // %[src_v]
@@ -2422,7 +2460,8 @@ void I410ToAR30Row_SVE2(const uint16_t* src_y,
   int width_last_y = width & (vl - 1);
   uint16_t limit = 0x3ff0;
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "dup      z23.h, %w[limit]                        \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -2466,8 +2505,9 @@ void P410ToARGBRow_SVE2(const uint16_t* src_y,
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -2517,7 +2557,8 @@ void P410ToAR30Row_SVE2(const uint16_t* src_y,
   int width_last_y = width & (vl - 1);
   uint16_t limit = 0x3ff0;
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "dup      z23.h, %w[limit]                        \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -2568,7 +2609,8 @@ void I212ToAR30Row_SVE2(const uint16_t* src_y,
   int width_last_y = width & (vl - 1);
   uint16_t limit = 0x3ff0;
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
       "dup      z23.h, %w[limit]                        \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
@@ -2613,8 +2655,9 @@ void I212ToARGBRow_SVE2(const uint16_t* src_y,
   asm("cnth %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
   asm volatile(
-      "ptrue    p0.b                                    \n" YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
