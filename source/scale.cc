@@ -2724,6 +2724,38 @@ int NV12Scale(const uint8_t* src_y,
   return r;
 }
 
+LIBYUV_API
+int NV24Scale(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_uv,
+              int src_stride_uv,
+              int src_width,
+              int src_height,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_uv,
+              int dst_stride_uv,
+              int dst_width,
+              int dst_height,
+              enum FilterMode filtering) {
+  int r;
+
+  if (!src_y || !src_uv || src_width <= 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 || !dst_y || !dst_uv ||
+      dst_width <= 0 || dst_height <= 0) {
+    return -1;
+  }
+
+  r = ScalePlane(src_y, src_stride_y, src_width, src_height, dst_y,
+                 dst_stride_y, dst_width, dst_height, filtering);
+  if (r != 0) {
+    return r;
+  }
+  r = UVScale(src_uv, src_stride_uv, src_width, src_height, dst_uv,
+              dst_stride_uv, dst_width, dst_height, filtering);
+  return r;
+}
+
 // Deprecated api
 LIBYUV_API
 int Scale(const uint8_t* src_y,
