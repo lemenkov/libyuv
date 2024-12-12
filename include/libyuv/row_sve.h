@@ -791,10 +791,6 @@ static inline void NV12ToARGBRow_SVE_SC(const uint8_t* src_y,
                                         uint8_t* dst_argb,
                                         const struct YuvConstants* yuvconstants,
                                         int width) STREAMING_COMPATIBLE {
-  uint32_t nv_u_start = 0xff00U;
-  uint32_t nv_u_step = 0x0002U;
-  uint32_t nv_v_start = 0xff01U;
-  uint32_t nv_v_step = 0x0002U;
   uint64_t vl;
   asm("cntb %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
@@ -803,8 +799,6 @@ static inline void NV12ToARGBRow_SVE_SC(const uint8_t* src_y,
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n"  // Alpha
-      "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
-      "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -837,10 +831,6 @@ static inline void NV12ToARGBRow_SVE_SC(const uint8_t* src_y,
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
@@ -851,10 +841,6 @@ static inline void NV21ToARGBRow_SVE_SC(const uint8_t* src_y,
                                         uint8_t* dst_argb,
                                         const struct YuvConstants* yuvconstants,
                                         int width) STREAMING_COMPATIBLE {
-  uint32_t nv_u_start = 0xff01U;
-  uint32_t nv_u_step = 0x0002U;
-  uint32_t nv_v_start = 0xff00U;
-  uint32_t nv_v_step = 0x0002U;
   uint64_t vl;
   asm("cntb %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
@@ -863,8 +849,6 @@ static inline void NV21ToARGBRow_SVE_SC(const uint8_t* src_y,
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n"  // Alpha
-      "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
-      "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -897,10 +881,6 @@ static inline void NV21ToARGBRow_SVE_SC(const uint8_t* src_y,
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
@@ -912,10 +892,6 @@ static inline void NV12ToRGB24Row_SVE_SC(
     uint8_t* dst_rgb24,
     const struct YuvConstants* yuvconstants,
     int width) STREAMING_COMPATIBLE {
-  uint32_t nv_u_start = 0xff00U;
-  uint32_t nv_u_step = 0x0002U;
-  uint32_t nv_v_start = 0xff01U;
-  uint32_t nv_v_step = 0x0002U;
   uint64_t vl;
   asm("cntb %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
@@ -924,8 +900,6 @@ static inline void NV12ToRGB24Row_SVE_SC(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n"  // Alpha
-      "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
-      "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -958,10 +932,6 @@ static inline void NV12ToRGB24Row_SVE_SC(
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
@@ -973,10 +943,6 @@ static inline void NV21ToRGB24Row_SVE_SC(
     uint8_t* dst_rgb24,
     const struct YuvConstants* yuvconstants,
     int width) STREAMING_COMPATIBLE {
-  uint32_t nv_u_start = 0xff01U;
-  uint32_t nv_u_step = 0x0002U;
-  uint32_t nv_v_start = 0xff00U;
-  uint32_t nv_v_step = 0x0002U;
   uint64_t vl;
   asm("cntb %0" : "=r"(vl));
   int width_last_y = width & (vl - 1);
@@ -985,8 +951,6 @@ static inline void NV21ToRGB24Row_SVE_SC(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
       "dup      z19.b, #255                             \n"  // Alpha
-      "index    z7.h, %w[nv_u_start], %w[nv_u_step]     \n"
-      "index    z23.h, %w[nv_v_start], %w[nv_v_step]    \n"
       "subs     %w[width], %w[width], %w[vl]            \n"
       "b.lt     2f                                      \n"
 
@@ -1019,10 +983,6 @@ static inline void NV21ToRGB24Row_SVE_SC(
       : [vl] "r"(vl),                                       // %[vl]
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
-        [nv_u_start] "r"(nv_u_start),                       // %[nv_u_start]
-        [nv_u_step] "r"(nv_u_step),                         // %[nv_u_step]
-        [nv_v_start] "r"(nv_v_start),                       // %[nv_v_start]
-        [nv_v_step] "r"(nv_v_step),                         // %[nv_v_step]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
         [width_last_uv] "r"(width_last_uv)                  // %[width_last_uv]
       : "cc", "memory", YUVTORGB_SVE_REGS, "p2");
