@@ -23,6 +23,9 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 #define STREAMING_COMPATIBLE __arm_streaming_compatible
+#else  // defined(LIBYUV_DISABLE_SME) || !defined(CLANG_HAS_SME) ||
+       // !defined(__aarch64__)
+#define STREAMING_COMPATIBLE
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 
