@@ -2523,6 +2523,8 @@ static int TestHalfFloatPlane(int benchmark_width,
   }
 
   free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
   return max_diff;
 }
 
