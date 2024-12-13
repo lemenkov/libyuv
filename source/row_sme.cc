@@ -805,8 +805,6 @@ __arm_locally_streaming static void HalfRow_16_SME(uint16_t* dst_ptr,
                                                    const uint16_t* src_ptr,
                                                    ptrdiff_t src_stride,
                                                    int width) {
-  int y1_fraction = 128;
-  int y0_fraction = 256 - y1_fraction;
   const uint16_t* src_ptr1 = src_ptr + src_stride;
 
   int vl;
@@ -933,8 +931,6 @@ __arm_locally_streaming static void HalfRow_16To8_SME(uint8_t* dst_ptr,
                                                       ptrdiff_t src_stride,
                                                       int scale,
                                                       int width) {
-  int y1_fraction = 128;
-  int y0_fraction = 256 - y1_fraction;
   const uint16_t* src_ptr1 = src_ptr + src_stride;
 
   // 15 - clz(scale), + 8 to shift result into the high half of the lane to
