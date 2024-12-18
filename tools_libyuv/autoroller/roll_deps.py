@@ -20,13 +20,20 @@ import subprocess
 import sys
 import urllib.request
 
+def FindRootPath():
+    """Returns the absolute path to the highest level repo root.
 
-def FindSrcDirPath():
-    """Returns the abs path to the src/ dir of the project."""
-    src_dir = os.path.dirname(os.path.abspath(__file__))
-    while os.path.basename(src_dir) != 'src':
-        src_dir = os.path.normpath(os.path.join(src_dir, os.pardir))
-    return src_dir
+    If this repo is checked out as a submodule of the chromium/src
+    superproject, this returns the superproect root. Otherwise, it returns the
+    webrtc/src repo root.
+    """
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    while os.path.basename(root_dir) not in ('src', 'chromium'):
+        par_dir = os.path.normpath(os.path.join(root_dir, os.pardir))
+        if par_dir == root_dir:
+            raise RuntimeError('Could not find the repo root.')
+        root_dir = par_dir
+    return root_dir
 
 
 # Skip these dependencies (list without solution name prefix).
@@ -75,8 +82,8 @@ CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION = \'([-0-9a-z]+)\'$')
 ROLL_BRANCH_NAME = 'roll_chromium_revision'
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CHECKOUT_SRC_DIR = FindSrcDirPath()
-CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(CHECKOUT_SRC_DIR, os.pardir))
+CHECKOUT_ROOT_DIR = FindRootPath()
+GCLIENT_ROOT_DIR = os.path.realpath(os.path.join(CHECKOUT_ROOT_DIR, os.pardir))
 
 # Copied from tools/android/roll/android_deps/.../BuildConfigGenerator.groovy.
 ANDROID_DEPS_START = r'=== ANDROID_DEPS Generated Code Start ==='
@@ -84,14 +91,14 @@ ANDROID_DEPS_END = r'=== ANDROID_DEPS Generated Code End ==='
 # Location of automically gathered android deps.
 ANDROID_DEPS_PATH = 'src/third_party/android_deps/'
 
-sys.path.append(os.path.join(CHECKOUT_SRC_DIR, 'build'))
+sys.path.append(os.path.join(CHECKOUT_ROOT_DIR, 'build'))
 import find_depot_tools  # pylint: disable=wrong-import-position
 
 find_depot_tools.add_depot_tools_to_path()
 
 CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.py'
 CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join(
-    CHECKOUT_SRC_DIR, 'tools', 'clang', 'scripts', 'update.py'
+    CHECKOUT_ROOT_DIR, 'tools', 'clang', 'scripts', 'update.py'
 )
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
@@ -166,7 +173,7 @@ def _RunCommand(
     Returns:
       A tuple containing the stdout and stderr outputs as strings.
     """
-    working_dir = working_dir or CHECKOUT_SRC_DIR
+    working_dir = working_dir or CHECKOUT_ROOT_DIR
     logging.debug('CMD: %s CWD: %s', ' '.join(command), working_dir)
     env = os.environ.copy()
     if extra_env:
@@ -652,7 +659,7 @@ def UpdateDepsFile(deps_filename, rev_update, changed_deps, new_cr_content):
         # ChangedVersionEntry types are already been processed.
         if isinstance(dep, ChangedVersionEntry):
             continue
-        local_dep_dir = os.path.join(CHECKOUT_ROOT_DIR, dep.path)
+        local_dep_dir = os.path.join(GCLIENT_ROOT_DIR, dep.path)
         if not os.path.isdir(local_dep_dir):
             raise RollError(
                 'Cannot find local directory %s. Either run\n'
@@ -669,7 +676,7 @@ def UpdateDepsFile(deps_filename, rev_update, changed_deps, new_cr_content):
             update = '%s@%s' % (dep.path, dep.new_rev)
         _RunCommand(
             ['gclient', 'setdep', '--revision', update],
-            working_dir=CHECKOUT_SRC_DIR,
+            working_dir=CHECKOUT_ROOT_DIR,
         )
 
 
@@ -857,7 +864,7 @@ def main():
     if not opts.ignore_unclean_workdir:
         _EnsureUpdatedMainBranch(opts.dry_run)
 
-    deps_filename = os.path.join(CHECKOUT_SRC_DIR, 'DEPS')
+    deps_filename = os.path.join(CHECKOUT_ROOT_DIR, 'DEPS')
     libyuv_deps = ParseLocalDepsFile(deps_filename)
 
     rev_update = GetRollRevisionRanges(opts, libyuv_deps)
