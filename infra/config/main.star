@@ -175,6 +175,9 @@ luci.cq_group(
 
 luci.bucket(
     name = "ci",
+    constraints = luci.bucket_constraints(
+        pools = ["luci.flex.ci"],
+    ),
 )
 luci.bucket(
     name = "try",
@@ -184,6 +187,12 @@ luci.bucket(
             "service-account-cq",
         ]),
     ],
+    constraints = luci.bucket_constraints(
+        pools = ["luci.flex.try"],
+        service_accounts = [
+            "libyuv-try-builder@chops-service-accounts.iam.gserviceaccount.com",
+        ],
+    ),
 )
 luci.bucket(
     name = "cron",
