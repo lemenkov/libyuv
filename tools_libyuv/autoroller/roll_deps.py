@@ -19,7 +19,6 @@ import re
 import subprocess
 import sys
 import urllib.request
-import find_depot_tools
 
 
 def FindSrcDirPath():
@@ -86,6 +85,7 @@ ANDROID_DEPS_END = r'=== ANDROID_DEPS Generated Code End ==='
 ANDROID_DEPS_PATH = 'src/third_party/android_deps/'
 
 sys.path.append(os.path.join(CHECKOUT_SRC_DIR, 'build'))
+import find_depot_tools  # pylint: disable=wrong-import-position
 
 find_depot_tools.add_depot_tools_to_path()
 
