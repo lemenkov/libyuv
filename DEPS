@@ -226,38 +226,26 @@ deps = {
   },
   'src/third_party/android_sdk/public': {
       'packages': [
-          {
-              'package': 'chromium/third_party/android_sdk/public/build-tools/34.0.0',
-              'version': 'YK9Rzw3fDzMHVzatNN6VlyoD_81amLZpN1AbmkdOd6AC',
-          },
-          {
+         {
+              'package': 'chromium/third_party/android_sdk/public/build-tools/35.0.0',
+              'version': 'DxwAZ3hD551Neu6ycuW5CPnXFrdleRBd93oX1eB_m9YC'
+         },
+         {
               'package': 'chromium/third_party/android_sdk/public/emulator',
-              'version': '9lGp8nTUCRRWGMnI_96HcKfzjnxEJKUcfvfwmA3wXNkC',
-          },
-          {
-              'package': 'chromium/third_party/android_sdk/public/patcher',
-              'version': 'I6FNMhrXlpB-E1lOhMlvld7xt9lBVNOO83KIluXDyA0C',
-          },
-          {
+              'version': '9lGp8nTUCRRWGMnI_96HcKfzjnxEJKUcfvfwmA3wXNkC'
+         },
+         {
               'package': 'chromium/third_party/android_sdk/public/platform-tools',
-              'version': 'HWVsGs2HCKgSVv41FsOcsfJbNcB0UFiNrF6Tc4yRArYC',
-          },
-          {
-              'package': 'chromium/third_party/android_sdk/public/platforms/android-34',
-              'version': 'u-bhWbTME6u-DjypTgr3ZikCyeAeU6txkR9ET6Uudc8C',
-          },
-   {
-              'package': 'chromium/third_party/android_sdk/public/platforms/android-tiramisuprivacysandbox',
-              'version': 'YWMYkzyxGBgVsty0GhXL1oxbY0pGXQIgFc0Rh7ZMRPYC',
-          },
-          {
-              'package': 'chromium/third_party/android_sdk/public/sources/android-31',
-              'version': '_a_BcnANjPYw5mSKlNHa7GFY8yc1kdqj2rmQgac7yUcC',
-          },
-          {
+              'version': 'WihaseZR6cojZbkzIqwGhpTp92ztaGfqq8njBU8eTXYC'
+         },
+         {
+              'package': 'chromium/third_party/android_sdk/public/platforms/android-35',
+              'version': 'kIXA-9XuCfOESodXEdOBkW5f1ytrGWdbp3HFp1I8A_0C'
+         },
+         {
               'package': 'chromium/third_party/android_sdk/public/cmdline-tools',
-              'version': 'EWnL2r7oV5GtE9Ef7GyohyFam42wtMtEKYU4dCb3U1YC',
-          },
+              'version': 'OCGHZKTdjXjIELVI6FMAgcDkfnd_1ybB0_MtljPtz-8C'
+         }
       ],
       'condition': 'checkout_android',
       'dep_type': 'cipd',
