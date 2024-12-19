@@ -395,6 +395,8 @@ if (libyuv_include_tests) {
 
     if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
+      # For enabling ASLR.
+      ldflags = [ "-pie" ]
     }
     if (is_ios) {
       configs -= [ "//build/config/compiler:default_symbols" ]
