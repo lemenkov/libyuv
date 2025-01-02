@@ -191,7 +191,8 @@ static int ARGBRotate180(const uint8_t* src_argb,
 #endif
 #if defined(HAS_COPYROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    CopyRow = IS_ALIGNED(width * 4, 128) ? CopyRow_AVX512BW : CopyRow_Any_AVX512BW;
+    CopyRow =
+        IS_ALIGNED(width * 4, 128) ? CopyRow_AVX512BW : CopyRow_Any_AVX512BW;
   }
 #endif
 #if defined(HAS_COPYROW_ERMS)

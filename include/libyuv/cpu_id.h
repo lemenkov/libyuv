@@ -67,7 +67,6 @@ static const int kCpuHasLOONGARCH = 0x20;
 static const int kCpuHasLSX = 0x100;
 static const int kCpuHasLASX = 0x200;
 
-
 // Optional init function. TestCpuFlag does an auto-init.
 // Returns cpu_info flags.
 LIBYUV_API

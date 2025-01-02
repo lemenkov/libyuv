@@ -3613,9 +3613,9 @@ void Convert16To8Row_AVX2(const uint16_t* src_y,
                           int scale,
                           int width);
 void Convert16To8Row_AVX512BW(const uint16_t* src_y,
-                             uint8_t* dst_y,
-                             int scale,
-                             int width);
+                              uint8_t* dst_y,
+                              int scale,
+                              int width);
 void Convert16To8Row_Any_SSSE3(const uint16_t* src_ptr,
                                uint8_t* dst_ptr,
                                int scale,

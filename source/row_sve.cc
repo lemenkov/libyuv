@@ -241,7 +241,7 @@ static void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
                                    const int16_t* uvconstants) {
   const uint8_t* src_argb_1 = src_argb + src_stride_argb;
   uint64_t vl;
-  asm volatile (
+  asm volatile(
       "ptrue    p0.b                                \n"
       "ld1rd    {z24.d}, p0/z, [%[uvconstants]]     \n"
       "ld1rd    {z25.d}, p0/z, [%[uvconstants], #8] \n"

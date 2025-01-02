@@ -333,14 +333,14 @@ static void ScaleUVDownEven(int src_width,
 #endif
 #if defined(HAS_SCALEUVROWDOWNEVEN_RVV) || defined(HAS_SCALEUVROWDOWN4_RVV)
   if (TestCpuFlag(kCpuHasRVV) && !filtering) {
-    #if defined(HAS_SCALEUVROWDOWNEVEN_RVV)
-      ScaleUVRowDownEven = ScaleUVRowDownEven_RVV;
-    #endif
-    #if defined(HAS_SCALEUVROWDOWN4_RVV)
-      if (col_step == 4) {
-        ScaleUVRowDownEven = ScaleUVRowDown4_RVV;
-      }
-    #endif
+#if defined(HAS_SCALEUVROWDOWNEVEN_RVV)
+    ScaleUVRowDownEven = ScaleUVRowDownEven_RVV;
+#endif
+#if defined(HAS_SCALEUVROWDOWN4_RVV)
+    if (col_step == 4) {
+      ScaleUVRowDownEven = ScaleUVRowDown4_RVV;
+    }
+#endif
   }
 #endif
 

@@ -67,16 +67,16 @@ TEST_F(LibYUVBaseTest, TestCpuId) {
 #endif
 
 #ifdef __linux__
-static void KernelVersion(int *version) {
+static void KernelVersion(int* version) {
   struct utsname buffer;
   int i = 0;
 
   version[0] = version[1] = 0;
   if (uname(&buffer) == 0) {
-    char *v = buffer.release;
+    char* v = buffer.release;
     for (i = 0; *v && i < 2; ++v) {
       if (isdigit(*v)) {
-        version[i++] = (int) strtol(v, &v, 10);
+        version[i++] = (int)strtol(v, &v, 10);
       }
     }
   }
@@ -142,8 +142,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
 
     // Read and print the RVV vector length.
     if (has_rvv) {
-      register uint32_t vlenb __asm__ ("t0");
-      __asm__(".word 0xC22022F3"  /* CSRR t0, vlenb */ : "=r" (vlenb));
+      register uint32_t vlenb __asm__("t0");
+      __asm__(".word 0xC22022F3" /* CSRR t0, vlenb */ : "=r"(vlenb));
       printf("RVV vector length: %d bytes\n", vlenb);
     }
   }
@@ -161,7 +161,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
 #if defined(__loongarch__)
   int has_loongarch = TestCpuFlag(kCpuHasLOONGARCH);
   if (has_loongarch) {
-    int has_lsx  = TestCpuFlag(kCpuHasLSX);
+    int has_lsx = TestCpuFlag(kCpuHasLSX);
     int has_lasx = TestCpuFlag(kCpuHasLASX);
     printf("Has LOONGARCH 0x%x\n", has_loongarch);
     printf("Has LSX 0x%x\n", has_lsx);
@@ -169,8 +169,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   }
 #endif  // defined(__loongarch__)
 
-#if defined(__i386__) || defined(__x86_64__) || \
-    defined(_M_IX86) || defined(_M_X64)
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+    defined(_M_X64)
   int has_x86 = TestCpuFlag(kCpuHasX86);
   if (has_x86) {
     int has_sse2 = TestCpuFlag(kCpuHasSSE2);
@@ -215,7 +215,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     printf("Has AVXVNNIINT8 0x%x\n", has_avxvnniint8);
     printf("Has AMXINT8 0x%x\n", has_amxint8);
   }
-#endif  // defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+#endif  // defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) ||
+        // defined(_M_X64)
 }
 
 TEST_F(LibYUVBaseTest, TestCompilerMacros) {

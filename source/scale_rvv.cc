@@ -149,7 +149,7 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
   const uint32_t* src = (const uint32_t*)(src_argb);
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m4_t v_odd, v_even, v_dst;
     vuint32m4_t v_odd_32, v_even_32;
@@ -214,7 +214,7 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
   const uint32_t* src1 = (const uint32_t*)(src_argb + src_stride);
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m4_t v_row0_odd, v_row0_even, v_row1_odd, v_row1_even, v_dst;
     vuint16m8_t v_row0_sum, v_row1_sum, v_dst_16;
@@ -311,7 +311,7 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
   const int stride_byte = src_stepx * 4;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m4_t v_row0_low, v_row0_high, v_row1_low, v_row1_high, v_dst;
     vuint16m8_t v_row0_sum, v_row1_sum, v_sum;
@@ -389,7 +389,7 @@ void ScaleRowDown2Linear_RVV(const uint8_t* src_ptr,
   (void)src_stride;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m4_t v_s0, v_s1, v_dst;
     size_t vl = __riscv_vsetvl_e8m4(w);
@@ -444,7 +444,7 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
   size_t w = (size_t)dst_width;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     size_t vl = __riscv_vsetvl_e8m4(w);
     vuint8m4_t v_s0, v_s1, v_t0, v_t1;
@@ -577,7 +577,7 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
   size_t w = (size_t)dst_width;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m2_t v_s0, v_s1, v_s2, v_s3;
     vuint8m2_t v_t0, v_t1, v_t2, v_t3;
@@ -747,7 +747,7 @@ void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
   const uint8_t* t = src_ptr + src_stride;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m2_t v_s0, v_s1, v_s2, v_s3;
     vuint16m4_t v_t0_u16, v_t1_u16, v_t2_u16, v_t3_u16;
@@ -876,7 +876,7 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
   const uint8_t* t = src_ptr + src_stride;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m2_t v_s0, v_s1, v_s2, v_s3;
     vuint8m2_t v_ave0, v_ave1, v_ave2, v_ave3;
@@ -1539,7 +1539,7 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
   (void)src_stride;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m4_t v_u0v0, v_u1v1, v_avg;
     vuint16m4_t v_u0v0_16, v_u1v1_16;
@@ -1608,7 +1608,7 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
   size_t w = (size_t)dst_width;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
-  asm volatile ("csrwi vxrm, 0");
+  asm volatile("csrwi vxrm, 0");
   do {
     vuint8m2_t v_u0_row0, v_v0_row0, v_u1_row0, v_v1_row0;
     vuint8m2_t v_u0_row1, v_v0_row1, v_u1_row1, v_v1_row1;

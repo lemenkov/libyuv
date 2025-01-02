@@ -665,7 +665,7 @@ int I010ToNV12(const uint16_t* src_y,
   void (*Convert16To8Row)(const uint16_t* src_y, uint8_t* dst_y, int scale,
                           int width) = Convert16To8Row_C;
   void (*MergeUVRow)(const uint8_t* src_u, const uint8_t* src_v,
-                      uint8_t* dst_uv, int width) = MergeUVRow_C;
+                     uint8_t* dst_uv, int width) = MergeUVRow_C;
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_uv || width <= 0 ||
       height == 0) {
     return -1;

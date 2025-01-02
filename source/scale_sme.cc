@@ -15,7 +15,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 
