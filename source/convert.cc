@@ -33,7 +33,7 @@ static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
 
-// Any I4xx To I420 format with mirroring.
+// Any I4xx To I420 format
 static int I4xxToI420(const uint8_t* src_y,
                       int src_stride_y,
                       const uint8_t* src_u,
@@ -50,7 +50,7 @@ static int I4xxToI420(const uint8_t* src_y,
                       int src_y_height,
                       int src_uv_width,
                       int src_uv_height) {
-  const int dst_y_width = Abs(src_y_width);
+  const int dst_y_width = src_y_width;
   const int dst_y_height = Abs(src_y_height);
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
@@ -61,11 +61,8 @@ static int I4xxToI420(const uint8_t* src_y,
     return -1;
   }
   if (dst_y) {
-    r = ScalePlane(src_y, src_stride_y, src_y_width, src_y_height, dst_y,
-                   dst_stride_y, dst_y_width, dst_y_height, kFilterBilinear);
-    if (r != 0) {
-      return r;
-    }
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, src_y_width,
+              src_y_height);
   }
   r = ScalePlane(src_u, src_stride_u, src_uv_width, src_uv_height, dst_u,
                  dst_stride_u, dst_uv_width, dst_uv_height, kFilterBilinear);
@@ -77,9 +74,7 @@ static int I4xxToI420(const uint8_t* src_y,
   return r;
 }
 
-// Copy I420 with optional flipping.
-// TODO(fbarchard): Use Scale plane which supports mirroring, but ensure
-// is does row coalescing.
+// Copy I420 with optional vertical flipping using negative height.
 LIBYUV_API
 int I420Copy(const uint8_t* src_y,
              int src_stride_y,
@@ -514,7 +509,7 @@ int I412ToI420(const uint16_t* src_y,
                     dst_v, dst_stride_v, width, height, 12);
 }
 
-// Any Ix10 To I010 format with mirroring.
+// Any Ix10 To I010 format
 static int Ix10ToI010(const uint16_t* src_y,
                       int src_stride_y,
                       const uint16_t* src_u,
@@ -531,22 +526,19 @@ static int Ix10ToI010(const uint16_t* src_y,
                       int height,
                       int subsample_x,
                       int subsample_y) {
-  const int dst_y_width = Abs(width);
+  const int dst_y_width = width;
   const int dst_y_height = Abs(height);
   const int src_uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
   const int src_uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
   int r;
-  if (width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
+      height == 0) {
     return -1;
   }
   if (dst_y) {
-    r = ScalePlane_12(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
-                      dst_y_width, dst_y_height, kFilterBilinear);
-    if (r != 0) {
-      return r;
-    }
+    CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
   r = ScalePlane_12(src_u, src_stride_u, src_uv_width, src_uv_height, dst_u,
                     dst_stride_u, dst_uv_width, dst_uv_height, kFilterBilinear);
@@ -598,7 +590,7 @@ int I210ToI010(const uint16_t* src_y,
                     dst_v, dst_stride_v, width, height, 1, 0);
 }
 
-// Any I[420]1[02] to P[420]1[02] format with mirroring.
+// Any I[420]1[02] to P[420]1[02] format
 static int IxxxToPxxx(const uint16_t* src_y,
                       int src_stride_y,
                       const uint16_t* src_u,
@@ -1152,7 +1144,8 @@ int I422ToNV21(const uint8_t* src_y,
                          int source_y_fraction) = InterpolateRow_C;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_vu || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_vu || width <= 0 ||
+      height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1339,7 +1332,8 @@ int I444ToNV12(const uint8_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
-  if (!src_y || !src_u || !src_v || !dst_uv || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_uv || width <= 0 ||
+      height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1392,7 +1386,7 @@ int I400ToI420(const uint8_t* src_y,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1422,7 +1416,7 @@ int I400ToNV21(const uint8_t* src_y,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!dst_vu || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !dst_vu || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1456,7 +1450,8 @@ int NV12ToI420(const uint8_t* src_y,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_uv || !dst_u || !dst_v || width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_uv || !dst_u || !dst_v || width <= 0 ||
+      height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1524,16 +1519,12 @@ int NV12ToNV24(const uint8_t* src_y,
                int width,
                int height) {
   int r;
-  if (width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_uv || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
 
   if (dst_y) {
-    r = ScalePlane(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
-                   Abs(width), Abs(height), kFilterBilinear);
-    if (r != 0) {
-      return r;
-    }
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
   r = UVScale(src_uv, src_stride_uv, SUBSAMPLE(width, 1, 1),
               SUBSAMPLE(height, 1, 1), dst_uv, dst_stride_uv, Abs(width),
@@ -1553,23 +1544,19 @@ int NV16ToNV24(const uint8_t* src_y,
                int width,
                int height) {
   int r;
-  if (width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_uv || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
 
   if (dst_y) {
-    r = ScalePlane(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
-                   Abs(width), Abs(height), kFilterBilinear);
-    if (r != 0) {
-      return r;
-    }
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
   r = UVScale(src_uv, src_stride_uv, SUBSAMPLE(width, 1, 1), height, dst_uv,
               dst_stride_uv, Abs(width), Abs(height), kFilterBilinear);
   return r;
 }
 
-// Any P[420]1[02] to I[420]1[02] format with mirroring.
+// Any P[420]1[02] to I[420]1[02] format
 static int PxxxToIxxx(const uint16_t* src_y,
                       int src_stride_y,
                       const uint16_t* src_uv,
@@ -1587,7 +1574,8 @@ static int PxxxToIxxx(const uint16_t* src_y,
                       int depth) {
   const int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
   const int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
-  if (width <= 0 || height == 0) {
+  if (!src_y || !dst_y || !src_uv || !dst_u || !dst_v || width <= 0 ||
+      height == 0) {
     return -1;
   }
   ConvertToLSBPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height,
@@ -1645,16 +1633,12 @@ int P010ToP410(const uint16_t* src_y,
                int width,
                int height) {
   int r;
-  if (width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_uv || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
 
   if (dst_y) {
-    r = ScalePlane_16(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
-                      Abs(width), Abs(height), kFilterBilinear);
-    if (r != 0) {
-      return r;
-    }
+    CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
   r = UVScale_16(src_uv, src_stride_uv, SUBSAMPLE(width, 1, 1),
                  SUBSAMPLE(height, 1, 1), dst_uv, dst_stride_uv, Abs(width),
@@ -1674,16 +1658,12 @@ int P210ToP410(const uint16_t* src_y,
                int width,
                int height) {
   int r;
-  if (width <= 0 || height == 0) {
+  if ((!src_y && dst_y) || !src_uv || !dst_uv || width <= 0 || height == 0) {
     return -1;
   }
 
   if (dst_y) {
-    r = ScalePlane_16(src_y, src_stride_y, width, height, dst_y, dst_stride_y,
-                      Abs(width), Abs(height), kFilterBilinear);
-    if (r != 0) {
-      return r;
-    }
+    CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
   r = UVScale_16(src_uv, src_stride_uv, SUBSAMPLE(width, 1, 1), height, dst_uv,
                  dst_stride_uv, Abs(width), Abs(height), kFilterBilinear);
