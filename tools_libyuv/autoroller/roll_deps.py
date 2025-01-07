@@ -55,8 +55,6 @@ LIBYUV_ONLY_DEPS = [
     'src/testing',
     'src/third_party',
     'src/third_party/android_support_test_runner',
-    'src/third_party/bazel',
-    'src/third_party/bouncycastle',
     'src/third_party/errorprone/lib',
     'src/third_party/findbugs',
     'src/third_party/gson',
