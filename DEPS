@@ -171,10 +171,6 @@ deps = {
 
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git' + '@' + 'd3f61eeacbf7fda857c1d8bbba56e3b5cb6cc2df',
-  'src/base': {
-    'url': Var('chromium_git') + '/chromium/src/base' + '@' + 'f9db0ed7ca6c9bc32e69e8b76af572cef6323eec',
-    'condition': 'checkout_android',
-  },
 
   'src/third_party/android_toolchain/ndk': {
     'packages': [
