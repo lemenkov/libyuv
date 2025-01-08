@@ -104,8 +104,6 @@ deps = {
   },
   'src/third_party/depot_tools':
     Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '423f1e1914ab4aa7b2bdf804e216d4c097853ba2',
-  'src/third_party/freetype/src':
-    Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + 'afc7000cacb8cc90ae61036858c5306defa1236a',
   'third_party/fuchsia-gn-sdk': {
     'url': Var('chromium_git') + '/chromium/src/third_party/fuchsia-gn-sdk.git' + '@' + '0d6902558d92fe3d49ba9a8f638ddea829be595b',
     'condition': 'checkout_fuchsia',
@@ -168,9 +166,6 @@ deps = {
       'condition': 'checkout_android',
       'dep_type': 'cipd',
   },
-
-  'src/third_party/boringssl/src':
-    'https://boringssl.googlesource.com/boringssl.git' + '@' + 'd3f61eeacbf7fda857c1d8bbba56e3b5cb6cc2df',
 
   'src/third_party/android_toolchain/ndk': {
     'packages': [
@@ -270,16 +265,6 @@ deps = {
           {
               'package': 'chromium/third_party/gson',
               'version': '681931c9778045903a0ed59856ce2dd8dd7bf7ca',
-          },
-      ],
-      'condition': 'checkout_android',
-      'dep_type': 'cipd',
-  },
-  'src/third_party/guava': {
-      'packages': [
-          {
-              'package': 'chromium/third_party/guava',
-              'version': 'a6fba501f3a0de88b9be1daa2052632de5b96a46',
           },
       ],
       'condition': 'checkout_android',
