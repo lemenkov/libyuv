@@ -3240,6 +3240,24 @@ void Convert8To16Row_C(const uint8_t* src_y,
   }
 }
 
+// Use scale to convert J420 to I420
+// scale parameter is 8.8 fixed point but limited to 0 to 255
+// Function is based on DivideRow, but adds a bias
+// Does not clamp
+void Convert8To8Row_C(const uint8_t* src_y,
+                      uint8_t* dst_y,
+                      int scale,
+                      int bias,
+                      int width) {
+  int x;
+  assert(scale >= 0);
+  assert(scale <= 255);
+
+  for (x = 0; x < width; ++x) {
+    dst_y[x] = ((src_y[x] * scale) >> 8) + bias;
+  }
+}
+
 void CopyRow_C(const uint8_t* src, uint8_t* dst, int count) {
   memcpy(dst, src, count);
 }

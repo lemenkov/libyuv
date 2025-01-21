@@ -1780,6 +1780,34 @@ ANY11C(DivideRow_16_Any_NEON, DivideRow_16_NEON, 2, 2, uint16_t, uint16_t, 15)
 #endif
 #undef ANY11C
 
+// Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
+#define ANY11SB(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)         \
+  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int bias, \
+               int width) {                                               \
+    SIMD_ALIGNED(STYPE vin[64]);                                          \
+    SIMD_ALIGNED(DTYPE vout[64]);                                         \
+    memset(vin, 0, sizeof(vin)); /* for msan */                           \
+    int r = width & MASK;                                                 \
+    int n = width & ~MASK;                                                \
+    if (n > 0) {                                                          \
+      ANY_SIMD(src_ptr, dst_ptr, scale, bias, n);                         \
+    }                                                                     \
+    memcpy(vin, src_ptr + n, r * SBPP);                                   \
+    ANY_SIMD(vin, vout, scale, bias, MASK + 1);                           \
+    memcpy(dst_ptr + n, vout, r * BPP);                                   \
+  }
+
+#ifdef HAS_CONVERT8TO8ROW_NEON
+ANY11SB(Convert8To8Row_Any_NEON,
+        Convert8To8Row_NEON,
+        1,
+        1,
+        uint8_t,
+        uint8_t,
+        31)
+#endif
+#undef ANY11B
+
 // Any 1 to 1 with parameter and shorts to byte.  BPP measures in shorts.
 #define ANY11P16(NAMEANY, ANY_SIMD, ST, T, SBPP, BPP, MASK)             \
   void NAMEANY(const ST* src_ptr, T* dst_ptr, float param, int width) { \

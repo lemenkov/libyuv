@@ -507,6 +507,7 @@ extern "C" {
 
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_CONVERT8TO8ROW_NEON
 #define HAS_ARGBTOAR30ROW_NEON
 #define HAS_ABGRTOAR30ROW_NEON
 #define HAS_I210ALPHATOARGBROW_NEON
@@ -3640,6 +3641,22 @@ void Convert16To8Row_SME(const uint16_t* src_y,
                          uint8_t* dst_y,
                          int scale,
                          int width);
+
+void Convert8To8Row_C(const uint8_t* src_y,
+                      uint8_t* dst_y,
+                      int scale,
+                      int bias,
+                      int width);
+void Convert8To8Row_NEON(const uint8_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int bias,
+                         int width);
+void Convert8To8Row_Any_NEON(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int scale,
+                             int bias,
+                             int width);
 
 void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);

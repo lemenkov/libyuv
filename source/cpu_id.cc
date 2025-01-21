@@ -450,7 +450,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
                   ((cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0) |
                   ((cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0);
       if (cpu_info0[0] >= 0x24 && (cpu_einfo7[3] & 0x00080000)) {
-        cpu_info |= ((cpu_info24[1] & 0xFF) >= 2) ? kCpuHasAVX10_2: 0;
+        cpu_info |= ((cpu_info24[1] & 0xFF) >= 2) ? kCpuHasAVX10_2 : 0;
       }
     }
   }
