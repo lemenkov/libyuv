@@ -405,6 +405,7 @@ extern "C" {
 #define HAS_BGRATOYROW_NEON
 #define HAS_BYTETOFLOATROW_NEON
 #define HAS_CONVERT16TO8ROW_NEON
+#define HAS_CONVERT8TO8ROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_DETILEROW_16_NEON
 #define HAS_DETILEROW_NEON
@@ -507,7 +508,6 @@ extern "C" {
 
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
-#define HAS_CONVERT8TO8ROW_NEON
 #define HAS_ARGBTOAR30ROW_NEON
 #define HAS_ABGRTOAR30ROW_NEON
 #define HAS_I210ALPHATOARGBROW_NEON
