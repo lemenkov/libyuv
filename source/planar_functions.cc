@@ -271,32 +271,11 @@ void Convert8To8Plane(const uint8_t* src_y,
     }
   }
 #endif
-#if defined(HAS_CONVERT8TO8ROW_SME)
-  if (TestCpuFlag(kCpuHasSME)) {
-    Convert8To8Row = Convert8To8Row_SME;
-  }
-#endif
-#if defined(HAS_CONVERT8TO8ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    Convert8To8Row = Convert8To8Row_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      Convert8To8Row = Convert8To8Row_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_CONVERT8TO8ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     Convert8To8Row = Convert8To8Row_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       Convert8To8Row = Convert8To8Row_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_CONVERT8TO8ROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW)) {
-    Convert8To8Row = Convert8To8Row_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      Convert8To8Row = Convert8To8Row_AVX512BW;
     }
   }
 #endif

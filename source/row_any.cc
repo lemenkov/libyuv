@@ -1806,6 +1806,15 @@ ANY11SB(Convert8To8Row_Any_NEON,
         uint8_t,
         31)
 #endif
+#ifdef HAS_CONVERT8TO8ROW_AVX2
+ANY11SB(Convert8To8Row_Any_AVX2,
+        Convert8To8Row_AVX2,
+        1,
+        1,
+        uint8_t,
+        uint8_t,
+        31)
+#endif
 #undef ANY11B
 
 // Any 1 to 1 with parameter and shorts to byte.  BPP measures in shorts.
