@@ -271,6 +271,16 @@ void Convert8To8Plane(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_CONVERT8TO8ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    Convert8To8Row = Convert8To8Row_SVE2;
+  }
+#endif
+#if defined(HAS_CONVERT8TO8ROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    Convert8To8Row = Convert8To8Row_SME;
+  }
+#endif
 #if defined(HAS_CONVERT8TO8ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     Convert8To8Row = Convert8To8Row_Any_AVX2;
