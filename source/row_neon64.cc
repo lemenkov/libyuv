@@ -2710,12 +2710,7 @@ void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
   );
 }
 
-struct RgbUVConstantsU8 {
-  uint8_t kRGBToU[4];
-  uint8_t kRGBToV[4];
-};
-
-struct RgbUVConstantsI8 {
+struct RgbUVConstants {
   int8_t kRGBToU[4];
   int8_t kRGBToV[4];
 };
@@ -2726,7 +2721,7 @@ static void ARGBToUV444MatrixRow_NEON(
     uint8_t* dst_u,
     uint8_t* dst_v,
     int width,
-    const struct RgbUVConstantsU8* rgbuvconstants) {
+    const struct RgbUVConstants* rgbuvconstants) {
   asm volatile(
       "ldr         d0, [%4]                      \n"  // load rgbuvconstants
       "dup         v24.16b, v0.b[0]              \n"  // UB  0.875 coefficient
@@ -2740,13 +2735,13 @@ static void ARGBToUV444MatrixRow_NEON(
       "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load 8 ARGB
       "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
       "umull       v4.8h, v0.8b, v24.8b          \n"  // B
-      "umlsl       v4.8h, v1.8b, v25.8b          \n"  // G
-      "umlsl       v4.8h, v2.8b, v26.8b          \n"  // R
+      "umlal       v4.8h, v1.8b, v25.8b          \n"  // G
+      "umlal       v4.8h, v2.8b, v26.8b          \n"  // R
       "prfm        pldl1keep, [%0, 448]          \n"
 
       "umull       v3.8h, v2.8b, v24.8b          \n"  // R
-      "umlsl       v3.8h, v1.8b, v28.8b          \n"  // G
-      "umlsl       v3.8h, v0.8b, v27.8b          \n"  // B
+      "umlal       v3.8h, v1.8b, v28.8b          \n"  // G
+      "umlal       v3.8h, v0.8b, v27.8b          \n"  // B
 
       "addhn       v0.8b, v4.8h, v29.8h          \n"  // +128 -> unsigned
       "addhn       v1.8b, v3.8h, v29.8h          \n"  // +128 -> unsigned
@@ -2768,7 +2763,7 @@ static void ARGBToUV444MatrixRow_NEON_I8MM(
     uint8_t* dst_u,
     uint8_t* dst_v,
     int width,
-    const struct RgbUVConstantsI8* rgbuvconstants) {
+    const struct RgbUVConstants* rgbuvconstants) {
       asm("ld2r        {v16.4s, v17.4s}, [%[rgbuvconstants]] \n"
       "movi        v29.16b, #0x80                \n"  // 128.5
       "1:                                        \n"
@@ -2801,25 +2796,21 @@ static void ARGBToUV444MatrixRow_NEON_I8MM(
 
 // RGB to bt601 coefficients
 // UB   0.875 coefficient = 112
-// UG -0.5781 coefficient = 74
-// UR -0.2969 coefficient = 38
-// VB -0.1406 coefficient = 18
-// VG -0.7344 coefficient = 94
-// VR   0.875 coefficient = 112 (ignored)
+// UG -0.5781 coefficient = -74
+// UR -0.2969 coefficient = -38
+// VB -0.1406 coefficient = -18
+// VG -0.7344 coefficient = -94
+// VR   0.875 coefficient = 112
 
-static const struct RgbUVConstantsU8 kRgb24I601UVConstantsU8 = {
-    {112, 74, 38, 0},
-    {18, 94, 112, 0}};
-static const struct RgbUVConstantsI8 kRgb24I601UVConstantsI8 = {
-    {112, -74, -38, 0},
-    {-18, -94, 112, 0}};
+static const struct RgbUVConstants kRgb24I601UVConstants = {{112, -74, -38, 0},
+                                                            {-18, -94, 112, 0}};
 
 void ARGBToUV444Row_NEON(const uint8_t* src_argb,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
                          int width) {
   ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width,
-                            &kRgb24I601UVConstantsU8);
+                            &kRgb24I601UVConstants);
 }
 
 void ARGBToUV444Row_NEON_I8MM(const uint8_t* src_argb,
@@ -2827,7 +2818,35 @@ void ARGBToUV444Row_NEON_I8MM(const uint8_t* src_argb,
                               uint8_t* dst_v,
                               int width) {
   ARGBToUV444MatrixRow_NEON_I8MM(src_argb, dst_u, dst_v, width,
-                                 &kRgb24I601UVConstantsI8);
+                                 &kRgb24I601UVConstants);
+}
+
+// RGB to JPEG coefficients
+// UB  0.500    coefficient = 127
+// UG -0.33126  coefficient = -84
+// UR -0.16874  coefficient = -43
+// VB -0.08131  coefficient = -20
+// VG -0.41869  coefficient = -107
+// VR 0.500     coefficient = 127
+
+static const struct RgbUVConstants kRgb24JPEGUVConstants = {
+    {127, -84, -43, 0},
+    {-20, -107, 127, 0}};
+
+void ARGBToUVJ444Row_NEON(const uint8_t* src_argb,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width) {
+  ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width,
+                            &kRgb24JPEGUVConstants);
+}
+
+void ARGBToUVJ444Row_NEON_I8MM(const uint8_t* src_argb,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width) {
+  ARGBToUV444MatrixRow_NEON_I8MM(src_argb, dst_u, dst_v, width,
+                                 &kRgb24JPEGUVConstants);
 }
 
 #define RGBTOUV_SETUP_REG                                                  \
