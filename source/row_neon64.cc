@@ -2729,19 +2729,23 @@ static void ARGBToUV444MatrixRow_NEON(
       "dup         v26.16b, v0.b[2]              \n"  // UR -0.2969 coefficient
       "dup         v27.16b, v0.b[4]              \n"  // VB -0.1406 coefficient
       "dup         v28.16b, v0.b[5]              \n"  // VG -0.7344 coefficient
+      "neg         v25.16b, v25.16b              \n"
+      "neg         v26.16b, v26.16b              \n"
+      "neg         v27.16b, v27.16b              \n"
+      "neg         v28.16b, v28.16b              \n"
       "movi        v29.16b, #0x80                \n"  // 128.5
 
       "1:                                        \n"
       "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load 8 ARGB
       "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
       "umull       v4.8h, v0.8b, v24.8b          \n"  // B
-      "umlal       v4.8h, v1.8b, v25.8b          \n"  // G
-      "umlal       v4.8h, v2.8b, v26.8b          \n"  // R
+      "umlsl       v4.8h, v1.8b, v25.8b          \n"  // G
+      "umlsl       v4.8h, v2.8b, v26.8b          \n"  // R
       "prfm        pldl1keep, [%0, 448]          \n"
 
       "umull       v3.8h, v2.8b, v24.8b          \n"  // R
-      "umlal       v3.8h, v1.8b, v28.8b          \n"  // G
-      "umlal       v3.8h, v0.8b, v27.8b          \n"  // B
+      "umlsl       v3.8h, v1.8b, v28.8b          \n"  // G
+      "umlsl       v3.8h, v0.8b, v27.8b          \n"  // B
 
       "addhn       v0.8b, v4.8h, v29.8h          \n"  // +128 -> unsigned
       "addhn       v1.8b, v3.8h, v29.8h          \n"  // +128 -> unsigned

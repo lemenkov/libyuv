@@ -1841,18 +1841,22 @@ static void ARGBToUV444MatrixRow_NEON(
       "vdup.u8     d26, d0[2]                    \n"  // UR -0.2969 coefficient
       "vdup.u8     d27, d0[4]                    \n"  // VB -0.1406 coefficient
       "vdup.u8     d28, d0[5]                    \n"  // VG -0.7344 coefficient
+      "vneg.s8     d25, d25                      \n"
+      "vneg.s8     d26, d26                      \n"
+      "vneg.s8     d27, d27                      \n"
+      "vneg.s8     d28, d28                      \n"
       "vmov.u16    q15, #0x8080                  \n"  // 128.5
 
       "1:                                        \n"
       "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // load 8 ARGB pixels.
       "subs        %3, %3, #8                    \n"  // 8 processed per loop.
       "vmull.u8    q2, d0, d24                   \n"  // B
-      "vmlal.u8    q2, d1, d25                   \n"  // G
-      "vmlal.u8    q2, d2, d26                   \n"  // R
+      "vmlsl.u8    q2, d1, d25                   \n"  // G
+      "vmlsl.u8    q2, d2, d26                   \n"  // R
 
       "vmull.u8    q3, d2, d24                   \n"  // R
-      "vmlal.u8    q3, d1, d28                   \n"  // G
-      "vmlal.u8    q3, d0, d27                   \n"  // B
+      "vmlsl.u8    q3, d1, d28                   \n"  // G
+      "vmlsl.u8    q3, d0, d27                   \n"  // B
 
       "vaddhn.u16  d0, q2, q15                   \n"  // +128 -> unsigned
       "vaddhn.u16  d1, q3, q15                   \n"  // +128 -> unsigned
