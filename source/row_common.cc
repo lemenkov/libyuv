@@ -662,15 +662,13 @@ static __inline uint8_t RGBToV(uint8_t r, uint8_t g, uint8_t b) {
 }
 #endif
 
-// LIBYUV_ARGBTOUV_PAVGB mimics x86 code that subsamples with 2 pavgb.
+// ARM uses uint16
 #if !defined(LIBYUV_ARGBTOUV_PAVGB)
-static __inline int RGB2xToU(uint16_t r, uint16_t g, uint16_t b) {
-  return STATIC_CAST(
-      uint8_t, ((112 / 2) * b - (74 / 2) * g - (38 / 2) * r + 0x8080) >> 8);
+static __inline int RGBxToU(uint16_t r, uint16_t g, uint16_t b) {
+  return STATIC_CAST(uint8_t, (112 * b - 74 * g - 38 * r + 0x8080) >> 8);
 }
-static __inline int RGB2xToV(uint16_t r, uint16_t g, uint16_t b) {
-  return STATIC_CAST(
-      uint8_t, ((112 / 2) * r - (94 / 2) * g - (18 / 2) * b + 0x8080) >> 8);
+static __inline int RGBxToV(uint16_t r, uint16_t g, uint16_t b) {
+  return STATIC_CAST(uint8_t, (112 * r - 94 * g - 18 * b + 0x8080) >> 8);
 }
 #endif
 
@@ -713,7 +711,7 @@ static __inline int RGB2xToV(uint16_t r, uint16_t g, uint16_t b) {
     }                                                                      \
   }
 #else
-// ARM version does sum / 2 then multiply by 2x smaller coefficients
+// ARM version does average of 4 pixels with rounding
 #define MAKEROWY(NAME, R, G, B, BPP)                                       \
   void NAME##ToYRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width) { \
     int x;                                                                 \
@@ -729,27 +727,27 @@ static __inline int RGB2xToV(uint16_t r, uint16_t g, uint16_t b) {
     int x;                                                                 \
     for (x = 0; x < width - 1; x += 2) {                                   \
       uint16_t ab = (src_rgb[B] + src_rgb[B + BPP] + src_rgb1[B] +         \
-                     src_rgb1[B + BPP] + 1) >>                             \
-                    1;                                                     \
+                     src_rgb1[B + BPP] + 2) >>                             \
+                    2;                                                     \
       uint16_t ag = (src_rgb[G] + src_rgb[G + BPP] + src_rgb1[G] +         \
-                     src_rgb1[G + BPP] + 1) >>                             \
-                    1;                                                     \
+                     src_rgb1[G + BPP] + 2) >>                             \
+                    2;                                                     \
       uint16_t ar = (src_rgb[R] + src_rgb[R + BPP] + src_rgb1[R] +         \
-                     src_rgb1[R + BPP] + 1) >>                             \
-                    1;                                                     \
-      dst_u[0] = RGB2xToU(ar, ag, ab);                                     \
-      dst_v[0] = RGB2xToV(ar, ag, ab);                                     \
+                     src_rgb1[R + BPP] + 2) >>                             \
+                    2;                                                     \
+      dst_u[0] = RGBxToU(ar, ag, ab);                                      \
+      dst_v[0] = RGBxToV(ar, ag, ab);                                      \
       src_rgb += BPP * 2;                                                  \
       src_rgb1 += BPP * 2;                                                 \
       dst_u += 1;                                                          \
       dst_v += 1;                                                          \
     }                                                                      \
     if (width & 1) {                                                       \
-      uint16_t ab = src_rgb[B] + src_rgb1[B];                              \
-      uint16_t ag = src_rgb[G] + src_rgb1[G];                              \
-      uint16_t ar = src_rgb[R] + src_rgb1[R];                              \
-      dst_u[0] = RGB2xToU(ar, ag, ab);                                     \
-      dst_v[0] = RGB2xToV(ar, ag, ab);                                     \
+      uint16_t ab = (src_rgb[B] + src_rgb1[B] + 1) >> 1;                   \
+      uint16_t ag = (src_rgb[G] + src_rgb1[G] + 1) >> 1;                   \
+      uint16_t ar = (src_rgb[R] + src_rgb1[R] + 1) >> 1;                   \
+      dst_u[0] = RGBxToU(ar, ag, ab);                                      \
+      dst_v[0] = RGBxToV(ar, ag, ab);                                      \
     }                                                                      \
   }
 #endif
@@ -806,11 +804,11 @@ static __inline uint8_t RGBToVJ(uint8_t r, uint8_t g, uint8_t b) {
   return (127 * r - 107 * g - 20 * b + 0x8080) >> 8;
 }
 #if !defined(LIBYUV_ARGBTOUV_PAVGB)
-static __inline uint8_t RGB2xToUJ(uint16_t r, uint16_t g, uint16_t b) {
-  return ((127 / 2) * b - (84 / 2) * g - (43 / 2) * r + 0x8080) >> 8;
+static __inline uint8_t RGBxToUJ(uint16_t r, uint16_t g, uint16_t b) {
+  return (127 * b - 84 * g - 43 * r + 0x8080) >> 8;
 }
-static __inline uint8_t RGB2xToVJ(uint16_t r, uint16_t g, uint16_t b) {
-  return ((127 / 2) * r - (107 / 2) * g - (20 / 2) * b + 0x8080) >> 8;
+static __inline uint8_t RGBxToVJ(uint16_t r, uint16_t g, uint16_t b) {
+  return (127 * r - 107 * g - 20 * b + 0x8080) >> 8;
 }
 #endif
 
@@ -853,7 +851,7 @@ static __inline uint8_t RGB2xToVJ(uint16_t r, uint16_t g, uint16_t b) {
     }                                                                       \
   }
 #else
-// ARM version does sum / 2 then multiply by 2x smaller coefficients
+// ARM version does average of 4 pixels with rounding
 #define MAKEROWYJ(NAME, R, G, B, BPP)                                       \
   void NAME##ToYJRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width) { \
     int x;                                                                  \
@@ -869,27 +867,27 @@ static __inline uint8_t RGB2xToVJ(uint16_t r, uint16_t g, uint16_t b) {
     int x;                                                                  \
     for (x = 0; x < width - 1; x += 2) {                                    \
       uint16_t ab = (src_rgb[B] + src_rgb[B + BPP] + src_rgb1[B] +          \
-                     src_rgb1[B + BPP] + 1) >>                              \
-                    1;                                                      \
+                     src_rgb1[B + BPP] + 2) >>                              \
+                    2;                                                      \
       uint16_t ag = (src_rgb[G] + src_rgb[G + BPP] + src_rgb1[G] +          \
-                     src_rgb1[G + BPP] + 1) >>                              \
-                    1;                                                      \
+                     src_rgb1[G + BPP] + 2) >>                              \
+                    2;                                                      \
       uint16_t ar = (src_rgb[R] + src_rgb[R + BPP] + src_rgb1[R] +          \
-                     src_rgb1[R + BPP] + 1) >>                              \
-                    1;                                                      \
-      dst_u[0] = RGB2xToUJ(ar, ag, ab);                                     \
-      dst_v[0] = RGB2xToVJ(ar, ag, ab);                                     \
+                     src_rgb1[R + BPP] + 2) >>                              \
+                    2;                                                      \
+      dst_u[0] = RGBxToUJ(ar, ag, ab);                                      \
+      dst_v[0] = RGBxToVJ(ar, ag, ab);                                      \
       src_rgb += BPP * 2;                                                   \
       src_rgb1 += BPP * 2;                                                  \
       dst_u += 1;                                                           \
       dst_v += 1;                                                           \
     }                                                                       \
     if (width & 1) {                                                        \
-      uint16_t ab = (src_rgb[B] + src_rgb1[B]);                             \
-      uint16_t ag = (src_rgb[G] + src_rgb1[G]);                             \
-      uint16_t ar = (src_rgb[R] + src_rgb1[R]);                             \
-      dst_u[0] = RGB2xToUJ(ar, ag, ab);                                     \
-      dst_v[0] = RGB2xToVJ(ar, ag, ab);                                     \
+      uint16_t ab = (src_rgb[B] + src_rgb1[B] + 1) >> 1;                    \
+      uint16_t ag = (src_rgb[G] + src_rgb1[G] + 1) >> 1;                    \
+      uint16_t ar = (src_rgb[R] + src_rgb1[R] + 1) >> 1;                    \
+      dst_u[0] = RGBxToUJ(ar, ag, ab);                                      \
+      dst_v[0] = RGBxToVJ(ar, ag, ab);                                      \
     }                                                                       \
   }
 
@@ -994,11 +992,11 @@ void RGB565ToUVRow_C(const uint8_t* src_rgb565,
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
 #else
-    uint16_t b = (b0 + b1 + b2 + b3 + 1) >> 1;
-    uint16_t g = (g0 + g1 + g2 + g3 + 1) >> 1;
-    uint16_t r = (r0 + r1 + r2 + r3 + 1) >> 1;
-    dst_u[0] = RGB2xToU(r, g, b);
-    dst_v[0] = RGB2xToV(r, g, b);
+    uint16_t b = (b0 + b1 + b2 + b3 + 2) >> 2;
+    uint16_t g = (g0 + g1 + g2 + g3 + 2) >> 2;
+    uint16_t r = (r0 + r1 + r2 + r3 + 2) >> 2;
+    dst_u[0] = RGBxToU(r, g, b);
+    dst_v[0] = RGBxToV(r, g, b);
 #endif
 
     src_rgb565 += 4;
@@ -1029,11 +1027,11 @@ void RGB565ToUVRow_C(const uint8_t* src_rgb565,
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
 #else
-    uint16_t b = b0 + b2;
-    uint16_t g = g0 + g2;
-    uint16_t r = r0 + r2;
-    dst_u[0] = RGB2xToU(r, g, b);
-    dst_v[0] = RGB2xToV(r, g, b);
+    uint16_t b = (b0 + b2 + 1) >> 1;
+    uint16_t g = (g0 + g2 + 1) >> 1;
+    uint16_t r = (r0 + r2 + 1) >> 1;
+    dst_u[0] = RGBxToU(r, g, b);
+    dst_v[0] = RGBxToV(r, g, b);
 #endif
   }
 }
@@ -1083,11 +1081,11 @@ void ARGB1555ToUVRow_C(const uint8_t* src_argb1555,
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
 #else
-    uint16_t b = (b0 + b1 + b2 + b3 + 1) >> 1;
-    uint16_t g = (g0 + g1 + g2 + g3 + 1) >> 1;
-    uint16_t r = (r0 + r1 + r2 + r3 + 1) >> 1;
-    dst_u[0] = RGB2xToU(r, g, b);
-    dst_v[0] = RGB2xToV(r, g, b);
+    uint16_t b = (b0 + b1 + b2 + b3 + 2) >> 2;
+    uint16_t g = (g0 + g1 + g2 + g3 + 2) >> 2;
+    uint16_t r = (r0 + r1 + r2 + r3 + 2) >> 2;
+    dst_u[0] = RGBxToU(r, g, b);
+    dst_v[0] = RGBxToV(r, g, b);
 #endif
 
     src_argb1555 += 4;
@@ -1119,11 +1117,11 @@ void ARGB1555ToUVRow_C(const uint8_t* src_argb1555,
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
 #else
-    uint16_t b = b0 + b2;
-    uint16_t g = g0 + g2;
-    uint16_t r = r0 + r2;
-    dst_u[0] = RGB2xToU(r, g, b);
-    dst_v[0] = RGB2xToV(r, g, b);
+    uint16_t b = (b0 + b2 + 1) >> 1;
+    uint16_t g = (g0 + g2 + 1) >> 1;
+    uint16_t r = (r0 + r2 + 1) >> 1;
+    dst_u[0] = RGBxToU(r, g, b);
+    dst_v[0] = RGBxToV(r, g, b);
 #endif
   }
 }
@@ -1169,11 +1167,11 @@ void ARGB4444ToUVRow_C(const uint8_t* src_argb4444,
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
 #else
-    uint16_t b = (b0 + b1 + b2 + b3 + 1) >> 1;
-    uint16_t g = (g0 + g1 + g2 + g3 + 1) >> 1;
-    uint16_t r = (r0 + r1 + r2 + r3 + 1) >> 1;
-    dst_u[0] = RGB2xToU(r, g, b);
-    dst_v[0] = RGB2xToV(r, g, b);
+    uint16_t b = (b0 + b1 + b2 + b3 + 2) >> 2;
+    uint16_t g = (g0 + g1 + g2 + g3 + 2) >> 2;
+    uint16_t r = (r0 + r1 + r2 + r3 + 2) >> 2;
+    dst_u[0] = RGBxToU(r, g, b);
+    dst_v[0] = RGBxToV(r, g, b);
 #endif
 
     src_argb4444 += 4;
@@ -1203,11 +1201,11 @@ void ARGB4444ToUVRow_C(const uint8_t* src_argb4444,
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
 #else
-    uint16_t b = b0 + b2;
-    uint16_t g = g0 + g2;
-    uint16_t r = r0 + r2;
-    dst_u[0] = RGB2xToU(r, g, b);
-    dst_v[0] = RGB2xToV(r, g, b);
+    uint16_t b = (b0 + b2 + 1) >> 1;
+    uint16_t g = (g0 + g2 + 1) >> 1;
+    uint16_t r = (r0 + r2 + 1) >> 1;
+    dst_u[0] = RGBxToU(r, g, b);
+    dst_v[0] = RGBxToV(r, g, b);
 #endif
   }
 }

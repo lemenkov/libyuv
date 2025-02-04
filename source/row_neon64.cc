@@ -2853,13 +2853,13 @@ void ARGBToUVJ444Row_NEON_I8MM(const uint8_t* src_argb,
                                  &kRgb24JPEGUVConstants);
 }
 
-#define RGBTOUV_SETUP_REG                                                  \
-  "movi       v20.8h, #56, lsl #0  \n" /* UB/VR coefficient (0.875) / 2 */ \
-  "movi       v21.8h, #37, lsl #0  \n" /* UG coefficient (-0.5781) / 2  */ \
-  "movi       v22.8h, #19, lsl #0  \n" /* UR coefficient (-0.2969) / 2  */ \
-  "movi       v23.8h, #9,  lsl #0  \n" /* VB coefficient (-0.1406) / 2  */ \
-  "movi       v24.8h, #47, lsl #0  \n" /* VG coefficient (-0.7344) / 2  */ \
-  "movi       v25.16b, #0x80       \n" /* 128.5 (0x8080 in 16-bit)      */
+#define RGBTOUV_SETUP_REG                                             \
+  "movi       v20.8h, #112     \n" /* UB/VR coefficient  (0.875)   */ \
+  "movi       v21.8h, #74      \n" /* UG coefficient    (-0.5781)  */ \
+  "movi       v22.8h, #38      \n" /* UR coefficient    (-0.2969)  */ \
+  "movi       v23.8h, #18      \n" /* VB coefficient    (-0.1406)  */ \
+  "movi       v24.8h, #94      \n" /* VG coefficient    (-0.7344)  */ \
+  "movi       v25.16b, #0x80   \n" /* 128.5 (0x8080 in 16-bit)      */
 
 // 16x2 pixels -> 8x1.  width is number of argb pixels. e.g. 16.
 // clang-format off
@@ -2899,9 +2899,9 @@ void ARGBToUVRow_NEON(const uint8_t* src_argb,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -2918,7 +2918,6 @@ void ARGBToUVRow_NEON(const uint8_t* src_argb,
   );
 }
 
-// TODO(fbarchard): Subsample match Intel code.
 void ARGBToUVJRow_NEON(const uint8_t* src_argb,
                        int src_stride_argb,
                        uint8_t* dst_u,
@@ -2926,11 +2925,11 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
                        int width) {
   const uint8_t* src_argb_1 = src_argb + src_stride_argb;
   asm volatile (
-      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
-      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
-      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
-      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
-      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v20.8h, #127                  \n"  // UB/VR coeff (0.500)
+      "movi        v21.8h, #84                   \n"  // UG coeff (-0.33126)
+      "movi        v22.8h, #43                   \n"  // UR coeff (-0.16874)
+      "movi        v23.8h, #20                   \n"  // VB coeff (-0.08131)
+      "movi        v24.8h, #107                  \n"  // VG coeff (-0.41869)
       "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
       "1:                                        \n"
       "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels.
@@ -2945,9 +2944,9 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -2971,11 +2970,11 @@ void ABGRToUVJRow_NEON(const uint8_t* src_abgr,
                        int width) {
   const uint8_t* src_abgr_1 = src_abgr + src_stride_abgr;
   asm volatile (
-      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
-      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
-      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
-      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
-      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v20.8h, #127                  \n"  // UB/VR coeff (0.500)
+      "movi        v21.8h, #84                   \n"  // UG coeff (-0.33126)
+      "movi        v22.8h, #43                   \n"  // UR coeff (-0.16874)
+      "movi        v23.8h, #20                   \n"  // VB coeff (-0.08131)
+      "movi        v24.8h, #107                  \n"  // VG coeff (-0.41869)
       "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
       "1:                                        \n"
       "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels.
@@ -2990,9 +2989,9 @@ void ABGRToUVJRow_NEON(const uint8_t* src_abgr,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v6.16b                 \n"  // B 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v2.8h, v1.8h, v0.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3016,11 +3015,11 @@ void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
                         int width) {
   const uint8_t* src_rgb24_1 = src_rgb24 + src_stride_rgb24;
   asm volatile (
-      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
-      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
-      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
-      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
-      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v20.8h, #127                  \n"  // UB/VR coeff (0.500)
+      "movi        v21.8h, #84                   \n"  // UG coeff (-0.33126)
+      "movi        v22.8h, #43                   \n"  // UR coeff (-0.16874)
+      "movi        v23.8h, #20                   \n"  // VB coeff (-0.08131)
+      "movi        v24.8h, #107                  \n"  // VG coeff (-0.41869)
       "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
       "1:                                        \n"
       "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 pixels.
@@ -3035,9 +3034,9 @@ void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3061,11 +3060,11 @@ void RAWToUVJRow_NEON(const uint8_t* src_raw,
                       int width) {
   const uint8_t* src_raw_1 = src_raw + src_stride_raw;
   asm volatile (
-      "movi        v20.8h, #63, lsl #0           \n"  // UB/VR coeff (0.500) / 2
-      "movi        v21.8h, #42, lsl #0           \n"  // UG coeff (-0.33126) / 2
-      "movi        v22.8h, #21, lsl #0           \n"  // UR coeff (-0.16874) / 2
-      "movi        v23.8h, #10, lsl #0           \n"  // VB coeff (-0.08131) / 2
-      "movi        v24.8h, #53, lsl #0           \n"  // VG coeff (-0.41869) / 2
+      "movi        v20.8h, #127                  \n"  // UB/VR coeff (0.500)
+      "movi        v21.8h, #84                   \n"  // UG coeff (-0.33126)
+      "movi        v22.8h, #43                   \n"  // UR coeff (-0.16874)
+      "movi        v23.8h, #20                   \n"  // VB coeff (-0.08131)
+      "movi        v24.8h, #107                  \n"  // VG coeff (-0.41869)
       "movi        v25.16b, #0x80                \n"  // 128.5 (0x8080 in 16-bit)
       "1:                                        \n"
       "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 pixels.
@@ -3080,9 +3079,9 @@ void RAWToUVJRow_NEON(const uint8_t* src_raw,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v2.8h, v1.8h, v0.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3120,9 +3119,9 @@ void BGRAToUVRow_NEON(const uint8_t* src_bgra,
       "uadalp      v3.8h, v6.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v5.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v3.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v3.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3160,9 +3159,9 @@ void ABGRToUVRow_NEON(const uint8_t* src_abgr,
       "uadalp      v2.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v1.8h, v4.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v3.8h, #1              \n"  // 2x average
-      "urshr       v2.8h, v2.8h, #1              \n"
-      "urshr       v1.8h, v1.8h, #1              \n"
+      "urshr       v0.8h, v3.8h, #2              \n"  // average of 4
+      "urshr       v2.8h, v2.8h, #2              \n"
+      "urshr       v1.8h, v1.8h, #2              \n"
 
     RGBTOUV(v0.8h, v2.8h, v1.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3200,9 +3199,9 @@ void RGBAToUVRow_NEON(const uint8_t* src_rgba,
       "uadalp      v1.8h, v6.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v7.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3240,9 +3239,9 @@ void RGB24ToUVRow_NEON(const uint8_t* src_rgb24,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v0.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v2.8h, v2.8h, #1              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
 
     RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3280,9 +3279,9 @@ void RAWToUVRow_NEON(const uint8_t* src_raw,
       "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v0.8h, v4.16b                 \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v2.8h, v2.8h, #1              \n"  // 2x average
-      "urshr       v1.8h, v1.8h, #1              \n"
-      "urshr       v0.8h, v0.8h, #1              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v0.8h, v0.8h, #2              \n"
 
     RGBTOUV(v2.8h, v1.8h, v0.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3324,9 +3323,9 @@ void RGB565ToUVRow_NEON(const uint8_t* src_rgb565,
       "uadalp      v17.8h, v1.16b                \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v18.8h, v2.16b                \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v16.8h, #1             \n"  // 2x average
-      "urshr       v1.8h, v17.8h, #1             \n"
-      "urshr       v2.8h, v18.8h, #1             \n"
+      "urshr       v0.8h, v16.8h, #2             \n"  // average of 4
+      "urshr       v1.8h, v17.8h, #2             \n"
+      "urshr       v2.8h, v18.8h, #2             \n"
 
       RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3368,9 +3367,9 @@ void ARGB1555ToUVRow_NEON(const uint8_t* src_argb1555,
       "uadalp      v17.8h, v1.16b                \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v18.8h, v2.16b                \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v16.8h, #1             \n"  // 2x average
-      "urshr       v1.8h, v17.8h, #1             \n"
-      "urshr       v2.8h, v18.8h, #1             \n"
+      "urshr       v0.8h, v16.8h, #2             \n"  // average of 4
+      "urshr       v1.8h, v17.8h, #2             \n"
+      "urshr       v2.8h, v18.8h, #2             \n"
 
       RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
@@ -3412,9 +3411,9 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
       "uadalp      v17.8h, v1.16b                \n"  // G 16 bytes -> 8 shorts.
       "uadalp      v18.8h, v2.16b                \n"  // R 16 bytes -> 8 shorts.
 
-      "urshr       v0.8h, v16.8h, #1             \n"  // 2x average
-      "urshr       v1.8h, v17.8h, #1             \n"
-      "urshr       v2.8h, v18.8h, #1             \n"
+      "urshr       v0.8h, v16.8h, #2             \n"  // average of 4
+      "urshr       v1.8h, v17.8h, #2             \n"
+      "urshr       v2.8h, v18.8h, #2             \n"
 
       RGBTOUV(v0.8h, v1.8h, v2.8h)
       "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
