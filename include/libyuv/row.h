@@ -88,7 +88,6 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #if !defined(LIBYUV_BIT_EXACT)
 #define HAS_ABGRTOUVROW_SSSE3
-#define HAS_ARGBTOUV444ROW_SSSE3
 #define HAS_ARGBTOUVJROW_SSSE3
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
@@ -234,6 +233,8 @@ extern "C" {
 #define HAS_ARGBTOAB64ROW_SSSE3
 #define HAS_ARGBTOAR30ROW_SSSE3
 #define HAS_ARGBTOAR64ROW_SSSE3
+#define HAS_ARGBTOUV444ROW_SSSE3
+#define HAS_ARGBTOUVJ444ROW_SSSE3
 #define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
@@ -259,13 +260,14 @@ extern "C" {
 #define HAS_P210TOARGBROW_SSSE3
 #define HAS_P410TOAR30ROW_SSSE3
 #define HAS_P410TOARGBROW_SSSE3
+#define HAS_RAWTOARGBROW_AVX2
 #define HAS_RAWTORGBAROW_SSSE3
 #define HAS_RGB24MIRRORROW_SSSE3
 #define HAS_RGBATOYJROW_SSSE3
 #define HAS_SPLITARGBROW_SSE2
 #define HAS_SPLITARGBROW_SSSE3
-#define HAS_SPLITRGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSE41
+#define HAS_SPLITRGBROW_SSSE3
 #define HAS_SPLITXRGBROW_SSE2
 #define HAS_SPLITXRGBROW_SSSE3
 #define HAS_SWAPUVROW_SSSE3
@@ -298,6 +300,8 @@ extern "C" {
 #define HAS_ARGBTOAR64ROW_AVX2
 #define HAS_ARGBTORAWROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
+#define HAS_ARGBTOUV444ROW_AVX2
+#define HAS_ARGBTOUVJ444ROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
@@ -332,8 +336,8 @@ extern "C" {
 #define HAS_P410TOAR30ROW_AVX2
 #define HAS_P410TOARGBROW_AVX2
 #define HAS_RGBATOYJROW_AVX2
-#define HAS_SPLITRGBROW_AVX2
 #define HAS_SPLITARGBROW_AVX2
+#define HAS_SPLITRGBROW_AVX2
 #define HAS_SPLITUVROW_16_AVX2
 #define HAS_SPLITXRGBROW_AVX2
 #define HAS_SWAPUVROW_AVX2
@@ -2699,6 +2703,33 @@ void ARGBToUV444Row_Any_SSSE3(const uint8_t* src_ptr,
                               uint8_t* dst_v,
                               int width);
 
+void ARGBToUVJ444Row_SSSE3(const uint8_t* src_argb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
+void ARGBToUVJ444Row_Any_SSSE3(const uint8_t* src_ptr,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
+
+void ARGBToUV444Row_AVX2(const uint8_t* src_argb,
+                         uint8_t* dst_u,
+                         uint8_t* dst_v,
+                         int width);
+void ARGBToUV444Row_Any_AVX2(const uint8_t* src_ptr,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width);
+
+void ARGBToUVJ444Row_AVX2(const uint8_t* src_argb,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
+void ARGBToUVJ444Row_Any_AVX2(const uint8_t* src_ptr,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width);
+
 void ARGBToUV444Row_C(const uint8_t* src_argb,
                       uint8_t* dst_u,
                       uint8_t* dst_v,
@@ -3853,6 +3884,7 @@ void RGB24ToARGBRow_SSSE3(const uint8_t* src_rgb24,
                           uint8_t* dst_argb,
                           int width);
 void RAWToARGBRow_SSSE3(const uint8_t* src_raw, uint8_t* dst_argb, int width);
+void RAWToARGBRow_AVX2(const uint8_t* src_raw, uint8_t* dst_argb, int width);
 void RAWToRGBARow_SSSE3(const uint8_t* src_raw, uint8_t* dst_rgba, int width);
 void RAWToRGB24Row_SSSE3(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
 void RGB565ToARGBRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
@@ -3955,6 +3987,7 @@ void RGB24ToARGBRow_Any_SSSE3(const uint8_t* src_ptr,
 void RAWToARGBRow_Any_SSSE3(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
+void RAWToARGBRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RAWToRGBARow_Any_SSSE3(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);

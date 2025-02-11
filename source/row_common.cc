@@ -47,7 +47,6 @@ extern "C" {
 #if !defined(LIBYUV_BIT_EXACT) && (defined(__x86_64__) || defined(_M_X64) || \
                                    defined(__i386__) || defined(_M_IX86))
 #define LIBYUV_ARGBTOUV_PAVGB 1
-#define LIBYUV_RGBTOU_TRUNCATE 1
 #endif
 #if defined(LIBYUV_BIT_EXACT)
 #define LIBYUV_UNATTENUATE_DUP 1
@@ -626,9 +625,15 @@ void AR64ShuffleRow_C(const uint8_t* src_ar64,
 }
 
 #ifdef LIBYUV_RGB7
-// Old 7 bit math for compatibility on unsupported platforms.
+// Old 7 bit math for Visual C
 static __inline uint8_t RGBToY(uint8_t r, uint8_t g, uint8_t b) {
   return STATIC_CAST(uint8_t, ((33 * r + 65 * g + 13 * b) >> 7) + 16);
+}
+static __inline uint8_t RGBToU(uint8_t r, uint8_t g, uint8_t b) {
+  return STATIC_CAST(uint8_t, (112 * b - 74 * g - 38 * r + 0x8000) >> 8);
+}
+static __inline uint8_t RGBToV(uint8_t r, uint8_t g, uint8_t b) {
+  return STATIC_CAST(uint8_t, (112 * r - 94 * g - 18 * b + 0x8000) >> 8);
 }
 #else
 // 8 bit
@@ -640,20 +645,6 @@ static __inline uint8_t RGBToY(uint8_t r, uint8_t g, uint8_t b) {
 static __inline uint8_t RGBToY(uint8_t r, uint8_t g, uint8_t b) {
   return STATIC_CAST(uint8_t, (66 * r + 129 * g + 25 * b + 0x1080) >> 8);
 }
-#endif
-
-#define AVGB(a, b) (((a) + (b) + 1) >> 1)
-
-// LIBYUV_RGBTOU_TRUNCATE mimics x86 code that does not round.
-#ifdef LIBYUV_RGBTOU_TRUNCATE
-static __inline uint8_t RGBToU(uint8_t r, uint8_t g, uint8_t b) {
-  return STATIC_CAST(uint8_t, (112 * b - 74 * g - 38 * r + 0x8000) >> 8);
-}
-static __inline uint8_t RGBToV(uint8_t r, uint8_t g, uint8_t b) {
-  return STATIC_CAST(uint8_t, (112 * r - 94 * g - 18 * b + 0x8000) >> 8);
-}
-#else
-// TODO(fbarchard): Add rounding to x86 SIMD and use this
 static __inline uint8_t RGBToU(uint8_t r, uint8_t g, uint8_t b) {
   return STATIC_CAST(uint8_t, (112 * b - 74 * g - 38 * r + 0x8080) >> 8);
 }
@@ -662,7 +653,9 @@ static __inline uint8_t RGBToV(uint8_t r, uint8_t g, uint8_t b) {
 }
 #endif
 
-// ARM uses uint16
+
+#define AVGB(a, b) (((a) + (b) + 1) >> 1)
+// ARM uses uint16.  TODO: Make ARM use uint8 to allow dotproduct.
 #if !defined(LIBYUV_ARGBTOUV_PAVGB)
 static __inline int RGBxToU(uint16_t r, uint16_t g, uint16_t b) {
   return STATIC_CAST(uint8_t, (112 * b - 74 * g - 38 * r + 0x8080) >> 8);
@@ -784,6 +777,16 @@ MAKEROWY(RAW, 0, 1, 2, 3)
 // b -0.08131 * 255 = -20.73405 = -20
 // g -0.41869 * 255 = -106.76595 = -107
 // r  0.50000 * 255 = 127.5 = 127
+// TODO: consider 256 for fixed point on UV
+// JPeg 8 bit U:
+// b  0.50000 * 256 = 128.0 = 128
+// g -0.33126 * 256 = −84.80256 = -85
+// r -0.16874 * 256 = −43.19744 = -43
+// JPeg 8 bit V:
+// b -0.08131 * 256 = −20.81536 = -21
+// g -0.41869 * 256 = −107.18464 = -107
+// r  0.50000 * 256 = 128.0 = 128
+
 
 #ifdef LIBYUV_RGB7
 // Old 7 bit math for compatibility on unsupported platforms.
@@ -4379,13 +4382,17 @@ void RGB24ToYJRow_AVX2(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
 #endif  // HAS_RGB24TOYJROW_AVX2
 
 #ifdef HAS_RAWTOYJROW_AVX2
-// Convert 16 RAW pixels (64 bytes) to 16 YJ values.
+// Convert 32 RAW pixels (128 bytes) to 32 YJ values.
 void RAWToYJRow_AVX2(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+#ifdef HAS_RAWTOARGBROW_AVX2
+    RAWToARGBRow_AVX2(src_raw, row, twidth);
+#else
     RAWToARGBRow_SSSE3(src_raw, row, twidth);
+#endif
     ARGBToYJRow_AVX2(row, dst_yj, twidth);
     src_raw += twidth * 3;
     dst_yj += twidth;
