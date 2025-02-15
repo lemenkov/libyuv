@@ -2771,11 +2771,13 @@ void HalfFloatRow_LSX(const uint16_t* src,
   }
 }
 
+#ifndef RgbConstants
 struct RgbConstants {
   uint8_t kRGBToY[4];
   uint16_t kAddY;
   uint16_t pad;
 };
+#define RgbConstants RgbConstants
 
 // RGB to JPeg coefficients
 // B * 0.1140 coefficient = 29
@@ -2801,6 +2803,7 @@ static const struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0},
 static const struct RgbConstants kRawI601Constants = {{66, 129, 25, 0},
                                                       0x1080,
                                                       0};
+#endif  // RgbConstants
 
 // ARGB expects first 3 values to contain RGB and 4th value is ignored.
 static void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
@@ -2980,6 +2983,17 @@ void RGB24ToYRow_LSX(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
 void RAWToYRow_LSX(const uint8_t* src_raw, uint8_t* dst_y, int width) {
   RGBToYMatrixRow_LSX(src_raw, dst_y, width, &kRawI601Constants);
 }
+
+// undef for unified sources build
+#undef YUVTORGB_SETUP
+#undef READYUV422_D
+#undef READYUV422
+#undef YUVTORGB_D
+#undef YUVTORGB
+#undef I444TORGB
+#undef STOREARGB_D
+#undef STOREARGB
+#undef RGBTOUV
 
 #ifdef __cplusplus
 }  // extern "C"
