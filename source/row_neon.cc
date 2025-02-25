@@ -263,7 +263,7 @@ void I422ToRGBARow_NEON(const uint8_t* src_y,
       "vmov.u8     d6, #255                      \n"
       "1:          \n" READYUV422
       "subs        %[width], %[width], #8        \n" YUVTORGB RGBTORGB8
-      STORERGBA "bgt         1b                            \n"
+          STORERGBA "bgt         1b                            \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
@@ -379,8 +379,7 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
       YUVTORGB_SETUP
       "vmov.u8     d6, #255                      \n"
       "vmov.u8     d7, #0x0f                     \n"  // vbic bits to clear
-      "1:          \n" READYUV422 YUVTORGB
-          RGBTORGB8
+      "1:          \n" READYUV422 YUVTORGB RGBTORGB8
       "subs        %[width], %[width], #8        \n" ARGBTOARGB4444
       "vst1.8      {q0}, [%[dst_argb4444]]!      \n"  // store 8 pixels
       "bgt         1b                            \n"
@@ -401,8 +400,7 @@ void I400ToARGBRow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "vmov.u8     d6, #255                      \n"
-      "1:          \n" READYUV400 YUVTORGB
-          RGBTORGB8
+      "1:          \n" READYUV400 YUVTORGB RGBTORGB8
       "subs        %[width], %[width], #8        \n"
       "vst4.8      {d0, d2, d4, d6}, [%[dst_argb]]! \n"
       "bgt         1b                            \n"

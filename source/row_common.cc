@@ -653,7 +653,6 @@ static __inline uint8_t RGBToV(uint8_t r, uint8_t g, uint8_t b) {
 }
 #endif
 
-
 #define AVGB(a, b) (((a) + (b) + 1) >> 1)
 // ARM uses uint16.  TODO: Make ARM use uint8 to allow dotproduct.
 #if !defined(LIBYUV_ARGBTOUV_PAVGB)
@@ -786,7 +785,6 @@ MAKEROWY(RAW, 0, 1, 2, 3)
 // b -0.08131 * 256 = −20.81536 = -21
 // g -0.41869 * 256 = −107.18464 = -107
 // r  0.50000 * 256 = 128.0 = 128
-
 
 #ifdef LIBYUV_RGB7
 // Old 7 bit math for compatibility on unsupported platforms.
