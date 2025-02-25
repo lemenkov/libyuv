@@ -37,7 +37,7 @@ uint32_t HammingDistance_SSE42(const uint8_t* src_a,
 
       // Process 32 bytes per loop.
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "mov         (%0),%%rcx                    \n"
       "mov         0x8(%0),%%rdx                 \n"
       "xor         (%1),%%rcx                    \n"
@@ -80,7 +80,7 @@ uint32_t HammingDistance_SSE42(const uint8_t* src_a,
   asm volatile(
       // Process 16 bytes per loop.
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "mov         (%0),%%ecx                    \n"
       "mov         0x4(%0),%%edx                 \n"
       "xor         (%1),%%ecx                    \n"
@@ -129,7 +129,7 @@ uint32_t HammingDistance_SSSE3(const uint8_t* src_a,
       "sub         %0,%1                         \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqa      (%0),%%xmm4                   \n"
       "movdqa      0x10(%0), %%xmm5              \n"
       "pxor        (%0,%1), %%xmm4               \n"
@@ -188,7 +188,7 @@ uint32_t HammingDistance_AVX2(const uint8_t* src_a,
       "sub         %0,%1                         \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqa     (%0),%%ymm4                   \n"
       "vmovdqa     0x20(%0), %%ymm5              \n"
       "vpxor       (%0,%1), %%ymm4, %%ymm4       \n"
@@ -217,7 +217,7 @@ uint32_t HammingDistance_AVX2(const uint8_t* src_a,
       "vpermq      $0xaa,%%ymm0,%%ymm1           \n"
       "vpaddd      %%ymm1,%%ymm0,%%ymm0          \n"
       "vmovd       %%xmm0,%3                     \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_a),       // %0
         "+r"(src_b),       // %1
         "+r"(count),       // %2
@@ -239,7 +239,7 @@ uint32_t SumSquareError_SSE2(const uint8_t* src_a,
       "pxor        %%xmm5,%%xmm5                 \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm1                   \n"
       "lea         0x10(%0),%0                   \n"
       "movdqu      (%1),%%xmm2                   \n"
@@ -306,7 +306,7 @@ uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed) {
       "movdqa      %4,%%xmm6                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm1                   \n"
       "lea         0x10(%0),%0                   \n"
       "pmulld      %%xmm6,%%xmm0                 \n"

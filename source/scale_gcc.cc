@@ -100,7 +100,7 @@ void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
   asm volatile(
       // 16 pixel loop.
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "lea         0x20(%0),%0                   \n"
@@ -130,7 +130,7 @@ void ScaleRowDown2Linear_SSSE3(const uint8_t* src_ptr,
       "pxor        %%xmm5,%%xmm5                 \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "lea         0x20(%0),%0                   \n"
@@ -161,7 +161,7 @@ void ScaleRowDown2Box_SSSE3(const uint8_t* src_ptr,
       "pxor        %%xmm5,%%xmm5                 \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "movdqu      0x00(%0,%3,1),%%xmm2          \n"
@@ -196,7 +196,7 @@ void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
                         int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
       "lea         0x40(%0),%0                   \n"
@@ -208,7 +208,7 @@ void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -228,7 +228,7 @@ void ScaleRowDown2Linear_AVX2(const uint8_t* src_ptr,
       "vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
       "lea         0x40(%0),%0                   \n"
@@ -242,7 +242,7 @@ void ScaleRowDown2Linear_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -261,7 +261,7 @@ void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
       "vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
       "vmovdqu     0x00(%0,%3,1),%%ymm2          \n"
@@ -283,7 +283,7 @@ void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),               // %0
         "+r"(dst_ptr),               // %1
         "+r"(dst_width)              // %2
@@ -303,7 +303,7 @@ void ScaleRowDown4_SSSE3(const uint8_t* src_ptr,
       "pslld       $0x10,%%xmm5                  \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "lea         0x20(%0),%0                   \n"
@@ -337,7 +337,7 @@ void ScaleRowDown4Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x00(%4,%4,2),%3              \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "movdqu      0x00(%0,%4,1),%%xmm2          \n"
@@ -389,7 +389,7 @@ void ScaleRowDown4_AVX2(const uint8_t* src_ptr,
       "vpslld      $0x10,%%ymm5,%%ymm5           \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
       "lea         0x40(%0),%0                   \n"
@@ -404,7 +404,7 @@ void ScaleRowDown4_AVX2(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -423,7 +423,7 @@ void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
       "vpackuswb   %%ymm4,%%ymm4,%%ymm4          \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
       "vmovdqu     0x20(%0),%%ymm1               \n"
       "vmovdqu     0x00(%0,%3,1),%%ymm2          \n"
@@ -457,7 +457,7 @@ void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                   // %0
         "+r"(dst_ptr),                   // %1
         "+r"(dst_width)                  // %2
@@ -482,7 +482,7 @@ void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
         "m"(kShuf2)   // %2
   );
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm2               \n"
       "lea         0x20(%0),%0                   \n"
@@ -527,7 +527,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kRound34)  // %2
   );
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm6                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm7          \n"
       "pavgb       %%xmm7,%%xmm6                 \n"
@@ -592,7 +592,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
   );
 
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm6                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm7          \n"
       "pavgb       %%xmm6,%%xmm7                 \n"
@@ -646,7 +646,7 @@ void ScaleRowDown38_SSSE3(const uint8_t* src_ptr,
       "movdqa      %4,%%xmm5                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "lea         0x20(%0),%0                   \n"
@@ -683,7 +683,7 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kScaleAb2)  // %3
   );
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm1          \n"
       "lea         0x10(%0),%0                   \n"
@@ -725,7 +725,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
         "m"(kScaleAc33)  // %2
   );
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x00(%0,%3,1),%%xmm6          \n"
       "movhlps     %%xmm0,%%xmm1                 \n"
@@ -789,7 +789,7 @@ void ScaleRowUp2_Linear_SSE2(const uint8_t* src_ptr,
       "psllw       $1,%%xmm6                     \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm1                   \n"  // 01234567
       "movq        1(%0),%%xmm2                  \n"  // 12345678
       "movdqa      %%xmm1,%%xmm3                 \n"
@@ -839,7 +839,7 @@ void ScaleRowUp2_Bilinear_SSE2(const uint8_t* src_ptr,
                                ptrdiff_t dst_stride,
                                int dst_width) {
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "pxor        %%xmm0,%%xmm0                 \n"  // 0
       // above line
       "movq        (%0),%%xmm1                   \n"  // 01234567
@@ -958,7 +958,7 @@ void ScaleRowUp2_Linear_12_SSSE3(const uint16_t* src_ptr,
       "psllw       $1,%%xmm4                     \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"  // 01234567 (16)
       "movdqu      2(%0),%%xmm1                  \n"  // 12345678 (16)
 
@@ -1010,7 +1010,7 @@ void ScaleRowUp2_Bilinear_12_SSSE3(const uint16_t* src_ptr,
       "movdqa      %5,%%xmm6                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       // above line
       "movdqu      (%0),%%xmm0                   \n"  // 01234567 (16)
       "movdqu      2(%0),%%xmm1                  \n"  // 12345678 (16)
@@ -1108,7 +1108,7 @@ void ScaleRowUp2_Linear_16_SSE2(const uint16_t* src_ptr,
       "pslld       $1,%%xmm4                     \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 0123 (16b)
       "movq        2(%0),%%xmm1                  \n"  // 1234 (16b)
 
@@ -1161,7 +1161,7 @@ void ScaleRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
       "pslld       $3,%%xmm6                     \n"  // all 8
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 0011 (16b, 1u1v)
       "movq        4(%0),%%xmm1                  \n"  // 1122 (16b, 1u1v)
       "punpcklwd   %%xmm7,%%xmm0                 \n"  // 0011 (near) (32b, 1u1v)
@@ -1269,7 +1269,7 @@ void ScaleRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
       "movdqa      %3,%%xmm3                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 01234567
       "movq        1(%0),%%xmm1                  \n"  // 12345678
       "punpcklwd   %%xmm0,%%xmm0                 \n"  // 0101232345456767
@@ -1310,7 +1310,7 @@ void ScaleRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
       "movdqa      %5,%%xmm7                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 01234567
       "movq        1(%0),%%xmm1                  \n"  // 12345678
       "punpcklwd   %%xmm0,%%xmm0                 \n"  // 0101232345456767
@@ -1395,7 +1395,7 @@ void ScaleRowUp2_Linear_AVX2(const uint8_t* src_ptr,
       "vbroadcastf128 %3,%%ymm3                  \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"  // 0123456789ABCDEF
       "vmovdqu     1(%0),%%xmm1                  \n"  // 123456789ABCDEF0
       "vpermq      $0b11011000,%%ymm0,%%ymm0     \n"
@@ -1417,7 +1417,7 @@ void ScaleRowUp2_Linear_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 16 sample to 32 sample
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),      // %0
         "+r"(dst_ptr),      // %1
         "+r"(dst_width)     // %2
@@ -1439,7 +1439,7 @@ void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "vbroadcastf128 %5,%%ymm7                  \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"  // 0123456789ABCDEF
       "vmovdqu     1(%0),%%xmm1                  \n"  // 123456789ABCDEF0
       "vpermq      $0b11011000,%%ymm0,%%ymm0     \n"
@@ -1498,7 +1498,7 @@ void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 16 sample to 32 sample
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                // %0
         "+r"(dst_ptr),                // %1
         "+r"(dst_width)               // %2
@@ -1521,7 +1521,7 @@ void ScaleRowUp2_Linear_12_AVX2(const uint16_t* src_ptr,
       "vpsllw      $1,%%ymm4,%%ymm4              \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"  // 0123456789ABCDEF (16b)
       "vmovdqu     2(%0),%%ymm1                  \n"  // 123456789ABCDEF0 (16b)
 
@@ -1551,7 +1551,7 @@ void ScaleRowUp2_Linear_12_AVX2(const uint16_t* src_ptr,
       "lea         0x40(%1),%1                   \n"  // 16 sample to 32 sample
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),          // %0
         "+r"(dst_ptr),          // %1
         "+r"(dst_width)         // %2
@@ -1573,7 +1573,7 @@ void ScaleRowUp2_Bilinear_12_AVX2(const uint16_t* src_ptr,
       "vpsllw      $3,%%ymm4,%%ymm4              \n"  // all 8
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
 
       "vmovdqu     (%0),%%xmm0                   \n"  // 01234567 (16b)
       "vmovdqu     2(%0),%%xmm1                  \n"  // 12345678 (16b)
@@ -1613,7 +1613,7 @@ void ScaleRowUp2_Bilinear_12_AVX2(const uint16_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 8 sample to 16 sample
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                // %0
         "+r"(dst_ptr),                // %1
         "+r"(dst_width)               // %2
@@ -1634,7 +1634,7 @@ void ScaleRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
       "vpslld      $1,%%ymm4,%%ymm4              \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"  // 01234567 (16b, 1u1v)
       "vmovdqu     2(%0),%%xmm1                  \n"  // 12345678 (16b, 1u1v)
 
@@ -1663,7 +1663,7 @@ void ScaleRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 8 pixel to 16 pixel
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -1684,7 +1684,7 @@ void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
       "vpslld      $3,%%ymm6,%%ymm6              \n"  // all 8
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
 
       "vmovdqu     (%0),%%xmm0                   \n"  // 01234567 (16b, 1u1v)
       "vmovdqu     2(%0),%%xmm1                  \n"  // 12345678 (16b, 1u1v)
@@ -1747,7 +1747,7 @@ void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 8 pixel to 16 pixel
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                // %0
         "+r"(dst_ptr),                // %1
         "+r"(dst_width)               // %2
@@ -1765,7 +1765,7 @@ void ScaleAddRow_SSE2(const uint8_t* src_ptr,
 
                // 16 pixel loop.
                LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm3                   \n"
       "lea         0x10(%0),%0                   \n"  // src_ptr += 16
       "movdqu      (%1),%%xmm0                   \n"
@@ -1795,7 +1795,7 @@ void ScaleAddRow_AVX2(const uint8_t* src_ptr,
       asm volatile("vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
 
                LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm3                   \n"
       "lea         0x20(%0),%0                   \n"  // src_ptr += 32
       "vpermq      $0xd8,%%ymm3,%%ymm3           \n"
@@ -1808,7 +1808,7 @@ void ScaleAddRow_AVX2(const uint8_t* src_ptr,
       "lea         0x40(%1),%1                   \n"
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
                : "+r"(src_ptr),   // %0
                  "+r"(dst_ptr),   // %1
                  "+r"(src_width)  // %2
@@ -1854,7 +1854,7 @@ void ScaleFilterCols_SSSE3(uint8_t* dst_ptr,
       "pextrw      $0x3,%%xmm2,%k4               \n"
 
       LABELALIGN
-      "2:                                        \n"
+      "2:          \n"
       "movdqa      %%xmm2,%%xmm1                 \n"
       "paddd       %%xmm3,%%xmm2                 \n"
       "movzwl      0x00(%1,%3,1),%k2             \n"
@@ -1881,7 +1881,7 @@ void ScaleFilterCols_SSSE3(uint8_t* dst_ptr,
       "jge         2b                            \n"
 
       LABELALIGN
-      "29:                                       \n"
+      "29:         \n"
       "addl        $0x1,%5                       \n"
       "jl          99f                           \n"
       "movzwl      0x00(%1,%3,1),%k2             \n"
@@ -1897,7 +1897,7 @@ void ScaleFilterCols_SSSE3(uint8_t* dst_ptr,
       "packuswb    %%xmm2,%%xmm2                 \n"
       "movd        %%xmm2,%k2                    \n"
       "mov         %b2,(%0)                      \n"
-      "99:                                       \n"
+      "99:         \n"
       : "+r"(dst_ptr),      // %0
         "+r"(src_ptr),      // %1
         "=&a"(temp_pixel),  // %2
@@ -1931,7 +1931,7 @@ void ScaleColsUp2_SSE2(uint8_t* dst_ptr,
   (void)x;
   (void)dx;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%1),%%xmm0                   \n"
       "lea         0x10(%1),%1                   \n"
       "movdqa      %%xmm0,%%xmm1                 \n"
@@ -1956,7 +1956,7 @@ void ScaleARGBRowDown2_SSE2(const uint8_t* src_argb,
                             int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "lea         0x20(%0),%0                   \n"
@@ -1978,7 +1978,7 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8_t* src_argb,
                                   int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "lea         0x20(%0),%0                   \n"
@@ -2002,7 +2002,7 @@ void ScaleARGBRowDown2Box_SSE2(const uint8_t* src_argb,
                                uint8_t* dst_argb,
                                int dst_width) {
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
       "movdqu      0x10(%0),%%xmm1               \n"
       "movdqu      0x00(%0,%3,1),%%xmm2          \n"
@@ -2040,7 +2040,7 @@ void ScaleARGBRowDownEven_SSE2(const uint8_t* src_argb,
       "lea         0x00(%1,%1,2),%4              \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movd        (%0),%%xmm0                   \n"
       "movd        0x00(%0,%1,1),%%xmm1          \n"
       "punpckldq   %%xmm1,%%xmm0                 \n"
@@ -2078,7 +2078,7 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8_t* src_argb,
       "lea         0x00(%0,%5,1),%5              \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"
       "movhps      0x00(%0,%1,1),%%xmm0          \n"
       "movq        0x00(%0,%1,2),%%xmm1          \n"
@@ -2134,7 +2134,7 @@ void ScaleARGBCols_SSE2(uint8_t* dst_argb,
       "jl          49f                           \n"
 
       LABELALIGN
-      "40:                                       \n"
+      "40:         \n"
       "movd        0x00(%3,%0,4),%%xmm0          \n"
       "movd        0x00(%3,%1,4),%%xmm1          \n"
       "pextrw      $0x5,%%xmm2,%k0               \n"
@@ -2152,7 +2152,7 @@ void ScaleARGBCols_SSE2(uint8_t* dst_argb,
       "sub         $0x4,%4                       \n"
       "jge         40b                           \n"
 
-      "49:                                       \n"
+      "49:         \n"
       "test        $0x2,%4                       \n"
       "je          29f                           \n"
       "movd        0x00(%3,%0,4),%%xmm0          \n"
@@ -2161,12 +2161,12 @@ void ScaleARGBCols_SSE2(uint8_t* dst_argb,
       "punpckldq   %%xmm1,%%xmm0                 \n"
       "movq        %%xmm0,(%2)                   \n"
       "lea         0x8(%2),%2                    \n"
-      "29:                                       \n"
+      "29:         \n"
       "test        $0x1,%4                       \n"
       "je          99f                           \n"
       "movd        0x00(%3,%0,4),%%xmm0          \n"
       "movd        %%xmm0,(%2)                   \n"
-      "99:                                       \n"
+      "99:         \n"
       : "=&a"(x0),       // %0
         "=&d"(x1),       // %1
         "+r"(dst_argb),  // %2
@@ -2187,7 +2187,7 @@ void ScaleARGBColsUp2_SSE2(uint8_t* dst_argb,
   (void)x;
   (void)dx;
   asm volatile(
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%1),%%xmm0                   \n"
       "lea         0x10(%1),%1                   \n"
       "movdqa      %%xmm0,%%xmm1                 \n"
@@ -2248,7 +2248,7 @@ void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
       "pextrw      $0x3,%%xmm2,%k4               \n"
 
       LABELALIGN
-      "2:                                        \n"
+      "2:          \n"
       "movdqa      %%xmm2,%%xmm1                 \n"
       "paddd       %%xmm3,%%xmm2                 \n"
       "movq        0x00(%1,%3,4),%%xmm0          \n"
@@ -2268,7 +2268,7 @@ void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
       "jge         2b                            \n"
 
       LABELALIGN
-      "29:                                       \n"
+      "29:         \n"
       "add         $0x1,%2                       \n"
       "jl          99f                           \n"
       "psrlw       $0x9,%%xmm2                   \n"
@@ -2281,7 +2281,7 @@ void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
       "packuswb    %%xmm0,%%xmm0                 \n"
       "movd        %%xmm0,(%0)                   \n"
 
-      LABELALIGN "99:                                       \n"
+      LABELALIGN "99:         \n"
 
       : "+r"(dst_argb),    // %0
         "+r"(src_argb),    // %1
@@ -2296,7 +2296,7 @@ void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_X86(int num, int div) {
   asm volatile(
-      "cdq                                       \n"
+      "cdq         \n"
       "shld        $0x10,%%eax,%%edx             \n"
       "shl         $0x10,%%eax                   \n"
       "idiv        %1                            \n"
@@ -2310,7 +2310,7 @@ int FixedDiv_X86(int num, int div) {
 // Divide num - 1 by div - 1 and return as 16.16 fixed point result.
 int FixedDiv1_X86(int num, int div) {
   asm volatile(
-      "cdq                                       \n"
+      "cdq         \n"
       "shld        $0x10,%%eax,%%edx             \n"
       "shl         $0x10,%%eax                   \n"
       "sub         $0x10001,%%eax                \n"
@@ -2350,7 +2350,7 @@ void ScaleUVRowDown2Box_SSSE3(const uint8_t* src_ptr,
       "movdqa      %5,%%xmm3                     \n"  // merge shuffler
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"  // 8 UV row 0
       "movdqu      0x00(%0,%3,1),%%xmm2          \n"  // 8 UV row 1
       "lea         0x10(%0),%0                   \n"
@@ -2390,7 +2390,7 @@ void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
       "vbroadcastf128 %5,%%ymm3                  \n"  // merge shuffler
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"  // 16 UV row 0
       "vmovdqu     0x00(%0,%3,1),%%ymm2          \n"  // 16 UV row 1
       "lea         0x20(%0),%0                   \n"
@@ -2407,7 +2407,7 @@ void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 8 UV
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                // %0
         "+r"(dst_ptr),                // %1
         "+r"(dst_width)               // %2
@@ -2432,7 +2432,7 @@ void ScaleUVRowUp2_Linear_SSSE3(const uint8_t* src_ptr,
       "movdqa      %3,%%xmm3                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 00112233 (1u1v)
       "movq        2(%0),%%xmm1                  \n"  // 11223344 (1u1v)
       "punpcklbw   %%xmm1,%%xmm0                 \n"  // 0101121223233434 (2u2v)
@@ -2473,7 +2473,7 @@ void ScaleUVRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
       "movdqa      %5,%%xmm7                     \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 00112233 (1u1v)
       "movq        2(%0),%%xmm1                  \n"  // 11223344 (1u1v)
       "punpcklbw   %%xmm1,%%xmm0                 \n"  // 0101121223233434 (2u2v)
@@ -2557,7 +2557,7 @@ void ScaleUVRowUp2_Linear_AVX2(const uint8_t* src_ptr,
       "vbroadcastf128 %3,%%ymm3                  \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"
       "vmovdqu     2(%0),%%xmm1                  \n"
       "vpermq      $0b11011000,%%ymm0,%%ymm0     \n"
@@ -2578,7 +2578,7 @@ void ScaleUVRowUp2_Linear_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 8 uv to 16 uv
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),        // %0
         "+r"(dst_ptr),        // %1
         "+r"(dst_width)       // %2
@@ -2600,7 +2600,7 @@ void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "vbroadcastf128 %5,%%ymm7                  \n"
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"
       "vmovdqu     2(%0),%%xmm1                  \n"
       "vpermq      $0b11011000,%%ymm0,%%ymm0     \n"
@@ -2657,7 +2657,7 @@ void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 8 uv to 16 uv
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                // %0
         "+r"(dst_ptr),                // %1
         "+r"(dst_width)               // %2
@@ -2680,7 +2680,7 @@ void ScaleUVRowUp2_Linear_16_SSE41(const uint16_t* src_ptr,
       "pslld       $1,%%xmm4                     \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 0011 (16b, 1u1v)
       "movq        4(%0),%%xmm1                  \n"  // 1122 (16b, 1u1v)
 
@@ -2732,7 +2732,7 @@ void ScaleUVRowUp2_Bilinear_16_SSE41(const uint16_t* src_ptr,
       "pslld       $3,%%xmm6                     \n"  // all 8
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "movq        (%0),%%xmm0                   \n"  // 0011 (16b, 1u1v)
       "movq        4(%0),%%xmm1                  \n"  // 1122 (16b, 1u1v)
       "punpcklwd   %%xmm7,%%xmm0                 \n"  // 0011 (near) (32b, 1u1v)
@@ -2822,7 +2822,7 @@ void ScaleUVRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
       "vpslld      $1,%%ymm4,%%ymm4              \n"  // all 2
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
       "vmovdqu     (%0),%%xmm0                   \n"  // 00112233 (16b, 1u1v)
       "vmovdqu     4(%0),%%xmm1                  \n"  // 11223344 (16b, 1u1v)
 
@@ -2850,7 +2850,7 @@ void ScaleUVRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 4 uv to 8 uv
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -2871,7 +2871,7 @@ void ScaleUVRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
       "vpslld      $3,%%ymm6,%%ymm6              \n"  // all 8
 
       LABELALIGN
-      "1:                                        \n"
+      "1:          \n"
 
       "vmovdqu     (%0),%%xmm0                   \n"  // 00112233 (16b, 1u1v)
       "vmovdqu     4(%0),%%xmm1                  \n"  // 11223344 (16b, 1u1v)
@@ -2932,7 +2932,7 @@ void ScaleUVRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 4 uv to 8 uv
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      "vzeroupper                                \n"
+      "vzeroupper  \n"
       : "+r"(src_ptr),                // %0
         "+r"(dst_ptr),                // %1
         "+r"(dst_width)               // %2
