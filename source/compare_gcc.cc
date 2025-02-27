@@ -19,7 +19,9 @@ extern "C" {
 #endif
 
 // This module is for GCC x86 and x64.
-#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) &&               \
+    (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN)
 
 // "memory" clobber prevents the reads from being removed
 

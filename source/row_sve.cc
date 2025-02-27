@@ -203,6 +203,15 @@ void NV21ToRGB24Row_SVE2(const uint8_t* src_y,
 // elements flipped to account for the interleaving nature of the widening
 // addition instructions.
 
+// RGB to BT601 coefficients
+// UB   0.875 coefficient = 112
+// UG -0.5781 coefficient = -74
+// UR -0.2969 coefficient = -38
+// VB -0.1406 coefficient = -18
+// VG -0.7344 coefficient = -94
+// VR   0.875 coefficient = 112
+
+// SVE constants are not negated
 static const int16_t kARGBToUVCoefficients[] = {
     // UB, -UR, -UG, 0, -VB, VR, -VG, 0
     112, -38, -74, 0, -18, 112, -94, 0,
@@ -223,14 +232,22 @@ static const int16_t kABGRToUVCoefficients[] = {
     -38, 112, -74, 0, 112, -18, -94, 0,
 };
 
+// RGB to JPEG coefficients
+// UB  0.500    coefficient = 128
+// UG -0.33126  coefficient = -85
+// UR -0.16874  coefficient = -43
+// VB -0.08131  coefficient = -21
+// VG -0.41869  coefficient = -107
+// VR 0.500     coefficient = 128
+
 static const int16_t kARGBToUVJCoefficients[] = {
     // UB, -UR, -UG, 0, -VB, VR, -VG, 0
-    127, -43, -84, 0, -20, 127, -107, 0,
+    128, -43, -85, 0, -21, 128, -107, 0,
 };
 
 static const int16_t kABGRToUVJCoefficients[] = {
     // -UR, UB, -UG, 0, VR, -VB, -VG, 0
-    -43, 127, -84, 0, 127, -20, -107, 0,
+    -43, 128, -85, 0, 128, -21, -107, 0,
 };
 
 static void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
@@ -245,8 +262,7 @@ static void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
       "ptrue    p0.b                                \n"
       "ld1rd    {z24.d}, p0/z, [%[uvconstants]]     \n"
       "ld1rd    {z25.d}, p0/z, [%[uvconstants], #8] \n"
-      "mov      z26.b, #0x80                        \n"
-
+      "mov      z26.h, #0x8000                      \n"  // 128.0 (0x8000)
       "cntb     %[vl]                               \n"
       "subs     %w[width], %w[width], %w[vl]        \n"
       "b.lt     2f                                  \n"

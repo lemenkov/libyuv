@@ -4034,16 +4034,22 @@ int RGB565ToI420(const uint8_t* src_rgb565,
 // Neon version does direct RGB565 to YUV.
 #if defined(HAS_RGB565TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGB565ToUVRow = RGB565ToUVRow_Any_NEON;
     RGB565ToYRow = RGB565ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       RGB565ToYRow = RGB565ToYRow_NEON;
+    }
+  }
+#endif
+// Neon version does direct RGB565 to YUV.
+#if defined(HAS_RGB565TOUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    RGB565ToUVRow = RGB565ToUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
       RGB565ToUVRow = RGB565ToUVRow_NEON;
     }
   }
+#endif
 // MSA version does direct RGB565 to YUV.
-#elif (defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_LSX) || \
-       defined(HAS_RGB565TOYROW_LASX))
 #if defined(HAS_RGB565TOYROW_MSA) && defined(HAS_RGB565TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB565ToUVRow = RGB565ToUVRow_Any_MSA;
@@ -4075,7 +4081,6 @@ int RGB565ToI420(const uint8_t* src_rgb565,
   }
 #endif
 // Other platforms do intermediate conversion from RGB565 to ARGB.
-#else
 #if defined(HAS_RGB565TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     RGB565ToARGBRow = RGB565ToARGBRow_Any_SSE2;
@@ -4100,19 +4105,19 @@ int RGB565ToI420(const uint8_t* src_rgb565,
     }
   }
 #endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_ARGBTOYROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
     }
   }
 #endif
@@ -4123,7 +4128,6 @@ int RGB565ToI420(const uint8_t* src_rgb565,
       ARGBToUVRow = ARGBToUVRow_AVX2;
     }
   }
-#endif
 #endif
   {
 #if !(defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || \
@@ -4214,18 +4218,22 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
 // Neon version does direct ARGB1555 to YUV.
 #if defined(HAS_ARGB1555TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGB1555ToUVRow = ARGB1555ToUVRow_Any_NEON;
     ARGB1555ToYRow = ARGB1555ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGB1555ToYRow = ARGB1555ToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        ARGB1555ToUVRow = ARGB1555ToUVRow_NEON;
-      }
     }
   }
+#endif
+#if defined(HAS_ARGB1555TOUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGB1555ToUVRow = ARGB1555ToUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB1555ToUVRow = ARGB1555ToUVRow_NEON;
+    }
+  }
+#endif
+
 // MSA version does direct ARGB1555 to YUV.
-#elif (defined(HAS_ARGB1555TOYROW_MSA) || defined(HAS_ARGB1555TOYROW_LSX) || \
-       defined(HAS_ARGB1555TOYROW_LASX))
 #if defined(HAS_ARGB1555TOYROW_MSA) && defined(HAS_ARGB1555TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGB1555ToUVRow = ARGB1555ToUVRow_Any_MSA;
@@ -4256,8 +4264,8 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
     }
   }
 #endif
+
 // Other platforms do intermediate conversion from ARGB1555 to ARGB.
-#else
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_SSE2;
@@ -4305,7 +4313,6 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
       ARGBToUVRow = ARGBToUVRow_AVX2;
     }
   }
-#endif
 #endif
   {
 #if !(defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA) || \
@@ -4398,17 +4405,20 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
 // Neon version does direct ARGB4444 to YUV.
 #if defined(HAS_ARGB4444TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGB4444ToUVRow = ARGB4444ToUVRow_Any_NEON;
     ARGB4444ToYRow = ARGB4444ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGB4444ToYRow = ARGB4444ToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        ARGB4444ToUVRow = ARGB4444ToUVRow_NEON;
-      }
     }
   }
-// Other platforms do intermediate conversion from ARGB4444 to ARGB.
-#else
+#endif
+#if defined(HAS_ARGB4444TOUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGB4444ToUVRow = ARGB4444ToUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB4444ToUVRow = ARGB4444ToUVRow_NEON;
+    }
+  }
+#endif
 #if defined(HAS_ARGB4444TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_SSE2;
@@ -4520,7 +4530,6 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
       ARGBToUVRow = ARGBToUVRow_LASX;
     }
   }
-#endif
 #endif
 
   {

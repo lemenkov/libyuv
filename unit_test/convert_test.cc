@@ -2076,7 +2076,7 @@ TEST_F(LibYUVConvertTest, TestRGB24ToJ420) {
   }
 
   uint32_t checksum = HashDjb2(dest_j420, kSize * 3 / 2 * 2, 5381);
-  EXPECT_EQ(4157186353u, checksum);
+  EXPECT_EQ(223551344u, checksum);
 
   free_aligned_buffer_page_end(orig_rgb24);
   free_aligned_buffer_page_end(dest_j420);
@@ -2104,7 +2104,7 @@ TEST_F(LibYUVConvertTest, TestRGB24ToI420) {
   }
 
   uint32_t checksum = HashDjb2(dest_i420, kSize * 3 / 2 * 2, 5381);
-  EXPECT_EQ(1526656597u, checksum);
+  EXPECT_EQ(4197774805u, checksum);
 
   free_aligned_buffer_page_end(orig_rgb24);
   free_aligned_buffer_page_end(dest_i420);
