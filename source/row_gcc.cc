@@ -9396,9 +9396,8 @@ void HalfMergeUVRow_SSSE3(const uint8_t* src_u,
                           uint8_t* dst_uv,
                           int width) {
   asm volatile(
-      "pcmpeqb     %%xmm4,%%xmm4                 \n"
-      "psrlw       $0xf,%%xmm4                   \n"
-      "packuswb    %%xmm4,%%xmm4                 \n"
+      "pcmpeqb     %%xmm4,%%xmm4                 \n"  // 0x0101
+      "pabsb       %%xmm4,%%xmm4                 \n"
       "pxor        %%xmm5,%%xmm5                 \n"
 
       LABELALIGN
@@ -9443,8 +9442,7 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
                          int width) {
   asm volatile(
       "vpcmpeqb    %%ymm4,%%ymm4,%%ymm4          \n"
-      "vpsrlw      $0xf,%%ymm4,%%ymm4            \n"
-      "vpackuswb   %%ymm4,%%ymm4,%%ymm4          \n"
+      "vpabsb      %%ymm4,%%ymm4                 \n"
       "vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
 
       LABELALIGN

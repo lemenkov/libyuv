@@ -3418,19 +3418,23 @@ int RAWToJ420(const uint8_t* src_raw,
     }
   }
 #endif
-#if defined(HAS_RAWTOYJROW_LSX)
+#if defined(HAS_RAWTOYJROW_LSX) && defined(HAS_RAWTOUVJROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
+    RAWToUVJRow = RAWToUVJRow_Any_LSX;
     RAWToYJRow = RAWToYJRow_Any_LSX;
     if (IS_ALIGNED(width, 16)) {
       RAWToYJRow = RAWToYJRow_LSX;
+      RAWToUVJRow = RAWToUVJRow_LSX;
     }
   }
 #endif
-#if defined(HAS_RAWTOYJROW_LASX)
+#if defined(HAS_RAWTOYJROW_LASX) && defined(HAS_RAWTOUVJROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
+    RAWToUVJRow = RAWToUVJRow_Any_LASX;
     RAWToYJRow = RAWToYJRow_Any_LASX;
     if (IS_ALIGNED(width, 32)) {
       RAWToYJRow = RAWToYJRow_LASX;
+      RAWToUVJRow = RAWToUVJRow_LASX;
     }
   }
 #endif
