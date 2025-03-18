@@ -527,6 +527,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_ARGBTOAR30ROW_NEON
 #define HAS_ABGRTOAR30ROW_NEON
+#define HAS_CONVERT8TO16ROW_NEON
 #define HAS_I210ALPHATOARGBROW_NEON
 #define HAS_I410ALPHATOARGBROW_NEON
 #define HAS_I210TOARGBROW_NEON
@@ -3784,6 +3785,14 @@ void Convert8To16Row_Any_SSE2(const uint8_t* src_ptr,
                               int width);
 void Convert8To16Row_Any_AVX2(const uint8_t* src_ptr,
                               uint16_t* dst_ptr,
+                              int scale,
+                              int width);
+void Convert8To16Row_NEON(const uint8_t* src_y,
+                          uint16_t* dst_y,
+                          int scale,
+                          int width);
+void Convert8To16Row_Any_NEON(const uint8_t* src_y,
+                              uint16_t* dst_y,
                               int scale,
                               int width);
 
