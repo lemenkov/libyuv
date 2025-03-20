@@ -617,6 +617,7 @@ extern "C" {
     defined(__aarch64__)
 #define HAS_ARGBMULTIPLYROW_SME
 #define HAS_CONVERT16TO8ROW_SME
+#define HAS_CONVERT8TO16ROW_SME
 #define HAS_CONVERT8TO8ROW_SME
 #define HAS_COPYROW_SME
 #define HAS_I210ALPHATOARGBROW_SME
@@ -3791,6 +3792,10 @@ void Convert8To16Row_Any_NEON(const uint8_t* src_y,
                               uint16_t* dst_y,
                               int scale,
                               int width);
+void Convert8To16Row_SME(const uint8_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width);
 
 void Convert16To8Row_C(const uint16_t* src_y,
                        uint8_t* dst_y,

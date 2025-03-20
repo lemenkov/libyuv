@@ -1064,6 +1064,62 @@ __arm_locally_streaming void Convert8To8Row_SME(const uint8_t* src_y,
   Convert8To8Row_SVE_SC(src_y, dst_y, scale, bias, width);
 }
 
+#define CONVERT8TO16_SVE                                 \
+  "ld1b        {z0.h}, p0/z, [%[src]]                \n" \
+  "ld1b        {z1.h}, p1/z, [%[src], #1, mul vl]    \n" \
+  "incb        %[src]                                \n" \
+  "subs        %w[width], %w[width], %w[vl], lsl #1  \n" \
+  "trn1        z0.b, z0.b, z0.b                      \n" \
+  "trn1        z1.b, z1.b, z1.b                      \n" \
+  "lsr         z0.h, p0/m, z0.h, z2.h                \n" \
+  "lsr         z1.h, p1/m, z1.h, z2.h                \n" \
+  "prfm        pldl1keep, [%[src], 448]              \n" \
+  "st1h        {z0.h}, p0, [%[dst]]                  \n" \
+  "st1h        {z1.h}, p1, [%[dst], #1, mul vl]      \n" \
+  "incb        %[dst], all, mul #2                   \n"
+
+__arm_locally_streaming void Convert8To16Row_SME(const uint8_t* src_y,
+                                                 uint16_t* dst_y,
+                                                 int scale,
+                                                 int width) {
+  // (src * 0x0101 * scale) >> 16.
+  // Since scale is a power of two, compute the shift to use to avoid needing
+  // to widen to int32.
+  int shift = __builtin_clz(scale) - 15;
+
+  uint64_t vl;
+  asm volatile(
+      "dup         z2.h, %w[shift]                      \n"
+      "cnth        %[vl]                                \n"
+      "subs        %w[width], %w[width], %w[vl], lsl #1 \n"
+      "b.lt        2f                                   \n"
+
+      // Run bulk of computation with all-true predicates to avoid predicate
+      // generation overhead.
+      "ptrue       p0.h                                 \n"
+      "ptrue       p1.h                                 \n"
+      "1:                                               \n"  //
+      CONVERT8TO16_SVE
+      "b.ge        1b                                   \n"
+
+      "2:                                               \n"
+      "adds        %w[width], %w[width], %w[vl], lsl #1 \n"
+      "b.eq        99f                                  \n"
+
+      // Calculate predicates for the final iteration to deal with the tail.
+      "whilelt     p0.h, wzr, %w[width]                 \n"
+      "whilelt     p1.h, %w[vl], %w[width]              \n"  //
+      CONVERT8TO16_SVE
+
+      "99:                                              \n"
+      : [src] "+r"(src_y),    // %[src]
+        [dst] "+r"(dst_y),    // %[dst]
+        [width] "+r"(width),  // %[width]
+        [vl] "=&r"(vl)        // %[vl]
+      : [shift] "r"(shift)    // %[shift]
+      : "cc", "memory", "z0", "z1", "z2", "p0", "p1");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 
