@@ -769,6 +769,53 @@ static inline void I422ToRGBARow_SVE_SC(const uint8_t* src_y,
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
 
+static inline void I422ToAR30Row_SVE_SC(const uint8_t* src_y,
+                                        const uint8_t* src_u,
+                                        const uint8_t* src_v,
+                                        uint8_t* dst_ar30,
+                                        const struct YuvConstants* yuvconstants,
+                                        int width) STREAMING_COMPATIBLE {
+  uint64_t vl;
+  // The limit is used for saturating the 2.14 red channel in STOREAR30_SVE.
+  const uint16_t limit = 0x3ff0;
+  asm volatile(
+      "cnth     %[vl]                                   \n"
+      "ptrue    p0.b                                    \n"  //
+      YUVTORGB_SVE_SETUP
+      "dup      z19.b, #255                             \n"  // Alpha
+      "dup      z23.h, %w[limit]                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.le     2f                                      \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.h                                    \n"
+      "1:                                               \n"  //
+      READYUV422_SVE I4XXTORGB_SVE STOREAR30_SVE
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.gt     1b                                      \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "2:                                               \n"
+      "adds    %w[width], %w[width], %w[vl]             \n"
+      "b.eq    99f                                      \n"
+
+      "whilelt  p1.h, wzr, %w[width]                    \n"  //
+      READYUV422_SVE I4XXTORGB_SVE STOREAR30_SVE
+
+      "99:                                              \n"
+      : [src_y] "+r"(src_y),                                // %[src_y]
+        [src_u] "+r"(src_u),                                // %[src_u]
+        [src_v] "+r"(src_v),                                // %[src_v]
+        [dst_ar30] "+r"(dst_ar30),                          // %[dst_ar30]
+        [width] "+r"(width),                                // %[width]
+        [vl] "=&r"(vl)                                      // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
+        [limit] "r"(limit)                                  // %[limit]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
+
 static inline void I422AlphaToARGBRow_SVE_SC(
     const uint8_t* src_y,
     const uint8_t* src_u,

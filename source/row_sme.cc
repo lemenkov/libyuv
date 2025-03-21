@@ -158,6 +158,16 @@ __arm_locally_streaming void I422ToRGBARow_SME(
   I422ToRGBARow_SVE_SC(src_y, src_u, src_v, dst_argb, yuvconstants, width);
 }
 
+__arm_locally_streaming void I422ToAR30Row_SME(
+    const uint8_t* src_y,
+    const uint8_t* src_u,
+    const uint8_t* src_v,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
+  I422ToAR30Row_SVE_SC(src_y, src_u, src_v, dst_argb, yuvconstants, width);
+}
+
 __arm_locally_streaming void I422AlphaToARGBRow_SME(
     const uint8_t* src_y,
     const uint8_t* src_u,

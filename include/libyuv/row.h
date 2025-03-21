@@ -589,6 +589,7 @@ extern "C" {
 #define HAS_I410TOAR30ROW_SVE2
 #define HAS_I410TOARGBROW_SVE2
 #define HAS_I422ALPHATOARGBROW_SVE2
+#define HAS_I422TOAR30ROW_SVE2
 #define HAS_I422TOARGB1555ROW_SVE2
 #define HAS_I422TOARGB4444ROW_SVE2
 #define HAS_I422TOARGBROW_SVE2
@@ -632,6 +633,7 @@ extern "C" {
 #define HAS_I410TOAR30ROW_SME
 #define HAS_I410TOARGBROW_SME
 #define HAS_I422ALPHATOARGBROW_SME
+#define HAS_I422TOAR30ROW_SME
 #define HAS_I422TOARGB1555ROW_SME
 #define HAS_I422TOARGB4444ROW_SME
 #define HAS_I422TOARGBROW_SME
@@ -1363,6 +1365,18 @@ void I422ToAR30Row_NEON(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToAR30Row_SVE2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I422ToAR30Row_SME(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I444AlphaToARGBRow_NEON(const uint8_t* src_y,
                              const uint8_t* src_u,
                              const uint8_t* src_v,

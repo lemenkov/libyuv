@@ -154,6 +154,15 @@ void I422ToRGBARow_SVE2(const uint8_t* src_y,
   I422ToRGBARow_SVE_SC(src_y, src_u, src_v, dst_argb, yuvconstants, width);
 }
 
+void I422ToAR30Row_SVE2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width) {
+  I422ToAR30Row_SVE_SC(src_y, src_u, src_v, dst_argb, yuvconstants, width);
+}
+
 void I422AlphaToARGBRow_SVE2(const uint8_t* src_y,
                              const uint8_t* src_u,
                              const uint8_t* src_v,

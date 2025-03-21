@@ -6710,6 +6710,16 @@ int I420ToAR30Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOAR30ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    I422ToAR30Row = I422ToAR30Row_SVE2;
+  }
+#endif
+#if defined(HAS_I422TOAR30ROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    I422ToAR30Row = I422ToAR30Row_SME;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
