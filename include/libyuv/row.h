@@ -597,6 +597,7 @@ extern "C" {
 #define HAS_I422TORGBAROW_SVE2
 #define HAS_I444ALPHATOARGBROW_SVE2
 #define HAS_I444TOARGBROW_SVE2
+#define HAS_I444TORGB24ROW_SVE2
 #define HAS_NV12TOARGBROW_SVE2
 #define HAS_NV12TORGB24ROW_SVE2
 #define HAS_NV21TOARGBROW_SVE2
@@ -639,6 +640,7 @@ extern "C" {
 #define HAS_I422TORGBAROW_SME
 #define HAS_I444ALPHATOARGBROW_SME
 #define HAS_I444TOARGBROW_SME
+#define HAS_I444TORGB24ROW_SME
 #define HAS_INTERPOLATEROW_16_SME
 #define HAS_INTERPOLATEROW_16TO8_SME
 #define HAS_INTERPOLATEROW_SME
@@ -1217,6 +1219,18 @@ void I444ToRGB24Row_NEON(const uint8_t* src_y,
                          uint8_t* dst_rgb24,
                          const struct YuvConstants* yuvconstants,
                          int width);
+void I444ToRGB24Row_SVE2(const uint8_t* src_y,
+                         const uint8_t* src_u,
+                         const uint8_t* src_v,
+                         uint8_t* dst_rgb24,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void I444ToRGB24Row_SME(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_rgb24,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void I210ToARGBRow_NEON(const uint16_t* src_y,
                         const uint16_t* src_u,
                         const uint16_t* src_v,

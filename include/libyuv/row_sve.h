@@ -51,6 +51,21 @@ extern "C" {
   "trn1       z0.b, z0.b, z0.b               \n" \
   "prfm       pldl1keep, [%[src_v], 448]     \n"
 
+// Read twice as much data from YUV, putting the even elements from the Y data
+// in z0.h and odd elements in z1.h.
+#define READYUV444_SVE_2X                        \
+  "ld1b       {z0.b}, p1/z, [%[src_y]]       \n" \
+  "ld1b       {z2.b}, p1/z, [%[src_u]]       \n" \
+  "ld1b       {z3.b}, p1/z, [%[src_v]]       \n" \
+  "incb       %[src_y]                       \n" \
+  "incb       %[src_u]                       \n" \
+  "incb       %[src_v]                       \n" \
+  "prfm       pldl1keep, [%[src_y], 448]     \n" \
+  "prfm       pldl1keep, [%[src_u], 128]     \n" \
+  "prfm       pldl1keep, [%[src_v], 128]     \n" \
+  "trn2       z1.b, z0.b, z0.b               \n" \
+  "trn1       z0.b, z0.b, z0.b               \n"
+
 #define READYUV400_SVE                           \
   "ld1b       {z0.h}, p1/z, [%[src_y]]       \n" \
   "inch       %[src_y]                       \n" \
@@ -193,6 +208,30 @@ extern "C" {
   "uqsub      z16.h, z16.h, z25.h            \n" /* B */  \
   "uqsub      z18.h, z18.h, z27.h            \n" /* R */
 
+#define I444TORGB_SVE_2X                                  \
+  "umulh      z0.h, z24.h, z0.h              \n" /* Y0 */ \
+  "umulh      z1.h, z24.h, z1.h              \n" /* Y1 */ \
+  "umullb     z6.h, z30.b, z2.b              \n"          \
+  "umullt     z7.h, z30.b, z2.b              \n"          \
+  "umullb     z4.h, z28.b, z2.b              \n" /* DB */ \
+  "umullt     z2.h, z28.b, z2.b              \n" /* DB */ \
+  "umlalb     z6.h, z31.b, z3.b              \n" /* DG */ \
+  "umlalt     z7.h, z31.b, z3.b              \n" /* DG */ \
+  "umullb     z5.h, z29.b, z3.b              \n" /* DR */ \
+  "umullt     z3.h, z29.b, z3.b              \n" /* DR */ \
+  "add        z17.h, z0.h, z26.h             \n" /* G */  \
+  "add        z21.h, z1.h, z26.h             \n" /* G */  \
+  "add        z16.h, z0.h, z4.h              \n" /* B */  \
+  "add        z20.h, z1.h, z2.h              \n" /* B */  \
+  "add        z18.h, z0.h, z5.h              \n" /* R */  \
+  "add        z22.h, z1.h, z3.h              \n" /* R */  \
+  "uqsub      z17.h, z17.h, z6.h             \n" /* G */  \
+  "uqsub      z21.h, z21.h, z7.h             \n" /* G */  \
+  "uqsub      z16.h, z16.h, z25.h            \n" /* B */  \
+  "uqsub      z20.h, z20.h, z25.h            \n" /* B */  \
+  "uqsub      z18.h, z18.h, z27.h            \n" /* R */  \
+  "uqsub      z22.h, z22.h, z27.h            \n" /* R */
+
 // Like I4XXTORGB_SVE but U/V components are stored in even/odd .b lanes of z1
 // rather than widened .h elements of z1/z2.
 #define NVTORGB_SVE                                       \
@@ -317,6 +356,53 @@ extern "C" {
   "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16", "z17", "z18", "z19", \
       "z20", "z22", "z23", "z24", "z25", "z26", "z27", "z28", "z29", "z30",   \
       "z31", "p0", "p1", "p2", "p3"
+
+static inline void I444ToRGB24Row_SVE_SC(
+    const uint8_t* src_y,
+    const uint8_t* src_u,
+    const uint8_t* src_v,
+    uint8_t* dst_rgb24,
+    const struct YuvConstants* yuvconstants,
+    int width) STREAMING_COMPATIBLE {
+  uint64_t vl;
+  asm volatile(
+      "cntb     %[vl]                                     \n"
+      "ptrue    p0.b                                      \n"  //
+      YUVTORGB_SVE_SETUP
+      "subs     %w[width], %w[width], %w[vl]              \n"
+      "b.lt     2f                                        \n"
+
+      // Run bulk of computation with an all-true predicate to avoid predicate
+      // generation overhead.
+      "ptrue    p1.b                                      \n"
+      "1:                                                 \n"  //
+      READYUV444_SVE_2X I444TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "subs     %w[width], %w[width], %w[vl]              \n"
+      "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_rgb24]] \n"
+      "incb     %[dst_rgb24], all, mul #3                 \n"
+      "b.ge     1b                                        \n"
+
+      "2:                                                 \n"
+      "adds     %w[width], %w[width], %w[vl]              \n"
+      "b.eq     99f                                       \n"
+
+      // Calculate a predicate for the final iteration to deal with the tail.
+      "cnth     %[vl]                                     \n"
+      "whilelt  p1.b, wzr, %w[width]                      \n"  //
+      READYUV444_SVE_2X I444TORGB_SVE_2X RGBTOARGB8_SVE_2X
+      "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_rgb24]] \n"
+
+      "99:                                                \n"
+      : [src_y] "+r"(src_y),                               // %[src_y]
+        [src_u] "+r"(src_u),                               // %[src_u]
+        [src_v] "+r"(src_v),                               // %[src_v]
+        [dst_rgb24] "+r"(dst_rgb24),                       // %[dst_argb]
+        [width] "+r"(width),                               // %[width]
+        [vl] "=&r"(vl)                                     // %[vl]
+      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
+        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
+      : "cc", "memory", YUVTORGB_SVE_REGS);
+}
 
 static inline void I400ToARGBRow_SVE_SC(const uint8_t* src_y,
                                         uint8_t* dst_argb,
