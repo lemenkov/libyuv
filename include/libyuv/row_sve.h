@@ -501,7 +501,11 @@ static inline void I422ToRGB565Row_SVE_SC(
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_TOP_2X
           RGB8TORGB565_SVE_FROM_TOP_2X
-      "st2h     {z18.h, z19.h}, p1, [%[dst]] \n"
+      // Need to permute the data on the final iteration such that the
+      // predicates (.b) line up with the 16-bit element data.
+      "trn1     z20.b, z18.b, z19.b                     \n"
+      "trn2     z21.b, z18.b, z19.b                     \n"
+      "st2b     {z20.b, z21.b}, p1, [%[dst]]            \n"
 
       "99:                                              \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
