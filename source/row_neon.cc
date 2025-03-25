@@ -269,7 +269,7 @@ void I422ToRGBARow_NEON(const uint8_t* src_y,
       "1:          \n"  //
       READYUV422
       "subs        %[width], %[width], #8        \n" YUVTORGB RGBTORGB8
-      STORERGBA "bgt         1b                            \n"
+          STORERGBA "bgt         1b                            \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]

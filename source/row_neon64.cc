@@ -291,12 +291,12 @@ void I210ToAR30Row_NEON(const uint16_t* src_y,
   uint16_t limit = 0x3ff0;
   uint16_t alpha = 0xc000;
   asm volatile(YUVTORGB_SETUP
-      "dup         v22.8h, %w[limit]             \n"
-      "dup         v23.8h, %w[alpha]             \n"
-      "1:          \n"  //
+               "dup         v22.8h, %w[limit]             \n"
+               "dup         v23.8h, %w[alpha]             \n"
+               "1:          \n"  //
                READYUV210
-      "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
-      "b.gt        1b                            \n"
+               "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
+               "b.gt        1b                            \n"
                : [src_y] "+r"(src_y),             // %[src_y]
                  [src_u] "+r"(src_u),             // %[src_u]
                  [src_v] "+r"(src_v),             // %[src_v]
@@ -320,12 +320,12 @@ void I410ToAR30Row_NEON(const uint16_t* src_y,
   uint16_t limit = 0x3ff0;
   uint16_t alpha = 0xc000;
   asm volatile(YUVTORGB_SETUP
-      "dup         v22.8h, %w[limit]             \n"
-      "dup         v23.8h, %w[alpha]             \n"
-      "1:          \n"  //
+               "dup         v22.8h, %w[limit]             \n"
+               "dup         v23.8h, %w[alpha]             \n"
+               "1:          \n"  //
                READYUV410
-      "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
-      "b.gt        1b                            \n"
+               "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
+               "b.gt        1b                            \n"
                : [src_y] "+r"(src_y),             // %[src_y]
                  [src_u] "+r"(src_u),             // %[src_u]
                  [src_v] "+r"(src_v),             // %[src_v]
@@ -348,12 +348,12 @@ void I212ToAR30Row_NEON(const uint16_t* src_y,
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
   const uint16_t limit = 0x3ff0;
   asm volatile(YUVTORGB_SETUP
-      "dup         v22.8h, %w[limit]             \n"
-      "movi        v23.8h, #0xc0, lsl #8         \n"  // A
-      "1:          \n"                                //
+               "dup         v22.8h, %w[limit]             \n"
+               "movi        v23.8h, #0xc0, lsl #8         \n"  // A
+               "1:          \n"                                //
                READYUV212
-      "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
-      "b.gt        1b                            \n"
+               "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
+               "b.gt        1b                            \n"
                : [src_y] "+r"(src_y),             // %[src_y]
                  [src_u] "+r"(src_u),             // %[src_u]
                  [src_v] "+r"(src_v),             // %[src_v]
@@ -530,13 +530,13 @@ void P210ToAR30Row_NEON(const uint16_t* src_y,
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
   const uint16_t limit = 0x3ff0;
   asm volatile(YUVTORGB_SETUP
-      "dup         v22.8h, %w[limit]             \n"
-      "movi        v23.8h, #0xc0, lsl #8         \n"  // A
-      "ldr         q2, [%[kIndices]]             \n"
-      "1:          \n"  //
+               "dup         v22.8h, %w[limit]             \n"
+               "movi        v23.8h, #0xc0, lsl #8         \n"  // A
+               "ldr         q2, [%[kIndices]]             \n"
+               "1:          \n"  //
                READYUVP210
-      "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
-      "b.gt        1b                            \n"
+               "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
+               "b.gt        1b                            \n"
                : [src_y] "+r"(src_y),                     // %[src_y]
                  [src_uv] "+r"(src_uv),                   // %[src_uv]
                  [dst_ar30] "+r"(dst_ar30),               // %[dst_ar30]
@@ -557,13 +557,13 @@ void P410ToAR30Row_NEON(const uint16_t* src_y,
   const vec16* rgb_coeff = &yuvconstants->kRGBCoeffBias;
   uint16_t limit = 0x3ff0;
   asm volatile(YUVTORGB_SETUP
-      "dup         v22.8h, %w[limit]             \n"
-      "movi        v23.8h, #0xc0, lsl #8         \n"  // A
-      "ldr         q2, [%[kIndices]]             \n"
-      "1:          \n"  //
+               "dup         v22.8h, %w[limit]             \n"
+               "movi        v23.8h, #0xc0, lsl #8         \n"  // A
+               "ldr         q2, [%[kIndices]]             \n"
+               "1:          \n"  //
                READYUVP410
-      "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
-      "b.gt        1b                            \n"
+               "subs        %w[width], %w[width], #8      \n" NVTORGB STOREAR30
+               "b.gt        1b                            \n"
                : [src_y] "+r"(src_y),                     // %[src_y]
                  [src_uv] "+r"(src_uv),                   // %[src_uv]
                  [dst_ar30] "+r"(dst_ar30),               // %[dst_ar30]
