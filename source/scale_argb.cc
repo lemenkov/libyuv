@@ -139,7 +139,9 @@ static void ScaleARGBDown2(int src_width,
     }
   }
 #endif
-#if defined(HAS_SCALEARGBROWDOWN2_RVV)
+#if defined(HAS_SCALEARGBROWDOWN2_RVV) &&       \
+    defined(HAS_SCALEARGBROWDOWN2LINEAR_RVV) && \
+    defined(HAS_SCALEARGBROWDOWN2BOX_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     ScaleARGBRowDown2 =
         filtering == kFilterNone
@@ -215,7 +217,7 @@ static int ScaleARGBDown4Box(int src_width,
     ScaleARGBRowDown2 = ScaleARGBRowDown2Box_SME;
   }
 #endif
-#if defined(HAS_SCALEARGBROWDOWN2_RVV)
+#if defined(HAS_SCALEARGBROWDOWN2BOX_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     ScaleARGBRowDown2 = ScaleARGBRowDown2Box_RVV;
   }

@@ -95,6 +95,7 @@ void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
 #endif
 
 #ifdef HAS_SCALEARGBROWDOWN2_RVV
+// TODO: Reimplement similar to linear with vlseg2 so u64 is not required
 void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
                            ptrdiff_t src_stride,
                            uint8_t* dst_argb,

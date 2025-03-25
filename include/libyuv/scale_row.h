@@ -162,39 +162,49 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_LSX
 #endif
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
-#define HAS_SCALEADDROW_RVV
-// TODO: Test ScaleARGBRowDownEven_RVV and enable it
-// #define HAS_SCALEARGBROWDOWNEVEN_RVV
-#if defined(__riscv_zve64x)
+// The following are available on RVV with 64 bit elements
+// TODO: Update compiler to support 64 bit
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
+    defined(__riscv_zve64x)
 #define HAS_SCALEUVROWDOWN4_RVV
-#endif
-#define HAS_SCALEUVROWDOWNEVEN_RVV
-#if __riscv_v_intrinsic == 11000
-#define HAS_SCALEARGBFILTERCOLS_RVV
-#endif
 #define HAS_SCALEARGBROWDOWN2_RVV
+#endif
+
+// The following are available on RVV 1.1
+// TODO: Port to RVV 1.2
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
+    defined(__riscv_v_intrinsic) && __riscv_v_intrinsic == 11000
+#define HAS_SCALEROWDOWN34_0_BOX_RVV
+#define HAS_SCALEROWDOWN34_1_BOX_RVV
+#define HAS_SCALEROWDOWN38_2_BOX_RVV
+#define HAS_SCALEROWDOWN38_3_BOX_RVV
+#define HAS_SCALEUVROWUP2_BILINEAR_RVV
+#define HAS_SCALEUVROWUP2_LINEAR_RVV
+#define HAS_SCALEROWDOWN34_RVV
+#define HAS_SCALEROWDOWN38_RVV
+#define HAS_SCALEROWUP2_BILINEAR_RVV
+#define HAS_SCALEROWUP2_LINEAR_RVV
+#endif
+
+// The following are available on RVV
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
+    defined(__riscv_v_intrinsic) && __riscv_v_intrinsic == 11000
+#define HAS_SCALEARGBFILTERCOLS_RVV
 #define HAS_SCALEARGBROWDOWN2BOX_RVV
 #define HAS_SCALEARGBROWDOWN2LINEAR_RVV
 #define HAS_SCALEARGBROWDOWNEVENBOX_RVV
-#define HAS_SCALEROWDOWN2_RVV
 #define HAS_SCALEROWDOWN2BOX_RVV
+#define HAS_SCALEADDROW_RVV
+// TODO: Test ScaleARGBRowDownEven_RVV and enable it
+// #define HAS_SCALEARGBROWDOWNEVEN_RVV
+#define HAS_SCALEUVROWDOWNEVEN_RVV
+#define HAS_SCALEROWDOWN2_RVV
 #define HAS_SCALEROWDOWN2LINEAR_RVV
-#define HAS_SCALEROWDOWN34_0_BOX_RVV
-#define HAS_SCALEROWDOWN34_1_BOX_RVV
-#define HAS_SCALEROWDOWN34_RVV
-#define HAS_SCALEROWDOWN38_2_BOX_RVV
-#define HAS_SCALEROWDOWN38_3_BOX_RVV
-#define HAS_SCALEROWDOWN38_RVV
 #define HAS_SCALEROWDOWN4_RVV
 #define HAS_SCALEROWDOWN4BOX_RVV
-#define HAS_SCALEROWUP2_BILINEAR_RVV
-#define HAS_SCALEROWUP2_LINEAR_RVV
 #define HAS_SCALEUVROWDOWN2_RVV
 #define HAS_SCALEUVROWDOWN2BOX_RVV
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
-#define HAS_SCALEUVROWUP2_BILINEAR_RVV
-#define HAS_SCALEUVROWUP2_LINEAR_RVV
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.

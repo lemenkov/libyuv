@@ -895,36 +895,73 @@ extern "C" {
 #define HAS_RAWTOYJROW_LASX
 #endif
 
+#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 12000 && \
+    !defined(LIBYUV_DISABLE_RVV)
+#define LIBYUV_DISABLE_RVV 1
+#endif
+
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
-#if __riscv_v_intrinsic > 11000
+#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic > 11000
 // Since v0.12, TUPLE_TYPE is introduced for segment load and store.
 #define LIBYUV_RVV_HAS_TUPLE_TYPE
 // Since v0.12, VXRM(fixed-point rounding mode) is included in arguments of
 // fixed-point intrinsics.
 #define LIBYUV_RVV_HAS_VXRM_ARG
 #endif
+#endif
 
-#define HAS_COPYROW_RVV
-#define HAS_AB64TOARGBROW_RVV
+// The following are available for RVV 1.2
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #define HAS_ABGRTOYJROW_RVV
 #define HAS_ABGRTOYROW_RVV
 #define HAS_AR64TOARGBROW_RVV
-#define HAS_AR64TOAB64ROW_RVV
-#define HAS_ARGBATTENUATEROW_RVV
-#define HAS_ARGBBLENDROW_RVV
 #define HAS_ARGBCOPYYTOALPHAROW_RVV
 #define HAS_ARGBEXTRACTALPHAROW_RVV
-#define HAS_ARGBTOAB64ROW_RVV
-#define HAS_ARGBTOABGRROW_RVV
 #define HAS_ARGBTOAR64ROW_RVV
-#define HAS_ARGBTOBGRAROW_RVV
-#define HAS_ARGBTORAWROW_RVV
-#define HAS_ARGBTORGB24ROW_RVV
-#define HAS_ARGBTORGBAROW_RVV
 #define HAS_ARGBTOYJROW_RVV
 #define HAS_ARGBTOYMATRIXROW_RVV
 #define HAS_ARGBTOYROW_RVV
 #define HAS_BGRATOYROW_RVV
+#define HAS_COPYROW_RVV
+#define HAS_INTERPOLATEROW_RVV
+#define HAS_RAWTOYJROW_RVV
+#define HAS_RAWTOYROW_RVV
+#define HAS_RGB24TOYJROW_RVV
+#define HAS_RGB24TOYROW_RVV
+#define HAS_RGBATOYJROW_RVV
+#define HAS_RGBATOYMATRIXROW_RVV
+#define HAS_RGBATOYROW_RVV
+#define HAS_RGBTOYMATRIXROW_RVV
+#define HAS_SPLITARGBROW_RVV
+#define HAS_SPLITRGBROW_RVV
+#define HAS_SPLITUVROW_RVV
+#define HAS_SPLITXRGBROW_RVV
+#endif
+
+// The following are available for RVV 1.1
+// TODO(fbarchard): Port to RVV 1.2 (tuple)
+// missing support for vcreate_v:
+//  __riscv_vcreate_v_u16m2x2
+//  __riscv_vcreate_v_u16m2x4
+//  __riscv_vcreate_v_u16m4x2
+//  __riscv_vcreate_v_u8m1x3
+//  __riscv_vcreate_v_u8m1x4
+//  __riscv_vcreate_v_u8m2x2
+//  __riscv_vcreate_v_u8m2x3
+//  __riscv_vcreate_v_u8m2x4
+//  __riscv_vcreate_v_u8m4x2
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
+    !defined(LIBYUV_RVV_HAS_TUPLE_TYPE)
+#define HAS_AB64TOARGBROW_RVV
+#define HAS_AR64TOAB64ROW_RVV
+#define HAS_ARGBATTENUATEROW_RVV
+#define HAS_ARGBBLENDROW_RVV
+#define HAS_ARGBTOAB64ROW_RVV
+#define HAS_ARGBTOABGRROW_RVV
+#define HAS_ARGBTOBGRAROW_RVV
+#define HAS_ARGBTORAWROW_RVV
+#define HAS_ARGBTORGB24ROW_RVV
+#define HAS_ARGBTORGBAROW_RVV
 #define HAS_BLENDPLANEROW_RVV
 #define HAS_I400TOARGBROW_RVV
 #define HAS_I422ALPHATOARGBROW_RVV
@@ -934,7 +971,6 @@ extern "C" {
 #define HAS_I444ALPHATOARGBROW_RVV
 #define HAS_I444TOARGBROW_RVV
 #define HAS_I444TORGB24ROW_RVV
-#define HAS_INTERPOLATEROW_RVV
 #define HAS_J400TOARGBROW_RVV
 #define HAS_MERGEARGBROW_RVV
 #define HAS_MERGERGBROW_RVV
@@ -947,20 +983,8 @@ extern "C" {
 #define HAS_RAWTOARGBROW_RVV
 #define HAS_RAWTORGB24ROW_RVV
 #define HAS_RAWTORGBAROW_RVV
-#define HAS_RAWTOYJROW_RVV
-#define HAS_RAWTOYROW_RVV
 #define HAS_RGB24TOARGBROW_RVV
-#define HAS_RGB24TOYJROW_RVV
-#define HAS_RGB24TOYROW_RVV
 #define HAS_RGBATOARGBROW_RVV
-#define HAS_RGBATOYJROW_RVV
-#define HAS_RGBATOYMATRIXROW_RVV
-#define HAS_RGBATOYROW_RVV
-#define HAS_RGBTOYMATRIXROW_RVV
-#define HAS_SPLITARGBROW_RVV
-#define HAS_SPLITRGBROW_RVV
-#define HAS_SPLITUVROW_RVV
-#define HAS_SPLITXRGBROW_RVV
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
