@@ -61,6 +61,7 @@ int main(int argc, const char* argv[]) {
     int has_sve = TestCpuFlag(kCpuHasSVE);
     int has_sve2 = TestCpuFlag(kCpuHasSVE2);
     int has_sme = TestCpuFlag(kCpuHasSME);
+    int has_sme2 = TestCpuFlag(kCpuHasSME2);
     printf("Has Arm 0x%x\n", has_arm);
     printf("Has Neon 0x%x\n", has_neon);
     printf("Has Neon DotProd 0x%x\n", has_neon_dotprod);
@@ -68,6 +69,7 @@ int main(int argc, const char* argv[]) {
     printf("Has SVE 0x%x\n", has_sve);
     printf("Has SVE2 0x%x\n", has_sve2);
     printf("Has SME 0x%x\n", has_sme);
+    printf("Has SME2 0x%x\n", has_sme2);
 
 #if __aarch64__
     // Read and print the SVE and SME vector lengths.

@@ -182,11 +182,12 @@ LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
 #ifdef __linux__
 // Define hwcap values ourselves: building with an old auxv header where these
 // hwcap values are not defined should not prevent features from being enabled.
-#define YUV_AARCH64_HWCAP_ASIMDDP (1 << 20)
-#define YUV_AARCH64_HWCAP_SVE (1 << 22)
-#define YUV_AARCH64_HWCAP2_SVE2 (1 << 1)
-#define YUV_AARCH64_HWCAP2_I8MM (1 << 13)
-#define YUV_AARCH64_HWCAP2_SME (1 << 23)
+#define YUV_AARCH64_HWCAP_ASIMDDP (1UL << 20)
+#define YUV_AARCH64_HWCAP_SVE (1UL << 22)
+#define YUV_AARCH64_HWCAP2_SVE2 (1UL << 1)
+#define YUV_AARCH64_HWCAP2_I8MM (1UL << 13)
+#define YUV_AARCH64_HWCAP2_SME (1UL << 23)
+#define YUV_AARCH64_HWCAP2_SME2 (1UL << 37)
 
 // For AArch64, but public to allow testing on any CPU.
 LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
@@ -210,6 +211,9 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
           features |= kCpuHasSVE2;
           if (hwcap2 & YUV_AARCH64_HWCAP2_SME) {
             features |= kCpuHasSME;
+            if (hwcap2 & YUV_AARCH64_HWCAP2_SME2) {
+              features |= kCpuHasSME2;
+            }
           }
         }
       }
@@ -256,8 +260,11 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
     features |= kCpuHasNeonDotProd;
     if (have_feature("hw.optional.arm.FEAT_I8MM")) {
       features |= kCpuHasNeonI8MM;
-      if (have_feature("hw.optional.arm.FEAT_SME2")) {
+      if (have_feature("hw.optional.arm.FEAT_SME")) {
         features |= kCpuHasSME;
+        if (have_feature("hw.optional.arm.FEAT_SME2")) {
+          features |= kCpuHasSME2;
+        }
       }
     }
   }

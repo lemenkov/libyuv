@@ -29,6 +29,7 @@ static const int kCpuHasNeonI8MM = 0x400;
 static const int kCpuHasSVE = 0x800;
 static const int kCpuHasSVE2 = 0x1000;
 static const int kCpuHasSME = 0x2000;
+static const int kCpuHasSME2 = 0x4000;
 
 // These flags are only valid on RISCV processors.
 static const int kCpuHasRISCV = 0x4;

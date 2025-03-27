@@ -101,6 +101,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     int has_sve = TestCpuFlag(kCpuHasSVE);
     int has_sve2 = TestCpuFlag(kCpuHasSVE2);
     int has_sme = TestCpuFlag(kCpuHasSME);
+    int has_sme2 = TestCpuFlag(kCpuHasSME2);
     printf("Has Arm 0x%x\n", has_arm);
     printf("Has Neon 0x%x\n", has_neon);
     printf("Has Neon DotProd 0x%x\n", has_neon_dotprod);
@@ -108,6 +109,7 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
     printf("Has SVE 0x%x\n", has_sve);
     printf("Has SVE2 0x%x\n", has_sve2);
     printf("Has SME 0x%x\n", has_sme);
+    printf("Has SME2 0x%x\n", has_sme2);
 
 #if defined(__aarch64__)
     // Read and print the SVE and SME vector lengths.
@@ -381,6 +383,8 @@ TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
   // Check for SME feature detection.
   expected |= kCpuHasSME;
   EXPECT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x82f3ffU));
+
+  // TODO: Check for SME2 feature detection from Apple M4
 }
 #endif
 
