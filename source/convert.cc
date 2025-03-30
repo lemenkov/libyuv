@@ -2087,6 +2087,14 @@ int ARGBToI420(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUVROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    ARGBToUVRow = ARGBToUVRow_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_NEON_I8MM;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUVROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     ARGBToUVRow = ARGBToUVRow_Any_SVE2;
@@ -2262,6 +2270,14 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
     ARGBToUVRow = ARGBToUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    ARGBToUVRow = ARGBToUVRow_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_NEON_I8MM;
     }
   }
 #endif
@@ -2444,6 +2460,14 @@ int BGRAToI420(const uint8_t* src_bgra,
     }
   }
 #endif
+#if defined(HAS_BGRATOUVROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    BGRAToUVRow = BGRAToUVRow_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 16)) {
+      BGRAToUVRow = BGRAToUVRow_NEON_I8MM;
+    }
+  }
+#endif
 #if defined(HAS_BGRATOUVROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     BGRAToUVRow = BGRAToUVRow_Any_SVE2;
@@ -2619,6 +2643,14 @@ int ABGRToI420(const uint8_t* src_abgr,
     }
   }
 #endif
+#if defined(HAS_ABGRTOUVROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    ABGRToUVRow = ABGRToUVRow_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 16)) {
+      ABGRToUVRow = ABGRToUVRow_NEON_I8MM;
+    }
+  }
+#endif
 #if defined(HAS_ABGRTOUVROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     ABGRToUVRow = ABGRToUVRow_Any_SVE2;
@@ -2741,6 +2773,14 @@ int RGBAToI420(const uint8_t* src_rgba,
     RGBAToUVRow = RGBAToUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       RGBAToUVRow = RGBAToUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOUVROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    RGBAToUVRow = RGBAToUVRow_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 16)) {
+      RGBAToUVRow = RGBAToUVRow_NEON_I8MM;
     }
   }
 #endif

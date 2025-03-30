@@ -3448,6 +3448,177 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
   );
 }
 
+// Process any of ARGB, ABGR, BGRA, RGBA, by adjusting the uvconstants layout.
+static void ABCDToUVMatrixRow_NEON_I8MM(const uint8_t* src,
+                                        int src_stride,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width,
+                                        const int8_t* uvconstants) {
+  const uint8_t* src1 = src + src_stride;
+  asm volatile(
+      "movi        v23.8h, #0x80, lsl #8           \n"  // 128.0 (0x8000 in
+                                                        // 16-bit)
+      "ld2r        {v24.4s, v25.4s}, [%[uvconstants]] \n"
+
+      "1:                                          \n"
+      "ld2         {v0.4s, v1.4s}, [%[src]], #32   \n"  // load 8 pixels
+      "ld2         {v2.4s, v3.4s}, [%[src]], #32   \n"  // load 8 pixels
+      "subs        %w[width], %w[width], #16       \n"  // 16 processed per loop
+      "uaddl       v4.8h, v0.8b, v1.8b             \n"  // ABCDABCD
+      "uaddl2      v5.8h, v0.16b, v1.16b           \n"  // ABCDABCD
+      "uaddl       v6.8h, v2.8b, v3.8b             \n"  // ABCDABCD
+      "uaddl2      v7.8h, v2.16b, v3.16b           \n"  // ABCDABCD
+
+      "ld2         {v0.4s, v1.4s}, [%[src1]], #32  \n"  // load 8 pixels
+      "ld2         {v2.4s, v3.4s}, [%[src1]], #32  \n"  // load 8 pixels
+      "uaddw       v4.8h, v4.8h, v0.8b             \n"  // ABCDABCD
+      "uaddw2      v5.8h, v5.8h, v0.16b            \n"  // ABCDABCD
+      "uaddw       v6.8h, v6.8h, v2.8b             \n"  // ABCDABCD
+      "uaddw2      v7.8h, v7.8h, v2.16b            \n"  // ABCDABCD
+      "prfm        pldl1keep, [%[src], 448]        \n"
+      "uaddw       v4.8h, v4.8h, v1.8b             \n"  // ABCDABCD
+      "uaddw2      v5.8h, v5.8h, v1.16b            \n"  // ABCDABCD
+      "uaddw       v6.8h, v6.8h, v3.8b             \n"  // ABCDABCD
+      "uaddw2      v7.8h, v7.8h, v3.16b            \n"  // ABCDABCD
+      "prfm        pldl1keep, [%[src1], 448]       \n"
+
+      "rshrn       v4.8b, v4.8h, #2                \n"  // average of 4 pixels
+      "rshrn       v6.8b, v6.8h, #2                \n"  // average of 4 pixels
+      "rshrn2      v4.16b, v5.8h, #2               \n"  // average of 4 pixels
+      "rshrn2      v6.16b, v7.8h, #2               \n"  // average of 4 pixels
+
+      "movi        v0.4s, #0                       \n"  // U
+      "movi        v1.4s, #0                       \n"  // U
+      "usdot       v0.4s, v4.16b, v24.16b          \n"
+      "usdot       v1.4s, v6.16b, v24.16b          \n"
+
+      "movi        v2.4s, #0                       \n"  // V
+      "movi        v3.4s, #0                       \n"  // V
+      "usdot       v2.4s, v4.16b, v25.16b          \n"
+      "usdot       v3.4s, v6.16b, v25.16b          \n"
+
+      "uzp1        v0.8h, v0.8h, v1.8h             \n"  // U
+      "uzp1        v1.8h, v2.8h, v3.8h             \n"  // V
+
+      "subhn       v0.8b, v23.8h, v0.8h            \n"  // +128 -> unsigned
+      "subhn       v1.8b, v23.8h, v1.8h            \n"  // +128 -> unsigned
+
+      "str         d0, [%[dst_u]], #8              \n"  // store 8 pixels U
+      "str         d1, [%[dst_v]], #8              \n"  // store 8 pixels V
+      "b.gt        1b                              \n"
+      : [src] "+r"(src),                // %[src]
+        [src1] "+r"(src1),              // %[src1]
+        [dst_u] "+r"(dst_u),            // %[dst_u]
+        [dst_v] "+r"(dst_v),            // %[dst_v]
+        [width] "+r"(width)             // %[width]
+      : [uvconstants] "r"(uvconstants)  // %[uvconstants]
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v23",
+        "v24", "v25");
+}
+
+// RGB to BT601 coefficients
+// UB   0.875 coefficient = 112
+// UG -0.5781 coefficient = -74
+// UR -0.2969 coefficient = -38
+// VB -0.1406 coefficient = -18
+// VG -0.7344 coefficient = -94
+// VR   0.875 coefficient = 112
+// I8MM constants are stored negated such that we can store 128 in int8_t.
+
+static const int8_t kARGBToUVCoefficients[] = {
+    // -UB, -UG, -UR, 0, -VB, -VG, -VR, 0
+    -112, 74, 38, 0, 18, 94, -112, 0,
+};
+
+static const int8_t kABGRToUVCoefficients[] = {
+    // -UR, -UG, -UB, 0, -VR, -VG, -VB, 0
+    38, 74, -112, 0, -112, 94, 18, 0,
+};
+
+static const int8_t kBGRAToUVCoefficients[] = {
+    // 0, -UR, -UG, -UB, 0, -VR, -VG, -VB
+    0, 38, 74, -112, 0, -112, 94, 18,
+};
+
+static const int8_t kRGBAToUVCoefficients[] = {
+    // 0, -UB, -UG, -UR, 0, -VB, -VG, -VR
+    0, -112, 74, 38, 0, 18, 94, -112,
+};
+
+void ARGBToUVRow_NEON_I8MM(const uint8_t* src_argb,
+                           int src_stride_argb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
+  ABCDToUVMatrixRow_NEON_I8MM(src_argb, src_stride_argb, dst_u, dst_v, width,
+                              kARGBToUVCoefficients);
+}
+
+void ABGRToUVRow_NEON_I8MM(const uint8_t* src_abgr,
+                           int src_stride_abgr,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
+  ABCDToUVMatrixRow_NEON_I8MM(src_abgr, src_stride_abgr, dst_u, dst_v, width,
+                              kABGRToUVCoefficients);
+}
+
+void BGRAToUVRow_NEON_I8MM(const uint8_t* src_bgra,
+                           int src_stride_bgra,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
+  ABCDToUVMatrixRow_NEON_I8MM(src_bgra, src_stride_bgra, dst_u, dst_v, width,
+                              kBGRAToUVCoefficients);
+}
+
+void RGBAToUVRow_NEON_I8MM(const uint8_t* src_rgba,
+                           int src_stride_rgba,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
+  ABCDToUVMatrixRow_NEON_I8MM(src_rgba, src_stride_rgba, dst_u, dst_v, width,
+                              kRGBAToUVCoefficients);
+}
+
+// RGB to JPEG coefficients
+// UB  0.500    coefficient = 128
+// UG -0.33126  coefficient = -85
+// UR -0.16874  coefficient = -43
+// VB -0.08131  coefficient = -21
+// VG -0.41869  coefficient = -107
+// VR 0.500     coefficient = 128
+// I8MM constants are stored negated such that we can store 128 in int8_t.
+
+static const int8_t kARGBToUVJCoefficients[] = {
+    // -UB, -UG, -UR, 0, -VB, -VG, -VR, 0
+    -128, 85, 43, 0, 21, 107, -128, 0,
+};
+
+static const int8_t kABGRToUVJCoefficients[] = {
+    // -UR, -UG, -UB, 0, -VR, -VG, -VB, 0
+    43, 85, -128, 0, -128, 107, 21, 0,
+};
+
+void ARGBToUVJRow_NEON_I8MM(const uint8_t* src_argb,
+                            int src_stride_argb,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width) {
+  ABCDToUVMatrixRow_NEON_I8MM(src_argb, src_stride_argb, dst_u, dst_v, width,
+                              kARGBToUVJCoefficients);
+}
+
+void ABGRToUVJRow_NEON_I8MM(const uint8_t* src_abgr,
+                            int src_stride_abgr,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width) {
+  ABCDToUVMatrixRow_NEON_I8MM(src_abgr, src_stride_abgr, dst_u, dst_v, width,
+                              kABGRToUVJCoefficients);
+}
+
 void RGB565ToYRow_NEON(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
   asm volatile(
       "movi        v24.16b, #25                  \n"  // B * 0.1016 coefficient
