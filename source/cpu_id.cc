@@ -209,12 +209,13 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
         features |= kCpuHasSVE;
         if (hwcap2 & YUV_AARCH64_HWCAP2_SVE2) {
           features |= kCpuHasSVE2;
-          if (hwcap2 & YUV_AARCH64_HWCAP2_SME) {
-            features |= kCpuHasSME;
-            if (hwcap2 & YUV_AARCH64_HWCAP2_SME2) {
-              features |= kCpuHasSME2;
-            }
-          }
+        }
+      }
+      // SME may be present without SVE
+      if (hwcap2 & YUV_AARCH64_HWCAP2_SME) {
+        features |= kCpuHasSME;
+        if (hwcap2 & YUV_AARCH64_HWCAP2_SME2) {
+          features |= kCpuHasSME2;
         }
       }
     }
