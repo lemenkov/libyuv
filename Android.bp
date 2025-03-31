@@ -103,6 +103,9 @@ cc_library {
     min_sdk_version: "29",
     sanitize: {
         cfi: true,
+        config: {
+            cfi_assembly_support: true,
+        },
     },
 }
 
