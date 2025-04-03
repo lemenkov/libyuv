@@ -28,13 +28,21 @@ extern "C" {
 
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505
 #if defined(__has_feature)
-#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_NEON)
+#if __has_feature(memory_sanitizer)
+#if !defined(LIBYUV_DISABLE_NEON)
 #define LIBYUV_DISABLE_NEON
 #endif
-#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_X86)
+#if !defined(LIBYUV_DISABLE_SME)
+#define LIBYUV_DISABLE_SME
+#endif
+#if !defined(LIBYUV_DISABLE_SVE)
+#define LIBYUV_DISABLE_SVE
+#endif
+#if !defined(LIBYUV_DISABLE_X86)
 #define LIBYUV_DISABLE_X86
 #endif
-#endif
+#endif  // __has_feature(memory_sanitizer)
+#endif  // defined(__has_feature)
 
 // clang >= 3.5.0 required for Arm64.
 #if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_NEON)
