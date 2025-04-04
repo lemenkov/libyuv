@@ -1517,6 +1517,7 @@ TEST_F(LibYUVPlanarTest, I420Blend_Invert) {
                 disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
 }
 
+#ifdef ENABLE_ROW_TESTS
 TEST_F(LibYUVPlanarTest, TestAffine) {
   SIMD_ALIGNED(uint8_t orig_pixels_0[1280][4]);
   SIMD_ALIGNED(uint8_t interpolate_pixels_C[1280][4]);
@@ -1550,6 +1551,7 @@ TEST_F(LibYUVPlanarTest, TestAffine) {
   }
 #endif
 }
+#endif  // ENABLE_ROW_TESTS
 
 static int TestCopyPlane(int benchmark_width,
                          int benchmark_height,

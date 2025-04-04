@@ -22,37 +22,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO(fbarchard): Move cpu macros to row.h
-#if defined(__pnacl__) || defined(__CLR_VER) ||            \
-    (defined(__native_client__) && defined(__x86_64__)) || \
-    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
-#define LIBYUV_DISABLE_X86
-#endif
-// MemorySanitizer does not support assembly code yet. http://crbug.com/344505
-#if defined(__has_feature)
-#if __has_feature(memory_sanitizer)
-#if !defined(LIBYUV_DISABLE_NEON)
-#define LIBYUV_DISABLE_NEON
-#endif
-#if !defined(LIBYUV_DISABLE_SME)
-#define LIBYUV_DISABLE_SME
-#endif
-#if !defined(LIBYUV_DISABLE_SVE)
-#define LIBYUV_DISABLE_SVE
-#endif
-#if !defined(LIBYUV_DISABLE_X86)
-#define LIBYUV_DISABLE_X86
-#endif
-#endif  // __has_feature(memory_sanitizer)
-#endif  // defined(__has_feature)
-// The following are available on all x86 platforms:
-#if !defined(LIBYUV_DISABLE_X86) &&                             \
-    (defined(_M_IX86) ||                                        \
-     (defined(__x86_64__) && !defined(LIBYUV_ENABLE_ROWWIN)) || \
-     defined(__i386__))
-#define HAS_ARGBAFFINEROW_SSE2
-#endif
-
 // Copy a plane of data.
 LIBYUV_API
 void CopyPlane(const uint8_t* src_y,
@@ -1104,22 +1073,6 @@ int I420Interpolate(const uint8_t* src0_y,
                     int width,
                     int height,
                     int interpolation);
-
-// Row function for copying pixels from a source with a slope to a row
-// of destination. Useful for scaling, rotation, mirror, texture mapping.
-LIBYUV_API
-void ARGBAffineRow_C(const uint8_t* src_argb,
-                     int src_argb_stride,
-                     uint8_t* dst_argb,
-                     const float* uv_dudv,
-                     int width);
-// TODO(fbarchard): Move ARGBAffineRow_SSE2 to row.h
-LIBYUV_API
-void ARGBAffineRow_SSE2(const uint8_t* src_argb,
-                        int src_argb_stride,
-                        uint8_t* dst_argb,
-                        const float* uv_dudv,
-                        int width);
 
 // Shuffle ARGB channel order.  e.g. BGRA to ARGB.
 // shuffler is 16 bytes.
