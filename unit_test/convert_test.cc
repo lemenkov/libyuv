@@ -27,14 +27,9 @@
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
 
-#ifdef ENABLE_ROW_TESTS
-#include "libyuv/row.h" /* For ARGBToAR30Row_AVX2 */
-#endif
-
 #if defined(__riscv) && !defined(__clang__)
 #define DISABLE_SLOW_TESTS
 #undef ENABLE_FULL_TESTS
-#undef ENABLE_ROW_TESTS
 #define LEAN_TESTS
 #endif
 
