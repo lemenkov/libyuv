@@ -2,11 +2,11 @@
 # Originally created for "roxlu build system" to compile libyuv on windows
 # Run with -DUNIT_TEST=ON to build unit tests
 
-include(CheckCSourceCompiles)
-
+cmake_minimum_required( VERSION 3.16 )
 project ( YUV C CXX )	# "C" is required even for C++ projects
-cmake_minimum_required( VERSION 3.5 )
 option( UNIT_TEST "Built unit tests" OFF )
+
+include(CheckCSourceCompiles)
 
 set ( ly_base_dir	${PROJECT_SOURCE_DIR} )
 set ( ly_src_dir	${ly_base_dir}/source )
