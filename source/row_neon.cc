@@ -266,10 +266,13 @@ void I422ToRGBARow_NEON(const uint8_t* src_y,
   asm volatile(
       YUVTORGB_SETUP
       "vmov.u8     d6, #255                      \n"
-      "1:          \n"  //
-      READYUV422
-      "subs        %[width], %[width], #8        \n" YUVTORGB RGBTORGB8
-          STORERGBA "bgt         1b                            \n"
+      "1:          \n"                                //
+      READYUV422                                      //
+      "subs        %[width], %[width], #8        \n"  //
+      YUVTORGB                                        //
+          RGBTORGB8                                   //
+      STORERGBA                                       //
+      "bgt         1b                            \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]
         [src_v] "+r"(src_v),                               // %[src_v]
