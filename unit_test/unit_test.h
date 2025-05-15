@@ -18,7 +18,8 @@
 #include <sys/time.h>
 #endif
 
-#include <gtest/gtest.h>
+// pragma to disable warning for ASSERT_NE
+#include <gtest/gtest.h>  // IWYU pragma: export
 
 #include "libyuv/basic_types.h"
 
