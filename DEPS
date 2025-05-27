@@ -12,6 +12,8 @@ vars = {
   'ninja_version': 'version:3@1.12.1.chromium.4',
   # reclient CIPD package version
   'reclient_version': 're_client_version:0.178.0.5ee9d3e8-gomaip',
+  # siso CIPD package version.
+  'siso_version': 'git_revision:d9393c2115244b6e4a797189055e4a2b6769a64d',
   # Fetch configuration files required for the 'use_remoteexec' gn arg
   'download_remoteexec_cfg': False,
   # RBE instance to use for running remote builds
@@ -344,6 +346,15 @@ deps = {
       {
         'package': 'infra/3pp/tools/ninja/${{platform}}',
         'version': Var('ninja_version'),
+      }
+    ],
+    'dep_type': 'cipd',
+  },
+  'src/third_party/siso/cipd': {
+    'packages': [
+      {
+        'package': 'infra/build/siso/${{platform}}',
+        'version': Var('siso_version'),
       }
     ],
     'dep_type': 'cipd',
@@ -1847,6 +1858,16 @@ hooks = [
                '--rewrapper_cfg_project',
                Var('rewrapper_cfg_project'),
                '--quiet',
+               ],
+  },
+  # Configure Siso for developer builds.
+  {
+    'name': 'configure_siso',
+    'pattern': '.',
+    'action': ['python3',
+               'src/build/config/siso/configure_siso.py',
+               '--rbe_instance',
+               Var('rbe_instance'),
                ],
   },
 ]
