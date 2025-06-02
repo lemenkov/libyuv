@@ -236,10 +236,6 @@ def libyuv_try_builder(name, dimensions, properties, recipe_name = "libyuv/libyu
 def get_build_properties(bucket):
     rbe_project = RBE_PROJECT.get(bucket)
     return {
-        "$build/reclient": {
-            "instance": rbe_project,
-            "metrics_project": "chromium-reclient-metrics",
-        },
         "$build/siso": {
             "project": rbe_project,
             "configs": ["builder"],
