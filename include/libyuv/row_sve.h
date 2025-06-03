@@ -354,8 +354,8 @@ extern "C" {
 
 #define YUVTORGB_SVE_REGS                                                     \
   "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16", "z17", "z18", "z19", \
-      "z20", "z22", "z23", "z24", "z25", "z26", "z27", "z28", "z29", "z30",   \
-      "z31", "p0", "p1", "p2", "p3"
+      "z20", "z21", "z22", "z23", "z24", "z25", "z26", "z27", "z28", "z29",   \
+      "z30", "z31", "p0", "p1", "p2", "p3"
 
 static inline void I444ToRGB24Row_SVE_SC(
     const uint8_t* src_y,
