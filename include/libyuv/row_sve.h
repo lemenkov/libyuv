@@ -342,6 +342,7 @@ extern "C" {
 // rather than needing a pair of shifts to saturate and then insert into the
 // correct position in the lane.
 #define STOREAR30_SVE                                                    \
+  /* Inputs: B: z16.h,  G: z17.h,  R: z18.h */                           \
   "uqshl    z16.h, p0/m, z16.h, #2            \n" /* bbbbbbbbbbxxxxxx */ \
   "uqshl    z17.h, p0/m, z17.h, #2            \n" /* ggggggggggxxxxxx */ \
   "umin     z18.h, p0/m, z18.h, z23.h         \n" /* 00rrrrrrrrrrxxxx */ \
@@ -351,6 +352,31 @@ extern "C" {
   "sri      z17.h, z16.h, #6                  \n" /* ggggggbbbbbbbbbb */ \
   "st2h     {z17.h, z18.h}, p1, [%[dst_ar30]] \n"                        \
   "incb     %[dst_ar30], all, mul #2          \n"
+
+#define STOREAR30_SVE_2X                                                 \
+  /* Inputs: B: z16.h,  G: z17.h,  R: z18.h */                           \
+  /*         B: z20.h,  G: z21.h,  R: z22.h */                           \
+  "uqshl    z16.h, p0/m, z16.h, #2            \n" /* bbbbbbbbbbxxxxxx */ \
+  "uqshl    z20.h, p0/m, z20.h, #2            \n" /* bbbbbbbbbbxxxxxx */ \
+  "uqshl    z17.h, p0/m, z17.h, #2            \n" /* ggggggggggxxxxxx */ \
+  "uqshl    z21.h, p0/m, z21.h, #2            \n" /* ggggggggggxxxxxx */ \
+  "umin     z18.h, p0/m, z18.h, z23.h         \n" /* 00rrrrrrrrrrxxxx */ \
+  "umin     z22.h, p0/m, z22.h, z23.h         \n" /* 00rrrrrrrrrrxxxx */ \
+  "orr      z18.h, z18.h, #0xc000             \n" /* 11rrrrrrrrrrxxxx */ \
+  "orr      z22.h, z22.h, #0xc000             \n" /* 11rrrrrrrrrrxxxx */ \
+  "sri      z18.h, z17.h, #12                 \n" /* 11rrrrrrrrrrgggg */ \
+  "sri      z22.h, z21.h, #12                 \n" /* 11rrrrrrrrrrgggg */ \
+  "lsl      z17.h, z17.h, #4                  \n" /* ggggggxxxxxx0000 */ \
+  "lsl      z19.h, z21.h, #4                  \n" /* ggggggxxxxxx0000 */ \
+  "sri      z17.h, z16.h, #6                  \n" /* ggggggbbbbbbbbbb */ \
+  "sri      z19.h, z20.h, #6                  \n" /* ggggggbbbbbbbbbb */ \
+  "zip2     z16.h, z17.h, z19.h               \n"                        \
+  "zip1     z21.h, z17.h, z19.h               \n"                        \
+  "zip2     z17.h, z18.h, z22.h               \n"                        \
+  "zip1     z22.h, z18.h, z22.h               \n"                        \
+  "st2h     {z21.h, z22.h}, p2, [%[dst_ar30]] \n"                        \
+  "st2h     {z16.h, z17.h}, p3, [%[dst_ar30], #2, mul vl] \n"            \
+  "incb     %[dst_ar30], all, mul #4          \n"
 
 #define YUVTORGB_SVE_REGS                                                     \
   "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16", "z17", "z18", "z19", \
@@ -776,32 +802,35 @@ static inline void I422ToAR30Row_SVE_SC(const uint8_t* src_y,
                                         const struct YuvConstants* yuvconstants,
                                         int width) STREAMING_COMPATIBLE {
   uint64_t vl;
-  // The limit is used for saturating the 2.14 red channel in STOREAR30_SVE.
+  // The limit is used for saturating the 2.14 red channel in STOREAR30_SVE_2X.
   const uint16_t limit = 0x3ff0;
   asm volatile(
       "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // Alpha
       "dup      z23.h, %w[limit]                        \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.le     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
-      "ptrue    p1.h                                    \n"
+      "ptrue    p1.b                                    \n"
+      "ptrue    p2.b                                    \n"
+      "ptrue    p3.b                                    \n"
       "1:                                               \n"  //
-      READYUV422_SVE I4XXTORGB_SVE STOREAR30_SVE
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      READYUV422_SVE_2X I422TORGB_SVE_2X STOREAR30_SVE_2X
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.gt     1b                                      \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
       "2:                                               \n"
-      "adds    %w[width], %w[width], %w[vl]             \n"
+      "adds    %w[width], %w[width], %w[vl], lsl #1     \n"
       "b.eq    99f                                      \n"
 
-      "whilelt  p1.h, wzr, %w[width]                    \n"  //
-      READYUV422_SVE I4XXTORGB_SVE STOREAR30_SVE
+      "whilelt  p1.b, wzr, %w[width]                    \n"
+      "whilelt  p2.h, wzr, %w[width]                    \n"
+      "whilelt  p3.h, %w[vl], %w[width]                 \n"  //
+      READYUV422_SVE_2X I422TORGB_SVE_2X STOREAR30_SVE_2X
 
       "99:                                              \n"
       : [src_y] "+r"(src_y),                                // %[src_y]
