@@ -119,6 +119,26 @@ extern "C" {
   "uqshrnb    z1.b, z1.h, #2                 \n" \
   "uqshrnb    z2.b, z2.h, #2                 \n"
 
+#define READI210_SVE_2X                                      \
+  "ld1h       {z4.h}, p2/z, [%[src_y]]                   \n" \
+  "ld1h       {z5.h}, p3/z, [%[src_y], #1, mul vl]       \n" \
+  "ld1h       {z2.h}, p1/z, [%[src_u]]                   \n" \
+  "ld1h       {z3.h}, p1/z, [%[src_v]]                   \n" \
+  "incb       %[src_y], all, mul #2                      \n" \
+  "uzp1       z6.h, z4.h, z5.h                           \n" \
+  "uzp2       z5.h, z4.h, z5.h                           \n" \
+  "incb       %[src_u]                                   \n" \
+  "incb       %[src_v]                                   \n" \
+  "lsl        z0.h, z6.h, #6                             \n" \
+  "lsl        z1.h, z5.h, #6                             \n" \
+  "prfm       pldl1keep, [%[src_y], 448]                 \n" \
+  "prfm       pldl1keep, [%[src_u], 128]                 \n" \
+  "prfm       pldl1keep, [%[src_v], 128]                 \n" \
+  "usra       z0.h, z6.h, #4                             \n" \
+  "usra       z1.h, z5.h, #4                             \n" \
+  "uqshrnb    z2.b, z2.h, #2                             \n" \
+  "uqshrnb    z3.b, z3.h, #2                             \n"
+
 #define READP210_SVE                             \
   "ld1h       {z0.h}, p1/z, [%[src_y]]       \n" \
   "ld1h       {z1.h}, p2/z, [%[src_uv]]      \n" \
@@ -1387,31 +1407,36 @@ static inline void I210ToAR30Row_SVE_SC(const uint16_t* src_y,
                                         int width) STREAMING_COMPATIBLE {
   uint64_t vl;
   asm("cnth %0" : "=r"(vl));
-  int width_last_y = width & (vl - 1);
-  // The limit is used for saturating the 2.14 red channel in STOREAR30_SVE.
+  int width_last_y = width & (2 * vl - 1);
+  int width_last_uv = (width_last_y + 1) / 2;
+  // The limit is used for saturating the 2.14 red channel in STOREAR30_SVE_2X.
   uint16_t limit = 0x3ff0;
   asm volatile(
       "ptrue    p0.b                                    \n"  //
       YUVTORGB_SVE_SETUP
       "dup      z23.h, %w[limit]                        \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.lt     2f                                      \n"
 
       // Run bulk of computation with an all-true predicate to avoid predicate
       // generation overhead.
       "ptrue    p1.h                                    \n"
+      "ptrue    p2.h                                    \n"
+      "ptrue    p3.h                                    \n"
       "1:                                               \n"  //
-      READI210_SVE I4XXTORGB_SVE STOREAR30_SVE
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      READI210_SVE_2X I422TORGB_SVE_2X STOREAR30_SVE_2X
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.ge     1b                                      \n"
 
       "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p1.h, wzr, %w[width_last_y]             \n"  //
-      READI210_SVE I4XXTORGB_SVE STOREAR30_SVE
+      "whilelt  p1.h, wzr, %w[width_last_uv]            \n"
+      "whilelt  p2.h, wzr, %w[width_last_y]             \n"
+      "whilelt  p3.h, %w[vl], %w[width_last_y]          \n"  //
+      READI210_SVE_2X I422TORGB_SVE_2X STOREAR30_SVE_2X
 
       "99:                                              \n"
       : [src_y] "+r"(src_y),                                // %[src_y]
@@ -1423,6 +1448,7 @@ static inline void I210ToAR30Row_SVE_SC(const uint16_t* src_y,
         [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
         [width_last_y] "r"(width_last_y),                   // %[width_last_y]
+        [width_last_uv] "r"(width_last_uv),                 // %[width_last_uv]
         [limit] "r"(limit)                                  // %[limit]
       : "cc", "memory", YUVTORGB_SVE_REGS);
 }
