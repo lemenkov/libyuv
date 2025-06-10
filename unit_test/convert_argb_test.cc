@@ -2721,7 +2721,7 @@ TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
   EXPECT_EQ(3486643515u, checksum);
 }
 
-#if defined(_M_X64) || defined(_M_X64) || defined(__aarch64__)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
 TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   // The width and height are chosen as follows:
   // - kWidth * kHeight is not a multiple of 8: This lets us to use the Any

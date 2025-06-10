@@ -5593,16 +5593,16 @@ void Convert8To16Row_NEON(const uint8_t* src_y,
   // to widen to int32.
   int shift = 15 - __builtin_clz(scale);
   asm volatile(
-      "dup    v2.8h, %w[shift]                 \n"
-      "1:                                      \n"
-      "ldr    q0, [%[src]], #16                \n"
-      "zip2   v1.16b, v0.16b, v0.16b           \n"
-      "zip1   v0.16b, v0.16b, v0.16b           \n"
-      "subs   %w[width], %w[width], #16        \n"
-      "ushl   v1.8h, v1.8h, v2.8h              \n"
-      "ushl   v0.8h, v0.8h, v2.8h              \n"
-      "stp    q0, q1, [%[dst]], #32            \n"
-      "b.ne   1b                               \n"
+      "dup         v2.8h, %w[shift]                 \n"
+      "1:          \n"
+      "ldr         q0, [%[src]], #16                \n"
+      "zip2        v1.16b, v0.16b, v0.16b           \n"
+      "zip1        v0.16b, v0.16b, v0.16b           \n"
+      "subs        %w[width], %w[width], #16        \n"
+      "ushl        v1.8h, v1.8h, v2.8h              \n"
+      "ushl        v0.8h, v0.8h, v2.8h              \n"
+      "stp         q0, q1, [%[dst]], #32            \n"
+      "b.ne        1b                               \n"
       : [src] "+r"(src_y),   // %[src]
         [dst] "+r"(dst_y),   // %[dst]
         [width] "+r"(width)  // %[width]
