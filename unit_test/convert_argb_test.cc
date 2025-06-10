@@ -2720,6 +2720,32 @@ TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
   uint32_t checksum = HashDjb2(&dest_argb[0][0], sizeof(dest_argb), 5381);
   EXPECT_EQ(3486643515u, checksum);
 }
+
+#if defined(_M_X64) || defined(_M_X64) || defined(__aarch64__)
+TEST_F(LibYUVConvertTest, TestI400LargeSize) {
+  // The width and height are chosen as follows:
+  // - kWidth * kHeight is not a multiple of 8: This lets us to use the Any
+  //   variant of the conversion function.
+  const int kWidth = 1073741823;
+  const int kHeight = 2;
+  // Allocate one extra column so that the coalesce optimizations do not trigger
+  // in convert_argb.cc (they are triggered only when stride is equal to width).
+  const size_t kStride = kWidth + 1;
+  align_buffer_page_end(orig_i400, (size_t) kWidth * kHeight);
+  ASSERT_NE(orig_i400, nullptr);
+  align_buffer_page_end(dest_argb, (size_t) kWidth * kHeight * 4);
+  ASSERT_NE(dest_argb, nullptr);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    orig_i400[i] = i % 256;
+  }
+  EXPECT_EQ(I400ToARGBMatrix(orig_i400, kStride, dest_argb, kWidth,
+                             &kYuvJPEGConstants, kWidth, kHeight),
+            0);
+  free_aligned_buffer_page_end(dest_argb);
+  free_aligned_buffer_page_end(orig_i400);
+}
+#endif  // defined(_M_X64) || defined(_M_X64) || defined(__aarch64__)
+
 #endif  // !defined(LEAN_TESTS)
 
 }  // namespace libyuv
