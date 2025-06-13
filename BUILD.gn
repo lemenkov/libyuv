@@ -254,7 +254,7 @@ if (libyuv_use_sve) {
     public_configs = [ ":libyuv_config" ]
 
     # SVE2 is an Armv9-A feature.
-    cflags = [ "-march=armv9-a+sve2+i8mm" ]
+    cflags = [ "-march=armv9-a+i8mm+sve2" ]
   }
 }
 
@@ -271,7 +271,7 @@ if (libyuv_use_sme) {
     public_configs = [ ":libyuv_config" ]
 
     # SME is an Armv9-A feature.
-    cflags = [ "-march=armv9-a+sme" ]
+    cflags = [ "-march=armv9-a+i8mm+sme" ]
   }
 }
 

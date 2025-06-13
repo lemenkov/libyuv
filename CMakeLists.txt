@@ -123,7 +123,7 @@ if(NOT MSVC)
 
     set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
-    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+sme")
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+i8mm+sme")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     # Check whether the compiler can compile SME functions; this fails
     # with Clang for Windows.
@@ -140,7 +140,7 @@ int main(void) { return 0; }
         ${ly_src_dir}/rotate_sme.cc
         ${ly_src_dir}/row_sme.cc
         ${ly_src_dir}/scale_sme.cc)
-      target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+sme)
+      target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+i8mm+sme)
       list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
     else()
       add_definitions(-DLIBYUV_DISABLE_SME)
