@@ -1120,6 +1120,60 @@ __arm_locally_streaming void Convert8To16Row_SME(const uint8_t* src_y,
       : "cc", "memory", "z0", "z1", "z2", "p0", "p1");
 }
 
+__arm_locally_streaming void ARGBToUVRow_SME(const uint8_t* src_argb,
+                                             int src_stride_argb,
+                                             uint8_t* dst_u,
+                                             uint8_t* dst_v,
+                                             int width) {
+  ARGBToUVMatrixRow_SVE_SC(src_argb, src_stride_argb, dst_u, dst_v, width,
+                           kARGBToUVCoefficients);
+}
+
+__arm_locally_streaming void ARGBToUVJRow_SME(const uint8_t* src_argb,
+                                              int src_stride_argb,
+                                              uint8_t* dst_u,
+                                              uint8_t* dst_v,
+                                              int width) {
+  ARGBToUVMatrixRow_SVE_SC(src_argb, src_stride_argb, dst_u, dst_v, width,
+                           kARGBToUVJCoefficients);
+}
+
+__arm_locally_streaming void ABGRToUVJRow_SME(const uint8_t* src_abgr,
+                                              int src_stride_abgr,
+                                              uint8_t* dst_uj,
+                                              uint8_t* dst_vj,
+                                              int width) {
+  ARGBToUVMatrixRow_SVE_SC(src_abgr, src_stride_abgr, dst_uj, dst_vj, width,
+                           kABGRToUVJCoefficients);
+}
+
+__arm_locally_streaming void BGRAToUVRow_SME(const uint8_t* src_bgra,
+                                             int src_stride_bgra,
+                                             uint8_t* dst_u,
+                                             uint8_t* dst_v,
+                                             int width) {
+  ARGBToUVMatrixRow_SVE_SC(src_bgra, src_stride_bgra, dst_u, dst_v, width,
+                           kBGRAToUVCoefficients);
+}
+
+__arm_locally_streaming void ABGRToUVRow_SME(const uint8_t* src_abgr,
+                                             int src_stride_abgr,
+                                             uint8_t* dst_u,
+                                             uint8_t* dst_v,
+                                             int width) {
+  ARGBToUVMatrixRow_SVE_SC(src_abgr, src_stride_abgr, dst_u, dst_v, width,
+                           kABGRToUVCoefficients);
+}
+
+__arm_locally_streaming void RGBAToUVRow_SME(const uint8_t* src_rgba,
+                                             int src_stride_rgba,
+                                             uint8_t* dst_u,
+                                             uint8_t* dst_v,
+                                             int width) {
+  ARGBToUVMatrixRow_SVE_SC(src_rgba, src_stride_rgba, dst_u, dst_v, width,
+                           kRGBAToUVCoefficients);
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 
