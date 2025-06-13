@@ -271,7 +271,7 @@ void I422ToRGBARow_NEON(const uint8_t* src_y,
       "subs        %[width], %[width], #8        \n"  //
       YUVTORGB                                        //
           RGBTORGB8                                   //
-      STORERGBA                                       //
+              STORERGBA                               //
       "bgt         1b                            \n"
       : [src_y] "+r"(src_y),                               // %[src_y]
         [src_u] "+r"(src_u),                               // %[src_u]

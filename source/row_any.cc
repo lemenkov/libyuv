@@ -2046,7 +2046,7 @@ ANY11IS(InterpolateRow_16To8_Any_AVX2,
       ANY_SIMD(src_ptr + r * BPP, dst_ptr, n);                        \
     }                                                                 \
     ptrdiff_t np = n;                                                 \
-    memcpy(vin, src_ptr, r * BPP);                                    \
+    memcpy(vin, src_ptr, r* BPP);                                     \
     ANY_SIMD(vin, vout, MASK + 1);                                    \
     memcpy(dst_ptr + np * BPP, vout + (MASK + 1 - r) * BPP, r * BPP); \
   }

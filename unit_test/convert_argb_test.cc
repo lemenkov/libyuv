@@ -2731,9 +2731,9 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   // Allocate one extra column so that the coalesce optimizations do not trigger
   // in convert_argb.cc (they are triggered only when stride is equal to width).
   const size_t kStride = kWidth + 1;
-  align_buffer_page_end(orig_i400, (size_t) kWidth * kHeight);
+  align_buffer_page_end(orig_i400, (size_t)kWidth * kHeight);
   ASSERT_NE(orig_i400, nullptr);
-  align_buffer_page_end(dest_argb, (size_t) kWidth * kHeight * 4);
+  align_buffer_page_end(dest_argb, (size_t)kWidth * kHeight * 4);
   ASSERT_NE(dest_argb, nullptr);
   for (int i = 0; i < kWidth * kHeight; ++i) {
     orig_i400[i] = i % 256;
@@ -2744,7 +2744,7 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   free_aligned_buffer_page_end(dest_argb);
   free_aligned_buffer_page_end(orig_i400);
 }
-#endif  // defined(_M_X64) || defined(_M_X64) || defined(__aarch64__)
+#endif  // defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
 
 #endif  // !defined(LEAN_TESTS)
 

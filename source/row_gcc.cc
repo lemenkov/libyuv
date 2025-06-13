@@ -1650,7 +1650,7 @@ void ARGBToUV444MatrixRow_SSSE3(const uint8_t* src_argb,
 #if defined(__i386__)
         "+m"(width)  // %3
 #else
-        "+rm"(width)  // %3
+        "+rm"(width)           // %3
 #endif
       : "m"(rgbuvconstants->kRGBToU),  // %4
         "m"(rgbuvconstants->kRGBToV),  // %5
@@ -1721,7 +1721,7 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
 #if defined(__i386__)
         "+m"(width)  // %3
 #else
-        "+rm"(width)  // %3
+        "+rm"(width)           // %3
 #endif
       : "m"(rgbuvconstants->kRGBToU),  // %4
         "m"(rgbuvconstants->kRGBToV),  // %5
@@ -1734,9 +1734,13 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 
-void OMITFP ARGBToUVMatrixRow_SSSE3(
-    const uint8_t* src_argb, int src_stride_argb, uint8_t* dst_u,
-    uint8_t* dst_v, int width, const struct RgbUVConstants* rgbuvconstants) {
+void OMITFP
+ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
+                        int src_stride_argb,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width,
+                        const struct RgbUVConstants* rgbuvconstants) {
   asm volatile(
       "movdqa      %0,%%xmm3                     \n"
       "movdqa      %1,%%xmm4                     \n"
@@ -1821,9 +1825,13 @@ static const UVMatrixConstants kShufARGBToUV_AVX = {
     0, 128, 0, 128, 0, 128, 0,  128, 0, 128, 0,  128, 0, 128, 0,  128,
     0, 128, 0, 128, 0, 128, 0,  128, 0, 128, 0,  128, 0, 128, 0,  128};
 
-void OMITFP ARGBToUVMatrixRow_AVX2(
-    const uint8_t* src_argb, int src_stride_argb, uint8_t* dst_u,
-    uint8_t* dst_v, int width, const struct RgbUVConstants* rgbuvconstants) {
+void OMITFP
+ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
+                       int src_stride_argb,
+                       uint8_t* dst_u,
+                       uint8_t* dst_v,
+                       int width,
+                       const struct RgbUVConstants* rgbuvconstants) {
   asm volatile(
       "vbroadcastf128 %0,%%ymm6                  \n"
       "vbroadcastf128 %1,%%ymm7                  \n"

@@ -15,6 +15,13 @@
 #ifdef __linux__
 #include <ctype.h>
 #include <sys/utsname.h>
+#include <unistd.h>  // for sysconf
+#endif
+#if defined(_WIN32)
+#include <windows.h>  // for GetSystemInfo
+#endif
+#if defined(__APPLE__)
+#include <sys/sysctl.h>  // for sysctlbyname
 #endif
 
 #include "libyuv/cpu_id.h"
@@ -24,16 +31,16 @@ using namespace libyuv;
 #endif
 
 #ifdef __linux__
-static void KernelVersion(int *version) {
+static void KernelVersion(int* version) {
   struct utsname buffer;
   int i = 0;
 
   version[0] = version[1] = 0;
   if (uname(&buffer) == 0) {
-    char *v = buffer.release;
+    char* v = buffer.release;
     for (i = 0; *v && i < 2; ++v) {
       if (isdigit(*v)) {
-        version[i++] = (int) strtol(v, &v, 10);
+        version[i++] = (int)strtol(v, &v, 10);
       }
     }
   }
@@ -51,6 +58,23 @@ int main(int argc, const char* argv[]) {
     printf("Kernel Version %d.%d\n", kernelversion[0], kernelversion[1]);
   }
 #endif  // defined(__linux__)
+#if defined(_WIN32)
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  int num_cpus = (int)sysInfo.dwNumberOfProcessors;
+#elif defined(__linux__)
+  int num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(__APPLE__)
+  int num_cpus = 0;
+  size_t num_cpus_len = sizeof(num_cpus);
+  // Get the number of logical CPU cores
+  if (sysctlbyname("hw.logicalcpu", &num_cpus, &num_cpus_len, NULL, 0) == -1) {
+    printf("sysctlbyname failed to get hw.logicalcpu\n");
+  }
+#else
+  int num_cpus = 0;  // unknown OS
+#endif
+  printf("Number of cpus: %d\n", num_cpus);
 
 #if defined(__arm__) || defined(__aarch64__)
   int has_arm = TestCpuFlag(kCpuHasARM);
@@ -75,7 +99,8 @@ int main(int argc, const char* argv[]) {
     // Read and print the SVE and SME vector lengths.
     if (has_sve) {
       int sve_vl;
-      __asm__(".inst 0x04bf5020    \n"  // rdvl x0, #1
+      __asm__(
+          ".inst 0x04bf5020    \n"  // rdvl x0, #1
           "mov %w[sve_vl], w0  \n"
           : [sve_vl] "=r"(sve_vl)  // %[sve_vl]
           :
@@ -84,7 +109,8 @@ int main(int argc, const char* argv[]) {
     }
     if (has_sme) {
       int sme_vl;
-      __asm__(".inst 0x04bf5820    \n"  // rdsvl x0, #1
+      __asm__(
+          ".inst 0x04bf5820    \n"  // rdsvl x0, #1
           "mov %w[sme_vl], w0  \n"
           : [sme_vl] "=r"(sme_vl)  // %[sme_vl]
           :
@@ -104,8 +130,8 @@ int main(int argc, const char* argv[]) {
 
     // Read and print the RVV vector length.
     if (has_rvv) {
-      register uint32_t vlenb __asm__ ("t0");
-      __asm__(".word 0xC22022F3"  /* CSRR t0, vlenb */ : "=r" (vlenb));
+      register uint32_t vlenb __asm__("t0");
+      __asm__(".word 0xC22022F3" /* CSRR t0, vlenb */ : "=r"(vlenb));
       printf("RVV vector length: %d bytes\n", vlenb);
     }
   }
@@ -123,7 +149,7 @@ int main(int argc, const char* argv[]) {
 #if defined(__loongarch__)
   int has_loongarch = TestCpuFlag(kCpuHasLOONGARCH);
   if (has_loongarch) {
-    int has_lsx  = TestCpuFlag(kCpuHasLSX);
+    int has_lsx = TestCpuFlag(kCpuHasLSX);
     int has_lasx = TestCpuFlag(kCpuHasLASX);
     printf("Has LOONGARCH 0x%x\n", has_loongarch);
     printf("Has LSX 0x%x\n", has_lsx);
@@ -131,8 +157,8 @@ int main(int argc, const char* argv[]) {
   }
 #endif  // defined(__loongarch__)
 
-#if defined(__i386__) || defined(__x86_64__) || \
-    defined(_M_IX86) || defined(_M_X64)
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+    defined(_M_X64)
   int has_x86 = TestCpuFlag(kCpuHasX86);
   if (has_x86) {
     int family, model, cpu_info[4];
@@ -153,6 +179,13 @@ int main(int argc, const char* argv[]) {
     cpu_info[3] = 0;
     printf("Cpu Vendor: %s\n", (char*)(&cpu_info[0]));
 
+    for (int n = 0; n < num_cpus; ++n) {
+      // Check EDX bit 15 for hybrid design indication
+      CpuId(7, n, &cpu_info[0]);
+      int hybrid = (cpu_info[3] >> 15) & 1;
+      printf("  Cpu %d Hybrid %d\n", n, hybrid);
+    }
+
     // CPU Family and Model
     // 3:0 - Stepping
     // 7:4 - Model
@@ -163,8 +196,8 @@ int main(int argc, const char* argv[]) {
     CpuId(1, 0, &cpu_info[0]);
     family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
     model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
-    printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family,
-           model, model);
+    printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family, model,
+           model);
 
     int has_sse2 = TestCpuFlag(kCpuHasSSE2);
     int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
@@ -210,7 +243,7 @@ int main(int argc, const char* argv[]) {
     printf("Has AVXVNNIINT8 0x%x\n", has_avxvnniint8);
     printf("Has AMXINT8 0x%x\n", has_amxint8);
   }
-#endif  // defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+#endif  // defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) ||
+        // defined(_M_X64)
   return 0;
 }
-
