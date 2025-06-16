@@ -2721,6 +2721,86 @@ TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
   EXPECT_EQ(3486643515u, checksum);
 }
 
+#ifdef ENABLE_ROW_TESTS
+TEST_F(LibYUVConvertTest, TestARGBToUVRow) {
+  SIMD_ALIGNED(uint8_t orig_argb_pixels[256]);
+  SIMD_ALIGNED(uint8_t dest_u[32]);
+  SIMD_ALIGNED(uint8_t dest_v[32]);
+
+  for (int i = 0; i < 256; ++i) {
+    orig_argb_pixels[i] = i * 43;
+  }
+
+  orig_argb_pixels[0] = 0xff;  // blue
+  orig_argb_pixels[1] = 0x0;
+  orig_argb_pixels[2] = 0x0;
+  orig_argb_pixels[3] = 0xff;
+  orig_argb_pixels[4] = 0xff;  // blue
+  orig_argb_pixels[5] = 0x0;
+  orig_argb_pixels[6] = 0x0;
+  orig_argb_pixels[7] = 0xff;
+
+  orig_argb_pixels[8] = 0x0;
+  orig_argb_pixels[9] = 0xff;  // green
+  orig_argb_pixels[10] = 0x0;
+  orig_argb_pixels[11] = 0xff;
+  orig_argb_pixels[12] = 0x0;
+  orig_argb_pixels[13] = 0xff;  // green
+  orig_argb_pixels[14] = 0x0;
+  orig_argb_pixels[15] = 0xff;
+
+  orig_argb_pixels[16] = 0x0;
+  orig_argb_pixels[17] = 0x0;
+  orig_argb_pixels[18] = 0xff;  // red
+  orig_argb_pixels[19] = 0xff;
+  orig_argb_pixels[20] = 0x0;
+  orig_argb_pixels[21] = 0x0;
+  orig_argb_pixels[22] = 0xff;  // red
+  orig_argb_pixels[23] = 0xff;
+
+  orig_argb_pixels[24] = 0xff;
+  orig_argb_pixels[25] = 0xff;
+  orig_argb_pixels[26] = 0xff;  // white
+  orig_argb_pixels[27] = 0xff;
+  orig_argb_pixels[28] = 0xff;
+  orig_argb_pixels[29] = 0xff;
+  orig_argb_pixels[30] = 0xff;  // white
+  orig_argb_pixels[31] = 0xff;
+
+  int benchmark_iterations =
+      benchmark_width_ * benchmark_height_ * benchmark_iterations_ / 32;
+
+  for (int i = 0; i < benchmark_iterations; ++i) {
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+    int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+    if (has_ssse3) {
+      ARGBToUVRow_SSSE3(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
+    } else {
+      ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
+    }
+#elif defined(HAS_ARGBTOUVROW_NEON)
+    ARGBToUVRow_NEON(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
+#else
+    ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
+#endif
+  }
+  printf("u: ");
+  for (int i = 0; i < 32; ++i) {
+    printf("%3d ", (int)dest_u[i]);
+  }
+  printf("\nv: ");
+  for (int i = 0; i < 32; ++i) {
+    printf("%3d ", (int)dest_v[i]);
+  }
+  printf("\n");
+
+  uint32_t checksum_u = HashDjb2(&dest_u[0], sizeof(dest_u), 5381);
+  EXPECT_EQ(192508756u, checksum_u);
+  uint32_t checksum_v = HashDjb2(&dest_v[0], sizeof(dest_v), 5381);
+  EXPECT_EQ(2590663990u, checksum_v);
+}
+#endif
+
 #if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
 TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   // The width and height are chosen as follows:
