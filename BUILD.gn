@@ -236,6 +236,8 @@ if (libyuv_use_neon) {
 
     public_configs = [ ":libyuv_config" ]
 
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
     if (current_cpu == "arm64") {
       cflags = [ "-march=armv8-a+dotprod+i8mm" ]
     } else {
@@ -253,6 +255,8 @@ if (libyuv_use_sve) {
 
     public_configs = [ ":libyuv_config" ]
 
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
     # SVE2 is an Armv9-A feature.
     cflags = [ "-march=armv9-a+i8mm+sve2" ]
   }
@@ -270,6 +274,8 @@ if (libyuv_use_sme) {
 
     public_configs = [ ":libyuv_config" ]
 
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
     # SME is an Armv9-A feature.
     cflags = [ "-march=armv9-a+i8mm+sme" ]
   }
