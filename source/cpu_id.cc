@@ -23,7 +23,7 @@
 #include <stdio.h>  // For fopen()
 #include <string.h>
 
-#if defined(__linux__) && defined(__aarch64__)
+#if defined(__linux__) && (defined(__aarch64__) || defined(__loongarch__))
 #include <sys/auxv.h>  // For getauxval()
 #endif
 
@@ -388,21 +388,20 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
   return flag;
 }
 
-#define LOONGARCH_CFG2 0x2
-#define LOONGARCH_CFG2_LSX (1 << 6)
-#define LOONGARCH_CFG2_LASX (1 << 7)
+#if defined(__loongarch__) && defined(__linux__)
+// Define hwcap values ourselves: building with an old auxv header where these
+// hwcap values are not defined should not prevent features from being enabled.
+#define YUV_LOONGARCH_HWCAP_LSX (1 << 4)
+#define YUV_LOONGARCH_HWCAP_LASX (1 << 5)
 
-#if defined(__loongarch__)
 LIBYUV_API SAFEBUFFERS int LoongarchCpuCaps(void) {
   int flag = 0;
-  uint32_t cfg2 = 0;
+  unsigned long hwcap = getauxval(AT_HWCAP);
 
-  __asm__ volatile("cpucfg %0, %1 \n\t" : "+&r"(cfg2) : "r"(LOONGARCH_CFG2));
-
-  if (cfg2 & LOONGARCH_CFG2_LSX)
+  if (hwcap & YUV_LOONGARCH_HWCAP_LSX)
     flag |= kCpuHasLSX;
 
-  if (cfg2 & LOONGARCH_CFG2_LASX)
+  if (hwcap & YUV_LOONGARCH_HWCAP_LASX)
     flag |= kCpuHasLASX;
   return flag;
 }
