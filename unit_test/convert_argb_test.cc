@@ -2808,13 +2808,41 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   //   variant of the conversion function.
   const int kWidth = 1073741823;
   const int kHeight = 2;
+
+#if defined(__aarch64__)
+  // Infer malloc can accept a large size for cpu with dot product (a76/a55)
+  int has_large_malloc = TestCpuFlag(kCpuHasNeonDotProd);
+#else
+  int has_large_malloc = 1;
+#endif
+  if (!has_large_malloc) {
+    printf("WARNING: Skipped.  Large allocation may assert for %ld\n", (size_t)kWidth * kHeight);
+    return;
+  }
+
   // Allocate one extra column so that the coalesce optimizations do not trigger
   // in convert_argb.cc (they are triggered only when stride is equal to width).
   const size_t kStride = kWidth + 1;
+
+  printf("WARNING: attempting to allocate I400 image of %zd bytes\n", (size_t)kWidth * kHeight);
+  fflush(stdout);
   align_buffer_page_end(orig_i400, (size_t)kWidth * kHeight);
-  ASSERT_NE(orig_i400, nullptr);
+  if (!orig_i400) {
+    printf("WARNING: unable to allocate I400 image of %zd bytes\n", (size_t)kWidth * kHeight);
+    fflush(stdout);
+    return;
+  }
+  printf("INFO: allocate I400 image returned %p\n", orig_i400);
+  fflush(stdout);
   align_buffer_page_end(dest_argb, (size_t)kWidth * kHeight * 4);
-  ASSERT_NE(dest_argb, nullptr);
+  if (!dest_argb) {
+    printf("WARNING: unable to allocate ARGB image of %zd bytes\n", (size_t)kWidth * kHeight * 4);
+    fflush(stdout);
+    free_aligned_buffer_page_end(orig_i400);
+    return;
+  }
+  printf("INFO: allocate ARGB image returned %p\n", dest_argb);
+  fflush(stdout);
   for (int i = 0; i < kWidth * kHeight; ++i) {
     orig_i400[i] = i % 256;
   }
