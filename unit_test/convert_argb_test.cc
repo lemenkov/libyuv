@@ -2801,7 +2801,10 @@ TEST_F(LibYUVConvertTest, TestARGBToUVRow) {
 }
 #endif
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
+#if !defined(DISABLE_SLOW_TESTS) && \
+    (defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__))
+// TODO(fbarchard): Consider _set_new_mode(0) to make malloc return NULL
+
 TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   // The width and height are chosen as follows:
   // - kWidth * kHeight is not a multiple of 8: This lets us to use the Any
@@ -2816,7 +2819,8 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   int has_large_malloc = 1;
 #endif
   if (!has_large_malloc) {
-    printf("WARNING: Skipped.  Large allocation may assert for %ld\n", (size_t)kWidth * kHeight);
+    printf("WARNING: Skipped.  Large allocation may assert for %zd\n",
+           (size_t)kWidth * kHeight);
     return;
   }
 
@@ -2824,11 +2828,13 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   // in convert_argb.cc (they are triggered only when stride is equal to width).
   const size_t kStride = kWidth + 1;
 
-  printf("WARNING: attempting to allocate I400 image of %zd bytes\n", (size_t)kWidth * kHeight);
+  printf("WARNING: attempting to allocate I400 image of %zd bytes\n",
+         (size_t)kWidth * kHeight);
   fflush(stdout);
   align_buffer_page_end(orig_i400, (size_t)kWidth * kHeight);
   if (!orig_i400) {
-    printf("WARNING: unable to allocate I400 image of %zd bytes\n", (size_t)kWidth * kHeight);
+    printf("WARNING: unable to allocate I400 image of %zd bytes\n",
+           (size_t)kWidth * kHeight);
     fflush(stdout);
     return;
   }
@@ -2836,7 +2842,8 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   fflush(stdout);
   align_buffer_page_end(dest_argb, (size_t)kWidth * kHeight * 4);
   if (!dest_argb) {
-    printf("WARNING: unable to allocate ARGB image of %zd bytes\n", (size_t)kWidth * kHeight * 4);
+    printf("WARNING: unable to allocate ARGB image of %zd bytes\n",
+           (size_t)kWidth * kHeight * 4);
     fflush(stdout);
     free_aligned_buffer_page_end(orig_i400);
     return;

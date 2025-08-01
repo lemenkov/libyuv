@@ -179,13 +179,6 @@ int main(int argc, const char* argv[]) {
     cpu_info[3] = 0;
     printf("Cpu Vendor: %s\n", (char*)(&cpu_info[0]));
 
-    for (int n = 0; n < num_cpus; ++n) {
-      // Check EDX bit 15 for hybrid design indication
-      CpuId(7, n, &cpu_info[0]);
-      int hybrid = (cpu_info[3] >> 15) & 1;
-      printf("  Cpu %d Hybrid %d\n", n, hybrid);
-    }
-
     // CPU Family and Model
     // 3:0 - Stepping
     // 7:4 - Model

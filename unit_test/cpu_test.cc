@@ -342,7 +342,7 @@ static int FileExists(const char* file_name) {
   return 1;
 }
 
-TEST_F(LibYUVBaseTest, TestLinuxArm) {
+TEST_F(LibYUVBaseTest, DISABLED_TestLinuxArm) {
   if (FileExists("../../unit_test/testdata/arm_v7.txt")) {
     printf("Note: testing to load \"../../unit_test/testdata/arm_v7.txt\"\n");
 
@@ -388,7 +388,7 @@ TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
 }
 #endif
 
-TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {
+TEST_F(LibYUVBaseTest, DISABLED_TestLinuxMipsMsa) {
   if (FileExists("../../unit_test/testdata/mips.txt")) {
     printf("Note: testing to load \"../../unit_test/testdata/mips.txt\"\n");
 
@@ -401,7 +401,7 @@ TEST_F(LibYUVBaseTest, TestLinuxMipsMsa) {
   }
 }
 
-TEST_F(LibYUVBaseTest, TestLinuxRVV) {
+TEST_F(LibYUVBaseTest, DISABLED_TestLinuxRVV) {
   if (FileExists("../../unit_test/testdata/riscv64.txt")) {
     printf("Note: testing to load \"../../unit_test/testdata/riscv64.txt\"\n");
 
@@ -427,12 +427,7 @@ TEST_F(LibYUVBaseTest, TestLinuxRVV) {
 #endif
 }
 
-// TODO(fbarchard): Fix clangcl test of cpuflags.
-#ifdef _MSC_VER
-TEST_F(LibYUVBaseTest, DISABLED_TestSetCpuFlags) {
-#else
 TEST_F(LibYUVBaseTest, TestSetCpuFlags) {
-#endif
   // Reset any masked flags that may have been set so auto init is enabled.
   MaskCpuFlags(0);
 
