@@ -184,7 +184,7 @@ void I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
 // 32 bit
 #else  // defined(_M_X64)
 
-// if HAS_ARGBTOUVROW_SSSE3
+// ifdef HAS_ARGBTOUVROW_SSSE3
 
 // 8 bit fixed point 0.5, for bias of UV.
 static const ulvec8 kBiasUV128 = {
