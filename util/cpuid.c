@@ -8,15 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// For hybrid detect.
+#if defined(__linux__) && !defined(_GNU_SOURCE) && \
+  (defined(__i386__) || defined(__x86_64__))
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef __linux__
 #include <ctype.h>
+#include <pthread.h>
 #include <sys/utsname.h>
 #include <unistd.h>  // for sysconf
+#include <sched.h>  // For hybrid detect CPU_ZERO()
 #endif
+
+// For hybrid detect
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+    defined(_M_X64)
+#include <stdbool.h>
+#endif  // defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+        // defined(_M_X64)
+
 #if defined(_WIN32)
 #include <windows.h>  // for GetSystemInfo
 #endif
@@ -26,12 +42,122 @@
 
 #include "libyuv/cpu_id.h"
 
-#ifdef __cplusplus
-using namespace libyuv;
-#endif
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+    defined(_M_X64)
+// Start of Intel Hybrid Detect
 
-#ifdef __linux__
-static void KernelVersion(int* version) {
+// test Intel and AMD cpuid flags for hybrid cpu
+void isHybridCPU(bool* isaHybrid) {
+  int cpu_info[4];
+
+  // Check EDX bit 15 for hybrid design indication
+  CpuId(7, 0, &cpu_info[0]);
+  int hybrid = (cpu_info[3] >> 15) & 1;
+
+  if (hybrid) {
+    *isaHybrid = true;
+  } else {
+    *isaHybrid = false;
+  }
+}
+
+// tests Intel and AMD cpuid flags for performance core
+// 0x40 = performance core, 0x20 = efficient core
+bool isPerformanceCore(void) {
+  int cpu_info[4];
+
+  // Check EDX bit 15 for hybrid design indication
+  CpuId(0x1A, 0, &cpu_info[0]);
+
+  // core type from eax 24-31
+  int core_type = (cpu_info[0] >> 24) & 0xFF;
+  bool isaPCore = core_type != 0x20;
+  return isaPCore;
+}
+
+// TODO(fbarchard): Use common function to query Nth core
+#if defined(__linux__)
+void* core_thread(void* arg) {
+  int core_id = *(int*)arg;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(core_id, &cpuset);
+  pthread_t thread = pthread_self();
+  bool runningCoreThread;
+  if (pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset) == 0) {
+    runningCoreThread = true;
+  } else {
+    runningCoreThread = false;
+  }
+  // confirm affinity
+  CPU_ZERO(&cpuset);
+  pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+  printf("thread running on cpu: ");
+  for (int i = 0; i < CPU_SETSIZE; i++) {
+    if (CPU_ISSET(i, &cpuset)) {
+      printf("%d ", i);
+      if (runningCoreThread) {
+        const bool isaPerformanceCore = isPerformanceCore();
+        if (isaPerformanceCore) {
+          printf("Core[%d] - Performance\n", i);
+        } else {
+          printf("Core[%d] - Efficient\n", i);
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+#endif  // defined(__linux__)
+
+// Detect cpuid for Nth core
+void detectCoreType(int num_cpus) {
+#if defined(_WIN32)
+  for (int i = 0; i < num_cpus; i++) {
+    HANDLE hThread = NULL;
+    DWORD_PTR prevThreadPtr = 0;
+    DWORD_PTR affinityMask = 0;
+
+    hThread = GetCurrentThread();
+    affinityMask = 1ULL << i;  // Select core (0-based index)
+    prevThreadPtr = SetThreadAffinityMask(hThread, affinityMask);
+    if (prevThreadPtr != 0) {
+      const bool isaPerformanceCore = isPerformanceCore();
+      if (isaPerformanceCore) {
+        printf("Core[%d] - Performance\n", i);
+      } else {
+        printf("Core[%d] - Efficient\n", i);
+      }
+    } else {
+      printf("Core[%d] - Error setting affinity\n", i);
+    }
+  }
+#elif defined(__linux__)
+  pthread_t thread_id;
+  int core_id;
+
+  for (int i = 0; i < num_cpus; i++) {
+    core_id = i;
+    if (pthread_create(&thread_id, NULL, core_thread, &core_id) != 0) {
+      printf("WARNING: Error creating thread %d\n", i);
+      fflush(stdout);
+      return;
+    }
+    if (pthread_join(thread_id, NULL) != 0) {
+      printf("WARNING: Error joining thread %d\n", i);
+      fflush(stdout);
+      return;
+    }
+  }
+#endif
+}
+// End of Hybrid Detect
+#endif  // defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+       // defined(_M_X64)
+
+#if defined(__linux__)
+void KernelVersion(int version[2]) {
   struct utsname buffer;
   int i = 0;
 
@@ -45,12 +171,11 @@ static void KernelVersion(int* version) {
     }
   }
 }
-#endif
+#endif  // defined(__linux__)
 
 int main(int argc, const char* argv[]) {
   (void)argc;
   (void)argv;
-
 #if defined(__linux__)
   {
     int kernelversion[2];
@@ -178,6 +303,8 @@ int main(int argc, const char* argv[]) {
     cpu_info[1] = cpu_info[3];
     cpu_info[3] = 0;
     printf("Cpu Vendor: %s\n", (char*)(&cpu_info[0]));
+
+    detectCoreType(num_cpus);
 
     // CPU Family and Model
     // 3:0 - Stepping

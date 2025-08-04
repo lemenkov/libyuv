@@ -2859,7 +2859,8 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   free_aligned_buffer_page_end(dest_argb);
   free_aligned_buffer_page_end(orig_i400);
 }
-#endif  // defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
+#endif  // !defined(DISABLE_SLOW_TESTS) && \
+        // (defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__))
 
 #endif  // !defined(LEAN_TESTS)
 
