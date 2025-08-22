@@ -13,7 +13,7 @@ vars = {
   # reclient CIPD package version
   'reclient_version': 're_client_version:0.178.0.5ee9d3e8-gomaip',
   # siso CIPD package version.
-  'siso_version': 'git_revision:d9393c2115244b6e4a797189055e4a2b6769a64d',
+  'siso_version': 'git_revision:15568691576f74b11a3c73c85a3c8dd5efb72f05',
   # Fetch configuration files required for the 'use_remoteexec' gn arg
   'download_remoteexec_cfg': False,
   # RBE instance to use for running remote builds
@@ -353,7 +353,7 @@ deps = {
   'src/third_party/siso/cipd': {
     'packages': [
       {
-        'package': 'infra/build/siso/${{platform}}',
+        'package': 'build/siso/${{platform}}',
         'version': Var('siso_version'),
       }
     ],
