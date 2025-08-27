@@ -212,7 +212,6 @@ def libyuv_ci_builder(name, dimensions, properties, triggered_by):
         executable = luci.recipe(
             name = "libyuv/libyuv",
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
-            use_python3 = True,
         ),
     )
 
@@ -229,7 +228,6 @@ def libyuv_try_builder(name, dimensions, properties, recipe_name = "libyuv/libyu
         executable = luci.recipe(
             name = recipe_name,
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
-            use_python3 = True,
         ),
     )
 
@@ -290,7 +288,6 @@ luci.builder(
     executable = luci.recipe(
         name = "libyuv/roll_deps",
         cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
-        use_python3 = True,
     ),
 )
 
