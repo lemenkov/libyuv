@@ -1744,8 +1744,16 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
   asm volatile(
       "pcmpeqb     %%xmm4,%%xmm4                 \n"  // 0x0101
       "pabsb       %%xmm4,%%xmm4                 \n"
-      "movdqa      %5,%%xmm6                     \n"  // ARGB to U
-      "movdqa      %6,%%xmm7                     \n"  // ARGB to V
+      "movdqa      %0,%%xmm6                     \n"  // ARGB to U
+      "movdqa      %1,%%xmm7                     \n"  // ARGB to V
+      :
+      :
+        "m"(rgbuvconstants->kRGBToU),      // %0
+        "m"(rgbuvconstants->kRGBToV)       // %1
+      : "memory", "cc");
+
+  asm volatile(
+
       "sub         %1,%2                         \n"
 
       LABELALIGN
@@ -1786,7 +1794,7 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
       "pmaddubsw   %%xmm7,%%xmm1                 \n"  // v
       "phaddw      %%xmm1,%%xmm0                 \n"  // uuuuvvvv
 
-      "movdqa      %7,%%xmm2                     \n"  // 0x8000
+      "movdqa      %5,%%xmm2                     \n"  // 0x8000
       "psubw       %%xmm0,%%xmm2                 \n"  // unsigned 0 to 0xffff
       "psrlw       $0x8,%%xmm2                   \n"
       "packuswb    %%xmm2,%%xmm2                 \n"
@@ -1807,9 +1815,7 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
         "+rm"(width)  // %3
 #endif
       : "r"((intptr_t)(src_stride_argb)),  // %4
-        "m"(rgbuvconstants->kRGBToU),      // %5
-        "m"(rgbuvconstants->kRGBToV),      // %6
-        "m"(kAddUV128)                     // %7
+        "m"(kAddUV128)                     // %5
 
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
