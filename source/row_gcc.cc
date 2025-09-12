@@ -1822,6 +1822,86 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBTOUVROW_SSSE3
 
+#ifdef HAS_ARGBTOUVROW_AVX2
+
+// UYVY shuf 8 UV to 16 UV.
+static const vec8 kShuffleAARRGGBB = {0, 4,  1, 5,  2,  6,  3,  7,
+   8, 12,  9, 13,  10,  14,  11,  15};
+
+// 16x2 -> 8x1 ARGB pixels converted to 8 U and 8 V
+// ARGBToUV does rounding average of 4 ARGB pixels
+void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
+                             int src_stride_argb,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width,
+                             const struct RgbUVConstants* rgbuvconstants) {
+  asm volatile(
+      "vbroadcastf128 %7,%%ymm15                 \n"  // kShuffleAARRGGBB
+      "vpcmpeqb    %%ymm14,%%ymm14,%%ymm14       \n"  // 0x0101
+      "vpabsb      %%ymm14,%%ymm14               \n"
+      "vpxor       %%ymm13,%%ymm13,%%ymm13       \n"  // 0 for vpavgw
+
+      "vbroadcastf128 %5,%%ymm6                  \n"  // RGBToU
+      "vbroadcastf128 %6,%%ymm7                  \n"  // RGBToV
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // 0x8000
+      "vpsllw      $15,%%ymm5,%%ymm5             \n"
+
+      "sub         %1,%2                         \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%0),%%ymm8                   \n"  // Read 16x2 ARGB Pixels
+      "vmovdqu     0x20(%0),%%ymm9               \n"
+      "vmovdqu     0x00(%0,%4,1),%%ymm10         \n"
+      "vmovdqu     0x20(%0,%4,1),%%ymm11         \n"
+      "vpshufb     %%ymm15,%%ymm8,%%ymm8         \n"  // aarrggbb
+      "vpshufb     %%ymm15,%%ymm9,%%ymm9         \n"
+      "vpshufb     %%ymm15,%%ymm10,%%ymm10       \n"
+      "vpshufb     %%ymm15,%%ymm11,%%ymm11       \n"
+      "vpmaddubsw  %%ymm14,%%ymm8,%%ymm8         \n"  // 16x2 -> 8x2
+      "vpmaddubsw  %%ymm14,%%ymm9,%%ymm9         \n"
+      "vpmaddubsw  %%ymm14,%%ymm10,%%ymm10       \n"
+      "vpmaddubsw  %%ymm14,%%ymm11,%%ymm11       \n"
+      "vpaddw      %%ymm8,%%ymm10,%%ymm8         \n"  // 8x2 -> 8x1
+      "vpaddw      %%ymm9,%%ymm11,%%ymm9         \n"
+      "vpsrlw      $1,%%ymm8,%%ymm8              \n"
+      "vpsrlw      $1,%%ymm9,%%ymm9              \n"
+      "vpavgw      %%ymm13,%%ymm8,%%ymm8         \n"
+      "vpavgw      %%ymm13,%%ymm9,%%ymm9         \n"
+      "vpackuswb   %%ymm9,%%ymm8,%%ymm0          \n"  // mutates
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"  // 8 ARGB Pixels
+
+      "vpmaddubsw  %%ymm7,%%ymm0,%%ymm1          \n"  // 8 V
+      "vpmaddubsw  %%ymm6,%%ymm0,%%ymm0          \n"  // 8 U
+      "vphaddw     %%ymm1,%%ymm0,%%ymm0          \n"  // uuuuvvvv uuuuvvvv
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"  // uuuuuuuu vvvvvvvv
+      "vpsubw      %%ymm0,%%ymm5,%%ymm2          \n"
+      "vpsrlw      $0x8,%%ymm2,%%ymm2            \n"
+      "vpackuswb   %%ymm2,%%ymm2,%%ymm2          \n"  // mutates 8U8u- 8V8v
+      "vmovq       %%xmm2,(%1)                   \n"  // Write 8 U's
+      "vextractf128 $0x1,%%ymm2,%%xmm2           \n"  // Copy V to low 8 bytes
+      "vmovq       %%xmm2,0x00(%1,%2,1)          \n"  // Write 8 V's
+
+      "lea         0x40(%0),%0                   \n"
+      "lea         0x8(%1),%1                    \n"
+      "subl        $0x10,%3                      \n"
+      "jg          1b                           \n"
+      "vzeroupper  \n"
+      : "+r"(src_argb),  // %0
+        "+r"(dst_u),     // %1
+        "+r"(dst_v),     // %2
+        "+r"(width)      // %3
+      : "r"((intptr_t)(src_stride_argb)),  // %4
+        "m"(rgbuvconstants->kRGBToU),      // %5
+        "m"(rgbuvconstants->kRGBToV),      // %6
+        "m"(kShuffleAARRGGBB)              // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm5", "xmm6", "xmm7",
+                        "xmm8", "xmm9", "xmm10", "xmm11", "xmm13", "xmm14", "xmm15");
+}
+#endif  // HAS_ARGBTOUVROW_AVX2
+
+
 #ifdef HAS_ARGBTOUV444ROW_SSSE3
 
 // RGB to BT601 coefficients
@@ -1854,6 +1934,18 @@ void ARGBToUV444Row_AVX2(const uint8_t* src_argb,
                             &kARGBI601UVConstants);
 }
 #endif  // HAS_ARGBTOUV444ROW_AVX2
+
+#ifdef HAS_ARGBTOUVROW_AVX2
+void ARGBToUVRow_AVX2(const uint8_t* src_argb,
+                       int src_stride_argb,
+                       uint8_t* dst_u,
+                       uint8_t* dst_v,
+                       int width) {
+  ARGBToUVMatrixRow_AVX2(src_argb, src_stride_argb, dst_u, dst_v, width,
+                          &kARGBI601UVConstants);
+}
+#endif  // HAS_ARGBTOUVROW_AVX2
+
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 void ARGBToUVRow_SSSE3(const uint8_t* src_argb,
@@ -3089,7 +3181,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "lea        0x20(%[y_buf]),%[y_buf]                             \n"
 
 // Read 8 UV from 210, upsample to 16 UV
-// TODO(fbarchard): Consider vshufb to replace pack/unpack
+// TODO(fbarchard): Consider vpshufb to replace pack/unpack
 // TODO(fbarchard): Consider vunpcklpd to combine the 2 registers into 1.
 #define READYUV210_AVX2                                            \
   "vmovdqu    (%[u_buf]),%%xmm3                                \n" \

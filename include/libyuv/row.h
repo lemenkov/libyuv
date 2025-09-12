@@ -350,7 +350,7 @@ extern "C" {
 // #define HAS_ABGRTOUVJROW_AVX2
 // #define HAS_ABGRTOUVROW_AVX2
 // #define HAS_ARGBTOUVJROW_AVX2
-// #define HAS_ARGBTOUVROW_AVX2
+#define HAS_ARGBTOUVROW_AVX2
 
 #if defined(__x86_64__) || !defined(__pic__)
 // TODO(fbarchard): fix build error on android_full_debug=1
