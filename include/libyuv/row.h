@@ -909,11 +909,6 @@ extern "C" {
 #define HAS_RAWTOYJROW_LASX
 #endif
 
-#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 12000 && \
-    !defined(LIBYUV_DISABLE_RVV)
-#define LIBYUV_DISABLE_RVV 1
-#endif
-
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic > 11000
 // Since v0.12, TUPLE_TYPE is introduced for segment load and store.
