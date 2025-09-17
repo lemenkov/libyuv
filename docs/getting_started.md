@@ -178,10 +178,10 @@ Running test with C code:
 
 ### MIPS Linux
 
-   gn gen out/Release "--args=is_debug=false target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" is_component_build=false use_sysroot=false use_gold=false"
-   gn gen out/Debug "--args=is_debug=true target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" is_component_build=false use_sysroot=false use_gold=false"
-   ninja -v -C out/Debug libyuv_unittest
-   ninja -v -C out/Release libyuv_unittest
+    gn gen out/Release "--args=is_debug=false target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" is_component_build=false use_sysroot=false use_gold=false"
+    gn gen out/Debug "--args=is_debug=true target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" is_component_build=false use_sysroot=false use_gold=false"
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 ## Building the Library with make
 
