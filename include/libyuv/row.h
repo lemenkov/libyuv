@@ -288,13 +288,10 @@ extern "C" {
     (defined(__x86_64__) || defined(__i386__)) &&         \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)) && \
     !defined(LIBYUV_ENABLE_ROWWIN)
-#define HAS_RAWTOYJROW_AVX2
-#define HAS_RGB24TOYJROW_AVX2
-
-#define HAS_ARGBTOYJROW_AVX2
-#define HAS_ARGBTOYROW_AVX2
 #define HAS_AB64TOARGBROW_AVX2
 #define HAS_ABGRTOAR30ROW_AVX2
+#define HAS_ABGRTOUVJROW_AVX2
+#define HAS_ABGRTOUVROW_AVX2
 #define HAS_ABGRTOYJROW_AVX2
 #define HAS_ABGRTOYROW_AVX2
 #define HAS_AR64TOARGBROW_AVX2
@@ -306,6 +303,10 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_AVX2
 #define HAS_ARGBTOUV444ROW_AVX2
 #define HAS_ARGBTOUVJ444ROW_AVX2
+#define HAS_ARGBTOUVJROW_AVX2
+#define HAS_ARGBTOUVROW_AVX2
+#define HAS_ARGBTOYJROW_AVX2
+#define HAS_ARGBTOYROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
@@ -339,6 +340,8 @@ extern "C" {
 #define HAS_P210TOARGBROW_AVX2
 #define HAS_P410TOAR30ROW_AVX2
 #define HAS_P410TOARGBROW_AVX2
+#define HAS_RAWTOYJROW_AVX2
+#define HAS_RGB24TOYJROW_AVX2
 #define HAS_RGBATOYJROW_AVX2
 #define HAS_SPLITARGBROW_AVX2
 #define HAS_SPLITRGBROW_AVX2
@@ -353,18 +356,6 @@ extern "C" {
 #define HAS_I210ALPHATOARGBROW_AVX2
 #define HAS_I410ALPHATOARGBROW_AVX2
 #endif
-#endif
-
-// The following are available for AVX2 gcc/clang x64 platforms:
-// TODO(fbarchard): Port to Visual C
-// TODO(fbarchard): Port to x86 32 bit
-#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) && \
-    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)) &&  \
-    !defined(LIBYUV_ENABLE_ROWWIN)
-#define HAS_ABGRTOUVJROW_AVX2
-#define HAS_ABGRTOUVROW_AVX2
-#define HAS_ARGBTOUVJROW_AVX2
-#define HAS_ARGBTOUVROW_AVX2
 #endif
 
 // The following are available for AVX512 clang x86 platforms:
