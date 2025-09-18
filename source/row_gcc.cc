@@ -1733,6 +1733,13 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
 #endif  // HAS_ARGBTOUV444ROW_AVX2
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
+
+// ARGBARGB to AARRGGBB shuffle
+static const lvec8 kShuffleAARRGGBB = {
+    0, 4, 1, 5, 2, 6, 3, 7, 8, 12, 9, 13, 10, 14, 11, 15,
+    0, 4, 1, 5, 2, 6, 3, 7, 8, 12, 9, 13, 10, 14, 11, 15,
+};
+
 // 8x2 -> 4x1 ARGB pixels converted to 4 U and 4 V
 // ARGBToUV does rounding average of 4 ARGB pixels
 void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
@@ -1742,69 +1749,52 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
                              int width,
                              const struct RgbUVConstants* rgbuvconstants) {
   asm volatile(
-      "pcmpeqb     %%xmm4,%%xmm4                 \n"  // 0x0101
-      "pabsb       %%xmm4,%%xmm4                 \n"
-      "movdqa      %0,%%xmm6                     \n"  // ARGB to U
-      "movdqa      %1,%%xmm7                     \n"  // ARGB to V
-      :
-      : "m"(rgbuvconstants->kRGBToU),  // %0
-        "m"(rgbuvconstants->kRGBToV)   // %1
-      : "memory", "cc");
+      "movdqa     %5,%%xmm4                     \n"  // RGBToU
+      "movdqa     %6,%%xmm5                     \n"  // RGBToV
+      "pcmpeqb    %%xmm6,%%xmm6                 \n"  // 0x0101
+      "pabsb      %%xmm6,%%xmm6                 \n"
+      "movdqa     %7,%%xmm7                     \n"  // kShuffleAARRGGBB
+      "sub         %1,%2                        \n"
 
-  asm volatile(
-
-      "sub         %1,%2                         \n"
-
-      LABELALIGN
       "1:          \n"
-      "movdqu      (%0),%%xmm0                   \n"  // Read 8 ARGB Pixels
-      "movdqu      0x10(%0),%%xmm5               \n"
-      "movdqa      %%xmm0,%%xmm1                 \n"
-      "shufps      $0x88,%%xmm5,%%xmm0           \n"  // Even pixels
-      "shufps      $0xdd,%%xmm5,%%xmm1           \n"  // Odd pixels
-      "movdqa      %%xmm0,%%xmm5                 \n"
-      "punpcklbw   %%xmm1,%%xmm0                 \n"  // aarrgbb
-      "punpckhbw   %%xmm5,%%xmm1                 \n"
-      "pmaddubsw   %%xmm4,%%xmm0                 \n"  // paired add argb
-      "pmaddubsw   %%xmm4,%%xmm1                 \n"
+      "movdqu     (%0),%%xmm0                   \n"  // Read 8x2 ARGB Pixels
+      "movdqu     0x10(%0),%%xmm1               \n"
+      "movdqu     0x00(%0,%4,1),%%xmm2          \n"
+      "movdqu     0x10(%0,%4,1),%%xmm3          \n"
+      "pshufb     %%xmm7,%%xmm0                 \n"  // aarrggbb
+      "pshufb     %%xmm7,%%xmm1                 \n"
+      "pshufb     %%xmm7,%%xmm2                 \n"
+      "pshufb     %%xmm7,%%xmm3                 \n"
+      "pmaddubsw  %%xmm6,%%xmm0                 \n"  // 8x2 -> 4x2
+      "pmaddubsw  %%xmm6,%%xmm1                 \n"
+      "pmaddubsw  %%xmm6,%%xmm2                 \n"
+      "pmaddubsw  %%xmm6,%%xmm3                 \n"
+      "paddw      %%xmm2,%%xmm0                 \n"  // 4x2 -> 4x1
+      "paddw      %%xmm3,%%xmm1                 \n"
+      "pxor       %%xmm2,%%xmm2                 \n"  // 0 for vpavgw
+      "psrlw      $1,%%xmm0                     \n"
+      "psrlw      $1,%%xmm1                     \n"
+      "pavgw      %%xmm2,%%xmm0                 \n"
+      "pavgw      %%xmm2,%%xmm1                 \n"
+      "packuswb   %%xmm1,%%xmm0                 \n"  // mutates
 
-      "movdqu      0x00(%0,%4,1),%%xmm2          \n"  // Read 2nd row
-      "movdqu      0x10(%0,%4,1),%%xmm5          \n"
-      "movdqa      %%xmm2,%%xmm3                 \n"
-      "shufps      $0x88,%%xmm5,%%xmm2           \n"  // Even
-      "shufps      $0xdd,%%xmm5,%%xmm3           \n"  // Odd pixels
-      "movdqa      %%xmm2,%%xmm5                 \n"
-      "punpcklbw   %%xmm3,%%xmm2                 \n"  // aarrgbb
-      "punpckhbw   %%xmm5,%%xmm3                 \n"
-      "pmaddubsw   %%xmm4,%%xmm2                 \n"  // argb
-      "pmaddubsw   %%xmm4,%%xmm3                 \n"
+      "movdqa     %%xmm6,%%xmm2                 \n"
+      "psllw      $15,%%xmm2                    \n"  // 0x8000
+      "movdqa     %%xmm0,%%xmm1                 \n"
+      "pmaddubsw  %%xmm5,%%xmm1                 \n"  // 4 V
+      "pmaddubsw  %%xmm4,%%xmm0                 \n"  // 4 U
+      "phaddw     %%xmm1,%%xmm0                 \n"  // uuuuvvvv
+      "psubw      %%xmm0,%%xmm2                 \n"
+      "psrlw      $0x8,%%xmm2                   \n"
+      "packuswb   %%xmm2,%%xmm2                 \n"
+      "movd       %%xmm2,(%1)                   \n"  // Write 4 U's
+      "pshufd     $0x55,%%xmm2,%%xmm2           \n"  // Copy V to low 4 bytes
+      "movd       %%xmm2,0x00(%1,%2,1)          \n"  // Write 4 V's
 
-      "pxor        %%xmm5,%%xmm5                 \n"  // constant 0 for pavgw
-      "paddw       %%xmm2,%%xmm0                 \n"
-      "paddw       %%xmm3,%%xmm1                 \n"
-      "psrlw       $1,%%xmm0                     \n"  // round
-      "psrlw       $1,%%xmm1                     \n"
-      "pavgw       %%xmm5,%%xmm0                 \n"
-      "pavgw       %%xmm5,%%xmm1                 \n"
-      "packuswb    %%xmm1,%%xmm0                 \n"  // 4 ARGB pixels
-
-      "movdqa      %%xmm0,%%xmm1                 \n"
-      "pmaddubsw   %%xmm6,%%xmm0                 \n"  // u
-      "pmaddubsw   %%xmm7,%%xmm1                 \n"  // v
-      "phaddw      %%xmm1,%%xmm0                 \n"  // uuuuvvvv
-
-      "movdqa      %5,%%xmm2                     \n"  // 0x8000
-      "psubw       %%xmm0,%%xmm2                 \n"  // unsigned 0 to 0xffff
-      "psrlw       $0x8,%%xmm2                   \n"
-      "packuswb    %%xmm2,%%xmm2                 \n"
-      "movd        %%xmm2,(%1)                   \n"  // Write 4 U's
-      "shufps      $0xdd,%%xmm2,%%xmm2           \n"
-      "movd        %%xmm2,0x00(%1,%2,1)          \n"  // Write 4 V's
-
-      "lea         0x20(%0),%0                   \n"
-      "lea         0x4(%1),%1                    \n"
-      "subl        $0x8,%3                       \n"
-      "jg          1b                            \n"
+      "lea         0x20(%0),%0                  \n"
+      "lea         0x4(%1),%1                   \n"
+      "subl        $0x8,%3                      \n"
+      "jg          1b                           \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_u),     // %1
         "+r"(dst_v),     // %2
@@ -1814,20 +1804,16 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
         "+rm"(width)  // %3
 #endif
       : "r"((intptr_t)(src_stride_argb)),  // %4
-        "m"(kAddUV128)                     // %5
-
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+        "m"(rgbuvconstants->kRGBToU),      // %5
+        "m"(rgbuvconstants->kRGBToV),      // %6
+        "m"(kShuffleAARRGGBB)              // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+                        "xmm6", "xmm7");
 }
+
 #endif  // HAS_ARGBTOUVROW_SSSE3
 
 #ifdef HAS_ARGBTOUVROW_AVX2
-
-// ARGBARGB to AARRGGBB shuffle
-static const lvec8 kShuffleAARRGGBB = {
-    0, 4, 1, 5, 2, 6, 3, 7, 8, 12, 9, 13, 10, 14, 11, 15,
-    0, 4, 1, 5, 2, 6, 3, 7, 8, 12, 9, 13, 10, 14, 11, 15,
-};
 
 // 16x2 -> 8x1 ARGB pixels converted to 8 U and 8 V
 // ARGBToUV does rounding average of 4 ARGB pixels
@@ -1888,7 +1874,11 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
       : "+r"(src_argb),  // %0
         "+r"(dst_u),     // %1
         "+r"(dst_v),     // %2
-        "+r"(width)      // %3
+#if defined(__i386__)
+        "+m"(width)  // %3
+#else
+        "+rm"(width)  // %3
+#endif
       : "r"((intptr_t)(src_stride_argb)),  // %4
         "m"(rgbuvconstants->kRGBToU),      // %5
         "m"(rgbuvconstants->kRGBToV),      // %6
