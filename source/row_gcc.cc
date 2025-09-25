@@ -9,6 +9,9 @@
  */
 
 #include "libyuv/row.h"
+#if defined(__i386__) && defined(__pic__)
+#include <string.h>
+#endif
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -1748,6 +1751,18 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
                              uint8_t* dst_v,
                              int width,
                              const struct RgbUVConstants* rgbuvconstants) {
+#if defined(__i386__) && defined(__pic__)
+  // i386 + PIC builds: Inline asm may run out of general-purpose registers.
+  // In PIC, EBX is reserved for the GOT (and with a frame pointer EBP is also
+  // unavailable), so addressing struct fields via memory operands can require
+  // extra temporaries that the compiler cannot allocate given the asm constraints.
+  // To avoid this, copy the RGB-to-UV constants to stack locals first and let the
+  // asm use simple stack-relative addressing.
+  __attribute__((aligned(16))) vec8 local_kRGBToU = {};
+  __attribute__((aligned(16))) vec8 local_kRGBToV = {};
+  memcpy(&local_kRGBToU, &rgbuvconstants->kRGBToU, sizeof(local_kRGBToU));
+  memcpy(&local_kRGBToV, &rgbuvconstants->kRGBToV, sizeof(local_kRGBToV));
+#endif
   asm volatile(
       "movdqa     %5,%%xmm4                     \n"  // RGBToU
       "movdqa     %6,%%xmm5                     \n"  // RGBToV
@@ -1804,8 +1819,13 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
         "+rm"(width)  // %3
 #endif
       : "r"((intptr_t)(src_stride_argb)),  // %4
+#if defined(__i386__) && defined(__pic__)
+        "m"(local_kRGBToU),                // %5
+        "m"(local_kRGBToV),                // %6
+#else  // defined(__i386__) && defined(__pic__)
         "m"(rgbuvconstants->kRGBToU),      // %5
         "m"(rgbuvconstants->kRGBToV),      // %6
+#endif  // defined(__i386__) && defined(__pic__)
         "m"(kShuffleAARRGGBB)              // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
                         "xmm6", "xmm7");
@@ -1823,6 +1843,19 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
                              uint8_t* dst_v,
                              int width,
                              const struct RgbUVConstants* rgbuvconstants) {
+#if defined(__i386__) && defined(__pic__)
+  // i386 + PIC builds: Inline asm may run out of general-purpose registers.
+  // In PIC, EBX is reserved for the GOT (and with a frame pointer EBP is also
+  // unavailable), so addressing struct fields via memory operands can require
+  // extra temporaries that the compiler cannot allocate given the asm constraints.
+  // To avoid this, copy the RGB-to-UV constants to stack locals first and let the
+  // asm use simple stack-relative addressing.
+  __attribute__((aligned(32))) vec8 local_kRGBToU = {};
+  __attribute__((aligned(32))) vec8 local_kRGBToV = {};
+  memcpy(&local_kRGBToU, &rgbuvconstants->kRGBToU, sizeof(local_kRGBToU));
+  memcpy(&local_kRGBToV, &rgbuvconstants->kRGBToV, sizeof(local_kRGBToV));
+#endif
+
   asm volatile(
       "vbroadcastf128 %5,%%ymm4                  \n"  // RGBToU
       "vbroadcastf128 %6,%%ymm5                  \n"  // RGBToV
@@ -1880,8 +1913,13 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
         "+rm"(width)  // %3
 #endif
       : "r"((intptr_t)(src_stride_argb)),  // %4
+#if defined(__i386__) && defined(__pic__)
+        "m"(local_kRGBToU),                // %5
+        "m"(local_kRGBToV),                // %6
+#else
         "m"(rgbuvconstants->kRGBToU),      // %5
         "m"(rgbuvconstants->kRGBToV),      // %6
+#endif // defined(__i386__) && defined(__pic__)
         "m"(kShuffleAARRGGBB)              // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
                         "xmm6", "xmm7");
