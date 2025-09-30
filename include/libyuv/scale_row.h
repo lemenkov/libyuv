@@ -157,10 +157,11 @@ extern "C" {
 #define HAS_SCALEARGBROWDOWN2_RVV
 #endif
 
-// The following are available on RVV 1.1
-// TODO: Port to RVV 1.2
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
-    defined(__riscv_v_intrinsic) && __riscv_v_intrinsic == 11000
+    defined(__riscv_v_intrinsic)
+// The following are available on RVV v0.11 and RVV v1.0
+// TODO: Port to RVV v0.12
+#if __riscv_v_intrinsic == 11000 || __riscv_v_intrinsic >= 100000
 #define HAS_SCALEROWDOWN34_0_BOX_RVV
 #define HAS_SCALEROWDOWN34_1_BOX_RVV
 #define HAS_SCALEROWDOWN38_2_BOX_RVV
@@ -171,12 +172,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN38_RVV
 #define HAS_SCALEROWUP2_BILINEAR_RVV
 #define HAS_SCALEROWUP2_LINEAR_RVV
-#endif
 
-// The following are available on RVV
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
-    defined(__riscv_v_intrinsic) && __riscv_v_intrinsic == 11000
-#define HAS_SCALEARGBFILTERCOLS_RVV
 #define HAS_SCALEARGBROWDOWN2BOX_RVV
 #define HAS_SCALEARGBROWDOWN2LINEAR_RVV
 #define HAS_SCALEARGBROWDOWNEVENBOX_RVV
@@ -192,6 +188,12 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2_RVV
 #define HAS_SCALEUVROWDOWN2BOX_RVV
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
+#endif
+
+// The following are available on RVV v0.11
+#if __riscv_v_intrinsic == 11000
+#define HAS_SCALEARGBFILTERCOLS_RVV
+#endif
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.
