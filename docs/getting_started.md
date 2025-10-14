@@ -11,21 +11,7 @@ Refer to chromium instructions for each platform for other prerequisites.
 
 Create a working directory, enter it, and run:
 
-    gclient config --name src https://chromium.googlesource.com/libyuv/libyuv
-    gclient sync
-
-Then you'll get a .gclient file like:
-
-    solutions = [
-      { "name"        : "src",
-        "url"         : "https://chromium.googlesource.com/libyuv/libyuv",
-        "deps_file"   : "DEPS",
-        "managed"     : True,
-        "custom_deps" : {
-        },
-        "safesync_url": "",
-      },
-    ];
+    fetch libyuv
 
 For iOS add `;target_os=['ios'];` to your OSX .gclient and run `gclient sync.`
 
