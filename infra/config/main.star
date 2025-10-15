@@ -5,10 +5,6 @@
 
 lucicfg.check_version("1.30.9")
 
-load("@chromium-luci//xcode.star", _xcode = "xcode")
-
-_XCODE_VERSION = "17a324"
-
 LIBYUV_GIT = "https://chromium.googlesource.com/libyuv/libyuv"
 LIBYUV_GERRIT = "https://chromium-review.googlesource.com/libyuv/libyuv"
 
@@ -248,7 +244,7 @@ def get_os_dimensions(os):
         return {"os": "Ubuntu-22.04", "cores": "8", "cpu": "x86-64"}
     return {}
 
-def libyuv_ci_builder(name, dimensions, properties, triggered_by, caches):
+def libyuv_ci_builder(name, dimensions, properties, triggered_by):
     return luci.builder(
         name = name,
         dimensions = dimensions,
@@ -263,10 +259,9 @@ def libyuv_ci_builder(name, dimensions, properties, triggered_by, caches):
             name = "libyuv/libyuv",
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
         ),
-        caches = caches
     )
 
-def libyuv_try_builder(name, dimensions, properties, caches, recipe_name = "libyuv/libyuv"):
+def libyuv_try_builder(name, dimensions, properties, recipe_name = "libyuv/libyuv"):
     return luci.builder(
         name = name,
         dimensions = dimensions,
@@ -280,23 +275,11 @@ def libyuv_try_builder(name, dimensions, properties, caches, recipe_name = "liby
             name = recipe_name,
             cipd_package = "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
         ),
-        caches = caches
     )
 
-def get_xcode(os):
-  if os == "mac":
-    return _xcode.for_mac(_XCODE_VERSION)
-  if os == "ios":
-    return _xcode.for_ios(_XCODE_VERSION)
-  return None
-
-def get_caches(os):
-  xcode = get_xcode(os)
-  return [xcode.cache] if xcode else []
-
-def get_build_properties(bucket, os):
+def get_build_properties(bucket):
     rbe_project = RBE_PROJECT.get(bucket)
-    properties = {
+    return {
         "$build/siso": {
             "project": rbe_project,
             "configs": ["builder"],
@@ -304,42 +287,39 @@ def get_build_properties(bucket, os):
             "enable_cloud_trace": True,
             "enable_monitoring": True,
         },
+        "$depot_tools/osx_sdk": {
+            "sdk_version": "17a324"
+        },
     }
-    xcode = get_xcode(os)
-    if xcode:
-      properties["xcode_build_version"] = xcode.version
-    return properties
 
 def ci_builder(name, os, category, short_name = None):
     dimensions = get_os_dimensions(os)
-    properties = get_build_properties("ci", os)
+    properties = get_build_properties("ci")
 
     dimensions["pool"] = "luci.flex.ci"
     properties["builder_group"] = "client.libyuv"
 
     triggered_by = ["master-gitiles-trigger" if os != "android" else "Android Debug"]
     libyuv_ci_view(name, category, short_name)
-    caches = get_caches(os)
-    return libyuv_ci_builder(name, dimensions, properties, triggered_by, caches)
+    return libyuv_ci_builder(name, dimensions, properties, triggered_by)
 
 def try_builder(name, os, experiment_percentage = None):
     dimensions = get_os_dimensions(os)
-    properties = get_build_properties("try", os)
+    properties = get_build_properties("try")
 
     dimensions["pool"] = "luci.flex.try"
     properties["builder_group"] = "tryserver.libyuv"
-    caches = get_caches(os)
 
     if name == "presubmit":
         recipe_name = "run_presubmit"
         properties["repo_name"] = "libyuv"
         properties["runhooks"] = True
         libyuv_try_job_verifier(name, "config", experiment_percentage)
-        return libyuv_try_builder(name, dimensions, properties, caches, recipe_name)
+        return libyuv_try_builder(name, dimensions, properties, recipe_name)
 
     libyuv_try_job_verifier(name, "master", experiment_percentage)
     libyuv_try_view(name)
-    return libyuv_try_builder(name, dimensions, properties, caches)
+    return libyuv_try_builder(name, dimensions, properties)
 
 luci.builder(
     name = "DEPS Autoroller",
