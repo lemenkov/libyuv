@@ -173,6 +173,26 @@ luci.bucket(
     ),
 )
 luci.bucket(
+    name = "ci.shadow",
+    shadows = "ci",
+    constraints = luci.bucket_constraints(
+        pools = ["luci.flex.ci"],
+    ),
+    bindings = [
+        # For led permissions.
+        luci.binding(
+            roles = "role/buildbucket.creator",
+            groups = [
+                "chromium-led-users",
+                "mdb/chrome-build-access-sphinx",
+                "mdb/chrome-troopers",
+                "mdb/foundry-x-team",
+            ],
+        ),
+    ],
+    dynamic = True,
+)
+luci.bucket(
     name = "try",
     acls = [
         acl.entry(acl.BUILDBUCKET_TRIGGERER, groups = [
@@ -186,6 +206,26 @@ luci.bucket(
             "libyuv-try-builder@chops-service-accounts.iam.gserviceaccount.com",
         ],
     ),
+)
+luci.bucket(
+    name = "try.shadow",
+    shadows = "try",
+    constraints = luci.bucket_constraints(
+        pools = ["luci.flex.try"],
+    ),
+    bindings = [
+        # For led permissions.
+        luci.binding(
+            roles = "role/buildbucket.creator",
+            groups = [
+                "chromium-led-users",
+                "mdb/chrome-build-access-sphinx",
+                "mdb/chrome-troopers",
+                "mdb/foundry-x-team",
+            ],
+        ),
+    ],
+    dynamic = True,
 )
 luci.bucket(
     name = "cron",
