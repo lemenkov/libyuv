@@ -177,6 +177,9 @@ luci.bucket(
     shadows = "ci",
     constraints = luci.bucket_constraints(
         pools = ["luci.flex.ci"],
+        service_accounts = [
+          "libyuv-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
+        ],
     ),
     bindings = [
         # For led permissions.
@@ -212,6 +215,9 @@ luci.bucket(
     shadows = "try",
     constraints = luci.bucket_constraints(
         pools = ["luci.flex.try"],
+        service_accounts = [
+            "libyuv-try-builder@chops-service-accounts.iam.gserviceaccount.com",
+        ],
     ),
     bindings = [
         # For led permissions.
