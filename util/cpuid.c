@@ -113,15 +113,6 @@ int main(int argc, const char* argv[]) {
   }
 #endif  // defined(__riscv)
 
-#if defined(__mips__)
-  int has_mips = TestCpuFlag(kCpuHasMIPS);
-  if (has_mips) {
-    int has_msa = TestCpuFlag(kCpuHasMSA);
-    printf("Has MIPS 0x%x\n", has_mips);
-    printf("Has MSA 0x%x\n", has_msa);
-  }
-#endif  // defined(__mips__)
-
 #if defined(__loongarch__)
   int has_loongarch = TestCpuFlag(kCpuHasLOONGARCH);
   if (has_loongarch) {

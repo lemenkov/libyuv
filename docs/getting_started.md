@@ -116,13 +116,6 @@ ia32
     ninja -v -C out/Debug libyuv_unittest
     ninja -v -C out/Release libyuv_unittest
 
-mips
-
-    gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true"
-    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true"
-    ninja -v -C out/Debug libyuv_unittest
-    ninja -v -C out/Release libyuv_unittest
-
 arm disassembly:
 
     llvm-objdump -d ./out/Release/obj/libyuv/row_common.o >row_common.txt
@@ -159,13 +152,6 @@ Running test with C code:
 
     gn gen out/Release "--args=is_debug=false target_cpu=\"arm64\""
     gn gen out/Debug "--args=is_debug=true target_cpu=\"arm64\""
-    ninja -v -C out/Debug libyuv_unittest
-    ninja -v -C out/Release libyuv_unittest
-
-### MIPS Linux
-
-    gn gen out/Release "--args=is_debug=false target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" is_component_build=false use_sysroot=false use_gold=false"
-    gn gen out/Debug "--args=is_debug=true target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" is_component_build=false use_sysroot=false use_gold=false"
     ninja -v -C out/Debug libyuv_unittest
     ninja -v -C out/Release libyuv_unittest
 

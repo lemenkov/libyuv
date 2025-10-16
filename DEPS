@@ -1533,13 +1533,6 @@ hooks = [
                '--arch=x86'],
   },
   {
-    'name': 'sysroot_mips',
-    'pattern': '.',
-    'condition': 'checkout_linux and checkout_mips',
-    'action': ['python3', 'src/build/linux/sysroot_scripts/install-sysroot.py',
-               '--arch=mips'],
-  },
-  {
     'name': 'sysroot_x64',
     'pattern': '.',
     'condition': 'checkout_linux and checkout_x64',

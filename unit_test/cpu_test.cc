@@ -151,15 +151,6 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   }
 #endif  // defined(__riscv)
 
-#if defined(__mips__)
-  int has_mips = TestCpuFlag(kCpuHasMIPS);
-  if (has_mips) {
-    int has_msa = TestCpuFlag(kCpuHasMSA);
-    printf("Has MIPS 0x%x\n", has_mips);
-    printf("Has MSA 0x%x\n", has_msa);
-  }
-#endif  // defined(__mips__)
-
 #if defined(__loongarch__)
   int has_loongarch = TestCpuFlag(kCpuHasLOONGARCH);
   if (has_loongarch) {
@@ -291,18 +282,6 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef __llvm__
   printf("__llvm__ %d\n", __llvm__);
 #endif
-#ifdef __mips_msa
-  printf("__mips_msa %d\n", __mips_msa);
-#endif
-#ifdef __mips
-  printf("__mips %d\n", __mips);
-#endif
-#ifdef __mips_isa_rev
-  printf("__mips_isa_rev %d\n", __mips_isa_rev);
-#endif
-#ifdef _MIPS_ARCH_LOONGSON3A
-  printf("_MIPS_ARCH_LOONGSON3A %d\n", _MIPS_ARCH_LOONGSON3A);
-#endif
 #ifdef __loongarch__
   printf("__loongarch__ %d\n", __loongarch__);
 #endif
@@ -387,19 +366,6 @@ TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
   // TODO: Check for SME2 feature detection from Apple M4
 }
 #endif
-
-TEST_F(LibYUVBaseTest, DISABLED_TestLinuxMipsMsa) {
-  if (FileExists("../../unit_test/testdata/mips.txt")) {
-    printf("Note: testing to load \"../../unit_test/testdata/mips.txt\"\n");
-
-    EXPECT_EQ(0, MipsCpuCaps("../../unit_test/testdata/mips.txt"));
-    EXPECT_EQ(kCpuHasMSA, MipsCpuCaps("../../unit_test/testdata/mips_msa.txt"));
-    EXPECT_EQ(kCpuHasMSA,
-              MipsCpuCaps("../../unit_test/testdata/mips_loongson2k.txt"));
-  } else {
-    printf("WARNING: unable to load \"../../unit_test/testdata/mips.txt\"\n");
-  }
-}
 
 TEST_F(LibYUVBaseTest, DISABLED_TestLinuxRVV) {
   if (FileExists("../../unit_test/testdata/riscv64.txt")) {
