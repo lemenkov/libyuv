@@ -60,6 +60,7 @@ int main(int argc, const char* argv[]) {
     int has_neon_i8mm = TestCpuFlag(kCpuHasNeonI8MM);
     int has_sve = TestCpuFlag(kCpuHasSVE);
     int has_sve2 = TestCpuFlag(kCpuHasSVE2);
+    int has_sve_f32mm = TestCpuFlag(kCpuHasSVEF32MM);
     int has_sme = TestCpuFlag(kCpuHasSME);
     int has_sme2 = TestCpuFlag(kCpuHasSME2);
     printf("Has Arm 0x%x\n", has_arm);
@@ -68,6 +69,7 @@ int main(int argc, const char* argv[]) {
     printf("Has Neon I8MM 0x%x\n", has_neon_i8mm);
     printf("Has SVE 0x%x\n", has_sve);
     printf("Has SVE2 0x%x\n", has_sve2);
+    printf("Has SVE F32MM 0x%x\n", has_sve_f32mm);
     printf("Has SME 0x%x\n", has_sme);
     printf("Has SME2 0x%x\n", has_sme2);
 
