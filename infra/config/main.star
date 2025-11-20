@@ -287,9 +287,6 @@ def get_build_properties(bucket):
             "enable_cloud_trace": True,
             "enable_monitoring": True,
         },
-        "$depot_tools/osx_sdk": {
-            "sdk_version": "17a324"
-        },
     }
 
 def ci_builder(name, os, category, short_name = None):
