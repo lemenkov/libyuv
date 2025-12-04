@@ -5,15 +5,15 @@ gclient_gn_args = [
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '68659bfa38fb7a446bff13b59532f4cb301d9bf1',
-  'gn_version': 'git_revision:07d3c6f4dc290fae5ca6152ebcb37d6815c411ab',
+  'chromium_revision': '30d4d9c77931b3900f6e0c5e98be6343842b29ed',
+  'gn_version': 'git_revision:0eb071f600702e6e235137ba133ee8834aeece83',
   # ninja CIPD package version.
   # https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/ninja
   'ninja_version': 'version:3@1.12.1.chromium.4',
   # reclient CIPD package version
   'reclient_version': 're_client_version:0.185.0.db415f21-gomaip',
   # siso CIPD package version.
-  'siso_version': 'git_revision:f24720f1320c0b85feea49cb5f1207be7555deee',
+  'siso_version': 'git_revision:41351d34a647bb3f390000f021786db0a6ad2430',
   # Fetch configuration files required for the 'use_remoteexec' gn arg
   'download_remoteexec_cfg': False,
   # RBE instance to use for running remote builds
@@ -27,7 +27,7 @@ vars = {
 
   # By default, download the fuchsia sdk from the public sdk directory.
   'fuchsia_sdk_cipd_prefix': 'fuchsia/sdk/core/',
-  'fuchsia_version': 'version:29.20251016.3.1',
+  'fuchsia_version': 'version:30.20251204.1.1',
   # By default, download the fuchsia images from the fuchsia GCS bucket.
   'fuchsia_images_bucket': 'fuchsia',
   'checkout_fuchsia': False,
@@ -48,13 +48,13 @@ vars = {
 
 deps = {
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'b2e55d8d32cfc78c6d598740ceefc8e6dce00545',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '3c58005adf6e658f44946971a544d62815373e00',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '28a4e2e3dc4dea96027664dd777316c335de1f28',
+    Var('chromium_git') + '/chromium/src/buildtools' + '@' + 'eca5f0685c48ed59ff06077cb18cee00934249dd',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '4c3aba1a9edf0b61f30354e124a0cd99e33ecf6d',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'e8bfcfdf9da115d13567e2009b787e02a596a66d',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '1920e63dfd1c6f908d02aa3b61bb6aef8161b29b',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '4471edb07a8bd1d5eb4a87c1459fcc3da0596d2c',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -100,11 +100,11 @@ deps = {
   },
 
   'src/third_party/catapult':
-    Var('chromium_git') + '/catapult.git' + '@' + '1c28f8a288ca1883a3555eaf29a9fc718afaad6e',
+    Var('chromium_git') + '/catapult.git' + '@' + 'eda8d2eec9f0986179004f80a383518ba51008ab',
   'src/third_party/clang-format/script':
       Var('chromium_git') + '/external/github.com/llvm/llvm-project/clang/tools/clang-format.git' + '@' + 'c2725e0622e1a86d55f14514f2177a39efea4a0e',
   'src/third_party/compiler-rt/src':
-    'https://chromium.googlesource.com/external/github.com/llvm/llvm-project/compiler-rt.git@d7392a1ed4ee4eb636db4d38e05905edd3dc7994',
+    'https://chromium.googlesource.com/external/github.com/llvm/llvm-project/compiler-rt.git@03f50e54e93b20552e31c414e8eec21e739880fb',
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '3de9f013df4b470069d03d250224062e8cf15c49',
   'src/third_party/cpu_features/src': {
@@ -112,13 +112,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/third_party/depot_tools':
-    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'ddb97c1c77ee11a8a5d1ab04cffaa9ea5433b45b',
+    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '85116f17109bbd1e5545aa9c12308a19684cf792',
   'third_party/fuchsia-gn-sdk': {
     'url': Var('chromium_git') + '/chromium/src/third_party/fuchsia-gn-sdk.git' + '@' + '0d6902558d92fe3d49ba9a8f638ddea829be595b',
     'condition': 'checkout_fuchsia',
   },
   'src/third_party/googletest/src':
-    Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + 'e17e37a1151a47d6e8089f2e9a78921ac022a511',
+    Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + '4fe3307fb2d9f86d19777c7eb0e4809e9694dde7',
   'src/third_party/harfbuzz-ng/src':
     Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '7d936359a27abb2d7cb14ecc102463bb15c11843',
   'src/third_party/instrumented_libs': {
@@ -126,20 +126,20 @@ deps = {
     'condition': 'checkout_instrumented_libraries',
   },
   'src/third_party/libc++/src':
-    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libcxx.git' + '@' + '1af2c657e2646fd13cf50f426059b696194fff10',
+    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libcxx.git' + '@' + '07572e7b169225ef3a999584cba9d9004631ae66',
   'src/third_party/libc++abi/src':
-    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libcxxabi.git' + '@' + '8e720a3a3ae30fcfffe436aae418c91acacc34d0',
+    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libcxxabi.git' + '@' + '83a852080747b9a362e8f9e361366b7a601f302c',
   'src/third_party/llvm-libc/src':
-    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libc.git' + '@' + 'b3af9aedd645bb067261301f6cc2151fa01db295',
+    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libc.git' + '@' + '3b327fec433171a850ad58bbef8441d670c8d8b2',
 
   'src/third_party/libunwind/src':
-    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libunwind.git' + '@' + '224761f783e2fb35d5556943e2fecf490fdc3fab',
+    Var('chromium_git') + '/external/github.com/llvm/llvm-project/libunwind.git' + '@' + '88fc07ed143a5b3bbf45d430b72a4617ee9e235f',
   'src/third_party/libjpeg_turbo':
-    Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + 'e14cbfaa85529d47f9f55b0f104a579c1061f9ad',
+    Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '6383cf609c1f63c18af0f59b2738caa0c6c7e379',
   'src/third_party/nasm':
-    Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + 'e2c93c34982b286b27ce8b56dd7159e0b90869a2',
+    Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + 'af5eeeb054bebadfbb79c7bcd100a95e2ad4525f',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '6c975b3dc5452046f61bf08e9f442619deae31ef',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '39bc80757f9e7a3ed67a9775f9276790895e6e28',
 
   # libyuv-only dependencies (not present in Chromium).
   'src/third_party/gtest-parallel':
@@ -151,14 +151,14 @@ deps = {
   },
 
   'src/third_party/re2/src':
-    Var('chromium_git') + '/external/github.com/google/re2.git' + '@' + '61c4644171ee6b480540bf9e569cba06d9090b4b',
+    Var('chromium_git') + '/external/github.com/google/re2.git' + '@' + 'e7aec5985072c1dbe735add802653ef4b36c231a',
 
   # Android deps:
   'src/third_party/kotlin_stdlib/cipd': {
       'packages': [
           {
               'package': 'chromium/third_party/kotlin_stdlib',
-              'version': 'fb5owI7Lkc_2iMOvOSTFR5l6KH9Ufv9VQ2quZCyG3eQC',
+              'version': 'nrNlkfwnssJGD9SLlKJAWk1z2QnlYuVa8YUPNj4sUzEC',
           },
       ],
       'condition': 'checkout_android',
@@ -169,7 +169,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/kotlinc',
-              'version': '_goUeuVtOV_2DBIbshAqBuLckbAOCDbHx3UfMYwHK2cC',
+              'version': 'dzSoO7s4xA33tSKgOGuseaOQRuvYg3_3mtA0H89f4_wC',
           },
       ],
       'condition': 'checkout_android',
@@ -191,7 +191,7 @@ deps = {
     'packages': [
       {
           'package': 'chromium/third_party/androidx',
-          'version': 'KoJF8n5Z68D_pjbJf-EUw4bnZ5FTSOFKGsfnzTWt6pwC',
+          'version': 'dUYDoYVH-NzyM8K7wLLtKL4FIBeid3P4p_gbwEOapJ4C',
       },
     ],
     'condition': 'checkout_android and non_git_source',
@@ -241,7 +241,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_build_tools/aapt2',
-              'version': 'XqcH9BN43Trcigbh3gSdKc-5OAI-r7MV7wIs5fRXxFMC',
+              'version': 's6POXpUalcnuPehDsORiojCpgbNXT4LYq7DVUYgsfxEC',
           },
       ],
       'condition': 'checkout_android',
@@ -284,7 +284,7 @@ deps = {
 
 
   'src/third_party/icu': {
-    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'ff35c4f9df23800935ff9f34203152c6b3c7881e',
+    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'a86a32e67b8d1384b33f8fa48c83a6079b86f8cd',
   },
 
   'src/third_party/icu4j/cipd': {
@@ -368,7 +368,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/r8',
-              'version': 'AYeAI5FH_WyqBwnhCmq8W1k-pGRyIkxmRN7PbMErE7EC',
+              'version': 'sjuUu6_BDMGSci_jpKyt68J7gQ3sA59eJI7biFlTGXoC',
           },
       ],
       'condition': 'checkout_android',
@@ -381,7 +381,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/r8',
-              'version': '2aBDG942g42qUBPPInGETRHusdxru1U3anwJI_QX5wIC',
+              'version': 'a4fVqbIycCDqs1714SLRqxEdz6P-sH-z1QT_eeeF0PcC',
           },
       ],
       'condition': 'checkout_android',
@@ -427,7 +427,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/turbine',
-              'version': 'EHj3lVL72PrpZUDnsWnaS5rdJuF5o1QYrJ7CUhO3MIEC',
+              'version': 'DV_E8eKAtXx3kTD4avzQC_CWVnH_yOQrf80YkYt77PAC',
           },
       ],
       'condition': 'checkout_android',
@@ -440,7 +440,7 @@ deps = {
 
   # iOS deps:
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '82e655421ce38fb3cb25f19c67572c0907fd722f',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'bf756663c33fb2dfb242cb6986fa51b21bd4f5c7',
     'condition': 'checkout_ios'
   },
 
@@ -450,73 +450,73 @@ deps = {
     'objects': [
       {
         # The Android libclang_rt.builtins libraries are currently only included in the Linux clang package.
-        'object_name': 'Linux_x64/clang-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': 'f6a487ffd0e56ba7a39b063d85d1f8ff7846514f50635785730cffb7368872ce',
-        'size_bytes': 55669844,
-        'generation': 1759771493989631,
+        'object_name': 'Linux_x64/clang-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': '91f570063e53b0ece9d68e5237135d52ccf38e543abb31ac50c0c01588c8d40a',
+        'size_bytes': 56531092,
+        'generation': 1764612628593714,
         'condition': 'host_os == "linux" or checkout_android',
       },
       {
-        'object_name': 'Linux_x64/llvmobjdump-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': 'fd644634db56977b072d951f26571ac41c9c298bf5989e99efeb150ee8427364',
-        'size_bytes': 5666140,
-        'generation': 1759771494159187,
+        'object_name': 'Linux_x64/llvmobjdump-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': '6caf67f5ba0891b0e5b0228ebb63a24956477f3a72255a62c0b8b0b8667e742e',
+        'size_bytes': 5730840,
+        'generation': 1764612629250891,
         'condition': '((checkout_linux or checkout_mac or checkout_android) and host_os == "linux")',
       },
       {
-        'object_name': 'Mac/clang-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': '44811b6ed6868142c088807f6bcc0d08811a7b11d3f2bc2124c45868037e8cc3',
-        'size_bytes': 53583464,
-        'generation': 1759771495565305,
+        'object_name': 'Mac/clang-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': '70320598b220bc73e7d4099dd87c0e8b510f640cadfdcf517e0a35e2cb6d8b1a',
+        'size_bytes': 54119080,
+        'generation': 1764612631537558,
         'condition': 'host_os == "mac" and host_cpu == "x64"',
       },
       {
-        'object_name': 'Mac/clang-mac-runtime-library-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': '8a2e16410bede5d52c77a012f182dde2350b05e647f7c1acaf7823ce816b4422',
-        'size_bytes': 1005144,
-        'generation': 1759771503758969,
+        'object_name': 'Mac/clang-mac-runtime-library-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': 'aaa59817158482d916d4b821669c372090481ee7b96959b5157b7be4aa004cec',
+        'size_bytes': 1007104,
+        'generation': 1764612653376647,
         'condition': 'checkout_mac and not host_os == "mac"',
       },
       {
-        'object_name': 'Mac/llvmobjdump-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': 'a10d075e19e7b614ffd8c5a65f04fbd45011ec74c735dda89f0b3780ab397329',
-        'size_bytes': 5567160,
-        'generation': 1759771495741126,
+        'object_name': 'Mac/llvmobjdump-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': 'b185d69c3d53cd59c2d7a8b9f037f436656f5b79a97e1010b4580757fdb59c2d',
+        'size_bytes': 5609228,
+        'generation': 1764612632088648,
         'condition': 'host_os == "mac" and host_cpu == "x64"',
       },
       {
-        'object_name': 'Mac_arm64/clang-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': 'c97e4f62cdd77edf725ccbf4cd63b589302605bf643c871f83214f39e629b2ea',
-        'size_bytes': 44593804,
-        'generation': 1759771504972271,
+        'object_name': 'Mac_arm64/clang-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': 'c83d90592462dc612042e14031673f7ee99f540ecf09b0ccf4e1ab8204c8edfd',
+        'size_bytes': 45143528,
+        'generation': 1764612655158394,
         'condition': 'host_os == "mac" and host_cpu == "arm64"',
       },
       {
-        'object_name': 'Mac_arm64/llvmobjdump-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': '7aa959752d6beafc74129e4822912021f855584e55a55600044f1d42b889f8b0',
-        'size_bytes': 5292960,
-        'generation': 1759771505201957,
+        'object_name': 'Mac_arm64/llvmobjdump-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': '2871b960e650898c448e9e04f753cfb9d202a16e5abeacf9c6d81090ebdef11d',
+        'size_bytes': 5345876,
+        'generation': 1764612656056708,
         'condition': 'host_os == "mac" and host_cpu == "arm64"',
       },
       {
-        'object_name': 'Win/clang-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': 'fc756186dea61e700bd0f885b585050d9356bbd7f942dafae25d38eef4671adf',
-        'size_bytes': 47657436,
-        'generation': 1759771514781908,
+        'object_name': 'Win/clang-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': 'ccbd73543ee52947950a0ed0cc9f283b5d3f0daf4ded41f1623aa45b12e840d6',
+        'size_bytes': 48347024,
+        'generation': 1764612682127943,
         'condition': 'host_os == "win"',
       },
       {
-        'object_name': 'Win/clang-win-runtime-library-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': '0a426702c9e0f92ea27f9611a1665cc5df9a58820360d3fa6a4026b9a0e5120f',
-        'size_bytes': 2501292,
-        'generation': 1759771523074183,
+        'object_name': 'Win/clang-win-runtime-library-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': '1c31fe0026ec6adbb707433ab43f674804b4345184144dcef987ae5e6bc405fd',
+        'size_bytes': 2521152,
+        'generation': 1764612703739250,
         'condition': 'checkout_win and not host_os == "win"',
       },
       {
-        'object_name': 'Win/llvmobjdump-llvmorg-22-init-8940-g4d4cb757-84.tar.xz',
-        'sha256sum': '94c068f109e220e028a38f5beced7d6acd67725fc0b1da9fa8ed1b959f12d799',
-        'size_bytes': 5673824,
-        'generation': 1759771514962844,
+        'object_name': 'Win/llvmobjdump-llvmorg-22-init-14273-gea10026b-3.tar.xz',
+        'sha256sum': 'ae6c7002b8871676da1f73a350fcc37c80836f962421ea77c8aaba3a0a6a0c93',
+        'size_bytes': 5722184,
+        'generation': 1764612682869464,
         'condition': '(checkout_linux or checkout_mac or checkout_android) and host_os == "win"',
       },
     ]
@@ -525,17 +525,6 @@ deps = {
   # Everything coming after this is automatically updated by the auto-roller.
   # === ANDROID_DEPS Generated Code Start ===
   # Generated by //third_party/android_deps/fetch_all.py
-  'src/third_party/android_deps/cipd/libs/com_android_support_support_annotations': {
-      'packages': [
-          {
-              'package': 'chromium/third_party/android_deps/libs/com_android_support_support_annotations',
-              'version': 'version:2@28.0.0.cr2',
-          },
-      ],
-      'condition': 'checkout_android and non_git_source',
-      'dep_type': 'cipd',
-  },
-
   'src/third_party/android_deps/cipd/libs/com_android_tools_common': {
       'packages': [
           {
@@ -662,17 +651,6 @@ deps = {
           {
               'package': 'chromium/third_party/android_deps/libs/org_jetbrains_kotlin_kotlin_parcelize_runtime',
               'version': 'version:2@1.9.22.cr2',
-          },
-      ],
-      'condition': 'checkout_android and non_git_source',
-      'dep_type': 'cipd',
-  },
-
-  'src/third_party/android_deps/cipd/libs/org_jetbrains_kotlinx_atomicfu_jvm': {
-      'packages': [
-          {
-              'package': 'chromium/third_party/android_deps/libs/org_jetbrains_kotlinx_atomicfu_jvm',
-              'version': 'version:2@0.23.2.cr2',
           },
       ],
       'condition': 'checkout_android and non_git_source',
