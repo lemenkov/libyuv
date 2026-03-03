@@ -153,6 +153,20 @@ int ARGBToI444(const uint8_t* src_argb,
                int width,
                int height);
 
+// Convert ARGB To I444 with matrix.
+LIBYUV_API
+int ARGBToI444Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_u,
+                     int dst_stride_u,
+                     uint8_t* dst_v,
+                     int dst_stride_v,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
 // Convert ARGB to AR64.
 LIBYUV_API
 int ARGBToAR64(const uint8_t* src_argb,
@@ -189,6 +203,20 @@ int ARGBToI422(const uint8_t* src_argb,
                int dst_stride_v,
                int width,
                int height);
+
+// Convert ARGB To I422 with matrix.
+LIBYUV_API
+int ARGBToI422Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_u,
+                     int dst_stride_u,
+                     uint8_t* dst_v,
+                     int dst_stride_v,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
 
 // Convert ARGB To I420. (also in convert.h)
 LIBYUV_API

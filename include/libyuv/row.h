@@ -971,6 +971,14 @@ typedef uint32_t ulvec32[8];
 typedef uint8_t ulvec8[32];
 #endif
 
+struct ArgbConstants {
+  uint8_t kRGBToY[32];
+  int16_t kRGBToU[16];
+  int16_t kRGBToV[16];
+  uint16_t kAddY[16];
+  uint16_t kAddUV[16];
+};
+
 #if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
 // This struct is for ARM and RISC-V color conversion.
 struct YuvConstants {
@@ -2074,6 +2082,22 @@ void RAWToYJRow_LASX(const uint8_t* src_raw, uint8_t* dst_yj, int width);
 
 void ARGBToYRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);
 void ARGBToYJRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);
+void ARGBToYMatrixRow_C(const uint8_t* src_argb,
+                        uint8_t* dst_y,
+                        int width,
+                        const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_C(const uint8_t* src_argb,
+                         int src_stride_argb,
+                         uint8_t* dst_u,
+                         uint8_t* dst_v,
+                         int width,
+                         const struct ArgbConstants* c);
+void ARGBToUV444MatrixRow_C(const uint8_t* src_argb,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width,
+                            const struct ArgbConstants* c);
+
 void ABGRToYJRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);
 void RGBAToYJRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);
 void BGRAToYRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);

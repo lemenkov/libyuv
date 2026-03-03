@@ -756,6 +756,92 @@ MAKEROWYJ(RGB24, 2, 1, 0, 3)
 MAKEROWYJ(RAW, 0, 1, 2, 3)
 #undef MAKEROWYJ
 
+static __inline uint8_t RGBToYMatrix(uint8_t r,
+                                     uint8_t g,
+                                     uint8_t b,
+                                     const struct ArgbConstants* c) {
+  return (c->kRGBToY[2] * r + c->kRGBToY[1] * g + c->kRGBToY[0] * b +
+          c->kAddY[0]) >>
+         8;
+}
+static __inline uint8_t RGBToUMatrix(uint8_t r,
+                                     uint8_t g,
+                                     uint8_t b,
+                                     const struct ArgbConstants* c) {
+  return (c->kRGBToU[2] * r + c->kRGBToU[1] * g + c->kRGBToU[0] * b +
+          c->kAddUV[0]) >>
+         8;
+}
+static __inline uint8_t RGBToVMatrix(uint8_t r,
+                                     uint8_t g,
+                                     uint8_t b,
+                                     const struct ArgbConstants* c) {
+  return (c->kRGBToV[2] * r + c->kRGBToV[1] * g + c->kRGBToV[0] * b +
+          c->kAddUV[0]) >>
+         8;
+}
+
+void ARGBToYMatrixRow_C(const uint8_t* src_argb,
+                        uint8_t* dst_y,
+                        int width,
+                        const struct ArgbConstants* c) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_y[0] = RGBToYMatrix(src_argb[2], src_argb[1], src_argb[0], c);
+    src_argb += 4;
+    dst_y += 1;
+  }
+}
+
+void ARGBToUVMatrixRow_C(const uint8_t* src_argb,
+                         int src_stride_argb,
+                         uint8_t* dst_u,
+                         uint8_t* dst_v,
+                         int width,
+                         const struct ArgbConstants* c) {
+  const uint8_t* src_argb1 = src_argb + src_stride_argb;
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    uint8_t ab =
+        (src_argb[0] + src_argb[4] + src_argb1[0] + src_argb1[4] + 2) >> 2;
+    uint8_t ag =
+        (src_argb[1] + src_argb[5] + src_argb1[1] + src_argb1[5] + 2) >> 2;
+    uint8_t ar =
+        (src_argb[2] + src_argb[6] + src_argb1[2] + src_argb1[6] + 2) >> 2;
+    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
+    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
+    src_argb += 8;
+    src_argb1 += 8;
+    dst_u += 1;
+    dst_v += 1;
+  }
+  if (width & 1) {
+    uint8_t ab = (src_argb[0] + src_argb1[0] + 1) >> 1;
+    uint8_t ag = (src_argb[1] + src_argb1[1] + 1) >> 1;
+    uint8_t ar = (src_argb[2] + src_argb1[2] + 1) >> 1;
+    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
+    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
+  }
+}
+
+void ARGBToUV444MatrixRow_C(const uint8_t* src_argb,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width,
+                            const struct ArgbConstants* c) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint8_t ab = src_argb[0];
+    uint8_t ag = src_argb[1];
+    uint8_t ar = src_argb[2];
+    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
+    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
+    src_argb += 4;
+    dst_u += 1;
+    dst_v += 1;
+  }
+}
+
 void RGB565ToYRow_C(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
   int x;
   for (x = 0; x < width; ++x) {
@@ -1399,6 +1485,15 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
    {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}}
 #endif
 
+#define ARGBCONSTANTSBODY(RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV)      \
+  {{BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0,             \
+    BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0},            \
+   {BU, GU, RU, 0, BU, GU, RU, 0, BU, GU, RU, 0, BU, GU, RU, 0},            \
+   {BV, GV, RV, 0, BV, GV, RV, 0, BV, GV, RV, 0, BV, GV, RV, 0},            \
+   {AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY},        \
+   {AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV,   \
+    AUV, AUV}}
+
 // clang-format on
 
 #define MAKEYUVCONSTANTS(name, YG, YB, UB, UG, VG, VR)            \
@@ -1406,6 +1501,94 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
       YUVCONSTANTSBODY(YG, YB, UB, UG, VG, VR);                   \
   const struct YuvConstants SIMD_ALIGNED(kYvu##name##Constants) = \
       YUVCONSTANTSBODY(YG, YB, VR, VG, UG, UB);
+
+#define MAKEARGBCONSTANTS(name, RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV) \
+  const struct ArgbConstants SIMD_ALIGNED(kArgb##name##Constants) =          \
+      ARGBCONSTANTSBODY(RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV);
+
+// BT.601 limited range RGB to YUV coefficients
+// RY = round(0.299 * 219 / 255 * 256) = 66
+// GY = round(0.587 * 219 / 255 * 256) = 129
+// BY = round(0.114 * 219 / 255 * 256) = 25
+// BU = round(0.500 * 224 / 255 * 256) = 112
+// RU = round(-0.299 / (1 - 0.114) * 112.4) = -38
+// GU = round(-0.587 / (1 - 0.114) * 112.4) = -74
+// RV = 112
+// GV = round(-0.587 / (1 - 0.299) * 112.4) = -94
+// BV = round(-0.114 / (1 - 0.299) * 112.4) = -18
+// AY = 16 * 256 + 128 = 4224
+// AUV = 128 * 256 = 32768
+MAKEARGBCONSTANTS(I601, 66, 129, 25, -38, -74, 112, 112, -94, -18, 4224, 32768)
+
+// BT.601 full range RGB to YUV coefficients (aka JPEG)
+// RY = round(0.299 * 256) = 77
+// GY = round(0.587 * 256) = 150
+// BY = round(0.114 * 256) = 29
+// BU = 128
+// RU = round(-0.299 / (1 - 0.114) * 128) = -43
+// GU = round(-0.587 / (1 - 0.114) * 128) = -85
+// RV = 128
+// GV = round(-0.587 / (1 - 0.299) * 128) = -107
+// BV = round(-0.114 / (1 - 0.299) * 128) = -21
+// AY = 128
+// AUV = 32768
+MAKEARGBCONSTANTS(JPEG, 77, 150, 29, -43, -85, 128, 128, -107, -21, 128, 32768)
+
+// BT.709 limited range RGB to YUV coefficients
+// RY = round(0.2126 * 219 / 255 * 256) = 47
+// GY = round(0.7152 * 219 / 255 * 256) = 157
+// BY = round(0.0722 * 219 / 255 * 256) = 16
+// BU = round(0.500 * 224 / 255 * 256) = 112
+// RU = round(-0.2126 / (1 - 0.0722) * 112.4) = -26
+// GU = round(-0.7152 / (1 - 0.0722) * 112.4) = -86
+// RV = 112
+// GV = round(-0.7152 / (1 - 0.2126) * 112.4) = -102
+// BV = round(-0.0722 / (1 - 0.2126) * 112.4) = -10
+// AY = 16 * 256 + 128 = 4224
+// AUV = 128 * 256 = 32768
+MAKEARGBCONSTANTS(H709, 47, 157, 16, -26, -86, 112, 112, -102, -10, 4224, 32768)
+
+// BT.709 full range RGB to YUV coefficients
+// RY = round(0.2126 * 256) = 54
+// GY = round(0.7152 * 256) = 183
+// BY = round(0.0722 * 256) = 19
+// BU = 128
+// RU = round(-0.2126 / (1 - 0.0722) * 128) = -29
+// GU = round(-0.7152 / (1 - 0.0722) * 128) = -99
+// RV = 128
+// GV = round(-0.7152 / (1 - 0.2126) * 128) = -116
+// BV = round(-0.0722 / (1 - 0.2126) * 128) = -12
+// AY = 128
+// AUV = 32768
+MAKEARGBCONSTANTS(F709, 54, 183, 19, -29, -99, 128, 128, -116, -12, 128, 32768)
+
+// BT.2020 limited range RGB to YUV coefficients
+// RY = round(0.2627 * 219 / 255 * 256) = 58
+// GY = round(0.6780 * 219 / 255 * 256) = 149
+// BY = round(0.0593 * 219 / 255 * 256) = 13
+// BU = 112
+// RU = round(-0.2627 / (1 - 0.0593) * 112.4) = -31
+// GU = round(-0.6780 / (1 - 0.0593) * 112.4) = -81
+// RV = 112
+// GV = round(-0.6780 / (1 - 0.2627) * 112.4) = -103
+// BV = round(-0.0593 / (1 - 0.2627) * 112.4) = -9
+// AY = 16 * 256 + 128 = 4224
+// AUV = 128 * 256 = 32768
+MAKEARGBCONSTANTS(U2020, 59, 148, 13, -31, -81, 112, 112, -103, -9, 4224, 32768)
+
+// BT.2020 full range RGB to YUV coefficients
+// RY = round(0.2627 * 256) = 67
+// GY = round(0.6780 * 256) = 174
+// BY = round(0.0593 * 256) = 15
+// BU = 128
+// RU = round(-0.2627 / (1 - 0.0593) * 128) = -36
+// GU = round(-0.6780 / (1 - 0.0593) * 128) = -92
+// RV = 128
+// GV = round(-0.6780 / (1 - 0.2627) * 128) = -118
+// BV = round(-0.0593 / (1 - 0.2627) * 128) = -10
+// AY = 128
+// AUV = 32768
+MAKEARGBCONSTANTS(V2020, 67, 174, 15, -36, -92, 128, 128, -118, -10, 128, 32768)
 
 // TODO(fbarchard): Generate SIMD structures from float matrix.
 

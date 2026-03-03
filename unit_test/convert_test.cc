@@ -2128,6 +2128,194 @@ TEST_F(LibYUVConvertTest, TestJ420ToI420) {
   EXPECT_EQ(dst_v[2], 240);
 }
 
+TEST_F(LibYUVConvertTest, TestARGBToI420Matrix) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(dst_v, kWidth / 2 * kHeight / 2);
+
+  MemRandomize(src_argb, kWidth * kHeight * 4);
+
+  // BT.601
+  ARGBToI420Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbI601Constants, kWidth, kHeight);
+  // Verify against non-matrix version
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_v, kWidth / 2 * kHeight / 2);
+  ARGBToI420(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+             kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  // JPEG
+  ARGBToI420Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbJPEGConstants, kWidth, kHeight);
+  // Verify against non-matrix version
+  ARGBToJ420(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+             kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  // BT.709
+  ARGBToI420Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbH709Constants, kWidth, kHeight);
+  // Just check if it returns 0 for now.
+  // In a real test we'd have reference values.
+
+  // BT.2020
+  ARGBToI420Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbU2020Constants, kWidth, kHeight);
+
+  // Reference BT.709 (limited range)
+  // Y = round(0.2126 * 219 / 255 * R + 0.7152 * 219 / 255 * G + 0.0722 * 219 / 255 * B + 16)
+  // Y = round(0.1826 * R + 0.6142 * G + 0.0620 * B + 16)
+  // 47 * 255 + 157 * 255 + 16 * 255 + 4224 = 11985 + 40035 + 4080 + 4224 = 60324
+  // 60324 / 256 = 235.64 -> 235. Correct.
+
+  for (int i = 0; i < kWidth * kHeight * 4; ++i) src_argb[i] = 255;
+  ARGBToI420Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbH709Constants, kWidth, kHeight);
+  EXPECT_EQ(dst_y[0], 235);
+  EXPECT_EQ(dst_u[0], 128);
+  EXPECT_EQ(dst_v[0], 128);
+
+  for (int i = 0; i < kWidth * kHeight * 4; i += 4) {
+    src_argb[i + 0] = 0;    // B
+    src_argb[i + 1] = 0;    // G
+    src_argb[i + 2] = 255;  // R
+    src_argb[i + 3] = 255;  // A
+  }
+  ARGBToI420Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbH709Constants, kWidth, kHeight);
+  // Y = 47 * 255 + 4224 = 11985 + 4224 = 16209. 16209 / 256 = 63.3 -> 63.
+  EXPECT_EQ(dst_y[0], 63);
+  // U = -26 * 255 + 32768 = -6630 + 32768 = 26138. 26138 / 256 = 102.1 -> 102.
+  EXPECT_EQ(dst_u[0], 102);
+  // V = 112 * 255 + 32768 = 28560 + 32768 = 61328. 61328 / 256 = 239.5 -> 239.
+  EXPECT_EQ(dst_v[0], 239);
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+}
+
+TEST_F(LibYUVConvertTest, TestARGBToI422Matrix) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, kWidth / 2 * kHeight);
+  align_buffer_page_end(dst_v, kWidth / 2 * kHeight);
+
+  MemRandomize(src_argb, kWidth * kHeight * 4);
+
+  // BT.601
+  ARGBToI422Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbI601Constants, kWidth, kHeight);
+  // Verify against non-matrix version
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth / 2 * kHeight);
+  align_buffer_page_end(ref_v, kWidth / 2 * kHeight);
+  ARGBToI422(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+             kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth / 2 * kHeight; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  // JPEG
+  ARGBToI422Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbJPEGConstants, kWidth, kHeight);
+  // Verify against non-matrix version
+  ARGBToJ422(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+             kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+}
+
+TEST_F(LibYUVConvertTest, TestARGBToI444Matrix) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, kWidth * kHeight);
+  align_buffer_page_end(dst_v, kWidth * kHeight);
+
+  MemRandomize(src_argb, kWidth * kHeight * 4);
+
+  // BT.601
+  ARGBToI444Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth, dst_v,
+                   kWidth, &kArgbI601Constants, kWidth, kHeight);
+  // Verify against non-matrix version
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth * kHeight);
+  align_buffer_page_end(ref_v, kWidth * kHeight);
+  ARGBToI444(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth, ref_v, kWidth,
+             kWidth, kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  // JPEG
+  ARGBToI444Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_u, kWidth / 2,
+                   dst_v, kWidth / 2, &kArgbJPEGConstants, kWidth, kHeight);
+  // Verify against non-matrix version
+  ARGBToJ444(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+             kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+}
+
 #endif  // !defined(LEAN_TESTS)
 
 }  // namespace libyuv

@@ -165,6 +165,48 @@ int ARGBToI444(const uint8_t* src_argb,
   return 0;
 }
 
+// Convert ARGB To I444 with matrix.
+LIBYUV_API
+int ARGBToI444Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_u,
+                     int dst_stride_u,
+                     uint8_t* dst_v,
+                     int dst_stride_v,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height) {
+  int y;
+  void (*ARGBToYMatrixRow)(const uint8_t* src_argb, uint8_t* dst_y, int width,
+                           const struct ArgbConstants* c) = ARGBToYMatrixRow_C;
+  void (*ARGBToUV444MatrixRow)(const uint8_t* src_argb, uint8_t* dst_u,
+                               uint8_t* dst_v, int width,
+                               const struct ArgbConstants* c) =
+      ARGBToUV444MatrixRow_C;
+  if (!src_argb || !dst_y || !dst_u || !dst_v || !argbconstants || width <= 0 ||
+      height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  for (y = 0; y < height; ++y) {
+    ARGBToYMatrixRow(src_argb, dst_y, width, argbconstants);
+    ARGBToUV444MatrixRow(src_argb, dst_u, dst_v, width, argbconstants);
+    src_argb += src_stride_argb;
+    dst_y += dst_stride_y;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  return 0;
+}
+
 // ARGB little endian (bgra in memory) to I422
 LIBYUV_API
 int ARGBToI422(const uint8_t* src_argb,
@@ -316,6 +358,48 @@ int ARGBToI422(const uint8_t* src_argb,
   for (y = 0; y < height; ++y) {
     ARGBToUVRow(src_argb, 0, dst_u, dst_v, width);
     ARGBToYRow(src_argb, dst_y, width);
+    src_argb += src_stride_argb;
+    dst_y += dst_stride_y;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  return 0;
+}
+
+// Convert ARGB To I422 with matrix.
+LIBYUV_API
+int ARGBToI422Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_u,
+                     int dst_stride_u,
+                     uint8_t* dst_v,
+                     int dst_stride_v,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height) {
+  int y;
+  void (*ARGBToYMatrixRow)(const uint8_t* src_argb, uint8_t* dst_y, int width,
+                           const struct ArgbConstants* c) = ARGBToYMatrixRow_C;
+  void (*ARGBToUVMatrixRow)(const uint8_t* src_argb, int src_stride_argb,
+                            uint8_t* dst_u, uint8_t* dst_v, int width,
+                            const struct ArgbConstants* c) =
+      ARGBToUVMatrixRow_C;
+  if (!src_argb || !dst_y || !dst_u || !dst_v || !argbconstants || width <= 0 ||
+      height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  for (y = 0; y < height; ++y) {
+    ARGBToUVMatrixRow(src_argb, 0, dst_u, dst_v, width, argbconstants);
+    ARGBToYMatrixRow(src_argb, dst_y, width, argbconstants);
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
     dst_u += dst_stride_u;
