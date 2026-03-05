@@ -18,6 +18,29 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// The ArgbConstants below can be used with the ARGBTo*Matrix() functions to
+// process different RGB formats. E.g., if your input is ARGB little endian
+// (bgra in memory) you'll want to use the kArgb* constants. Alternatively, if
+// your input is ABGR little endian (rgba in memory) you'd use the kAbgr* ones.
+//
+// Conversion matrix for RGB to YUV.
+LIBYUV_API extern const struct ArgbConstants kArgbI601Constants;  // BT.601
+LIBYUV_API extern const struct ArgbConstants kArgbJPEGConstants;  // BT.601 full
+LIBYUV_API extern const struct ArgbConstants kArgbH709Constants;  // BT.709
+LIBYUV_API extern const struct ArgbConstants kArgbF709Constants;  // BT.709 full
+LIBYUV_API extern const struct ArgbConstants kArgbU2020Constants;  // BT.2020
+LIBYUV_API extern const struct ArgbConstants
+    kArgbV2020Constants;  // BT.2020 full
+
+// Conversion matrix for BGR to YUV.
+LIBYUV_API extern const struct ArgbConstants kAbgrI601Constants;  // BT.601
+LIBYUV_API extern const struct ArgbConstants kAbgrJPEGConstants;  // BT.601 full
+LIBYUV_API extern const struct ArgbConstants kAbgrH709Constants;  // BT.709
+LIBYUV_API extern const struct ArgbConstants kAbgrF709Constants;  // BT.709 full
+LIBYUV_API extern const struct ArgbConstants kAbgrU2020Constants;  // BT.2020
+LIBYUV_API extern const struct ArgbConstants
+    kAbgrV2020Constants;  // BT.2020 full
+
 // Copy ARGB to ARGB.
 #define ARGBToARGB ARGBCopy
 LIBYUV_API
@@ -153,7 +176,7 @@ int ARGBToI444(const uint8_t* src_argb,
                int width,
                int height);
 
-// Convert ARGB To I444 with matrix.
+// RGB to I444 with matrix. See ArgbConstants at the top of this file for usage.
 LIBYUV_API
 int ARGBToI444Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -204,7 +227,7 @@ int ARGBToI422(const uint8_t* src_argb,
                int width,
                int height);
 
-// Convert ARGB To I422 with matrix.
+// RGB to I444 with matrix. See ArgbConstants at the top of this file for usage.
 LIBYUV_API
 int ARGBToI422Matrix(const uint8_t* src_argb,
                      int src_stride_argb,

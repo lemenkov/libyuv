@@ -165,7 +165,6 @@ int ARGBToI444(const uint8_t* src_argb,
   return 0;
 }
 
-// Convert ARGB To I444 with matrix.
 LIBYUV_API
 int ARGBToI444Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -366,7 +365,6 @@ int ARGBToI422(const uint8_t* src_argb,
   return 0;
 }
 
-// Convert ARGB To I422 with matrix.
 LIBYUV_API
 int ARGBToI422Matrix(const uint8_t* src_argb,
                      int src_stride_argb,

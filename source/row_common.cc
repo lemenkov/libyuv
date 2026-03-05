@@ -15,6 +15,7 @@
 
 #include "libyuv/basic_types.h"
 #include "libyuv/convert_argb.h"  // For kYuvI601Constants
+#include "libyuv/convert_from_argb.h"  // For ArgbConstants
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -1504,7 +1505,9 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 
 #define MAKEARGBCONSTANTS(name, RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV) \
   const struct ArgbConstants SIMD_ALIGNED(kArgb##name##Constants) =          \
-      ARGBCONSTANTSBODY(RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV);
+      ARGBCONSTANTSBODY(RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV);        \
+  const struct ArgbConstants SIMD_ALIGNED(kAbgr##name##Constants) =          \
+      ARGBCONSTANTSBODY(BY, GY, RY, BU, GU, RU, BV, GV, RV, AY, AUV);
 
 // BT.601 limited range RGB to YUV coefficients
 // RY = round(0.299 * 219 / 255 * 256) = 66

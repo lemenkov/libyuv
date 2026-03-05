@@ -2144,7 +2144,6 @@ int ARGBToI420(const uint8_t* src_argb,
   return 0;
 }
 
-// ARGB little endian (bgra in memory) to I420 with matrix.
 LIBYUV_API
 int ARGBToI420Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
