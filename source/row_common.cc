@@ -769,16 +769,16 @@ static __inline uint8_t RGBToUMatrix(uint8_t r,
                                      uint8_t g,
                                      uint8_t b,
                                      const struct ArgbConstants* c) {
-  return (c->kRGBToU[2] * r + c->kRGBToU[1] * g + c->kRGBToU[0] * b +
-          c->kAddUV[0]) >>
+  return (c->kAddUV[0] -
+          (c->kRGBToU[2] * r + c->kRGBToU[1] * g + c->kRGBToU[0] * b)) >>
          8;
 }
 static __inline uint8_t RGBToVMatrix(uint8_t r,
                                      uint8_t g,
                                      uint8_t b,
                                      const struct ArgbConstants* c) {
-  return (c->kRGBToV[2] * r + c->kRGBToV[1] * g + c->kRGBToV[0] * b +
-          c->kAddUV[0]) >>
+  return (c->kAddUV[0] -
+          (c->kRGBToV[2] * r + c->kRGBToV[1] * g + c->kRGBToV[0] * b)) >>
          8;
 }
 
@@ -1486,13 +1486,16 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
    {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}}
 #endif
 
-#define ARGBCONSTANTSBODY(RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV)      \
-  {{BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0,             \
-    BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0, BY, GY, RY, 0},            \
-   {BU, GU, RU, 0, BU, GU, RU, 0, BU, GU, RU, 0, BU, GU, RU, 0},            \
-   {BV, GV, RV, 0, BV, GV, RV, 0, BV, GV, RV, 0, BV, GV, RV, 0},            \
-   {AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY},        \
-   {AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV,   \
+#define ARGBCONSTANTSBODY(Y0, Y1, Y2, Y3, U0, U1, U2, U3, V0, V1, V2, V3, AY, \
+                          AUV)                                                \
+  {{Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3,           \
+    Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3},          \
+   {U0, U1, U2, U3, U0, U1, U2, U3, U0, U1, U2, U3, U0, U1, U2, U3,           \
+    U0, U1, U2, U3, U0, U1, U2, U3, U0, U1, U2, U3, U0, U1, U2, U3},          \
+   {V0, V1, V2, V3, V0, V1, V2, V3, V0, V1, V2, V3, V0, V1, V2, V3,           \
+    V0, V1, V2, V3, V0, V1, V2, V3, V0, V1, V2, V3, V0, V1, V2, V3},          \
+   {AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY},          \
+   {AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV,     \
     AUV, AUV}}
 
 // clang-format on
@@ -1503,11 +1506,19 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
   const struct YuvConstants SIMD_ALIGNED(kYvu##name##Constants) = \
       YUVCONSTANTSBODY(YG, YB, VR, VG, UG, UB);
 
-#define MAKEARGBCONSTANTS(name, RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV) \
-  const struct ArgbConstants SIMD_ALIGNED(kArgb##name##Constants) =          \
-      ARGBCONSTANTSBODY(RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV);        \
-  const struct ArgbConstants SIMD_ALIGNED(kAbgr##name##Constants) =          \
-      ARGBCONSTANTSBODY(BY, GY, RY, BU, GU, RU, BV, GV, RV, AY, AUV);
+#define MAKEARGBCONSTANTS(name, RY, GY, BY, RU, GU, BU, RV, GV, BV, AY, AUV)   \
+  const struct ArgbConstants SIMD_ALIGNED(kArgb##name##Constants) =            \
+      ARGBCONSTANTSBODY(BY, GY, RY, 0, -(BU), -(GU), -(RU), 0, -(BV), -(GV),   \
+                        -(RV), 0, AY, AUV);                                    \
+  const struct ArgbConstants SIMD_ALIGNED(kAbgr##name##Constants) =            \
+      ARGBCONSTANTSBODY(RY, GY, BY, 0, -(RU), -(GU), -(BU), 0, -(RV), -(GV),   \
+                        -(BV), 0, AY, AUV);                                    \
+  const struct ArgbConstants SIMD_ALIGNED(kRgba##name##Constants) =            \
+      ARGBCONSTANTSBODY(0, BY, GY, RY, 0, -(BU), -(GU), -(RU), 0, -(BV),       \
+                        -(GV), -(RV), AY, AUV);                                \
+  const struct ArgbConstants SIMD_ALIGNED(kBgra##name##Constants) =            \
+      ARGBCONSTANTSBODY(0, RY, GY, BY, 0, -(RU), -(GU), -(BU), 0, -(RV),       \
+                        -(GV), -(BV), AY, AUV);
 
 // BT.601 limited range RGB to YUV coefficients
 // RY = round(0.299 * 219 / 255 * 256) = 66
