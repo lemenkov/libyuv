@@ -2214,6 +2214,68 @@ TEST_F(LibYUVConvertTest, TestABGRToI422Matrix) {
   free_aligned_buffer_page_end(ref_v);
 }
 
+TEST_F(LibYUVConvertTest, TestARGBToNV12Matrix) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_uv, kWidth * kHeight / 2);
+
+  MemRandomize(src_argb, kWidth * kHeight * 4);
+
+  // BT.601
+  ARGBToNV12Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_uv, kWidth,
+                   &kArgbI601Constants, kWidth, kHeight);
+  // Verify against non-matrix version
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_uv, kWidth * kHeight / 2);
+  ARGBToNV12(src_argb, kWidth * 4, ref_y, kWidth, ref_uv, kWidth, kWidth,
+             kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_uv[i], ref_uv[i]);
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_uv);
+}
+
+TEST_F(LibYUVConvertTest, TestABGRToNV12Matrix) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_abgr, kWidth * kHeight * 4);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_uv, kWidth * kHeight / 2);
+
+  MemRandomize(src_abgr, kWidth * kHeight * 4);
+
+  // BT.601
+  ARGBToNV12Matrix(src_abgr, kWidth * 4, dst_y, kWidth, dst_uv, kWidth,
+                   &kAbgrI601Constants, kWidth, kHeight);
+  // Verify against non-matrix version
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_uv, kWidth * kHeight / 2);
+  ABGRToNV12(src_abgr, kWidth * 4, ref_y, kWidth, ref_uv, kWidth, kWidth,
+             kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_uv[i], ref_uv[i]);
+  }
+
+  free_aligned_buffer_page_end(src_abgr);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_uv);
+}
+
 TEST_F(LibYUVConvertTest, TestARGBToI420Matrix) {
   const int kWidth = 16;
   const int kHeight = 16;

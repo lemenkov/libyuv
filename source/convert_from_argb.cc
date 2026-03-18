@@ -612,6 +612,113 @@ int ARGBToNV12(const uint8_t* src_argb,
   return 0;
 }
 
+LIBYUV_API
+int ARGBToNV12Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height) {
+  int y;
+  int halfwidth = (width + 1) >> 1;
+  void (*ARGBToYMatrixRow)(const uint8_t* src_argb, uint8_t* dst_y, int width,
+                           const struct ArgbConstants* c) = ARGBToYMatrixRow_C;
+  void (*ARGBToUVMatrixRow)(const uint8_t* src_argb, int src_stride_argb,
+                            uint8_t* dst_u, uint8_t* dst_v, int width,
+                            const struct ArgbConstants* c) =
+      ARGBToUVMatrixRow_C;
+  void (*MergeUVRow)(const uint8_t* src_u, const uint8_t* src_v,
+                     uint8_t* dst_uv, int width) = MergeUVRow_C;
+  if (!src_argb || !dst_y || !dst_uv || !argbconstants || width <= 0 ||
+      height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+#if defined(HAS_MERGEUVROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    MergeUVRow = MergeUVRow_Any_SSE2;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    MergeUVRow = MergeUVRow_Any_AVX2;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MergeUVRow = MergeUVRow_Any_AVX512BW;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      MergeUVRow = MergeUVRow_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MergeUVRow = MergeUVRow_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MergeUVRow = MergeUVRow_SME;
+  }
+#endif
+#if defined(HAS_MERGEUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    MergeUVRow = MergeUVRow_Any_LSX;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow = MergeUVRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow = MergeUVRow_RVV;
+  }
+#endif
+
+  // Allocate a rows of uv.
+  align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+  uint8_t* row_v = row_u + ((halfwidth + 31) & ~31);
+  if (!row_u)
+    return 1;
+
+  for (y = 0; y < height - 1; y += 2) {
+    ARGBToUVMatrixRow(src_argb, src_stride_argb, row_u, row_v, width,
+                      argbconstants);
+    MergeUVRow(row_u, row_v, dst_uv, halfwidth);
+    ARGBToYMatrixRow(src_argb, dst_y, width, argbconstants);
+    ARGBToYMatrixRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width,
+                      argbconstants);
+    src_argb += src_stride_argb * 2;
+    dst_y += dst_stride_y * 2;
+    dst_uv += dst_stride_uv;
+  }
+  if (height & 1) {
+    ARGBToUVMatrixRow(src_argb, 0, row_u, row_v, width, argbconstants);
+    MergeUVRow(row_u, row_v, dst_uv, halfwidth);
+    ARGBToYMatrixRow(src_argb, dst_y, width, argbconstants);
+  }
+  free_aligned_buffer_64(row_u);
+  return 0;
+}
+
 // Same as NV12 but U and V swapped.
 LIBYUV_API
 int ARGBToNV21(const uint8_t* src_argb,
