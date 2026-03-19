@@ -2253,6 +2253,30 @@ ANY12M(ARGBToUV444MatrixRow_Any_AVX2, ARGBToUV444MatrixRow_AVX2, 4, 31)
 #ifdef HAS_ARGBTOUV444MATRIXROW_SSSE3
 ANY12M(ARGBToUV444MatrixRow_Any_SSSE3, ARGBToUV444MatrixRow_SSSE3, 4, 15)
 #endif
+#ifdef HAS_ARGBTOUV444MATRIXROW_NEON
+ANY12M(ARGBToUV444MatrixRow_Any_NEON, ARGBToUV444MatrixRow_NEON, 4, 7)
+#endif
+
+#define ANY11MC(NAMEANY, ANY_SIMD, BPP, MASK)                                \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width,          \
+               const struct ArgbConstants* c) {                              \
+    SIMD_ALIGNED(uint8_t vin[128]);                                          \
+    SIMD_ALIGNED(uint8_t vout[128]);                                         \
+    memset(vin, 0, sizeof(vin)); /* for msan */                              \
+    int r = width & MASK;                                                    \
+    int n = width & ~MASK;                                                   \
+    if (n > 0) {                                                             \
+      ANY_SIMD(src_ptr, dst_ptr, n, c);                                      \
+    }                                                                        \
+    memcpy(vin, src_ptr + (ptrdiff_t)n * BPP, (ptrdiff_t)r * BPP);           \
+    ANY_SIMD(vin, vout, MASK + 1, c);                                        \
+    memcpy(dst_ptr + (ptrdiff_t)n, vout, (ptrdiff_t)r);                      \
+  }
+
+#ifdef HAS_ARGBTOYMATRIXROW_NEON
+ANY11MC(ARGBToYMatrixRow_Any_NEON, ARGBToYMatrixRow_NEON, 4, 15)
+#endif
+#undef ANY11MC
 
 #ifdef HAS_ARGBTOUVROW_AVX2
 ANY12S(ARGBToUVRow_Any_AVX2, ARGBToUVRow_AVX2, 0, 4, 31)

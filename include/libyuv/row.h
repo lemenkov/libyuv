@@ -406,11 +406,17 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_NEON
 #define HAS_ARGBTORGB565DITHERROW_NEON
 #define HAS_ARGBTORGB565ROW_NEON
+#if !defined(__aarch64__)
+#define HAS_ARGBTOUV444MATRIXROW_NEON
+#endif
 #define HAS_ARGBTOUV444ROW_NEON
 #define HAS_ARGBTOUVJ444ROW_NEON
 #define HAS_ARGBTOUVJROW_NEON
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
+#if !defined(__aarch64__)
+#define HAS_ARGBTOYMATRIXROW_NEON
+#endif
 #define HAS_ARGBTOYROW_NEON
 #define HAS_AYUVTOUVROW_NEON
 #define HAS_AYUVTOVUROW_NEON
@@ -975,19 +981,18 @@ typedef uint32_t ulvec32[8];
 typedef uint8_t ulvec8[32];
 #endif
 
-struct ArgbConstants {
-  uint8_t kRGBToY[32];
-  int8_t kRGBToU[32];
-  int8_t kRGBToV[32];
-  uint16_t kAddY[16];
-  uint16_t kAddUV[16];
-};
-
 #if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
 // This struct is for ARM and RISC-V color conversion.
 struct YuvConstants {
   uvec8 kUVCoeff;
   vec16 kRGBCoeffBias;
+};
+struct ArgbConstants {
+  uvec8 kRGBToY;
+  vec8 kRGBToU;
+  vec8 kRGBToV;
+  uvec16 kAddY;
+  uvec16 kAddUV;
 };
 #else
 // This struct is for Intel color conversion.
@@ -997,6 +1002,13 @@ struct YuvConstants {
   uint8_t kUVToR[32];
   int16_t kYToRgb[16];
   int16_t kYBiasToRgb[16];
+};
+struct ArgbConstants {
+  uint8_t kRGBToY[32];
+  int8_t kRGBToU[32];
+  int8_t kRGBToV[32];
+  uint16_t kAddY[16];
+  uint16_t kAddUV[16];
 };
 
 // Offsets into YuvConstants structure
@@ -1778,6 +1790,27 @@ void RGBAToYJRow_LSX(const uint8_t* src_rgba, uint8_t* dst_yj, int width);
 void ARGBToYJRow_LASX(const uint8_t* src_argb0, uint8_t* dst_y, int width);
 void ABGRToYJRow_LASX(const uint8_t* src_abgr, uint8_t* dst_yj, int width);
 void RGBAToYJRow_LASX(const uint8_t* src_rgba, uint8_t* dst_yj, int width);
+
+#if !defined(__aarch64__)
+void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width,
+                               const struct ArgbConstants* c);
+void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
+                            uint8_t* dst_y,
+                            int width,
+                            const struct ArgbConstants* c);
+void ARGBToUV444MatrixRow_Any_NEON(const uint8_t* src_argb,
+                                   uint8_t* dst_u,
+                                   uint8_t* dst_v,
+                                   int width,
+                                   const struct ArgbConstants* c);
+void ARGBToYMatrixRow_Any_NEON(const uint8_t* src_argb,
+                               uint8_t* dst_y,
+                               int width,
+                               const struct ArgbConstants* c);
+#endif
 void ARGBToUV444Row_NEON(const uint8_t* src_argb,
                          uint8_t* dst_u,
                          uint8_t* dst_v,

@@ -1486,6 +1486,15 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
    {YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB, YB}}
 #endif
 
+#if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
+#define ARGBCONSTANTSBODY(Y0, Y1, Y2, Y3, U0, U1, U2, U3, V0, V1, V2, V3, AY, \
+                          AUV)                                                \
+  {{Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3},          \
+   {U0, U1, U2, U3, U0, U1, U2, U3, U0, U1, U2, U3, U0, U1, U2, U3},          \
+   {V0, V1, V2, V3, V0, V1, V2, V3, V0, V1, V2, V3, V0, V1, V2, V3},          \
+   {AY, AY, AY, AY, AY, AY, AY, AY},                                          \
+   {AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV}}
+#else
 #define ARGBCONSTANTSBODY(Y0, Y1, Y2, Y3, U0, U1, U2, U3, V0, V1, V2, V3, AY, \
                           AUV)                                                \
   {{Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3, Y0, Y1, Y2, Y3,           \
@@ -1497,6 +1506,7 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width) {
    {AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY, AY},          \
    {AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV, AUV,     \
     AUV, AUV}}
+#endif
 
 // clang-format on
 
