@@ -25,6 +25,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
+struct ArgbConstants;
+
 // Convert I444 to I420.
 LIBYUV_API
 int I444ToI420(const uint8_t* src_y,
