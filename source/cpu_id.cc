@@ -428,7 +428,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
     cpu_info |= ((cpu_amdinfo21[0] & 0x00008000) ? kCpuHasERMS : 0);
 
     // Detect AVX512bw
-    if ((GetXCR0() & 0xe0) == 0xe0) {
+    if ((GetXCR0() & 0xe0) == 0xe0 && (cpu_info7[1] & 0x00010000)) {
       cpu_info |= ((cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0) |
                   ((cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0) |
                   ((cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0) |
