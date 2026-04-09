@@ -2704,7 +2704,11 @@ TEST_F(LibYUVConvertTest, TestYUY2ToARGB) {
   }
   YUY2ToARGB(&orig_pixels[0][0], 0, &dest_argb[0][0], 0, 256, 1);
   uint32_t checksum = HashDjb2(&dest_argb[0][0], sizeof(dest_argb), 5381);
+#if defined(LIBYUV_UNLIMITED_DATA)
+  EXPECT_EQ(10343289u, checksum);
+#else
   EXPECT_EQ(3486643515u, checksum);
+#endif
 }
 
 TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
@@ -2718,7 +2722,11 @@ TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
   }
   UYVYToARGB(&orig_pixels[0][0], 0, &dest_argb[0][0], 0, 256, 1);
   uint32_t checksum = HashDjb2(&dest_argb[0][0], sizeof(dest_argb), 5381);
+#if defined(LIBYUV_UNLIMITED_DATA)
+  EXPECT_EQ(10343289u, checksum);
+#else
   EXPECT_EQ(3486643515u, checksum);
+#endif
 }
 
 #ifdef ENABLE_ROW_TESTS
