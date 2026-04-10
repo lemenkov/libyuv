@@ -53,11 +53,6 @@ extern "C" {
 #define SAFEBUFFERS
 #endif
 
-#if defined(_MSC_VER)
-// MSVC provides strtok_s which is functionally equivalent to strtok_r.
-#define strtok_r strtok_s
-#endif
-
 // cpu_info_ variable for SIMD instruction sets detected.
 LIBYUV_API int cpu_info_ = 0;
 
@@ -338,14 +333,18 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
           extensions_len = strlen(extensions);
           // Multi-letter extensions are seperated by a single underscore
           // as described in RISC-V User-Level ISA V2.2.
-          char* saveptr = NULL;
-          char* ext = strtok_r(extensions, "_", &saveptr);
+          char* ext = extensions;
           while (ext) {
+            char* next = strchr(ext, '_');
+            if (next) {
+              *next = '\0';
+              next++;
+            }
             // Search for the ZVFH (Vector FP16) extension.
             if (!strcmp(ext, "zvfh")) {
               flag |= kCpuHasRVVZVFH;
             }
-            ext = strtok_r(NULL, "_", &saveptr);
+            ext = next;
           }
         }
         std_isa_len = isa_len - extensions_len - 5;
