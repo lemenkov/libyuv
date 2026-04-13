@@ -917,8 +917,8 @@ ANY21PT(MergeUVRow_16_Any_NEON, MergeUVRow_16_NEON, uint16_t, 2, 7)
 // Any 1 to 1.
 #define ANY11(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {     \
-    SIMD_ALIGNED(uint8_t vin[128]);                                       \
-    SIMD_ALIGNED(uint8_t vout[128]);                                      \
+    SIMD_ALIGNED(uint8_t vin[256]);                                       \
+    SIMD_ALIGNED(uint8_t vout[256]);                                      \
     memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                  \
     int r = width & MASK;                                                 \
     int n = width & ~MASK;                                                \
@@ -1762,8 +1762,8 @@ ANY11P16(HalfFloatRow_Any_LSX, HalfFloatRow_LSX, uint16_t, uint16_t, 2, 2, 31)
 #define ANY11C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)               \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr,                  \
                const struct YuvConstants* yuvconstants, int width) {      \
-    SIMD_ALIGNED(uint8_t vin[128]);                                       \
-    SIMD_ALIGNED(uint8_t vout[128]);                                      \
+    SIMD_ALIGNED(uint8_t vin[256]);                                       \
+    SIMD_ALIGNED(uint8_t vout[256]);                                      \
     memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                  \
     int r = width & MASK;                                                 \
     int n = width & ~MASK;                                                \
@@ -1994,8 +1994,8 @@ ANY1(ARGBSetRow_Any_LSX, ARGBSetRow_LSX, uint32_t, 4, 3)
 #define ANY12(NAMEANY, ANY_SIMD, UVSHIFT, BPP, DUVSHIFT, MASK)          \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_u, uint8_t* dst_v,  \
                int width) {                                             \
-    SIMD_ALIGNED(uint8_t vin[128]);                                     \
-    SIMD_ALIGNED(uint8_t vout[128 * 2]);                                \
+    SIMD_ALIGNED(uint8_t vin[256]);                                     \
+    SIMD_ALIGNED(uint8_t vout[256 * 2]);                                \
     memset(vin, 0, sizeof(vin)); /* for msan */                         \
     int r = width & MASK;                                               \
     int n = width & ~MASK;                                              \
@@ -2004,9 +2004,9 @@ ANY1(ARGBSetRow_Any_LSX, ARGBSetRow_LSX, uint32_t, 4, 3)
     }                                                                   \
     ptrdiff_t np = n;                                                   \
     memcpy(vin, src_ptr + (np >> UVSHIFT) * BPP, SS(r, UVSHIFT) * BPP); \
-    ANY_SIMD(vin, vout, vout + 128, MASK + 1);                          \
+    ANY_SIMD(vin, vout, vout + 256, MASK + 1);                          \
     memcpy(dst_u + (np >> DUVSHIFT), vout, SS(r, DUVSHIFT));            \
-    memcpy(dst_v + (np >> DUVSHIFT), vout + 128, SS(r, DUVSHIFT));      \
+    memcpy(dst_v + (np >> DUVSHIFT), vout + 256, SS(r, DUVSHIFT));      \
   }
 
 #ifdef HAS_SPLITUVROW_SSE2
@@ -2207,8 +2207,8 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
 #define ANY12M(NAMEANY, ANY_SIMD, BPP, MASK)                                 \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_u, uint8_t* dst_v,        \
                int width, const struct ArgbConstants* c) {                   \
-    SIMD_ALIGNED(uint8_t vin[128]);                                          \
-    SIMD_ALIGNED(uint8_t vout[128 * 2]);                                     \
+    SIMD_ALIGNED(uint8_t vin[256]);                                          \
+    SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
@@ -2216,9 +2216,9 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
       ANY_SIMD(src_ptr, dst_u, dst_v, n, c);                                 \
     }                                                                        \
     memcpy(vin, src_ptr + (ptrdiff_t)n * BPP, (ptrdiff_t)r * BPP);           \
-    ANY_SIMD(vin, vout, vout + 128, MASK + 1, c);                            \
+    ANY_SIMD(vin, vout, vout + 256, MASK + 1, c);                            \
     memcpy(dst_u + (ptrdiff_t)n, vout, (ptrdiff_t)r);                        \
-    memcpy(dst_v + (ptrdiff_t)n, vout + 128, (ptrdiff_t)r);                  \
+    memcpy(dst_v + (ptrdiff_t)n, vout + 256, (ptrdiff_t)r);                  \
   }
 
 #define ANY12MS(NAMEANY, ANY_SIMD, UVSHIFT, BPP, MASK)                       \
@@ -2269,8 +2269,8 @@ ANY12M(ARGBToUV444MatrixRow_Any_NEON, ARGBToUV444MatrixRow_NEON, 4, 7)
 #define ANY11MC(NAMEANY, ANY_SIMD, BPP, MASK)                                \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width,          \
                const struct ArgbConstants* c) {                              \
-    SIMD_ALIGNED(uint8_t vin[128]);                                          \
-    SIMD_ALIGNED(uint8_t vout[128]);                                         \
+    SIMD_ALIGNED(uint8_t vin[256]);                                          \
+    SIMD_ALIGNED(uint8_t vout[256]);                                         \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
