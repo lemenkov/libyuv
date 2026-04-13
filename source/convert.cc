@@ -2091,6 +2091,14 @@ int ARGBToI420(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToUVRow = ARGBToUVRow_Any_AVX2;
@@ -2522,6 +2530,14 @@ int BGRAToI420(const uint8_t* src_bgra,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    BGRAToYRow = BGRAToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      BGRAToYRow = BGRAToYRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_BGRATOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     BGRAToUVRow = BGRAToUVRow_Any_AVX2;
@@ -2618,6 +2634,14 @@ int ABGRToI420(const uint8_t* src_abgr,
     ABGRToYRow = ABGRToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ABGRToYRow = ABGRToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ABGRToYRow = ABGRToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ABGRToYRow = ABGRToYRow_AVX512BW;
     }
   }
 #endif
@@ -2749,6 +2773,22 @@ int RGBAToI420(const uint8_t* src_rgba,
     RGBAToYRow = RGBAToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
       RGBAToYRow = RGBAToYRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RGBAToYRow = RGBAToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGBAToYRow = RGBAToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RGBAToYRow = RGBAToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RGBAToYRow = RGBAToYRow_AVX512BW;
     }
   }
 #endif
@@ -3122,6 +3162,14 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
     ARGBToYJRow = ARGBToYJRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYJRow = ARGBToYJRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYJRow = ARGBToYJRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYJRow = ARGBToYJRow_AVX512BW;
     }
   }
 #endif

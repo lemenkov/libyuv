@@ -124,6 +124,14 @@ int ARGBToI444(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
@@ -1080,6 +1088,14 @@ int ABGRToNV12(const uint8_t* src_abgr,
     ABGRToYRow = ABGRToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ABGRToYRow = ABGRToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ABGRToYRow = ABGRToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ABGRToYRow = ABGRToYRow_AVX512BW;
     }
   }
 #endif
@@ -2710,6 +2726,14 @@ int ARGBToJ444(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYJRow = ARGBToYJRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYJRow = ARGBToYJRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYJRow = ARGBToYJRow_Any_NEON;
@@ -3171,6 +3195,14 @@ int RGBAToJ400(const uint8_t* src_rgba,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RGBAToYJRow = RGBAToYJRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RGBAToYJRow = RGBAToYJRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_RGBATOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RGBAToYJRow = RGBAToYJRow_Any_NEON;
@@ -3265,6 +3297,14 @@ int ABGRToJ420(const uint8_t* src_abgr,
     ABGRToYJRow = ABGRToYJRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ABGRToYJRow = ABGRToYJRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ABGRToYJRow = ABGRToYJRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ABGRToYJRow = ABGRToYJRow_AVX512BW;
     }
   }
 #endif
