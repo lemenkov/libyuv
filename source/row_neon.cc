@@ -2014,7 +2014,7 @@ void ABGRToUVJRow_NEON(const uint8_t* src_abgr,
                        uint8_t* dst_vj,
                        int width) {
   asm volatile (
-      "add         %1, %0, %1                    \n"  // src_stride + src_argb
+      "add         %1, %0, %1                    \n"  // src_stride + src_abgr
       "vmov.s16    q10, #128                     \n"  // UB/VR 0.500 coefficient
       "vmov.s16    q11, #85                      \n"  // UG -0.33126 coefficient
       "vmov.s16    q12, #43                      \n"  // UR -0.16874 coefficient

@@ -4519,30 +4519,30 @@ int I420Interpolate(const uint8_t* src0_y,
 
 // Shuffle ARGB channel order.  e.g. BGRA to ARGB.
 LIBYUV_API
-int ARGBShuffle(const uint8_t* src_bgra,
-                int src_stride_bgra,
+int ARGBShuffle(const uint8_t* src_argb,
+                int src_stride_argb,
                 uint8_t* dst_argb,
                 int dst_stride_argb,
                 const uint8_t* shuffler,
                 int width,
                 int height) {
   int y;
-  void (*ARGBShuffleRow)(const uint8_t* src_bgra, uint8_t* dst_argb,
+  void (*ARGBShuffleRow)(const uint8_t* src_argb, uint8_t* dst_argb,
                          const uint8_t* shuffler, int width) = ARGBShuffleRow_C;
-  if (!src_bgra || !dst_argb || width <= 0 || height == 0) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_bgra = src_bgra + (height - 1) * src_stride_bgra;
-    src_stride_bgra = -src_stride_bgra;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
   }
   // Coalesce rows.
-  if (src_stride_bgra == width * 4 && dst_stride_argb == width * 4) {
+  if (src_stride_argb == width * 4 && dst_stride_argb == width * 4) {
     width *= height;
     height = 1;
-    src_stride_bgra = dst_stride_argb = 0;
+    src_stride_argb = dst_stride_argb = 0;
   }
 #if defined(HAS_ARGBSHUFFLEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
@@ -4586,8 +4586,8 @@ int ARGBShuffle(const uint8_t* src_bgra,
 #endif
 
   for (y = 0; y < height; ++y) {
-    ARGBShuffleRow(src_bgra, dst_argb, shuffler, width);
-    src_bgra += src_stride_bgra;
+    ARGBShuffleRow(src_argb, dst_argb, shuffler, width);
+    src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
   return 0;

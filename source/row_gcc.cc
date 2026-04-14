@@ -1368,16 +1368,16 @@ void ARGBToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 #ifdef HAS_ABGRTOYJROW_SSSE3
 // Convert 16 ABGR pixels (64 bytes) to 16 YJ values.
 // Same as ABGRToYRow but different coefficients, no add 16.
-void ABGRToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kAbgrJPEGConstants);
+void ABGRToYJRow_SSSE3(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_SSSE3(src_abgr, dst_y, width, &kAbgrJPEGConstants);
 }
 #endif  // HAS_ABGRTOYJROW_SSSE3
 
 #ifdef HAS_RGBATOYJROW_SSSE3
-// Convert 16 ARGB pixels (64 bytes) to 16 YJ values.
+// Convert 16 RGBA pixels (64 bytes) to 16 YJ values.
 // Same as ARGBToYRow but different coefficients, no add 16.
-void RGBAToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kRgbaJPEGConstants);
+void RGBAToYJRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_SSSE3(src_rgba, dst_y, width, &kRgbaJPEGConstants);
 }
 #endif  // HAS_RGBATOYJROW_SSSE3
 
@@ -1399,8 +1399,8 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 #ifdef HAS_ABGRTOYROW_AVX2
 // Convert 32 ABGR pixels (128 bytes) to 32 Y values.
 #ifdef HAS_ARGBTOYROW_AVX2
-void ABGRToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kAbgrI601Constants);
+void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX2(src_abgr, dst_y, width, &kAbgrI601Constants);
 }
 #endif
 #endif  // HAS_ABGRTOYROW_AVX2
@@ -1418,8 +1418,8 @@ void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 #ifdef HAS_ABGRTOYJROW_AVX2
 // Convert 32 ABGR pixels (128 bytes) to 32 Y values.
 #ifdef HAS_ARGBTOYROW_AVX2
-void ABGRToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kAbgrJPEGConstants);
+void ABGRToYJRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX2(src_abgr, dst_y, width, &kAbgrJPEGConstants);
 }
 #endif
 #endif  // HAS_ABGRTOYJROW_AVX2
@@ -1427,8 +1427,8 @@ void ABGRToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 #ifdef HAS_RGBATOYJROW_AVX2
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 #ifdef HAS_ARGBTOYROW_AVX2
-void RGBAToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kRgbaJPEGConstants);
+void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX2(src_rgba, dst_y, width, &kRgbaJPEGConstants);
 }
 #endif
 #endif  // HAS_RGBATOYJROW_AVX2
@@ -1953,14 +1953,14 @@ void ARGBToUV444Row_SSSE3(const uint8_t* src_argb,
 
 
 #ifdef HAS_ARGBTOYROW_AVX2
-void RGBAToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kRgbaI601Constants);
+void RGBAToYRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX2(src_rgba, dst_y, width, &kRgbaI601Constants);
 }
 #endif
 
 #ifdef HAS_ARGBTOYROW_AVX2
-void BGRAToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kBgraI601Constants);
+void BGRAToYRow_AVX2(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX2(src_bgra, dst_y, width, &kBgraI601Constants);
 }
 #endif
 
@@ -1978,32 +1978,32 @@ void ARGBToYJRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 #endif
 
 #ifdef HAS_ARGBTOYROW_AVX512BW
-void ABGRToYRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kAbgrI601Constants);
+void ABGRToYRow_AVX512BW(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX512BW(src_abgr, dst_y, width, &kAbgrI601Constants);
 }
 #endif
 
 #ifdef HAS_ARGBTOYROW_AVX512BW
-void ABGRToYJRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kAbgrJPEGConstants);
+void ABGRToYJRow_AVX512BW(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX512BW(src_abgr, dst_y, width, &kAbgrJPEGConstants);
 }
 #endif
 
 #ifdef HAS_ARGBTOYROW_AVX512BW
-void RGBAToYRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kRgbaI601Constants);
+void RGBAToYRow_AVX512BW(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX512BW(src_rgba, dst_y, width, &kRgbaI601Constants);
 }
 #endif
 
 #ifdef HAS_ARGBTOYROW_AVX512BW
-void RGBAToYJRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kRgbaJPEGConstants);
+void RGBAToYJRow_AVX512BW(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX512BW(src_rgba, dst_y, width, &kRgbaJPEGConstants);
 }
 #endif
 
 #ifdef HAS_ARGBTOYROW_AVX512BW
-void BGRAToYRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kBgraI601Constants);
+void BGRAToYRow_AVX512BW(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_AVX512BW(src_bgra, dst_y, width, &kBgraI601Constants);
 }
 #endif
 
@@ -2157,16 +2157,16 @@ void ABGRToUVJRow_AVX2(const uint8_t* src_abgr,
 }
 #endif  // HAS_ABGRTOUVJROW_AVX2
 
-void BGRAToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kBgraI601Constants);
+void BGRAToYRow_SSSE3(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_SSSE3(src_bgra, dst_y, width, &kBgraI601Constants);
 }
 
-void ABGRToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kAbgrI601Constants);
+void ABGRToYRow_SSSE3(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_SSSE3(src_abgr, dst_y, width, &kAbgrI601Constants);
 }
 
-void RGBAToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kRgbaI601Constants);
+void RGBAToYRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  ARGBToYMatrixRow_SSSE3(src_rgba, dst_y, width, &kRgbaI601Constants);
 }
 
 #if defined(HAS_I422TOARGBROW_SSSE3) || defined(HAS_I422TOARGBROW_AVX2)

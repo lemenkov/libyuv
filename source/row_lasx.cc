@@ -375,7 +375,7 @@ void I422ToARGBRow_LASX(const uint8_t* src_y,
 void I422ToRGBARow_LASX(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
-                        uint8_t* dst_argb,
+                        uint8_t* dst_rgba,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   int x;
@@ -395,7 +395,7 @@ void I422ToRGBARow_LASX(const uint8_t* src_y,
     READYUV422_D(src_y, src_u, src_v, y, uv_l, uv_h);
     YUVTORGB_D(y, uv_l, uv_h, vec_ubvr, vec_ugvg, vec_yg, vec_yb, b_l, b_h, g_l,
                g_h, r_l, r_h);
-    STOREARGB_D(r_l, r_h, g_l, g_h, b_l, b_h, alpha, alpha, dst_argb);
+    STOREARGB_D(r_l, r_h, g_l, g_h, b_l, b_h, alpha, alpha, dst_rgba);
     src_y += 32;
     src_u += 16;
     src_v += 16;

@@ -3357,13 +3357,13 @@ int BGRAToARGB(const uint8_t* src_bgra,
 
 // Convert ARGB to BGRA (same as BGRAToARGB).
 LIBYUV_API
-int ARGBToBGRA(const uint8_t* src_bgra,
-               int src_stride_bgra,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+int ARGBToBGRA(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_bgra,
+               int dst_stride_bgra,
                int width,
                int height) {
-  return ARGBShuffle(src_bgra, src_stride_bgra, dst_argb, dst_stride_argb,
+  return ARGBShuffle(src_argb, src_stride_argb, dst_bgra, dst_stride_bgra,
                      (const uint8_t*)&kShuffleMaskBGRAToARGB, width, height);
 }
 
@@ -3381,13 +3381,13 @@ int ABGRToARGB(const uint8_t* src_abgr,
 
 // Convert ARGB to ABGR to (same as ABGRToARGB).
 LIBYUV_API
-int ARGBToABGR(const uint8_t* src_abgr,
-               int src_stride_abgr,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+int ARGBToABGR(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height) {
-  return ARGBShuffle(src_abgr, src_stride_abgr, dst_argb, dst_stride_argb,
+  return ARGBShuffle(src_argb, src_stride_argb, dst_abgr, dst_stride_abgr,
                      (const uint8_t*)&kShuffleMaskABGRToARGB, width, height);
 }
 
