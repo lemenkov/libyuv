@@ -383,6 +383,9 @@ extern "C" {
 #define HAS_ARGBTOUV444MATRIXROW_AVX512BW
 #define HAS_ARGBTOYROW_AVX512BW
 #define HAS_ARGBTOUVJ444ROW_AVX512BW
+#define HAS_ARGBTOUVROW_AVX512BW
+#define HAS_ARGBTOUVJROW_AVX512BW
+#define HAS_ARGBTOUVMATRIXROW_AVX512BW
 #endif
 
 // The following are available on Neon platforms:
@@ -2157,6 +2160,12 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
                             uint8_t* dst_v,
                             int width,
                             const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
+                                int src_stride_argb,
+                                uint8_t* dst_u,
+                                uint8_t* dst_v,
+                                int width,
+                                const struct ArgbConstants* c);
 void ARGBToUV444MatrixRow_C(const uint8_t* src_argb,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
@@ -2214,6 +2223,12 @@ void ARGBToUVMatrixRow_Any_AVX2(const uint8_t* src_argb,
                                 uint8_t* dst_v,
                                 int width,
                                 const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_Any_AVX512BW(const uint8_t* src_argb,
+                                    int src_stride_argb,
+                                    uint8_t* dst_u,
+                                    uint8_t* dst_v,
+                                    int width,
+                                    const struct ArgbConstants* c);
 void ARGBToUV444MatrixRow_Any_SSSE3(const uint8_t* src_argb,
                                     uint8_t* dst_u,
                                     uint8_t* dst_v,
@@ -2358,6 +2373,26 @@ void ABGRToUVJRow_AVX2(const uint8_t* src_abgr,
                        uint8_t* dst_u,
                        uint8_t* dst_v,
                        int width);
+void ARGBToUVRow_AVX512BW(const uint8_t* src_argb,
+                          int src_stride_argb,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
+void ABGRToUVRow_AVX512BW(const uint8_t* src_abgr,
+                          int src_stride_abgr,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
+void ARGBToUVJRow_AVX512BW(const uint8_t* src_argb,
+                           int src_stride_argb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
+void ABGRToUVJRow_AVX512BW(const uint8_t* src_abgr,
+                           int src_stride_abgr,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
 void ARGBToUVRow_SSSE3(const uint8_t* src_argb,
                        int src_stride_argb,
                        uint8_t* dst_u,
@@ -2408,6 +2443,26 @@ void ABGRToUVJRow_Any_AVX2(const uint8_t* src_ptr,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width);
+void ARGBToUVRow_Any_AVX512BW(const uint8_t* src_ptr,
+                              int src_stride,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width);
+void ABGRToUVRow_Any_AVX512BW(const uint8_t* src_ptr,
+                              int src_stride,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width);
+void ARGBToUVJRow_Any_AVX512BW(const uint8_t* src_ptr,
+                               int src_stride,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
+void ABGRToUVJRow_Any_AVX512BW(const uint8_t* src_ptr,
+                               int src_stride,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
 void ARGBToUVRow_Any_SSSE3(const uint8_t* src_ptr,
                            int src_stride,
                            uint8_t* dst_u,
