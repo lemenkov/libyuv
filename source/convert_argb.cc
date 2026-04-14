@@ -5311,7 +5311,7 @@ int NV12ToRGB565(const uint8_t* src_y,
                             width, height);
 }
 
-// Convert I422 to RGBA with matrix.
+// Convert I420 to RGBA with matrix.
 LIBYUV_API
 int I420ToRGBAMatrix(const uint8_t* src_y,
                      int src_stride_y,
