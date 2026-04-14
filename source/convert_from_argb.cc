@@ -320,6 +320,14 @@ int ARGBToI422(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToUVRow = ARGBToUVRow_Any_AVX2;
@@ -582,6 +590,14 @@ int ARGBToNV12(const uint8_t* src_argb,
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
     }
   }
 #endif
@@ -872,6 +888,14 @@ int ARGBToNV21(const uint8_t* src_argb,
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
     }
   }
 #endif
@@ -1514,6 +1538,14 @@ int ARGBToYUY2(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToUVRow = ARGBToUVRow_Any_AVX2;
@@ -1722,6 +1754,14 @@ int ARGBToUYVY(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToUVRow = ARGBToUVRow_Any_AVX2;
@@ -1911,6 +1951,14 @@ int ARGBToI400(const uint8_t* src_argb,
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToYRow = ARGBToYRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYRow = ARGBToYRow_AVX512BW;
     }
   }
 #endif
