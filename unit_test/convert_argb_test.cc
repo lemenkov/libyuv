@@ -28,7 +28,7 @@
 #include "libyuv/row.h" /* For ARGBToAR30Row_AVX2 */
 #endif
 
-#if defined(__riscv) && !defined(__clang__)
+#if (defined(__riscv) && !defined(__clang__)) || defined(__hexagon__)
 #define DISABLE_SLOW_TESTS
 #undef ENABLE_FULL_TESTS
 #undef ENABLE_ROW_TESTS

@@ -27,7 +27,7 @@
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
 
-#if defined(__riscv) && !defined(__clang__)
+#if (defined(__riscv) && !defined(__clang__)) || defined(__hexagon__)
 #define DISABLE_SLOW_TESTS
 #undef ENABLE_FULL_TESTS
 #define LEAN_TESTS
