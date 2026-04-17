@@ -847,7 +847,6 @@ extern "C" {
 #endif
 #if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 12000
 // Since v0.12, TUPLE_TYPE is introduced for segment load and store.
-#define LIBYUV_RVV_HAS_TUPLE_TYPE
 // Since v0.12, VXRM(fixed-point rounding mode) is included in arguments of
 // fixed-point intrinsics.
 #define LIBYUV_RVV_HAS_VXRM_ARG
@@ -863,6 +862,12 @@ extern "C" {
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBTOYJROW_RVV
 #define HAS_ARGBTOYMATRIXROW_RVV
+#define HAS_ARGBTOUV444MATRIXROW_RVV
+#define HAS_ARGBTOUVMATRIXROW_RVV
+#define HAS_ARGBTOUV444ROW_RVV
+#define HAS_ARGBTOUVJ444ROW_RVV
+#define HAS_ARGBTOUVROW_RVV
+#define HAS_ARGBTOUVJROW_RVV
 #define HAS_ARGBTOYROW_RVV
 #define HAS_BGRATOYROW_RVV
 #define HAS_COPYROW_RVV
@@ -892,8 +897,7 @@ extern "C" {
 //  __riscv_vcreate_v_u8m2x3
 //  __riscv_vcreate_v_u8m2x4
 //  __riscv_vcreate_v_u8m4x2
-#if !defined(LIBYUV_RVV_HAS_TUPLE_TYPE) || \
-    (defined(LIBYUV_RVV_HAS_TUPLE_TYPE) && defined(LIBYUV_RVV_HAS_VCREATE))
+#ifdef LIBYUV_RVV_HAS_VCREATE
 #define HAS_AB64TOARGBROW_RVV
 #define HAS_AR64TOAB64ROW_RVV
 #define HAS_ARGBATTENUATEROW_RVV
@@ -1798,6 +1802,35 @@ void ABGRToYJRow_NEON_DotProd(const uint8_t* src_abgr,
 void RGBAToYJRow_NEON_DotProd(const uint8_t* src_rgba,
                               uint8_t* dst_yj,
                               int width);
+void ARGBToUV444MatrixRow_RVV(const uint8_t* src_argb,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width,
+                              const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_RVV(const uint8_t* src_argb,
+                           int src_stride_argb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width,
+                           const struct ArgbConstants* c);
+void ARGBToUV444Row_RVV(const uint8_t* src_argb,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width);
+void ARGBToUVRow_RVV(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_u,
+                     uint8_t* dst_v,
+                     int width);
+void ARGBToUVJ444Row_RVV(const uint8_t* src_argb,
+                         uint8_t* dst_u,
+                         uint8_t* dst_v,
+                         int width);
+void ARGBToUVJRow_RVV(const uint8_t* src_argb,
+                      int src_stride_argb,
+                      uint8_t* dst_u,
+                      uint8_t* dst_v,
+                      int width);
 void ARGBToYRow_RVV(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYJRow_RVV(const uint8_t* src_argb, uint8_t* dst_yj, int width);
 void ABGRToYJRow_RVV(const uint8_t* src_abgr, uint8_t* dst_yj, int width);
@@ -2143,6 +2176,10 @@ void ARGBToYMatrixRow_C(const uint8_t* src_argb,
                         uint8_t* dst_y,
                         int width,
                         const struct ArgbConstants* c);
+void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
+                          uint8_t* dst_y,
+                          int width,
+                          const struct ArgbConstants* c);
 void ARGBToUVMatrixRow_C(const uint8_t* src_argb,
                          int src_stride_argb,
                          uint8_t* dst_u,
