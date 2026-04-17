@@ -474,7 +474,8 @@ int UYVYToNV12(const uint8_t* src_uyvy,
                int width,
                int height);
 
-// Convert NV21 to NV12.
+// Convert NV21 to NV12. The conversion is bidirectional (swapping UV plane
+// byte pairs), so NV12ToNV21 is an alias for NV21ToNV12.
 LIBYUV_API
 int NV21ToNV12(const uint8_t* src_y,
                int src_stride_y,
@@ -486,6 +487,8 @@ int NV21ToNV12(const uint8_t* src_y,
                int dst_stride_uv,
                int width,
                int height);
+
+#define NV12ToNV21 NV21ToNV12
 
 LIBYUV_API
 int YUY2ToY(const uint8_t* src_yuy2,

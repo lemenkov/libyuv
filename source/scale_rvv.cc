@@ -116,7 +116,6 @@ void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
 #endif
 
 #ifdef HAS_SCALEARGBROWDOWN2LINEAR_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
                                  ptrdiff_t src_stride,
                                  uint8_t* dst_argb,
@@ -140,10 +139,8 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEARGBROWDOWN2BOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
                               uint8_t* dst_argb,
@@ -179,7 +176,6 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEARGBROWDOWNEVEN_RVV
 void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
@@ -203,7 +199,6 @@ void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
 #endif
 
 #ifdef HAS_SCALEARGBROWDOWNEVENBOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
                                  ptrdiff_t src_stride,
                                  int src_stepx,
@@ -240,7 +235,6 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEROWDOWN2_RVV
 void ScaleRowDown2_RVV(const uint8_t* src_ptr,
@@ -263,7 +257,6 @@ void ScaleRowDown2_RVV(const uint8_t* src_ptr,
 #endif
 
 #ifdef HAS_SCALEROWDOWN2LINEAR_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleRowDown2Linear_RVV(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              uint8_t* dst,
@@ -283,10 +276,8 @@ void ScaleRowDown2Linear_RVV(const uint8_t* src_ptr,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEROWDOWN2BOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst,
@@ -315,7 +306,6 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEROWDOWN4_RVV
 void ScaleRowDown4_RVV(const uint8_t* src_ptr,
@@ -337,7 +327,6 @@ void ScaleRowDown4_RVV(const uint8_t* src_ptr,
 #endif
 
 #ifdef HAS_SCALEROWDOWN4BOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
                           ptrdiff_t src_stride,
                           uint8_t* dst_ptr,
@@ -398,7 +387,6 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEROWDOWN34_RVV
 void ScaleRowDown34_RVV(const uint8_t* src_ptr,
@@ -422,7 +410,6 @@ void ScaleRowDown34_RVV(const uint8_t* src_ptr,
 #endif
 
 #ifdef HAS_SCALEROWDOWN34_0_BOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -490,10 +477,8 @@ void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEROWDOWN34_1_BOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst_ptr,
@@ -552,7 +537,6 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
     dst_ptr += 3 * vl;
   } while (w > 0);
 }
-#endif
 #endif
 
 #ifdef HAS_SCALEROWDOWN38_RVV
@@ -878,7 +862,6 @@ void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
 #endif
 
 #ifdef HAS_SCALEUVROWDOWN2LINEAR_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
                                ptrdiff_t src_stride,
                                uint8_t* dst_uv,
@@ -902,10 +885,8 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
   } while (w > 0);
 }
 #endif
-#endif
 
 #ifdef HAS_SCALEUVROWDOWN2BOX_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
                             ptrdiff_t src_stride,
                             uint8_t* dst_uv,
@@ -945,7 +926,6 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
     src_uv_row1 += 4 * vl;
   } while (w > 0);
 }
-#endif
 #endif
 
 #ifdef HAS_SCALEUVROWDOWN4_RVV

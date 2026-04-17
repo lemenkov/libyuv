@@ -28,7 +28,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 // Fill YUV -> RGB conversion constants into vectors
 #define YUVTORGB_SETUP(yuvconst, ub, vr, ug, vg, yg, bb, bg, br) \
   {                                                              \
@@ -41,23 +40,6 @@ extern "C" {
     bg = yuvconst->kRGBCoeffBias[2] - 32;                        \
     br = yuvconst->kRGBCoeffBias[3] + 32;                        \
   }
-#else
-// Fill YUV -> RGB conversion constants into vectors
-// NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-// register) is set to round-to-nearest-up mode(0).
-#define YUVTORGB_SETUP(yuvconst, ub, vr, ug, vg, yg, bb, bg, br) \
-  {                                                              \
-    asm volatile("csrwi vxrm, 0");                               \
-    ub = yuvconst->kUVCoeff[0];                                  \
-    vr = yuvconst->kUVCoeff[1];                                  \
-    ug = yuvconst->kUVCoeff[2];                                  \
-    vg = yuvconst->kUVCoeff[3];                                  \
-    yg = yuvconst->kRGBCoeffBias[0];                             \
-    bb = yuvconst->kRGBCoeffBias[1] + 32;                        \
-    bg = yuvconst->kRGBCoeffBias[2] - 32;                        \
-    br = yuvconst->kRGBCoeffBias[3] + 32;                        \
-  }
-#endif
 // Read [2*VLEN/8] Y, [VLEN/8] U and [VLEN/8] V from 422
 #define READYUV422(vl, w, src_y, src_u, src_v, v_u, v_v, v_y_16) \
   {                                                              \
@@ -109,7 +91,6 @@ extern "C" {
     v_r_16 = __riscv_vssubu_vx_u16m4(v_tmp2, br, vl);                          \
   }
 
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 // Convert from fixed point RGB To 8 bit RGB
 #define RGBTORGB8(vl, v_g_16, v_b_16, v_r_16, v_g, v_b, v_r)        \
   {                                                                 \
@@ -117,15 +98,6 @@ extern "C" {
     v_b = __riscv_vnclipu_wx_u8m2(v_b_16, 6, __RISCV_VXRM_RNU, vl); \
     v_r = __riscv_vnclipu_wx_u8m2(v_r_16, 6, __RISCV_VXRM_RNU, vl); \
   }
-#else
-// Convert from fixed point RGB To 8 bit RGB
-#define RGBTORGB8(vl, v_g_16, v_b_16, v_r_16, v_g, v_b, v_r) \
-  {                                                          \
-    v_g = __riscv_vnclipu_wx_u8m2(v_g_16, 6, vl);            \
-    v_b = __riscv_vnclipu_wx_u8m2(v_b_16, 6, vl);            \
-    v_r = __riscv_vnclipu_wx_u8m2(v_r_16, 6, vl);            \
-  }
-#endif
 
 // Read [2*VLEN/8] Y from src_y; Read [VLEN/8] U and [VLEN/8] V from src_uv
 #define READNV12(vl, w, src_y, src_uv, v_u, v_v, v_y_16) \
@@ -707,7 +679,6 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
 #endif
 
 #ifdef HAS_I400TOARGBROW_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void I400ToARGBRow_RVV(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
@@ -745,7 +716,6 @@ void I400ToARGBRow_RVV(const uint8_t* src_y,
     dst_argb += vl * 4;
   } while (w > 0);
 }
-#endif
 #endif
 
 #ifdef HAS_J400TOARGBROW_RVV
@@ -903,7 +873,6 @@ void NV21ToRGB24Row_RVV(const uint8_t* src_y,
 
 // Bilinear filter [VLEN/8]x2 -> [VLEN/8]x1
 #ifdef HAS_INTERPOLATEROW_RVV
-#ifdef LIBYUV_RVV_HAS_VXRM_ARG
 void InterpolateRow_RVV(uint8_t* dst_ptr,
                         const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
@@ -957,64 +926,6 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
     dst_ptr += vl;
   } while (dst_w > 0);
 }
-#else
-void InterpolateRow_RVV(uint8_t* dst_ptr,
-                        const uint8_t* src_ptr,
-                        ptrdiff_t src_stride,
-                        int dst_width,
-                        int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
-  const uint8_t* src_ptr1 = src_ptr + src_stride;
-  size_t dst_w = (size_t)dst_width;
-  assert(source_y_fraction >= 0);
-  assert(source_y_fraction < 256);
-  // Blend 100 / 0 - Copy row unchanged.
-  if (y1_fraction == 0) {
-    do {
-      size_t vl = __riscv_vsetvl_e8m8(dst_w);
-      __riscv_vse8_v_u8m8(dst_ptr, __riscv_vle8_v_u8m8(src_ptr, vl), vl);
-      dst_w -= vl;
-      src_ptr += vl;
-      dst_ptr += vl;
-    } while (dst_w > 0);
-    return;
-  }
-  // To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up(0).
-  asm volatile("csrwi vxrm, 0");
-  // Blend 50 / 50.
-  if (y1_fraction == 128) {
-    do {
-      size_t vl = __riscv_vsetvl_e8m8(dst_w);
-      vuint8m8_t row0 = __riscv_vle8_v_u8m8(src_ptr, vl);
-      vuint8m8_t row1 = __riscv_vle8_v_u8m8(src_ptr1, vl);
-      // Use round-to-nearest-up mode for averaging add
-      vuint8m8_t row_out = __riscv_vaaddu_vv_u8m8(row0, row1, vl);
-      __riscv_vse8_v_u8m8(dst_ptr, row_out, vl);
-      dst_w -= vl;
-      src_ptr += vl;
-      src_ptr1 += vl;
-      dst_ptr += vl;
-    } while (dst_w > 0);
-    return;
-  }
-  // General purpose row blend.
-  do {
-    size_t vl = __riscv_vsetvl_e8m4(dst_w);
-    vuint8m4_t row0 = __riscv_vle8_v_u8m4(src_ptr, vl);
-    vuint16m8_t acc = __riscv_vwmulu_vx_u16m8(row0, y0_fraction, vl);
-    vuint8m4_t row1 = __riscv_vle8_v_u8m4(src_ptr1, vl);
-    acc = __riscv_vwmaccu_vx_u16m8(acc, y1_fraction, row1, vl);
-    // Use round-to-nearest-up mode for vnclip
-    __riscv_vse8_v_u8m4(dst_ptr, __riscv_vnclipu_wx_u8m4(acc, 8, vl), vl);
-    dst_w -= vl;
-    src_ptr += vl;
-    src_ptr1 += vl;
-    dst_ptr += vl;
-  } while (dst_w > 0);
-}
-#endif
 #endif
 
 #ifdef HAS_SPLITRGBROW_RVV
@@ -1609,74 +1520,96 @@ void ARGBToUVMatrixRow_RVV(const uint8_t* src_argb,
   size_t w = (size_t)(width / 2);
   if (w > 0) {
     do {
-      size_t vl = __riscv_vsetvl_e8m1(w);
-      vuint8m1x8_t v_src = __riscv_vlseg8e8_v_u8m1x8(src_argb, vl);
-      vuint8m1x8_t v_src1 = __riscv_vlseg8e8_v_u8m1x8(src_argb1, vl);
+      size_t vl_pairs = __riscv_vsetvl_e16m2(w);
+      size_t vl = vl_pairs * 2;
+      vuint8m2x4_t v_src = __riscv_vlseg4e8_v_u8m2x4(src_argb, vl);
+      vuint8m2x4_t v_src1 = __riscv_vlseg4e8_v_u8m2x4(src_argb1, vl);
 
-      vuint8m1_t v_b0 = __riscv_vget_v_u8m1x8_u8m1(v_src, 0);
-      vuint8m1_t v_g0 = __riscv_vget_v_u8m1x8_u8m1(v_src, 1);
-      vuint8m1_t v_r0 = __riscv_vget_v_u8m1x8_u8m1(v_src, 2);
-      vuint8m1_t v_b1 = __riscv_vget_v_u8m1x8_u8m1(v_src, 4);
-      vuint8m1_t v_g1 = __riscv_vget_v_u8m1x8_u8m1(v_src, 5);
-      vuint8m1_t v_r1 = __riscv_vget_v_u8m1x8_u8m1(v_src, 6);
+      vuint8m2_t v_b = __riscv_vget_v_u8m2x4_u8m2(v_src, 0);
+      vuint8m2_t v_g = __riscv_vget_v_u8m2x4_u8m2(v_src, 1);
+      vuint8m2_t v_r = __riscv_vget_v_u8m2x4_u8m2(v_src, 2);
 
-      vuint8m1_t v_b0_1 = __riscv_vget_v_u8m1x8_u8m1(v_src1, 0);
-      vuint8m1_t v_g0_1 = __riscv_vget_v_u8m1x8_u8m1(v_src1, 1);
-      vuint8m1_t v_r0_1 = __riscv_vget_v_u8m1x8_u8m1(v_src1, 2);
-      vuint8m1_t v_b1_1 = __riscv_vget_v_u8m1x8_u8m1(v_src1, 4);
-      vuint8m1_t v_g1_1 = __riscv_vget_v_u8m1x8_u8m1(v_src1, 5);
-      vuint8m1_t v_r1_1 = __riscv_vget_v_u8m1x8_u8m1(v_src1, 6);
+      vuint8m2_t v_b_1 = __riscv_vget_v_u8m2x4_u8m2(v_src1, 0);
+      vuint8m2_t v_g_1 = __riscv_vget_v_u8m2x4_u8m2(v_src1, 1);
+      vuint8m2_t v_r_1 = __riscv_vget_v_u8m2x4_u8m2(v_src1, 2);
 
-      vuint16m2_t v_sum_b = __riscv_vwaddu_vv_u16m2(v_b0, v_b1, vl);
-      vuint16m2_t v_sum_b1 = __riscv_vwaddu_vv_u16m2(v_b0_1, v_b1_1, vl);
-      v_sum_b = __riscv_vadd_vv_u16m2(v_sum_b, v_sum_b1, vl);
-      vuint8m1_t v_ab = __riscv_vnclipu_wx_u8m1(v_sum_b, 2, __RISCV_VXRM_RNU, vl);
+      vuint16m2_t v_b16 = __riscv_vreinterpret_v_u8m2_u16m2(v_b);
+      vuint8m1_t v_b0 = __riscv_vnsrl_wx_u8m1(v_b16, 0, vl_pairs);
+      vuint8m1_t v_b1 = __riscv_vnsrl_wx_u8m1(v_b16, 8, vl_pairs);
 
-      vuint16m2_t v_sum_g = __riscv_vwaddu_vv_u16m2(v_g0, v_g1, vl);
-      vuint16m2_t v_sum_g1 = __riscv_vwaddu_vv_u16m2(v_g0_1, v_g1_1, vl);
-      v_sum_g = __riscv_vadd_vv_u16m2(v_sum_g, v_sum_g1, vl);
-      vuint8m1_t v_ag = __riscv_vnclipu_wx_u8m1(v_sum_g, 2, __RISCV_VXRM_RNU, vl);
+      vuint16m2_t v_g16 = __riscv_vreinterpret_v_u8m2_u16m2(v_g);
+      vuint8m1_t v_g0 = __riscv_vnsrl_wx_u8m1(v_g16, 0, vl_pairs);
+      vuint8m1_t v_g1 = __riscv_vnsrl_wx_u8m1(v_g16, 8, vl_pairs);
 
-      vuint16m2_t v_sum_r = __riscv_vwaddu_vv_u16m2(v_r0, v_r1, vl);
-      vuint16m2_t v_sum_r1 = __riscv_vwaddu_vv_u16m2(v_r0_1, v_r1_1, vl);
-      v_sum_r = __riscv_vadd_vv_u16m2(v_sum_r, v_sum_r1, vl);
-      vuint8m1_t v_ar = __riscv_vnclipu_wx_u8m1(v_sum_r, 2, __RISCV_VXRM_RNU, vl);
+      vuint16m2_t v_r16 = __riscv_vreinterpret_v_u8m2_u16m2(v_r);
+      vuint8m1_t v_r0 = __riscv_vnsrl_wx_u8m1(v_r16, 0, vl_pairs);
+      vuint8m1_t v_r1 = __riscv_vnsrl_wx_u8m1(v_r16, 8, vl_pairs);
 
-      vint16m2_t v_b_16 = __riscv_vreinterpret_v_u16m2_i16m2(__riscv_vwaddu_vx_u16m2(v_ab, 0, vl));
-      vint16m2_t v_g_16 = __riscv_vreinterpret_v_u16m2_i16m2(__riscv_vwaddu_vx_u16m2(v_ag, 0, vl));
-      vint16m2_t v_r_16 = __riscv_vreinterpret_v_u16m2_i16m2(__riscv_vwaddu_vx_u16m2(v_ar, 0, vl));
+      vuint16m2_t v_b16_1 = __riscv_vreinterpret_v_u8m2_u16m2(v_b_1);
+      vuint8m1_t v_b0_1 = __riscv_vnsrl_wx_u8m1(v_b16_1, 0, vl_pairs);
+      vuint8m1_t v_b1_1 = __riscv_vnsrl_wx_u8m1(v_b16_1, 8, vl_pairs);
 
-      vint16m2_t v_u_16 = __riscv_vmv_v_x_i16m2(c->kAddUV[0], vl);
-      v_u_16 = __riscv_vnmsac_vx_i16m2(v_u_16, c->kRGBToU[2], v_r_16, vl);
-      v_u_16 = __riscv_vnmsac_vx_i16m2(v_u_16, c->kRGBToU[1], v_g_16, vl);
-      v_u_16 = __riscv_vnmsac_vx_i16m2(v_u_16, c->kRGBToU[0], v_b_16, vl);
-      vuint8m1_t v_u = __riscv_vnsrl_wx_u8m1(__riscv_vreinterpret_v_i16m2_u16m2(v_u_16), 8, vl);
+      vuint16m2_t v_g16_1 = __riscv_vreinterpret_v_u8m2_u16m2(v_g_1);
+      vuint8m1_t v_g0_1 = __riscv_vnsrl_wx_u8m1(v_g16_1, 0, vl_pairs);
+      vuint8m1_t v_g1_1 = __riscv_vnsrl_wx_u8m1(v_g16_1, 8, vl_pairs);
 
-      vint16m2_t v_v_16 = __riscv_vmv_v_x_i16m2(c->kAddUV[0], vl);
-      v_v_16 = __riscv_vnmsac_vx_i16m2(v_v_16, c->kRGBToV[2], v_r_16, vl);
-      v_v_16 = __riscv_vnmsac_vx_i16m2(v_v_16, c->kRGBToV[1], v_g_16, vl);
-      v_v_16 = __riscv_vnmsac_vx_i16m2(v_v_16, c->kRGBToV[0], v_b_16, vl);
-      vuint8m1_t v_v = __riscv_vnsrl_wx_u8m1(__riscv_vreinterpret_v_i16m2_u16m2(v_v_16), 8, vl);
+      vuint16m2_t v_r16_1 = __riscv_vreinterpret_v_u8m2_u16m2(v_r_1);
+      vuint8m1_t v_r0_1 = __riscv_vnsrl_wx_u8m1(v_r16_1, 0, vl_pairs);
+      vuint8m1_t v_r1_1 = __riscv_vnsrl_wx_u8m1(v_r16_1, 8, vl_pairs);
 
-      __riscv_vse8_v_u8m1(dst_u, v_u, vl);
-      __riscv_vse8_v_u8m1(dst_v, v_v, vl);
+      vuint16m2_t v_sum_b = __riscv_vwaddu_vv_u16m2(v_b0, v_b1, vl_pairs);
+      v_sum_b = __riscv_vwaddu_wv_u16m2(v_sum_b, v_b0_1, vl_pairs);
+      v_sum_b = __riscv_vwaddu_wv_u16m2(v_sum_b, v_b1_1, vl_pairs);
+      vuint8m1_t v_ab = __riscv_vnclipu_wx_u8m1(v_sum_b, 2, __RISCV_VXRM_RNU, vl_pairs);
 
-      w -= vl;
-      src_argb += 8 * vl;
-      src_argb1 += 8 * vl;
-      dst_u += vl;
-      dst_v += vl;
+      vuint16m2_t v_sum_g = __riscv_vwaddu_vv_u16m2(v_g0, v_g1, vl_pairs);
+      v_sum_g = __riscv_vwaddu_wv_u16m2(v_sum_g, v_g0_1, vl_pairs);
+      v_sum_g = __riscv_vwaddu_wv_u16m2(v_sum_g, v_g1_1, vl_pairs);
+      vuint8m1_t v_ag = __riscv_vnclipu_wx_u8m1(v_sum_g, 2, __RISCV_VXRM_RNU, vl_pairs);
+
+      vuint16m2_t v_sum_r = __riscv_vwaddu_vv_u16m2(v_r0, v_r1, vl_pairs);
+      v_sum_r = __riscv_vwaddu_wv_u16m2(v_sum_r, v_r0_1, vl_pairs);
+      v_sum_r = __riscv_vwaddu_wv_u16m2(v_sum_r, v_r1_1, vl_pairs);
+      vuint8m1_t v_ar = __riscv_vnclipu_wx_u8m1(v_sum_r, 2, __RISCV_VXRM_RNU, vl_pairs);
+
+      vint16m2_t v_b_16 = __riscv_vreinterpret_v_u16m2_i16m2(__riscv_vwaddu_vx_u16m2(v_ab, 0, vl_pairs));
+      vint16m2_t v_g_16 = __riscv_vreinterpret_v_u16m2_i16m2(__riscv_vwaddu_vx_u16m2(v_ag, 0, vl_pairs));
+      vint16m2_t v_r_16 = __riscv_vreinterpret_v_u16m2_i16m2(__riscv_vwaddu_vx_u16m2(v_ar, 0, vl_pairs));
+
+      vint16m2_t v_u_16 = __riscv_vmv_v_x_i16m2(c->kAddUV[0], vl_pairs);
+      v_u_16 = __riscv_vnmsac_vx_i16m2(v_u_16, c->kRGBToU[2], v_r_16, vl_pairs);
+      v_u_16 = __riscv_vnmsac_vx_i16m2(v_u_16, c->kRGBToU[1], v_g_16, vl_pairs);
+      v_u_16 = __riscv_vnmsac_vx_i16m2(v_u_16, c->kRGBToU[0], v_b_16, vl_pairs);
+      vuint8m1_t v_u = __riscv_vnsrl_wx_u8m1(__riscv_vreinterpret_v_i16m2_u16m2(v_u_16), 8, vl_pairs);
+
+      vint16m2_t v_v_16 = __riscv_vmv_v_x_i16m2(c->kAddUV[0], vl_pairs);
+      v_v_16 = __riscv_vnmsac_vx_i16m2(v_v_16, c->kRGBToV[2], v_r_16, vl_pairs);
+      v_v_16 = __riscv_vnmsac_vx_i16m2(v_v_16, c->kRGBToV[1], v_g_16, vl_pairs);
+      v_v_16 = __riscv_vnmsac_vx_i16m2(v_v_16, c->kRGBToV[0], v_b_16, vl_pairs);
+      vuint8m1_t v_v = __riscv_vnsrl_wx_u8m1(__riscv_vreinterpret_v_i16m2_u16m2(v_v_16), 8, vl_pairs);
+
+      __riscv_vse8_v_u8m1(dst_u, v_u, vl_pairs);
+      __riscv_vse8_v_u8m1(dst_v, v_v, vl_pairs);
+
+      w -= vl_pairs;
+      src_argb += 4 * vl;
+      src_argb1 += 4 * vl;
+      dst_u += vl_pairs;
+      dst_v += vl_pairs;
     } while (w > 0);
   }
   if (width & 1) {
     size_t vl = 1;
-    vuint8m1_t v_b0 = __riscv_vle8_v_u8m1(&src_argb[0], vl);
-    vuint8m1_t v_g0 = __riscv_vle8_v_u8m1(&src_argb[1], vl);
-    vuint8m1_t v_r0 = __riscv_vle8_v_u8m1(&src_argb[2], vl);
+    vuint8m1x4_t v_src = __riscv_vlseg4e8_v_u8m1x4(src_argb, vl);
+    vuint8m1x4_t v_src1 = __riscv_vlseg4e8_v_u8m1x4(src_argb1, vl);
 
-    vuint8m1_t v_b0_1 = __riscv_vle8_v_u8m1(&src_argb1[0], vl);
-    vuint8m1_t v_g0_1 = __riscv_vle8_v_u8m1(&src_argb1[1], vl);
-    vuint8m1_t v_r0_1 = __riscv_vle8_v_u8m1(&src_argb1[2], vl);
+    vuint8m1_t v_b0 = __riscv_vget_v_u8m1x4_u8m1(v_src, 0);
+    vuint8m1_t v_g0 = __riscv_vget_v_u8m1x4_u8m1(v_src, 1);
+    vuint8m1_t v_r0 = __riscv_vget_v_u8m1x4_u8m1(v_src, 2);
+
+    vuint8m1_t v_b0_1 = __riscv_vget_v_u8m1x4_u8m1(v_src1, 0);
+    vuint8m1_t v_g0_1 = __riscv_vget_v_u8m1x4_u8m1(v_src1, 1);
+    vuint8m1_t v_r0_1 = __riscv_vget_v_u8m1x4_u8m1(v_src1, 2);
 
     vuint16m2_t v_sum_b = __riscv_vwaddu_vv_u16m2(v_b0, v_b0_1, vl);
     vuint8m1_t v_ab = __riscv_vnclipu_wx_u8m1(v_sum_b, 1, __RISCV_VXRM_RNU, vl);

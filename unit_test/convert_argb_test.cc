@@ -2788,6 +2788,8 @@ TEST_F(LibYUVConvertTest, TestARGBToUVRow) {
     }
 #elif defined(HAS_ARGBTOUVROW_NEON)
     ARGBToUVRow_NEON(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
+#elif defined(HAS_ARGBTOUVROW_RVV)
+    ARGBToUVRow_RVV(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
 #else
     ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u[0], &dest_v[0], 64);
 #endif
@@ -2807,6 +2809,44 @@ TEST_F(LibYUVConvertTest, TestARGBToUVRow) {
   uint32_t checksum_v = HashDjb2(&dest_v[0], sizeof(dest_v), 5381);
   EXPECT_EQ(2590663990u, checksum_v);
 }
+
+TEST_F(LibYUVConvertTest, TestARGBToUVRow_Any) {
+  const int kWidth = 63;
+  SIMD_ALIGNED(uint8_t orig_argb_pixels[kWidth * 4]);
+  SIMD_ALIGNED(uint8_t dest_u_c[kWidth]);
+  SIMD_ALIGNED(uint8_t dest_v_c[kWidth]);
+  SIMD_ALIGNED(uint8_t dest_u_opt[kWidth]);
+  SIMD_ALIGNED(uint8_t dest_v_opt[kWidth]);
+
+  MemRandomize(orig_argb_pixels, sizeof(orig_argb_pixels));
+  memset(dest_u_c, 0, sizeof(dest_u_c));
+  memset(dest_v_c, 0, sizeof(dest_v_c));
+  memset(dest_u_opt, 0, sizeof(dest_u_opt));
+  memset(dest_v_opt, 0, sizeof(dest_v_opt));
+
+  ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u_c[0], &dest_v_c[0], kWidth);
+
+#if defined(HAS_ARGBTOUVROW_AVX2)
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  if (has_avx2) {
+    ARGBToUVRow_AVX2(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+  } else {
+    ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+  }
+#elif defined(HAS_ARGBTOUVROW_NEON)
+  ARGBToUVRow_NEON(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+#elif defined(HAS_ARGBTOUVROW_RVV)
+  ARGBToUVRow_RVV(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+#else
+  ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+#endif
+
+  for (int i = 0; i < (kWidth + 1) / 2; ++i) {
+    EXPECT_EQ(dest_u_c[i], dest_u_opt[i]);
+    EXPECT_EQ(dest_v_c[i], dest_v_opt[i]);
+  }
+}
+
 #endif
 
 #if !defined(DISABLE_SLOW_TESTS) && \
