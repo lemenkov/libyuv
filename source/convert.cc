@@ -2925,6 +2925,7 @@ int RGBAToI420(const uint8_t* src_rgba,
 
 // Enabled if 1 pass is available
 #if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_LSX) || \
+     defined(HAS_RGB24TOYROW_AVX2) || \
      defined(HAS_RGB24TOYROW_RVV))
 #define HAS_RGB24TOYROW
 #endif
@@ -2968,6 +2969,16 @@ int RGB24ToI420(const uint8_t* src_rgb24,
   }
 
 #if defined(HAS_RGB24TOYROW)
+
+#if defined(HAS_RGB24TOYROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    // TODO(fbarchard): Write an AVX2 function for RGB24ToUVRow.
+    RGB24ToYRow = RGB24ToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGB24ToYRow = RGB24ToYRow_AVX2;
+    }
+  }
+#endif
 
 // Neon version does direct RGB24 to YUV.
 #if defined(HAS_RGB24TOYROW_NEON) && defined(HAS_RGB24TOUVROW_NEON)
@@ -3112,7 +3123,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
 #undef HAS_RGB24TOYROW
 
 // Enabled if 1 pass is available
-#if defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_RVV)
+#if defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_AVX2) || defined(HAS_RGB24TOYJROW_RVV)
 #define HAS_RGB24TOYJROW
 #endif
 
@@ -3155,6 +3166,15 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
   }
 
 #if defined(HAS_RGB24TOYJROW)
+
+#if defined(HAS_RGB24TOYJROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RGB24ToYJRow = RGB24ToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGB24ToYJRow = RGB24ToYJRow_AVX2;
+    }
+  }
+#endif
 
 // Neon version does direct RGB24 to YUV.
 #if defined(HAS_RGB24TOYJROW_NEON) && defined(HAS_RGB24TOUVJROW_NEON)
@@ -3288,6 +3308,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
 
 // Enabled if 1 pass is available
 #if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_LSX) || \
+     defined(HAS_RAWTOYROW_AVX2) || \
      defined(HAS_RAWTOYROW_RVV))
 #define HAS_RAWTOYROW
 #endif
@@ -3330,6 +3351,16 @@ int RAWToI420(const uint8_t* src_raw,
   }
 
 #if defined(HAS_RAWTOYROW)
+
+#if defined(HAS_RAWTOYROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    // TODO(fbarchard): Write an AVX2 function for RAWToUVRow.
+    RAWToYRow = RAWToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RAWToYRow = RAWToYRow_AVX2;
+    }
+  }
+#endif
 
 // Neon version does direct RAW to YUV.
 #if defined(HAS_RAWTOYROW_NEON) && defined(HAS_RAWTOUVROW_NEON)
@@ -3482,7 +3513,7 @@ int RAWToI420(const uint8_t* src_raw,
 #undef HAS_RAWTOYROW
 
 // Enabled if 1 pass is available
-#if defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_RVV)
+#if defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_AVX2) || defined(HAS_RAWTOYJROW_RVV)
 #define HAS_RAWTOYJROW
 #endif
 
@@ -3525,6 +3556,15 @@ int RAWToJ420(const uint8_t* src_raw,
   }
 
 #if defined(HAS_RAWTOYJROW)
+
+#if defined(HAS_RAWTOYJROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RAWToYJRow = RAWToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RAWToYJRow = RAWToYJRow_AVX2;
+    }
+  }
+#endif
 
 // Neon version does direct RAW to YUV.
 #if defined(HAS_RAWTOYJROW_NEON) && defined(HAS_RAWTOUVJROW_NEON)
@@ -4717,7 +4757,7 @@ int RGB24ToJ400(const uint8_t* src_rgb24,
     }
   }
 #endif
-#if defined(HAS_RGB24TOYJROW_AVX2)
+#if defined(HAS_RGB24TOYJROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     RGB24ToYJRow = RGB24ToYJRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -4798,7 +4838,7 @@ int RAWToJ400(const uint8_t* src_raw,
     }
   }
 #endif
-#if defined(HAS_RAWTOYJROW_AVX2)
+#if defined(HAS_RAWTOYJROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     RAWToYJRow = RAWToYJRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {

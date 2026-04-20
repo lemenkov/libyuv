@@ -1706,6 +1706,78 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
 }
 #endif  // HAS_ARGBTOAR30ROW_AVX2
 
+#ifdef HAS_RGBTOYMATRIXROW_AVX2
+TEST_F(LibYUVConvertTest, RGBToYMatrixRow_Opt) {
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 31) & ~31;
+  align_buffer_page_end(src, kPixels * 3);
+  align_buffer_page_end(dst_opt, kPixels);
+  align_buffer_page_end(dst_c, kPixels);
+  MemRandomize(src, kPixels * 3);
+  memset(dst_opt, 0, kPixels);
+  memset(dst_c, 1, kPixels);
+
+  // We test with kArgbI601Constants since it's commonly used.
+  // We use ARGBToYMatrixRow_C for the C reference because we adapted
+  // ARGBToYMatrixRow_AVX2 to read 24-bit values. But wait, ARGBToYMatrixRow_C
+  // expects ARGB format (4 bytes).
+  // I need to create a simple reference loop or use a C function.
+  // I will just convert the RGB24 to ARGB32 and then call ARGBToYMatrixRow_C.
+  align_buffer_page_end(src_argb, kPixels * 4);
+  RGB24ToARGB(src, kPixels * 3, src_argb, kPixels * 4, kPixels, 1);
+  ARGBToYMatrixRow_C(src_argb, dst_c, kPixels, &kArgbI601Constants);
+
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    if (has_avx2) {
+      RGBToYMatrixRow_AVX2(src, dst_opt, kPixels, &kArgbI601Constants);
+    } else {
+      ARGBToYMatrixRow_C(src_argb, dst_opt, kPixels, &kArgbI601Constants);
+    }
+  }
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_opt[i], dst_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(dst_c);
+}
+
+TEST_F(LibYUVConvertTest, RGBToYMatrixRow_2Step_Opt) {
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 31) & ~31;
+  align_buffer_page_end(src, kPixels * 3);
+  align_buffer_page_end(src_argb, kPixels * 4);
+  align_buffer_page_end(dst_opt, kPixels);
+  align_buffer_page_end(dst_c, kPixels);
+  MemRandomize(src, kPixels * 3);
+  memset(dst_opt, 0, kPixels);
+  memset(dst_c, 1, kPixels);
+
+  RGB24ToARGB(src, kPixels * 3, src_argb, kPixels * 4, kPixels, 1);
+  ARGBToYMatrixRow_C(src_argb, dst_c, kPixels, &kArgbI601Constants);
+
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    if (has_avx2) {
+      RGB24ToARGB(src, kPixels * 3, src_argb, kPixels * 4, kPixels, 1);
+      ARGBToYMatrixRow_AVX2(src_argb, dst_opt, kPixels, &kArgbI601Constants);
+    } else {
+      RGB24ToARGB(src, kPixels * 3, src_argb, kPixels * 4, kPixels, 1);
+      ARGBToYMatrixRow_C(src_argb, dst_opt, kPixels, &kArgbI601Constants);
+    }
+  }
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_opt[i], dst_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(dst_c);
+}
+#endif  // HAS_RGBTOYMATRIXROW_AVX2
+
 #ifdef HAS_ABGRTOAR30ROW_AVX2
 TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
   // ABGRToAR30Row_AVX2 expects a multiple of 8 pixels.

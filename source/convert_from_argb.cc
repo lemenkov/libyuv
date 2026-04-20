@@ -3979,7 +3979,7 @@ int ARGBToAB64(const uint8_t* src_argb,
 }
 
 // Enabled if 1 pass is available
-#if defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_RVV)
+#if defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_AVX2) || defined(HAS_RAWTOYJROW_RVV)
 #define HAS_RAWTOYJROW
 #endif
 
@@ -4023,6 +4023,16 @@ int RAWToJNV21(const uint8_t* src_raw,
   }
 
 #if defined(HAS_RAWTOYJROW)
+
+#if defined(HAS_RAWTOYJROW_AVX2) && defined(HAS_RGBTOYMATRIXROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    // TODO(fbarchard): Write an AVX2 function for RAWToUVJRow.
+    RAWToYJRow = RAWToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RAWToYJRow = RAWToYJRow_AVX2;
+    }
+  }
+#endif
 
 // Neon version does direct RAW to YUV.
 #if defined(HAS_RAWTOYJROW_NEON) && defined(HAS_RAWTOUVJROW_NEON)
