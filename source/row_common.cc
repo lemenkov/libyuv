@@ -782,6 +782,18 @@ static __inline uint8_t RGBToVMatrix(uint8_t r,
          8;
 }
 
+void RGBToYMatrixRow_C(const uint8_t* src_rgb24,
+                       uint8_t* dst_y,
+                       int width,
+                       const struct ArgbConstants* c) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_y[0] = RGBToYMatrix(src_rgb24[2], src_rgb24[1], src_rgb24[0], c);
+    src_rgb24 += 3;
+    dst_y += 1;
+  }
+}
+
 void ARGBToYMatrixRow_C(const uint8_t* src_argb,
                         uint8_t* dst_y,
                         int width,
@@ -820,6 +832,38 @@ void ARGBToUVMatrixRow_C(const uint8_t* src_argb,
     uint8_t ab = (src_argb[0] + src_argb1[0] + 1) >> 1;
     uint8_t ag = (src_argb[1] + src_argb1[1] + 1) >> 1;
     uint8_t ar = (src_argb[2] + src_argb1[2] + 1) >> 1;
+    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
+    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
+  }
+}
+
+
+void RGBToUVMatrixRow_C(const uint8_t* src_rgb24,
+                        int src_stride_rgb24,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width,
+                        const struct ArgbConstants* c) {
+  const uint8_t* src_rgb24_1 = src_rgb24 + src_stride_rgb24;
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    uint8_t ab =
+        (src_rgb24[0] + src_rgb24[3] + src_rgb24_1[0] + src_rgb24_1[3] + 2) >> 2;
+    uint8_t ag =
+        (src_rgb24[1] + src_rgb24[4] + src_rgb24_1[1] + src_rgb24_1[4] + 2) >> 2;
+    uint8_t ar =
+        (src_rgb24[2] + src_rgb24[5] + src_rgb24_1[2] + src_rgb24_1[5] + 2) >> 2;
+    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
+    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
+    src_rgb24 += 6;
+    src_rgb24_1 += 6;
+    dst_u += 1;
+    dst_v += 1;
+  }
+  if (width & 1) {
+    uint8_t ab = (src_rgb24[0] + src_rgb24_1[0] + 1) >> 1;
+    uint8_t ag = (src_rgb24[1] + src_rgb24_1[1] + 1) >> 1;
+    uint8_t ar = (src_rgb24[2] + src_rgb24_1[2] + 1) >> 1;
     dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
     dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
   }

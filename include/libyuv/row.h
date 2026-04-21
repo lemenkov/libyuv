@@ -2191,6 +2191,10 @@ void RAWToYJRow_LASX(const uint8_t* src_raw, uint8_t* dst_yj, int width);
 
 void ARGBToYRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);
 void ARGBToYJRow_C(const uint8_t* src_rgb, uint8_t* dst_y, int width);
+void RGBToYMatrixRow_C(const uint8_t* src_rgb24,
+                       uint8_t* dst_y,
+                       int width,
+                       const struct ArgbConstants* c);
 void ARGBToYMatrixRow_C(const uint8_t* src_argb,
                         uint8_t* dst_y,
                         int width,
@@ -2199,6 +2203,10 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
                           uint8_t* dst_y,
                           int width,
                           const struct ArgbConstants* c);
+void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
+                         uint8_t* dst_y,
+                         int width,
+                         const struct ArgbConstants* c);
 void ARGBToUVMatrixRow_C(const uint8_t* src_argb,
                          int src_stride_argb,
                          uint8_t* dst_u,
@@ -2223,6 +2231,14 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
                                 uint8_t* dst_v,
                                 int width,
                                 const struct ArgbConstants* c);
+
+void RGBToUVMatrixRow_C(const uint8_t* src_rgb24,
+                        int src_stride_rgb24,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width,
+                        const struct ArgbConstants* c);
+
 void ARGBToUV444MatrixRow_C(const uint8_t* src_argb,
                             uint8_t* dst_u,
                             uint8_t* dst_v,

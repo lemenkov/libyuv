@@ -1238,7 +1238,7 @@ void BGRAToYRow_RVV(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
 #endif
 
 #ifdef HAS_RGBTOYMATRIXROW_RVV
-static void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
+void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
                                 uint8_t* dst_y,
                                 int width,
                                 const struct ArgbConstants* c) {

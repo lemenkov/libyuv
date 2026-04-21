@@ -2901,14 +2901,14 @@ TEST_F(LibYUVConvertTest, TestARGBToUVRow_Any) {
 #if defined(HAS_ARGBTOUVROW_AVX2)
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   if (has_avx2) {
-    ARGBToUVRow_AVX2(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+    ARGBToUVRow_Any_AVX2(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
   } else {
     ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
   }
 #elif defined(HAS_ARGBTOUVROW_NEON)
-  ARGBToUVRow_NEON(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+  ARGBToUVRow_Any_NEON(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
 #elif defined(HAS_ARGBTOUVROW_RVV)
-  ARGBToUVRow_RVV(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
+  ARGBToUVRow_Any_RVV(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
 #else
   ARGBToUVRow_C(&orig_argb_pixels[0], 0, &dest_u_opt[0], &dest_v_opt[0], kWidth);
 #endif
