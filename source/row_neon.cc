@@ -2830,7 +2830,7 @@ void BGRAToYRow_NEON(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
   RGBAToYMatrixRow_NEON(src_bgra, dst_y, width, &kAbgrI601Constants);
 }
 
-static void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
+void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
                                  uint8_t* dst_y,
                                  int width,
                                  const struct ArgbConstants* c) {
@@ -2865,21 +2865,9 @@ static void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
         "q12");
 }
 
-void RGB24ToYJRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
-  RGBToYMatrixRow_NEON(src_rgb24, dst_yj, width, &kArgbJPEGConstants);
-}
 
-void RAWToYJRow_NEON(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
-  RGBToYMatrixRow_NEON(src_raw, dst_yj, width, &kAbgrJPEGConstants);
-}
 
-void RGB24ToYRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
-  RGBToYMatrixRow_NEON(src_rgb24, dst_y, width, &kArgbI601Constants);
-}
 
-void RAWToYRow_NEON(const uint8_t* src_raw, uint8_t* dst_y, int width) {
-  RGBToYMatrixRow_NEON(src_raw, dst_y, width, &kAbgrI601Constants);
-}
 
 // Bilinear filter 16x2 -> 16x1
 void InterpolateRow_NEON(uint8_t* dst_ptr,

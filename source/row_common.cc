@@ -678,8 +678,6 @@ MAKEROWY(ARGB, 2, 1, 0, 4)
 MAKEROWY(BGRA, 1, 2, 3, 4)
 MAKEROWY(ABGR, 0, 1, 2, 4)
 MAKEROWY(RGBA, 3, 2, 1, 4)
-MAKEROWY(RGB24, 2, 1, 0, 3)
-MAKEROWY(RAW, 0, 1, 2, 3)
 #undef MAKEROWY
 
 // JPeg uses BT.601-1 full range
@@ -753,8 +751,6 @@ static __inline uint8_t RGBToVJ(uint8_t r, uint8_t g, uint8_t b) {
 MAKEROWYJ(ARGB, 2, 1, 0, 4)
 MAKEROWYJ(ABGR, 0, 1, 2, 4)
 MAKEROWYJ(RGBA, 3, 2, 1, 4)
-MAKEROWYJ(RGB24, 2, 1, 0, 3)
-MAKEROWYJ(RAW, 0, 1, 2, 3)
 #undef MAKEROWYJ
 
 static __inline uint8_t RGBToYMatrix(uint8_t r,
@@ -780,18 +776,6 @@ static __inline uint8_t RGBToVMatrix(uint8_t r,
   return (c->kAddUV[0] -
           (c->kRGBToV[2] * r + c->kRGBToV[1] * g + c->kRGBToV[0] * b)) >>
          8;
-}
-
-void RGBToYMatrixRow_C(const uint8_t* src_rgb24,
-                       uint8_t* dst_y,
-                       int width,
-                       const struct ArgbConstants* c) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    dst_y[0] = RGBToYMatrix(src_rgb24[2], src_rgb24[1], src_rgb24[0], c);
-    src_rgb24 += 3;
-    dst_y += 1;
-  }
 }
 
 void ARGBToYMatrixRow_C(const uint8_t* src_argb,
@@ -832,38 +816,6 @@ void ARGBToUVMatrixRow_C(const uint8_t* src_argb,
     uint8_t ab = (src_argb[0] + src_argb1[0] + 1) >> 1;
     uint8_t ag = (src_argb[1] + src_argb1[1] + 1) >> 1;
     uint8_t ar = (src_argb[2] + src_argb1[2] + 1) >> 1;
-    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
-    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
-  }
-}
-
-
-void RGBToUVMatrixRow_C(const uint8_t* src_rgb24,
-                        int src_stride_rgb24,
-                        uint8_t* dst_u,
-                        uint8_t* dst_v,
-                        int width,
-                        const struct ArgbConstants* c) {
-  const uint8_t* src_rgb24_1 = src_rgb24 + src_stride_rgb24;
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    uint8_t ab =
-        (src_rgb24[0] + src_rgb24[3] + src_rgb24_1[0] + src_rgb24_1[3] + 2) >> 2;
-    uint8_t ag =
-        (src_rgb24[1] + src_rgb24[4] + src_rgb24_1[1] + src_rgb24_1[4] + 2) >> 2;
-    uint8_t ar =
-        (src_rgb24[2] + src_rgb24[5] + src_rgb24_1[2] + src_rgb24_1[5] + 2) >> 2;
-    dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
-    dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
-    src_rgb24 += 6;
-    src_rgb24_1 += 6;
-    dst_u += 1;
-    dst_v += 1;
-  }
-  if (width & 1) {
-    uint8_t ab = (src_rgb24[0] + src_rgb24_1[0] + 1) >> 1;
-    uint8_t ag = (src_rgb24[1] + src_rgb24_1[1] + 1) >> 1;
-    uint8_t ar = (src_rgb24[2] + src_rgb24_1[2] + 1) >> 1;
     dst_u[0] = RGBToUMatrix(ar, ag, ab, c);
     dst_v[0] = RGBToVMatrix(ar, ag, ab, c);
   }
@@ -4421,35 +4373,23 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
+#ifdef HAS_RGB24TOYJROW_AVX2
+// Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
+}
+#endif  // HAS_RGB24TOYJROW_AVX2
+
+#ifdef HAS_RAWTOYJROW_AVX2
+// Convert 32 RAW pixels (128 bytes) to 32 YJ values.
+}
+#endif  // HAS_RAWTOYJROW_AVX2
+
 #ifdef HAS_RGB24TOYJROW_SSSE3
 // Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
-void RGB24ToYJRow_SSSE3(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    RGB24ToARGBRow_SSSE3(src_rgb24, row, twidth);
-    ARGBToYJRow_SSSE3(row, dst_yj, twidth);
-    src_rgb24 += twidth * 3;
-    dst_yj += twidth;
-    width -= twidth;
-  }
 }
 #endif  // HAS_RGB24TOYJROW_SSSE3
 
 #ifdef HAS_RAWTOYJROW_SSSE3
 // Convert 16 RAW pixels (64 bytes) to 16 YJ values.
-void RAWToYJRow_SSSE3(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    RAWToARGBRow_SSSE3(src_raw, row, twidth);
-    ARGBToYJRow_SSSE3(row, dst_yj, twidth);
-    src_raw += twidth * 3;
-    dst_yj += twidth;
-    width -= twidth;
-  }
 }
 #endif  // HAS_RAWTOYJROW_SSSE3
 

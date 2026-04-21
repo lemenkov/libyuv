@@ -3723,6 +3723,14 @@ int RAWToARGB(const uint8_t* src_raw,
     }
   }
 #endif
+#if defined(HAS_RAWTOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RAWToARGBRow = RAWToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RAWToARGBRow = RAWToARGBRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_RAWTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RAWToARGBRow = RAWToARGBRow_Any_NEON;
@@ -5311,7 +5319,7 @@ int NV12ToRGB565(const uint8_t* src_y,
                             width, height);
 }
 
-// Convert I420 to RGBA with matrix.
+// Convert I422 to RGBA with matrix.
 LIBYUV_API
 int I420ToRGBAMatrix(const uint8_t* src_y,
                      int src_stride_y,
