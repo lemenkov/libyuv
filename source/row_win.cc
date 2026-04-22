@@ -261,15 +261,13 @@ void RAWToARGBRow_AVX2(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
 }
 #endif
 
-#ifdef HAS_RAWTOARGBROW_AVX512VBMI
+#ifdef HAS_RAWTOARGBROW_AVX512BW
 LIBYUV_TARGET_AVX512BW
-void RAWToARGBRow_AVX512VBMI(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
+void RGBToARGBRow_AVX512BW(const uint8_t* src_raw, uint8_t* dst_argb, const __m128i* shuffler, int width) {
   __m512i zmm_alpha = _mm512_set1_epi32(0xff000000);
-  __m512i zmm_shuf = _mm512_set_epi8(
-      48, 45, 46, 47, 48, 42, 43, 44, 48, 39, 40, 41, 48, 36, 37, 38,
-      48, 33, 34, 35, 48, 30, 31, 32, 48, 27, 28, 29, 48, 24, 25, 26,
-      48, 21, 22, 23, 48, 18, 19, 20, 48, 15, 16, 17, 48, 12, 13, 14,
-      48,  9, 10, 11, 48,  6,  7,  8, 48,  3,  4,  5, 48,  0,  1,  2);
+  __m512i zmm_perm = _mm512_set_epi32(
+      12, 11, 10, 9, 9, 8, 7, 6, 6, 5, 4, 3, 3, 2, 1, 0);
+  __m512i zmm_shuf = _mm512_broadcast_i32x4(_mm_loadu_si128(shuffler));
 
   while (width > 0) {
     __m512i zmm0 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw);
@@ -277,10 +275,15 @@ void RAWToARGBRow_AVX512VBMI(const uint8_t* src_raw, uint8_t* dst_argb, int widt
     __m512i zmm2 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw + 96);
     __m512i zmm3 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw + 144);
 
-    zmm0 = _mm512_permutexvar_epi8(zmm_shuf, zmm0);
-    zmm1 = _mm512_permutexvar_epi8(zmm_shuf, zmm1);
-    zmm2 = _mm512_permutexvar_epi8(zmm_shuf, zmm2);
-    zmm3 = _mm512_permutexvar_epi8(zmm_shuf, zmm3);
+    zmm0 = _mm512_permutexvar_epi32(zmm_perm, zmm0);
+    zmm1 = _mm512_permutexvar_epi32(zmm_perm, zmm1);
+    zmm2 = _mm512_permutexvar_epi32(zmm_perm, zmm2);
+    zmm3 = _mm512_permutexvar_epi32(zmm_perm, zmm3);
+
+    zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
+    zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
+    zmm2 = _mm512_shuffle_epi8(zmm2, zmm_shuf);
+    zmm3 = _mm512_shuffle_epi8(zmm3, zmm_shuf);
 
     zmm0 = _mm512_or_si512(zmm0, zmm_alpha);
     zmm1 = _mm512_or_si512(zmm1, zmm_alpha);
@@ -296,6 +299,18 @@ void RAWToARGBRow_AVX512VBMI(const uint8_t* src_raw, uint8_t* dst_argb, int widt
     dst_argb += 256;
     width -= 64;
   }
+}
+
+LIBYUV_TARGET_AVX512BW
+void RAWToARGBRow_AVX512BW(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
+  __m128i shuf = _mm_set_epi8(-1, 9, 10, 11, -1, 6, 7, 8, -1, 3, 4, 5, -1, 0, 1, 2);
+  RGBToARGBRow_AVX512BW(src_raw, dst_argb, &shuf, width);
+}
+
+LIBYUV_TARGET_AVX512BW
+void RGB24ToARGBRow_AVX512BW(const uint8_t* src_rgb24, uint8_t* dst_argb, int width) {
+  __m128i shuf = _mm_set_epi8(-1, 11, 10, 9, -1, 8, 7, 6, -1, 5, 4, 3, -1, 2, 1, 0);
+  RGBToARGBRow_AVX512BW(src_rgb24, dst_argb, &shuf, width);
 }
 #endif
 
