@@ -4184,11 +4184,11 @@ int RAWToNV21Matrix(const uint8_t* src_raw,
     }
   }
 #endif
-#if defined(HAS_RAWTOARGBROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RAWToARGBRow = RAWToARGBRow_Any_AVX512BW;
+#if defined(HAS_RAWTOARGBROW_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
+    RAWToARGBRow = RAWToARGBRow_Any_AVX512VBMI;
     if (IS_ALIGNED(width, 64)) {
-      RAWToARGBRow = RAWToARGBRow_AVX512BW;
+      RAWToARGBRow = RAWToARGBRow_AVX512VBMI;
     }
   }
 #endif
@@ -4198,6 +4198,11 @@ int RAWToNV21Matrix(const uint8_t* src_raw,
     if (IS_ALIGNED(width, 8)) {
       RAWToARGBRow = RAWToARGBRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_RAWTOARGBROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    RAWToARGBRow = RAWToARGBRow_SVE2;
   }
 #endif
 #if defined(HAS_RAWTOARGBROW_LSX)
@@ -4221,8 +4226,6 @@ int RAWToNV21Matrix(const uint8_t* src_raw,
     RAWToARGBRow = RAWToARGBRow_RVV;
   }
 #endif
-
-
 #if defined(HAS_ARGBTOUVMATRIXROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_SSSE3;

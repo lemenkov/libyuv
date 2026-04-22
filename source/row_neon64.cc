@@ -3449,7 +3449,7 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
 }
 
 // Process any of ARGB, ABGR, BGRA, RGBA, by adjusting the uvconstants layout.
-static void ABCDToUVMatrixRow_NEON_I8MM(const uint8_t* src,
+static void ARGBToUVMatrixRow_NEON_I8MM(const uint8_t* src,
                                         int src_stride,
                                         uint8_t* dst_u,
                                         uint8_t* dst_v,
@@ -3551,7 +3551,7 @@ void ARGBToUVRow_NEON_I8MM(const uint8_t* src_argb,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width) {
-  ABCDToUVMatrixRow_NEON_I8MM(src_argb, src_stride_argb, dst_u, dst_v, width,
+  ARGBToUVMatrixRow_NEON_I8MM(src_argb, src_stride_argb, dst_u, dst_v, width,
                               kARGBToUVCoefficients);
 }
 
@@ -3560,7 +3560,7 @@ void ABGRToUVRow_NEON_I8MM(const uint8_t* src_abgr,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width) {
-  ABCDToUVMatrixRow_NEON_I8MM(src_abgr, src_stride_abgr, dst_u, dst_v, width,
+  ARGBToUVMatrixRow_NEON_I8MM(src_abgr, src_stride_abgr, dst_u, dst_v, width,
                               kABGRToUVCoefficients);
 }
 
@@ -3569,7 +3569,7 @@ void BGRAToUVRow_NEON_I8MM(const uint8_t* src_bgra,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width) {
-  ABCDToUVMatrixRow_NEON_I8MM(src_bgra, src_stride_bgra, dst_u, dst_v, width,
+  ARGBToUVMatrixRow_NEON_I8MM(src_bgra, src_stride_bgra, dst_u, dst_v, width,
                               kBGRAToUVCoefficients);
 }
 
@@ -3578,7 +3578,7 @@ void RGBAToUVRow_NEON_I8MM(const uint8_t* src_rgba,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width) {
-  ABCDToUVMatrixRow_NEON_I8MM(src_rgba, src_stride_rgba, dst_u, dst_v, width,
+  ARGBToUVMatrixRow_NEON_I8MM(src_rgba, src_stride_rgba, dst_u, dst_v, width,
                               kRGBAToUVCoefficients);
 }
 
@@ -3606,7 +3606,7 @@ void ARGBToUVJRow_NEON_I8MM(const uint8_t* src_argb,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
                             int width) {
-  ABCDToUVMatrixRow_NEON_I8MM(src_argb, src_stride_argb, dst_u, dst_v, width,
+  ARGBToUVMatrixRow_NEON_I8MM(src_argb, src_stride_argb, dst_u, dst_v, width,
                               kARGBToUVJCoefficients);
 }
 
@@ -3615,7 +3615,7 @@ void ABGRToUVJRow_NEON_I8MM(const uint8_t* src_abgr,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
                             int width) {
-  ABCDToUVMatrixRow_NEON_I8MM(src_abgr, src_stride_abgr, dst_u, dst_v, width,
+  ARGBToUVMatrixRow_NEON_I8MM(src_abgr, src_stride_abgr, dst_u, dst_v, width,
                               kABGRToUVJCoefficients);
 }
 

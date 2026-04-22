@@ -261,40 +261,26 @@ void RAWToARGBRow_AVX2(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
 }
 #endif
 
-#ifdef HAS_RAWTOARGBROW_AVX512BW
+#ifdef HAS_RAWTOARGBROW_AVX512VBMI
 LIBYUV_TARGET_AVX512BW
-void RAWToARGBRow_AVX512BW(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
+void RAWToARGBRow_AVX512VBMI(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   __m512i zmm_alpha = _mm512_set1_epi32(0xff000000);
-  __m128i shuf_low = _mm_set_epi8(-1, 9, 10, 11, -1, 6, 7, 8, -1, 3, 4, 5, -1, 0, 1, 2);
-  __m128i shuf_high = _mm_set_epi8(-1, 13, 14, 15, -1, 10, 11, 12, -1, 7, 8, 9, -1, 4, 5, 6);
-  __m512i zmm_shuf = _mm512_broadcast_i32x4(shuf_low);
-  __m512i zmm_shuf2 = _mm512_broadcast_i32x4(shuf_high);
+  __m512i zmm_shuf = _mm512_set_epi8(
+      48, 45, 46, 47, 48, 42, 43, 44, 48, 39, 40, 41, 48, 36, 37, 38,
+      48, 33, 34, 35, 48, 30, 31, 32, 48, 27, 28, 29, 48, 24, 25, 26,
+      48, 21, 22, 23, 48, 18, 19, 20, 48, 15, 16, 17, 48, 12, 13, 14,
+      48,  9, 10, 11, 48,  6,  7,  8, 48,  3,  4,  5, 48,  0,  1,  2);
 
   while (width > 0) {
-    __m512i zmm0 = _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)src_raw));
-    zmm0 = _mm512_inserti32x4(zmm0, _mm_loadu_si128((const __m128i*)(src_raw + 12)), 1);
-    zmm0 = _mm512_inserti32x4(zmm0, _mm_loadu_si128((const __m128i*)(src_raw + 24)), 2);
-    zmm0 = _mm512_inserti32x4(zmm0, _mm_loadu_si128((const __m128i*)(src_raw + 36)), 3);
+    __m512i zmm0 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw);
+    __m512i zmm1 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw + 48);
+    __m512i zmm2 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw + 96);
+    __m512i zmm3 = _mm512_maskz_loadu_epi8(0xffffffffffffull, src_raw + 144);
 
-    __m512i zmm1 = _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src_raw + 48)));
-    zmm1 = _mm512_inserti32x4(zmm1, _mm_loadu_si128((const __m128i*)(src_raw + 60)), 1);
-    zmm1 = _mm512_inserti32x4(zmm1, _mm_loadu_si128((const __m128i*)(src_raw + 72)), 2);
-    zmm1 = _mm512_inserti32x4(zmm1, _mm_loadu_si128((const __m128i*)(src_raw + 84)), 3);
-
-    __m512i zmm2 = _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src_raw + 96)));
-    zmm2 = _mm512_inserti32x4(zmm2, _mm_loadu_si128((const __m128i*)(src_raw + 108)), 1);
-    zmm2 = _mm512_inserti32x4(zmm2, _mm_loadu_si128((const __m128i*)(src_raw + 120)), 2);
-    zmm2 = _mm512_inserti32x4(zmm2, _mm_loadu_si128((const __m128i*)(src_raw + 132)), 3);
-
-    __m512i zmm3 = _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src_raw + 140)));
-    zmm3 = _mm512_inserti32x4(zmm3, _mm_loadu_si128((const __m128i*)(src_raw + 152)), 1);
-    zmm3 = _mm512_inserti32x4(zmm3, _mm_loadu_si128((const __m128i*)(src_raw + 164)), 2);
-    zmm3 = _mm512_inserti32x4(zmm3, _mm_loadu_si128((const __m128i*)(src_raw + 176)), 3);
-
-    zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
-    zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
-    zmm2 = _mm512_shuffle_epi8(zmm2, zmm_shuf);
-    zmm3 = _mm512_shuffle_epi8(zmm3, zmm_shuf2);
+    zmm0 = _mm512_permutexvar_epi8(zmm_shuf, zmm0);
+    zmm1 = _mm512_permutexvar_epi8(zmm_shuf, zmm1);
+    zmm2 = _mm512_permutexvar_epi8(zmm_shuf, zmm2);
+    zmm3 = _mm512_permutexvar_epi8(zmm_shuf, zmm3);
 
     zmm0 = _mm512_or_si512(zmm0, zmm_alpha);
     zmm1 = _mm512_or_si512(zmm1, zmm_alpha);

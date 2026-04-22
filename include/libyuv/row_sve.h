@@ -2019,7 +2019,7 @@ static const int8_t kABGRToUVJCoefficients[] = {
     43, 85, -128, 0, -128, 107, 21, 0,
 };
 
-#define ABCDTOUVMATRIX_SVE                                                  \
+#define ARGBTOUVMATRIX_SVE                                                  \
   "ld1d     {z0.d}, p1/z, [%[src0]]               \n" /* ABCD(bgra) */      \
   "ld1d     {z1.d}, p2/z, [%[src0], #1, mul vl]   \n" /* EFGH(bgra) */      \
   "ld1d     {z2.d}, p3/z, [%[src0], #2, mul vl]   \n" /* IJKL(bgra) */      \
@@ -2113,7 +2113,7 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
       "ptrue  p4.d                                   \n"
       "ptrue  p5.h                                   \n"
       "1:                                            \n"  //
-      ABCDTOUVMATRIX_SVE
+      ARGBTOUVMATRIX_SVE
       "b.gt     1b                                   \n"
 
       "2:                                            \n"
@@ -2126,7 +2126,7 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
       "whilelt  p3.d, %w[vl2], %w[width]             \n"
       "whilelt  p4.d, %w[vl3], %w[width]             \n"
       "whilelt  p5.h, wzr, %w[width]                 \n"  //
-      ABCDTOUVMATRIX_SVE
+      ARGBTOUVMATRIX_SVE
       "b.gt     3b                                   \n"
 
       "99:                                           \n"
