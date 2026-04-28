@@ -8,8 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+
+#include <new>
 
 #include "../unit_test/unit_test.h"
 #include "libyuv/cpu_id.h"
@@ -462,4 +467,71 @@ TEST_F(LibYUVScaleTest, PlaneTest1_16_Box) {
   free_aligned_buffer_page_end(dst_pixels_alloc);
   free_aligned_buffer_page_end(orig_pixels_alloc);
 }
+
+// POC: int * int overflow in ScalePlaneVertical (scale_common.cc).
+//
+// `yi * src_stride` is evaluated as int * int. When the product exceeds
+// INT_MAX it wraps negative and InterpolateRow reads from BEFORE the
+// source allocation.
+//
+// Parameters:
+//   - dst_width == src_width
+//     -> ScalePlane dispatches to ScalePlaneVertical
+//   - src_height == 5, dst_height == 1
+//     -> single iteration with yi == 2
+//   - src_stride == 0x7FFFFFF8
+//     -> 2 * 0x7FFFFFF8 == 0xFFFFFFF0 == -16 (int)
+//
+// The source buffer is sized so that the *correct* 64-bit offset
+// (2 * 0x7FFFFFF8 == 4294967280) plus kWidth bytes is in-bounds. With the
+// bug, the 32-bit product is -16 and ASAN reports a heap-buffer-overflow
+// READ "16 bytes before" the allocation.
+TEST_F(LibYUVScaleTest, ScalePlaneVertical_IntStrideOverflow) {
+  const int kWidth = 16;
+  const int kSrcHeight = 5;
+  const int kDstHeight = 1;
+  const int kStride = 0x7FFFFFF8;  // 2147483640
+
+  // src_size is big enough for the only row this call legitimately touches
+  // (yi == 2) when computed in 64-bit: 2 * stride + width = 4 GiB.
+  size_t src_size = kStride;
+  if (src_size > SIZE_MAX / 2) {
+    GTEST_SKIP() << "could not represent allocation size in size_t";
+  }
+  src_size *= 2;
+  if (src_size > SIZE_MAX - kWidth) {
+    GTEST_SKIP() << "could not represent allocation size in size_t";
+  }
+  src_size += kWidth;
+
+#if defined(__aarch64__)
+  // Infer malloc can accept a large size for cpu with dot product (a76/a55)
+  int has_large_malloc = TestCpuFlag(kCpuHasNeonDotProd);
+#else
+  int has_large_malloc = 1;
+#endif
+  if (!has_large_malloc) {
+    GTEST_SKIP() << "large allocation may assert for " << src_size << " bytes";
+  }
+
+  uint8_t* src = new (std::nothrow) uint8_t[src_size];
+  if (!src) {
+    GTEST_SKIP() << "could not allocate " << src_size << " bytes";
+  }
+  uint8_t* dst = new uint8_t[kWidth];
+  memset(dst, 0, kWidth);
+
+  // Force the scalar path so the crash site is deterministic
+  // (InterpolateRow_C -> memcpy when yf == 0).
+  MaskCpuFlags(disable_cpu_flags_);
+
+  int r = ScalePlane(src, kStride, kWidth, kSrcHeight, dst, kWidth, kWidth,
+                     kDstHeight, kFilterNone);
+
+  // Not reached under ASAN.
+  EXPECT_EQ(0, r);
+  delete[] src;
+  delete[] dst;
+}
+
 }  // namespace libyuv
