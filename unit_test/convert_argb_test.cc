@@ -2827,9 +2827,8 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   int has_large_malloc = 1;
 #endif
   if (!has_large_malloc) {
-    printf("WARNING: Skipped.  Large allocation may assert for %zd\n",
-           (size_t)kWidth * kHeight);
-    return;
+    GTEST_SKIP() << "WARNING: Large allocation may assert for "
+                 << (size_t)kWidth * kHeight << " bytes";
   }
 
   // Allocate one extra column so that the coalesce optimizations do not trigger
@@ -2841,20 +2840,16 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   fflush(stdout);
   align_buffer_page_end(orig_i400, (size_t)kWidth * kHeight);
   if (!orig_i400) {
-    printf("WARNING: unable to allocate I400 image of %zd bytes\n",
-           (size_t)kWidth * kHeight);
-    fflush(stdout);
-    return;
+    GTEST_SKIP() << "WARNING: unable to allocate I400 image of "
+                 << (size_t)kWidth * kHeight << " bytes";
   }
   printf("INFO: allocate I400 image returned %p\n", orig_i400);
   fflush(stdout);
   align_buffer_page_end(dest_argb, (size_t)kWidth * kHeight * 4);
   if (!dest_argb) {
-    printf("WARNING: unable to allocate ARGB image of %zd bytes\n",
-           (size_t)kWidth * kHeight * 4);
-    fflush(stdout);
     free_aligned_buffer_page_end(orig_i400);
-    return;
+    GTEST_SKIP() << "WARNING: unable to allocate ARGB image of "
+                 << (size_t)kWidth * kHeight * 4 << " bytes";
   }
   printf("INFO: allocate ARGB image returned %p\n", dest_argb);
   fflush(stdout);
