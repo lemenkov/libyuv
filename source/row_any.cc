@@ -2264,6 +2264,12 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     memcpy(dst_v + (np >> 1), vout + 256, SS(r, 1));                         \
   }
 
+#ifdef HAS_ARGBTOUVMATRIXROW_NEON
+ANY12MS(ARGBToUVMatrixRow_Any_NEON, ARGBToUVMatrixRow_NEON, 0, 4, 15)
+#endif
+#ifdef HAS_ARGBTOUVMATRIXROW_NEON_I8MM
+ANY12MS(ARGBToUVMatrixRow_Any_NEON_I8MM, ARGBToUVMatrixRow_NEON_I8MM, 0, 4, 15)
+#endif
 #ifdef HAS_ARGBTOUVMATRIXROW_AVX2
 ANY12MS(ARGBToUVMatrixRow_Any_AVX2, ARGBToUVMatrixRow_AVX2, 0, 4, 15)
 #endif

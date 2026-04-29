@@ -140,6 +140,13 @@ extern "C" {
 
 // The following are available on all x86 platforms, but
 // require VS2012, clang 3.4 or gcc 4.7.
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(__x86_64__) || defined(__i386__) || \
+     defined(_M_X64) || defined(_M_X86))
+#define HAS_ARGBTOUVMATRIXROW_AVX2
+#define HAS_MERGEUVROW_AVX2
+#endif
+
 #if !defined(LIBYUV_DISABLE_X86) && defined(USE_ROW_GCC) && \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2) || \
      defined(GCC_HAS_AVX2))
@@ -163,7 +170,6 @@ extern "C" {
 #define HAS_I444TORGB24ROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_J422TOARGBROW_AVX2
-#define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
 #define HAS_NV12TORGB24ROW_AVX2
@@ -427,6 +433,7 @@ extern "C" {
 #define HAS_ARGBTOUV444ROW_NEON
 #define HAS_ARGBTOUVJ444ROW_NEON
 #define HAS_ARGBTOUVJROW_NEON
+#define HAS_ARGBTOUVMATRIXROW_NEON
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
 #if !defined(__aarch64__)
@@ -573,6 +580,7 @@ extern "C" {
 #define HAS_ARGBTOUV444ROW_NEON_I8MM
 #define HAS_ARGBTOUVJ444ROW_NEON_I8MM
 #define HAS_ARGBTOUVJROW_NEON_I8MM
+#define HAS_ARGBTOUVMATRIXROW_NEON_I8MM
 #define HAS_ARGBTOUVROW_NEON_I8MM
 #define HAS_BGRATOUVROW_NEON_I8MM
 #define HAS_RGBATOUVROW_NEON_I8MM
@@ -588,6 +596,7 @@ extern "C" {
 #define HAS_ARGBTORGB565DITHERROW_SVE2
 #define HAS_ARGBTORGB565ROW_SVE2
 #define HAS_ARGBTOUVJROW_SVE2
+#define HAS_ARGBTOUVMATRIXROW_SVE2
 #define HAS_ARGBTOUVROW_SVE2
 #define HAS_AYUVTOUVROW_SVE2
 #define HAS_AYUVTOVUROW_SVE2
@@ -639,6 +648,7 @@ extern "C" {
 #define HAS_ABGRTOUVROW_SME
 #define HAS_ARGBMULTIPLYROW_SME
 #define HAS_ARGBTOUVJROW_SME
+#define HAS_ARGBTOUVMATRIXROW_SME
 #define HAS_ARGBTOUVROW_SME
 #define HAS_BGRATOUVROW_SME
 #define HAS_CONVERT16TO8ROW_SME
@@ -1834,6 +1844,43 @@ void ARGBToUVJ444Row_NEON_I8MM(const uint8_t* src_argb,
                                uint8_t* dst_u,
                                uint8_t* dst_v,
                                int width);
+void ARGBToUVMatrixRow_NEON(const uint8_t* src_argb,
+                            int src_stride_argb,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width,
+                            const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_Any_NEON(const uint8_t* src_argb,
+                                int src_stride_argb,
+                                uint8_t* dst_u,
+                                uint8_t* dst_v,
+                                int width,
+                                const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_NEON_I8MM(const uint8_t* src_argb,
+                                 int src_stride_argb,
+                                 uint8_t* dst_u,
+                                 uint8_t* dst_v,
+                                 int width,
+                                 const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_Any_NEON_I8MM(const uint8_t* src_argb,
+                                     int src_stride_argb,
+                                     uint8_t* dst_u,
+                                     uint8_t* dst_v,
+                                     int width,
+                                     const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
+                            int src_stride_argb,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width,
+                            const struct ArgbConstants* c);
+void ARGBToUVMatrixRow_SME(const uint8_t* src_argb,
+                           int src_stride_argb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width,
+                           const struct ArgbConstants* c);
+
 void ARGBToUVRow_NEON(const uint8_t* src_argb,
                       int src_stride_argb,
                       uint8_t* dst_u,
