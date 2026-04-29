@@ -183,10 +183,10 @@ void ScaleRowDown2Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride))  // %3
+      : "+r"(src_ptr),   // %0
+        "+r"(dst_ptr),   // %1
+        "+r"(dst_width)  // %2
+      : "r"(src_stride)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
 }
 
@@ -283,10 +283,10 @@ void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride))  // %3
+      : "+r"(src_ptr),   // %0
+        "+r"(dst_ptr),   // %1
+        "+r"(dst_width)  // %2
+      : "r"(src_stride)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
 }
 #endif  // HAS_SCALEROWDOWN2_AVX2
@@ -326,7 +326,7 @@ void ScaleRowDown4Box_SSSE3(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
                             uint8_t* dst_ptr,
                             int dst_width) {
-  intptr_t stridex3;
+  ptrdiff_t stridex3;
   asm volatile(
       "pcmpeqb     %%xmm4,%%xmm4                 \n"
       "pabsw       %%xmm4,%%xmm5                 \n"
@@ -367,11 +367,11 @@ void ScaleRowDown4Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x8(%1),%1                    \n"
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width),             // %2
-        "=&r"(stridex3)              // %3
-      : "r"((intptr_t)(src_stride))  // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width),  // %2
+        "=&r"(stridex3)   // %3
+      : "r"(src_stride)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 
@@ -456,11 +456,11 @@ void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                   // %0
-        "+r"(dst_ptr),                   // %1
-        "+r"(dst_width)                  // %2
-      : "r"((intptr_t)(src_stride)),     // %3
-        "r"((intptr_t)(src_stride * 3))  // %4
+      : "+r"(src_ptr),       // %0
+        "+r"(dst_ptr),       // %1
+        "+r"(dst_width)      // %2
+      : "r"(src_stride),     // %3
+        "r"(src_stride * 3)  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 #endif  // HAS_SCALEROWDOWN4_AVX2
@@ -557,11 +557,11 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x18(%1),%1                   \n"
       "sub         $0x18,%2                      \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "m"(kMadd21)                  // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "m"(kMadd21)      // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -625,11 +625,11 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x18(%1),%1                   \n"
       "sub         $0x18,%2                      \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "m"(kMadd21)                  // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "m"(kMadd21)      // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -701,10 +701,10 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x6(%1),%1                    \n"
       "sub         $0x6,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride))  // %3
+      : "+r"(src_ptr),   // %0
+        "+r"(dst_ptr),   // %1
+        "+r"(dst_width)  // %2
+      : "r"(src_stride)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 
@@ -762,10 +762,10 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x6(%1),%1                    \n"
       "sub         $0x6,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),               // %0
-        "+r"(dst_ptr),               // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride))  // %3
+      : "+r"(src_ptr),   // %0
+        "+r"(dst_ptr),   // %1
+        "+r"(dst_width)  // %2
+      : "r"(src_stride)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -935,11 +935,11 @@ void ScaleRowUp2_Bilinear_SSE2(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 8 sample to 16 sample
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride))   // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "r"(dst_stride)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -1084,12 +1084,12 @@ void ScaleRowUp2_Bilinear_12_SSSE3(const uint16_t* src_ptr,
       "lea         0x20(%1),%1                   \n"  // 8 sample to 16 sample
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride)),  // %4
-        "m"(kLinearShuffleFar)        // %5
+      : "+r"(src_ptr),          // %0
+        "+r"(dst_ptr),          // %1
+        "+r"(dst_width)         // %2
+      : "r"(src_stride),        // %3
+        "r"(dst_stride),        // %4
+        "m"(kLinearShuffleFar)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -1246,11 +1246,11 @@ void ScaleRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 4 pixel to 8 pixel
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride))   // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "r"(dst_stride)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -1371,12 +1371,12 @@ void ScaleRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 8 sample to 16 sample
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride)),  // %4
-        "m"(kLinearMadd31)            // %5
+      : "+r"(src_ptr),      // %0
+        "+r"(dst_ptr),      // %1
+        "+r"(dst_width)     // %2
+      : "r"(src_stride),    // %3
+        "r"(dst_stride),    // %4
+        "m"(kLinearMadd31)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -1497,12 +1497,12 @@ void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "sub         $0x20,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride)),  // %4
-        "m"(kLinearMadd31)            // %5
+      : "+r"(src_ptr),      // %0
+        "+r"(dst_ptr),      // %1
+        "+r"(dst_width)     // %2
+      : "r"(src_stride),    // %3
+        "r"(dst_stride),    // %4
+        "m"(kLinearMadd31)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -1612,12 +1612,12 @@ void ScaleRowUp2_Bilinear_12_AVX2(const uint16_t* src_ptr,
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride)),  // %4
-        "m"(kLinearShuffleFar)        // %5
+      : "+r"(src_ptr),          // %0
+        "+r"(dst_ptr),          // %1
+        "+r"(dst_width)         // %2
+      : "r"(src_stride),        // %3
+        "r"(dst_stride),        // %4
+        "m"(kLinearShuffleFar)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 #endif
@@ -1746,11 +1746,11 @@ void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride))   // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "r"(dst_stride)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif
@@ -2016,10 +2016,10 @@ void ScaleARGBRowDown2Box_SSE2(const uint8_t* src_argb,
       "lea         0x10(%1),%1                   \n"
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_argb),              // %0
-        "+r"(dst_argb),              // %1
-        "+r"(dst_width)              // %2
-      : "r"((intptr_t)(src_stride))  // %3
+      : "+r"(src_argb),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(dst_width)  // %2
+      : "r"(src_stride)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 
@@ -2030,8 +2030,8 @@ void ScaleARGBRowDownEven_SSE2(const uint8_t* src_argb,
                                int src_stepx,
                                uint8_t* dst_argb,
                                int dst_width) {
-  intptr_t src_stepx_x4 = (intptr_t)(src_stepx);
-  intptr_t src_stepx_x12;
+  ptrdiff_t src_stepx_x4 = (ptrdiff_t)(src_stepx);
+  ptrdiff_t src_stepx_x12;
   (void)src_stride;
   asm volatile(
       "lea         0x00(,%1,4),%1                \n"
@@ -2067,9 +2067,8 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8_t* src_argb,
                                   int src_stepx,
                                   uint8_t* dst_argb,
                                   int dst_width) {
-  intptr_t src_stepx_x4 = (intptr_t)(src_stepx);
-  intptr_t src_stepx_x12;
-  intptr_t row1 = (intptr_t)(src_stride);
+  ptrdiff_t src_stepx_x4 = (ptrdiff_t)(src_stepx);
+  ptrdiff_t src_stepx_x12;
   asm volatile(
       "lea         0x00(,%1,4),%1                \n"
       "lea         0x00(%1,%1,2),%4              \n"
@@ -2102,7 +2101,7 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8_t* src_argb,
         "+r"(dst_argb),        // %2
         "+rm"(dst_width),      // %3
         "=&r"(src_stepx_x12),  // %4
-        "+r"(row1)             // %5
+        "+r"(src_stride)       // %5
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
@@ -2364,12 +2363,12 @@ void ScaleUVRowDown2Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x8(%1),%1                    \n"  // 4 UV
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "m"(kShuffleSplitUV),         // %4
-        "m"(kShuffleMergeUV)          // %5
+      : "+r"(src_ptr),         // %0
+        "+r"(dst_ptr),         // %1
+        "+r"(dst_width)        // %2
+      : "r"(src_stride),       // %3
+        "m"(kShuffleSplitUV),  // %4
+        "m"(kShuffleMergeUV)   // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 #endif  // HAS_SCALEUVROWDOWN2BOX_SSSE3
@@ -2405,12 +2404,12 @@ void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "m"(kShuffleSplitUV),         // %4
-        "m"(kShuffleMergeUV)          // %5
+      : "+r"(src_ptr),         // %0
+        "+r"(dst_ptr),         // %1
+        "+r"(dst_width)        // %2
+      : "r"(src_stride),       // %3
+        "m"(kShuffleSplitUV),  // %4
+        "m"(kShuffleMergeUV)   // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 #endif  // HAS_SCALEUVROWDOWN2BOX_AVX2
@@ -2531,12 +2530,12 @@ void ScaleUVRowUp2_Bilinear_SSSE3(const uint8_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 4 uv to 8 uv
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride)),  // %4
-        "m"(kUVLinearMadd31)          // %5
+      : "+r"(src_ptr),        // %0
+        "+r"(dst_ptr),        // %1
+        "+r"(dst_width)       // %2
+      : "r"(src_stride),      // %3
+        "r"(dst_stride),      // %4
+        "m"(kUVLinearMadd31)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -2655,12 +2654,12 @@ void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
       "sub         $0x10,%2                      \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride)),  // %4
-        "m"(kUVLinearMadd31)          // %5
+      : "+r"(src_ptr),        // %0
+        "+r"(dst_ptr),        // %1
+        "+r"(dst_width)       // %2
+      : "r"(src_stride),      // %3
+        "r"(dst_stride),      // %4
+        "m"(kUVLinearMadd31)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -2799,11 +2798,11 @@ void ScaleUVRowUp2_Bilinear_16_SSE41(const uint16_t* src_ptr,
       "lea         0x10(%1),%1                   \n"  // 2 uv to 4 uv
       "sub         $0x4,%2                       \n"
       "jg          1b                            \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride))   // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "r"(dst_stride)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -2930,11 +2929,11 @@ void ScaleUVRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
       "sub         $0x8,%2                       \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
-      : "+r"(src_ptr),                // %0
-        "+r"(dst_ptr),                // %1
-        "+r"(dst_width)               // %2
-      : "r"((intptr_t)(src_stride)),  // %3
-        "r"((intptr_t)(dst_stride))   // %4
+      : "+r"(src_ptr),    // %0
+        "+r"(dst_ptr),    // %1
+        "+r"(dst_width)   // %2
+      : "r"(src_stride),  // %3
+        "r"(dst_stride)   // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif
