@@ -4011,12 +4011,10 @@ void Convert8To8Row_NEON(const uint8_t* src_y,
       "vmull.u8    q1, d5, d8                    \n"
       "vmull.u8    q2, d6, d8                    \n"
       "vmull.u8    q3, d7, d8                    \n"
-      "vshrn.u16   d0, q0, #8                    \n"
-      "vshrn.u16   d1, q1, #8                    \n"
-      "vshrn.u16   d2, q2, #8                    \n"
-      "vshrn.u16   d3, q3, #8                    \n"
-      "vadd.u8     q0, q0, q5                    \n"
-      "vadd.u8     q1, q1, q5                    \n"
+      "vuzp.8      q0, q1                        \n"
+      "vuzp.8      q2, q3                        \n"
+      "vadd.u8     q0, q1, q5                    \n"
+      "vadd.u8     q1, q3, q5                    \n"
       "vst1.8      {q0, q1}, [%1]!               \n"  // store 32 pixels
       "bgt         1b                            \n"
       : "+r"(src_y),  // %0
