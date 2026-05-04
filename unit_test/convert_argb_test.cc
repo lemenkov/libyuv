@@ -2809,6 +2809,46 @@ TEST_F(LibYUVConvertTest, TestARGBToUVRow) {
 }
 #endif
 
+#ifdef ENABLE_ROW_TESTS
+TEST_F(LibYUVConvertTest, TestARGBToUVMatrixRow_Opt) {
+  const int kMaxWidth = 128;
+  SIMD_ALIGNED(uint8_t orig_argb_pixels[kMaxWidth * 4 * 2]);
+  SIMD_ALIGNED(uint8_t dest_u_c[kMaxWidth]);
+  SIMD_ALIGNED(uint8_t dest_v_c[kMaxWidth]);
+  SIMD_ALIGNED(uint8_t dest_u_opt[kMaxWidth]);
+  SIMD_ALIGNED(uint8_t dest_v_opt[kMaxWidth]);
+
+  for (int i = 0; i < kMaxWidth * 4 * 2; ++i) {
+    orig_argb_pixels[i] = i * 43;
+  }
+
+#if defined(HAS_ARGBTOUVMATRIXROW_NEON)
+  int has_neon = TestCpuFlag(kCpuHasNEON);
+  if (has_neon) {
+    for (int width = 1; width <= kMaxWidth; ++width) {
+      for (int height = 1; height <= 2; ++height) {
+        memset(dest_u_c, 0, sizeof(dest_u_c));
+        memset(dest_v_c, 0, sizeof(dest_v_c));
+        memset(dest_u_opt, 0, sizeof(dest_u_opt));
+        memset(dest_v_opt, 0, sizeof(dest_v_opt));
+        
+        int src_stride = (height == 1) ? 0 : kMaxWidth * 4;
+
+        ARGBToUVMatrixRow_C(&orig_argb_pixels[0], src_stride, &dest_u_c[0], &dest_v_c[0], width, &kArgbI601Constants);
+        ARGBToUVMatrixRow_Any_NEON(&orig_argb_pixels[0], src_stride, &dest_u_opt[0], &dest_v_opt[0], width, &kArgbI601Constants);
+
+        int half_width = (width + 1) / 2;
+        for (int i = 0; i < half_width; ++i) {
+          EXPECT_EQ(dest_u_c[i], dest_u_opt[i]) << "u mismatch at " << i << " width " << width << " height " << height;
+          EXPECT_EQ(dest_v_c[i], dest_v_opt[i]) << "v mismatch at " << i << " width " << width << " height " << height;
+        }
+      }
+    }
+  }
+#endif
+}
+#endif
+
 #if !defined(DISABLE_SLOW_TESTS) && \
     (defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__))
 // TODO(fbarchard): Consider _set_new_mode(0) to make malloc return NULL

@@ -2201,6 +2201,7 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     SIMD_ALIGNED(uint8_t vin[256 * 2]);                                      \
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
+    memset(vout, 0, sizeof(vout)); /* for msan */                            \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
@@ -2244,6 +2245,7 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     SIMD_ALIGNED(uint8_t vin[256 * 2]);                                      \
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
+    memset(vout, 0, sizeof(vout)); /* for msan */                            \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \

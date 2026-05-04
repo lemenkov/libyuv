@@ -2263,12 +2263,16 @@ ARGBToUVMatrixRow_C;
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_SVE2)
     if (TestCpuFlag(kCpuHasSVE2)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_SVE2;
+      if (IS_ALIGNED(width, 2)) {
+        ARGBToUVMatrixRow = ARGBToUVMatrixRow_SVE2;
+      }
     }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_SME)
     if (TestCpuFlag(kCpuHasSME)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_SME;
+      if (IS_ALIGNED(width, 2)) {
+        ARGBToUVMatrixRow = ARGBToUVMatrixRow_SME;
+      }
     }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_SSSE3)

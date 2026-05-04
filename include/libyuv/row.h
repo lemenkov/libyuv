@@ -433,7 +433,9 @@ extern "C" {
 #define HAS_ARGBTOUV444ROW_NEON
 #define HAS_ARGBTOUVJ444ROW_NEON
 #define HAS_ARGBTOUVJROW_NEON
+#if !defined(__GNUC__) || defined(__clang__)
 #define HAS_ARGBTOUVMATRIXROW_NEON
+#endif
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
 #if !defined(__aarch64__)

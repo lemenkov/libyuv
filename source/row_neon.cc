@@ -1924,8 +1924,8 @@ void ARGBToUVMatrixRow_NEON(const uint8_t* src_argb,
                             uint8_t* dst_v,
                             int width,
                             const struct ArgbConstants* c) {
+  const uint8_t* src_argb_1 = src_argb + src_stride_argb;
   asm volatile (
-      "add         %1, %0, %1                    \n"  // src_stride + src_argb
       "vld1.8      {d18}, [%5]                   \n"  // load kRGBToU
       "vld1.8      {d19}, [%6]                   \n"  // load kRGBToV
       "vmovl.s8    q8, d18                       \n"  // U coeffs in q8 (d16, d17)
@@ -1936,6 +1936,7 @@ void ARGBToUVMatrixRow_NEON(const uint8_t* src_argb,
       "vdup.16     q13, d18[0]                   \n"  // V0
       "vdup.16     q14, d18[1]                   \n"  // V1
       "vdup.16     q15, d18[2]                   \n"  // V2
+
       "1:          \n"
       "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  // load 8 ARGB pixels.
       "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"  // load next 8 ARGB pixels.
@@ -1963,17 +1964,14 @@ void ARGBToUVMatrixRow_NEON(const uint8_t* src_argb,
       "vmla.s16    q9, q1, q14                   \n"  // V += G * V1
       "vmla.s16    q9, q2, q15                   \n"  // V += R * V2
 
-      "vsub.u16    q8, q3, q8                    \n"  // 128.0 - U
-      "vsub.u16    q9, q3, q9                    \n"  // 128.0 - V
-
-      "vqshrn.u16  d0, q8, #8                    \n"  // Saturating shift right
-      "vqshrn.u16  d1, q9, #8                    \n"
+      "vsubhn.s16  d0, q3, q8                    \n"  // 128.0 - U
+      "vsubhn.s16  d1, q3, q9                    \n"  // 128.0 - V
 
       "vst1.8      {d0}, [%2]!                   \n"  // store 8 pixels U.
       "vst1.8      {d1}, [%3]!                   \n"  // store 8 pixels V.
       "bgt         1b                            \n"
   : "+r"(src_argb),  // %0
-    "+r"(src_stride_argb),  // %1
+    "+r"(src_argb_1),  // %1
     "+r"(dst_u),     // %2
     "+r"(dst_v),     // %3
     "+r"(width)        // %4
