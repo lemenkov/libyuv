@@ -1748,9 +1748,6 @@ ANY11SB(Convert8To8Row_Any_AVX2,
     memcpy(dst_ptr + np, vout, r * BPP);                                \
   }
 
-#ifdef HAS_HALFFLOATROW_SSE2
-ANY11P16(HalfFloatRow_Any_SSE2, HalfFloatRow_SSE2, uint16_t, uint16_t, 2, 2, 7)
-#endif
 #ifdef HAS_HALFFLOATROW_AVX2
 ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, uint16_t, uint16_t, 2, 2, 15)
 #endif

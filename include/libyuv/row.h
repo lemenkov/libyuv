@@ -50,7 +50,6 @@ extern "C" {
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
-#define HAS_HALFFLOATROW_SSE2
 #define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
@@ -6863,14 +6862,6 @@ void ARGBPolynomialRow_AVX2(const uint8_t* src_argb,
 
 // Scale and convert to half float.
 void HalfFloatRow_C(const uint16_t* src, uint16_t* dst, float scale, int width);
-void HalfFloatRow_SSE2(const uint16_t* src,
-                       uint16_t* dst,
-                       float scale,
-                       int width);
-void HalfFloatRow_Any_SSE2(const uint16_t* src_ptr,
-                           uint16_t* dst_ptr,
-                           float param,
-                           int width);
 void HalfFloatRow_AVX2(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
