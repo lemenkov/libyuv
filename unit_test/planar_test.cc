@@ -29,11 +29,7 @@
 #include "libyuv/row.h" /* For ScaleSumSamples_Neon */
 #endif
 
-#if defined(LIBYUV_BIT_EXACT)
 #define EXPECTED_UNATTENUATE_DIFF 0
-#else
-#define EXPECTED_UNATTENUATE_DIFF 2
-#endif
 
 namespace libyuv {
 
@@ -284,28 +280,28 @@ TEST_F(LibYUVPlanarTest, ARGBUnattenuate_Any) {
   int max_diff = TestUnattenuateI(benchmark_width_ + 1, benchmark_height_,
                                   benchmark_iterations_, disable_cpu_flags_,
                                   benchmark_cpu_info_, +1, 0);
-  ASSERT_LE(max_diff, EXPECTED_UNATTENUATE_DIFF);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBUnattenuate_Unaligned) {
   int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
                                   benchmark_iterations_, disable_cpu_flags_,
                                   benchmark_cpu_info_, +1, 1);
-  ASSERT_LE(max_diff, EXPECTED_UNATTENUATE_DIFF);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBUnattenuate_Invert) {
   int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
                                   benchmark_iterations_, disable_cpu_flags_,
                                   benchmark_cpu_info_, -1, 0);
-  ASSERT_LE(max_diff, EXPECTED_UNATTENUATE_DIFF);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBUnattenuate_Opt) {
   int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
                                   benchmark_iterations_, disable_cpu_flags_,
                                   benchmark_cpu_info_, +1, 0);
-  ASSERT_LE(max_diff, EXPECTED_UNATTENUATE_DIFF);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, TestARGBComputeCumulativeSum) {

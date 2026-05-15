@@ -1,6 +1,6 @@
 Name: libyuv
 URL: https://chromium.googlesource.com/libyuv/libyuv/
-Version: 1938
+Version: 1939
 Revision: DEPS
 License: BSD-3-Clause
 License File: LICENSE

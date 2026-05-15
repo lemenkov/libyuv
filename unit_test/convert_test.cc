@@ -2050,7 +2050,6 @@ TEST_F(LibYUVConvertTest, MM21ToYUY2) {
 }
 
 // Test RGB24 to J420 is exact
-#if defined(LIBYUV_BIT_EXACT)
 TEST_F(LibYUVConvertTest, TestRGB24ToJ420) {
   const int kSize = 256;
   align_buffer_page_end(orig_rgb24, kSize * 3 * 2);  // 2 rows of RGB24
@@ -2075,10 +2074,8 @@ TEST_F(LibYUVConvertTest, TestRGB24ToJ420) {
   free_aligned_buffer_page_end(orig_rgb24);
   free_aligned_buffer_page_end(dest_j420);
 }
-#endif
 
 // Test RGB24 to I420 is exact
-#if defined(LIBYUV_BIT_EXACT)
 TEST_F(LibYUVConvertTest, TestRGB24ToI420) {
   const int kSize = 256;
   align_buffer_page_end(orig_rgb24, kSize * 3 * 2);  // 2 rows of RGB24
@@ -2103,7 +2100,6 @@ TEST_F(LibYUVConvertTest, TestRGB24ToI420) {
   free_aligned_buffer_page_end(orig_rgb24);
   free_aligned_buffer_page_end(dest_i420);
 }
-#endif
 
 TEST_F(LibYUVConvertTest, TestJ420ToI420) {
   const uint8_t src_y[12] = {0, 0, 128, 128, 255, 255,

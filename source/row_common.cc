@@ -37,10 +37,6 @@ extern "C" {
 // LIBYUV_UNLIMITED_BT709
 // LIBYUV_UNLIMITED_BT2020
 
-#if defined(LIBYUV_BIT_EXACT)
-#define LIBYUV_UNATTENUATE_DUP 1
-#endif
-
 // llvm x86 is poor at ternary operator, so use branchless min/max.
 
 #define USE_BRANCHLESS 1
@@ -3578,12 +3574,8 @@ const uint32_t fixed_invtbl8[256] = {
     T(0xfc),    T(0xfd),    T(0xfe), 0x01000100};
 #undef T
 
-#if defined(LIBYUV_UNATTENUATE_DUP)
 // This code mimics the Intel SIMD version for better testability.
 #define UNATTENUATE(f, ia) clamp255(((f | (f << 8)) * ia) >> 16)
-#else
-#define UNATTENUATE(f, ia) clamp255((f * ia) >> 8)
-#endif
 
 // mimics the Intel SIMD code for exactness.
 void ARGBUnattenuateRow_C(const uint8_t* src_argb,

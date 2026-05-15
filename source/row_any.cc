@@ -1906,8 +1906,8 @@ ANY11IS(InterpolateRow_16To8_Any_AVX2,
 // Any 1 to 1 mirror.
 #define ANY11M(NAMEANY, ANY_SIMD, BPP, MASK)                          \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) { \
-    SIMD_ALIGNED(uint8_t vin[64]);                                    \
-    SIMD_ALIGNED(uint8_t vout[64]);                                   \
+    SIMD_ALIGNED(uint8_t vin[128]);                                   \
+    SIMD_ALIGNED(uint8_t vout[128]);                                  \
     memset(vin, 0, sizeof(vin)); /* for msan */                       \
     int r = width & MASK;                                             \
     int n = width & ~MASK;                                            \
@@ -1915,7 +1915,7 @@ ANY11IS(InterpolateRow_16To8_Any_AVX2,
       ANY_SIMD(src_ptr + r * BPP, dst_ptr, n);                        \
     }                                                                 \
     ptrdiff_t np = n;                                                 \
-    memcpy(vin, src_ptr, r* BPP);                                     \
+    memcpy(vin, src_ptr, r * BPP);                                    \
     ANY_SIMD(vin, vout, MASK + 1);                                    \
     memcpy(dst_ptr + np * BPP, vout + (MASK + 1 - r) * BPP, r * BPP); \
   }
@@ -1937,9 +1937,6 @@ ANY11M(MirrorRow_Any_LASX, MirrorRow_LASX, 1, 63)
 #endif
 #ifdef HAS_MIRRORUVROW_AVX2
 ANY11M(MirrorUVRow_Any_AVX2, MirrorUVRow_AVX2, 2, 15)
-#endif
-#ifdef HAS_MIRRORUVROW_SSSE3
-ANY11M(MirrorUVRow_Any_SSSE3, MirrorUVRow_SSSE3, 2, 7)
 #endif
 #ifdef HAS_MIRRORUVROW_NEON
 ANY11M(MirrorUVRow_Any_NEON, MirrorUVRow_NEON, 2, 31)
@@ -1965,8 +1962,8 @@ ANY11M(ARGBMirrorRow_Any_LSX, ARGBMirrorRow_LSX, 4, 7)
 #ifdef HAS_ARGBMIRRORROW_LASX
 ANY11M(ARGBMirrorRow_Any_LASX, ARGBMirrorRow_LASX, 4, 15)
 #endif
-#ifdef HAS_RGB24MIRRORROW_SSSE3
-ANY11M(RGB24MirrorRow_Any_SSSE3, RGB24MirrorRow_SSSE3, 3, 15)
+#ifdef HAS_RGB24MIRRORROW_AVX2
+ANY11M(RGB24MirrorRow_Any_AVX2, RGB24MirrorRow_AVX2, 3, 31)
 #endif
 #ifdef HAS_RGB24MIRRORROW_NEON
 ANY11M(RGB24MirrorRow_Any_NEON, RGB24MirrorRow_NEON, 3, 15)

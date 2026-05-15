@@ -2583,7 +2583,6 @@ void MirrorUVPlane(const uint8_t* src_uv,
 #endif
 #if defined(HAS_MIRRORUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    MirrorUVRow = MirrorUVRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       MirrorUVRow = MirrorUVRow_SSSE3;
     }
@@ -2823,11 +2822,11 @@ int RGB24Mirror(const uint8_t* src_rgb24,
     }
   }
 #endif
-#if defined(HAS_RGB24MIRRORROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    RGB24MirrorRow = RGB24MirrorRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      RGB24MirrorRow = RGB24MirrorRow_SSSE3;
+#if defined(HAS_RGB24MIRRORROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RGB24MirrorRow = RGB24MirrorRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGB24MirrorRow = RGB24MirrorRow_AVX2;
     }
   }
 #endif

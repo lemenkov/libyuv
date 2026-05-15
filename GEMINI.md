@@ -10,7 +10,7 @@ Libyuv uses a dispatch system where high-level conversion functions call optimiz
 
 ### x86 Architectures (32-bit and 64-bit)
 
-*   **row_gcc.cc**: **Master copy.** Contains inline assembly in GCC syntax for GCC and Clang. Supports SSE, AVX, and AVX512. AVX512 implementations are strictly for 64-bit targets.
+*   **row_gcc.cc**: **Master copy.** Contains inline assembly in GCC syntax for GCC and Clang. Supports AVX, and AVX512. AVX512 implementations are strictly for 64-bit targets.
 *   **row_win.cc**: Derivative of `row_gcc.cc`. Contains C++ intrinsics specifically for Visual C++ (MSVC). Can be tested with Clang using `-DLIBYUV_ENABLE_ROWWIN`.
 *   **Note**: Use either `row_gcc` or `row_win`, never both.
 
@@ -33,10 +33,8 @@ Libyuv uses a dispatch system where high-level conversion functions call optimiz
 
 ## Coding Guidelines
 
-1.  **Maintain Parity**: When modifying `row_common.cc`, update corresponding optimizations. `row_gcc.cc` is the master; `row_win.cc` should be updated to match.
-2.  **Assembly Safety**: Ensure inline assembly in `row_gcc.cc` correctly preserves registers according to the ABI.
-3.  **AVX512 Logic**: AVX512 row functions are strictly enabled for **64-bit x86 only**.
-4.  **Feature Macros**: Use the `HAS_` macros in `include/libyuv/row.h` to enable or disable specific AVX512 versions.
+1.  **AVX512 Logic**: AVX512 row functions are strictly enabled for **64-bit x86 only**.
+2.  **Feature Macros**: Use the `HAS_` macros in `include/libyuv/row.h` to enable or disable specific AVX512 versions.
 
 ## Changelist (CL) & Commit Guidelines
 

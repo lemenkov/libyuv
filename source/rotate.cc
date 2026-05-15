@@ -397,9 +397,9 @@ void SplitRotateUV180(const uint8_t* src,
     MirrorSplitUVRow = MirrorSplitUVRow_NEON;
   }
 #endif
-#if defined(HAS_MIRRORSPLITUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    MirrorSplitUVRow = MirrorSplitUVRow_SSSE3;
+#if defined(HAS_MIRRORSPLITUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_AVX2;
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_LSX)

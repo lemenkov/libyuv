@@ -142,8 +142,13 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || defined(__i386__) || \
      defined(_M_X64) || defined(_M_X86))
+#define HAS_ARGBMIRRORROW_AVX2
+#define HAS_RGB24MIRRORROW_AVX2
 #define HAS_ARGBTOUVMATRIXROW_AVX2
 #define HAS_MERGEUVROW_AVX2
+#define HAS_MIRRORROW_AVX2
+#define HAS_MIRRORSPLITUVROW_AVX2
+#define HAS_MIRRORUVROW_AVX2
 #endif
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(USE_ROW_GCC) && \
@@ -170,6 +175,7 @@ extern "C" {
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_J422TOARGBROW_AVX2
 #define HAS_MIRRORROW_AVX2
+#define HAS_MIRRORSPLITUVROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
 #define HAS_NV12TORGB24ROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
@@ -236,7 +242,6 @@ extern "C" {
 #define HAS_P410TOARGBROW_SSSE3
 #define HAS_RAWTOARGBROW_AVX2
 #define HAS_RAWTORGBAROW_SSSE3
-#define HAS_RGB24MIRRORROW_SSSE3
 #define HAS_RGBATOYJROW_SSSE3
 #define HAS_SPLITARGBROW_SSE2
 #define HAS_SPLITARGBROW_SSSE3
@@ -2939,15 +2944,14 @@ void MirrorUVRow_LSX(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_LASX(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
-void MirrorUVRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 
-void MirrorSplitUVRow_SSSE3(const uint8_t* src,
-                            uint8_t* dst_u,
-                            uint8_t* dst_v,
-                            int width);
+void MirrorSplitUVRow_AVX2(const uint8_t* src,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
 void MirrorSplitUVRow_NEON(const uint8_t* src_uv,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
@@ -2983,16 +2987,16 @@ void ARGBMirrorRow_Any_LASX(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
 
-void RGB24MirrorRow_SSSE3(const uint8_t* src_rgb24,
-                          uint8_t* dst_rgb24,
-                          int width);
+void RGB24MirrorRow_AVX2(const uint8_t* src_rgb24,
+                         uint8_t* dst_rgb24,
+                         int width);
 void RGB24MirrorRow_NEON(const uint8_t* src_rgb24,
                          uint8_t* dst_rgb24,
                          int width);
 void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24, int width);
-void RGB24MirrorRow_Any_SSSE3(const uint8_t* src_ptr,
-                              uint8_t* dst_ptr,
-                              int width);
+void RGB24MirrorRow_Any_AVX2(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int width);
 void RGB24MirrorRow_Any_NEON(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
