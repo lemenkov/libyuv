@@ -1076,14 +1076,6 @@ static int ScalePlaneBilinearDown(int src_width,
              &dx, &dy);
   src_width = Abs(src_width);
 
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(src_width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
@@ -1196,14 +1188,6 @@ static int ScalePlaneBilinearDown_16(int src_width,
              &dx, &dy);
   src_width = Abs(src_width);
 
-#if defined(HAS_INTERPOLATEROW_16_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_16_Any_SSE2;
-    if (IS_ALIGNED(src_width, 16)) {
-      InterpolateRow = InterpolateRow_16_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_16_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_16_Any_SSSE3;
@@ -1290,14 +1274,6 @@ static int ScalePlaneBilinearUp(int src_width,
              &dx, &dy);
   src_width = Abs(src_width);
 
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(dst_width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
@@ -1779,14 +1755,6 @@ static int ScalePlaneBilinearUp_16(int src_width,
              &dx, &dy);
   src_width = Abs(src_width);
 
-#if defined(HAS_INTERPOLATEROW_16_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_16_Any_SSE2;
-    if (IS_ALIGNED(dst_width, 16)) {
-      InterpolateRow = InterpolateRow_16_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_16_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_16_Any_SSSE3;

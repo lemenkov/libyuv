@@ -121,19 +121,11 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
                                uint8_t* dst_v,
                                int width,
                                const struct ArgbConstants* c) {
-  __m256i ymm5 = _mm256_set1_epi8((char)0x80);
   __m256i ymm_u =
       _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)c->kRGBToU));
   __m256i ymm_v =
       _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)c->kRGBToV));
-  __m256i ymm_add =
-      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)c->kAddUV));
-  __m256i ymm_u_bias = _mm256_maddubs_epi16(ymm_u, ymm5);
-  ymm_u_bias = _mm256_hadd_epi16(ymm_u_bias, ymm_u_bias);
-  __m256i ymm_add_u = _mm256_sub_epi16(ymm_add, ymm_u_bias);
-  __m256i ymm_v_bias = _mm256_maddubs_epi16(ymm_v, ymm5);
-  ymm_v_bias = _mm256_hadd_epi16(ymm_v_bias, ymm_v_bias);
-  __m256i ymm_add_v = _mm256_sub_epi16(ymm_add, ymm_v_bias);
+  __m256i ymm5 = _mm256_set1_epi16((short)0x8000);
   __m256i perm_mask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
 
   while (width > 0) {
@@ -143,25 +135,15 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
     __m256i ymm3 = _mm256_loadu_si256((const __m256i*)(src_argb + 96));
     src_argb += 128;
 
-    __m256i ymm0_u = _mm256_sub_epi8(ymm0, ymm5);
-    __m256i ymm1_u = _mm256_sub_epi8(ymm1, ymm5);
-    __m256i ymm2_u = _mm256_sub_epi8(ymm2, ymm5);
-    __m256i ymm3_u = _mm256_sub_epi8(ymm3, ymm5);
+    __m256i ymm0_u = _mm256_maddubs_epi16(ymm0, ymm_u);
+    __m256i ymm1_u = _mm256_maddubs_epi16(ymm1, ymm_u);
+    __m256i ymm2_u = _mm256_maddubs_epi16(ymm2, ymm_u);
+    __m256i ymm3_u = _mm256_maddubs_epi16(ymm3, ymm_u);
 
-    __m256i ymm0_v = ymm0_u;
-    __m256i ymm1_v = ymm1_u;
-    __m256i ymm2_v = ymm2_u;
-    __m256i ymm3_v = ymm3_u;
-
-    ymm0_u = _mm256_maddubs_epi16(ymm_u, ymm0_u);
-    ymm1_u = _mm256_maddubs_epi16(ymm_u, ymm1_u);
-    ymm2_u = _mm256_maddubs_epi16(ymm_u, ymm2_u);
-    ymm3_u = _mm256_maddubs_epi16(ymm_u, ymm3_u);
-
-    ymm0_v = _mm256_maddubs_epi16(ymm_v, ymm0_v);
-    ymm1_v = _mm256_maddubs_epi16(ymm_v, ymm1_v);
-    ymm2_v = _mm256_maddubs_epi16(ymm_v, ymm2_v);
-    ymm3_v = _mm256_maddubs_epi16(ymm_v, ymm3_v);
+    __m256i ymm0_v = _mm256_maddubs_epi16(ymm0, ymm_v);
+    __m256i ymm1_v = _mm256_maddubs_epi16(ymm1, ymm_v);
+    __m256i ymm2_v = _mm256_maddubs_epi16(ymm2, ymm_v);
+    __m256i ymm3_v = _mm256_maddubs_epi16(ymm3, ymm_v);
 
     ymm0_u = _mm256_hadd_epi16(ymm0_u, ymm1_u);
     ymm2_u = _mm256_hadd_epi16(ymm2_u, ymm3_u);
@@ -169,11 +151,11 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
     ymm0_v = _mm256_hadd_epi16(ymm0_v, ymm1_v);
     ymm2_v = _mm256_hadd_epi16(ymm2_v, ymm3_v);
 
-    ymm0_u = _mm256_add_epi16(ymm0_u, ymm_add_u);
-    ymm2_u = _mm256_add_epi16(ymm2_u, ymm_add_u);
+    ymm0_u = _mm256_sub_epi16(ymm5, ymm0_u);
+    ymm2_u = _mm256_sub_epi16(ymm5, ymm2_u);
 
-    ymm0_v = _mm256_add_epi16(ymm0_v, ymm_add_v);
-    ymm2_v = _mm256_add_epi16(ymm2_v, ymm_add_v);
+    ymm0_v = _mm256_sub_epi16(ymm5, ymm0_v);
+    ymm2_v = _mm256_sub_epi16(ymm5, ymm2_v);
 
     ymm0_u = _mm256_srli_epi16(ymm0_u, 8);
     ymm2_u = _mm256_srli_epi16(ymm2_u, 8);
@@ -573,6 +555,101 @@ void RGB24MirrorRow_AVX2(const uint8_t* src_rgb24,
     dst_rgb24 += 96;
     width -= 32;
   }
+}
+#endif
+
+#ifdef HAS_INTERPOLATEROW_AVX2
+LIBYUV_TARGET_AVX2
+void InterpolateRow_AVX2(uint8_t* dst_ptr,
+                         const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         int width,
+                         int source_y_fraction) {
+  int y1 = source_y_fraction;
+  int y0 = 256 - y1;
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  __m256i ymm_y = _mm256_set1_epi16((y1 << 8) | y0);
+  __m256i ymm_8080 = _mm256_set1_epi16(0x8080);
+  int i;
+
+  if (y1 == 0) {
+    for (i = 0; i < width; i += 32) {
+      _mm256_storeu_si256((__m256i*)(dst_ptr + i),
+                          _mm256_loadu_si256((const __m256i*)(src_ptr + i)));
+    }
+  } else if (y1 == 128) {
+    for (i = 0; i < width; i += 32) {
+      __m256i row0 = _mm256_loadu_si256((const __m256i*)(src_ptr + i));
+      __m256i row1 = _mm256_loadu_si256((const __m256i*)(src_ptr1 + i));
+      _mm256_storeu_si256((__m256i*)(dst_ptr + i), _mm256_avg_epu8(row0, row1));
+    }
+  } else {
+    for (i = 0; i < width; i += 32) {
+      __m256i row0 = _mm256_loadu_si256((const __m256i*)(src_ptr + i));
+      __m256i row1 = _mm256_loadu_si256((const __m256i*)(src_ptr1 + i));
+      __m256i low = _mm256_unpacklo_epi8(row0, row1);
+      __m256i high = _mm256_unpackhi_epi8(row0, row1);
+      low = _mm256_sub_epi8(low, ymm_8080);
+      high = _mm256_sub_epi8(high, ymm_8080);
+      low = _mm256_maddubs_epi16(ymm_y, low);
+      high = _mm256_maddubs_epi16(ymm_y, high);
+      low = _mm256_add_epi16(low, ymm_8080);
+      high = _mm256_add_epi16(high, ymm_8080);
+      low = _mm256_srli_epi16(low, 8);
+      high = _mm256_srli_epi16(high, 8);
+      _mm256_storeu_si256((__m256i*)(dst_ptr + i),
+                          _mm256_packus_epi16(low, high));
+    }
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_INTERPOLATEROW_16_AVX2
+LIBYUV_TARGET_AVX2
+void InterpolateRow_16_AVX2(uint16_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int width,
+                            int source_y_fraction) {
+  int y1 = source_y_fraction;
+  int y0 = 256 - y1;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  __m256i ymm_y = _mm256_set1_epi32((y1 << 16) | y0);
+  __m256i ymm_8000 = _mm256_set1_epi16((short)0x8000);
+  __m256i ymm_round = _mm256_set1_epi32(8388736);  // 0x800000 + 128
+  int i;
+
+  if (y1 == 0) {
+    for (i = 0; i < width; i += 16) {
+      _mm256_storeu_si256((__m256i*)(dst_ptr + i),
+                          _mm256_loadu_si256((const __m256i*)(src_ptr + i)));
+    }
+  } else if (y1 == 128) {
+    for (i = 0; i < width; i += 16) {
+      __m256i row0 = _mm256_loadu_si256((const __m256i*)(src_ptr + i));
+      __m256i row1 = _mm256_loadu_si256((const __m256i*)(src_ptr1 + i));
+      _mm256_storeu_si256((__m256i*)(dst_ptr + i), _mm256_avg_epu16(row0, row1));
+    }
+  } else {
+    for (i = 0; i < width; i += 16) {
+      __m256i row0 = _mm256_loadu_si256((const __m256i*)(src_ptr + i));
+      __m256i row1 = _mm256_loadu_si256((const __m256i*)(src_ptr1 + i));
+      __m256i row0l = _mm256_unpacklo_epi16(row0, row1);
+      __m256i row0h = _mm256_unpackhi_epi16(row0, row1);
+      row0l = _mm256_sub_epi16(row0l, ymm_8000);
+      row0h = _mm256_sub_epi16(row0h, ymm_8000);
+      __m256i resl = _mm256_madd_epi16(row0l, ymm_y);
+      __m256i resh = _mm256_madd_epi16(row0h, ymm_y);
+      resl = _mm256_add_epi32(resl, ymm_round);
+      resh = _mm256_add_epi32(resh, ymm_round);
+      resl = _mm256_srai_epi32(resl, 8);
+      resh = _mm256_srai_epi32(resh, 8);
+      _mm256_storeu_si256((__m256i*)(dst_ptr + i),
+                          _mm256_packus_epi32(resl, resh));
+    }
+  }
+  _mm256_zeroupper();
 }
 #endif
 

@@ -1204,14 +1204,6 @@ int I422ToNV21(const uint8_t* src_y,
     MergeUVRow = MergeUVRow_RVV;
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;

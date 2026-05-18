@@ -4332,14 +4332,6 @@ int InterpolatePlane(const uint8_t* src0,
     height = 1;
     src_stride0 = src_stride1 = dst_stride = 0;
   }
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
@@ -5535,14 +5527,6 @@ int UYVYToNV12(const uint8_t* src_uyvy,
   }
 #endif
 
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;

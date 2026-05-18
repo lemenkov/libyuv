@@ -1830,17 +1830,8 @@ ANY11C(UYVYToARGBRow_Any_LSX, UYVYToARGBRow_LSX, 1, 4, 4, 7)
     memcpy(dst_ptr + np * BPP, vout, r * BPP * sizeof(TD));          \
   }
 
-#ifdef HAS_INTERPOLATEROW_AVX2
+#if defined(HAS_INTERPOLATEROW_AVX2)
 ANY11I(InterpolateRow_Any_AVX2, InterpolateRow_AVX2, uint8_t, uint8_t, 1, 1, 31)
-#endif
-#ifdef HAS_INTERPOLATEROW_SSSE3
-ANY11I(InterpolateRow_Any_SSSE3,
-       InterpolateRow_SSSE3,
-       uint8_t,
-       uint8_t,
-       1,
-       1,
-       15)
 #endif
 #ifdef HAS_INTERPOLATEROW_NEON
 ANY11I(InterpolateRow_Any_NEON, InterpolateRow_NEON, uint8_t, uint8_t, 1, 1, 15)

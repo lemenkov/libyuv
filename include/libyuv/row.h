@@ -60,7 +60,6 @@ extern "C" {
 #define HAS_I422TOYUY2ROW_SSE2
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_I444TORGB24ROW_SSSE3
-#define HAS_INTERPOLATEROW_SSSE3
 #define HAS_J400TOARGBROW_SSE2
 #define HAS_J422TOARGBROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
@@ -149,6 +148,8 @@ extern "C" {
 #define HAS_MIRRORROW_AVX2
 #define HAS_MIRRORSPLITUVROW_AVX2
 #define HAS_MIRRORUVROW_AVX2
+#define HAS_INTERPOLATEROW_16_AVX2
+#define HAS_INTERPOLATEROW_AVX2
 #endif
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(USE_ROW_GCC) && \
@@ -172,7 +173,6 @@ extern "C" {
 #define HAS_I422TORGBAROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_I444TORGB24ROW_AVX2
-#define HAS_INTERPOLATEROW_AVX2
 #define HAS_J422TOARGBROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_MIRRORSPLITUVROW_AVX2
@@ -323,7 +323,6 @@ extern "C" {
 #define HAS_I422TOUYVYROW_AVX2
 #define HAS_I422TOYUY2ROW_AVX2
 #define HAS_INTERPOLATEROW_16TO8_AVX2
-#define HAS_INTERPOLATEROW_16_AVX2
 #define HAS_MERGEAR64ROW_AVX2
 #define HAS_MERGEARGB16TO8ROW_AVX2
 #define HAS_MERGEARGBROW_AVX2
@@ -6645,11 +6644,6 @@ void InterpolateRow_C(uint8_t* dst_ptr,
                       ptrdiff_t src_stride,
                       int width,
                       int source_y_fraction);
-void InterpolateRow_SSSE3(uint8_t* dst_ptr,
-                          const uint8_t* src_ptr,
-                          ptrdiff_t src_stride,
-                          int dst_width,
-                          int source_y_fraction);
 void InterpolateRow_AVX2(uint8_t* dst_ptr,
                          const uint8_t* src_ptr,
                          ptrdiff_t src_stride,
@@ -6680,11 +6674,6 @@ void InterpolateRow_Any_NEON(uint8_t* dst_ptr,
                              ptrdiff_t src_stride_ptr,
                              int width,
                              int source_y_fraction);
-void InterpolateRow_Any_SSSE3(uint8_t* dst_ptr,
-                              const uint8_t* src_ptr,
-                              ptrdiff_t src_stride_ptr,
-                              int width,
-                              int source_y_fraction);
 void InterpolateRow_Any_AVX2(uint8_t* dst_ptr,
                              const uint8_t* src_ptr,
                              ptrdiff_t src_stride_ptr,

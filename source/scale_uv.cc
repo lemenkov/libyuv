@@ -363,14 +363,6 @@ static int ScaleUVBilinearDown(int src_width,
   clip_src_width = (int)(xr - xl) * 2;  // Width aligned to 2.
   src_uv += xl * 2;
   x -= (int)(xl << 16);
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(clip_src_width, 16)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
@@ -473,14 +465,6 @@ static int ScaleUVBilinearUp(int src_width,
                             int dst_width, int x, int dx) =
       filtering ? ScaleUVFilterCols_C : ScaleUVCols_C;
   const int max_y = (src_height - 1) << 16;
-#if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(dst_width, 8)) {
-      InterpolateRow = InterpolateRow_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
