@@ -8911,6 +8911,85 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_AVX2
 
+#ifdef HAS_INTERPOLATEROW_16_AVX2
+// Bilinear filter 16x2 -> 16x1
+void InterpolateRow_16_AVX2(uint16_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int width,
+                            int source_y_fraction) {
+  asm volatile(
+      "sub         %1,%0                         \n"
+      "cmp         $0x0,%3                       \n"
+      "je          100f                          \n"
+      "cmp         $0x80,%3                      \n"
+      "je          50f                           \n"
+
+      "vmovd       %3,%%xmm0                     \n"
+      "neg         %3                            \n"
+      "add         $0x100,%3                     \n"
+      "vmovd       %3,%%xmm5                     \n"
+      "vpunpcklwd  %%xmm0,%%xmm5,%%xmm5          \n"
+      "vpbroadcastd %%xmm5,%%ymm5                \n"
+      "mov         $0x80008000,%%eax             \n"  // 0x80008000 used to bias unsigned words to signed range for vpmaddwd.
+      "vmovd       %%eax,%%xmm4                  \n"
+      "vbroadcastss %%xmm4,%%ymm4                \n"
+      "mov         $8388736,%%eax                \n"  // 32768 * 256 + 128 rounding constant.
+      "vmovd       %%eax,%%xmm3                  \n"
+      "vbroadcastss %%xmm3,%%ymm3                \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%1),%%ymm0                   \n"
+      "vmovdqu     (%1,%4,2),%%ymm1              \n"
+      "vpunpckhwd  %%ymm1,%%ymm0,%%ymm2          \n"
+      "vpunpcklwd  %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpsubw      %%ymm4,%%ymm2,%%ymm2          \n"
+      "vpsubw      %%ymm4,%%ymm0,%%ymm0          \n"
+      "vpmaddwd    %%ymm5,%%ymm2,%%ymm2          \n"
+      "vpmaddwd    %%ymm5,%%ymm0,%%ymm0          \n"
+      "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
+      "vpaddd      %%ymm3,%%ymm0,%%ymm0          \n"
+      "vpsrad      $0x8,%%ymm2,%%ymm2            \n"
+      "vpsrad      $0x8,%%ymm0,%%ymm0            \n"
+      "vpackusdw   %%ymm2,%%ymm0,%%ymm0          \n"
+      "vmovdqu     %%ymm0,0x00(%1,%0,1)          \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x10,%2                      \n"
+      "jg          1b                            \n"
+      "jmp         99f                           \n"
+
+      "50:         \n"
+      LABELALIGN
+      "2:          \n"
+      "vmovdqu     (%1),%%ymm0                   \n"
+      "vpavgw      (%1,%4,2),%%ymm0,%%ymm0       \n"
+      "vmovdqu     %%ymm0,0x00(%1,%0,1)          \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x10,%2                      \n"
+      "jg          2b                            \n"
+      "jmp         99f                           \n"
+
+      "100:        \n"
+      LABELALIGN
+      "3:          \n"
+      "vmovdqu     (%1),%%ymm0                   \n"
+      "vmovdqu     %%ymm0,0x00(%1,%0,1)          \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x10,%2                      \n"
+      "jg          3b                            \n"
+
+      "99:         \n"
+      "vzeroupper                                \n"
+      : "+r"(dst_ptr),           // %0
+        "+r"(src_ptr),           // %1
+        "+r"(width),             // %2
+        "+r"(source_y_fraction)  // %3
+      : "r"(src_stride)          // %4
+      : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+}
+#endif  // HAS_INTERPOLATEROW_16_AVX2
+
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_SSSE3(const uint8_t* src_argb,

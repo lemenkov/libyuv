@@ -4370,26 +4370,6 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#ifdef HAS_RGB24TOYJROW_AVX2
-// Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
-}
-#endif  // HAS_RGB24TOYJROW_AVX2
-
-#ifdef HAS_RAWTOYJROW_AVX2
-// Convert 32 RAW pixels (128 bytes) to 32 YJ values.
-}
-#endif  // HAS_RAWTOYJROW_AVX2
-
-#ifdef HAS_RGB24TOYJROW_SSSE3
-// Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
-}
-#endif  // HAS_RGB24TOYJROW_SSSE3
-
-#ifdef HAS_RAWTOYJROW_SSSE3
-// Convert 16 RAW pixels (64 bytes) to 16 YJ values.
-}
-#endif  // HAS_RAWTOYJROW_SSSE3
-
 #ifdef HAS_INTERPOLATEROW_16TO8_AVX2
 void InterpolateRow_16To8_AVX2(uint8_t* dst_ptr,
                                const uint16_t* src_ptr,
@@ -4401,7 +4381,7 @@ void InterpolateRow_16To8_AVX2(uint8_t* dst_ptr,
   SIMD_ALIGNED(uint16_t row[MAXTWIDTH]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    InterpolateRow_16_C(row, src_ptr, src_stride, twidth, source_y_fraction);
+    InterpolateRow_16_AVX2(row, src_ptr, src_stride, twidth, source_y_fraction);
     Convert16To8Row_AVX2(row, dst_ptr, scale, twidth);
     src_ptr += twidth;
     dst_ptr += twidth;

@@ -323,6 +323,7 @@ extern "C" {
 #define HAS_I422TOUYVYROW_AVX2
 #define HAS_I422TOYUY2ROW_AVX2
 #define HAS_INTERPOLATEROW_16TO8_AVX2
+#define HAS_INTERPOLATEROW_16_AVX2
 #define HAS_MERGEAR64ROW_AVX2
 #define HAS_MERGEARGB16TO8ROW_AVX2
 #define HAS_MERGEARGBROW_AVX2
@@ -6700,6 +6701,16 @@ void InterpolateRow_16_C(uint16_t* dst_ptr,
                          ptrdiff_t src_stride,
                          int width,
                          int source_y_fraction);
+void InterpolateRow_16_AVX2(uint16_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int width,
+                            int source_y_fraction);
+void InterpolateRow_16_Any_AVX2(uint16_t* dst_ptr,
+                                const uint16_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                int width,
+                                int source_y_fraction);
 void InterpolateRow_16_NEON(uint16_t* dst_ptr,
                             const uint16_t* src_ptr,
                             ptrdiff_t src_stride,

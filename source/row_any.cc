@@ -1858,6 +1858,15 @@ ANY11I(InterpolateRow_16_Any_NEON,
        1,
        7)
 #endif
+#ifdef HAS_INTERPOLATEROW_16_AVX2
+ANY11I(InterpolateRow_16_Any_AVX2,
+       InterpolateRow_16_AVX2,
+       uint16_t,
+       uint16_t,
+       1,
+       1,
+       15)
+#endif
 #undef ANY11I
 
 // Any 1 to 1 interpolate with scale param
