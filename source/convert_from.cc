@@ -10,8 +10,6 @@
 
 #include "libyuv/convert_from.h"
 
-#include <stddef.h>
-
 #include "libyuv/basic_types.h"
 #include "libyuv/convert.h"  // For I420Copy
 #include "libyuv/cpu_id.h"
