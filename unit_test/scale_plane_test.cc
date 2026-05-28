@@ -42,6 +42,108 @@
 
 namespace libyuv {
 
+// POC: int row_stride = src_stride * 2 overflows to a small negative value
+// when src_stride is close to INT_MAX, causing src_ptr to walk backward
+// past the start of the source allocation on the second loop iteration.
+// With src_stride = 0x7FFFFFFE, row_stride = (int)0xFFFFFFFC = -4, so on
+// y=1 ScaleRowDown2Box reads 4 bytes before the heap allocation.
+TEST_F(LibYUVScaleTest, ScalePlaneDown2_RowStrideOverflow) {
+  constexpr int kSrcStride = 0x7FFFFFFE;  // INT_MAX - 1
+  constexpr int kSrcW = 64;
+  constexpr int kSrcH = 4;
+  constexpr int kDstW = 32;
+  constexpr int kDstH = 2;
+  // src_size = (kSrcH - 1) * stride + width.
+  size_t src_size = kSrcH - 1;
+  if (src_size > SIZE_MAX / kSrcStride) {
+    GTEST_SKIP() << "could not represent allocation size in size_t";
+  }
+  src_size *= kSrcStride;
+  if (src_size > SIZE_MAX - kSrcW) {
+    GTEST_SKIP() << "could not represent allocation size in size_t";
+  }
+  src_size += kSrcW;
+
+#if defined(__aarch64__)
+  // Infer malloc can accept a large size for cpu with dot product (a76/a55)
+  int has_large_malloc = TestCpuFlag(kCpuHasNeonDotProd);
+#else
+  int has_large_malloc = 1;
+#endif
+  if (!has_large_malloc) {
+    GTEST_SKIP() << "large allocation may assert for " << src_size << " bytes";
+  }
+
+  uint8_t* src = new (std::nothrow) uint8_t[src_size];
+  if (!src) {
+    GTEST_SKIP() << "could not allocate " << src_size << " bytes";
+  }
+  uint8_t dst[kDstW * kDstH];
+  uint8_t* src_row = src;
+  for (int i = 0; i < kSrcH; i++) {
+    memset(src_row, 0x41, kSrcW);
+    src_row += kSrcStride;
+  }
+  // Force the C row kernel: the SIMD kernels are inline asm that ASAN does not
+  // instrument, so they silently read OOB without a report.
+  MaskCpuFlags(1);
+  // 2*dst == src on both axes -> ScalePlane dispatches to ScalePlaneDown2.
+  // int row_stride = kSrcStride * 2 wraps to -4; on y=1 src_ptr underflows.
+  ScalePlane(src, kSrcStride, kSrcW, kSrcH, dst, kDstW, kDstW, kDstH,
+             kFilterBox);
+  MaskCpuFlags(0);
+  delete[] src;
+}
+
+// POC: same defect in the 1/4 fast path. src_stride = 0x3FFFFFFF gives
+// int row_stride = src_stride * 4 = (int)0xFFFFFFFC = -4.
+TEST_F(LibYUVScaleTest, ScalePlaneDown4_RowStrideOverflow) {
+  constexpr int kSrcStride = 0x3FFFFFFF;  // INT_MAX / 4 (rounded down)
+  constexpr int kSrcW = 64;
+  constexpr int kSrcH = 8;
+  constexpr int kDstW = 16;
+  constexpr int kDstH = 2;
+  // src_size = (kSrcH - 1) * stride + width.
+  size_t src_size = kSrcH - 1;
+  if (src_size > SIZE_MAX / kSrcStride) {
+    GTEST_SKIP() << "could not represent allocation size in size_t";
+  }
+  src_size *= kSrcStride;
+  if (src_size > SIZE_MAX - kSrcW) {
+    GTEST_SKIP() << "could not represent allocation size in size_t";
+  }
+  src_size += kSrcW;
+
+#if defined(__aarch64__)
+  // Infer malloc can accept a large size for cpu with dot product (a76/a55)
+  int has_large_malloc = TestCpuFlag(kCpuHasNeonDotProd);
+#else
+  int has_large_malloc = 1;
+#endif
+  if (!has_large_malloc) {
+    GTEST_SKIP() << "large allocation may assert for " << src_size << " bytes";
+  }
+
+  uint8_t* src = new (std::nothrow) uint8_t[src_size];
+  if (!src) {
+    GTEST_SKIP() << "could not allocate " << src_size << " bytes";
+  }
+  uint8_t dst[kDstW * kDstH];
+  uint8_t* src_row = src;
+  for (int i = 0; i < kSrcH; i++) {
+    memset(src_row, 0x41, kSrcW);
+    src_row += kSrcStride;
+  }
+  // Force the C row kernel: the SIMD kernels are inline asm that ASAN does not
+  // instrument, so they silently read OOB without a report.
+  MaskCpuFlags(1);
+  // 4*dst == src on both axes with kFilterBox -> ScalePlaneDown4.
+  ScalePlane(src, kSrcStride, kSrcW, kSrcH, dst, kDstW, kDstW, kDstH,
+             kFilterBox);
+  MaskCpuFlags(0);
+  delete[] src;
+}
+
 #ifdef ENABLE_ROW_TESTS
 #ifdef HAS_SCALEROWDOWN2_SSSE3
 TEST_F(LibYUVScaleTest, TestScaleRowDown2Box_Odd_SSSE3) {

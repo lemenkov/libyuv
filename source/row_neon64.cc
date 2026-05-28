@@ -4751,10 +4751,10 @@ void ConvertFP16ToFP32Column_NEON(const uint16_t* src,  // fp16
       "str         s2, [%1], #4                  \n"  // store 1 floats
       "b.gt        2b                            \n"
       "3:          \n"
-      : "+r"(src),                        // %0
-        "+r"(dst),                        // %1
-        "+r"(width)                       // %2
-      : "r"((ptrdiff_t)(src_stride * 2))  // %3
+      : "+r"(src),                      // %0
+        "+r"(dst),                      // %1
+        "+r"(width)                     // %2
+      : "r"((ptrdiff_t)src_stride * 2)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 

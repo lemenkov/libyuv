@@ -3088,7 +3088,7 @@ int I420Blend(const uint8_t* src_y0,
     }
     // Subsample 2 rows of UV to half width and half height.
     ScaleRowDown2(alpha, alpha_stride, halfalpha, halfwidth);
-    alpha += alpha_stride * 2;
+    alpha += (ptrdiff_t)alpha_stride * 2;
     BlendPlaneRow(src_u0, src_u1, halfalpha, dst_u, halfwidth);
     BlendPlaneRow(src_v0, src_v1, halfalpha, dst_v, halfwidth);
     src_u0 += src_stride_u0;
