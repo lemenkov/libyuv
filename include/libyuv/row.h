@@ -1025,7 +1025,10 @@ struct ArgbConstants {
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a)-1)))
 
 #define align_buffer_64(var, size)                                         \
-  void* var##_mem = malloc((size) + 63);                      /* NOLINT */ \
+  size_t var##_mem_size = (size); /* NOLINT */                             \
+  void* var##_mem = (var##_mem_size > SIZE_MAX - 63)                       \
+                        ? NULL                                             \
+                        : malloc(var##_mem_size + 63);        /* NOLINT */ \
   uint8_t* var = (uint8_t*)(((intptr_t)var##_mem + 63) & ~63) /* NOLINT */
 
 #define free_aligned_buffer_64(var) \

@@ -941,10 +941,13 @@ int I422ToNV21(const uint8_t* src_y,
   }
 
   // Allocate u and v buffers
-  align_buffer_64(plane_u, halfwidth * halfheight * 2);
-  uint8_t* plane_v = plane_u + halfwidth * halfheight;
+  const uint64_t plane_size = (uint64_t)halfwidth * halfheight;
+  if (plane_size > SIZE_MAX / 2)
+    return 1;
+  align_buffer_64(plane_u, (size_t)plane_size * 2);
   if (!plane_u)
     return 1;
+  uint8_t* plane_v = plane_u + (size_t)plane_size;
 
   I422ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
              dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth, width,
