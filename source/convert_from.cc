@@ -10,6 +10,8 @@
 
 #include "libyuv/convert_from.h"
 
+#include <limits.h>
+
 #include "libyuv/basic_types.h"
 #include "libyuv/convert.h"  // For I420Copy
 #include "libyuv/cpu_id.h"
@@ -357,7 +359,8 @@ int I422ToYUY2(const uint8_t* src_y,
   }
   // Coalesce rows.
   if (src_stride_y == width && src_stride_u * 2 == width &&
-      src_stride_v * 2 == width && dst_stride_yuy2 == width * 2) {
+      src_stride_v * 2 == width && dst_stride_yuy2 == width * 2 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_yuy2 = 0;
@@ -503,7 +506,8 @@ int I422ToUYVY(const uint8_t* src_y,
   }
   // Coalesce rows.
   if (src_stride_y == width && src_stride_u * 2 == width &&
-      src_stride_v * 2 == width && dst_stride_uyvy == width * 2) {
+      src_stride_v * 2 == width && dst_stride_uyvy == width * 2 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_uyvy = 0;

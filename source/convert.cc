@@ -10,6 +10,8 @@
 
 #include "libyuv/convert.h"
 
+#include <limits.h>
+
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
@@ -1435,7 +1437,8 @@ int NV12ToI420(const uint8_t* src_y,
     src_stride_uv = -src_stride_uv;
   }
   // Coalesce rows.
-  if (src_stride_y == width && dst_stride_y == width) {
+  if (src_stride_y == width && dst_stride_y == width &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = dst_stride_y = 0;
@@ -4476,7 +4479,8 @@ int RGB24ToJ400(const uint8_t* src_rgb24,
     src_stride_rgb24 = -src_stride_rgb24;
   }
   // Coalesce rows.
-  if (src_stride_rgb24 == width * 3 && dst_stride_yj == width) {
+  if (src_stride_rgb24 == width * 3 && dst_stride_yj == width &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_rgb24 = dst_stride_yj = 0;
@@ -4641,7 +4645,8 @@ int RAWToJ400(const uint8_t* src_raw,
     src_stride_raw = -src_stride_raw;
   }
   // Coalesce rows.
-  if (src_stride_raw == width * 3 && dst_stride_yj == width) {
+  if (src_stride_raw == width * 3 && dst_stride_yj == width &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_raw = dst_stride_yj = 0;
