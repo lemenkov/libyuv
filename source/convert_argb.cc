@@ -3280,19 +3280,20 @@ int J400ToARGB(const uint8_t* src_y,
     height = 1;
     src_stride_y = dst_stride_argb = 0;
   }
-#if defined(HAS_J400TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    J400ToARGBRow = J400ToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      J400ToARGBRow = J400ToARGBRow_SSE2;
-    }
-  }
-#endif
+
 #if defined(HAS_J400TOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     J400ToARGBRow = J400ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       J400ToARGBRow = J400ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_J400TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    J400ToARGBRow = J400ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      J400ToARGBRow = J400ToARGBRow_AVX512BW;
     }
   }
 #endif

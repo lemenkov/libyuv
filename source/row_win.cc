@@ -669,6 +669,41 @@ void ARGBMirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif
 
+#ifdef HAS_J400TOARGBROW_AVX2
+alignas(32) static const uint8_t kShuffleMaskJ400ToARGB_0[32] = {
+    0u, 0u, 0u, 128u, 1u, 1u, 1u, 128u, 2u, 2u, 2u, 128u, 3u, 3u, 3u, 128u,
+    4u, 4u, 4u, 128u, 5u, 5u, 5u, 128u, 6u, 6u, 6u, 128u, 7u, 7u, 7u, 128u
+};
+alignas(32) static const uint8_t kShuffleMaskJ400ToARGB_1[32] = {
+    8u, 8u, 8u, 128u, 9u, 9u, 9u, 128u, 10u, 10u, 10u, 128u, 11u, 11u, 11u, 128u,
+    12u, 12u, 12u, 128u, 13u, 13u, 13u, 128u, 14u, 14u, 14u, 128u, 15u, 15u, 15u, 128u
+};
+
+LIBYUV_TARGET_AVX2
+void J400ToARGBRow_AVX2(const uint8_t* src_y, uint8_t* dst_argb, int width) {
+  __m256i ymm_mask0 = _mm256_load_si256((const __m256i*)kShuffleMaskJ400ToARGB_0);
+  __m256i ymm_mask1 = _mm256_load_si256((const __m256i*)kShuffleMaskJ400ToARGB_1);
+  __m256i ymm_alpha = _mm256_set1_epi32((int)0xff000000u);
+
+  while (width > 0) {
+    __m256i ymm0 = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)src_y));
+
+    __m256i ymm1 = _mm256_shuffle_epi8(ymm0, ymm_mask0);
+    __m256i ymm2 = _mm256_shuffle_epi8(ymm0, ymm_mask1);
+
+    ymm1 = _mm256_or_si256(ymm1, ymm_alpha);
+    ymm2 = _mm256_or_si256(ymm2, ymm_alpha);
+
+    _mm256_storeu_si256((__m256i*)dst_argb, ymm1);
+    _mm256_storeu_si256((__m256i*)(dst_argb + 32), ymm2);
+
+    src_y += 16;
+    dst_argb += 64;
+    width -= 16;
+  }
+}
+#endif  // HAS_J400TOARGBROW_AVX2
+
 #endif
 
 #ifdef __cplusplus
