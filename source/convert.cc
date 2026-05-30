@@ -1448,7 +1448,8 @@ int NV12ToI420(const uint8_t* src_y,
   }
   // Coalesce rows.
   if (src_stride_uv == halfwidth * 2 && dst_stride_u == halfwidth &&
-      dst_stride_v == halfwidth) {
+      dst_stride_v == halfwidth &&
+      (ptrdiff_t)halfwidth * halfheight <= INT_MAX) {
     halfwidth *= halfheight;
     halfheight = 1;
     src_stride_uv = dst_stride_u = dst_stride_v = 0;
