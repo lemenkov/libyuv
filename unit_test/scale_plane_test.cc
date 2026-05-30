@@ -636,4 +636,53 @@ TEST_F(LibYUVScaleTest, ScalePlaneVertical_IntStrideOverflow) {
   delete[] dst;
 }
 
+TEST_F(LibYUVScaleTest, ScalePlane_InvalidInputs) {
+  uint8_t src[16] = {0};
+  uint8_t dst[16] = {0};
+
+  // NULL src/dst
+  EXPECT_EQ(-1, ScalePlane(nullptr, 4, 4, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 4, nullptr, 4, 4, 4, kFilterNone));
+
+  // Width/height <= 0 (except src_height which can be negative but not 0)
+  EXPECT_EQ(-1, ScalePlane(src, 4, 0, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, -1, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 0, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 4, dst, 4, 0, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 4, dst, 4, -1, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 4, dst, 4, 4, 0, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 4, dst, 4, 4, -1, kFilterNone));
+
+  // Width/height too large (> 32768)
+  EXPECT_EQ(-1, ScalePlane(src, 4, 32769, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, 32769, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane(src, 4, 4, -32769, dst, 4, 4, 4, kFilterNone));
+
+  // Valid edge cases
+  EXPECT_EQ(0, ScalePlane(src, 4, 1, 1, dst, 4, 1, 1, kFilterNone));
+  EXPECT_EQ(0, ScalePlane(src, 4, 1, -1, dst, 4, 1, 1, kFilterNone));
+}
+
+TEST_F(LibYUVScaleTest, ScalePlane_16_InvalidInputs) {
+  uint16_t src[16] = {0};
+  uint16_t dst[16] = {0};
+
+  EXPECT_EQ(-1, ScalePlane_16(nullptr, 4, 4, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_16(src, 4, 4, 4, nullptr, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_16(src, 4, 0, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_16(src, 4, 32769, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_16(src, 4, 4, -32769, dst, 4, 4, 4, kFilterNone));
+}
+
+TEST_F(LibYUVScaleTest, ScalePlane_12_InvalidInputs) {
+  uint16_t src[16] = {0};
+  uint16_t dst[16] = {0};
+
+  EXPECT_EQ(-1, ScalePlane_12(nullptr, 4, 4, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_12(src, 4, 4, 4, nullptr, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_12(src, 4, 0, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_12(src, 4, 32769, 4, dst, 4, 4, 4, kFilterNone));
+  EXPECT_EQ(-1, ScalePlane_12(src, 4, 4, -32769, dst, 4, 4, 4, kFilterNone));
+}
+
 }  // namespace libyuv

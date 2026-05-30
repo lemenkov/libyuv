@@ -3663,7 +3663,8 @@ void ARGBAffineRow_C(const uint8_t* src_argb,
     int x = (int)(uv[0]);
     int y = (int)(uv[1]);
     *(uint32_t*)(dst_argb) =
-        *(const uint32_t*)(src_argb + y * src_argb_stride + x * 4);
+        *(const uint32_t*)(src_argb + (ptrdiff_t)y * src_argb_stride +
+                           (ptrdiff_t)x * 4);
     dst_argb += 4;
     uv[0] += uv_dudv[2];
     uv[1] += uv_dudv[3];
