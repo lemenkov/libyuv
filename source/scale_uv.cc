@@ -1005,9 +1005,8 @@ static int ScaleUV(const uint8_t* src,
 #ifdef HAS_UVCOPY
         if (dx == 0x10000 && dy == 0x10000) {
           // Straight copy.
-          UVCopy(src + (y >> 16) * (ptrdiff_t)src_stride + (x >> 16) * 2,
-                 src_stride, dst, dst_stride, clip_width, clip_height);
-          return 0;
+          return UVCopy(src + (y >> 16) * (ptrdiff_t)src_stride + (x >> 16) * 2,
+                        src_stride, dst, dst_stride, clip_width, clip_height);
         }
 #endif
       }
@@ -1106,19 +1105,17 @@ int UVScale_16(const uint16_t* src_uv,
 #ifdef HAS_UVCOPY
   if (!filtering && src_width == dst_width && (src_height % dst_height == 0)) {
     if (dst_height == 1) {
-      UVCopy_16(src_uv + ((src_height - 1) / 2) * (ptrdiff_t)src_stride_uv,
-                src_stride_uv, dst_uv, dst_stride_uv, dst_width, dst_height);
-    } else {
-      dy = src_height / dst_height;
-      if (src_stride_uv > INT_MAX / dy) {
-        return -1;
-      }
-      UVCopy_16(src_uv + ((dy - 1) / 2) * (ptrdiff_t)src_stride_uv,
-                dy * src_stride_uv, dst_uv, dst_stride_uv, dst_width,
-                dst_height);
+      return UVCopy_16(
+          src_uv + ((src_height - 1) / 2) * (ptrdiff_t)src_stride_uv,
+          src_stride_uv, dst_uv, dst_stride_uv, dst_width, dst_height);
     }
-
-    return 0;
+    dy = src_height / dst_height;
+    if (src_stride_uv > INT_MAX / dy) {
+      return -1;
+    }
+    return UVCopy_16(src_uv + ((dy - 1) / 2) * (ptrdiff_t)src_stride_uv,
+                     dy * src_stride_uv, dst_uv, dst_stride_uv, dst_width,
+                     dst_height);
   }
 #endif
 
