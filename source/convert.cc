@@ -2136,8 +2136,16 @@ ARGBToUVMatrixRow_C;
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 32)) {
       ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
     }
   }
 #endif
@@ -2522,22 +2530,34 @@ int RGB24ToI420(const uint8_t* src_rgb24,
 
 #if defined(HAS_RGBTOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    RGBToYMatrixRow = RGBToYMatrixRow_AVX2;
+    RGBToYMatrixRow = RGBToYMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGBToYMatrixRow = RGBToYMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX2;
+    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_NEON;
+    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      RGBToUVMatrixRow = RGBToUVMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_RGBTOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGBToYMatrixRow = RGBToYMatrixRow_NEON;
+    RGBToYMatrixRow = RGBToYMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      RGBToYMatrixRow = RGBToYMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_RGBTOYMATRIXROW_LSX)
@@ -2825,22 +2845,34 @@ int RAWToI420(const uint8_t* src_rgb24,
 
 #if defined(HAS_RGBTOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    RGBToYMatrixRow = RGBToYMatrixRow_AVX2;
+    RGBToYMatrixRow = RGBToYMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGBToYMatrixRow = RGBToYMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX2;
+    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_NEON;
+    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      RGBToUVMatrixRow = RGBToUVMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_RGBTOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGBToYMatrixRow = RGBToYMatrixRow_NEON;
+    RGBToYMatrixRow = RGBToYMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      RGBToYMatrixRow = RGBToYMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_RGBTOYMATRIXROW_LSX)
@@ -3565,22 +3597,34 @@ int RGB565ToI420(const uint8_t* src_rgb565,
 
 #if defined(HAS_RGB565TOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    RGB565ToYMatrixRow = RGB565ToYMatrixRow_AVX2;
+    RGB565ToYMatrixRow = RGB565ToYMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGB565ToYMatrixRow = RGB565ToYMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_RGB565TOUVMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    RGB565ToUVMatrixRow = RGB565ToUVMatrixRow_AVX2;
+    RGB565ToUVMatrixRow = RGB565ToUVMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      RGB565ToUVMatrixRow = RGB565ToUVMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_RGB565TOUVMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGB565ToUVMatrixRow = RGB565ToUVMatrixRow_NEON;
+    RGB565ToUVMatrixRow = RGB565ToUVMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      RGB565ToUVMatrixRow = RGB565ToUVMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_RGB565TOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    RGB565ToYMatrixRow = RGB565ToYMatrixRow_NEON;
+    RGB565ToYMatrixRow = RGB565ToYMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      RGB565ToYMatrixRow = RGB565ToYMatrixRow_NEON;
+    }
   }
 #endif
 
@@ -3622,30 +3666,44 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
                  int width,
                  int height) {
   int y;
-  void (*ARGB1555ToUVMatrixRow)(const uint8_t* src_argb1555, int src_stride_argb1555,
-                              uint8_t* dst_u, uint8_t* dst_v, int width,
-                              const struct ArgbConstants* c) = ARGB1555ToUVMatrixRow_C;
-  void (*ARGB1555ToYMatrixRow)(const uint8_t* src_argb1555, uint8_t* dst_y, int width,
-                             const struct ArgbConstants* c) = ARGB1555ToYMatrixRow_C;
+  void (*ARGB1555ToUVMatrixRow)(
+      const uint8_t* src_argb1555, int src_stride_argb1555, uint8_t* dst_u,
+      uint8_t* dst_v, int width,
+      const struct ArgbConstants* c) = ARGB1555ToUVMatrixRow_C;
+  void (*ARGB1555ToYMatrixRow)(
+      const uint8_t* src_argb1555, uint8_t* dst_y, int width,
+      const struct ArgbConstants* c) = ARGB1555ToYMatrixRow_C;
 
 #if defined(HAS_ARGB1555TOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGB1555ToYMatrixRow = ARGB1555ToYMatrixRow_AVX2;
+    ARGB1555ToYMatrixRow = ARGB1555ToYMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGB1555ToYMatrixRow = ARGB1555ToYMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_ARGB1555TOUVMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGB1555ToUVMatrixRow = ARGB1555ToUVMatrixRow_AVX2;
+    ARGB1555ToUVMatrixRow = ARGB1555ToUVMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB1555ToUVMatrixRow = ARGB1555ToUVMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_ARGB1555TOUVMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGB1555ToUVMatrixRow = ARGB1555ToUVMatrixRow_NEON;
+    ARGB1555ToUVMatrixRow = ARGB1555ToUVMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB1555ToUVMatrixRow = ARGB1555ToUVMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_ARGB1555TOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGB1555ToYMatrixRow = ARGB1555ToYMatrixRow_NEON;
+    ARGB1555ToYMatrixRow = ARGB1555ToYMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB1555ToYMatrixRow = ARGB1555ToYMatrixRow_NEON;
+    }
   }
 #endif
 
@@ -3687,30 +3745,44 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
                  int width,
                  int height) {
   int y;
-  void (*ARGB4444ToUVMatrixRow)(const uint8_t* src_argb4444, int src_stride_argb4444,
-                              uint8_t* dst_u, uint8_t* dst_v, int width,
-                              const struct ArgbConstants* c) = ARGB4444ToUVMatrixRow_C;
-  void (*ARGB4444ToYMatrixRow)(const uint8_t* src_argb4444, uint8_t* dst_y, int width,
-                             const struct ArgbConstants* c) = ARGB4444ToYMatrixRow_C;
+  void (*ARGB4444ToUVMatrixRow)(
+      const uint8_t* src_argb4444, int src_stride_argb4444, uint8_t* dst_u,
+      uint8_t* dst_v, int width,
+      const struct ArgbConstants* c) = ARGB4444ToUVMatrixRow_C;
+  void (*ARGB4444ToYMatrixRow)(
+      const uint8_t* src_argb4444, uint8_t* dst_y, int width,
+      const struct ArgbConstants* c) = ARGB4444ToYMatrixRow_C;
 
 #if defined(HAS_ARGB4444TOYMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGB4444ToYMatrixRow = ARGB4444ToYMatrixRow_AVX2;
+    ARGB4444ToYMatrixRow = ARGB4444ToYMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGB4444ToYMatrixRow = ARGB4444ToYMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_ARGB4444TOUVMATRIXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGB4444ToUVMatrixRow = ARGB4444ToUVMatrixRow_AVX2;
+    ARGB4444ToUVMatrixRow = ARGB4444ToUVMatrixRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB4444ToUVMatrixRow = ARGB4444ToUVMatrixRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_ARGB4444TOUVMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGB4444ToUVMatrixRow = ARGB4444ToUVMatrixRow_NEON;
+    ARGB4444ToUVMatrixRow = ARGB4444ToUVMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB4444ToUVMatrixRow = ARGB4444ToUVMatrixRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_ARGB4444TOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGB4444ToYMatrixRow = ARGB4444ToYMatrixRow_NEON;
+    ARGB4444ToYMatrixRow = ARGB4444ToYMatrixRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB4444ToYMatrixRow = ARGB4444ToYMatrixRow_NEON;
+    }
   }
 #endif
 

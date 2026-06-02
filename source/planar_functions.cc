@@ -4601,6 +4601,14 @@ int ARGBShuffle(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBSHUFFLEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBShuffleRow = ARGBShuffleRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBShuffleRow = ARGBShuffleRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_ARGBSHUFFLEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBShuffleRow = ARGBShuffleRow_Any_NEON;
@@ -4676,6 +4684,14 @@ int AR64Shuffle(const uint16_t* src_ar64,
     AR64ShuffleRow = ARGBShuffleRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       AR64ShuffleRow = ARGBShuffleRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 16)) {
+      AR64ShuffleRow = ARGBShuffleRow_AVX512BW;
     }
   }
 #endif

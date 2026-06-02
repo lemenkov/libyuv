@@ -4170,7 +4170,7 @@ void NV21ToRGB24Row_SSSE3(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_NV12TORGB24ROW_AVX2)
+#if defined(HAS_NV12TOARGBROW_AVX2) && defined(HAS_ARGBTORGB24ROW_AVX2)
 void NV12ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_uv,
                          uint8_t* dst_rgb24,
@@ -4181,11 +4181,7 @@ void NV12ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV12ToARGBRow_AVX2(src_y, src_uv, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTORGB24ROW_AVX2)
     ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
-#else
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-#endif
     src_y += twidth;
     src_uv += twidth;
     dst_rgb24 += twidth * 3;
@@ -4194,7 +4190,7 @@ void NV12ToRGB24Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_NV21TORGB24ROW_AVX2)
+#if defined(HAS_NV21TOARGBROW_AVX2) && defined(HAS_ARGBTORGB24ROW_AVX2)
 void NV21ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_vu,
                          uint8_t* dst_rgb24,
@@ -4205,11 +4201,7 @@ void NV21ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV21ToARGBRow_AVX2(src_y, src_vu, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTORGB24ROW_AVX2)
     ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
-#else
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-#endif
     src_y += twidth;
     src_vu += twidth;
     dst_rgb24 += twidth * 3;
@@ -4218,7 +4210,7 @@ void NV21ToRGB24Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_I422TORGB565ROW_AVX2)
+#if defined(HAS_I422TOARGBROW_AVX2) && defined(HAS_ARGBTORGB565ROW_AVX2)
 void I422ToRGB565Row_AVX2(const uint8_t* src_y,
                           const uint8_t* src_u,
                           const uint8_t* src_v,
@@ -4229,11 +4221,7 @@ void I422ToRGB565Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTORGB565ROW_AVX2)
     ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
-#else
-    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
-#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
@@ -4243,7 +4231,7 @@ void I422ToRGB565Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_I422TOARGB1555ROW_AVX2)
+#if defined(HAS_I422TOARGBROW_AVX2) && defined(HAS_ARGBTOARGB1555ROW_AVX2)
 void I422ToARGB1555Row_AVX2(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
@@ -4255,11 +4243,7 @@ void I422ToARGB1555Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTOARGB1555ROW_AVX2)
     ARGBToARGB1555Row_AVX2(row, dst_argb1555, twidth);
-#else
-    ARGBToARGB1555Row_SSE2(row, dst_argb1555, twidth);
-#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
@@ -4269,7 +4253,7 @@ void I422ToARGB1555Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_I422TOARGB4444ROW_AVX2)
+#if defined(HAS_I422TOARGBROW_AVX2) && defined(HAS_ARGBTOARGB4444ROW_AVX2)
 void I422ToARGB4444Row_AVX2(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
@@ -4281,11 +4265,7 @@ void I422ToARGB4444Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTOARGB4444ROW_AVX2)
     ARGBToARGB4444Row_AVX2(row, dst_argb4444, twidth);
-#else
-    ARGBToARGB4444Row_SSE2(row, dst_argb4444, twidth);
-#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
@@ -4295,7 +4275,7 @@ void I422ToARGB4444Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_I422TORGB24ROW_AVX2)
+#if defined(HAS_I422TOARGBROW_AVX2) && defined(HAS_ARGBTORGB24ROW_AVX2)
 void I422ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_u,
                          const uint8_t* src_v,
@@ -4307,11 +4287,7 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTORGB24ROW_AVX2)
     ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
-#else
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
@@ -4321,7 +4297,7 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_I444TORGB24ROW_AVX2)
+#if defined(HAS_I444TOARGBROW_AVX2) && defined(HAS_ARGBTORGB24ROW_AVX2)
 void I444ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_u,
                          const uint8_t* src_v,
@@ -4333,11 +4309,7 @@ void I444ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I444ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTORGB24ROW_AVX2)
     ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
-#else
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-#endif
     src_y += twidth;
     src_u += twidth;
     src_v += twidth;
@@ -4347,7 +4319,7 @@ void I444ToRGB24Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#if defined(HAS_NV12TORGB565ROW_AVX2)
+#if defined(HAS_NV12TOARGBROW_AVX2) && defined(HAS_ARGBTORGB565ROW_AVX2)
 void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
                           const uint8_t* src_uv,
                           uint8_t* dst_rgb565,
@@ -4358,11 +4330,7 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV12ToARGBRow_AVX2(src_y, src_uv, row, yuvconstants, twidth);
-#if defined(HAS_ARGBTORGB565ROW_AVX2)
     ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
-#else
-    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
-#endif
     src_y += twidth;
     src_uv += twidth;
     dst_rgb565 += twidth * 2;
@@ -4622,7 +4590,7 @@ void RGBToUVMatrixRow_C(const uint8_t* src_rgb,
   }
 }
 
-#if defined(HAS_ARGBTOYMATRIXROW_AVX2)
+#if defined(HAS_ARGBTOYMATRIXROW_AVX2) && defined(HAS_RGB24TOARGBROW_AVX2)
 void RGBToYMatrixRow_AVX2(const uint8_t* src_rgb,
                           uint8_t* dst_y,
                           int width,
@@ -4630,12 +4598,8 @@ void RGBToYMatrixRow_AVX2(const uint8_t* src_rgb,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_RGB24TOARGBROW_SSSE3)
-    RGB24ToARGBRow_Any_SSSE3(src_rgb, row, twidth);
-#else
-    RGB24ToARGBRow_C(src_rgb, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_AVX2(row, dst_y, twidth, c);
+    RGB24ToARGBRow_AVX2(src_rgb, row, twidth);
+    ARGBToYMatrixRow_AVX2(row, dst_y, twidth, c);
     src_rgb += twidth * 3;
     dst_y += twidth;
     width -= twidth;
@@ -4643,7 +4607,7 @@ void RGBToYMatrixRow_AVX2(const uint8_t* src_rgb,
 }
 #endif
 
-#if defined(HAS_ARGBTOUVMATRIXROW_AVX2)
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX2) && defined(HAS_RGB24TOARGBROW_AVX2)
 void RGBToUVMatrixRow_AVX2(const uint8_t* src_rgb,
                            int src_stride_rgb,
                            uint8_t* dst_u,
@@ -4653,14 +4617,10 @@ void RGBToUVMatrixRow_AVX2(const uint8_t* src_rgb,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_RGB24TOARGBROW_SSSE3)
-    RGB24ToARGBRow_Any_SSSE3(src_rgb, row, twidth);
-    RGB24ToARGBRow_Any_SSSE3(src_rgb + src_stride_rgb, row + MAXTWIDTH * 4, twidth);
-#else
-    RGB24ToARGBRow_C(src_rgb, row, twidth);
-    RGB24ToARGBRow_C(src_rgb + src_stride_rgb, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    RGB24ToARGBRow_AVX2(src_rgb, row, twidth);
+    RGB24ToARGBRow_AVX2(src_rgb + src_stride_rgb,
+                        row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_rgb += twidth * 3;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
@@ -4679,9 +4639,9 @@ void RGBToUVMatrixRow_NEON(const uint8_t* src_rgb,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    RGB24ToARGBRow_Any_NEON(src_rgb, row, twidth);
-    RGB24ToARGBRow_Any_NEON(src_rgb + src_stride_rgb, row + MAXTWIDTH * 4, twidth);
-    ARGBToUVMatrixRow_Any_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    RGB24ToARGBRow_NEON(src_rgb, row, twidth);
+    RGB24ToARGBRow_NEON(src_rgb + src_stride_rgb, row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_rgb += twidth * 3;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
@@ -4724,7 +4684,7 @@ void RGB565ToUVMatrixRow_C(const uint8_t* src_rgb565,
   }
 }
 
-#if defined(HAS_ARGBTOYMATRIXROW_AVX2)
+#if defined(HAS_ARGBTOYMATRIXROW_AVX2) && defined(HAS_RGB565TOARGBROW_AVX2)
 void RGB565ToYMatrixRow_AVX2(const uint8_t* src_rgb565,
                              uint8_t* dst_y,
                              int width,
@@ -4732,12 +4692,8 @@ void RGB565ToYMatrixRow_AVX2(const uint8_t* src_rgb565,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_RGB565TOARGBROW_SSE2)
-    RGB565ToARGBRow_Any_SSE2(src_rgb565, row, twidth);
-#else
-    RGB565ToARGBRow_C(src_rgb565, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_AVX2(row, dst_y, twidth, c);
+    RGB565ToARGBRow_AVX2(src_rgb565, row, twidth);
+    ARGBToYMatrixRow_AVX2(row, dst_y, twidth, c);
     src_rgb565 += twidth * 2;
     dst_y += twidth;
     width -= twidth;
@@ -4745,7 +4701,7 @@ void RGB565ToYMatrixRow_AVX2(const uint8_t* src_rgb565,
 }
 #endif
 
-#if defined(HAS_ARGBTOUVMATRIXROW_AVX2)
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX2) && defined(HAS_RGB565TOARGBROW_AVX2)
 void RGB565ToUVMatrixRow_AVX2(const uint8_t* src_rgb565,
                               int src_stride_rgb565,
                               uint8_t* dst_u,
@@ -4755,14 +4711,10 @@ void RGB565ToUVMatrixRow_AVX2(const uint8_t* src_rgb565,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_RGB565TOARGBROW_SSE2)
-    RGB565ToARGBRow_Any_SSE2(src_rgb565, row, twidth);
-    RGB565ToARGBRow_Any_SSE2(src_rgb565 + src_stride_rgb565, row + MAXTWIDTH * 4, twidth);
-#else
-    RGB565ToARGBRow_C(src_rgb565, row, twidth);
-    RGB565ToARGBRow_C(src_rgb565 + src_stride_rgb565, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    RGB565ToARGBRow_AVX2(src_rgb565, row, twidth);
+    RGB565ToARGBRow_AVX2(src_rgb565 + src_stride_rgb565,
+                         row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_rgb565 += twidth * 2;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
@@ -4771,7 +4723,7 @@ void RGB565ToUVMatrixRow_AVX2(const uint8_t* src_rgb565,
 }
 #endif
 
-#if defined(HAS_RGB565TOYMATRIXROW_NEON) && defined(HAS_ARGBTOYMATRIXROW_NEON)
+#if defined(HAS_RGB565TOARGBROW_NEON) && defined(HAS_ARGBTOYMATRIXROW_NEON)
 void RGB565ToYMatrixRow_NEON(const uint8_t* src_rgb565,
                              uint8_t* dst_y,
                              int width,
@@ -4779,12 +4731,8 @@ void RGB565ToYMatrixRow_NEON(const uint8_t* src_rgb565,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_RGB565TOARGBROW_NEON)
-    RGB565ToARGBRow_Any_NEON(src_rgb565, row, twidth);
-#else
-    RGB565ToARGBRow_C(src_rgb565, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_NEON(row, dst_y, twidth, c);
+    RGB565ToARGBRow_NEON(src_rgb565, row, twidth);
+    ARGBToYMatrixRow_NEON(row, dst_y, twidth, c);
     src_rgb565 += twidth * 2;
     dst_y += twidth;
     width -= twidth;
@@ -4792,7 +4740,7 @@ void RGB565ToYMatrixRow_NEON(const uint8_t* src_rgb565,
 }
 #endif
 
-#if defined(HAS_RGB565TOUVMATRIXROW_NEON)
+#if defined(HAS_RGB565TOARGBROW_NEON) && defined(HAS_ARGBTOUVMATRIXROW_NEON)
 void RGB565ToUVMatrixRow_NEON(const uint8_t* src_rgb565,
                               int src_stride_rgb565,
                               uint8_t* dst_u,
@@ -4802,14 +4750,9 @@ void RGB565ToUVMatrixRow_NEON(const uint8_t* src_rgb565,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_RGB565TOARGBROW_NEON)
-    RGB565ToARGBRow_Any_NEON(src_rgb565, row, twidth);
-    RGB565ToARGBRow_Any_NEON(src_rgb565 + src_stride_rgb565, row + MAXTWIDTH * 4, twidth);
-#else
-    RGB565ToARGBRow_C(src_rgb565, row, twidth);
-    RGB565ToARGBRow_C(src_rgb565 + src_stride_rgb565, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    RGB565ToARGBRow_NEON(src_rgb565, row, twidth);
+    RGB565ToARGBRow_NEON(src_rgb565 + src_stride_rgb565, row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_rgb565 += twidth * 2;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
@@ -4817,7 +4760,6 @@ void RGB565ToUVMatrixRow_NEON(const uint8_t* src_rgb565,
   }
 }
 #endif
-
 
 void ARGB1555ToYMatrixRow_C(const uint8_t* src_argb1555,
                             uint8_t* dst_y,
@@ -4888,6 +4830,7 @@ void ARGB4444ToUVMatrixRow_C(const uint8_t* src_argb4444,
 }
 
 #if defined(HAS_ARGBTOYMATRIXROW_AVX2)
+#if defined(HAS_ARGB1555TOARGBROW_AVX2)
 void ARGB1555ToYMatrixRow_AVX2(const uint8_t* src_argb1555,
                                uint8_t* dst_y,
                                int width,
@@ -4895,20 +4838,16 @@ void ARGB1555ToYMatrixRow_AVX2(const uint8_t* src_argb1555,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB1555TOARGBROW_AVX2)
-    ARGB1555ToARGBRow_Any_AVX2(src_argb1555, row, twidth);
-#elif defined(HAS_ARGB1555TOARGBROW_SSE2)
-    ARGB1555ToARGBRow_Any_SSE2(src_argb1555, row, twidth);
-#else
-    ARGB1555ToARGBRow_C(src_argb1555, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_AVX2(row, dst_y, twidth, c);
+    ARGB1555ToARGBRow_AVX2(src_argb1555, row, twidth);
+    ARGBToYMatrixRow_AVX2(row, dst_y, twidth, c);
     src_argb1555 += twidth * 2;
     dst_y += twidth;
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_ARGB4444TOARGBROW_AVX2)
 void ARGB4444ToYMatrixRow_AVX2(const uint8_t* src_argb4444,
                                uint8_t* dst_y,
                                int width,
@@ -4916,22 +4855,18 @@ void ARGB4444ToYMatrixRow_AVX2(const uint8_t* src_argb4444,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB4444TOARGBROW_AVX2)
-    ARGB4444ToARGBRow_Any_AVX2(src_argb4444, row, twidth);
-#elif defined(HAS_ARGB4444TOARGBROW_SSE2)
-    ARGB4444ToARGBRow_Any_SSE2(src_argb4444, row, twidth);
-#else
-    ARGB4444ToARGBRow_C(src_argb4444, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_AVX2(row, dst_y, twidth, c);
+    ARGB4444ToARGBRow_AVX2(src_argb4444, row, twidth);
+    ARGBToYMatrixRow_AVX2(row, dst_y, twidth, c);
     src_argb4444 += twidth * 2;
     dst_y += twidth;
     width -= twidth;
   }
 }
 #endif
+#endif
 
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX2)
+#if defined(HAS_ARGB1555TOARGBROW_AVX2)
 void ARGB1555ToUVMatrixRow_AVX2(const uint8_t* src_argb1555,
                                 int src_stride_argb1555,
                                 uint8_t* dst_u,
@@ -4941,24 +4876,19 @@ void ARGB1555ToUVMatrixRow_AVX2(const uint8_t* src_argb1555,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB1555TOARGBROW_AVX2)
-    ARGB1555ToARGBRow_Any_AVX2(src_argb1555, row, twidth);
-    ARGB1555ToARGBRow_Any_AVX2(src_argb1555 + src_stride_argb1555, row + MAXTWIDTH * 4, twidth);
-#elif defined(HAS_ARGB1555TOARGBROW_SSE2)
-    ARGB1555ToARGBRow_Any_SSE2(src_argb1555, row, twidth);
-    ARGB1555ToARGBRow_Any_SSE2(src_argb1555 + src_stride_argb1555, row + MAXTWIDTH * 4, twidth);
-#else
-    ARGB1555ToARGBRow_C(src_argb1555, row, twidth);
-    ARGB1555ToARGBRow_C(src_argb1555 + src_stride_argb1555, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    ARGB1555ToARGBRow_AVX2(src_argb1555, row, twidth);
+    ARGB1555ToARGBRow_AVX2(src_argb1555 + src_stride_argb1555,
+                           row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_argb1555 += twidth * 2;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_ARGB4444TOARGBROW_AVX2)
 void ARGB4444ToUVMatrixRow_AVX2(const uint8_t* src_argb4444,
                                 int src_stride_argb4444,
                                 uint8_t* dst_u,
@@ -4968,17 +4898,10 @@ void ARGB4444ToUVMatrixRow_AVX2(const uint8_t* src_argb4444,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB4444TOARGBROW_AVX2)
-    ARGB4444ToARGBRow_Any_AVX2(src_argb4444, row, twidth);
-    ARGB4444ToARGBRow_Any_AVX2(src_argb4444 + src_stride_argb4444, row + MAXTWIDTH * 4, twidth);
-#elif defined(HAS_ARGB4444TOARGBROW_SSE2)
-    ARGB4444ToARGBRow_Any_SSE2(src_argb4444, row, twidth);
-    ARGB4444ToARGBRow_Any_SSE2(src_argb4444 + src_stride_argb4444, row + MAXTWIDTH * 4, twidth);
-#else
-    ARGB4444ToARGBRow_C(src_argb4444, row, twidth);
-    ARGB4444ToARGBRow_C(src_argb4444 + src_stride_argb4444, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    ARGB4444ToARGBRow_AVX2(src_argb4444, row, twidth);
+    ARGB4444ToARGBRow_AVX2(src_argb4444 + src_stride_argb4444,
+                           row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_AVX2(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_argb4444 += twidth * 2;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
@@ -4986,8 +4909,9 @@ void ARGB4444ToUVMatrixRow_AVX2(const uint8_t* src_argb4444,
   }
 }
 #endif
+#endif
 
-#if defined(HAS_ARGBTOYMATRIXROW_NEON)
+#if defined(HAS_ARGBTOYMATRIXROW_NEON) && defined(HAS_ARGB1555TOARGBROW_NEON)
 void ARGB1555ToYMatrixRow_NEON(const uint8_t* src_argb1555,
                                uint8_t* dst_y,
                                int width,
@@ -4995,18 +4919,16 @@ void ARGB1555ToYMatrixRow_NEON(const uint8_t* src_argb1555,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB1555TOARGBROW_NEON)
-    ARGB1555ToARGBRow_Any_NEON(src_argb1555, row, twidth);
-#else
-    ARGB1555ToARGBRow_C(src_argb1555, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_NEON(row, dst_y, twidth, c);
+    ARGB1555ToARGBRow_NEON(src_argb1555, row, twidth);
+    ARGBToYMatrixRow_NEON(row, dst_y, twidth, c);
     src_argb1555 += twidth * 2;
     dst_y += twidth;
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_ARGBTOYMATRIXROW_NEON) && defined(HAS_ARGB4444TOARGBROW_NEON)
 void ARGB4444ToYMatrixRow_NEON(const uint8_t* src_argb4444,
                                uint8_t* dst_y,
                                int width,
@@ -5014,12 +4936,8 @@ void ARGB4444ToYMatrixRow_NEON(const uint8_t* src_argb4444,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB4444TOARGBROW_NEON)
-    ARGB4444ToARGBRow_Any_NEON(src_argb4444, row, twidth);
-#else
-    ARGB4444ToARGBRow_C(src_argb4444, row, twidth);
-#endif
-    ARGBToYMatrixRow_Any_NEON(row, dst_y, twidth, c);
+    ARGB4444ToARGBRow_NEON(src_argb4444, row, twidth);
+    ARGBToYMatrixRow_NEON(row, dst_y, twidth, c);
     src_argb4444 += twidth * 2;
     dst_y += twidth;
     width -= twidth;
@@ -5027,7 +4945,7 @@ void ARGB4444ToYMatrixRow_NEON(const uint8_t* src_argb4444,
 }
 #endif
 
-#if defined(HAS_ARGBTOUVMATRIXROW_NEON)
+#if defined(HAS_ARGBTOUVMATRIXROW_NEON) && defined(HAS_ARGB1555TOARGBROW_NEON)
 void ARGB1555ToUVMatrixRow_NEON(const uint8_t* src_argb1555,
                                 int src_stride_argb1555,
                                 uint8_t* dst_u,
@@ -5037,21 +4955,18 @@ void ARGB1555ToUVMatrixRow_NEON(const uint8_t* src_argb1555,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB1555TOARGBROW_NEON)
-    ARGB1555ToARGBRow_Any_NEON(src_argb1555, row, twidth);
-    ARGB1555ToARGBRow_Any_NEON(src_argb1555 + src_stride_argb1555, row + MAXTWIDTH * 4, twidth);
-#else
-    ARGB1555ToARGBRow_C(src_argb1555, row, twidth);
-    ARGB1555ToARGBRow_C(src_argb1555 + src_stride_argb1555, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    ARGB1555ToARGBRow_NEON(src_argb1555, row, twidth);
+    ARGB1555ToARGBRow_NEON(src_argb1555 + src_stride_argb1555, row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_argb1555 += twidth * 2;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_ARGBTOUVMATRIXROW_NEON) && defined(HAS_ARGB4444TOARGBROW_NEON)
 void ARGB4444ToUVMatrixRow_NEON(const uint8_t* src_argb4444,
                                 int src_stride_argb4444,
                                 uint8_t* dst_u,
@@ -5061,14 +4976,9 @@ void ARGB4444ToUVMatrixRow_NEON(const uint8_t* src_argb4444,
   SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4 * 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-#if defined(HAS_ARGB4444TOARGBROW_NEON)
-    ARGB4444ToARGBRow_Any_NEON(src_argb4444, row, twidth);
-    ARGB4444ToARGBRow_Any_NEON(src_argb4444 + src_stride_argb4444, row + MAXTWIDTH * 4, twidth);
-#else
-    ARGB4444ToARGBRow_C(src_argb4444, row, twidth);
-    ARGB4444ToARGBRow_C(src_argb4444 + src_stride_argb4444, row + MAXTWIDTH * 4, twidth);
-#endif
-    ARGBToUVMatrixRow_Any_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
+    ARGB4444ToARGBRow_NEON(src_argb4444, row, twidth);
+    ARGB4444ToARGBRow_NEON(src_argb4444 + src_stride_argb4444, row + MAXTWIDTH * 4, twidth);
+    ARGBToUVMatrixRow_NEON(row, MAXTWIDTH * 4, dst_u, dst_v, twidth, c);
     src_argb4444 += twidth * 2;
     dst_u += twidth / 2;
     dst_v += twidth / 2;
