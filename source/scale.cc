@@ -11,6 +11,7 @@
 #include "libyuv/scale.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <string.h>
 
 #include "libyuv/cpu_id.h"
@@ -2230,8 +2231,8 @@ int I420Scale(const uint8_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2275,8 +2276,8 @@ int I420Scale_16(const uint16_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2320,8 +2321,8 @@ int I420Scale_12(const uint16_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2364,8 +2365,8 @@ int I444Scale(const uint8_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2405,8 +2406,8 @@ int I444Scale_16(const uint16_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2446,8 +2447,8 @@ int I444Scale_12(const uint16_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2492,8 +2493,8 @@ int I422Scale(const uint8_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2535,8 +2536,8 @@ int I422Scale_16(const uint16_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2578,8 +2579,8 @@ int I422Scale_12(const uint16_t* src_y,
   int r;
 
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_u || !dst_v ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2622,8 +2623,8 @@ int NV12Scale(const uint8_t* src_y,
   int r;
 
   if (!src_y || !src_uv || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_uv ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_uv || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 
@@ -2654,8 +2655,8 @@ int NV24Scale(const uint8_t* src_y,
   int r;
 
   if (!src_y || !src_uv || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height > 32768 || !dst_y || !dst_uv ||
-      dst_width <= 0 || dst_height <= 0) {
+      src_height == INT_MIN || src_width > 32768 || src_height > 32768 ||
+      !dst_y || !dst_uv || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
 

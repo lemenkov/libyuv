@@ -66,7 +66,8 @@ int ConvertToI420(const uint8_t* sample,
 
   if (!dst_y || !dst_u || !dst_v || !sample || src_width <= 0 ||
       src_width > INT_MAX / 4 || crop_width <= 0 || src_height == 0 ||
-      crop_height == 0 || crop_x < 0 || crop_y < 0 || crop_width > src_width ||
+      src_height == INT_MIN || crop_height == 0 || crop_height == INT_MIN ||
+      crop_x < 0 || crop_y < 0 || crop_width > src_width ||
       crop_x > src_width - crop_width || abs_crop_height > abs_src_height ||
       crop_y > abs_src_height - abs_crop_height) {
     return -1;

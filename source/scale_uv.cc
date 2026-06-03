@@ -885,7 +885,7 @@ static int UVCopy(const uint8_t* src_uv,
                   int dst_stride_uv,
                   int width,
                   int height) {
-  if (!src_uv || !dst_uv || width <= 0 || height == 0) {
+  if (!src_uv || !dst_uv || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
@@ -905,7 +905,7 @@ static int UVCopy_16(const uint16_t* src_uv,
                      int dst_stride_uv,
                      int width,
                      int height) {
-  if (!src_uv || !dst_uv || width <= 0 || height == 0) {
+  if (!src_uv || !dst_uv || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1061,8 +1061,9 @@ int UVScale(const uint8_t* src_uv,
             int dst_width,
             int dst_height,
             enum FilterMode filtering) {
-  if (!src_uv || src_width <= 0 || src_height == 0 || src_width > 32768 ||
-      src_height > 32768 || !dst_uv || dst_width <= 0 || dst_height <= 0) {
+  if (!src_uv || src_width <= 0 || src_height == 0 || src_height == INT_MIN ||
+      src_width > 32768 || src_height > 32768 || !dst_uv || dst_width <= 0 ||
+      dst_height <= 0) {
     return -1;
   }
   return ScaleUV(src_uv, src_stride_uv, src_width, src_height, dst_uv,
@@ -1084,8 +1085,9 @@ int UVScale_16(const uint16_t* src_uv,
                enum FilterMode filtering) {
   int dy = 0;
 
-  if (!src_uv || src_width <= 0 || src_height == 0 || src_width > 32768 ||
-      src_height > 32768 || !dst_uv || dst_width <= 0 || dst_height <= 0) {
+  if (!src_uv || src_width <= 0 || src_height == 0 || src_height == INT_MIN ||
+      src_width > 32768 || src_height > 32768 || !dst_uv || dst_width <= 0 ||
+      dst_height <= 0) {
     return -1;
   }
 

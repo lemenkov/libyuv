@@ -10,6 +10,8 @@
 
 #include "libyuv/rotate_argb.h"
 
+#include <limits.h>
+
 #include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
@@ -222,14 +224,15 @@ int ARGBRotate(const uint8_t* src_argb,
                int width,
                int height,
                enum RotationMode mode) {
-  if (!src_argb || width <= 0 || height == 0 || !dst_argb) {
+  if (!src_argb || width <= 0 || height == 0 || height == INT_MIN ||
+      !dst_argb) {
     return -1;
   }
 
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_argb = src_argb + (ptrdiff_t)(height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
 

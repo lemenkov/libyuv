@@ -42,8 +42,8 @@ int RGBScale(const uint8_t* src_rgb,
              enum FilterMode filtering) {
   int r;
   if (!src_rgb || !dst_rgb || src_width <= 0 || src_width > INT_MAX / 4 ||
-      src_height == 0 || dst_width <= 0 || dst_width > INT_MAX / 4 ||
-      dst_height <= 0) {
+      src_height == 0 || src_height == INT_MIN || dst_width <= 0 ||
+      dst_width > INT_MAX / 4 || dst_height <= 0) {
     return -1;
   }
   const int abs_src_height = (src_height < 0) ? -src_height : src_height;

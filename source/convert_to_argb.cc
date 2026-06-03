@@ -72,7 +72,8 @@ int ConvertToARGB(const uint8_t* sample,
 
   if (dst_argb == NULL || sample == NULL || src_width <= 0 ||
       src_width > INT_MAX / 4 || crop_width <= 0 || crop_width > INT_MAX / 4 ||
-      src_height == 0 || crop_height == 0) {
+      src_height == 0 || src_height == INT_MIN || crop_height == 0 ||
+      crop_height == INT_MIN) {
     return -1;
   }
   if (src_height < 0) {
