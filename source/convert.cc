@@ -57,16 +57,16 @@ static int I4xxToI420(const uint8_t* src_y,
                       int src_y_height,
                       int src_uv_width,
                       int src_uv_height) {
+  int r;
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v ||
+      src_y_width <= 0 || src_y_height == 0 || src_y_height == INT_MIN ||
+      src_uv_width <= 0 || src_uv_height == 0) {
+    return -1;
+  }
   const int dst_y_width = src_y_width;
   const int dst_y_height = Abs(src_y_height);
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
-  int r;
-  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v ||
-      src_y_width <= 0 || src_y_height == 0 || src_uv_width <= 0 ||
-      src_uv_height == 0) {
-    return -1;
-  }
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, src_y_width,
               src_y_height);
@@ -184,13 +184,13 @@ static int Planar16bitTo8bit(const uint16_t* src_y,
                              int subsample_x,
                              int subsample_y,
                              int depth) {
-  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
-  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
-  int scale = 1 << (24 - depth);
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
   }
+  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  int scale = 1 << (24 - depth);
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -533,17 +533,17 @@ static int Ix10ToI010(const uint16_t* src_y,
                       int height,
                       int subsample_x,
                       int subsample_y) {
+  int r;
+  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
+      height == 0 || height == INT_MIN) {
+    return -1;
+  }
   const int dst_y_width = width;
   const int dst_y_height = Abs(height);
   const int src_uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
   const int src_uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
-  int r;
-  if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
-      height == 0 || height == INT_MIN) {
-    return -1;
-  }
   if (dst_y) {
     CopyPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
@@ -613,11 +613,11 @@ static int IxxxToPxxx(const uint16_t* src_y,
                       int subsample_x,
                       int subsample_y,
                       int depth) {
-  const int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
-  const int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
   if (width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
+  const int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  const int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
 
   ConvertToMSBPlane_16(src_y, src_stride_y, dst_y, dst_stride_y, width, height,
                        depth);
@@ -4216,13 +4216,13 @@ static int Biplanar16bitTo8bit(const uint16_t* src_y,
                                int subsample_x,
                                int subsample_y,
                                int depth) {
-  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
-  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
-  int scale = 1 << (24 - depth);
   if ((!src_y && dst_y) || !src_uv || !dst_uv || width <= 0 || height == 0 ||
       height == INT_MIN) {
     return -1;
   }
+  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
+  int scale = 1 << (24 - depth);
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -4283,12 +4283,12 @@ static int Planar8bitTo8bit(const uint8_t* src_y,
                             int bias_y,
                             int scale_uv,
                             int bias_uv) {
-  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
-  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
   }
+  int uv_width = SUBSAMPLE(width, subsample_x, subsample_x);
+  int uv_height = SUBSAMPLE(height, subsample_y, subsample_y);
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
