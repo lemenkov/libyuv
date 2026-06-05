@@ -364,7 +364,7 @@ void RGB24ToARGBRow_AVX512BW(const uint8_t* src_rgb24, uint8_t* dst_argb, int wi
 #endif
 
 #ifdef HAS_ARGBTOUVMATRIXROW_AVX2
-LIBYUV_TARGET_AVX2 __attribute__((no_sanitize("cfi-icall")))
+LIBYUV_TARGET_AVX2
 void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
                             int src_stride_argb,
                             uint8_t* dst_u,
