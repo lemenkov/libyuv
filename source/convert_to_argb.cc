@@ -50,6 +50,13 @@ int ConvertToARGB(const uint8_t* sample,
                   int crop_height,
                   enum RotationMode rotation,
                   uint32_t fourcc) {
+  if (dst_argb == NULL || sample == NULL || src_width <= 0 ||
+      src_width > INT_MAX / 4 || crop_width <= 0 || crop_width > INT_MAX / 4 ||
+      src_height == 0 || src_height == INT_MIN || crop_height == 0 ||
+      crop_height == INT_MIN) {
+    return -1;
+  }
+
   uint32_t format = CanonicalFourCC(fourcc);
   int aligned_src_width = (src_width + 1) & ~1;
   const uint8_t* src;
@@ -70,12 +77,6 @@ int ConvertToARGB(const uint8_t* sample,
   uint8_t* rotate_buffer = NULL;
   int abs_crop_height = (crop_height < 0) ? -crop_height : crop_height;
 
-  if (dst_argb == NULL || sample == NULL || src_width <= 0 ||
-      src_width > INT_MAX / 4 || crop_width <= 0 || crop_width > INT_MAX / 4 ||
-      src_height == 0 || src_height == INT_MIN || crop_height == 0 ||
-      crop_height == INT_MIN) {
-    return -1;
-  }
   if (src_height < 0) {
     inv_crop_height = -inv_crop_height;
   }
