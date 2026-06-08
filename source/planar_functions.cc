@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/convert_from_argb.h"  // For ArgbConstants
 #include "libyuv/planar_functions.h"
 
 #include <assert.h>
 #include <limits.h>
 #include <string.h>  // for memset()
 
+#include "libyuv/convert_from_argb.h"  // For ArgbConstants
 #include "libyuv/cpu_id.h"
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h"  // for ScaleRowDown2
@@ -630,6 +630,14 @@ void SplitUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
+#if defined(HAS_SPLITUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    SplitUVRow = SplitUVRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      SplitUVRow = SplitUVRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_SPLITUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SplitUVRow = SplitUVRow_Any_NEON;
@@ -1087,7 +1095,7 @@ int NV21ToNV12(const uint8_t* src_y,
 }
 
 // Test if tile_height is a power of 2 (16 or 32)
-#define IS_POWEROFTWO(x) (!((x) & ((x)-1)))
+#define IS_POWEROFTWO(x) (!((x) & ((x) - 1)))
 
 // Detile a plane of data
 // tile width is 16 and assumed.
@@ -2585,6 +2593,14 @@ void MirrorPlane(const uint8_t* src_y,
     MirrorRow = MirrorRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       MirrorRow = MirrorRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MirrorRow = MirrorRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      MirrorRow = MirrorRow_AVX512BW;
     }
   }
 #endif

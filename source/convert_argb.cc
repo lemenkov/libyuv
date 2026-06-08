@@ -3720,7 +3720,7 @@ int RGB24ToARGB(const uint8_t* src_rgb24,
     RGB24ToARGBRow = RGB24ToARGBRow_RVV;
   }
 #endif
-for (y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     RGB24ToARGBRow(src_rgb24, dst_argb, width);
     src_rgb24 += src_stride_rgb24;
     dst_argb += dst_stride_argb;

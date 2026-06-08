@@ -1951,9 +1951,9 @@ int ScalePlane(const uint8_t* src,
   // Reject dimensions larger than 32768 (or smaller than -32768 for height).
   // This prevents FixedDiv signed integer overflows that can lead to division
   // by zero/overflow crashes (SIGFPE on x86) or incorrect step calculations.
-  if (!src || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height < -32768 || src_height > 32768 ||
-      !dst || dst_width <= 0 || dst_height <= 0) {
+  if (!src || src_width <= 0 || src_height == 0 || src_width > 32768 ||
+      src_height < -32768 || src_height > 32768 || !dst || dst_width <= 0 ||
+      dst_height <= 0) {
     return -1;
   }
   // Simplify filtering when possible.
@@ -2059,9 +2059,9 @@ int ScalePlane_16(const uint16_t* src,
   // Reject dimensions larger than 32768 (or smaller than -32768 for height).
   // This prevents FixedDiv signed integer overflows that can lead to division
   // by zero/overflow crashes (SIGFPE on x86) or incorrect step calculations.
-  if (!src || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height < -32768 || src_height > 32768 ||
-      !dst || dst_width <= 0 || dst_height <= 0) {
+  if (!src || src_width <= 0 || src_height == 0 || src_width > 32768 ||
+      src_height < -32768 || src_height > 32768 || !dst || dst_width <= 0 ||
+      dst_height <= 0) {
     return -1;
   }
   // Simplify filtering when possible.
@@ -2171,9 +2171,9 @@ int ScalePlane_12(const uint16_t* src,
   // Reject dimensions larger than 32768 (or smaller than -32768 for height).
   // This prevents FixedDiv signed integer overflows that can lead to division
   // by zero/overflow crashes (SIGFPE on x86) or incorrect step calculations.
-  if (!src || src_width <= 0 || src_height == 0 ||
-      src_width > 32768 || src_height < -32768 || src_height > 32768 ||
-      !dst || dst_width <= 0 || dst_height <= 0) {
+  if (!src || src_width <= 0 || src_height == 0 || src_width > 32768 ||
+      src_height < -32768 || src_height > 32768 || !dst || dst_width <= 0 ||
+      dst_height <= 0) {
     return -1;
   }
   // Simplify filtering when possible.

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "libyuv/rotate.h"
+
 #include <assert.h>
 #include <limits.h>
-
-#include "libyuv/rotate.h"
 
 #include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
@@ -401,6 +401,11 @@ void SplitRotateUV180(const uint8_t* src,
 #if defined(HAS_MIRRORSPLITUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
     MirrorSplitUVRow = MirrorSplitUVRow_AVX2;
+  }
+#endif
+#if defined(HAS_MIRRORSPLITUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW) && IS_ALIGNED(width, 32)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_AVX512BW;
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_LSX)
