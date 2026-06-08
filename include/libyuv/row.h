@@ -398,6 +398,8 @@ extern "C" {
 #define HAS_ARGBTOUV444MATRIXROW_AVX512BW
 #define HAS_ARGBTOYROW_AVX512BW
 #define HAS_ARGBTOYMATRIXROW_AVX512BW
+#define HAS_I422TORGB24ROW_AVX512VBMI
+#define HAS_I422TORGB24ROW_AVX512BW
 #define HAS_ARGBTOUVJ444ROW_AVX512BW
 #define HAS_ARGBTOUVROW_AVX512BW
 #define HAS_ARGBTOUVJROW_AVX512BW
@@ -5148,6 +5150,18 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
                          uint8_t* dst_rgb24,
                          const struct YuvConstants* yuvconstants,
                          int width);
+void I422ToRGB24Row_AVX512VBMI(const uint8_t* src_y,
+                               const uint8_t* src_u,
+                               const uint8_t* src_v,
+                               uint8_t* dst_rgb24,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
+void I422ToRGB24Row_AVX512BW(const uint8_t* src_y,
+                             const uint8_t* src_u,
+                             const uint8_t* src_v,
+                             uint8_t* dst_rgb24,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void I422ToARGBRow_Any_AVX2(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,
@@ -5466,6 +5480,18 @@ void I422ToRGB24Row_Any_AVX2(const uint8_t* y_buf,
                              uint8_t* dst_ptr,
                              const struct YuvConstants* yuvconstants,
                              int width);
+void I422ToRGB24Row_Any_AVX512VBMI(const uint8_t* y_buf,
+                                   const uint8_t* u_buf,
+                                   const uint8_t* v_buf,
+                                   uint8_t* dst_ptr,
+                                   const struct YuvConstants* yuvconstants,
+                                   int width);
+void I422ToRGB24Row_Any_AVX512BW(const uint8_t* y_buf,
+                                 const uint8_t* u_buf,
+                                 const uint8_t* v_buf,
+                                 uint8_t* dst_ptr,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
 
 void I400ToARGBRow_C(const uint8_t* src_y,
                      uint8_t* rgb_buf,
