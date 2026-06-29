@@ -844,9 +844,11 @@ int YUVToARGBScaleClip(const uint8_t* src_y,
   }
   const int abs_src_height = (src_height < 0) ? -src_height : src_height;
   const uint64_t argb_buffer_size = (uint64_t)src_width * abs_src_height * 4;
+#if UINT64_MAX > SIZE_MAX
   if (argb_buffer_size > SIZE_MAX) {
     return -1;  // Invalid size.
   }
+#endif
   uint8_t* argb_buffer = (uint8_t*)malloc((size_t)argb_buffer_size);
   if (!argb_buffer) {
     return 1;  // Out of memory runtime error.

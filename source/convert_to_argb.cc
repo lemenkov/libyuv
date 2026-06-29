@@ -92,9 +92,11 @@ int ConvertToARGB(const uint8_t* sample,
   if (need_buf) {
     const uint64_t rotate_buffer_size =
         (uint64_t)crop_width * 4 * abs_crop_height;
+#if UINT64_MAX > SIZE_MAX
     if (rotate_buffer_size > SIZE_MAX) {
       return -1;  // Invalid size.
     }
+#endif
     rotate_buffer = (uint8_t*)malloc((size_t)rotate_buffer_size);
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
