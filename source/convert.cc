@@ -682,7 +682,7 @@ int I010ToNV12(const uint16_t* src_y,
 #if defined(HAS_CONVERT16TO8ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     Convert16To8Row = Convert16To8Row_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       Convert16To8Row = Convert16To8Row_NEON;
     }
   }
@@ -695,7 +695,7 @@ int I010ToNV12(const uint16_t* src_y,
 #if defined(HAS_CONVERT16TO8ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     Convert16To8Row = Convert16To8Row_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       Convert16To8Row = Convert16To8Row_SSSE3;
     }
   }
@@ -703,7 +703,7 @@ int I010ToNV12(const uint16_t* src_y,
 #if defined(HAS_CONVERT16TO8ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     Convert16To8Row = Convert16To8Row_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
+    if (IS_ALIGNED(halfwidth, 32)) {
       Convert16To8Row = Convert16To8Row_AVX2;
     }
   }
@@ -711,7 +711,7 @@ int I010ToNV12(const uint16_t* src_y,
 #if defined(HAS_CONVERT16TO8ROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     Convert16To8Row = Convert16To8Row_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
+    if (IS_ALIGNED(halfwidth, 64)) {
       Convert16To8Row = Convert16To8Row_AVX512BW;
     }
   }
