@@ -122,6 +122,9 @@ static int ARGBRotate180(const uint8_t* src_argb,
       ARGBMirrorRow_C;
   void (*CopyRow)(const uint8_t* src_argb, uint8_t* dst_argb, int width) =
       CopyRow_C;
+  if (width > INT_MAX / 4) {
+    return -1;
+  }
   align_buffer_64(row, width * 4);
   if (!row)
     return 1;
