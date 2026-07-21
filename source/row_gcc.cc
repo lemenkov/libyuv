@@ -3821,14 +3821,18 @@ void OMITFP I422ToRGB24Row_AVX2(const uint8_t* y_buf,
       "vmovdqu      %%xmm2,0x10(%[dst_rgb24])                           \n"
       "vmovdqu      %%xmm3,0x20(%[dst_rgb24])                           \n"
       "lea          0x30(%[dst_rgb24]),%[dst_rgb24]                     \n"
-      "sub         $0x10,%[width]                \n"
+      "subl        $0x10,%[width]                \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
+#if defined(__i386__)
+    [width]"+m"(width)     // %[width]
+#else
     [width]"+rm"(width)    // %[width]
+#endif
   : [yuvconstants]"r"(yuvconstants),  // %[yuvconstants]
     [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24[0])
   : "memory", "cc", YUVTORGB_REGS_AVX2
