@@ -460,17 +460,17 @@ TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4, 1)
 #define JNV21ToARGB(a, b, c, d, e, f, g, h) \
   NV21ToARGBMatrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV12ToABGR(a, b, c, d, e, f, g, h) \
-  NV21ToARGBMatrix(a, b, c, d, e, f, &kYvuJPEGConstants, g, h)
+  NV12ToABGRMatrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV21ToABGR(a, b, c, d, e, f, g, h) \
-  NV12ToARGBMatrix(a, b, c, d, e, f, &kYvuJPEGConstants, g, h)
+  NV21ToABGRMatrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV12ToRGB24(a, b, c, d, e, f, g, h) \
   NV12ToRGB24Matrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV21ToRGB24(a, b, c, d, e, f, g, h) \
   NV21ToRGB24Matrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV12ToRAW(a, b, c, d, e, f, g, h) \
-  NV21ToRGB24Matrix(a, b, c, d, e, f, &kYvuJPEGConstants, g, h)
+  NV12ToRAWMatrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV21ToRAW(a, b, c, d, e, f, g, h) \
-  NV12ToRGB24Matrix(a, b, c, d, e, f, &kYvuJPEGConstants, g, h)
+  NV21ToRAWMatrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 #define JNV12ToRGB565(a, b, c, d, e, f, g, h) \
   NV12ToRGB565Matrix(a, b, c, d, e, f, &kYuvJPEGConstants, g, h)
 
