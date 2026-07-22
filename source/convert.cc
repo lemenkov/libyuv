@@ -2862,8 +2862,8 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
 
 // Convert RAW to I420.
 LIBYUV_API
-int RAWToI420(const uint8_t* src_rgb24,
-              int src_stride_rgb24,
+int RAWToI420(const uint8_t* src_raw,
+              int src_stride_raw,
               uint8_t* dst_y,
               int dst_stride_y,
               uint8_t* dst_u,
@@ -2925,31 +2925,31 @@ int RAWToI420(const uint8_t* src_rgb24,
   }
 #endif
 
-  if (!src_rgb24 || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0 ||
+  if (!src_raw || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0 ||
       height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_rgb24 = src_rgb24 + (ptrdiff_t)(height - 1) * src_stride_rgb24;
-    src_stride_rgb24 = -src_stride_rgb24;
+    src_raw = src_raw + (ptrdiff_t)(height - 1) * src_stride_raw;
+    src_stride_raw = -src_stride_raw;
   }
 
   for (y = 0; y < height - 1; y += 2) {
-    RGBToUVMatrixRow(src_rgb24, src_stride_rgb24, dst_u, dst_v, width,
-                     &kArgbI601Constants);
-    RGBToYMatrixRow(src_rgb24, dst_y, width, &kArgbI601Constants);
-    RGBToYMatrixRow(src_rgb24 + src_stride_rgb24, dst_y + dst_stride_y, width,
-                    &kArgbI601Constants);
-    src_rgb24 += src_stride_rgb24 * 2;
+    RGBToUVMatrixRow(src_raw, src_stride_raw, dst_u, dst_v, width,
+                     &kAbgrI601Constants);
+    RGBToYMatrixRow(src_raw, dst_y, width, &kAbgrI601Constants);
+    RGBToYMatrixRow(src_raw + src_stride_raw, dst_y + dst_stride_y, width,
+                    &kAbgrI601Constants);
+    src_raw += src_stride_raw * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    RGBToYMatrixRow(src_rgb24, dst_y, width, &kArgbI601Constants);
-    RGBToUVMatrixRow(src_rgb24, 0, dst_u, dst_v, width, &kArgbI601Constants);
+    RGBToYMatrixRow(src_raw, dst_y, width, &kAbgrI601Constants);
+    RGBToUVMatrixRow(src_raw, 0, dst_u, dst_v, width, &kAbgrI601Constants);
   }
   return 0;
 }
