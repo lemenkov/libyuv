@@ -777,7 +777,7 @@ int ARGBToNV21Matrix(const uint8_t* src_argb,
   for (y = 0; y < height - 1; y += 2) {
     ARGBToUVMatrixRow(src_argb, src_stride_argb, row_u, row_v, width,
                       argbconstants);
-    MergeUVRow(row_u, row_v, dst_vu, halfwidth);
+    MergeUVRow(row_v, row_u, dst_vu, halfwidth);
     ARGBToYMatrixRow(src_argb, dst_y, width, argbconstants);
     ARGBToYMatrixRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width,
                      argbconstants);
@@ -787,7 +787,7 @@ int ARGBToNV21Matrix(const uint8_t* src_argb,
   }
   if (height & 1) {
     ARGBToUVMatrixRow(src_argb, 0, row_u, row_v, width, argbconstants);
-    MergeUVRow(row_u, row_v, dst_vu, halfwidth);
+    MergeUVRow(row_v, row_u, dst_vu, halfwidth);
     ARGBToYMatrixRow(src_argb, dst_y, width, argbconstants);
   }
   free_aligned_buffer_64(row_u);
