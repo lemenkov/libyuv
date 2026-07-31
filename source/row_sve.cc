@@ -249,41 +249,7 @@ void ARGBToUVJRow_SVE2(const uint8_t* src_argb,
                            kARGBToUVJCoefficients);
 }
 
-void ABGRToUVJRow_SVE2(const uint8_t* src_abgr,
-                       int src_stride_abgr,
-                       uint8_t* dst_uj,
-                       uint8_t* dst_vj,
-                       int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_abgr, src_stride_abgr, dst_uj, dst_vj, width,
-                           kABGRToUVJCoefficients);
-}
 
-void BGRAToUVRow_SVE2(const uint8_t* src_bgra,
-                      int src_stride_bgra,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_bgra, src_stride_bgra, dst_u, dst_v, width,
-                           kBGRAToUVCoefficients);
-}
-
-void ABGRToUVRow_SVE2(const uint8_t* src_abgr,
-                      int src_stride_abgr,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_abgr, src_stride_abgr, dst_u, dst_v, width,
-                           kABGRToUVCoefficients);
-}
-
-void RGBAToUVRow_SVE2(const uint8_t* src_rgba,
-                      int src_stride_rgba,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_rgba, src_stride_rgba, dst_u, dst_v, width,
-                           kRGBAToUVCoefficients);
-}
 
 #define ARGBTORGB565_SVE                    \
   /* Inputs:                                \

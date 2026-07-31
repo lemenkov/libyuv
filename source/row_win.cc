@@ -236,34 +236,10 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 }
 
 LIBYUV_TARGET_AVX2
-void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_abgr, dst_y, width, &kAbgrI601Constants);
-}
-
-LIBYUV_TARGET_AVX2
 void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kArgbJPEGConstants);
 }
 
-LIBYUV_TARGET_AVX2
-void ABGRToYJRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_abgr, dst_y, width, &kAbgrJPEGConstants);
-}
-
-LIBYUV_TARGET_AVX2
-void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_rgba, dst_y, width, &kRgbaJPEGConstants);
-}
-
-LIBYUV_TARGET_AVX2
-void RGBAToYRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_rgba, dst_y, width, &kRgbaI601Constants);
-}
-
-LIBYUV_TARGET_AVX2
-void BGRAToYRow_AVX2(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_bgra, dst_y, width, &kBgraI601Constants);
-}
 
 #ifdef HAS_RAWTOARGBROW_AVX2
 LIBYUV_TARGET_AVX2

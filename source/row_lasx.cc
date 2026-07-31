@@ -2104,71 +2104,7 @@ void ARGBToYJRow_LASX(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
   ARGBToYMatrixRow_LASX(src_argb, dst_yj, width, &kRgb24JPEGConstants);
 }
 
-void ABGRToYRow_LASX(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_LASX(src_abgr, dst_y, width, &kRawI601Constants);
-}
 
-void ABGRToYJRow_LASX(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_LASX(src_abgr, dst_yj, width, &kRawJPEGConstants);
-}
-
-// RGBA expects first value to be A and ignored, then 3 values to contain RGB.
-// Same code as ARGB, except the LD4
-static void RGBAToYMatrixRow_LASX(const uint8_t* src_rgba,
-                                  uint8_t* dst_y,
-                                  int width,
-                                  const struct ArgbConstants* c) {
-  int32_t shuff[8] = {0, 4, 1, 5, 2, 6, 3, 7};
-  asm volatile(
-      "xvldrepl.b      $xr0,  %3,    0             \n\t"  // load rgbconstants
-      "xvldrepl.b      $xr1,  %3,    1             \n\t"  // load rgbconstants
-      "xvldrepl.b      $xr2,  %3,    2             \n\t"  // load rgbconstants
-      "xvldrepl.h      $xr3,  %3,    96            \n\t"  // load rgbconstants
-      "xvld            $xr20, %4,    0             \n\t"  // load shuff
-      "1:                                          \n\t"
-      "xvld            $xr4,  %0,    0             \n\t"
-      "xvld            $xr5,  %0,    32            \n\t"
-      "xvld            $xr6,  %0,    64            \n\t"
-      "xvld            $xr7,  %0,    96            \n\t"  // load 32 pixels of
-                                                          // RGBA
-      "xvor.v          $xr12, $xr3,  $xr3          \n\t"
-      "xvor.v          $xr13, $xr3,  $xr3          \n\t"
-      "addi.d          %2,    %2,    -32           \n\t"  // 32 processed per
-                                                          // loop.
-      "xvpickev.b      $xr8,  $xr5,  $xr4          \n\t"  // AG
-      "xvpickev.b      $xr10, $xr7,  $xr6          \n\t"
-      "xvpickod.b      $xr9,  $xr5,  $xr4          \n\t"  // BR
-      "xvpickod.b      $xr11, $xr7,  $xr6          \n\t"
-      "xvmaddwev.h.bu  $xr12, $xr9,  $xr0          \n\t"  // B
-      "xvmaddwev.h.bu  $xr13, $xr11, $xr0          \n\t"
-      "xvmaddwod.h.bu  $xr12, $xr8,  $xr1          \n\t"  // G
-      "xvmaddwod.h.bu  $xr13, $xr10, $xr1          \n\t"
-      "xvmaddwod.h.bu  $xr12, $xr9,  $xr2          \n\t"  // R
-      "xvmaddwod.h.bu  $xr13, $xr11, $xr2          \n\t"
-      "addi.d          %0,    %0,    128           \n\t"
-      "xvpickod.b      $xr10, $xr13, $xr12         \n\t"
-      "xvperm.w        $xr11, $xr10, $xr20         \n\t"
-      "xvst            $xr11, %1,    0             \n\t"
-      "addi.d          %1,    %1,    32            \n\t"
-      "bnez            %2,    1b                   \n\t"
-      : "+&r"(src_rgba),  // %0
-        "+&r"(dst_y),     // %1
-        "+&r"(width)      // %2
-      : "r"(c), "r"(shuff)
-      : "memory");
-}
-
-void RGBAToYRow_LASX(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  RGBAToYMatrixRow_LASX(src_rgba, dst_y, width, &kRgb24I601Constants);
-}
-
-void RGBAToYJRow_LASX(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
-  RGBAToYMatrixRow_LASX(src_rgba, dst_yj, width, &kRgb24JPEGConstants);
-}
-
-void BGRAToYRow_LASX(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
-  RGBAToYMatrixRow_LASX(src_bgra, dst_y, width, &kRawI601Constants);
-}
 
 static void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
                                  uint8_t* dst_y,

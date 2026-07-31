@@ -2989,41 +2989,7 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
                          &kArgbJPEGConstants);
 }
 
-void ABGRToUVRow_NEON(const uint8_t* src_abgr,
-                      int src_stride_abgr,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_NEON(src_abgr, src_stride_abgr, dst_u, dst_v, width,
-                         &kAbgrI601Constants);
-}
 
-void BGRAToUVRow_NEON(const uint8_t* src_bgra,
-                      int src_stride_bgra,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_NEON(src_bgra, src_stride_bgra, dst_u, dst_v, width,
-                         &kBgraI601Constants);
-}
-
-void RGBAToUVRow_NEON(const uint8_t* src_rgba,
-                      int src_stride_rgba,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_NEON(src_rgba, src_stride_rgba, dst_u, dst_v, width,
-                         &kRgbaI601Constants);
-}
-
-void ABGRToUVJRow_NEON(const uint8_t* src_abgr,
-                       int src_stride_abgr,
-                       uint8_t* dst_uj,
-                       uint8_t* dst_vj,
-                       int width) {
-  ARGBToUVMatrixRow_NEON(src_abgr, src_stride_abgr, dst_uj, dst_vj, width,
-                         &kAbgrJPEGConstants);
-}
 
 void RGB24ToUVJRow_NEON(const uint8_t* src_rgb24,
                         int src_stride_rgb24,
@@ -3418,32 +3384,7 @@ void ARGBToUVRow_NEON_I8MM(const uint8_t* src_argb,
                                    width, &kArgbI601Constants);
 }
 
-void ABGRToUVRow_NEON_I8MM(const uint8_t* src_abgr,
-                           int src_stride_abgr,
-                           uint8_t* dst_u,
-                           uint8_t* dst_v,
-                           int width) {
-  ARGBToUVMatrixRow_NEON_I8MM_Impl(src_abgr, src_stride_abgr, dst_u, dst_v,
-                                   width, &kAbgrI601Constants);
-}
 
-void BGRAToUVRow_NEON_I8MM(const uint8_t* src_bgra,
-                           int src_stride_bgra,
-                           uint8_t* dst_u,
-                           uint8_t* dst_v,
-                           int width) {
-  ARGBToUVMatrixRow_NEON_I8MM_Impl(src_bgra, src_stride_bgra, dst_u, dst_v,
-                                   width, &kBgraI601Constants);
-}
-
-void RGBAToUVRow_NEON_I8MM(const uint8_t* src_rgba,
-                           int src_stride_rgba,
-                           uint8_t* dst_u,
-                           uint8_t* dst_v,
-                           int width) {
-  ARGBToUVMatrixRow_NEON_I8MM_Impl(src_rgba, src_stride_rgba, dst_u, dst_v,
-                                   width, &kRgbaI601Constants);
-}
 
 void ARGBToUVJRow_NEON_I8MM(const uint8_t* src_argb,
                             int src_stride_argb,
@@ -3454,14 +3395,7 @@ void ARGBToUVJRow_NEON_I8MM(const uint8_t* src_argb,
                                    width, &kArgbJPEGConstants);
 }
 
-void ABGRToUVJRow_NEON_I8MM(const uint8_t* src_abgr,
-                            int src_stride_abgr,
-                            uint8_t* dst_u,
-                            uint8_t* dst_v,
-                            int width) {
-  ARGBToUVMatrixRow_NEON_I8MM_Impl(src_abgr, src_stride_abgr, dst_u, dst_v,
-                                   width, &kAbgrJPEGConstants);
-}
+
 
 void RGB565ToYRow_NEON(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
   asm volatile(
@@ -3640,13 +3574,7 @@ void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
   ARGBToYMatrixRow_NEON(src_argb, dst_yj, width, &kArgbJPEGConstants);
 }
 
-void ABGRToYRow_NEON(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_NEON(src_abgr, dst_y, width, &kAbgrI601Constants);
-}
 
-void ABGRToYJRow_NEON(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_NEON(src_abgr, dst_yj, width, &kAbgrJPEGConstants);
-}
 
 void ARGBToYRow_NEON_DotProd(const uint8_t* src_argb,
                              uint8_t* dst_y,
@@ -3660,49 +3588,11 @@ void ARGBToYJRow_NEON_DotProd(const uint8_t* src_argb,
   ARGBToYMatrixRow_NEON_DotProd(src_argb, dst_yj, width, &kArgbJPEGConstants);
 }
 
-void ABGRToYRow_NEON_DotProd(const uint8_t* src_abgr,
-                             uint8_t* dst_y,
-                             int width) {
-  ARGBToYMatrixRow_NEON_DotProd(src_abgr, dst_y, width, &kAbgrI601Constants);
-}
 
-void ABGRToYJRow_NEON_DotProd(const uint8_t* src_abgr,
-                              uint8_t* dst_yj,
-                              int width) {
-  ARGBToYMatrixRow_NEON_DotProd(src_abgr, dst_yj, width, &kAbgrJPEGConstants);
-}
 
 // RGBA expects first value to be A and ignored, then 3 values to contain RGB.
 
-void RGBAToYRow_NEON(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_NEON(src_rgba, dst_y, width, &kRgbaI601Constants);
-}
 
-void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_NEON(src_rgba, dst_yj, width, &kRgbaJPEGConstants);
-}
-
-void BGRAToYRow_NEON(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_NEON(src_bgra, dst_y, width, &kBgraI601Constants);
-}
-
-void RGBAToYRow_NEON_DotProd(const uint8_t* src_rgba,
-                             uint8_t* dst_y,
-                             int width) {
-  ARGBToYMatrixRow_NEON_DotProd(src_rgba, dst_y, width, &kRgbaI601Constants);
-}
-
-void RGBAToYJRow_NEON_DotProd(const uint8_t* src_rgba,
-                              uint8_t* dst_yj,
-                              int width) {
-  ARGBToYMatrixRow_NEON_DotProd(src_rgba, dst_yj, width, &kRgbaJPEGConstants);
-}
-
-void BGRAToYRow_NEON_DotProd(const uint8_t* src_bgra,
-                             uint8_t* dst_y,
-                             int width) {
-  ARGBToYMatrixRow_NEON_DotProd(src_bgra, dst_y, width, &kBgraI601Constants);
-}
 
 void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
                           uint8_t* dst_y,

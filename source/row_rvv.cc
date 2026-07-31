@@ -1332,71 +1332,7 @@ void ARGBToYJRow_RVV(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
 }
 #endif
 
-#ifdef HAS_ABGRTOYROW_RVV
-void ABGRToYRow_RVV(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_RVV(src_abgr, dst_y, width, &kRawI601Constants);
-}
-#endif
 
-#ifdef HAS_ABGRTOYJROW_RVV
-void ABGRToYJRow_RVV(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_RVV(src_abgr, dst_yj, width, &kRawJPEGConstants);
-}
-#endif
-
-// RGBA expects first value to be A and ignored, then 3 values to contain RGB.
-#ifdef HAS_RGBATOYMATRIXROW_RVV
-static void RGBAToYMatrixRow_RVV(const uint8_t* src_rgba,
-                                 uint8_t* dst_y,
-                                 int width,
-                                 const struct ArgbConstants* c) {
-  assert(width != 0);
-  size_t w = (size_t)width;
-  vuint8m2_t v_by, v_gy, v_ry;  // vectors are to store RGBToY constant
-  vuint16m4_t v_addy;           // vector is to store kAddY
-  size_t vl = __riscv_vsetvl_e8m2(w);
-  v_by = __riscv_vmv_v_x_u8m2(c->kRGBToY[0], vl);
-  v_gy = __riscv_vmv_v_x_u8m2(c->kRGBToY[1], vl);
-  v_ry = __riscv_vmv_v_x_u8m2(c->kRGBToY[2], vl);
-  v_addy = __riscv_vmv_v_x_u16m4(c->kAddY[0], vl);
-  do {
-    vuint8m2_t v_y;
-    vuint16m4_t v_y_u16;
-    size_t vl = __riscv_vsetvl_e8m2(w);
-    vuint8m2x4_t v_src_rgba = __riscv_vlseg4e8_v_u8m2x4(src_rgba, vl);
-    vuint8m2_t v_b = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 1);
-    vuint8m2_t v_g = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 2);
-    vuint8m2_t v_r = __riscv_vget_v_u8m2x4_u8m2(v_src_rgba, 3);
-    v_y_u16 = __riscv_vwmulu_vv_u16m4(v_r, v_ry, vl);
-    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_gy, v_g, vl);
-    v_y_u16 = __riscv_vwmaccu_vv_u16m4(v_y_u16, v_by, v_b, vl);
-    v_y_u16 = __riscv_vadd_vv_u16m4(v_y_u16, v_addy, vl);
-    v_y = __riscv_vnsrl_wx_u8m2(v_y_u16, 8, vl);
-    __riscv_vse8_v_u8m2(dst_y, v_y, vl);
-    w -= vl;
-    src_rgba += 4 * vl;
-    dst_y += vl;
-  } while (w > 0);
-}
-#endif
-
-#ifdef HAS_RGBATOYROW_RVV
-void RGBAToYRow_RVV(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  RGBAToYMatrixRow_RVV(src_rgba, dst_y, width, &kRgb24I601Constants);
-}
-#endif
-
-#ifdef HAS_RGBATOYJROW_RVV
-void RGBAToYJRow_RVV(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
-  RGBAToYMatrixRow_RVV(src_rgba, dst_yj, width, &kRgb24JPEGConstants);
-}
-#endif
-
-#ifdef HAS_BGRATOYROW_RVV
-void BGRAToYRow_RVV(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
-  RGBAToYMatrixRow_RVV(src_bgra, dst_y, width, &kRawI601Constants);
-}
-#endif
 
 #ifdef HAS_RGBTOYMATRIXROW_RVV
 static void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
