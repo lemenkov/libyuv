@@ -1249,41 +1249,6 @@ void MergeUVRow_RVV(const uint8_t* src_u,
 }
 #endif
 
-// RGB to JPeg coefficients
-// B * 0.1140 coefficient = 29
-// G * 0.5870 coefficient = 150
-// R * 0.2990 coefficient = 77
-// Add 0.5 = 0x80
-static const struct ArgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0},
-                                                         {0},
-                                                         {0},
-                                                         {128},
-                                                         {0}};
-
-static const struct ArgbConstants kRawJPEGConstants = {{77, 150, 29, 0},
-                                                       {0},
-                                                       {0},
-                                                       {128},
-                                                       {0}};
-
-// RGB to BT.601 coefficients
-// B * 0.1016 coefficient = 25
-// G * 0.5078 coefficient = 129
-// R * 0.2578 coefficient = 66
-// Add 16.5 = 0x1080
-
-static const struct ArgbConstants kRgb24I601Constants = {{25, 129, 66, 0},
-                                                         {0},
-                                                         {0},
-                                                         {0x1080},
-                                                         {0}};
-
-static const struct ArgbConstants kRawI601Constants = {{66, 129, 25, 0},
-                                                       {0},
-                                                       {0},
-                                                       {0x1080},
-                                                       {0}};
-
 // ARGB expects first 3 values to contain RGB and 4th value is ignored
 #ifdef HAS_ARGBTOYMATRIXROW_RVV
 void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
@@ -1320,25 +1285,11 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
 }
 #endif
 
-#ifdef HAS_ARGBTOYROW_RVV
-void ARGBToYRow_RVV(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_RVV(src_argb, dst_y, width, &kRgb24I601Constants);
-}
-#endif
-
-#ifdef HAS_ARGBTOYJROW_RVV
-void ARGBToYJRow_RVV(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_RVV(src_argb, dst_yj, width, &kRgb24JPEGConstants);
-}
-#endif
-
-
-
 #ifdef HAS_RGBTOYMATRIXROW_RVV
-static void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
-                                uint8_t* dst_y,
-                                int width,
-                                const struct ArgbConstants* c) {
+void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
+                         uint8_t* dst_y,
+                         int width,
+                         const struct ArgbConstants* c) {
   assert(width != 0);
   size_t w = (size_t)width;
   vuint8m2_t v_by, v_gy, v_ry;  // vectors are to store RGBToY constant
@@ -1367,18 +1318,6 @@ static void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
     dst_y += vl;
   } while (w > 0);
 }
-#endif
-
-#ifdef HAS_RGB24TOYJROW_RVV
-#endif
-
-#ifdef HAS_RAWTOYJROW_RVV
-#endif
-
-#ifdef HAS_RGB24TOYROW_RVV
-#endif
-
-#ifdef HAS_RAWTOYROW_RVV
 #endif
 
 // Blend src_argb over src_argb1 and store to dst_argb.

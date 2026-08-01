@@ -1105,40 +1105,6 @@ void ARGB4444ToUVRow_C(const uint8_t* src_argb4444,
   }
 }
 
-void ARGBToUV444Row_C(const uint8_t* src_argb,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint8_t ab = src_argb[0];
-    uint8_t ag = src_argb[1];
-    uint8_t ar = src_argb[2];
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-    src_argb += 4;
-    dst_u += 1;
-    dst_v += 1;
-  }
-}
-
-void ARGBToUVJ444Row_C(const uint8_t* src_argb,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint8_t ab = src_argb[0];
-    uint8_t ag = src_argb[1];
-    uint8_t ar = src_argb[2];
-    dst_u[0] = RGBToUJ(ar, ag, ab);
-    dst_v[0] = RGBToVJ(ar, ag, ab);
-    src_argb += 4;
-    dst_u += 1;
-    dst_v += 1;
-  }
-}
-
 void ARGBGrayRow_C(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
   int x;
   for (x = 0; x < width; ++x) {

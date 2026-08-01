@@ -152,6 +152,14 @@ int ARGBToI444Matrix(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOUV444MATRIXROW_NEON_I8MM)
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
+    ARGBToUV444MatrixRow = ARGBToUV444MatrixRow_Any_NEON_I8MM;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToUV444MatrixRow = ARGBToUV444MatrixRow_NEON_I8MM;
+    }
+  }
+#endif
   if (!src_argb || !dst_y || !dst_u || !dst_v || !argbconstants || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;

@@ -1135,26 +1135,6 @@ __arm_locally_streaming void ARGBToUVMatrixRow_SME(
                            uvconstants);
 }
 
-__arm_locally_streaming void ARGBToUVRow_SME(const uint8_t* src_argb,
-                                             int src_stride_argb,
-                                             uint8_t* dst_u,
-                                             uint8_t* dst_v,
-                                             int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_argb, src_stride_argb, dst_u, dst_v, width,
-                           kARGBToUVCoefficients);
-}
-
-__arm_locally_streaming void ARGBToUVJRow_SME(const uint8_t* src_argb,
-                                              int src_stride_argb,
-                                              uint8_t* dst_u,
-                                              uint8_t* dst_v,
-                                              int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_argb, src_stride_argb, dst_u, dst_v, width,
-                           kARGBToUVJCoefficients);
-}
-
-
-
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 

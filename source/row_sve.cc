@@ -231,26 +231,6 @@ void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
                            uvconstants);
 }
 
-void ARGBToUVRow_SVE2(const uint8_t* src_argb,
-                      int src_stride_argb,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_argb, src_stride_argb, dst_u, dst_v, width,
-                           kARGBToUVCoefficients);
-}
-
-void ARGBToUVJRow_SVE2(const uint8_t* src_argb,
-                       int src_stride_argb,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
-  ARGBToUVMatrixRow_SVE_SC(src_argb, src_stride_argb, dst_u, dst_v, width,
-                           kARGBToUVJCoefficients);
-}
-
-
-
 #define ARGBTORGB565_SVE                    \
   /* Inputs:                                \
    * z0: rrrrrxxxbbbbbxxx                   \

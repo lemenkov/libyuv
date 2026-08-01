@@ -25,7 +25,7 @@ extern "C" {
 // clang for windows needing to preserve xmm registers but not saving
 // them if declared as ymm or zmm.
 
-#if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
+#if defined(HAS_ARGBTOYMATRIXROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
 // Constants for ARGB
 
@@ -33,9 +33,9 @@ extern "C" {
 static const uvec8 kARGBToYJ = {29u, 150u, 77u, 0u, 29u, 150u, 77u, 0u,
                                 29u, 150u, 77u, 0u, 29u, 150u, 77u, 0u};
 
-#endif  // defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
+#endif  // defined(HAS_ARGBTOYMATRIXROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
-#if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
+#if defined(HAS_ARGBTOYMATRIXROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
 // Constants for BGRA
 
 // Constants for ABGR
@@ -46,7 +46,7 @@ static const uvec8 kARGBToYJ = {29u, 150u, 77u, 0u, 29u, 150u, 77u, 0u,
 static const uvec16 kSub128 = {0x8080u, 0x8080u, 0x8080u, 0x8080u,
                                0x8080u, 0x8080u, 0x8080u, 0x8080u};
 
-#endif  // defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
+#endif  // defined(HAS_ARGBTOYMATRIXROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
 
 #ifdef HAS_RGB24TOARGBROW_SSSE3
 
@@ -1362,55 +1362,14 @@ void AB64ToARGBRow_AVX2(const uint16_t* src_ab64,
 
 // clang-format on
 
-#ifdef HAS_ARGBTOYROW_SSSE3
-// Convert 16 ARGB pixels (64 bytes) to 16 Y values.
-
-void ARGBToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kArgbI601Constants);
-}
-#endif  // HAS_ARGBTOYROW_SSSE3
-
-#ifdef HAS_ARGBTOYJROW_SSSE3
-// Convert 16 ARGB pixels (64 bytes) to 16 YJ values.
-// Same as ARGBToYRow but different coefficients, no add 16.
-void ARGBToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_SSSE3(src_argb, dst_y, width, &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOYJROW_SSSE3
-
-
-
-#if defined(HAS_ARGBTOYROW_AVX2) || defined(HAS_ABGRTOYROW_AVX2) || \
-    defined(HAS_ARGBEXTRACTALPHAROW_AVX2)
-// vpermd for vphaddw + vpackuswb vpermd.
-#endif
-
-#ifdef HAS_ARGBTOYROW_AVX2
-
-// Convert 32 ARGB pixels (128 bytes) to 32 Y values.
-#ifdef HAS_ARGBTOYROW_AVX2
-void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kArgbI601Constants);
-}
-#endif
-#endif  // HAS_ARGBTOYROW_AVX2
-
-#ifdef HAS_ARGBTOYJROW_AVX2
-// Convert 32 ARGB pixels (128 bytes) to 32 Y values.
-#ifdef HAS_ARGBTOYROW_AVX2
-void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kArgbJPEGConstants);
-}
-#endif
-#endif  // HAS_ARGBTOYJROW_AVX2
-
-#if defined(HAS_ARGBTOYROW_AVX2) || defined(HAS_ARGBTOUV444ROW_AVX2) || \
+#if defined(HAS_ARGBTOYMATRIXROW_AVX2) || \
+    defined(HAS_ARGBTOUV444MATRIXROW_AVX2) || \
     defined(HAS_ARGBEXTRACTALPHAROW_AVX2)
 // vpermd for vphaddw + vpackuswb vpermd.
 static const lvec32 kPermdARGBToY_AVX = {0, 4, 1, 5, 2, 6, 3, 7};
 #endif
 
-#ifdef HAS_ARGBTOYROW_SSSE3
+#ifdef HAS_ARGBTOYMATRIXROW_SSSE3
 void ARGBToYMatrixRow_SSSE3(const uint8_t* src_argb,
                             uint8_t* dst_y,
                             int width,
@@ -1434,7 +1393,7 @@ void ARGBToYMatrixRow_SSSE3(const uint8_t* src_argb,
 }
 #endif
 
-#ifdef HAS_ARGBTOYROW_AVX2
+#ifdef HAS_ARGBTOYMATRIXROW_AVX2
 void ARGBToYMatrixRow_AVX2(const uint8_t* src_argb,
                            uint8_t* dst_y,
                            int width,
@@ -1460,18 +1419,19 @@ void ARGBToYMatrixRow_AVX2(const uint8_t* src_argb,
 }
 #endif
 
-#if defined(HAS_ARGBTOYROW_AVX512BW) || \
-    defined(HAS_ARGBTOUV444ROW_AVX512BW) || defined(HAS_ARGBTOUVROW_AVX512BW)
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512BW) || \
+    defined(HAS_ARGBTOUV444MATRIXROW_AVX512BW) || \
+    defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
 static const uint32_t kPermdARGBToY_AVX512BW[16] = {0, 4, 8,  12, 1, 5, 9,  13,
                                                     2, 6, 10, 14, 3, 7, 11, 15};
 #endif
 
-#if defined(HAS_ARGBTOUVROW_AVX512BW) || defined(HAS_ARGBTOUVJROW_AVX512BW)
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
 static const uint32_t kPermdARGBToUV_AVX512BW[16] = {
     0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15};
 #endif
 
-#ifdef HAS_ARGBTOYROW_AVX512BW
+#ifdef HAS_ARGBTOYMATRIXROW_AVX512BW
 void ARGBToYMatrixRow_AVX512BW(const uint8_t* src_argb,
                                uint8_t* dst_y,
                                int width,
@@ -1529,7 +1489,7 @@ void ARGBToYMatrixRow_AVX512BW(const uint8_t* src_argb,
 }
 #endif
 
-#ifdef HAS_ARGBTOUV444ROW_SSSE3
+#ifdef HAS_ARGBTOUV444MATRIXROW_SSSE3
 void ARGBToUV444MatrixRow_SSSE3(const uint8_t* src_argb,
                                 uint8_t* dst_u,
                                 uint8_t* dst_v,
@@ -1597,9 +1557,9 @@ void ARGBToUV444MatrixRow_SSSE3(const uint8_t* src_argb,
       : "r"(c)  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
-#endif  // HAS_ARGBTOUV444ROW_SSSE3
+#endif  // HAS_ARGBTOUV444MATRIXROW_SSSE3
 
-#ifdef HAS_ARGBTOUV444ROW_AVX2
+#ifdef HAS_ARGBTOUV444MATRIXROW_AVX2
 
 void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
                                uint8_t* dst_u,
@@ -1669,9 +1629,9 @@ void ARGBToUV444MatrixRow_AVX2(const uint8_t* src_argb,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
-#endif  // HAS_ARGBTOUV444ROW_AVX2
+#endif  // HAS_ARGBTOUV444MATRIXROW_AVX2
 
-#ifdef HAS_ARGBTOUV444ROW_AVX512BW
+#ifdef HAS_ARGBTOUV444MATRIXROW_AVX512BW
 
 void ARGBToUV444MatrixRow_AVX512BW(const uint8_t* src_argb,
                                    uint8_t* dst_u,
@@ -1749,9 +1709,9 @@ void ARGBToUV444MatrixRow_AVX512BW(const uint8_t* src_argb,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7", "xmm16");
 }
-#endif  // HAS_ARGBTOUV444ROW_AVX512BW
+#endif  // HAS_ARGBTOUV444MATRIXROW_AVX512BW
 
-#ifdef HAS_ARGBTOUVROW_SSSE3
+#ifdef HAS_ARGBTOUVMATRIXROW_SSSE3
 
 // ARGBARGB to AARRGGBB shuffle
 static const lvec8 kShuffleAARRGGBB = {
@@ -1829,9 +1789,9 @@ void ARGBToUVMatrixRow_SSSE3(const uint8_t* src_argb,
         "xmm7");
 }
 
-#endif  // HAS_ARGBTOUVROW_SSSE3
+#endif  // HAS_ARGBTOUVMATRIXROW_SSSE3
 
-#ifdef HAS_ARGBTOUVROW_AVX2
+#ifdef HAS_ARGBTOUVMATRIXROW_AVX2
 
 // 16x2 -> 8x1 ARGB pixels converted to 8 U and 8 V
 // ARGBToUV does rounding average of 4 ARGB pixels
@@ -1903,7 +1863,7 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
-#endif  // HAS_ARGBTOUVROW_AVX2
+#endif  // HAS_ARGBTOUVMATRIXROW_AVX2
 
 // RGB to BT601 coefficients
 // UB   0.875 coefficient = 112
@@ -1913,133 +1873,7 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
 // VG -0.7344 coefficient = -94
 // VR   0.875 coefficient = 112
 
-#ifdef HAS_ARGBTOUV444ROW_SSSE3
-void ARGBToUV444Row_SSSE3(const uint8_t* src_argb,
-                          uint8_t* dst_u,
-                          uint8_t* dst_v,
-                          int width) {
-  ARGBToUV444MatrixRow_SSSE3(src_argb, dst_u, dst_v, width,
-                             &kArgbI601Constants);
-}
-#endif  // HAS_ARGBTOUV444ROW_SSSE3
-
-
-
-#ifdef HAS_ARGBTOYROW_AVX512BW
-void ARGBToYRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kArgbI601Constants);
-}
-#endif
-
-#ifdef HAS_ARGBTOYROW_AVX512BW
-void ARGBToYJRow_AVX512BW(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX512BW(src_argb, dst_y, width, &kArgbJPEGConstants);
-}
-#endif
-
-
-
-#ifdef HAS_ARGBTOUV444ROW_AVX2
-void ARGBToUV444Row_AVX2(const uint8_t* src_argb,
-                         uint8_t* dst_u,
-                         uint8_t* dst_v,
-                         int width) {
-  ARGBToUV444MatrixRow_AVX2(src_argb, dst_u, dst_v, width, &kArgbI601Constants);
-}
-#endif  // HAS_ARGBTOUV444ROW_AVX2
-
-#ifdef HAS_ARGBTOUV444ROW_AVX512BW
-void ARGBToUV444Row_AVX512BW(const uint8_t* src_argb,
-                             uint8_t* dst_u,
-                             uint8_t* dst_v,
-                             int width) {
-  ARGBToUV444MatrixRow_AVX512BW(src_argb, dst_u, dst_v, width,
-                                &kArgbI601Constants);
-}
-#endif  // HAS_ARGBTOUV444ROW_AVX512BW
-
-#ifdef HAS_ARGBTOUVROW_SSSE3
-void ARGBToUVRow_SSSE3(const uint8_t* src_argb,
-                       int src_stride_argb,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
-  ARGBToUVMatrixRow_SSSE3(src_argb, src_stride_argb, dst_u, dst_v, width,
-                          &kArgbI601Constants);
-}
-
-
-#endif  // HAS_ARGBTOUVROW_SSSE3
-
-#ifdef HAS_ARGBTOUVROW_AVX2
-void ARGBToUVRow_AVX2(const uint8_t* src_argb,
-                      int src_stride_argb,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
-  ARGBToUVMatrixRow_AVX2(src_argb, src_stride_argb, dst_u, dst_v, width,
-                         &kArgbI601Constants);
-}
-
-
-#endif  // HAS_ARGBTOUVROW_AVX2
-
-#ifdef HAS_ARGBTOUVJ444ROW_SSSE3
-void ARGBToUVJ444Row_SSSE3(const uint8_t* src_argb,
-                           uint8_t* dst_u,
-                           uint8_t* dst_v,
-                           int width) {
-  ARGBToUV444MatrixRow_SSSE3(src_argb, dst_u, dst_v, width,
-                             &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOUVJ444ROW_SSSE3
-
-#ifdef HAS_ARGBTOUVJ444ROW_AVX2
-void ARGBToUVJ444Row_AVX2(const uint8_t* src_argb,
-                          uint8_t* dst_u,
-                          uint8_t* dst_v,
-                          int width) {
-  ARGBToUV444MatrixRow_AVX2(src_argb, dst_u, dst_v, width, &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOUVJ444ROW_AVX2
-
-#ifdef HAS_ARGBTOUVJ444ROW_AVX512BW
-void ARGBToUVJ444Row_AVX512BW(const uint8_t* src_argb,
-                              uint8_t* dst_u,
-                              uint8_t* dst_v,
-                              int width) {
-  ARGBToUV444MatrixRow_AVX512BW(src_argb, dst_u, dst_v, width,
-                                &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOUVJ444ROW_AVX512BW
-
-#ifdef HAS_ARGBTOUVJROW_SSSE3
-void ARGBToUVJRow_SSSE3(const uint8_t* src_argb,
-                        int src_stride_argb,
-                        uint8_t* dst_u,
-                        uint8_t* dst_v,
-                        int width) {
-  ARGBToUVMatrixRow_SSSE3(src_argb, src_stride_argb, dst_u, dst_v, width,
-                          &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOUVJROW_SSSE3
-
-
-
-#ifdef HAS_ARGBTOUVJROW_AVX2
-void ARGBToUVJRow_AVX2(const uint8_t* src_argb,
-                       int src_stride_argb,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
-  ARGBToUVMatrixRow_AVX2(src_argb, src_stride_argb, dst_u, dst_v, width,
-                         &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOUVJROW_AVX2
-
-
-
-#ifdef HAS_ARGBTOUVROW_AVX512BW
+#ifdef HAS_ARGBTOUVMATRIXROW_AVX512BW
 
 // 32x2 -> 16x1 ARGB pixels converted to 16 U and 16 V
 // ARGBToUV does rounding average of 4 ARGB pixels
@@ -2121,33 +1955,7 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7", "xmm16", "xmm17", "xmm18", "xmm19");
 }
-
-void ARGBToUVRow_AVX512BW(const uint8_t* src_argb,
-                          int src_stride_argb,
-                          uint8_t* dst_u,
-                          uint8_t* dst_v,
-                          int width) {
-  ARGBToUVMatrixRow_AVX512BW(src_argb, src_stride_argb, dst_u, dst_v, width,
-                             &kArgbI601Constants);
-}
-
-
-
-#ifdef HAS_ARGBTOUVJROW_AVX512BW
-void ARGBToUVJRow_AVX512BW(const uint8_t* src_argb,
-                           int src_stride_argb,
-                           uint8_t* dst_u,
-                           uint8_t* dst_v,
-                           int width) {
-  ARGBToUVMatrixRow_AVX512BW(src_argb, src_stride_argb, dst_u, dst_v, width,
-                             &kArgbJPEGConstants);
-}
-#endif  // HAS_ARGBTOUVJROW_AVX512BW
-
-
-#endif  // HAS_ARGBTOUVROW_AVX512BW
-
-
+#endif  // HAS_ARGBTOUVMATRIXROW_AVX512BW
 
 #if defined(HAS_I422TOARGBROW_SSSE3) || defined(HAS_I422TOARGBROW_AVX2)
 

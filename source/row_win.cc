@@ -230,17 +230,6 @@ void ARGBToYMatrixRow_AVX2(const uint8_t* src_argb,
   }
 }
 
-LIBYUV_TARGET_AVX2
-void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kArgbI601Constants);
-}
-
-LIBYUV_TARGET_AVX2
-void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_AVX2(src_argb, dst_y, width, &kArgbJPEGConstants);
-}
-
-
 #ifdef HAS_RAWTOARGBROW_AVX2
 LIBYUV_TARGET_AVX2
 void RAWToARGBRow_AVX2(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
