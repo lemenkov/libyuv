@@ -1897,6 +1897,58 @@ void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
         "q10", "q11", "q12");
 }
 
+// 8x1 pixels.
+void RGBToUV444MatrixRow_NEON(const uint8_t* src_rgb,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width,
+                              const struct ArgbConstants* c) {
+  asm volatile(
+      "vld1.8      {d24}, [%4]                   \n"  // load kRGBToU
+      "vld1.8      {d25}, [%5]                   \n"  // load kRGBToV
+      "vld1.16     {d26[0]}, [%6]                \n"  // load kAddUV[0]
+      "vmovl.s8    q10, d24                      \n"  // U coeffs (8 shorts)
+      "vmovl.s8    q11, d25                      \n"  // V coeffs (8 shorts)
+      "vdup.16     q6, d26[0]                    \n"  // bias
+      "1:          \n"
+      "vld3.8      {d0, d1, d2}, [%0]!           \n"  // load 8 RGB pixels.
+      "subs        %3, %3, #8                    \n"  // 8 processed per loop.
+
+      "vmovl.u8    q4, d0                        \n"  // B
+      "vmovl.u8    q5, d1                        \n"  // G
+      "vmovl.u8    q7, d2                        \n"  // R
+
+      "vdup.16     q12, d20[0]                   \n"
+      "vmul.s16    q2, q4, q12                   \n"  // U = B * U0
+      "vdup.16     q12, d20[1]                   \n"
+      "vmla.s16    q2, q5, q12                   \n"  // U += G * U1
+      "vdup.16     q12, d20[2]                   \n"
+      "vmla.s16    q2, q7, q12                   \n"  // U += R * U2
+
+      "vdup.16     q12, d22[0]                   \n"
+      "vmul.s16    q3, q4, q12                   \n"  // V = B * V0
+      "vdup.16     q12, d22[1]                   \n"
+      "vmla.s16    q3, q5, q12                   \n"  // V += G * V1
+      "vdup.16     q12, d22[2]                   \n"
+      "vmla.s16    q3, q7, q12                   \n"  // V += R * V2
+
+      "vsubhn.s16  d0, q6, q2                    \n"  // 128.0 - U
+      "vsubhn.s16  d1, q6, q3                    \n"  // 128.0 - V
+
+      "vst1.8      {d0}, [%1]!                   \n"  // store 8 pixels U.
+      "vst1.8      {d1}, [%2]!                   \n"  // store 8 pixels V.
+      "bgt         1b                            \n"
+      : "+r"(src_rgb),     // %0
+        "+r"(dst_u),       // %1
+        "+r"(dst_v),       // %2
+        "+r"(width)        // %3
+      : "r"(&c->kRGBToU),  // %4
+        "r"(&c->kRGBToV),  // %5
+        "r"(&c->kAddUV)    // %6
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+        "q10", "q11", "q12");
+}
+
 // clang-format off
 // 16x2 pixels -> 8x1.  width is number of argb pixels. e.g. 16.
 #define RGBTOUV(QB, QG, QR)                                                 \
@@ -1979,6 +2031,68 @@ void ARGBToUVMatrixRow_NEON(const uint8_t* src_argb,
       : "r"(&c->kRGBToU),  // %5
         "r"(&c->kRGBToV)   // %6
       : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+        "q9", "q11", "q12", "q14", "q15");
+}
+
+void RGBToUVMatrixRow_NEON(const uint8_t* src_rgb,
+                           int src_stride_rgb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width,
+                           const struct ArgbConstants* c) {
+  const uint8_t* src_rgb_1 = src_rgb + src_stride_rgb;
+  asm volatile(
+      "vld1.8      {d24}, [%5]                   \n"  // load kRGBToU
+      "vld1.8      {d25}, [%6]                   \n"  // load kRGBToV
+      "vmovl.s8    q14, d24                      \n"  // U coeffs in d28
+      "vmovl.s8    q15, d25                      \n"  // V coeffs in d30
+      "vmov.u16    q11, #0x8000                  \n"  // 128.0 bias
+
+      "1:          \n"
+      "vld3.8      {d0, d2, d4}, [%0]!           \n"  // load 8 RGB pixels.
+      "vld3.8      {d1, d3, d5}, [%0]!           \n"  // load next 8 RGB pixels.
+      "subs        %4, %4, #16                   \n"  // 16 processed per loop.
+      "vpaddl.u8   q0, q0                        \n"  // B 16 bytes -> 8 shorts.
+      "vpaddl.u8   q1, q1                        \n"  // G 16 bytes -> 8 shorts.
+      "vpaddl.u8   q2, q2                        \n"  // R 16 bytes -> 8 shorts.
+      "vld3.8      {d6, d8, d10}, [%1]!          \n"  // load 8 more pixels.
+      "vld3.8      {d7, d9, d11}, [%1]!          \n"
+      "vpadal.u8   q0, q3                        \n"  // B
+      "vpadal.u8   q1, q4                        \n"  // G
+      "vpadal.u8   q2, q5                        \n"  // R
+
+      "vrshr.u16   q0, q0, #2                    \n"  // average of 4
+      "vrshr.u16   q1, q1, #2                    \n"
+      "vrshr.u16   q2, q2, #2                    \n"
+
+      "vdup.16     q12, d28[0]                   \n"
+      "vmul.s16    q8, q0, q12                   \n"  // U = B * U0
+      "vdup.16     q12, d28[1]                   \n"
+      "vmla.s16    q8, q1, q12                   \n"  // U += G * U1
+      "vdup.16     q12, d28[2]                   \n"
+      "vmla.s16    q8, q2, q12                   \n"  // U += R * U2
+
+      "vdup.16     q12, d30[0]                   \n"
+      "vmul.s16    q9, q0, q12                   \n"  // V = B * V0
+      "vdup.16     q12, d30[1]                   \n"
+      "vmla.s16    q9, q1, q12                   \n"  // V += G * V1
+      "vdup.16     q12, d30[2]                   \n"
+      "vmla.s16    q9, q2, q12                   \n"  // V += R * V2
+
+      "vsubhn.s16  d0, q11, q8                   \n"  // 128.0 - U
+      "vsubhn.s16  d1, q11, q9                   \n"  // 128.0 - V
+
+      "vst1.8      {d0}, [%2]!                   \n"  // store 8 pixels U.
+      "vst1.8      {d1}, [%3]!                   \n"  // store 8 pixels V.
+      "bgt         1b                            \n"
+      : "+r"(src_rgb),     // %0
+        "+r"(src_rgb_1),   // %1
+        "+r"(dst_u),       // %2
+        "+r"(dst_v),       // %3
+        "+r"(width)        // %4
+      : "r"(&c->kRGBToU),  // %5
+        "r"(&c->kRGBToV)   // %6
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8",
         "q9", "q11", "q12", "q14", "q15");
 }
 

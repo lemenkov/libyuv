@@ -2144,6 +2144,79 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
         "z27", "p0", "p1", "p2", "p3", "p4", "p5");
 }
 
+#define ARGBTOYMATRIX_SVE                                                   \
+  "ld1w     {z0.s}, p1/z, [%[src]]                \n" /* load 4*vl pixels */\
+  "ld1w     {z1.s}, p2/z, [%[src], #1, mul vl]    \n"                       \
+  "ld1w     {z2.s}, p3/z, [%[src], #2, mul vl]    \n"                       \
+  "ld1w     {z3.s}, p4/z, [%[src], #3, mul vl]    \n"                       \
+  "incb     %[src], all, mul #4                   \n"                       \
+  "fmov     s16, wzr                              \n"                       \
+  "fmov     s17, wzr                              \n"                       \
+  "fmov     s18, wzr                              \n"                       \
+  "fmov     s19, wzr                              \n"                       \
+  "udot     z16.s, z0.b, z24.b                    \n"                       \
+  "udot     z17.s, z1.b, z24.b                    \n"                       \
+  "udot     z18.s, z2.b, z24.b                    \n"                       \
+  "udot     z19.s, z3.b, z24.b                    \n"                       \
+  "uzp1     z16.h, z16.h, z17.h                   \n"                       \
+  "uzp1     z18.h, z18.h, z19.h                   \n"                       \
+  "add      z16.h, z16.h, z25.h                   \n"                       \
+  "add      z18.h, z18.h, z25.h                   \n"                       \
+  "uzp2     z16.b, z16.b, z18.b                   \n"                       \
+  "st1b     {z16.b}, p5, [%[dst_y]]               \n"                       \
+  "incb     %[dst_y]                              \n"                       \
+  "subs     %w[width], %w[width], %w[vl], lsl #2  \n"
+
+static inline void ARGBToYMatrixRow_SVE_SC(const uint8_t* src_argb,
+                                          uint8_t* dst_y,
+                                          int width,
+                                          const struct ArgbConstants* c)
+    STREAMING_COMPATIBLE {
+  uint64_t vl;
+  asm("cntw %x0" : "=r"(vl));
+
+  asm volatile(
+      "ptrue    p0.b                                 \n"
+      "ld1rw    {z24.s}, p0/z, [%[c]]                \n"
+      "ld1rh    {z25.h}, p0/z, [%[c], #48]           \n"
+
+      "subs     %w[width], %w[width], %w[vl], lsl #2 \n"
+      "b.lt     2f                                   \n"
+
+      "ptrue    p1.s                                 \n"
+      "ptrue    p2.s                                 \n"
+      "ptrue    p3.s                                 \n"
+      "ptrue    p4.s                                 \n"
+      "ptrue    p5.b                                 \n"
+      "1:                                            \n"  //
+      ARGBTOYMATRIX_SVE
+      "b.gt     1b                                   \n"
+
+      "2:                                            \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #2 \n"
+      "b.eq     99f                                  \n"
+
+      "3:                                            \n"
+      "whilelt  p1.s, wzr, %w[width]                 \n"
+      "whilelt  p2.s, %w[vl], %w[width]              \n"
+      "whilelt  p3.s, %w[vl2], %w[width]             \n"
+      "whilelt  p4.s, %w[vl3], %w[width]             \n"
+      "whilelt  p5.b, wzr, %w[width]                 \n"  //
+      ARGBTOYMATRIX_SVE
+      "b.gt     3b                                   \n"
+
+      "99:                                           \n"
+      : [src] "+r"(src_argb),            // %[src]
+        [dst_y] "+r"(dst_y),             // %[dst_y]
+        [width] "+r"(width)              // %[width]
+      : [c] "r"(c),                      // %[c]
+        [vl] "r"(vl),                    // %[vl]
+        [vl2] "r"(vl * 2),               // %[vl2]
+        [vl3] "r"(vl * 3)                // %[vl3]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z16", "z17", "z18", "z19",
+        "z24", "z25", "p0", "p1", "p2", "p3", "p4", "p5");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

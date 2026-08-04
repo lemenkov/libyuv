@@ -2793,6 +2793,61 @@ void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
         "v27", "v28");
 }
 
+// 8x1 pixels.
+void RGBToUV444MatrixRow_NEON(const uint8_t* src_rgb,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width,
+                              const struct ArgbConstants* c) {
+  asm volatile(
+      "ldr         q16, [%[c], #16]               \n"  // kRGBToU
+      "ldr         q17, [%[c], #32]               \n"  // kRGBToV
+      "ldr         s0, [%[c], #64]                \n"  // kAddUV
+      "sxtl        v16.8h, v16.8b                 \n"  // sign extend U coeffs
+                                                       // to 16-bit
+      "sxtl        v17.8h, v17.8b                 \n"  // sign extend V coeffs
+                                                       // to 16-bit
+      "dup         v20.8h, v16.h[0]               \n"  // U0
+      "dup         v21.8h, v16.h[1]               \n"  // U1
+      "dup         v22.8h, v16.h[2]               \n"  // U2
+      "dup         v24.8h, v17.h[0]               \n"  // V0
+      "dup         v26.8h, v17.h[1]               \n"  // V1
+      "dup         v27.8h, v17.h[2]               \n"  // V2
+      "dup         v25.8h, v0.h[0]                \n"  // kAddUV
+      "1:          \n"
+      "ld3         {v0.8b,v1.8b,v2.8b}, [%0], #24 \n"  // load 8 RGB
+      "subs        %w3, %w3, #8                  \n"  // 8 processed per loop.
+
+      "uxtl        v4.8h, v0.8b                  \n"  // B
+      "uxtl        v5.8h, v1.8b                  \n"  // G
+      "uxtl        v6.8h, v2.8b                  \n"  // R
+
+      // U = B*U0 + G*U1 + R*U2
+      "mul         v18.8h, v4.8h, v20.8h         \n"
+      "mla         v18.8h, v5.8h, v21.8h         \n"
+      "mla         v18.8h, v6.8h, v22.8h         \n"
+
+      // V = B*V0 + G*V1 + R*V2
+      "mul         v19.8h, v4.8h, v24.8h         \n"
+      "mla         v19.8h, v5.8h, v26.8h         \n"
+      "mla         v19.8h, v6.8h, v27.8h         \n"
+
+      "subhn       v0.8b, v25.8h, v18.8h         \n"
+      "subhn       v1.8b, v25.8h, v19.8h         \n"
+
+      "st1         {v0.8b}, [%1], #8             \n"
+      "st1         {v1.8b}, [%2], #8             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_rgb),  // %0
+        "+r"(dst_u),    // %1
+        "+r"(dst_v),    // %2
+        "+r"(width)     // %3
+      : [c] "r"(c)      // %4
+      : "cc", "memory", "v0", "v1", "v2", "v4", "v5", "v6", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v24", "v25", "v26",
+        "v27");
+}
+
 void ARGBToUV444MatrixRow_NEON_I8MM(const uint8_t* src_argb,
                                     uint8_t* dst_u,
                                     uint8_t* dst_v,
@@ -2938,6 +2993,71 @@ void ARGBToUVMatrixRow_NEON(const uint8_t* src_argb,
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
         "v17", "v18", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
         "v28");
+}
+
+void RGBToUVMatrixRow_NEON(const uint8_t* src_rgb,
+                           int src_stride_rgb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width,
+                           const struct ArgbConstants* c) {
+  const uint8_t* src_rgb_1 = src_rgb + src_stride_rgb;
+  asm volatile(
+      "ldr         q16, [%[c], #16]               \n"  // kRGBToU
+      "ldr         q17, [%[c], #32]               \n"  // kRGBToV
+      "sxtl        v16.8h, v16.8b                 \n"  // sign extend U coeffs
+      "sxtl        v17.8h, v17.8b                 \n"  // sign extend V coeffs
+      "dup         v20.8h, v16.h[0]               \n"  // U0
+      "dup         v21.8h, v16.h[1]               \n"  // U1
+      "dup         v22.8h, v16.h[2]               \n"  // U2
+      "dup         v24.8h, v17.h[0]               \n"  // V0
+      "dup         v26.8h, v17.h[1]               \n"  // V1
+      "dup         v27.8h, v17.h[2]               \n"  // V2
+      "movi        v25.8h, #0x80, lsl #8          \n"  // 128.0 in 16-bit (0x8000)
+
+      "1:          \n"
+      "ld3         {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 pixels.
+      "subs        %w4, %w4, #16                 \n"  // 16 processed per loop.
+      "uaddlp      v0.8h, v0.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uaddlp      v1.8h, v1.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uaddlp      v2.8h, v2.16b                 \n"  // R 16 bytes -> 8 shorts.
+
+      "ld3         {v4.16b,v5.16b,v6.16b}, [%1], #48 \n"  // load 16 more.
+      "uadalp      v0.8h, v4.16b                 \n"  // B 16 bytes -> 8 shorts.
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uadalp      v1.8h, v5.16b                 \n"  // G 16 bytes -> 8 shorts.
+      "uadalp      v2.8h, v6.16b                 \n"  // R 16 bytes -> 8 shorts.
+
+      "urshr       v0.8h, v0.8h, #2              \n"  // average of 4
+      "urshr       v1.8h, v1.8h, #2              \n"
+      "urshr       v2.8h, v2.8h, #2              \n"
+
+      // U = B*U0 + G*U1 + R*U2
+      "mul         v3.8h, v0.8h, v20.8h          \n"
+      "mla         v3.8h, v1.8h, v21.8h          \n"
+      "mla         v3.8h, v2.8h, v22.8h          \n"
+
+      // V = B*V0 + G*V1 + R*V2
+      "mul         v4.8h, v0.8h, v24.8h          \n"
+      "mla         v4.8h, v1.8h, v26.8h          \n"
+      "mla         v4.8h, v2.8h, v27.8h          \n"
+
+      // U = (128.0 - U) >> 8, V = (128.0 - V) >> 8
+      "subhn       v0.8b, v25.8h, v3.8h           \n"
+      "subhn       v1.8b, v25.8h, v4.8h           \n"
+
+      "st1         {v0.8b}, [%2], #8             \n"  // store 8 pixels U.
+      "st1         {v1.8b}, [%3], #8             \n"  // store 8 pixels V.
+      "b.gt        1b                            \n"
+      : "+r"(src_rgb),     // %0
+        "+r"(src_rgb_1),   // %1
+        "+r"(dst_u),       // %2
+        "+r"(dst_v),       // %3
+        "+r"(width)        // %4
+      : [c] "r"(c)         // %5
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v20", "v21", "v22", "v24", "v25", "v26", "v27");
 }
 
 void RGB24ToUVRow_NEON(const uint8_t* src_rgb24,
@@ -3399,6 +3519,50 @@ void ARGBToYMatrixRow_NEON_DotProd(const uint8_t* src_argb,
       : "r"(c)           // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
         "v17", "v18", "v19");
+}
+
+void RGBToYMatrixRow_NEON_DotProd(const uint8_t* src_rgb,
+                                  uint8_t* dst_y,
+                                  int width,
+                                  const struct ArgbConstants* c) {
+  asm volatile(
+      "ldr         s16, [%3]                     \n"  // load 4 coeffs
+      "ldr         s17, [%3, #48]                \n"  // load kAddY[0]
+      "dup         v18.4s, v16.s[0]              \n"
+      "dup         v19.8h, v17.h[0]              \n"
+      "movi        v7.16b, #0                    \n"  // zero alpha
+      "1:          \n"
+      "ld3         {v4.16b, v5.16b, v6.16b}, [%0], #48 \n"  // load 16 pixels
+      "subs        %w2, %w2, #16                 \n"  // 16 processed per loop.
+      "zip1        v24.16b, v4.16b, v5.16b       \n"  // B0 G0 B1 G1 ...
+      "zip1        v25.16b, v6.16b, v7.16b       \n"  // R0 0  R1 0  ...
+      "zip2        v26.16b, v4.16b, v5.16b       \n"  // B8 G8 B9 G9 ...
+      "zip2        v27.16b, v6.16b, v7.16b       \n"  // R8 0  R9 0  ...
+      "zip1        v20.8h, v24.8h, v25.8h        \n"  // pixels 0..3
+      "zip2        v21.8h, v24.8h, v25.8h        \n"  // pixels 4..7
+      "zip1        v22.8h, v26.8h, v27.8h        \n"  // pixels 8..11
+      "zip2        v23.8h, v26.8h, v27.8h        \n"  // pixels 12..15
+      "movi        v0.16b, #0                    \n"
+      "movi        v1.16b, #0                    \n"
+      "movi        v2.16b, #0                    \n"
+      "movi        v3.16b, #0                    \n"
+      "udot        v0.4s, v20.16b, v18.16b       \n"
+      "udot        v1.4s, v21.16b, v18.16b       \n"
+      "udot        v2.4s, v22.16b, v18.16b       \n"
+      "udot        v3.4s, v23.16b, v18.16b       \n"
+      "uzp1        v0.8h, v0.8h, v1.8h           \n"
+      "uzp1        v1.8h, v2.8h, v3.8h           \n"
+      "addhn       v0.8b, v0.8h, v19.8h          \n"
+      "addhn       v1.8b, v1.8h, v19.8h          \n"
+      "st1         {v0.8b, v1.8b}, [%1], #16     \n"  // store 16 pixels Y.
+      "b.gt        1b                            \n"
+      : "+r"(src_rgb),  // %0
+        "+r"(dst_y),    // %1
+        "+r"(width)     // %2
+      : "r"(c)          // %3
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",
+        "v27");
 }
 
 // RGBA expects first value to be A and ignored, then 3 values to contain RGB.

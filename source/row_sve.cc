@@ -231,6 +231,13 @@ void ARGBToUVMatrixRow_SVE2(const uint8_t* src_argb,
                            uvconstants);
 }
 
+void ARGBToYMatrixRow_SVE2(const uint8_t* src_argb,
+                           uint8_t* dst_y,
+                           int width,
+                           const struct ArgbConstants* c) {
+  ARGBToYMatrixRow_SVE_SC(src_argb, dst_y, width, c);
+}
+
 #define ARGBTORGB565_SVE                    \
   /* Inputs:                                \
    * z0: rrrrrxxxbbbbbxxx                   \
