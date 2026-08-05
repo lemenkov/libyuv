@@ -632,6 +632,7 @@ int ARGBToNV12Matrix(const uint8_t* src_argb,
   return 0;
 }
 
+LIBYUV_API
 int ARGBToNV21Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
                      uint8_t* dst_y,

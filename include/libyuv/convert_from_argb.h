@@ -418,6 +418,18 @@ int ARGBToNV12Matrix(const uint8_t* src_argb,
                      int width,
                      int height);
 
+// RGB to NV21 with matrix. See ArgbConstants at the top of this file for usage.
+LIBYUV_API
+int ARGBToNV21Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_vu,
+                     int dst_stride_vu,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
 // Convert ARGB To NV21.
 LIBYUV_API
 int ARGBToNV21(const uint8_t* src_argb,
