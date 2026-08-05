@@ -637,7 +637,7 @@ int ARGBToNV21Matrix(const uint8_t* src_argb,
                      uint8_t* dst_y,
                      int dst_stride_y,
                      uint8_t* dst_vu,
-                     int dst_stride_uv,
+                     int dst_stride_vu,
                      const struct ArgbConstants* argbconstants,
                      int width,
                      int height) {
@@ -851,7 +851,7 @@ int ARGBToNV21Matrix(const uint8_t* src_argb,
                      argbconstants);
     src_argb += src_stride_argb * 2;
     dst_y += dst_stride_y * 2;
-    dst_vu += dst_stride_uv;
+    dst_vu += dst_stride_vu;
   }
   if (height & 1) {
     ARGBToUVMatrixRow(src_argb, 0, row_u, row_v, width, argbconstants);
