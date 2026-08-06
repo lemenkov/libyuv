@@ -579,8 +579,10 @@ extern "C" {
 #define HAS_AYUVTOUVROW_SVE2
 #define HAS_AYUVTOVUROW_SVE2
 #define HAS_CONVERT8TO8ROW_SVE2
+#define HAS_COPYROW_SVE2
 #define HAS_DIVIDEROW_16_SVE2
 #define HAS_HALFFLOATROW_SVE2
+#define HAS_HALFMERGEUVROW_SVE2
 #define HAS_I210ALPHATOARGBROW_SVE2
 #define HAS_I210TOAR30ROW_SVE2
 #define HAS_I210TOARGBROW_SVE2
@@ -601,6 +603,8 @@ extern "C" {
 #define HAS_I444ALPHATOARGBROW_SVE2
 #define HAS_I444TOARGBROW_SVE2
 #define HAS_I444TORGB24ROW_SVE2
+#define HAS_INTERPOLATEROW_SVE2
+#define HAS_MERGEUVROW_SVE2
 #define HAS_NV12TOARGBROW_SVE2
 #define HAS_NV12TORGB24ROW_SVE2
 #define HAS_NV21TOARGBROW_SVE2
@@ -613,8 +617,13 @@ extern "C" {
 #define HAS_RAWTORGB24ROW_SVE2
 #define HAS_RAWTORGBAROW_SVE2
 #define HAS_RGB24TOARGBROW_SVE2
+#define HAS_SPLITUVROW_SVE2
 #define HAS_UYVYTOARGBROW_SVE2
+#define HAS_UYVYTOUVROW_SVE2
+#define HAS_UYVYTOYROW_SVE2
 #define HAS_YUY2TOARGBROW_SVE2
+#define HAS_YUY2TOUVROW_SVE2
+#define HAS_YUY2TOYROW_SVE2
 #endif
 
 // The following are available on AArch64 SME platforms:
@@ -2708,6 +2717,10 @@ void SplitUVRow_NEON(const uint8_t* src_uv,
                      uint8_t* dst_u,
                      uint8_t* dst_v,
                      int width);
+void SplitUVRow_SVE2(const uint8_t* src_uv,
+                      uint8_t* dst_u,
+                      uint8_t* dst_v,
+                      int width);
 void SplitUVRow_LSX(const uint8_t* src_uv,
                     uint8_t* dst_u,
                     uint8_t* dst_v,
@@ -2869,6 +2882,10 @@ void MergeUVRow_NEON(const uint8_t* src_u,
                      const uint8_t* src_v,
                      uint8_t* dst_uv,
                      int width);
+void MergeUVRow_SVE2(const uint8_t* src_u,
+                      const uint8_t* src_v,
+                      uint8_t* dst_uv,
+                      int width);
 void MergeUVRow_SME(const uint8_t* src_u,
                     const uint8_t* src_v,
                     uint8_t* dst_uv,
@@ -2910,6 +2927,13 @@ void HalfMergeUVRow_C(const uint8_t* src_u,
                       int width);
 
 void HalfMergeUVRow_NEON(const uint8_t* src_u,
+                         int src_stride_u,
+                         const uint8_t* src_v,
+                         int src_stride_v,
+                         uint8_t* dst_uv,
+                         int width);
+
+void HalfMergeUVRow_SVE2(const uint8_t* src_u,
                          int src_stride_u,
                          const uint8_t* src_v,
                          int src_stride_v,
@@ -3605,6 +3629,7 @@ void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_ERMS(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width);
+void CopyRow_SVE2(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_SME(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_RVV(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_C(const uint8_t* src, uint8_t* dst, int count);
@@ -5684,11 +5709,23 @@ void YUY2ToUV422Row_SSE2(const uint8_t* src_yuy2,
                          uint8_t* dst_v,
                          int width);
 void YUY2ToYRow_NEON(const uint8_t* src_yuy2, uint8_t* dst_y, int width);
+void YUY2ToYRow_SVE2(const uint8_t* src_yuy2, uint8_t* dst_y, int width);
 void YUY2ToUVRow_NEON(const uint8_t* src_yuy2,
                       int stride_yuy2,
                       uint8_t* dst_u,
                       uint8_t* dst_v,
                       int width);
+void YUY2ToUVRow_SVE2(const uint8_t* src_yuy2,
+                       int stride_yuy2,
+                       uint8_t* dst_u,
+                       uint8_t* dst_v,
+                       int width);
+void UYVYToYRow_SVE2(const uint8_t* src_uyvy, uint8_t* dst_y, int width);
+void UYVYToUVRow_SVE2(const uint8_t* src_uyvy,
+                       int stride_uyvy,
+                       uint8_t* dst_u,
+                       uint8_t* dst_v,
+                       int width);
 void YUY2ToNVUVRow_NEON(const uint8_t* src_yuy2,
                         int stride_yuy2,
                         uint8_t* dst_uv,
@@ -6275,6 +6312,11 @@ void InterpolateRow_NEON(uint8_t* dst_ptr,
                          ptrdiff_t src_stride,
                          int dst_width,
                          int source_y_fraction);
+void InterpolateRow_SVE2(uint8_t* dst_ptr,
+                          const uint8_t* src_ptr,
+                          ptrdiff_t src_stride,
+                          int dst_width,
+                          int source_y_fraction);
 void InterpolateRow_SME(uint8_t* dst_ptr,
                         const uint8_t* src_ptr,
                         ptrdiff_t src_stride,

@@ -749,6 +749,11 @@ int I010ToNV12(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MergeUVRow = MergeUVRow_SVE2;
+  }
+#endif
 #if defined(HAS_MERGEUVROW_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     MergeUVRow = MergeUVRow_SME;
@@ -1199,6 +1204,11 @@ int I422ToNV21(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MergeUVRow = MergeUVRow_SVE2;
+  }
+#endif
 #if defined(HAS_MERGEUVROW_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     MergeUVRow = MergeUVRow_SME;
@@ -1231,6 +1241,11 @@ int I422ToNV21(const uint8_t* src_y,
     if (IS_ALIGNED(width, 16)) {
       InterpolateRow = InterpolateRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    InterpolateRow = InterpolateRow_SVE2;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_SME)
@@ -1719,6 +1734,12 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     }
   }
 #endif
+#if defined(HAS_YUY2TOYROW_SVE2) && defined(HAS_YUY2TOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    YUY2ToYRow = YUY2ToYRow_SVE2;
+    YUY2ToUVRow = YUY2ToUVRow_SVE2;
+  }
+#endif
 #if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LSX;
@@ -1811,6 +1832,12 @@ int UYVYToI420(const uint8_t* src_uyvy,
       UYVYToYRow = UYVYToYRow_NEON;
       UYVYToUVRow = UYVYToUVRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_UYVYTOYROW_SVE2) && defined(HAS_UYVYTOUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    UYVYToYRow = UYVYToYRow_SVE2;
+    UYVYToUVRow = UYVYToUVRow_SVE2;
   }
 #endif
 #if defined(HAS_UYVYTOYROW_LSX)
