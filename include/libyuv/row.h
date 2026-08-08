@@ -205,6 +205,7 @@ extern "C" {
 #define HAS_DETILESPLITUVROW_SSSE3
 #define HAS_DETILETOYUY2_SSE2
 #define HAS_HALFMERGEUVROW_SSSE3
+#define HAS_HALFROW_16TO8_SSSE3
 #define HAS_I210TOAR30ROW_SSSE3
 #define HAS_I210TOARGBROW_SSSE3
 #define HAS_I212TOAR30ROW_SSSE3
@@ -287,6 +288,7 @@ extern "C" {
 #define HAS_DETILEROW_16_AVX
 #define HAS_DIVIDEROW_16_AVX2
 #define HAS_HALFMERGEUVROW_AVX2
+#define HAS_HALFROW_16TO8_AVX2
 #define HAS_I210TOAR30ROW_AVX2
 #define HAS_I210TOARGBROW_AVX2
 #define HAS_I212TOAR30ROW_AVX2
@@ -297,7 +299,6 @@ extern "C" {
 #define HAS_I422TOAR30ROW_AVX2
 #define HAS_I422TOUYVYROW_AVX2
 #define HAS_I422TOYUY2ROW_AVX2
-#define HAS_INTERPOLATEROW_16TO8_AVX2
 #define HAS_MERGEAR64ROW_AVX2
 #define HAS_MERGEARGB16TO8ROW_AVX2
 #define HAS_MERGEARGBROW_AVX2
@@ -381,6 +382,7 @@ extern "C" {
 #define HAS_RGB24TOARGBROW_AVX512BW
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_CONVERT16TO8ROW_AVX512BW
+#define HAS_HALFROW_16TO8_AVX512BW
 #endif
 
 // The following are available for AVX512 clang x64 platforms:
@@ -451,6 +453,7 @@ extern "C" {
 #define HAS_DIVIDEROW_16_NEON
 #define HAS_HALFFLOATROW_NEON
 #define HAS_HALFMERGEUVROW_NEON
+#define HAS_HALFROW_16TO8_NEON
 #define HAS_I400TOARGBROW_NEON
 #define HAS_I422ALPHATOARGBROW_NEON
 #define HAS_I422TOARGB1555ROW_NEON
@@ -578,11 +581,13 @@ extern "C" {
 #define HAS_ARGBTOYMATRIXROW_SVE2
 #define HAS_AYUVTOUVROW_SVE2
 #define HAS_AYUVTOVUROW_SVE2
+#define HAS_CONVERT16TO8ROW_SVE2
 #define HAS_CONVERT8TO8ROW_SVE2
 #define HAS_COPYROW_SVE2
 #define HAS_DIVIDEROW_16_SVE2
 #define HAS_HALFFLOATROW_SVE2
 #define HAS_HALFMERGEUVROW_SVE2
+#define HAS_HALFROW_16TO8_SVE2
 #define HAS_I210ALPHATOARGBROW_SVE2
 #define HAS_I210TOAR30ROW_SVE2
 #define HAS_I210TOARGBROW_SVE2
@@ -636,6 +641,7 @@ extern "C" {
 #define HAS_CONVERT8TO16ROW_SME
 #define HAS_CONVERT8TO8ROW_SME
 #define HAS_COPYROW_SME
+#define HAS_HALFROW_16TO8_SME
 #define HAS_I210ALPHATOARGBROW_SME
 #define HAS_I210TOAR30ROW_SME
 #define HAS_I210TOARGBROW_SME
@@ -657,7 +663,6 @@ extern "C" {
 #define HAS_I444TOARGBROW_SME
 #define HAS_I444TORGB24ROW_SME
 #define HAS_INTERPOLATEROW_16_SME
-#define HAS_INTERPOLATEROW_16TO8_SME
 #define HAS_INTERPOLATEROW_SME
 #define HAS_MERGEUVROW_16_SME
 #define HAS_MERGEUVROW_SME
@@ -677,7 +682,6 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_GAUSSCOL_F32_NEON
 #define HAS_GAUSSROW_F32_NEON
-#define HAS_INTERPOLATEROW_16TO8_NEON
 #define HAS_SCALESUMSAMPLES_NEON
 #endif
 
@@ -828,7 +832,9 @@ extern "C" {
 #define HAS_ARGBTOUV444MATRIXROW_RVV
 #define HAS_ARGBTOUVMATRIXROW_RVV
 #define HAS_ARGBTOYMATRIXROW_RVV
+#define HAS_CONVERT16TO8ROW_RVV
 #define HAS_COPYROW_RVV
+#define HAS_HALFROW_16TO8_RVV
 #define HAS_INTERPOLATEROW_RVV
 #define HAS_RGBTOUV444MATRIXROW_RVV
 #define HAS_RGBTOUVMATRIXROW_RVV
@@ -3587,6 +3593,75 @@ void Convert16To8Row_SME(const uint16_t* src_y,
                          uint8_t* dst_y,
                          int scale,
                          int width);
+void Convert16To8Row_SVE2(const uint16_t* src_y,
+                          uint8_t* dst_y,
+                          int scale,
+                          int width);
+void Convert16To8Row_RVV(const uint16_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int width);
+
+void HalfRow_16To8_C(const uint16_t* src_uv,
+                     ptrdiff_t src_uv_stride,
+                     uint8_t* dst_uv,
+                     int scale,
+                     int width);
+void HalfRow_16To8_SSSE3(const uint16_t* src_uv,
+                         ptrdiff_t src_uv_stride,
+                         uint8_t* dst_uv,
+                         int scale,
+                         int width);
+void HalfRow_16To8_AVX2(const uint16_t* src_uv,
+                        ptrdiff_t src_uv_stride,
+                        uint8_t* dst_uv,
+                        int scale,
+                        int width);
+void HalfRow_16To8_AVX512BW(const uint16_t* src_uv,
+                            ptrdiff_t src_uv_stride,
+                            uint8_t* dst_uv,
+                            int scale,
+                            int width);
+void HalfRow_16To8_Any_SSSE3(const uint16_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int scale,
+                             int width);
+void HalfRow_16To8_Any_AVX2(const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int scale,
+                            int width);
+void HalfRow_16To8_Any_AVX512BW(const uint16_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int scale,
+                                int width);
+void HalfRow_16To8_NEON(const uint16_t* src_uv,
+                        ptrdiff_t src_uv_stride,
+                        uint8_t* dst_uv,
+                        int scale,
+                        int width);
+void HalfRow_16To8_Any_NEON(const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int scale,
+                            int width);
+void HalfRow_16To8_SVE2(const uint16_t* src_uv,
+                        ptrdiff_t src_uv_stride,
+                        uint8_t* dst_uv,
+                        int scale,
+                        int width);
+void HalfRow_16To8_SME(const uint16_t* src_uv,
+                       ptrdiff_t src_uv_stride,
+                       uint8_t* dst_uv,
+                       int scale,
+                       int width);
+void HalfRow_16To8_RVV(const uint16_t* src_uv,
+                       ptrdiff_t src_uv_stride,
+                       uint8_t* dst_uv,
+                       int scale,
+                       int width);
 
 void Convert8To8Row_C(const uint8_t* src_y,
                       uint8_t* dst_y,
@@ -6378,43 +6453,6 @@ void InterpolateRow_16_SME(uint16_t* dst_ptr,
                            ptrdiff_t src_stride,
                            int width,
                            int source_y_fraction);
-
-void InterpolateRow_16To8_C(uint8_t* dst_ptr,
-                            const uint16_t* src_ptr,
-                            ptrdiff_t src_stride,
-                            int scale,
-                            int width,
-                            int source_y_fraction);
-void InterpolateRow_16To8_NEON(uint8_t* dst_ptr,
-                               const uint16_t* src_ptr,
-                               ptrdiff_t src_stride,
-                               int scale,
-                               int width,
-                               int source_y_fraction);
-void InterpolateRow_16To8_Any_NEON(uint8_t* dst_ptr,
-                                   const uint16_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   int scale,
-                                   int width,
-                                   int source_y_fraction);
-void InterpolateRow_16To8_SME(uint8_t* dst_ptr,
-                              const uint16_t* src_ptr,
-                              ptrdiff_t src_stride,
-                              int scale,
-                              int width,
-                              int source_y_fraction);
-void InterpolateRow_16To8_AVX2(uint8_t* dst_ptr,
-                               const uint16_t* src_ptr,
-                               ptrdiff_t src_stride,
-                               int scale,
-                               int width,
-                               int source_y_fraction);
-void InterpolateRow_16To8_Any_AVX2(uint8_t* dst_ptr,
-                                   const uint16_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   int scale,
-                                   int width,
-                                   int source_y_fraction);
 
 // Sobel images.
 void SobelXRow_C(const uint8_t* src_y0,

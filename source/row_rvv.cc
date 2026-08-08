@@ -1794,6 +1794,56 @@ void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif
 
+#ifdef HAS_CONVERT16TO8ROW_RVV
+void Convert16To8Row_RVV(const uint16_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int width) {
+  size_t w = (size_t)width;
+  const int shift = __builtin_clz((int32_t)scale) - 15;
+  do {
+    size_t vl = __riscv_vsetvl_e16m4(w);
+    vuint16m4_t v_src = __riscv_vle16_v_u16m4(src_y, vl);
+    vuint8m2_t v_dst = __riscv_vnsrl_wx_u8m2(v_src, shift, vl);
+    __riscv_vse8_v_u8m2(dst_y, v_dst, vl);
+    w -= vl;
+    src_y += vl;
+    dst_y += vl;
+  } while (w > 0);
+}
+#endif
+
+#ifdef HAS_HALFROW_16TO8_RVV
+void HalfRow_16To8_RVV(const uint16_t* src_uv,
+                       ptrdiff_t src_uv_stride,
+                       uint8_t* dst_uv,
+                       int scale,
+                       int width) {
+  size_t w = (size_t)width;
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  const int shift = __builtin_clz((int32_t)scale) - 15;
+#ifndef LIBYUV_RVV_HAS_VXRM_ARG
+  asm volatile("csrwi vxrm, 0");
+#endif
+  do {
+    size_t vl = __riscv_vsetvl_e16m4(w);
+    vuint16m4_t v_src0 = __riscv_vle16_v_u16m4(src_uv, vl);
+    vuint16m4_t v_src1 = __riscv_vle16_v_u16m4(src_uv1, vl);
+#ifdef LIBYUV_RVV_HAS_VXRM_ARG
+    vuint16m4_t v_avg = __riscv_vaaddu_vv_u16m4_vxrm(v_src0, v_src1, 0, vl);
+#else
+    vuint16m4_t v_avg = __riscv_vaaddu_vv_u16m4(v_src0, v_src1, vl);
+#endif
+    vuint8m2_t v_dst = __riscv_vnsrl_wx_u8m2(v_avg, shift, vl);
+    __riscv_vse8_v_u8m2(dst_uv, v_dst, vl);
+    w -= vl;
+    src_uv += vl;
+    src_uv1 += vl;
+    dst_uv += vl;
+  } while (w > 0);
+}
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

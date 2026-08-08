@@ -59,7 +59,7 @@ namespace libyuv {
 
 #define TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,         \
                        SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,             \
-                       DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF,      \
+                       DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF, DOY, \
                        SRC_DEPTH)                                             \
   TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {              \
     static_assert(SRC_BPC == 1 || SRC_BPC == 2, "SRC BPC unsupported");       \
@@ -113,7 +113,7 @@ namespace libyuv {
     MaskCpuFlags(disable_cpu_flags_);                                         \
     SRC_FMT_PLANAR##To##FMT_PLANAR(                                           \
         src_y_p, kWidth, src_u_p, kSrcHalfWidth, src_v_p, kSrcHalfWidth,      \
-        reinterpret_cast<DST_T*>(dst_y_c), kWidth,                            \
+        DOY ? reinterpret_cast<DST_T*>(dst_y_c) : NULL, kWidth,               \
         reinterpret_cast<DST_T*>(dst_u_c), kDstHalfWidth,                     \
         reinterpret_cast<DST_T*>(dst_v_c), kDstHalfWidth, kWidth,             \
         NEG kHeight);                                                         \
@@ -121,13 +121,15 @@ namespace libyuv {
     for (int i = 0; i < benchmark_iterations_; ++i) {                         \
       SRC_FMT_PLANAR##To##FMT_PLANAR(                                         \
           src_y_p, kWidth, src_u_p, kSrcHalfWidth, src_v_p, kSrcHalfWidth,    \
-          reinterpret_cast<DST_T*>(dst_y_opt), kWidth,                        \
+          DOY ? reinterpret_cast<DST_T*>(dst_y_opt) : NULL, kWidth,           \
           reinterpret_cast<DST_T*>(dst_u_opt), kDstHalfWidth,                 \
           reinterpret_cast<DST_T*>(dst_v_opt), kDstHalfWidth, kWidth,         \
           NEG kHeight);                                                       \
     }                                                                         \
-    for (int i = 0; i < kHeight * kWidth * DST_BPC; ++i) {                    \
-      ASSERT_EQ(dst_y_c[i], dst_y_opt[i]);                                    \
+    if (DOY) {                                                                \
+      for (int i = 0; i < kHeight * kWidth * DST_BPC; ++i) {                  \
+        ASSERT_EQ(dst_y_c[i], dst_y_opt[i]);                                  \
+      }                                                                       \
     }                                                                         \
     for (int i = 0; i < kDstHalfWidth * kDstHalfHeight * DST_BPC; ++i) {      \
       ASSERT_EQ(dst_u_c[i], dst_u_opt[i]);                                    \
@@ -150,23 +152,29 @@ namespace libyuv {
                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)                 \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_ + 1, _Any, +, 0, SRC_DEPTH)                  \
+                 benchmark_width_ + 1, _Any, +, 0, 1, SRC_DEPTH)               \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Unaligned, +, 2, SRC_DEPTH)                \
+                 benchmark_width_, _Unaligned, +, 2, 1, SRC_DEPTH)             \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Invert, -, 0, SRC_DEPTH)                   \
+                 benchmark_width_, _Invert, -, 0, 1, SRC_DEPTH)                \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+                 benchmark_width_, _Opt, +, 0, 1, SRC_DEPTH)                   \
+  TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
+                 FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
+                 benchmark_width_, _NullY, +, 0, 0, SRC_DEPTH)
 #else
 #define TESTPLANARTOP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,           \
                       SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,               \
                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)                 \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+                 benchmark_width_, _NullY, +, 0, 0, SRC_DEPTH)                 \
+  TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
+                 FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
+                 benchmark_width_, _Opt, +, 0, 1, SRC_DEPTH)
 #endif
 
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420, uint8_t, 1, 2, 2, 8)
@@ -2787,6 +2795,59 @@ TEST_F(LibYUVConvertTest, ABGRToI420_Check) {
                 benchmark_cpu_info_);
   TestRGBToI420(ABGRToI420, ABGRToARGB, 1280, 720, disable_cpu_flags_,
                 benchmark_cpu_info_);
+}
+
+// I210ToI420/I212ToI420 funnel through I21xToI420, which scales chroma
+// vertically. Verify oversize heights do not overflow a signed int.
+TEST_F(LibYUVConvertTest, I21xToI420NoHeightOverflow) {
+  int width = 4;
+  int height = 40000;
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  // I21x: 16-bit 4:2:2
+  align_buffer_page_end_16(src_y, width * height);
+  align_buffer_page_end_16(src_u, half_width * height);
+  align_buffer_page_end_16(src_v, half_width * height);
+  // I420: 8-bit 4:2:0
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_u, half_width * half_height);
+  align_buffer_page_end(dst_v, half_width * half_height);
+
+  memset(src_y, 0, width * height * sizeof(uint16_t));
+  memset(src_u, 0, half_width * height * sizeof(uint16_t));
+  memset(src_v, 0, half_width * height * sizeof(uint16_t));
+
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32767));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32768));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32769));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32767));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32768));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32769));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32767));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32768));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32769));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32767));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32768));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32769));
+
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(src_u);
+  free_aligned_buffer_page_end_16(src_v);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
 }
 
 #endif  // !defined(LEAN_TESTS)

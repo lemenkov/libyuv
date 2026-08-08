@@ -241,6 +241,7 @@ void RGB24ToARGBRow_SSSE3(const uint8_t* src_rgb24,
 void RGB24ToARGBRow_AVX2(const uint8_t* src_rgb24,
                          uint8_t* dst_argb,
                          int width) {
+  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskRGB24ToARGB[1]
   // Reference to prevent discarding of kShuffleMaskRGB24ToARGB[1] which is
   // accessed via offset in assembly.
   const uvec8* dummy = &kShuffleMaskRGB24ToARGB[1];
@@ -2458,6 +2459,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  uint8_t* dst_rgb24,
                                  const struct YuvConstants* yuvconstants,
                                  int width) {
+  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskARGBToRGB24[1]
   // Reference to prevent discarding of kShuffleMaskARGBToRGB24[1] which is
   // accessed via offset in assembly.
   const uvec8* dummy = &kShuffleMaskARGBToRGB24[1];
@@ -2497,6 +2499,7 @@ void OMITFP I444ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  uint8_t* dst_rgb24,
                                  const struct YuvConstants* yuvconstants,
                                  int width) {
+  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskARGBToRGB24[1]
   // Reference to prevent discarding of kShuffleMaskARGBToRGB24[1] which is
   // accessed via offset in assembly.
   const uvec8* dummy = &kShuffleMaskARGBToRGB24[1];
@@ -3551,6 +3554,7 @@ void OMITFP I422ToRGB24Row_AVX2(const uint8_t* y_buf,
                                 uint8_t* dst_rgb24,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
+  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskARGBToRGB24[1]
   // Reference to prevent discarding of kShuffleMaskARGBToRGB24[1] which is
   // accessed via offset in assembly.
   const uvec8* dummy = &kShuffleMaskARGBToRGB24[1];
@@ -5414,7 +5418,117 @@ void Convert16To8Row_AVX512BW(const uint16_t* src_y,
                : "r"(scale)    // %3
                : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
-#endif  // HAS_CONVERT16TO8ROW_AVX2
+#endif  // HAS_CONVERT16TO8ROW_AVX512BW
+
+#ifdef HAS_HALFROW_16TO8_SSSE3
+void HalfRow_16To8_SSSE3(const uint16_t* src_uv,
+                         ptrdiff_t src_uv_stride,
+                         uint8_t* dst_uv,
+                         int scale,
+                         int width) {
+  asm volatile(
+      "movd        %4,%%xmm2                     \n"
+      "punpcklwd   %%xmm2,%%xmm2                 \n"
+      "pshufd      $0x0,%%xmm2,%%xmm2            \n"
+
+      // 16 pixels per loop.
+      LABELALIGN
+      "1:          \n"
+      "movdqu      (%0),%%xmm0                   \n"
+      "movdqu      0x10(%0),%%xmm1               \n"
+      "movdqu      (%0,%3,2),%%xmm3              \n"
+      "movdqu      0x10(%0,%3,2),%%xmm4          \n"
+      "add         $0x20,%0                      \n"
+      "pavgw       %%xmm3,%%xmm0                 \n"
+      "pavgw       %%xmm4,%%xmm1                 \n"
+      "pmulhuw     %%xmm2,%%xmm0                 \n"
+      "pmulhuw     %%xmm2,%%xmm1                 \n"
+      "packuswb    %%xmm1,%%xmm0                 \n"
+      "movdqu      %%xmm0,(%1)                   \n"
+      "add         $0x10,%1                      \n"
+      "sub         $0x10,%2                      \n"
+      "jg          1b                            \n"
+      : "+r"(src_uv),        // %0
+        "+r"(dst_uv),        // %1
+        "+r"(width)          // %2
+      : "r"(src_uv_stride),  // %3
+        "r"(scale)           // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
+}
+#endif  // HAS_HALFROW_16TO8_SSSE3
+
+#ifdef HAS_HALFROW_16TO8_AVX2
+void HalfRow_16To8_AVX2(const uint16_t* src_uv,
+                        ptrdiff_t src_uv_stride,
+                        uint8_t* dst_uv,
+                        int scale,
+                        int width) {
+  asm volatile(
+      "vmovd       %4,%%xmm2                     \n"
+      "vpbroadcastw %%xmm2,%%ymm2                \n"
+
+      // 32 pixels per loop.
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vmovdqu     0x20(%0),%%ymm1               \n"
+      "vpavgw      (%0,%3,2),%%ymm0,%%ymm0       \n"
+      "vpavgw      0x20(%0,%3,2),%%ymm1,%%ymm1   \n"
+      "add         $0x40,%0                      \n"
+      "vpmulhuw    %%ymm2,%%ymm0,%%ymm0          \n"
+      "vpmulhuw    %%ymm2,%%ymm1,%%ymm1          \n"
+      "vpackuswb   %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "vmovdqu     %%ymm0,(%1)                   \n"
+      "add         $0x20,%1                      \n"
+      "sub         $0x20,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src_uv),        // %0
+        "+r"(dst_uv),        // %1
+        "+r"(width)          // %2
+      : "r"(src_uv_stride),  // %3
+        "r"(scale)           // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+}
+#endif  // HAS_HALFROW_16TO8_AVX2
+
+#ifdef HAS_HALFROW_16TO8_AVX512BW
+void HalfRow_16To8_AVX512BW(const uint16_t* src_uv,
+                            ptrdiff_t src_uv_stride,
+                            uint8_t* dst_uv,
+                            int scale,
+                            int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  const int shift = 16 - __builtin_ctz((uint32_t)scale);
+  asm volatile(
+      "vpbroadcastw %4,%%zmm2                    \n"
+
+      // 64 pixels per loop.
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu64   (%0),%%zmm0                   \n"
+      "vmovdqu64   0x40(%0),%%zmm1               \n"
+      "vpavgw      (%1),%%zmm0,%%zmm0            \n"
+      "vpavgw      0x40(%1),%%zmm1,%%zmm1        \n"
+      "add         $0x80,%0                      \n"
+      "add         $0x80,%1                      \n"
+      "vpsrlvw     %%zmm2,%%zmm0,%%zmm0          \n"
+      "vpsrlvw     %%zmm2,%%zmm1,%%zmm1          \n"
+      "vpmovuswb   %%zmm0,(%2)                   \n"
+      "vpmovuswb   %%zmm1,0x20(%2)               \n"
+      "add         $0x40,%2                      \n"
+      "sub         $0x40,%3                      \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      : "r"(shift)      // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+}
+#endif  // HAS_HALFROW_16TO8_AVX512BW
 
 // Use scale to convert to lsb formats depending how many bits there are:
 // 512 = 9 bits

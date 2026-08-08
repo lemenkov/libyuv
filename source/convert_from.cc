@@ -96,17 +96,21 @@ int I420ToI010(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    if (src_y) {
+      src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+      src_stride_y = -src_stride_y;
+    }
     src_u = src_u + (ptrdiff_t)(halfheight - 1) * src_stride_u;
     src_v = src_v + (ptrdiff_t)(halfheight - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
 
   // Convert Y plane.
-  Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 1024, width,
-                    height);
+  if (dst_y) {
+    Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 1024, width,
+                      height);
+  }
   // Convert UV planes.
   Convert8To16Plane(src_u, src_stride_u, dst_u, dst_stride_u, 1024, halfwidth,
                     halfheight);
@@ -141,17 +145,21 @@ int I420ToI012(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    if (src_y) {
+      src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+      src_stride_y = -src_stride_y;
+    }
     src_u = src_u + (ptrdiff_t)(halfheight - 1) * src_stride_u;
     src_v = src_v + (ptrdiff_t)(halfheight - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
 
   // Convert Y plane.
-  Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 4096, width,
-                    height);
+  if (dst_y) {
+    Convert8To16Plane(src_y, src_stride_y, dst_y, dst_stride_y, 4096, width,
+                      height);
+  }
   // Convert UV planes.
   Convert8To16Plane(src_u, src_stride_u, dst_u, dst_stride_u, 4096, halfwidth,
                     halfheight);

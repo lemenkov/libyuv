@@ -3664,11 +3664,11 @@ static void HalfRow_16_C(const uint16_t* src_uv,
   }
 }
 
-static void HalfRow_16To8_C(const uint16_t* src_uv,
-                            ptrdiff_t src_uv_stride,
-                            uint8_t* dst_uv,
-                            int scale,
-                            int width) {
+void HalfRow_16To8_C(const uint16_t* src_uv,
+                     ptrdiff_t src_uv_stride,
+                     uint8_t* dst_uv,
+                     int scale,
+                     int width) {
   int x;
   for (x = 0; x < width; ++x) {
     dst_uv[x] = STATIC_CAST(
@@ -3736,47 +3736,6 @@ void InterpolateRow_16_C(uint16_t* dst_ptr,
     ++src_ptr;
     ++src_ptr1;
     ++dst_ptr;
-  }
-}
-
-// C version 2x2 16 bit-> 2x1 8 bit.
-// Use scale to convert lsb formats to msb, depending how many bits there are:
-// 32768 = 9 bits
-// 16384 = 10 bits
-// 4096 = 12 bits
-// 256 = 16 bits
-// TODO(fbarchard): change scale to bits
-
-void InterpolateRow_16To8_C(uint8_t* dst_ptr,
-                            const uint16_t* src_ptr,
-                            ptrdiff_t src_stride,
-                            int scale,
-                            int width,
-                            int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
-  const uint16_t* src_ptr1 = src_ptr + src_stride;
-  int x;
-  assert(source_y_fraction >= 0);
-  assert(source_y_fraction < 256);
-
-  if (source_y_fraction == 0) {
-    Convert16To8Row_C(src_ptr, dst_ptr, scale, width);
-    return;
-  }
-  if (source_y_fraction == 128) {
-    HalfRow_16To8_C(src_ptr, src_stride, dst_ptr, scale, width);
-    return;
-  }
-  for (x = 0; x < width; ++x) {
-    dst_ptr[0] = STATIC_CAST(
-        uint8_t,
-        C16TO8(
-            (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction + 128) >> 8,
-            scale));
-    src_ptr += 1;
-    src_ptr1 += 1;
-    dst_ptr += 1;
   }
 }
 
@@ -4290,26 +4249,6 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
   }
 }
 #endif
-
-#ifdef HAS_INTERPOLATEROW_16TO8_AVX2
-void InterpolateRow_16To8_AVX2(uint8_t* dst_ptr,
-                               const uint16_t* src_ptr,
-                               ptrdiff_t src_stride,
-                               int scale,
-                               int width,
-                               int source_y_fraction) {
-  // Row buffer for intermediate 16 bit pixels.
-  SIMD_ALIGNED(uint16_t row[MAXTWIDTH]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    InterpolateRow_16_AVX2(row, src_ptr, src_stride, twidth, source_y_fraction);
-    Convert16To8Row_AVX2(row, dst_ptr, scale, twidth);
-    src_ptr += twidth;
-    dst_ptr += twidth;
-    width -= twidth;
-  }
-}
-#endif  // HAS_INTERPOLATEROW_16TO8_AVX2
 
 float ScaleSumSamples_C(const float* src, float* dst, float scale, int width) {
   float fsum = 0.f;
