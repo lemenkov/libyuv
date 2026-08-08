@@ -1186,29 +1186,46 @@ void HalfMergeUVRow_SVE2(const uint8_t* src_u,
 }
 
 void CopyRow_SVE2(const uint8_t* src, uint8_t* dst, int width) {
-  uint64_t vl;
-  asm("cntb %x0" : "=r"(vl));
+  int vl;
+  int vl2;
   asm volatile(
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      "cntb     %x[vl]                                  \n"
+      "lsl      %w[vl2], %w[vl], #1                     \n"
+      "subs     %w[width], %w[width], %w[vl2]           \n"
       "b.lt     2f                                      \n"
+
       "ptrue    p0.b                                    \n"
       "1:                                               \n"
-      "ld1b     {z0.b}, p0/z, [%[src]]                  \n"
-      "add      %[src], %[src], %[vl]                   \n"
-      "st1b     {z0.b}, p0, [%[dst]]                    \n"
-      "add      %[dst], %[dst], %[vl]                   \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.ge     1b                                      \n"
+      "ld1b     {z0.b}, p0/z, [%[src], #0, mul vl]      \n"
+      "ld1b     {z1.b}, p0/z, [%[src], #1, mul vl]      \n"
+      "incb     %[src], all, mul #2                     \n"
+      "subs     %w[width], %w[width], %w[vl2]           \n"
+      "st1b     {z0.b}, p0, [%[dst], #0, mul vl]        \n"
+      "st1b     {z1.b}, p0, [%[dst], #1, mul vl]        \n"
+      "incb     %[dst], all, mul #2                     \n"
+      "b.gt     1b                                      \n"
+
       "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
+      "adds     %w[width], %w[width], %w[vl2]           \n"
       "b.eq     99f                                     \n"
+
+      "3:                                               \n"
       "whilelt  p0.b, wzr, %w[width]                    \n"
       "ld1b     {z0.b}, p0/z, [%[src]]                  \n"
+      "incb     %[src]                                  \n"
       "st1b     {z0.b}, p0, [%[dst]]                    \n"
+      "incb     %[dst]                                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.gt     3b                                      \n"
+
       "99:                                              \n"
-      : [src] "+r"(src), [dst] "+r"(dst), [width] "+r"(width)
-      : [vl] "r"(vl)
-      : "cc", "memory", "z0", "p0");
+      : [src] "+r"(src),
+        [dst] "+r"(dst),
+        [width] "+r"(width),
+        [vl] "=&r"(vl),
+        [vl2] "=&r"(vl2)
+      :
+      : "cc", "memory", "z0", "z1", "p0");
 }
 
 void InterpolateRow_SVE2(uint8_t* dst_ptr,
@@ -1226,6 +1243,45 @@ void InterpolateRow_SVE2(uint8_t* dst_ptr,
   }
   if (y0_fraction == 256) {
     CopyRow_SVE2(src_ptr, dst_ptr, width);
+    return;
+  }
+  if (y0_fraction == 128) {
+    int vl;
+    asm volatile(
+        "cntb     %x[vl]                                  \n"
+        "subs     %w[width], %w[width], %w[vl]            \n"
+        "b.lt     2f                                      \n"
+
+        "ptrue    p0.b                                    \n"
+        "1:                                               \n"
+        "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
+        "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
+        "incb     %[src_ptr]                              \n"
+        "incb     %[src_ptr1]                             \n"
+        "subs     %w[width], %w[width], %w[vl]            \n"
+        "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
+        "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
+        "incb     %[dst_ptr]                              \n"
+        "b.ge     1b                                      \n"
+
+        "2:                                               \n"
+        "adds     %w[width], %w[width], %w[vl]            \n"
+        "b.eq     99f                                     \n"
+
+        "whilelt  p0.b, wzr, %w[width]                    \n"
+        "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
+        "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
+        "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
+        "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
+
+        "99:                                              \n"
+        : [src_ptr] "+r"(src_ptr),
+          [src_ptr1] "+r"(src_ptr1),
+          [dst_ptr] "+r"(dst_ptr),
+          [width] "+r"(width),
+          [vl] "=&r"(vl)
+        :
+        : "cc", "memory", "z2", "z3", "p0");
     return;
   }
 
