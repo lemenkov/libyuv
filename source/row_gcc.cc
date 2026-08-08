@@ -101,7 +101,6 @@ static const uvec8 kShuffleMaskARGBToRGB24[2] = {
 static const uvec8 kShuffleMaskARGBToRAW = {
     2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u};
 
-
 // YUY2 shuf 16 Y to 32 Y.
 static const vec8 kShuffleYUY2Y = {0, 0, 2,  2,  4,  4,  6,  6,
                                    8, 8, 10, 10, 12, 12, 14, 14};
@@ -241,16 +240,11 @@ void RGB24ToARGBRow_SSSE3(const uint8_t* src_rgb24,
 void RGB24ToARGBRow_AVX2(const uint8_t* src_rgb24,
                          uint8_t* dst_argb,
                          int width) {
-  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskRGB24ToARGB[1]
-  // Reference to prevent discarding of kShuffleMaskRGB24ToARGB[1] which is
-  // accessed via offset in assembly.
-  const uvec8* dummy = &kShuffleMaskRGB24ToARGB[1];
-  (void)dummy;
   asm volatile(
       "vpcmpeqb    %%ymm6,%%ymm6,%%ymm6          \n"  // 0xff000000
       "vpslld      $0x18,%%ymm6,%%ymm6           \n"
       "vbroadcasti128 %3,%%ymm4                  \n"
-      "vbroadcasti128 16+%3,%%ymm5               \n"
+      "vbroadcasti128 %4,%%ymm5                  \n"
 
       LABELALIGN
       "1:          \n"
@@ -282,7 +276,8 @@ void RGB24ToARGBRow_AVX2(const uint8_t* src_rgb24,
       : "+r"(src_rgb24),                 // %0
         "+r"(dst_argb),                  // %1
         "+r"(width)                      // %2
-      : "m"(kShuffleMaskRGB24ToARGB[0])  // %3
+      : "m"(kShuffleMaskRGB24ToARGB[0]), // %3
+        "m"(kShuffleMaskRGB24ToARGB[1])  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif  // HAS_RGB24TOARGBROW_AVX2
@@ -2459,15 +2454,10 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  uint8_t* dst_rgb24,
                                  const struct YuvConstants* yuvconstants,
                                  int width) {
-  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskARGBToRGB24[1]
-  // Reference to prevent discarding of kShuffleMaskARGBToRGB24[1] which is
-  // accessed via offset in assembly.
-  const uvec8* dummy = &kShuffleMaskARGBToRGB24[1];
-  (void)dummy;
   asm volatile (
     YUVTORGB_SETUP(yuvconstants)
-      "movdqa      16+%[kShuffleMaskARGBToRGB24],%%xmm5 \n"
-      "movdqa      %[kShuffleMaskARGBToRGB24],%%xmm6 \n"
+      "movdqa      %[kShuffleMaskARGBToRGB24_1],%%xmm5 \n"
+      "movdqa      %[kShuffleMaskARGBToRGB24_0],%%xmm6 \n"
       "sub         %[u_buf],%[v_buf]             \n"
 
     LABELALIGN
@@ -2487,7 +2477,8 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8_t* y_buf,
     [width]"+rm"(width)    // %[width]
 #endif
   : [yuvconstants]"r"(yuvconstants),  // %[yuvconstants]
-    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24[0])
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24[0]),
+    [kShuffleMaskARGBToRGB24_1]"m"(kShuffleMaskARGBToRGB24[1])
   : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
@@ -2499,15 +2490,10 @@ void OMITFP I444ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  uint8_t* dst_rgb24,
                                  const struct YuvConstants* yuvconstants,
                                  int width) {
-  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskARGBToRGB24[1]
-  // Reference to prevent discarding of kShuffleMaskARGBToRGB24[1] which is
-  // accessed via offset in assembly.
-  const uvec8* dummy = &kShuffleMaskARGBToRGB24[1];
-  (void)dummy;
   asm volatile (
     YUVTORGB_SETUP(yuvconstants)
-      "movdqa      16+%[kShuffleMaskARGBToRGB24],%%xmm5 \n"
-      "movdqa      %[kShuffleMaskARGBToRGB24],%%xmm6 \n"
+      "movdqa      %[kShuffleMaskARGBToRGB24_1],%%xmm5 \n"
+      "movdqa      %[kShuffleMaskARGBToRGB24_0],%%xmm6 \n"
       "sub         %[u_buf],%[v_buf]             \n"
 
     LABELALIGN
@@ -2527,7 +2513,8 @@ void OMITFP I444ToRGB24Row_SSSE3(const uint8_t* y_buf,
     [width]"+rm"(width)    // %[width]
 #endif
   : [yuvconstants]"r"(yuvconstants),  // %[yuvconstants]
-    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24[0])
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24[0]),
+    [kShuffleMaskARGBToRGB24_1]"m"(kShuffleMaskARGBToRGB24[1])
   : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
@@ -3554,15 +3541,10 @@ void OMITFP I422ToRGB24Row_AVX2(const uint8_t* y_buf,
                                 uint8_t* dst_rgb24,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  // TODO(fbarchard): Fix ASAN issue with kShuffleMaskARGBToRGB24[1]
-  // Reference to prevent discarding of kShuffleMaskARGBToRGB24[1] which is
-  // accessed via offset in assembly.
-  const uvec8* dummy = &kShuffleMaskARGBToRGB24[1];
-  (void)dummy;
   asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
-      "vbroadcasti128 16+%[kShuffleMaskARGBToRGB24],%%ymm5 \n"
-      "vbroadcasti128 %[kShuffleMaskARGBToRGB24],%%ymm6 \n"
+      "vbroadcasti128 %[kShuffleMaskARGBToRGB24_1],%%ymm5 \n"
+      "vbroadcasti128 %[kShuffleMaskARGBToRGB24_0],%%ymm6 \n"
       "sub         %[u_buf],%[v_buf]             \n"
 
     LABELALIGN
@@ -3598,13 +3580,13 @@ void OMITFP I422ToRGB24Row_AVX2(const uint8_t* y_buf,
     [width]"+rm"(width)    // %[width]
 #endif
   : [yuvconstants]"r"(yuvconstants),  // %[yuvconstants]
-    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24[0])
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24[0]),
+    [kShuffleMaskARGBToRGB24_1]"m"(kShuffleMaskARGBToRGB24[1])
   : "memory", "cc", YUVTORGB_REGS_AVX2
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 #endif  // HAS_I422TORGB24ROW_AVX2
-
 
 #if defined(HAS_I422TOARGBROW_AVX512BW)
 static const uint64_t kSplitQuadWords[8] = {0, 2, 2, 2, 1, 2, 2, 2};
@@ -3671,7 +3653,6 @@ static const uint8_t kMaskDST1[64] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00};
-
 
 // 32 pixels
 // 16 UV values upsampled to 32 UV, mixed with 32 Y producing 32 RGB24 (96 bytes).
