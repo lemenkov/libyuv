@@ -2031,10 +2031,11 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     if (n > 0) {                                                       \
       ANY_SIMD(src_ptr, dst_u, dst_v, n, c);                           \
     }                                                                  \
-    memcpy(vin, src_ptr + (ptrdiff_t)n * BPP, (ptrdiff_t)r * BPP);     \
+    ptrdiff_t np = n;                                                  \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                          \
     ANY_SIMD(vin, vout, vout + 256, MASK + 1, c);                      \
-    memcpy(dst_u + (ptrdiff_t)n, vout, (ptrdiff_t)r);                  \
-    memcpy(dst_v + (ptrdiff_t)n, vout + 256, (ptrdiff_t)r);            \
+    memcpy(dst_u + np, vout, r);                                       \
+    memcpy(dst_v + np, vout + 256, r);                                 \
   }
 
 #define ANY12MS(NAMEANY, ANY_SIMD, UVSHIFT, BPP, MASK)                       \
@@ -2147,9 +2148,10 @@ ANY12M(ARGBToUV444MatrixRow_Any_NEON_I8MM,
     if (n > 0) {                                                    \
       ANY_SIMD(src_ptr, dst_ptr, n, c);                             \
     }                                                               \
-    memcpy(vin, src_ptr + (ptrdiff_t)n * BPP, (ptrdiff_t)r * BPP);  \
+    ptrdiff_t np = n;                                               \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                       \
     ANY_SIMD(vin, vout, MASK + 1, c);                               \
-    memcpy(dst_ptr + (ptrdiff_t)n, vout, (ptrdiff_t)r);             \
+    memcpy(dst_ptr + np, vout, r);                                  \
   }
 
 #ifdef HAS_ARGBTOYMATRIXROW_SSSE3
