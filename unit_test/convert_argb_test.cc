@@ -2736,6 +2736,82 @@ TEST_F(LibYUVConvertTest, TestUYVYToARGB) {
 #endif
 }
 
+// Call P010ToARGBMatrixFilter() with a width that is not a multiple of 16.
+// Verify there is no stack buffer overflow in P410ToARGBRow_Any_AVX2().
+TEST_F(LibYUVConvertTest, P010ToARGBMatrixFilterOverflow) {
+  int width = 1024 + 15;  // 1039
+  int height = 4;
+  int dst_stride_argb = width * 4;
+  align_buffer_page_end_16(src_y, width * height);
+  align_buffer_page_end_16(src_uv, width * ((height + 1) / 2));
+  align_buffer_page_end(dst_argb, dst_stride_argb * height);
+  memset(src_y, 0x02, width * height * sizeof(uint16_t));
+  memset(src_uv, 0x02, width * ((height + 1) / 2) * sizeof(uint16_t));
+  EXPECT_EQ(0, P010ToARGBMatrixFilter(src_y, width, src_uv, width, dst_argb,
+                                      dst_stride_argb, &kYuvI601Constants,
+                                      width, height, kFilterBilinear));
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(src_uv);
+  free_aligned_buffer_page_end(dst_argb);
+}
+
+// Call P210ToARGBMatrixFilter() with a width that is not a multiple of 16.
+// Verify there is no stack buffer overflow in P410ToARGBRow_Any_AVX2().
+TEST_F(LibYUVConvertTest, P210ToARGBMatrixFilterOverflow) {
+  int width = 1024 + 15;  // 1039
+  int height = 4;
+  int dst_stride_argb = width * 4;
+  align_buffer_page_end_16(src_y, width * height);
+  align_buffer_page_end_16(src_uv, width * height);
+  align_buffer_page_end(dst_argb, dst_stride_argb * height);
+  memset(src_y, 0x02, width * height * sizeof(uint16_t));
+  memset(src_uv, 0x02, width * height * sizeof(uint16_t));
+  EXPECT_EQ(0, P210ToARGBMatrixFilter(src_y, width, src_uv, width, dst_argb,
+                                      dst_stride_argb, &kYuvI601Constants,
+                                      width, height, kFilterBilinear));
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(src_uv);
+  free_aligned_buffer_page_end(dst_argb);
+}
+
+// Call P010ToAR30MatrixFilter() with a width that is not a multiple of 16.
+// Verify there is no stack buffer overflow in P410ToAR30Row_Any_AVX2().
+TEST_F(LibYUVConvertTest, P010ToAR30MatrixFilterOverflow) {
+  int width = 1024 + 15;  // 1039
+  int height = 4;
+  int dst_stride_argb = width * 4;
+  align_buffer_page_end_16(src_y, width * height);
+  align_buffer_page_end_16(src_uv, width * ((height + 1) / 2));
+  align_buffer_page_end(dst_argb, dst_stride_argb * height);
+  memset(src_y, 0x02, width * height * sizeof(uint16_t));
+  memset(src_uv, 0x02, width * ((height + 1) / 2) * sizeof(uint16_t));
+  EXPECT_EQ(0, P010ToAR30MatrixFilter(src_y, width, src_uv, width, dst_argb,
+                                      dst_stride_argb, &kYuvI601Constants,
+                                      width, height, kFilterBilinear));
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(src_uv);
+  free_aligned_buffer_page_end(dst_argb);
+}
+
+// Call P210ToAR30MatrixFilter(() with a width that is not a multiple of 16.
+// Verify there is no stack buffer overflow in P410ToAR30Row_Any_AVX2().
+TEST_F(LibYUVConvertTest, P210ToAR30MatrixFilterOverflow) {
+  int width = 1024 + 15;  // 1039
+  int height = 4;
+  int dst_stride_ar30 = width * 4;
+  align_buffer_page_end_16(src_y, width * height);
+  align_buffer_page_end_16(src_uv, width * height);
+  align_buffer_page_end(dst_ar30, dst_stride_ar30 * height);
+  memset(src_y, 0x02, width * height * sizeof(uint16_t));
+  memset(src_uv, 0x02, width * height * sizeof(uint16_t));
+  EXPECT_EQ(0, P210ToAR30MatrixFilter(src_y, width, src_uv, width, dst_ar30,
+                                      dst_stride_ar30, &kYuvI601Constants,
+                                      width, height, kFilterBilinear));
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(src_uv);
+  free_aligned_buffer_page_end(dst_ar30);
+}
+
 #ifdef ENABLE_ROW_TESTS
 TEST_F(LibYUVConvertTest, TestARGBToUVMatrixRow_Opt) {
   const int kMaxWidth = 128;

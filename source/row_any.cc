@@ -834,8 +834,12 @@ ANY21C(NV12ToRGB565Row_Any_LASX, NV12ToRGB565Row_LASX, 1, 1, 2, 2, 15)
 #define ANY21CT(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, T, SBPP, BPP, MASK)      \
   void NAMEANY(const T* y_buf, const T* uv_buf, uint8_t* dst_ptr,              \
                const struct YuvConstants* yuvconstants, int width) {           \
-    SIMD_ALIGNED(T vin[16 * 2]);                                               \
+    SIMD_ALIGNED(T vin[32 * 2]);                                               \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP * 2 <= sizeof(vin) / 2,         \
+                  "vin buffer too small");                                     \
     SIMD_ALIGNED(uint8_t vout[64]);                                            \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),                \
+                  "vout buffer too small");                                    \
     memset(vin, 0, sizeof(vin)); /* for msan */                                \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
@@ -844,8 +848,8 @@ ANY21C(NV12ToRGB565Row_Any_LASX, NV12ToRGB565Row_LASX, 1, 1, 2, 2, 15)
     }                                                                          \
     ptrdiff_t np = n;                                                          \
     memcpy(vin, y_buf + np, r * SBPP);                                         \
-    memcpy(vin + 16, uv_buf + 2 * (np >> UVSHIFT), SS(r, UVSHIFT) * SBPP * 2); \
-    ANY_SIMD(vin, vin + 16, vout, yuvconstants, MASK + 1);                     \
+    memcpy(vin + 32, uv_buf + 2 * (np >> UVSHIFT), SS(r, UVSHIFT) * SBPP * 2); \
+    ANY_SIMD(vin, vin + 32, vout, yuvconstants, MASK + 1);                     \
     memcpy(dst_ptr + (np >> DUVSHIFT) * BPP, vout, SS(r, DUVSHIFT) * BPP);     \
   }
 
