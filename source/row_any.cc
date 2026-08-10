@@ -27,7 +27,7 @@ extern "C" {
 // by the source type (e.g. ARGB) and the mask (last parameter), or by examining
 // the source code for how much the source pointers are advanced.
 
-// Subsampled source needs to be increase by 1 of not even.
+// Subsampled source needs to be increase by 1 if not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
 // Any 4 planes to 1
@@ -718,8 +718,8 @@ ANY21(SobelXYRow_Any_LSX, SobelXYRow_LSX, 0, 1, 1, 4, 15)
 #define ANY21S(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                        \
   void NAMEANY(const uint8_t* src_yuy2, int stride_yuy2, uint8_t* dst_uv, \
                int width) {                                               \
-    SIMD_ALIGNED(uint8_t vin[32 * 2]);                                    \
-    SIMD_ALIGNED(uint8_t vout[32]);                                       \
+    SIMD_ALIGNED(uint8_t vin[(MASK + 1) * SBPP * 2]);                     \
+    SIMD_ALIGNED(uint8_t vout[(MASK + 1) * BPP]);                         \
     memset(vin, 0, sizeof(vin)); /* for msan */                           \
     int awidth = (width + 1) / 2;                                         \
     int r = awidth & MASK;                                                \
@@ -729,8 +729,9 @@ ANY21(SobelXYRow_Any_LSX, SobelXYRow_LSX, 0, 1, 1, 4, 15)
     }                                                                     \
     ptrdiff_t np = n;                                                     \
     memcpy(vin, src_yuy2 + np * SBPP, r * SBPP);                          \
-    memcpy(vin + 32, src_yuy2 + stride_yuy2 + np * SBPP, r * SBPP);       \
-    ANY_SIMD(vin, 32, vout, MASK + 1);                                    \
+    memcpy(vin + (MASK + 1) * SBPP, src_yuy2 + stride_yuy2 + np * SBPP,   \
+           r * SBPP);                                                     \
+    ANY_SIMD(vin, (MASK + 1) * SBPP, vout, MASK + 1);                     \
     memcpy(dst_uv + np * BPP, vout, r * BPP);                             \
   }
 
@@ -1917,23 +1918,23 @@ ANY12PT(SplitUVRow_16_Any_NEON, SplitUVRow_16_NEON, uint16_t, 2, 7)
 #undef ANY21CT
 
 // Any 1 to 3.  Outputs RGB planes.
-#define ANY13(NAMEANY, ANY_SIMD, BPP, MASK)                            \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g, \
-               uint8_t* dst_b, int width) {                            \
-    SIMD_ALIGNED(uint8_t vin[16 * 3]);                                 \
-    SIMD_ALIGNED(uint8_t vout[16 * 3]);                                \
-    memset(vin, 0, sizeof(vin)); /* for msan */                        \
-    int r = width & MASK;                                              \
-    int n = width & ~MASK;                                             \
-    if (n > 0) {                                                       \
-      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, n);                       \
-    }                                                                  \
-    ptrdiff_t np = n;                                                  \
-    memcpy(vin, src_ptr + np * BPP, r * BPP);                          \
-    ANY_SIMD(vin, vout, vout + 16, vout + 32, MASK + 1);               \
-    memcpy(dst_r + np, vout, r);                                       \
-    memcpy(dst_g + np, vout + 16, r);                                  \
-    memcpy(dst_b + np, vout + 32, r);                                  \
+#define ANY13(NAMEANY, ANY_SIMD, BPP, MASK)                                \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g,     \
+               uint8_t* dst_b, int width) {                                \
+    SIMD_ALIGNED(uint8_t vin[(MASK + 1) * BPP]);                           \
+    SIMD_ALIGNED(uint8_t vout[(MASK + 1) * 3]);                            \
+    memset(vin, 0, sizeof(vin)); /* for msan */                            \
+    int r = width & MASK;                                                  \
+    int n = width & ~MASK;                                                 \
+    if (n > 0) {                                                           \
+      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, n);                           \
+    }                                                                      \
+    ptrdiff_t np = n;                                                      \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                              \
+    ANY_SIMD(vin, vout, vout + MASK + 1, vout + (MASK + 1) * 2, MASK + 1); \
+    memcpy(dst_r + np, vout, r);                                           \
+    memcpy(dst_g + np, vout + MASK + 1, r);                                \
+    memcpy(dst_b + np, vout + (MASK + 1) * 2, r);                          \
   }
 
 #ifdef HAS_SPLITRGBROW_SSSE3

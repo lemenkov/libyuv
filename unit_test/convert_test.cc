@@ -2850,6 +2850,23 @@ TEST_F(LibYUVConvertTest, I21xToI420NoHeightOverflow) {
   free_aligned_buffer_page_end(dst_v);
 }
 
+// Call YUY2ToNV12() with a width that is not a multiple of 32. Verify there is
+// no stack buffer overflow in YUY2ToNVUVRow_Any_AVX2().
+TEST_F(LibYUVConvertTest, YUY2ToNV12Overflow) {
+  int width = 40 * 32 + 30;  // 1310
+  int height = 4;
+  int src_stride_yuy2 = width * 2;
+  align_buffer_page_end(src_yuy2, src_stride_yuy2 * height);
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, width * ((height + 1) / 2));
+  memset(src_yuy2, 0xA5, src_stride_yuy2 * height);
+  EXPECT_EQ(0, YUY2ToNV12(src_yuy2, src_stride_yuy2, dst_y, width, dst_uv,
+                          width, width, height));
+  free_aligned_buffer_page_end(src_yuy2);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+}
+
 #endif  // !defined(LEAN_TESTS)
 
 }  // namespace libyuv

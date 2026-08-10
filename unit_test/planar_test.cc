@@ -3277,6 +3277,24 @@ TEST_F(LibYUVPlanarTest, SplitRGBPlane_Opt) {
   free_aligned_buffer_page_end(dst_pixels_opt);
 }
 
+// Call SplitRGBPlane() with a width that is not a multiple of 32. Verify there
+// is no stack buffer overflow in SplitRGBRow_Any_AVX2().
+TEST_F(LibYUVPlanarTest, SplitRGBPlaneOverflow) {
+  int width = 1024 + 31;  // 1055
+  const int height = 2;
+  align_buffer_page_end(src_rgb, width * 3 * height);
+  align_buffer_page_end(dst_r, width * height);
+  align_buffer_page_end(dst_g, width * height);
+  align_buffer_page_end(dst_b, width * height);
+  memset(src_rgb, 0x5A, width * 3 * height);
+  SplitRGBPlane(src_rgb, width * 3, dst_r, width, dst_g, width, dst_b, width,
+                width, height);
+  free_aligned_buffer_page_end(src_rgb);
+  free_aligned_buffer_page_end(dst_r);
+  free_aligned_buffer_page_end(dst_g);
+  free_aligned_buffer_page_end(dst_b);
+}
+
 TEST_F(LibYUVPlanarTest, MergeARGBPlane_Opt) {
   const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
@@ -3407,6 +3425,25 @@ TEST_F(LibYUVPlanarTest, SplitARGBPlane_Opt) {
   free_aligned_buffer_page_end(tmp_pixels_opt_a);
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
+}
+
+// Call SplitARGBPlane() with a width that is not a multiple of 16. Verify there
+// is no stack buffer overflow in SplitXRGBRow_Any_AVX2().
+TEST_F(LibYUVPlanarTest, SplitARGBPlaneOverflow) {
+  int width = 1024 + 15;  // 1039
+  int height = 2;
+  align_buffer_page_end(src_argb, width * 4 * height);
+  align_buffer_page_end(dst_r, width * height);
+  align_buffer_page_end(dst_g, width * height);
+  align_buffer_page_end(dst_b, width * height);
+  memset(src_argb, 0x5A, width * 4 * height);
+  // dst_a == NULL selects SplitXRGBRow
+  SplitARGBPlane(src_argb, width * 4, dst_r, width, dst_g, width, dst_b, width,
+                 NULL, 0, width, height);
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_r);
+  free_aligned_buffer_page_end(dst_g);
+  free_aligned_buffer_page_end(dst_b);
 }
 
 TEST_F(LibYUVPlanarTest, MergeXRGBPlane_Opt) {
