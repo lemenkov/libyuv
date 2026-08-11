@@ -3677,6 +3677,63 @@ void HalfRow_16To8_C(const uint16_t* src_uv,
   }
 }
 
+void HalfWidthRow_16To8_C(const uint16_t* src_uv,
+                          ptrdiff_t src_uv_stride,
+                          uint8_t* dst_uv,
+                          int scale,
+                          int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_uv_stride;
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    dst_uv[0] = STATIC_CAST(
+        uint8_t,
+        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+    dst_uv[1] = STATIC_CAST(
+        uint8_t,
+        C16TO8((s[2] + s[3] + t[2] + t[3] + 2) >> 2, scale));
+    dst_uv += 2;
+    s += 4;
+    t += 4;
+  }
+  if (width & 1) {
+    dst_uv[0] = STATIC_CAST(
+        uint8_t,
+        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+  }
+}
+
+void HalfWidthRow_16To8_Odd_C(const uint16_t* src_uv,
+                              ptrdiff_t src_uv_stride,
+                              uint8_t* dst_uv,
+                              int scale,
+                              int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_uv_stride;
+  int x;
+  width -= 1;
+  for (x = 0; x < width - 1; x += 2) {
+    dst_uv[0] = STATIC_CAST(
+        uint8_t,
+        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+    dst_uv[1] = STATIC_CAST(
+        uint8_t,
+        C16TO8((s[2] + s[3] + t[2] + t[3] + 2) >> 2, scale));
+    dst_uv += 2;
+    s += 4;
+    t += 4;
+  }
+  if (width & 1) {
+    dst_uv[0] = STATIC_CAST(
+        uint8_t,
+        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+    dst_uv += 1;
+    s += 2;
+    t += 2;
+  }
+  dst_uv[0] = STATIC_CAST(uint8_t, C16TO8((s[0] + t[0] + 1) >> 1, scale));
+}
+
 // C version 2x2 -> 2x1.
 void InterpolateRow_C(uint8_t* dst_ptr,
                       const uint8_t* src_ptr,

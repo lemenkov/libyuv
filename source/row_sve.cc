@@ -1530,6 +1530,8 @@ void UYVYToUVRow_SVE2(const uint8_t* src_uyvy,
       : "memory", "cc", "z0", "z1", "z2", "z4", "z5", "p0", "p1");
 }
 
+#ifdef HAS_CONVERT16TO8ROW_SVE2
+// Disabled: NEON version is faster for 128 bit vectors.
 void Convert16To8Row_SVE2(const uint16_t* src_y,
                           uint8_t* dst_y,
                           int scale,
@@ -1571,7 +1573,10 @@ void Convert16To8Row_SVE2(const uint16_t* src_y,
       : [shift] "r"(shift)      // %[shift]
       : "cc", "memory", "z2", "z31", "p0");
 }
+#endif  // HAS_CONVERT16TO8ROW_SVE2
 
+#ifdef HAS_HALFROW_16TO8_SVE2
+// Disabled: NEON version is faster for 128 bit vectors.
 void HalfRow_16To8_SVE2(const uint16_t* src_uv,
                         ptrdiff_t src_uv_stride,
                         uint8_t* dst_uv,
@@ -1621,6 +1626,92 @@ void HalfRow_16To8_SVE2(const uint16_t* src_uv,
       : [shift] "r"(shift)         // %[shift]
       : "cc", "memory", "z2", "z3", "z31", "p0");
 }
+#endif  // HAS_HALFROW_16TO8_SVE2
+
+#ifdef HAS_HALFWIDTHROW_16TO8_SVE2
+// Disabled: NEON version is faster for 128 bit vectors.
+void HalfWidthRow_16To8_SVE2(const uint16_t* src_uv,
+                             ptrdiff_t src_uv_stride,
+                             uint8_t* dst_uv,
+                             int scale,
+                             int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  const int shift = 23 - __builtin_clz((int32_t)scale);
+  int vl;
+  int vl_input;
+  asm volatile(
+      "cnth     %x[vl]                                  \n"
+      "dup      z31.h, %w[shift]                        \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      "ptrue    p0.h                                    \n"
+      "1:                                               \n"
+      "ld1h     {z0.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z1.h}, p0/z, [%[src_ptr], #1, mul vl]  \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr1]]             \n"
+      "ld1h     {z3.h}, p0/z, [%[src_ptr1], #1, mul vl] \n"
+      "incb     %[src_ptr], all, mul #4                 \n"
+      "incb     %[src_ptr1], all, mul #4                \n"
+      "uzp1     z4.h, z0.h, z1.h                        \n"
+      "uzp2     z5.h, z0.h, z1.h                        \n"
+      "uzp1     z6.h, z2.h, z3.h                        \n"
+      "uzp2     z7.h, z2.h, z3.h                        \n"
+      "uaddlb   z0.s, z4.h, z5.h                        \n"
+      "uaddlt   z1.s, z4.h, z5.h                        \n"
+      "uaddlb   z2.s, z6.h, z7.h                        \n"
+      "uaddlt   z3.s, z6.h, z7.h                        \n"
+      "add      z0.s, z0.s, z2.s                        \n"
+      "add      z1.s, z1.s, z3.s                        \n"
+      "rshrnb   z0.h, z0.s, #2                          \n"
+      "rshrnt   z0.h, z1.s, #2                          \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "uqshl    z0.h, p0/m, z0.h, z31.h                 \n"
+      "shrnb    z0.b, z0.h, #8                          \n"
+      "st1b     {z0.h}, p0, [%[dst_ptr]]                \n"
+      "inch     %[dst_ptr]                              \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.eq     99f                                     \n"
+
+      "lsl      %w[vl_input], %w[width], #1             \n"
+      "whilelt  p0.h, wzr, %w[vl_input]                 \n"
+      "whilelt  p1.h, %w[vl], %w[vl_input]              \n"
+      "whilelt  p2.h, wzr, %w[width]                    \n"
+      "ld1h     {z0.h}, p0/z, [%[src_ptr]]              \n"
+      "ld1h     {z1.h}, p1/z, [%[src_ptr], #1, mul vl]  \n"
+      "ld1h     {z2.h}, p0/z, [%[src_ptr1]]             \n"
+      "ld1h     {z3.h}, p1/z, [%[src_ptr1], #1, mul vl] \n"
+      "uzp1     z4.h, z0.h, z1.h                        \n"
+      "uzp2     z5.h, z0.h, z1.h                        \n"
+      "uzp1     z6.h, z2.h, z3.h                        \n"
+      "uzp2     z7.h, z2.h, z3.h                        \n"
+      "uaddlb   z0.s, z4.h, z5.h                        \n"
+      "uaddlt   z1.s, z4.h, z5.h                        \n"
+      "uaddlb   z2.s, z6.h, z7.h                        \n"
+      "uaddlt   z3.s, z6.h, z7.h                        \n"
+      "add      z0.s, z0.s, z2.s                        \n"
+      "add      z1.s, z1.s, z3.s                        \n"
+      "rshrnb   z0.h, z0.s, #2                          \n"
+      "rshrnt   z0.h, z1.s, #2                          \n"
+      "uqshl    z0.h, p2/m, z0.h, z31.h                 \n"
+      "shrnb    z0.b, z0.h, #8                          \n"
+      "st1b     {z0.h}, p2, [%[dst_ptr]]                \n"
+
+      "99:                                              \n"
+      : [src_ptr] "+r"(src_uv),        // %[src_ptr]
+        [src_ptr1] "+r"(src_uv1),      // %[src_ptr1]
+        [dst_ptr] "+r"(dst_uv),        // %[dst_ptr]
+        [width] "+r"(width),           // %[width]
+        [vl] "=&r"(vl),                // %[vl]
+        [vl_input] "=&r"(vl_input)     // %[vl_input]
+      : [shift] "r"(shift)             // %[shift]
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z31",
+        "p0", "p1", "p2");
+}
+#endif  // HAS_HALFWIDTHROW_16TO8_SVE2
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 

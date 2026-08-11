@@ -1830,7 +1830,8 @@ void HalfRow_16To8_RVV(const uint16_t* src_uv,
     vuint16m4_t v_src0 = __riscv_vle16_v_u16m4(src_uv, vl);
     vuint16m4_t v_src1 = __riscv_vle16_v_u16m4(src_uv1, vl);
 #ifdef LIBYUV_RVV_HAS_VXRM_ARG
-    vuint16m4_t v_avg = __riscv_vaaddu_vv_u16m4_vxrm(v_src0, v_src1, 0, vl);
+    vuint16m4_t v_avg =
+        __riscv_vaaddu_vv_u16m4(v_src0, v_src1, __RISCV_VXRM_RNU, vl);
 #else
     vuint16m4_t v_avg = __riscv_vaaddu_vv_u16m4(v_src0, v_src1, vl);
 #endif
@@ -1842,6 +1843,69 @@ void HalfRow_16To8_RVV(const uint16_t* src_uv,
     dst_uv += vl;
   } while (w > 0);
 }
+#endif
+
+#ifdef HAS_HALFWIDTHROW_16TO8_RVV
+#if defined(LIBYUV_RVV_HAS_TUPLE_TYPE) && defined(LIBYUV_RVV_HAS_VXRM_ARG)
+void HalfWidthRow_16To8_RVV(const uint16_t* src_uv,
+                            ptrdiff_t src_uv_stride,
+                            uint8_t* dst_uv,
+                            int scale,
+                            int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_uv_stride;
+  size_t w = (size_t)width;
+  const int shift = __builtin_clz((int32_t)scale) - 15;
+  do {
+    size_t vl = __riscv_vsetvl_e16m4(w);
+    vuint16m4x2_t v_s = __riscv_vlseg2e16_v_u16m4x2(s, vl);
+    vuint16m4x2_t v_t = __riscv_vlseg2e16_v_u16m4x2(t, vl);
+    vuint16m4_t v_s0 = __riscv_vget_v_u16m4x2_u16m4(v_s, 0);
+    vuint16m4_t v_s1 = __riscv_vget_v_u16m4x2_u16m4(v_s, 1);
+    vuint16m4_t v_t0 = __riscv_vget_v_u16m4x2_u16m4(v_t, 0);
+    vuint16m4_t v_t1 = __riscv_vget_v_u16m4x2_u16m4(v_t, 1);
+    vuint32m8_t v_s01 = __riscv_vwaddu_vv_u32m8(v_s0, v_s1, vl);
+    vuint32m8_t v_t01 = __riscv_vwaddu_vv_u32m8(v_t0, v_t1, vl);
+    vuint32m8_t v_st01 = __riscv_vadd_vv_u32m8(v_s01, v_t01, vl);
+    vuint16m4_t v_avg =
+        __riscv_vnclipu_wx_u16m4(v_st01, 2, __RISCV_VXRM_RNU, vl);
+    vuint8m2_t v_dst = __riscv_vnsrl_wx_u8m2(v_avg, shift, vl);
+    __riscv_vse8_v_u8m2(dst_uv, v_dst, vl);
+    w -= vl;
+    s += 2 * vl;
+    t += 2 * vl;
+    dst_uv += vl;
+  } while (w > 0);
+}
+#else
+void HalfWidthRow_16To8_RVV(const uint16_t* src_uv,
+                            ptrdiff_t src_uv_stride,
+                            uint8_t* dst_uv,
+                            int scale,
+                            int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_uv_stride;
+  size_t w = (size_t)width;
+  const int shift = __builtin_clz((int32_t)scale) - 15;
+  asm volatile("csrwi vxrm, 0");
+  do {
+    size_t vl = __riscv_vsetvl_e16m4(w);
+    vuint16m4_t v_s0, v_s1, v_t0, v_t1;
+    __riscv_vlseg2e16_v_u16m4(&v_s0, &v_s1, s, vl);
+    __riscv_vlseg2e16_v_u16m4(&v_t0, &v_t1, t, vl);
+    vuint32m8_t v_s01 = __riscv_vwaddu_vv_u32m8(v_s0, v_s1, vl);
+    vuint32m8_t v_t01 = __riscv_vwaddu_vv_u32m8(v_t0, v_t1, vl);
+    vuint32m8_t v_st01 = __riscv_vadd_vv_u32m8(v_s01, v_t01, vl);
+    vuint16m4_t v_avg = __riscv_vnclipu_wx_u16m4(v_st01, 2, vl);
+    vuint8m2_t v_dst = __riscv_vnsrl_wx_u8m2(v_avg, shift, vl);
+    __riscv_vse8_v_u8m2(dst_uv, v_dst, vl);
+    w -= vl;
+    s += 2 * vl;
+    t += 2 * vl;
+    dst_uv += vl;
+  } while (w > 0);
+}
+#endif
 #endif
 
 #ifdef __cplusplus

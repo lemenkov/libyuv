@@ -5135,6 +5135,39 @@ void HalfRow_16To8_NEON(const uint16_t* src_uv,
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
+void HalfWidthRow_16To8_NEON(const uint16_t* src_uv,
+                             ptrdiff_t src_uv_stride,
+                             uint8_t* dst_uv,
+                             int scale,
+                             int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  const int shift = 23 - __builtin_clz((int32_t)scale);
+  asm volatile(
+      "dup         v4.8h, %w4                    \n"
+      "1:          \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
+      "subs        %w3, %w3, #8                  \n"
+      "uaddlp      v0.4s, v0.8h                  \n"
+      "uaddlp      v1.4s, v1.8h                  \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uadalp      v0.4s, v2.8h                  \n"
+      "uadalp      v1.4s, v3.8h                  \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "rshrn       v0.4h, v0.4s, #2              \n"
+      "rshrn2      v0.8h, v1.4s, #2              \n"
+      "uqshl       v0.8h, v0.8h, v4.8h           \n"
+      "uzp2        v0.16b, v0.16b, v0.16b        \n"
+      "str         d0, [%2], #8                  \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      : "r"(shift)      // %4
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
+}
+
 // Use scale to convert J420 to I420
 // scale parameter is 8.8 fixed point but limited to 0 to 255
 // Function is based on DivideRow, but adds a bias

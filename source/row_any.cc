@@ -1732,6 +1732,44 @@ ANY11HS(HalfRow_16To8_Any_NEON, HalfRow_16To8_NEON, uint16_t, uint8_t, 15)
 
 #undef ANY11HS
 
+// Any 2 to 1 half-width row with scale param
+#define ANY11HWS(NAMEANY, ANY_SIMD, TS, TD, MASK)                              \
+  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr,           \
+               int scale, int width) {                                         \
+    SIMD_ALIGNED(TS vin[128 * 2]);                                             \
+    static_assert((MASK + 1) * 2 * sizeof(TS) <= sizeof(vin),                  \
+                  "vin buffer too small");                                     \
+    SIMD_ALIGNED(TD vout[64]);                                                 \
+    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),                     \
+                  "vout buffer too small");                                    \
+    memset(vin, 0, sizeof(vin)); /* for msan */                                \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);                        \
+    }                                                                          \
+    ptrdiff_t np = n;                                                          \
+    memcpy(vin, src_ptr + np * 2, r * 2 * sizeof(TS));                         \
+    memcpy(vin + 128, src_ptr + src_stride + np * 2, r * 2 * sizeof(TS));      \
+    ANY_SIMD(vin, 128, vout, scale, MASK + 1);                                 \
+    memcpy(dst_ptr + np, vout, r * sizeof(TD));                                \
+  }
+
+#ifdef HAS_HALFWIDTHROW_16TO8_SSSE3
+ANY11HWS(HalfWidthRow_16To8_Any_SSSE3, HalfWidthRow_16To8_SSSE3, uint16_t, uint8_t, 7)
+#endif
+#ifdef HAS_HALFWIDTHROW_16TO8_AVX2
+ANY11HWS(HalfWidthRow_16To8_Any_AVX2, HalfWidthRow_16To8_AVX2, uint16_t, uint8_t, 15)
+#endif
+#ifdef HAS_HALFWIDTHROW_16TO8_AVX512BW
+ANY11HWS(HalfWidthRow_16To8_Any_AVX512BW, HalfWidthRow_16To8_AVX512BW, uint16_t, uint8_t, 31)
+#endif
+#ifdef HAS_HALFWIDTHROW_16TO8_NEON
+ANY11HWS(HalfWidthRow_16To8_Any_NEON, HalfWidthRow_16To8_NEON, uint16_t, uint8_t, 7)
+#endif
+
+#undef ANY11HWS
+
 // Any 1 to 1 mirror.
 #define ANY11M(NAMEANY, ANY_SIMD, BPP, MASK)                          \
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) { \
