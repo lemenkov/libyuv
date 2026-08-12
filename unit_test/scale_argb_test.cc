@@ -597,4 +597,42 @@ TEST_F(LibYUVScaleTest, ARGBTest4x) {
   free_aligned_buffer_page_end(orig_pixels);
 }
 
+TEST_F(LibYUVScaleTest, ARGBScale_LargeHeightOverflow) {
+  const int src_w = 4;
+  const int src_h = 32767;
+  align_buffer_page_end(orig_pixels, src_w * src_h * 4);
+  align_buffer_page_end(dest_pixels, src_w * 2 * 4);
+  memset(orig_pixels, 128, src_w * src_h * 4);
+
+  // Test both vertical-only scaling (dst_w == src_w) and 2D scaling (dst_w != src_w).
+  for (int dst_w : {4, 2}) {
+    int res = ARGBScale(orig_pixels, src_w * 4, src_w, src_h, dest_pixels,
+                        dst_w * 4, dst_w, 2, kFilterBilinear);
+    EXPECT_EQ(0, res);
+
+    res = ARGBScale(orig_pixels, src_w * 4, src_w, -src_h, dest_pixels,
+                    dst_w * 4, dst_w, 2, kFilterBilinear);
+    EXPECT_EQ(0, res);
+
+    res = ARGBScale(orig_pixels, src_w * 4, src_w, src_h, dest_pixels,
+                    dst_w * 4, dst_w, 2, kFilterLinear);
+    EXPECT_EQ(0, res);
+
+    res = ARGBScale(orig_pixels, src_w * 4, src_w, -src_h, dest_pixels,
+                    dst_w * 4, dst_w, 2, kFilterLinear);
+    EXPECT_EQ(0, res);
+
+    res = ARGBScale(orig_pixels, src_w * 4, src_w, src_h, dest_pixels,
+                    dst_w * 4, dst_w, 2, kFilterNone);
+    EXPECT_EQ(0, res);
+
+    res = ARGBScale(orig_pixels, src_w * 4, src_w, -src_h, dest_pixels,
+                    dst_w * 4, dst_w, 2, kFilterNone);
+    EXPECT_EQ(0, res);
+  }
+
+  free_aligned_buffer_page_end(dest_pixels);
+  free_aligned_buffer_page_end(orig_pixels);
+}
+
 }  // namespace libyuv
