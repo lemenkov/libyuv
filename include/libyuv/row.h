@@ -393,6 +393,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) &&                                            \
     (defined(__x86_64__) || defined(_M_X64)) && defined(CLANG_HAS_AVX512)
 #define HAS_I422TOARGBROW_AVX512BW
+#define HAS_I422TOAR30ROW_AVX512BW
 #define HAS_ARGBSHUFFLEROW_AVX512BW
 #define HAS_ARGBTOUV444MATRIXROW_AVX512BW
 #define HAS_RGBTOUV444MATRIXROW_AVX512BW
@@ -4465,6 +4466,12 @@ void I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
                             uint8_t* dst_argb,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_ar30,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I422ToRGBARow_AVX2(const uint8_t* y_buf,
                         const uint8_t* u_buf,
                         const uint8_t* v_buf,
@@ -4788,6 +4795,12 @@ void I422ToARGBRow_Any_AVX2(const uint8_t* y_buf,
                             const struct YuvConstants* yuvconstants,
                             int width);
 void I422ToARGBRow_Any_AVX512BW(const uint8_t* y_buf,
+                                const uint8_t* u_buf,
+                                const uint8_t* v_buf,
+                                uint8_t* dst_ptr,
+                                const struct YuvConstants* yuvconstants,
+                                int width);
+void I422ToAR30Row_Any_AVX512BW(const uint8_t* y_buf,
                                 const uint8_t* u_buf,
                                 const uint8_t* v_buf,
                                 uint8_t* dst_ptr,

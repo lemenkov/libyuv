@@ -6512,6 +6512,15 @@ int I420ToAR30Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOAR30ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
+    I422ToAR30Row = I422ToAR30Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToAR30Row = I422ToAR30Row_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_I422TOAR30ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToAR30Row = I422ToAR30Row_Any_NEON;

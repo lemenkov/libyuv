@@ -3436,6 +3436,33 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovups    %%zmm0,0x40(%[dst_argb])                            \n" \
   "lea        0x80(%[dst_argb]), %[dst_argb]                      \n"
 
+// Store 32 AR30 values.
+#define STOREAR30_AVX512BW                                            \
+  "vpsraw     $0x4,%%zmm0,%%zmm0                                  \n" \
+  "vpsraw     $0x4,%%zmm1,%%zmm1                                  \n" \
+  "vpsraw     $0x4,%%zmm2,%%zmm2                                  \n" \
+  "vpminsw    %%zmm7,%%zmm0,%%zmm0                                \n" \
+  "vpminsw    %%zmm7,%%zmm1,%%zmm1                                \n" \
+  "vpminsw    %%zmm7,%%zmm2,%%zmm2                                \n" \
+  "vpmaxsw    %%zmm6,%%zmm0,%%zmm0                                \n" \
+  "vpmaxsw    %%zmm6,%%zmm1,%%zmm1                                \n" \
+  "vpmaxsw    %%zmm6,%%zmm2,%%zmm2                                \n" \
+  "vpsllw     $0x4,%%zmm2,%%zmm2                                  \n" \
+  "vpermq     %%zmm0,%%zmm18,%%zmm0                               \n" \
+  "vpermq     %%zmm1,%%zmm18,%%zmm1                               \n" \
+  "vpermq     %%zmm2,%%zmm18,%%zmm2                               \n" \
+  "vpunpckhwd %%zmm2,%%zmm0,%%zmm3                                \n" \
+  "vpunpcklwd %%zmm2,%%zmm0,%%zmm0                                \n" \
+  "vpunpckhwd %%zmm5,%%zmm1,%%zmm2                                \n" \
+  "vpunpcklwd %%zmm5,%%zmm1,%%zmm1                                \n" \
+  "vpslld     $0xa,%%zmm1,%%zmm1                                  \n" \
+  "vpslld     $0xa,%%zmm2,%%zmm2                                  \n" \
+  "vpord      %%zmm1,%%zmm0,%%zmm0                                \n" \
+  "vpord      %%zmm2,%%zmm3,%%zmm3                                \n" \
+  "vmovdqu32  %%zmm0,(%[dst_ar30])                                \n" \
+  "vmovdqu32  %%zmm3,0x40(%[dst_ar30])                            \n" \
+  "lea        0x80(%[dst_ar30]), %[dst_ar30]                      \n"
+
 // Store 16 AR30 values.
 #define STOREAR30_AVX2                                                \
   "vpsraw     $0x4,%%ymm0,%%ymm0                                  \n" \
@@ -3704,6 +3731,51 @@ void OMITFP I422ToRGB24Row_AVX512VBMI(const uint8_t* y_buf,
   );
 }
 #endif  // HAS_I422TORGB24ROW_AVX512VBMI
+
+#if defined(HAS_I422TOAR30ROW_AVX512BW)
+// 32 pixels
+// 16 UV values upsampled to 32 UV, mixed with 32 Y producing 32 AR30 (128
+// bytes).
+void OMITFP I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
+                                   const uint8_t* u_buf,
+                                   const uint8_t* v_buf,
+                                   uint8_t* dst_ar30,
+                                   const struct YuvConstants* yuvconstants,
+                                   int width) {
+  asm volatile (
+    YUVTORGB_SETUP_AVX512BW(yuvconstants)
+      "sub         %[u_buf],%[v_buf]             \n"
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // AR30 constants
+      "vpsrlw      $14,%%ymm5,%%ymm5             \n"
+      "vpsllw      $4,%%ymm5,%%ymm5              \n"  // 2 alpha bits
+      "vpbroadcastq %%xmm5,%%zmm5                \n"
+      "vpxord      %%zmm6,%%zmm6,%%zmm6          \n"  // 0 for min
+      "vpternlogd  $0xff,%%zmm7,%%zmm7,%%zmm7    \n"  // 1023 for max
+      "vpsrlw      $6,%%zmm7,%%zmm7              \n"
+
+    LABELALIGN
+      "1:          \n"
+    READYUV422_AVX512BW
+    YUVTORGB16_AVX512BW(yuvconstants)
+    STOREAR30_AVX512BW
+      "sub         $0x20,%[width]                \n"
+      "jg          1b                            \n"
+
+      "vzeroupper  \n"
+  : [y_buf]"+r"(y_buf),                         // %[y_buf]
+    [u_buf]"+r"(u_buf),                         // %[u_buf]
+    [v_buf]"+r"(v_buf),                         // %[v_buf]
+    [dst_ar30]"+r"(dst_ar30),                   // %[dst_ar30]
+    [width]"+rm"(width)                         // %[width]
+  : [yuvconstants]"r"(yuvconstants),            // %[yuvconstants]
+    [quadsplitperm]"r"(kSplitQuadWords),        // %[quadsplitperm]
+    [dquadsplitperm]"r"(kSplitDoubleQuadWords), // %[dquadsplitperm]
+    [unperm]"r"(kUnpermuteAVX512)               // %[unperm]
+  : "memory", "cc", YUVTORGB_REGS_AVX512BW
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+  );
+}
+#endif  // HAS_I422TOAR30ROW_AVX512BW
 
 #endif  // HAS_I422TOARGBROW_AVX512BW
 
