@@ -1433,8 +1433,8 @@ void YUY2ToUVRow_SVE2(const uint8_t* src_yuy2,
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st1b     {z0.b}, p1, [%[dst_u]]                  \n"
       "st1b     {z2.b}, p1, [%[dst_v]]                  \n"
-      "incp     %[dst_u], p1.b                          \n"
-      "incp     %[dst_v], p1.b                          \n"
+      "add      %[dst_u], %[dst_u], %x[vl_half]         \n"
+      "add      %[dst_v], %[dst_v], %x[vl_half]         \n"
       "b.ge     1b                                      \n"
 
       "2:                                               \n"
@@ -1497,8 +1497,8 @@ void UYVYToUVRow_SVE2(const uint8_t* src_uyvy,
       "subs     %w[width], %w[width], %w[vl]            \n"
       "st1b     {z1.b}, p1, [%[dst_u]]                  \n"
       "st1b     {z2.b}, p1, [%[dst_v]]                  \n"
-      "incp     %[dst_u], p1.b                          \n"
-      "incp     %[dst_v], p1.b                          \n"
+      "add      %[dst_u], %[dst_u], %x[vl_half]         \n"
+      "add      %[dst_v], %[dst_v], %x[vl_half]         \n"
       "b.ge     1b                                      \n"
 
       "2:                                               \n"
