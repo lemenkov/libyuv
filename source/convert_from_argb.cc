@@ -11,6 +11,7 @@
 #include "libyuv/convert_from_argb.h"
 
 #include <limits.h>
+#include <string.h>  // For memcpy.
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
@@ -1582,6 +1583,7 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
                        int width,
                        int height) {
   int y;
+  uint32_t dither4[4];
   void (*ARGBToRGB565DitherRow)(const uint8_t* src_argb, uint8_t* dst_rgb,
                                 uint32_t dither4, int width) =
       ARGBToRGB565DitherRow_C;
@@ -1597,6 +1599,7 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
   if (!dither4x4) {
     dither4x4 = kDither565_4x4;
   }
+  memcpy(dither4, dither4x4, 16);
 
 #if defined(HAS_ARGBTORGB565DITHERROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
@@ -1637,9 +1640,7 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
 #endif
 
   for (y = 0; y < height; ++y) {
-    ARGBToRGB565DitherRow(src_argb, dst_rgb565,
-                          *(const uint32_t*)(dither4x4 + ((y & 3) << 2)),
-                          width);
+    ARGBToRGB565DitherRow(src_argb, dst_rgb565, dither4[y & 3], width);
     src_argb += src_stride_argb;
     dst_rgb565 += dst_stride_rgb565;
   }
