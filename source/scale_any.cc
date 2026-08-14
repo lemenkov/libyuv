@@ -470,9 +470,9 @@ SDAANY(ScaleUVRowDownEven_Any_NEON,
 // Add rows box filter scale down.  Using macro from row_any
 #define SAROW(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                      \
   void NAMEANY(const uint8_t* src_ptr, uint16_t* dst_ptr, int width) { \
-    SIMD_ALIGNED(uint16_t dst_temp[32]);                               \
     SIMD_ALIGNED(uint8_t src_temp[32]);                                \
-    memset(dst_temp, 0, 32 * 2); /* for msan */                        \
+    SIMD_ALIGNED(uint16_t dst_temp[32]);                               \
+    memset(src_temp, 0, sizeof(src_temp)); /* for msan */              \
     int r = width & MASK;                                              \
     int n = width & ~MASK;                                             \
     if (n > 0) {                                                       \
