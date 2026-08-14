@@ -338,7 +338,7 @@ void ARGBToRGB565DitherRow_SVE2(const uint8_t* src_argb,
         [vl] "=&r"(vl)             // %[vl]
       : [bsl_mask] "r"(bsl_mask),  // %[bsl_mask]
         [dither4] "r"(dither4)     // %[dither4]
-      : "cc", "memory", "z0", "z1", "z3", "z4", "p0");
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0");
 }
 
 #define ARGB1555TOARGB                                        \
