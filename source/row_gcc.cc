@@ -5525,10 +5525,9 @@ void HalfWidthRow_16To8_SSSE3(const uint16_t* src_uv,
       "punpcklwd   %%xmm2,%%xmm2                 \n"
       "pshufd      $0x0,%%xmm2,%%xmm2            \n"
       "pcmpeqw     %%xmm5,%%xmm5                 \n"
+      "pcmpeqw     %%xmm6,%%xmm6                 \n"
       "psrlw       $15,%%xmm5                    \n"
-      "mov         $2,%%eax                      \n"
-      "movd        %%eax,%%xmm6                  \n"
-      "pshufd      $0x0,%%xmm6,%%xmm6            \n"
+      "pmaddwd     %%xmm6,%%xmm6                 \n"
       "movdqa      %5,%%xmm7                     \n"
 
       // 8 pixels per loop.
@@ -5556,19 +5555,15 @@ void HalfWidthRow_16To8_SSSE3(const uint16_t* src_uv,
       "packuswb    %%xmm0,%%xmm0                 \n"
       "movq        %%xmm0,(%1)                   \n"
       "add         $0x08,%1                      \n"
-      "subl        $0x08,%2                      \n"
+      "sub         $0x08,%2                      \n"
       "jg          1b                            \n"
       : "+r"(src_uv),        // %0
         "+r"(dst_uv),        // %1
-#if defined(__i386__)
-        "+m"(width)          // %2
-#else
         "+r"(width)          // %2
-#endif
       : "r"(src_uv_stride),  // %3
-        "r"(scale),          // %4
+        "rm"(scale),         // %4
         "m"(kShuffleMaskHalfWidth16To8)  // %5
-      : "eax", "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
         "xmm6", "xmm7");
 }
 #endif  // HAS_HALFWIDTHROW_16TO8_SSSE3
@@ -5604,7 +5599,7 @@ void HalfRow_16To8_AVX2(const uint16_t* src_uv,
         "+r"(dst_uv),        // %1
         "+r"(width)          // %2
       : "r"(src_uv_stride),  // %3
-        "r"(scale)           // %4
+        "rm"(scale)          // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_HALFROW_16TO8_AVX2
@@ -5619,10 +5614,8 @@ void HalfWidthRow_16To8_AVX2(const uint16_t* src_uv,
       "vmovd       %4,%%xmm2                     \n"
       "vpbroadcastw %%xmm2,%%ymm2                \n"
       "vpcmpeqw    %%ymm5,%%ymm5,%%ymm5          \n"
+      "vpmaddwd    %%ymm5,%%ymm5,%%ymm6          \n"
       "vpsrlw      $15,%%ymm5,%%ymm5             \n"
-      "mov         $2,%%eax                      \n"
-      "vmovd       %%eax,%%xmm6                  \n"
-      "vpbroadcastd %%xmm6,%%ymm6                \n"
 
       // 16 pixels per loop.
       LABELALIGN
@@ -5656,8 +5649,8 @@ void HalfWidthRow_16To8_AVX2(const uint16_t* src_uv,
         "+r"(dst_uv),        // %1
         "+r"(width)          // %2
       : "r"(src_uv_stride),  // %3
-        "r"(scale)           // %4
-      : "eax", "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+        "rm"(scale)          // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
         "xmm6");
 }
 #endif  // HAS_HALFWIDTHROW_16TO8_AVX2
@@ -5694,7 +5687,7 @@ void HalfRow_16To8_AVX512BW(const uint16_t* src_uv,
         "+r"(src_uv1),  // %1
         "+r"(dst_uv),   // %2
         "+r"(width)     // %3
-      : "r"(shift)      // %4
+      : "rm"(shift)     // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_HALFROW_16TO8_AVX512BW
@@ -5708,12 +5701,9 @@ void HalfWidthRow_16To8_AVX512BW(const uint16_t* src_uv,
   const uint16_t* src_uv1 = src_uv + src_uv_stride;
   asm volatile(
       "vpbroadcastw %4,%%zmm2                    \n"
-      "mov         $1,%%eax                      \n"
-      "vmovd       %%eax,%%xmm5                  \n"
-      "vpbroadcastw %%xmm5,%%zmm5                \n"
-      "mov         $2,%%eax                      \n"
-      "vmovd       %%eax,%%xmm6                  \n"
-      "vpbroadcastd %%xmm6,%%zmm6                \n"
+      "vpternlogd  $0xff,%%zmm5,%%zmm5,%%zmm5    \n"
+      "vpmaddwd    %%zmm5,%%zmm5,%%zmm6          \n"
+      "vpabsw      %%zmm5,%%zmm5                 \n"
 
       // 32 pixels per loop.
       LABELALIGN
@@ -5747,8 +5737,8 @@ void HalfWidthRow_16To8_AVX512BW(const uint16_t* src_uv,
         "+r"(src_uv1),  // %1
         "+r"(dst_uv),   // %2
         "+r"(width)     // %3
-      : "r"(scale)      // %4
-      : "eax", "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+      : "rm"(scale)     // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
         "xmm6");
 }
 #endif  // HAS_HALFWIDTHROW_16TO8_AVX512BW
