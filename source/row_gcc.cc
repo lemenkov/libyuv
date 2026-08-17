@@ -5556,11 +5556,15 @@ void HalfWidthRow_16To8_SSSE3(const uint16_t* src_uv,
       "packuswb    %%xmm0,%%xmm0                 \n"
       "movq        %%xmm0,(%1)                   \n"
       "add         $0x08,%1                      \n"
-      "sub         $0x08,%2                      \n"
+      "subl        $0x08,%2                      \n"
       "jg          1b                            \n"
       : "+r"(src_uv),        // %0
         "+r"(dst_uv),        // %1
+#if defined(__i386__)
+        "+m"(width)          // %2
+#else
         "+r"(width)          // %2
+#endif
       : "r"(src_uv_stride),  // %3
         "r"(scale),          // %4
         "m"(kShuffleMaskHalfWidth16To8)  // %5
