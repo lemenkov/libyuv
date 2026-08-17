@@ -1675,7 +1675,14 @@ int ARGBToRGB565(const uint8_t* src_argb,
     height = 1;
     src_stride_argb = dst_stride_rgb565 = 0;
   }
-
+#if defined(HAS_ARGBTORGB565ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTORGB565ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToRGB565Row = ARGBToRGB565Row_Any_AVX2;

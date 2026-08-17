@@ -42,6 +42,7 @@ extern "C" {
 #define HAS_ARGBSHUFFLEROW_SSSE3
 #define HAS_ARGBTORAWROW_SSSE3
 #define HAS_ARGBTORGB24ROW_SSSE3
+#define HAS_ARGBTORGB565ROW_SSE2
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
 #define HAS_I422TOARGBROW_SSSE3
@@ -4086,7 +4087,7 @@ void ARGB4444ToARGBRow_Any_LASX(const uint8_t* src_ptr,
 
 void ARGBToRGB24Row_SSSE3(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToRAWRow_SSSE3(const uint8_t* src, uint8_t* dst, int width);
-
+void ARGBToRGB565Row_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void ABGRToAR30Row_SSSE3(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToAR30Row_SSSE3(const uint8_t* src, uint8_t* dst, int width);
 
@@ -5378,7 +5379,9 @@ void ARGBToRGB24Row_Any_SSSE3(const uint8_t* src_ptr,
 void ARGBToRAWRow_Any_SSSE3(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
-
+void ARGBToRGB565Row_Any_SSE2(const uint8_t* src_ptr,
+                              uint8_t* dst_ptr,
+                              int width);
 void ABGRToAR30Row_Any_SSSE3(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
