@@ -349,6 +349,7 @@ extern "C" {
 #define HAS_RGB24TOARGBROW_AVX512BW
 #define HAS_ARGBSHUFFLEROW_AVX512BW
 #define HAS_I422TORGB24ROW_AVX512VBMI
+#define HAS_I422TORGB24ROW_AVX512BW
 #define HAS_RGBTOYMATRIXROW_AVX512BW
 #endif
 #define HAS_ARGBTOYMATRIXROW_AVX2
@@ -399,6 +400,7 @@ extern "C" {
 #define HAS_RGBTOUV444MATRIXROW_AVX512BW
 #define HAS_ARGBTOYMATRIXROW_AVX512BW
 #define HAS_I422TORGB24ROW_AVX512VBMI
+#define HAS_I422TORGB24ROW_AVX512BW
 #define HAS_ARGBTOUVMATRIXROW_AVX512BW
 #define HAS_J400TOARGBROW_AVX512BW
 #define HAS_MERGEUVROW_AVX512BW
@@ -4788,6 +4790,12 @@ void I422ToRGB24Row_AVX512VBMI(const uint8_t* src_y,
                                uint8_t* dst_rgb24,
                                const struct YuvConstants* yuvconstants,
                                int width);
+void I422ToRGB24Row_AVX512BW(const uint8_t* src_y,
+                             const uint8_t* src_u,
+                             const uint8_t* src_v,
+                             uint8_t* dst_rgb24,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void I422ToARGBRow_Any_AVX2(const uint8_t* y_buf,
                             const uint8_t* u_buf,
                             const uint8_t* v_buf,

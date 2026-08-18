@@ -1290,7 +1290,7 @@ void NV21ToARGBRow_AVX2(const uint8_t* src_y,
 }
 #endif
 
-#ifdef HAS_I422TORGB24ROW_AVX2
+#if defined(HAS_I422TORGB24ROW_AVX2) || defined(HAS_I422TORGB24ROW_AVX512BW)
 static const uint8_t kShuffleMaskARGBToRGB24[2][16] = {
     {0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u,
      128u},
@@ -1379,9 +1379,11 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
     __m128i xmm2_store = _mm256_extractf128_si256(ymm0_packed, 1);
     __m128i xmm3_store = _mm256_extractf128_si256(ymm1_packed, 1);
 
-    _mm_storel_epi64((__m128i*)dst_rgb24, xmm0_store);
-    _mm_storeu_si128((__m128i*)(dst_rgb24 + 8), xmm1_store);
-    _mm_storel_epi64((__m128i*)(dst_rgb24 + 24), xmm2_store);
+    xmm0_store = _mm_unpacklo_epi64(xmm0_store, xmm1_store);
+    xmm2_store = _mm_alignr_epi8(xmm2_store, xmm1_store, 8);
+
+    _mm_storeu_si128((__m128i*)dst_rgb24, xmm0_store);
+    _mm_storeu_si128((__m128i*)(dst_rgb24 + 16), xmm2_store);
     _mm_storeu_si128((__m128i*)(dst_rgb24 + 32), xmm3_store);
 
     dst_rgb24 += 48;
@@ -1490,6 +1492,105 @@ void I422ToRGB24Row_AVX512VBMI(const uint8_t* src_y,
     __m512i zmm_BG = _mm512_permutex2var_epi8(zmm0, zmm_mask_BG, zmm1);
     __m512i zmm_dst0 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST0, zmm2);
     __m512i zmm_dst1 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST1, zmm2);
+
+    _mm512_storeu_si512((__m512i*)dst_rgb24, zmm_dst0);
+    _mm256_storeu_si256((__m256i*)(dst_rgb24 + 64), _mm512_castsi512_si256(zmm_dst1));
+
+    dst_rgb24 += 96;
+    width -= 32;
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_I422TORGB24ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void I422ToRGB24Row_AVX512BW(const uint8_t* src_y,
+                             const uint8_t* src_u,
+                             const uint8_t* src_v,
+                             uint8_t* dst_rgb24,
+                             const struct YuvConstants* yuvconstants,
+                             int width) {
+  static const uint64_t kStitchRGB24_0[8] = {0, 8, 9, 2, 10, 11, 4, 12};
+  static const uint64_t kStitchRGB24_1[8] = {13, 6, 14, 15, 0, 0, 0, 0};
+  static const uint64_t kSplitQuadWords[8] = {0, 2, 2, 2, 1, 2, 2, 2};
+  static const uint64_t kSplitDoubleQuadWords[8] = {0, 1, 4, 4, 2, 3, 4, 4};
+
+  // Constants
+  __m512i zmm_kUVToB = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToB));
+  __m512i zmm_kUVToG = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToG));
+  __m512i zmm_kUVToR = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToR));
+  __m512i zmm_kYToRgb = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYToRgb));
+  __m512i zmm_kYBiasToRgb = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYBiasToRgb));
+  __m512i zmm_128 = _mm512_set1_epi8((char)0x80);
+
+  __m512i zmm_shuf0 = _mm512_broadcast_i32x4(
+      _mm_loadu_si128((const __m128i*)kShuffleMaskARGBToRGB24[1]));
+  __m512i zmm_shuf1 = _mm512_broadcast_i32x4(
+      _mm_loadu_si128((const __m128i*)kShuffleMaskARGBToRGB24[0]));
+  __m512i zmm_stitch0 = _mm512_loadu_si512((const __m512i*)kStitchRGB24_0);
+  __m512i zmm_stitch1 = _mm512_loadu_si512((const __m512i*)kStitchRGB24_1);
+  __m512i zmm_split = _mm512_loadu_si512((const __m512i*)kSplitQuadWords);
+  __m512i zmm_split_y = _mm512_loadu_si512((const __m512i*)kSplitDoubleQuadWords);
+
+  ptrdiff_t offset = src_v - src_u;
+
+  while (width >= 32) {
+    // READYUV422_AVX512BW
+    __m128i xmm_u = _mm_loadu_si128((const __m128i*)src_u);
+    __m128i xmm_v = _mm_loadu_si128((const __m128i*)(src_u + offset));
+    src_u += 16;
+
+    __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);
+    __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);
+
+    zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);
+    zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);
+
+    __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);
+    zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);
+    zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);
+
+    __m256i ymm_y = _mm256_loadu_si256((const __m256i*)src_y);
+    src_y += 32;
+    __m512i zmm4 = _mm512_castsi256_si512(ymm_y);
+    zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);
+    zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);
+    zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
+
+    // YUVTORGB_AVX512BW
+    zmm3 = _mm512_sub_epi8(zmm3, zmm_128);
+    zmm4 = _mm512_mulhi_epu16(zmm4, zmm_kYToRgb);
+
+    __m512i zmm0 = _mm512_maddubs_epi16(zmm_kUVToB, zmm3);
+    __m512i zmm1 = _mm512_maddubs_epi16(zmm_kUVToG, zmm3);
+    __m512i zmm2 = _mm512_maddubs_epi16(zmm_kUVToR, zmm3);
+
+    zmm4 = _mm512_add_epi16(zmm4, zmm_kYBiasToRgb);
+
+    zmm0 = _mm512_adds_epi16(zmm0, zmm4);
+    zmm1 = _mm512_subs_epi16(zmm4, zmm1);
+    zmm2 = _mm512_adds_epi16(zmm2, zmm4);
+
+    zmm0 = _mm512_srai_epi16(zmm0, 6);
+    zmm1 = _mm512_srai_epi16(zmm1, 6);
+    zmm2 = _mm512_srai_epi16(zmm2, 6);
+
+    zmm0 = _mm512_packus_epi16(zmm0, zmm0);
+    zmm1 = _mm512_packus_epi16(zmm1, zmm1);
+    zmm2 = _mm512_packus_epi16(zmm2, zmm2);
+
+    // STORERGB24_AVX512BW
+    __m512i zmm_bg = _mm512_unpacklo_epi8(zmm0, zmm1);
+    __m512i zmm_rr = _mm512_unpacklo_epi8(zmm2, zmm2);
+    __m512i zmm_lo = _mm512_unpacklo_epi16(zmm_bg, zmm_rr);
+    __m512i zmm_hi = _mm512_unpackhi_epi16(zmm_bg, zmm_rr);
+    zmm_lo = _mm512_shuffle_epi8(zmm_lo, zmm_shuf0);
+    zmm_hi = _mm512_shuffle_epi8(zmm_hi, zmm_shuf1);
+    zmm_hi = _mm512_alignr_epi8(zmm_hi, zmm_lo, 12);
+
+    __m512i zmm_dst0 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch0, zmm_hi);
+    __m512i zmm_dst1 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch1, zmm_hi);
 
     _mm512_storeu_si512((__m512i*)dst_rgb24, zmm_dst0);
     _mm256_storeu_si256((__m256i*)(dst_rgb24 + 64), _mm512_castsi512_si256(zmm_dst1));
