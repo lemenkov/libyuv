@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <string.h>  // For memset/memcpy
 
 #include "libyuv/scale.h"
@@ -30,8 +31,9 @@ extern "C" {
     if (n > 0) {                                                               \
       SCALEROWDOWN_SIMD(src_ptr, src_stride, dst_ptr, n);                      \
     }                                                                          \
-    SCALEROWDOWN_C(src_ptr + (n * FACTOR) * BPP, src_stride,                   \
-                   dst_ptr + n * BPP, r);                                      \
+    ptrdiff_t np = n;                                                          \
+    SCALEROWDOWN_C(src_ptr + (np * FACTOR) * BPP, src_stride,                  \
+                   dst_ptr + np * BPP, r);                                     \
   }
 
 // Fixed scale down for odd source width.  Used by I420Blend subsampling.
@@ -45,8 +47,9 @@ extern "C" {
     if (n > 0) {                                                               \
       SCALEROWDOWN_SIMD(src_ptr, src_stride, dst_ptr, n);                      \
     }                                                                          \
-    SCALEROWDOWN_C(src_ptr + (n * FACTOR) * BPP, src_stride,                   \
-                   dst_ptr + n * BPP, r + 1);                                  \
+    ptrdiff_t np = n;                                                          \
+    SCALEROWDOWN_C(src_ptr + (np * FACTOR) * BPP, src_stride,                  \
+                   dst_ptr + np * BPP, r + 1);                                 \
   }
 
 #ifdef HAS_SCALEROWDOWN2_SSSE3
@@ -416,8 +419,9 @@ SDANY(ScaleARGBRowDown2Box_Any_LSX,
     if (n > 0) {                                                            \
       SCALEROWDOWN_SIMD(src_ptr, src_stride, src_stepx, dst_ptr, n);        \
     }                                                                       \
-    SCALEROWDOWN_C(src_ptr + (n * src_stepx) * BPP, src_stride, src_stepx,  \
-                   dst_ptr + n * BPP, r);                                   \
+    ptrdiff_t np = n;                                                       \
+    SCALEROWDOWN_C(src_ptr + (np * src_stepx) * BPP, src_stride, src_stepx, \
+                   dst_ptr + np * BPP, r);                                  \
   }
 
 #ifdef HAS_SCALEARGBROWDOWNEVEN_SSE2
@@ -471,17 +475,22 @@ SDAANY(ScaleUVRowDownEven_Any_NEON,
 #define SAROW(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                      \
   void NAMEANY(const uint8_t* src_ptr, uint16_t* dst_ptr, int width) { \
     SIMD_ALIGNED(uint8_t src_temp[32]);                                \
+    static_assert((MASK + 1) * SBPP <= sizeof(src_temp),               \
+                  "src_temp buffer too small");                        \
     SIMD_ALIGNED(uint16_t dst_temp[32]);                               \
+    static_assert((MASK + 1) * BPP <= sizeof(dst_temp),                \
+                  "dst_temp buffer too small");                        \
     memset(src_temp, 0, sizeof(src_temp)); /* for msan */              \
     int r = width & MASK;                                              \
     int n = width & ~MASK;                                             \
     if (n > 0) {                                                       \
       ANY_SIMD(src_ptr, dst_ptr, n);                                   \
     }                                                                  \
-    memcpy(src_temp, src_ptr + n * SBPP, r * SBPP);                    \
-    memcpy(dst_temp, dst_ptr + n * BPP, r * BPP);                      \
+    ptrdiff_t np = n;                                                  \
+    memcpy(src_temp, src_ptr + np * SBPP, r * SBPP);                   \
+    memcpy(dst_temp, dst_ptr + np * BPP, r * BPP);                     \
     ANY_SIMD(src_temp, dst_temp, MASK + 1);                            \
-    memcpy(dst_ptr + n * BPP, dst_temp, r * BPP);                      \
+    memcpy(dst_ptr + np * BPP, dst_temp, r * BPP);                     \
   }
 
 #ifdef HAS_SCALEADDROW_SSE2
@@ -535,7 +544,8 @@ SAANY(ScaleAddRow_Any_LSX, ScaleAddRow_LSX, ScaleAddRow_C, 15)
     if (n > 0) {                                                               \
       TERP_SIMD(dst_ptr, src_ptr, n, x, dx);                                   \
     }                                                                          \
-    TERP_C(dst_ptr + n * BPP, src_ptr, r, x + n * dx, dx);                     \
+    ptrdiff_t np = n;                                                          \
+    TERP_C(dst_ptr + np * BPP, src_ptr, r, x + np * dx, dx);                   \
   }
 
 #ifdef HAS_SCALEFILTERCOLS_NEON
@@ -819,7 +829,8 @@ SU2BLANY(ScaleRowUp2_Bilinear_16_Any_NEON,
       if (n != 0) {                                                   \
         SIMD(src_ptr, dst_ptr + 2, n);                                \
       }                                                               \
-      C(src_ptr + n, dst_ptr + 2 * n + 2, r);                         \
+      ptrdiff_t np = n;                                               \
+      C(src_ptr + np, dst_ptr + 2 * np + 2, r);                       \
     }                                                                 \
     dst_ptr[2 * dst_width - 2] = src_ptr[((dst_width + 1) & ~1) - 2]; \
     dst_ptr[2 * dst_width - 1] = src_ptr[((dst_width + 1) & ~1) - 1]; \
@@ -907,7 +918,8 @@ SBUH2LANY(ScaleUVRowUp2_Linear_16_Any_NEON,
       if (n != 0) {                                                     \
         SIMD(sa, sb - sa, da + 2, db - da, n);                          \
       }                                                                 \
-      C(sa + n, sb - sa, da + 2 * n + 2, db - da, r);                   \
+      ptrdiff_t np = n;                                                 \
+      C(sa + np, sb - sa, da + 2 * np + 2, db - da, r);                 \
     }                                                                   \
     da[2 * dst_width - 2] = (3 * sa[((dst_width + 1) & ~1) - 2] +       \
                              sb[((dst_width + 1) & ~1) - 2] + 2) >>     \
