@@ -3121,17 +3121,17 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
 #define READYUV422_AVX512BW                                           \
   "vmovdqu    (%[u_buf]),%%xmm3                                   \n" \
   "vmovdqu    0x00(%[u_buf],%[v_buf],1),%%xmm1                    \n" \
-  "vpermq     %%zmm3,%%zmm16,%%zmm3                               \n" \
-  "vpermq     %%zmm1,%%zmm16,%%zmm1                               \n" \
   "lea        0x10(%[u_buf]),%[u_buf]                             \n" \
-  "vpunpcklbw %%zmm1,%%zmm3,%%zmm3                                \n" \
-  "vpermq     $0xd8,%%zmm3,%%zmm3                                 \n" \
-  "vpunpcklwd %%zmm3,%%zmm3,%%zmm3                                \n" \
-  "vmovdqu    (%[y_buf]),%%ymm4                                   \n" \
-  "vpermq     %%zmm4,%%zmm17,%%zmm4                               \n" \
-  "vpermq     $0xd8,%%zmm4,%%zmm4                                 \n" \
-  "vpunpcklbw %%zmm4,%%zmm4,%%zmm4                                \n" \
-  "lea        0x20(%[y_buf]),%[y_buf]                             \n"
+  "vpunpcklbw %%xmm1,%%xmm3,%%xmm2                                \n" \
+  "vpunpckhbw %%xmm1,%%xmm3,%%xmm3                                \n" \
+  "vinserti64x2 $1,%%xmm3,%%ymm2,%%ymm3                           \n" \
+  "vmovdqa64  %%zmm16,%%zmm1                                      \n" \
+  "vpermi2w   %%zmm3,%%zmm3,%%zmm1                                \n" \
+  "vpmovzxbw  (%[y_buf]),%%zmm4                                   \n" \
+  "lea        0x20(%[y_buf]),%[y_buf]                             \n" \
+  "vpsllw     $8,%%zmm4,%%zmm3                                    \n" \
+  "vpord      %%zmm3,%%zmm4,%%zmm4                                \n" \
+  "vmovdqa64  %%zmm1,%%zmm3                                       \n"
 
 // Read 8 UV from 210, upsample to 16 UV
 // TODO(fbarchard): Consider vpshufb to replace pack/unpack
@@ -3648,7 +3648,9 @@ void OMITFP I422ToRGB24Row_AVX2(const uint8_t* y_buf,
 #endif  // HAS_I422TORGB24ROW_AVX2
 
 #if defined(HAS_I422TOARGBROW_AVX512BW)
-static const uint64_t kSplitQuadWords[8] = {0, 2, 2, 2, 1, 2, 2, 2};
+static const uint16_t kSplitQuadWords[32] = {
+    0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
+    8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15};
 static const uint64_t kSplitDoubleQuadWords[8] = {0, 1, 4, 4, 2, 3, 4, 4};
 static const uint64_t kUnpermuteAVX512[8] = {0, 4, 1, 5, 2, 6, 3, 7};
 
