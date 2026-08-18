@@ -22,15 +22,20 @@ and compiler compatibility.
     `-DLIBYUV_ENABLE_ROWWIN`.
 *   **Note**: Use either `row_gcc` or `row_win`, never both.
 
-### ARM Architectures
+### Arm Architecture (32-bit)
 
-*   **row_neon.cc**: 32-bit ARM. Written entirely in inline assembly for
+*   **row_neon.cc**: 32-bit Arm. Written entirely in inline assembly for
     GCC/Clang.
-*   **row_neon64.cc**: 64-bit ARM (AArch64). Written entirely in inline assembly
-    for GCC/Clang.
-*   **row_sve.cc**: ARMv9 Scalable Vector Extensions (SVE).
-*   **row_sme.cc**: ARMv9 Scalable Matrix Extension (SME) and Streaming SVE
+
+### Arm Architecture (AArch64) (64-bit)
+
+*   **row_neon64.cc**: 64-bit Arm (AArch64) Neon. Written entirely in inline
+    assembly for GCC/Clang.
+*   **row_sve.cc**: Armv9 Scalable Vector Extension (SVE2).
+*   **row_sme.cc**: Armv9 Scalable Matrix Extension (SME) and Streaming SVE
     (SSVE).
+*   **row_sve.h**: Streaming-compatible implementations shared across
+    **row_sve.cc** and **row_sme.cc**.
 
 ### Other Architectures
 
@@ -43,16 +48,27 @@ and compiler compatibility.
 *   **row_common.cc**: Portable C/C++ versions. This is the reference
     implementation.
 *   **row_any.cc**: Handles "remainder" pixels for widths not multiples of SIMD
-    register size. Used for x86, NEON, and MIPS. Not required for SVE, SME, or
+    register size. Used for x86, Neon, and MIPS. Not required for SVE2, SME, or
     RVV due to hardware-level masking.
 
 ## Coding Guidelines
 
+1.  **Feature Macros**: Use the `HAS_` macros in `include/libyuv/row.h` to
+    enable or disable specific instruction set extensions.
+
+### x86 Architectures (32-bit and 64-bit)
+
 1.  **AVX512 Logic**: AVX512 row functions are strictly enabled for **64-bit x86
     only**.
-2.  **Feature Macros**: Use the `HAS_` macros in `include/libyuv/row.h` to
-    enable or disable specific AVX512 versions.
-3.  **MSVC Intrinsics (`row_win.cc`)**: When converting `row_gcc.cc` to `row_win.cc`, use `_mm512_permutex2var_epi8`, not `_mm512_permi2var_epi8` intrinsic.
+2.  **MSVC Intrinsics (`row_win.cc`)**: When converting `row_gcc.cc` to
+    `row_win.cc`, use `_mm512_permutex2var_epi8`, not `_mm512_permi2var_epi8`
+    intrinsic.
+
+### AArch64
+
+1. For SVE2/SME, aim to use full predicates (`ptrue`) and full vectors for the
+   main loop body and use predication only to mask the tail loop as needed.
+   Pointer updates should be done with `inc[bhwd]` or `add`, not by `incp`.
 
 ## Changelist (CL) Format Guidelines
 
