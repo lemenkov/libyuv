@@ -2742,12 +2742,14 @@ TEST_F(LibYUVConvertTest, P010ToARGBMatrixFilterOverflow) {
   int width = 1024 + 15;  // 1039
   int height = 4;
   int dst_stride_argb = width * 4;
+  int src_stride_uv = (width + 1) & ~1;
+  int src_uv_height = (height + 1) / 2;
   align_buffer_page_end_16(src_y, width * height);
-  align_buffer_page_end_16(src_uv, width * ((height + 1) / 2));
+  align_buffer_page_end_16(src_uv, src_stride_uv * src_uv_height);
   align_buffer_page_end(dst_argb, dst_stride_argb * height);
   memset(src_y, 0x02, width * height * sizeof(uint16_t));
-  memset(src_uv, 0x02, width * ((height + 1) / 2) * sizeof(uint16_t));
-  EXPECT_EQ(0, P010ToARGBMatrixFilter(src_y, width, src_uv, width, dst_argb,
+  memset(src_uv, 0x02, src_stride_uv * src_uv_height * sizeof(uint16_t));
+  EXPECT_EQ(0, P010ToARGBMatrixFilter(src_y, width, src_uv, src_stride_uv, dst_argb,
                                       dst_stride_argb, &kYuvI601Constants,
                                       width, height, kFilterBilinear));
   free_aligned_buffer_page_end_16(src_y);
@@ -2761,12 +2763,13 @@ TEST_F(LibYUVConvertTest, P210ToARGBMatrixFilterOverflow) {
   int width = 1024 + 15;  // 1039
   int height = 4;
   int dst_stride_argb = width * 4;
+  int src_stride_uv = (width + 1) & ~1;
   align_buffer_page_end_16(src_y, width * height);
-  align_buffer_page_end_16(src_uv, width * height);
+  align_buffer_page_end_16(src_uv, src_stride_uv * height);
   align_buffer_page_end(dst_argb, dst_stride_argb * height);
   memset(src_y, 0x02, width * height * sizeof(uint16_t));
-  memset(src_uv, 0x02, width * height * sizeof(uint16_t));
-  EXPECT_EQ(0, P210ToARGBMatrixFilter(src_y, width, src_uv, width, dst_argb,
+  memset(src_uv, 0x02, src_stride_uv * height * sizeof(uint16_t));
+  EXPECT_EQ(0, P210ToARGBMatrixFilter(src_y, width, src_uv, src_stride_uv, dst_argb,
                                       dst_stride_argb, &kYuvI601Constants,
                                       width, height, kFilterBilinear));
   free_aligned_buffer_page_end_16(src_y);
@@ -2780,12 +2783,14 @@ TEST_F(LibYUVConvertTest, P010ToAR30MatrixFilterOverflow) {
   int width = 1024 + 15;  // 1039
   int height = 4;
   int dst_stride_argb = width * 4;
+  int src_stride_uv = (width + 1) & ~1;
+  int src_uv_height = (height + 1) / 2;
   align_buffer_page_end_16(src_y, width * height);
-  align_buffer_page_end_16(src_uv, width * ((height + 1) / 2));
+  align_buffer_page_end_16(src_uv, src_stride_uv * src_uv_height);
   align_buffer_page_end(dst_argb, dst_stride_argb * height);
   memset(src_y, 0x02, width * height * sizeof(uint16_t));
-  memset(src_uv, 0x02, width * ((height + 1) / 2) * sizeof(uint16_t));
-  EXPECT_EQ(0, P010ToAR30MatrixFilter(src_y, width, src_uv, width, dst_argb,
+  memset(src_uv, 0x02, src_stride_uv * src_uv_height * sizeof(uint16_t));
+  EXPECT_EQ(0, P010ToAR30MatrixFilter(src_y, width, src_uv, src_stride_uv, dst_argb,
                                       dst_stride_argb, &kYuvI601Constants,
                                       width, height, kFilterBilinear));
   free_aligned_buffer_page_end_16(src_y);
@@ -2799,12 +2804,13 @@ TEST_F(LibYUVConvertTest, P210ToAR30MatrixFilterOverflow) {
   int width = 1024 + 15;  // 1039
   int height = 4;
   int dst_stride_ar30 = width * 4;
+  int src_stride_uv = (width + 1) & ~1;
   align_buffer_page_end_16(src_y, width * height);
-  align_buffer_page_end_16(src_uv, width * height);
+  align_buffer_page_end_16(src_uv, src_stride_uv * height);
   align_buffer_page_end(dst_ar30, dst_stride_ar30 * height);
   memset(src_y, 0x02, width * height * sizeof(uint16_t));
-  memset(src_uv, 0x02, width * height * sizeof(uint16_t));
-  EXPECT_EQ(0, P210ToAR30MatrixFilter(src_y, width, src_uv, width, dst_ar30,
+  memset(src_uv, 0x02, src_stride_uv * height * sizeof(uint16_t));
+  EXPECT_EQ(0, P210ToAR30MatrixFilter(src_y, width, src_uv, src_stride_uv, dst_ar30,
                                       dst_stride_ar30, &kYuvI601Constants,
                                       width, height, kFilterBilinear));
   free_aligned_buffer_page_end_16(src_y);
@@ -2874,6 +2880,14 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
 #if defined(__aarch64__)
   // Infer malloc can accept a large size for cpu with dot product (a76/a55)
   int has_large_malloc = TestCpuFlag(kCpuHasNeonDotProd);
+#elif defined(__SANITIZE_MEMORY__)
+  int has_large_malloc = 0;
+#elif defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+  int has_large_malloc = 0;
+#else
+  int has_large_malloc = 1;
+#endif
 #else
   int has_large_malloc = 1;
 #endif
