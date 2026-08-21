@@ -1160,7 +1160,7 @@ void ARGBToAB64Row_SSSE3(const uint8_t* src_argb,
         "+r"(width)                 // %2
       : "m"(kShuffleARGBToAB64Lo),  // %3
         "m"(kShuffleARGBToAB64Hi)   // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 
 void AR64ToARGBRow_SSSE3(const uint16_t* src_ar64,
@@ -1259,7 +1259,7 @@ void ARGBToAB64Row_AVX2(const uint8_t* src_argb,
         "+r"(width)                 // %2
       : "m"(kShuffleARGBToAB64Lo),  // %3
         "m"(kShuffleARGBToAB64Hi)   // %3
-      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 #endif
 
@@ -2947,7 +2947,7 @@ void OMITFP UYVYToARGBRow_SSSE3(const uint8_t* uyvy_buf,
       : [yuvconstants] "r"(yuvconstants),  // %[yuvconstants]
         [kShuffleUYVYY] "m"(kShuffleUYVYY), [kShuffleUYVYUV] "m"(kShuffleUYVYUV)
       : "memory", "cc", YUVTORGB_REGS "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
-        "xmm5");
+        "xmm5", "xmm6", "xmm7");
 }
 
 void OMITFP P210ToARGBRow_SSSE3(const uint16_t* y_buf,
@@ -6632,7 +6632,8 @@ void MergeXR30Row_AVX2(const uint16_t* src_r,
 #else
       : "rm"(shift)  // %5
 #endif
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+        "xmm6");
 }
 #endif
 
@@ -8700,8 +8701,6 @@ void SobelToPlaneRow_SSE2(const uint8_t* src_sobelx,
                           int width) {
   asm volatile(
       "sub         %0,%1                         \n"
-      "pcmpeqb     %%xmm5,%%xmm5                 \n"
-      "pslld       $0x18,%%xmm5                  \n"
 
       // 8 pixel loop.
       LABELALIGN

@@ -1701,7 +1701,7 @@ void MergeAR64Row_NEON(const uint16_t* src_r,
         "+r"(width)      // %5
       : "r"(shift),      // %6
         "r"(mask)        // %7
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v31");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v30", "v31");
 }
 
 void MergeXR64Row_NEON(const uint16_t* src_r,
@@ -1741,7 +1741,7 @@ void MergeXR64Row_NEON(const uint16_t* src_r,
         "+r"(width)      // %4
       : "r"(shift),      // %5
         "r"(mask)        // %6
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v31");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v30", "v31");
 }
 
 void MergeARGB16To8Row_NEON(const uint16_t* src_r,
@@ -2657,7 +2657,7 @@ void ARGBToAB64Row_NEON(const uint8_t* src_argb,
         "+r"(dst_ab64),              // %1
         "+r"(width)                  // %2
       : "r"(&kShuffleARGBToAB64[0])  // %3
-      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 #endif  // LIBYUV_USE_ST2
 
@@ -4063,7 +4063,7 @@ void ARGBSepiaRow_NEON_DotProd(uint8_t* dst_argb, int width) {
       : [coeffs] "r"(&kARGBSepiaRowCoeffs),        // %[coeffs]
         [indices] "r"(&kARGBSepiaRowAlphaIndices)  // %[indices]
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
-        "v21", "v22", "v24", "v25", "v26", "v28", "v29", "v30");
+        "v21", "v22", "v23", "v24", "v25", "v26", "v28", "v29", "v30");
 }
 
 // Tranform 8 ARGB pixels (32 bytes) with color matrix.

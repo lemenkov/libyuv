@@ -187,7 +187,7 @@ void ScaleRowDown2Box_SSSE3(const uint8_t* src_ptr,
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
       : "r"(src_stride)  // %3
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 
 #ifdef HAS_SCALEROWDOWN2_AVX2
@@ -287,7 +287,7 @@ void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
       : "r"(src_stride)  // %3
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 #endif  // HAS_SCALEROWDOWN2_AVX2
 
