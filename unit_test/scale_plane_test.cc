@@ -570,6 +570,126 @@ TEST_F(LibYUVScaleTest, PlaneTest1_16_Box) {
   free_aligned_buffer_page_end(orig_pixels_alloc);
 }
 
+TEST_F(LibYUVScaleTest, ScalePlaneVerticalPointUp) {
+  const int kWidth = 32;
+  const uint8_t kSentinel = 0xFF;
+  const uint8_t expected[] = {10, 10, 20, 30, 30};
+
+  // An extra sentinel row exposes accidental interpolation past the last valid
+  // row. 3->5 is the uneven ratio that used to drop the last source row.
+  align_buffer_page_end(src, kWidth * 4);
+  align_buffer_page_end(dst, kWidth * 5);
+  memset(src, kSentinel, kWidth * 4);
+  memset(dst, kSentinel, kWidth * 5);
+  memset(src, 10, kWidth);
+  memset(src + kWidth, 20, kWidth);
+  memset(src + 2 * kWidth, 30, kWidth);
+
+  ASSERT_EQ(0, ScalePlane(src, kWidth, kWidth, 3, dst, kWidth, kWidth, 5,
+                          kFilterNone));
+  for (int y = 0; y < 5; ++y) {
+    for (int x = 0; x < kWidth; ++x) {
+      EXPECT_EQ(expected[y], dst[y * kWidth + x]);
+    }
+  }
+
+  free_aligned_buffer_page_end(dst);
+  free_aligned_buffer_page_end(src);
+}
+
+TEST_F(LibYUVScaleTest, ScalePlaneVerticalPointUp_16) {
+  const int kWidth = 32;
+  const uint16_t kSentinel = 0xFFFF;
+  const uint16_t expected[] = {10, 10, 20, 30, 30};
+
+  align_buffer_page_end(src_alloc, kWidth * 4 * 2);
+  align_buffer_page_end(dst_alloc, kWidth * 5 * 2);
+  uint16_t* src = reinterpret_cast<uint16_t*>(src_alloc);
+  uint16_t* dst = reinterpret_cast<uint16_t*>(dst_alloc);
+  for (int i = 0; i < kWidth * 4; ++i) {
+    src[i] = kSentinel;
+  }
+  for (int i = 0; i < kWidth * 5; ++i) {
+    dst[i] = kSentinel;
+  }
+  for (int x = 0; x < kWidth; ++x) {
+    src[x] = 10;
+    src[kWidth + x] = 20;
+    src[2 * kWidth + x] = 30;
+  }
+
+  ASSERT_EQ(0, ScalePlane_16(src, kWidth, kWidth, 3, dst, kWidth, kWidth, 5,
+                             kFilterNone));
+  for (int y = 0; y < 5; ++y) {
+    for (int x = 0; x < kWidth; ++x) {
+      EXPECT_EQ(expected[y], dst[y * kWidth + x]);
+    }
+  }
+
+  free_aligned_buffer_page_end(dst_alloc);
+  free_aligned_buffer_page_end(src_alloc);
+}
+
+TEST_F(LibYUVScaleTest, ScalePlaneVerticalBilinearUp) {
+  const int kWidth = 32;
+  const uint8_t kSentinel = 0xFF;
+  // Same-width 2x upsampling still uses FixedDiv1. With y = 0 the 8.8
+  // fractions are 0, 85, 170, 255. InterpolateRow_C:
+  // (a * (256 - yf) + b * yf + 128) >> 8.
+  // Nearest 2x would duplicate rows as {10, 10, 200, 200}.
+  const uint8_t expected[] = {10, 73, 136, 199};
+
+  align_buffer_page_end(src, kWidth * 3);
+  align_buffer_page_end(dst, kWidth * 4);
+  memset(src, kSentinel, kWidth * 3);
+  memset(dst, kSentinel, kWidth * 4);
+  memset(src, 10, kWidth);
+  memset(src + kWidth, 200, kWidth);
+
+  ASSERT_EQ(0, ScalePlane(src, kWidth, kWidth, 2, dst, kWidth, kWidth, 4,
+                          kFilterBilinear));
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < kWidth; ++x) {
+      EXPECT_EQ(expected[y], dst[y * kWidth + x]);
+    }
+  }
+
+  free_aligned_buffer_page_end(dst);
+  free_aligned_buffer_page_end(src);
+}
+
+TEST_F(LibYUVScaleTest, ScalePlaneVerticalBilinearUp_16) {
+  const int kWidth = 32;
+  const uint16_t kSentinel = 0xFFFF;
+  const uint16_t expected[] = {10, 73, 136, 199};
+
+  align_buffer_page_end(src_alloc, kWidth * 3 * 2);
+  align_buffer_page_end(dst_alloc, kWidth * 4 * 2);
+  uint16_t* src = reinterpret_cast<uint16_t*>(src_alloc);
+  uint16_t* dst = reinterpret_cast<uint16_t*>(dst_alloc);
+  for (int i = 0; i < kWidth * 3; ++i) {
+    src[i] = kSentinel;
+  }
+  for (int i = 0; i < kWidth * 4; ++i) {
+    dst[i] = kSentinel;
+  }
+  for (int x = 0; x < kWidth; ++x) {
+    src[x] = 10;
+    src[kWidth + x] = 200;
+  }
+
+  ASSERT_EQ(0, ScalePlane_16(src, kWidth, kWidth, 2, dst, kWidth, kWidth, 4,
+                             kFilterBilinear));
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < kWidth; ++x) {
+      EXPECT_EQ(expected[y], dst[y * kWidth + x]);
+    }
+  }
+
+  free_aligned_buffer_page_end(dst_alloc);
+  free_aligned_buffer_page_end(src_alloc);
+}
+
 // POC: int * int overflow in ScalePlaneVertical (scale_common.cc).
 //
 // `yi * src_stride` is evaluated as int * int. When the product exceeds

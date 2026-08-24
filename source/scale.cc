@@ -1966,12 +1966,19 @@ int ScalePlane(const uint8_t* src,
     int dy = 0;
     int y = 0;
     // When scaling down, use the center 2 rows to filter.
-    // When scaling up, last row of destination uses the last 2 source rows.
     if (dst_height <= src_height) {
       dy = FixedDiv(src_height, dst_height);
       y = CENTERSTART(dy, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (src_height > 1 && dst_height > 1) {
-      dy = FixedDiv1(src_height, dst_height);
+      // Point sampling uses centered source/destination stepping, matching
+      // ScaleSlope. Bilinear scaling maps the source endpoints.
+      if (filtering == kFilterNone) {
+        dy = FixedDiv(src_height, dst_height);
+        y = CENTERSTART(dy, 0);
+      } else {
+        // When scaling up, last row of destination uses the last 2 source rows.
+        dy = FixedDiv1(src_height, dst_height);
+      }
     }
     // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical(src_height, dst_width, dst_height, src_stride,
@@ -2074,15 +2081,19 @@ int ScalePlane_16(const uint16_t* src,
     int dy = 0;
     int y = 0;
     // When scaling down, use the center 2 rows to filter.
-    // When scaling up, last row of destination uses the last 2 source rows.
     if (dst_height <= src_height) {
       dy = FixedDiv(src_height, dst_height);
       y = CENTERSTART(dy, -32768);  // Subtract 0.5 (32768) to center filter.
-      // When scaling up, ensure the last row of destination uses the last
-      // source. Avoid divide by zero for dst_height but will do no scaling
-      // later.
     } else if (src_height > 1 && dst_height > 1) {
-      dy = FixedDiv1(src_height, dst_height);
+      // Point sampling uses centered source/destination stepping, matching
+      // ScaleSlope. Bilinear scaling maps the source endpoints.
+      if (filtering == kFilterNone) {
+        dy = FixedDiv(src_height, dst_height);
+        y = CENTERSTART(dy, 0);
+      } else {
+        // When scaling up, last row of destination uses the last 2 source rows.
+        dy = FixedDiv1(src_height, dst_height);
+      }
     }
     // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical_16(src_height, dst_width, dst_height, src_stride,
