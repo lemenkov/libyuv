@@ -1174,7 +1174,13 @@ void I422ToAR30Row_AVX2(const uint8_t* src_y,
   __m256i ymm_kUVToG = _mm256_loadu_si256((const __m256i*)yuvconstants->kUVToG);
   __m256i ymm_kUVToR = _mm256_loadu_si256((const __m256i*)yuvconstants->kUVToR);
   __m256i ymm_kYToRgb = _mm256_loadu_si256((const __m256i*)yuvconstants->kYToRgb);
+#if defined(LIBYUV_UNBIASED_DATA)
+  __m256i ymm_kYBiasToRgb = _mm256_sub_epi16(
+      _mm256_loadu_si256((const __m256i*)yuvconstants->kYBiasToRgb),
+      _mm256_set1_epi16(24));
+#else
   __m256i ymm_kYBiasToRgb = _mm256_loadu_si256((const __m256i*)yuvconstants->kYBiasToRgb);
+#endif
   __m256i ymm_128 = _mm256_set1_epi8((char)0x80);
   __m256i ymm_3ff0 = _mm256_set1_epi16((short)0x3ff0);
   __m256i ymm_c000 = _mm256_set1_epi16((short)0xc000);
@@ -1723,7 +1729,13 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
   __m512i zmm_kUVToG = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToG));
   __m512i zmm_kUVToR = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToR));
   __m512i zmm_kYToRgb = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYToRgb));
+#if defined(LIBYUV_UNBIASED_DATA)
+  __m512i zmm_kYBiasToRgb = _mm512_sub_epi16(
+      _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYBiasToRgb)),
+      _mm512_set1_epi16(24));
+#else
   __m512i zmm_kYBiasToRgb = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYBiasToRgb));
+#endif
   __m512i zmm_128 = _mm512_set1_epi8((char)0x80);
   __m512i zmm_3ff0 = _mm512_set1_epi16((short)0x3ff0);
   __m512i zmm_fc00 = _mm512_set1_epi16((short)0xfc00);

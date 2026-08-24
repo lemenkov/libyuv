@@ -37,6 +37,9 @@ extern "C" {
 // LIBYUV_UNLIMITED_BT709
 // LIBYUV_UNLIMITED_BT2020
 
+// This macro fixes the AR30 rounding bias offset (+24 / -24) for 10-bit YUV to RGB conversions:
+// LIBYUV_UNBIASED_DATA
+
 // llvm x86 is poor at ternary operator, so use branchless min/max.
 
 #define USE_BRANCHLESS 1
@@ -1785,6 +1788,30 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
   int r16 = y1 + (vi * vr)
 #endif
 
+#if defined(LIBYUV_UNBIASED_DATA)
+#if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
+#define LOAD_YUV_CONSTANTS_AR30            \
+  int ub = yuvconstants->kUVCoeff[0];      \
+  int vr = yuvconstants->kUVCoeff[1];      \
+  int ug = yuvconstants->kUVCoeff[2];      \
+  int vg = yuvconstants->kUVCoeff[3];      \
+  int yg = yuvconstants->kRGBCoeffBias[0]; \
+  int bb = yuvconstants->kRGBCoeffBias[1] + 24; \
+  int bg = yuvconstants->kRGBCoeffBias[2] - 24; \
+  int br = yuvconstants->kRGBCoeffBias[3] + 24
+#else
+#define LOAD_YUV_CONSTANTS_AR30      \
+  int ub = yuvconstants->kUVToB[0];  \
+  int ug = yuvconstants->kUVToG[0];  \
+  int vg = yuvconstants->kUVToG[1];  \
+  int vr = yuvconstants->kUVToR[1];  \
+  int yg = yuvconstants->kYToRgb[0]; \
+  int yb = yuvconstants->kYBiasToRgb[0] - 24
+#endif
+#else
+#define LOAD_YUV_CONSTANTS_AR30 LOAD_YUV_CONSTANTS
+#endif
+
 // C reference code that mimics the YUV assembly.
 // Reads 8 bit YUV and leaves result as 16 bit.
 static __inline void YuvPixel(uint8_t y,
@@ -1810,7 +1837,7 @@ static __inline void YuvPixel8_16(uint8_t y,
                                   int* g,
                                   int* r,
                                   const struct YuvConstants* yuvconstants) {
-  LOAD_YUV_CONSTANTS;
+  LOAD_YUV_CONSTANTS_AR30;
   uint32_t y32 = y * 0x0101;
   CALC_RGB16;
   *b = b16;

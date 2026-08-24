@@ -2270,6 +2270,18 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
   "movdqa     96(%[yuvconstants]),%%xmm11                     \n" \
   "movdqa     128(%[yuvconstants]),%%xmm12                    \n"
 
+#if defined(LIBYUV_UNBIASED_DATA)
+#define YUVTORGB_SETUP_AR30(yuvconstants)                             \
+  YUVTORGB_SETUP(yuvconstants)                                        \
+  "pcmpeqb     %%xmm0,%%xmm0                                  \n"     \
+  "psrlw       $14,%%xmm0                                     \n"     \
+  "psllw       $3,%%xmm0                                      \n"     \
+  "psubw       %%xmm0,%%xmm12                                 \n"
+#else
+#define YUVTORGB_SETUP_AR30(yuvconstants)                             \
+  YUVTORGB_SETUP(yuvconstants)
+#endif
+
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB16(yuvconstants)                                  \
   "psubb      %%xmm13,%%xmm3                                  \n" \
@@ -2290,6 +2302,7 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
 
 #else
 #define YUVTORGB_SETUP(yuvconstants)
+#define YUVTORGB_SETUP_AR30(yuvconstants)
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB16(yuvconstants)                                  \
@@ -2552,7 +2565,7 @@ void OMITFP I422ToAR30Row_SSSE3(const uint8_t* y_buf,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
-    YUVTORGB_SETUP(yuvconstants)
+    YUVTORGB_SETUP_AR30(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"  // all 1s
       "movdqa      %%xmm5,%%xmm7                 \n"
@@ -3340,6 +3353,27 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovups    (%[dquadsplitperm]),%%zmm17                         \n" \
   "vmovups    (%[unperm]),%%zmm18                                 \n"
 
+#if defined(LIBYUV_UNBIASED_DATA)
+#define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)                        \
+  YUVTORGB_SETUP_AVX2(yuvconstants)                                   \
+  "vpcmpeqb    %%ymm0,%%ymm0,%%ymm0                           \n"     \
+  "vpsrlw      $14,%%ymm0,%%ymm0                              \n"     \
+  "vpsllw      $3,%%ymm0,%%ymm0                               \n"     \
+  "vpsubw      %%ymm0,%%ymm12,%%ymm12                         \n"
+
+#define YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)                    \
+  YUVTORGB_SETUP_AVX512BW(yuvconstants)                               \
+  "vpternlogd  $0xff,%%zmm0,%%zmm0,%%zmm0                         \n" \
+  "vpsrlw      $14,%%zmm0,%%zmm0                                  \n" \
+  "vpsllw      $3,%%zmm0,%%zmm0                                   \n" \
+  "vpsubw      %%zmm0,%%zmm12,%%zmm12                             \n"
+#else
+#define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)                        \
+  YUVTORGB_SETUP_AVX2(yuvconstants)
+#define YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)                    \
+  YUVTORGB_SETUP_AVX512BW(yuvconstants)
+#endif
+
 #define YUVTORGB16_AVX2(yuvconstants)                                 \
   "vpsubb      %%ymm13,%%ymm3,%%ymm3                              \n" \
   "vpmulhuw    %%ymm11,%%ymm4,%%ymm4                              \n" \
@@ -3369,6 +3403,8 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
 #else  // Convert 16 pixels: 16 UV and 16 Y.
 
 #define YUVTORGB_SETUP_AVX2(yuvconstants)
+#define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)
+#define YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)
 #define YUVTORGB16_AVX2(yuvconstants)                                 \
   "vpcmpeqb    %%ymm0,%%ymm0,%%ymm0                               \n" \
   "vpabsb      %%ymm0,%%ymm0                                      \n" \
@@ -3818,7 +3854,7 @@ void OMITFP I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
                                    const struct YuvConstants* yuvconstants,
                                    int width) {
   asm volatile (
-    YUVTORGB_SETUP_AVX512BW(yuvconstants)
+    YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpternlogd  $0xff,%%zmm5,%%zmm5,%%zmm5    \n"  // all 1s
       "vpsrlw      $6,%%zmm5,%%zmm7              \n"
@@ -3866,7 +3902,7 @@ void OMITFP I422ToAR30Row_AVX2(const uint8_t* y_buf,
                                const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
-    YUVTORGB_SETUP_AVX2(yuvconstants)
+    YUVTORGB_SETUP_AR30_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // all 1s
       "vpsrlw      $6,%%ymm5,%%ymm7              \n"

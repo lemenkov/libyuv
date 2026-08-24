@@ -2511,10 +2511,10 @@ TEST_F(LibYUVConvertTest, TestH010ToAB30) {
     ++histogram_b[b10];
     ++histogram_g[g10];
     ++histogram_r[r10];
-    int expected_y = Clamp10(static_cast<int>((i - 64) * 1.164f));
-    ASSERT_NEAR(b10, expected_y, 4);
-    ASSERT_NEAR(g10, expected_y, 4);
+    int expected_y = Clamp10(static_cast<int>((i - 64) * 1.164f + 0.5));
     ASSERT_NEAR(r10, expected_y, 4);
+    ASSERT_NEAR(g10, expected_y, 4);
+    ASSERT_NEAR(b10, expected_y, 4);
     ASSERT_EQ(a2, 3);
   }
 
@@ -2573,7 +2573,7 @@ TEST_F(LibYUVConvertTest, TestH420ToAR30) {
     ++histogram_b[b10];
     ++histogram_g[g10];
     ++histogram_r[r10];
-    int expected_y = Clamp10(static_cast<int>((i - 16) * 1.164f * 4.f));
+    int expected_y = Clamp10(static_cast<int>((i - 16) * 1.164f * 4.f + 0.5));
     ASSERT_NEAR(b10, expected_y, 4);
     ASSERT_NEAR(g10, expected_y, 4);
     ASSERT_NEAR(r10, expected_y, 4);

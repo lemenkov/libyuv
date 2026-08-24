@@ -72,6 +72,7 @@ Additional commonly used compiler options can be passed to Bazel via `--copt`:
 
     bazel build -c opt --config=android_arm64 \
         --copt=-DLIBYUV_UNLIMITED_DATA \
+        --copt=-DLIBYUV_UNBIASED_DATA \
         --copt=-DENABLE_ROW_TESTS \
         //:libyuv_test
 
