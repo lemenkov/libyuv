@@ -27,28 +27,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Read 8 UV from 444
-#define READYUV444                                    \
-  xmm3 = _mm_loadl_epi64((__m128i*)u_buf);            \
-  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset)); \
-  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);               \
-  u_buf += 8;                                         \
-  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);            \
-  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);               \
-  y_buf += 8;
-
-// Read 8 UV from 444, With 8 Alpha.
-#define READYUVA444                                   \
-  xmm3 = _mm_loadl_epi64((__m128i*)u_buf);            \
-  xmm1 = _mm_loadl_epi64((__m128i*)(u_buf + offset)); \
-  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);               \
-  u_buf += 8;                                         \
-  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);            \
-  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);               \
-  y_buf += 8;                                         \
-  xmm5 = _mm_loadl_epi64((__m128i*)a_buf);            \
-  a_buf += 8;
-
 // Read 4 UV from 422, upsample to 8 UV.
 #define READYUV422                                        \
   xmm3 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
@@ -59,19 +37,6 @@ extern "C" {
   xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
   xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
   y_buf += 8;
-
-// Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
-#define READYUVA422                                       \
-  xmm3 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
-  xmm1 = _mm_cvtsi32_si128(*(uint32_t*)(u_buf + offset)); \
-  xmm3 = _mm_unpacklo_epi8(xmm3, xmm1);                   \
-  xmm3 = _mm_unpacklo_epi16(xmm3, xmm3);                  \
-  u_buf += 4;                                             \
-  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
-  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
-  y_buf += 8;                                             \
-  xmm5 = _mm_loadl_epi64((__m128i*)a_buf);                \
-  a_buf += 8;
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(yuvconstants)                                      \
@@ -90,17 +55,6 @@ extern "C" {
   xmm0 = _mm_packus_epi16(xmm0, xmm0);                              \
   xmm1 = _mm_packus_epi16(xmm1, xmm1);                              \
   xmm2 = _mm_packus_epi16(xmm2, xmm2);
-
-// Store 8 ARGB values.
-#define STOREARGB                                    \
-  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);              \
-  xmm2 = _mm_unpacklo_epi8(xmm2, xmm5);              \
-  xmm1 = _mm_loadu_si128(&xmm0);                     \
-  xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);             \
-  xmm1 = _mm_unpackhi_epi16(xmm1, xmm2);             \
-  _mm_storeu_si128((__m128i*)dst_argb, xmm0);        \
-  _mm_storeu_si128((__m128i*)(dst_argb + 16), xmm1); \
-  dst_argb += 32;
 
 // Store 8 AR30 values.
 #define STOREAR30                                              \
