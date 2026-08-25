@@ -3509,6 +3509,30 @@ int RAWToRGB24(const uint8_t* src_raw,
     }
   }
 #endif
+#if defined(HAS_RAWTORGB24ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RAWToRGB24Row = RAWToRGB24Row_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RAWToRGB24Row = RAWToRGB24Row_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGB24ROW_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_AVX512VBMI;
+    if (IS_ALIGNED(width, 64)) {
+      RAWToRGB24Row = RAWToRGB24Row_AVX512VBMI;
+    }
+  }
+#endif
 #if defined(HAS_RAWTORGB24ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RAWToRGB24Row = RAWToRGB24Row_Any_NEON;

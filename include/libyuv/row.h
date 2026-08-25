@@ -313,6 +313,7 @@ extern "C" {
 #define HAS_I410TOARGBROW_AVX2
 #if defined(__x86_64__)
 #define HAS_I422TOAR30ROW_AVX2
+#define HAS_RAWTORGB24ROW_AVX2
 #endif
 #define HAS_I422TOUYVYROW_AVX2
 #define HAS_I422TOYUY2ROW_AVX2
@@ -369,10 +370,13 @@ extern "C" {
 #define HAS_NV12TORGB565ROW_AVX2
 #if defined(__x86_64__) || defined(_M_X64)
 #define HAS_I422TOAR30ROW_AVX2
+#define HAS_RAWTORGB24ROW_AVX2
 #define HAS_RAWTOARGBROW_AVX512BW
 #define HAS_RGB24TOARGBROW_AVX512BW
+#define HAS_RAWTORGB24ROW_AVX512BW
 #define HAS_ARGBSHUFFLEROW_AVX512BW
 #define HAS_I422TORGB24ROW_AVX512VBMI
+#define HAS_RAWTORGB24ROW_AVX512VBMI
 #define HAS_I422TORGB24ROW_AVX512BW
 #define HAS_I422TOAR30ROW_AVX512BW
 #define HAS_RGBTOYMATRIXROW_AVX512BW
@@ -408,6 +412,8 @@ extern "C" {
 #define HAS_COPYROW_AVX512BW
 #define HAS_RAWTOARGBROW_AVX512BW
 #define HAS_RGB24TOARGBROW_AVX512BW
+#define HAS_RAWTORGB24ROW_AVX512BW
+#define HAS_RAWTORGB24ROW_AVX512VBMI
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_CONVERT16TO8ROW_AVX512BW
 #define HAS_HALFROW_16TO8_AVX512BW
@@ -425,6 +431,7 @@ extern "C" {
 #define HAS_RGBTOUV444MATRIXROW_AVX512BW
 #define HAS_ARGBTOYMATRIXROW_AVX512BW
 #define HAS_I422TORGB24ROW_AVX512VBMI
+#define HAS_RAWTORGB24ROW_AVX512VBMI
 #define HAS_I422TORGB24ROW_AVX512BW
 #define HAS_ARGBTOUVMATRIXROW_AVX512BW
 #define HAS_J400TOARGBROW_AVX512BW
@@ -3949,6 +3956,13 @@ void RAWToARGBRow_AVX512BW(const uint8_t* src_raw,
                            int width);
 void RAWToRGBARow_SSSE3(const uint8_t* src_raw, uint8_t* dst_rgba, int width);
 void RAWToRGB24Row_SSSE3(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
+void RAWToRGB24Row_AVX2(const uint8_t* src_raw, uint8_t* dst_rgb24, int width);
+void RAWToRGB24Row_AVX512BW(const uint8_t* src_raw,
+                            uint8_t* dst_rgb24,
+                            int width);
+void RAWToRGB24Row_AVX512VBMI(const uint8_t* src_raw,
+                             uint8_t* dst_rgb24,
+                             int width);
 
 void RGB565ToARGBRow_AVX2(const uint8_t* src_rgb565,
                           uint8_t* dst_argb,
@@ -4054,6 +4068,15 @@ void RAWToRGBARow_Any_SSSE3(const uint8_t* src_ptr,
 void RAWToRGB24Row_Any_SSSE3(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
+void RAWToRGB24Row_Any_AVX2(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void RAWToRGB24Row_Any_AVX512BW(const uint8_t* src_ptr,
+                                uint8_t* dst_ptr,
+                                int width);
+void RAWToRGB24Row_Any_AVX512VBMI(const uint8_t* src_ptr,
+                                  uint8_t* dst_ptr,
+                                  int width);
 
 void RGB565ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
