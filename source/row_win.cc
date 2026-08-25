@@ -938,6 +938,140 @@ void ARGB4444ToARGBRow_AVX2(const uint8_t* src_argb4444,
 }
 #endif
 
+#ifdef HAS_ARGBTORGB565DITHERROW_AVX2
+LIBYUV_TARGET_AVX2
+void ARGBToRGB565DitherRow_AVX2(const uint8_t* src_argb,
+                                uint8_t* dst_rgb,
+                                uint32_t dither4,
+                                int width) {
+  __m128i dither_shuf =
+      _mm_setr_epi8(0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3);
+  __m128i d128 = _mm_shuffle_epi8(_mm_cvtsi32_si128((int)dither4), dither_shuf);
+  __m256i ymm_dither = _mm256_broadcastsi128_si256(d128);
+  __m256i mask_b = _mm256_set1_epi32(0x0000001f);
+  __m256i mask_g = _mm256_set1_epi32(0x000007e0);
+  __m256i mask_r = _mm256_set1_epi32(0x0000f800);
+
+  while (width > 0) {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_argb);
+    ymm0 = _mm256_adds_epu8(ymm0, ymm_dither);
+    __m256i ymm2 = _mm256_srli_epi32(ymm0, 5);
+    __m256i ymm1 = _mm256_srli_epi32(ymm0, 3);
+    ymm0 = _mm256_srli_epi32(ymm0, 8);
+    ymm2 = _mm256_and_si256(ymm2, mask_g);
+    ymm1 = _mm256_and_si256(ymm1, mask_b);
+    ymm0 = _mm256_and_si256(ymm0, mask_r);
+    ymm1 = _mm256_or_si256(ymm2, ymm1);
+    ymm0 = _mm256_or_si256(ymm1, ymm0);
+    ymm0 = _mm256_packus_epi32(ymm0, ymm0);
+    ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+    _mm_storeu_si128((__m128i*)dst_rgb, _mm256_castsi256_si128(ymm0));
+    src_argb += 32;
+    dst_rgb += 16;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_ARGBTORGB565ROW_AVX2
+LIBYUV_TARGET_AVX2
+void ARGBToRGB565Row_AVX2(const uint8_t* src_argb,
+                          uint8_t* dst_rgb,
+                          int width) {
+  __m256i mask_b = _mm256_set1_epi32(0x0000001f);
+  __m256i mask_g = _mm256_set1_epi32(0x000007e0);
+  __m256i mask_r = _mm256_set1_epi32(0x0000f800);
+
+  while (width > 0) {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_argb);
+    __m256i ymm2 = _mm256_srli_epi32(ymm0, 5);
+    __m256i ymm1 = _mm256_srli_epi32(ymm0, 3);
+    ymm0 = _mm256_srli_epi32(ymm0, 8);
+    ymm2 = _mm256_and_si256(ymm2, mask_g);
+    ymm1 = _mm256_and_si256(ymm1, mask_b);
+    ymm0 = _mm256_and_si256(ymm0, mask_r);
+    ymm1 = _mm256_or_si256(ymm2, ymm1);
+    ymm0 = _mm256_or_si256(ymm1, ymm0);
+    ymm0 = _mm256_packus_epi32(ymm0, ymm0);
+    ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+    _mm_storeu_si128((__m128i*)dst_rgb, _mm256_castsi256_si128(ymm0));
+    src_argb += 32;
+    dst_rgb += 16;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_ARGBTOARGB1555ROW_AVX2
+LIBYUV_TARGET_AVX2
+void ARGBToARGB1555Row_AVX2(const uint8_t* src_argb,
+                            uint8_t* dst_argb1555,
+                            int width) {
+  __m256i mask_b = _mm256_set1_epi32(0x0000001f);
+  __m256i mask_g = _mm256_set1_epi32(0x000003e0);
+  __m256i mask_r = _mm256_set1_epi32(0x00007c00);
+  __m256i mask_a = _mm256_set1_epi32(0x00008000);
+
+  while (width > 0) {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_argb);
+    __m256i ymm2 = _mm256_srli_epi32(ymm0, 6);
+    __m256i ymm1 = _mm256_srli_epi32(ymm0, 3);
+    __m256i ymm7 = _mm256_srli_epi32(ymm0, 16);
+    ymm0 = _mm256_srli_epi32(ymm0, 9);
+    ymm2 = _mm256_and_si256(ymm2, mask_g);
+    ymm1 = _mm256_and_si256(ymm1, mask_b);
+    ymm7 = _mm256_and_si256(ymm7, mask_a);
+    ymm0 = _mm256_and_si256(ymm0, mask_r);
+    ymm1 = _mm256_or_si256(ymm2, ymm1);
+    ymm0 = _mm256_or_si256(ymm7, ymm0);
+    ymm0 = _mm256_or_si256(ymm1, ymm0);
+    ymm0 = _mm256_packus_epi32(ymm0, ymm0);
+    ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+    _mm_storeu_si128((__m128i*)dst_argb1555, _mm256_castsi256_si128(ymm0));
+    src_argb += 32;
+    dst_argb1555 += 16;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_ARGBTOARGB4444ROW_AVX2
+LIBYUV_TARGET_AVX2
+void ARGBToARGB4444Row_AVX2(const uint8_t* src_argb,
+                            uint8_t* dst_argb4444,
+                            int width) {
+  __m256i mask_b = _mm256_set1_epi32(0x0000000f);
+  __m256i mask_g = _mm256_set1_epi32(0x000000f0);
+  __m256i mask_r = _mm256_set1_epi32(0x00000f00);
+  __m256i mask_a = _mm256_set1_epi32(0x0000f000);
+
+  while (width > 0) {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_argb);
+    __m256i ymm2 = _mm256_srli_epi32(ymm0, 8);
+    __m256i ymm1 = _mm256_srli_epi32(ymm0, 4);
+    __m256i ymm7 = _mm256_srli_epi32(ymm0, 16);
+    ymm0 = _mm256_srli_epi32(ymm0, 12);
+    ymm2 = _mm256_and_si256(ymm2, mask_g);
+    ymm1 = _mm256_and_si256(ymm1, mask_b);
+    ymm7 = _mm256_and_si256(ymm7, mask_a);
+    ymm0 = _mm256_and_si256(ymm0, mask_r);
+    ymm1 = _mm256_or_si256(ymm2, ymm1);
+    ymm0 = _mm256_or_si256(ymm7, ymm0);
+    ymm0 = _mm256_or_si256(ymm1, ymm0);
+    ymm0 = _mm256_packus_epi32(ymm0, ymm0);
+    ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+    _mm_storeu_si128((__m128i*)dst_argb4444, _mm256_castsi256_si128(ymm0));
+    src_argb += 32;
+    dst_argb4444 += 16;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif
+
 #ifdef HAS_RGB24TOARGBROW_AVX2
 LIBYUV_TARGET_AVX2
 void RGB24ToARGBRow_AVX2(const uint8_t* src_rgb24,

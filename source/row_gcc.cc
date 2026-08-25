@@ -921,6 +921,124 @@ void ARGBToRGB565DitherRow_AVX2(const uint8_t* src,
 }
 #endif  // HAS_ARGBTORGB565DITHERROW_AVX2
 
+#ifdef HAS_ARGBTORGB565ROW_AVX2
+void ARGBToRGB565Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vpcmpeqb    %%ymm3,%%ymm3,%%ymm3          \n"
+      "vpsrld      $0x1b,%%ymm3,%%ymm3           \n"
+      "vpcmpeqb    %%ymm4,%%ymm4,%%ymm4          \n"
+      "vpsrld      $0x1a,%%ymm4,%%ymm4           \n"
+      "vpslld      $0x5,%%ymm4,%%ymm4            \n"
+      "vpslld      $0xb,%%ymm3,%%ymm5            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vpsrld      $0x5,%%ymm0,%%ymm2            \n"
+      "vpsrld      $0x3,%%ymm0,%%ymm1            \n"
+      "vpsrld      $0x8,%%ymm0,%%ymm0            \n"
+      "vpand       %%ymm4,%%ymm2,%%ymm2          \n"
+      "vpand       %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpand       %%ymm5,%%ymm0,%%ymm0          \n"
+      "vpor        %%ymm2,%%ymm1,%%ymm1          \n"
+      "vpor        %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpackusdw   %%ymm0,%%ymm0,%%ymm0          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "lea         0x20(%0),%0                   \n"
+      "vmovdqu     %%xmm0,(%1)                   \n"
+      "lea         0x10(%1),%1                   \n"
+      "sub         $0x8,%2                       \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src),    // %0
+        "+r"(dst),    // %1
+        "+r"(width)   // %2
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+}
+#endif  // HAS_ARGBTORGB565ROW_AVX2
+
+#ifdef HAS_ARGBTOARGB1555ROW_AVX2
+void ARGBToARGB1555Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vpcmpeqb    %%ymm3,%%ymm3,%%ymm3          \n"
+      "vpslld      $0x1f,%%ymm3,%%ymm6           \n"
+      "vpsrld      $0x10,%%ymm6,%%ymm6           \n"
+      "vpsrld      $0x1b,%%ymm3,%%ymm3           \n"
+      "vpslld      $0x5,%%ymm3,%%ymm4            \n"
+      "vpslld      $0xa,%%ymm3,%%ymm5            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vpsrld      $0x6,%%ymm0,%%ymm2            \n"
+      "vpsrld      $0x3,%%ymm0,%%ymm1            \n"
+      "vpsrld      $0x10,%%ymm0,%%ymm7           \n"
+      "vpsrld      $0x9,%%ymm0,%%ymm0            \n"
+      "vpand       %%ymm4,%%ymm2,%%ymm2          \n"
+      "vpand       %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpand       %%ymm6,%%ymm7,%%ymm7          \n"
+      "vpand       %%ymm5,%%ymm0,%%ymm0          \n"
+      "vpor        %%ymm2,%%ymm1,%%ymm1          \n"
+      "vpor        %%ymm7,%%ymm0,%%ymm0          \n"
+      "vpor        %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpackusdw   %%ymm0,%%ymm0,%%ymm0          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "lea         0x20(%0),%0                   \n"
+      "vmovdqu     %%xmm0,(%1)                   \n"
+      "lea         0x10(%1),%1                   \n"
+      "sub         $0x8,%2                       \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src),    // %0
+        "+r"(dst),    // %1
+        "+r"(width)   // %2
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif  // HAS_ARGBTOARGB1555ROW_AVX2
+
+#ifdef HAS_ARGBTOARGB4444ROW_AVX2
+void ARGBToARGB4444Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vpcmpeqb    %%ymm3,%%ymm3,%%ymm3          \n"
+      "vpsrld      $0x1c,%%ymm3,%%ymm3           \n"
+      "vpslld      $0x4,%%ymm3,%%ymm4            \n"
+      "vpslld      $0x8,%%ymm3,%%ymm5            \n"
+      "vpslld      $0xc,%%ymm3,%%ymm6            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vpsrld      $0x8,%%ymm0,%%ymm2            \n"
+      "vpsrld      $0x4,%%ymm0,%%ymm1            \n"
+      "vpsrld      $0x10,%%ymm0,%%ymm7           \n"
+      "vpsrld      $0xc,%%ymm0,%%ymm0            \n"
+      "vpand       %%ymm4,%%ymm2,%%ymm2          \n"
+      "vpand       %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpand       %%ymm6,%%ymm7,%%ymm7          \n"
+      "vpand       %%ymm5,%%ymm0,%%ymm0          \n"
+      "vpor        %%ymm2,%%ymm1,%%ymm1          \n"
+      "vpor        %%ymm7,%%ymm0,%%ymm0          \n"
+      "vpor        %%ymm1,%%ymm0,%%ymm0          \n"
+      "vpackusdw   %%ymm0,%%ymm0,%%ymm0          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "lea         0x20(%0),%0                   \n"
+      "vmovdqu     %%xmm0,(%1)                   \n"
+      "lea         0x10(%1),%1                   \n"
+      "sub         $0x8,%2                       \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src),    // %0
+        "+r"(dst),    // %1
+        "+r"(width)   // %2
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif  // HAS_ARGBTOARGB4444ROW_AVX2
+
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
 /*
