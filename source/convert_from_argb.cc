@@ -2306,6 +2306,14 @@ static int RAWToNVMatrix(const uint8_t* src_raw,
     }
   }
 #endif
+#if defined(HAS_RGBTOYMATRIXROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    RGBToYMatrixRow = RGBToYMatrixRow_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      RGBToYMatrixRow = RGBToYMatrixRow_LSX;
+    }
+  }
+#endif
 #if defined(HAS_RGBTOYMATRIXROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     RGBToYMatrixRow = RGBToYMatrixRow_Any_LASX;

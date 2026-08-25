@@ -2646,19 +2646,20 @@ void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
 }
 
 void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
-                           uint8_t* dst_y,
-                           int width,
-                           const struct ArgbConstants* c) {
-  int8_t shuff[64] = {0,  2,  3,  5,  6,  8,  9,  11, 12, 14, 15, 17, 18,
-                      20, 21, 23, 24, 26, 27, 29, 30, 0,  1,  3,  4,  6,
-                      7,  9,  10, 12, 13, 15, 1,  0,  4,  0,  7,  0,  10,
-                      0,  13, 0,  16, 0,  19, 0,  22, 0,  25, 0,  28, 0,
-                      31, 0,  2,  0,  5,  0,  8,  0,  11, 0,  14, 0};
+                         uint8_t* dst_y,
+                         int width,
+                         const struct ArgbConstants* c) {
+  static const int8_t shuff[64] = {
+      0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23,
+      24, 26, 27, 29, 30, 0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15,
+      1, 0, 4, 0, 7, 0, 10, 0, 13, 0, 16, 0, 19, 0, 22, 0,
+      25, 0, 28, 0, 31, 0, 2, 0, 5, 0, 8, 0, 11, 0, 14, 0,
+  };
   asm volatile(
       "vldrepl.b      $vr0,  %3,    0             \n\t"  // load rgbconstants
       "vldrepl.b      $vr1,  %3,    1             \n\t"  // load rgbconstants
       "vldrepl.b      $vr2,  %3,    2             \n\t"  // load rgbconstants
-      "vldrepl.h      $vr3,  %3,    4             \n\t"  // load rgbconstants
+      "vldrepl.h      $vr3,  %3,    96            \n\t"  // load rgbconstants
       "vld            $vr4,  %4,    0             \n\t"  // load shuff
       "vld            $vr5,  %4,    16            \n\t"
       "vld            $vr6,  %4,    32            \n\t"

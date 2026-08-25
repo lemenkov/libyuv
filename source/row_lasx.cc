@@ -1933,10 +1933,10 @@ void ARGBToYMatrixRow_LASX(const uint8_t* src_argb,
 }
 
 void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
-                            uint8_t* dst_y,
-                            int width,
-                            const struct ArgbConstants* c) {
-  int8_t shuff[128] = {
+                          uint8_t* dst_y,
+                          int width,
+                          const struct ArgbConstants* c) {
+  static const int8_t shuff[128] = {
       0,  2,  3,  5,  6,  8, 9,  11, 12, 14, 15, 17, 18, 20, 21, 23,
       0,  2,  3,  5,  6,  8, 9,  11, 12, 14, 15, 17, 18, 20, 21, 23,
       24, 26, 27, 29, 30, 0, 1,  3,  4,  6,  7,  9,  10, 12, 13, 15,
@@ -1949,7 +1949,7 @@ void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
       "xvldrepl.b      $xr0,  %3,    0             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr1,  %3,    1             \n\t"  // load rgbconstants
       "xvldrepl.b      $xr2,  %3,    2             \n\t"  // load rgbconstants
-      "xvldrepl.h      $xr3,  %3,    4             \n\t"  // load rgbconstants
+      "xvldrepl.h      $xr3,  %3,    96            \n\t"  // load rgbconstants
       "xvld            $xr4,  %4,    0             \n\t"  // load shuff
       "xvld            $xr5,  %4,    32            \n\t"
       "xvld            $xr6,  %4,    64            \n\t"

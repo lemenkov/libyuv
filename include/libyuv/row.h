@@ -797,6 +797,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_LSX
 #define HAS_YUY2TOYROW_LSX
 #define HAS_ARGBTOYMATRIXROW_LSX
+#define HAS_RGBTOYMATRIXROW_LSX
 #endif
 
 #if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
