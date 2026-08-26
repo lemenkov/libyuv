@@ -1642,7 +1642,8 @@ enum FilterMode ScaleFilterReduce(int src_width,
   }
   if (filtering == kFilterBox) {
     // If scaling either axis to 0.5 or larger, switch from Box to Bilinear.
-    if (dst_width * 2 >= src_width || dst_height * 2 >= src_height) {
+    if ((int64_t)dst_width * 2 >= src_width ||
+        (int64_t)dst_height * 2 >= src_height) {
       filtering = kFilterBilinear;
     }
   }
@@ -1651,7 +1652,7 @@ enum FilterMode ScaleFilterReduce(int src_width,
       filtering = kFilterLinear;
     }
     // TODO(fbarchard): Detect any odd scale factor and reduce to Linear.
-    if (dst_height == src_height || dst_height * 3 == src_height) {
+    if (dst_height == src_height || (int64_t)dst_height * 3 == src_height) {
       filtering = kFilterLinear;
     }
     // TODO(fbarchard): Remove 1 pixel wide filter restriction, which is to
@@ -1665,7 +1666,7 @@ enum FilterMode ScaleFilterReduce(int src_width,
       filtering = kFilterNone;
     }
     // TODO(fbarchard): Detect any odd scale factor and reduce to None.
-    if (dst_width == src_width || dst_width * 3 == src_width) {
+    if (dst_width == src_width || (int64_t)dst_width * 3 == src_width) {
       filtering = kFilterNone;
     }
   }
