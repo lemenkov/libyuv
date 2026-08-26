@@ -52,6 +52,7 @@ PLATFORM_COPTS = select({
     "//conditions:default": [],
 }) + [
     "-DLIBYUV_DISABLE_SME",
+    "-DLIBYUV_UNBIASED_DATA",
     "-DLIBYUV_USE_ABSL_FLAGS",
     "-DGOOGLE_COMMANDLINEFLAGS_FULL_API",
 ]

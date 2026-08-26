@@ -66,6 +66,8 @@ list ( SORT			ly_unittest_sources )
 
 include_directories( BEFORE ${ly_inc_dir} )
 
+add_definitions(-DLIBYUV_UNBIASED_DATA)
+
 if(MSVC)
   add_definitions ( -D_CRT_SECURE_NO_WARNINGS )
 endif()
