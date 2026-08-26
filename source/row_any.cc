@@ -339,8 +339,14 @@ ANY31(I422ToUYVYRow_Any_LASX, I422ToUYVYRow_LASX, 1, 1, 4, 31)
 #ifdef HAS_BLENDPLANEROW_AVX2
 ANY31(BlendPlaneRow_Any_AVX2, BlendPlaneRow_AVX2, 0, 0, 1, 31)
 #endif
+#ifdef HAS_BLENDPLANEROW_AVX512BW
+ANY31(BlendPlaneRow_Any_AVX512BW, BlendPlaneRow_AVX512BW, 0, 0, 1, 63)
+#endif
 #ifdef HAS_BLENDPLANEROW_SSSE3
 ANY31(BlendPlaneRow_Any_SSSE3, BlendPlaneRow_SSSE3, 0, 0, 1, 7)
+#endif
+#ifdef HAS_BLENDPLANEROW_NEON
+ANY31(BlendPlaneRow_Any_NEON, BlendPlaneRow_NEON, 0, 0, 1, 15)
 #endif
 #undef ANY31
 
@@ -703,6 +709,9 @@ ANY21(ARGBAddRow_Any_NEON, ARGBAddRow_NEON, 0, 4, 4, 4, 7)
 #endif
 #ifdef HAS_ARGBSUBTRACTROW_NEON
 ANY21(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, 0, 4, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBBLENDROW_LSX
+ANY21(ARGBBlendRow_Any_LSX, ARGBBlendRow_LSX, 0, 4, 4, 4, 7)
 #endif
 #ifdef HAS_ARGBMULTIPLYROW_LSX
 ANY21(ARGBMultiplyRow_Any_LSX, ARGBMultiplyRow_LSX, 0, 4, 4, 4, 3)

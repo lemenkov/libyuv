@@ -3102,6 +3102,68 @@ void ARGBSubtractRow_NEON(const uint8_t* src_argb,
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
+// Blend 32 pixels at a time.
+// dst = (((a) * src0) + ((255 - a) * src1) + 255) >> 8
+void BlendPlaneRow_NEON(const uint8_t* src0,
+                        const uint8_t* src1,
+                        const uint8_t* alpha,
+                        uint8_t* dst,
+                        int width) {
+  asm volatile(
+      "vmov.u16    q15, #255                     \n"
+      "subs        %4, %4, #32                   \n"
+      "blt         19f                           \n"
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 32 src0
+      "vld1.8      {q2, q3}, [%1]!               \n"  // load 32 src1
+      "vld1.8      {q8, q9}, [%2]!               \n"  // load 32 alpha
+      "subs        %4, %4, #32                   \n"  // 32 processed per loop
+      "vmvn.8      q10, q8                       \n"  // 255 - alpha0
+      "vmvn.8      q11, q9                       \n"  // 255 - alpha1
+      "vmull.u8    q4, d0, d16                   \n"  // low src0 * alpha
+      "pld         [%0, #448]                    \n"
+      "vmull.u8    q5, d1, d17                   \n"  // high src0 * alpha
+      "pld         [%1, #448]                    \n"
+      "vmull.u8    q6, d2, d18                   \n"
+      "pld         [%2, #448]                    \n"
+      "vmull.u8    q7, d3, d19                   \n"
+      "vmlal.u8    q4, d4, d20                   \n"  // low + src1 * (255 - alpha)
+      "vmlal.u8    q5, d5, d21                   \n"  // high + src1 * (255 - alpha)
+      "vmlal.u8    q6, d6, d22                   \n"
+      "vmlal.u8    q7, d7, d23                   \n"
+      "vaddhn.u16  d0, q4, q15                   \n"  // (low + 255) >> 8
+      "vaddhn.u16  d1, q5, q15                   \n"  // (high + 255) >> 8
+      "vaddhn.u16  d2, q6, q15                   \n"
+      "vaddhn.u16  d3, q7, q15                   \n"
+      "vst1.8      {q0, q1}, [%3]!               \n"  // store 32 dst
+      "bge         1b                            \n"
+      "19:                                       \n"
+      "adds        %4, %4, #32                   \n"
+      "ble         99f                           \n"
+
+      // 16 pixel tail
+      "vld1.8      {q0}, [%0]!                   \n"  // load 16 src0
+      "vld1.8      {q1}, [%1]!                   \n"  // load 16 src1
+      "vld1.8      {q2}, [%2]!                   \n"  // load 16 alpha
+      "vmvn.8      q12, q2                       \n"  // 255 - alpha
+      "vmull.u8    q4, d0, d4                    \n"  // low src0 * alpha
+      "vmull.u8    q5, d1, d5                    \n"  // high src0 * alpha
+      "vmlal.u8    q4, d2, d24                   \n"  // low + src1 * (255 - alpha)
+      "vmlal.u8    q5, d3, d25                   \n"  // high + src1 * (255 - alpha)
+      "vaddhn.u16  d0, q4, q15                   \n"  // + 255 >> 8
+      "vaddhn.u16  d1, q5, q15                   \n"  // + 255 >> 8
+      "vst1.8      {q0}, [%3]!                   \n"  // store 16 dst
+      "99:                                       \n"
+      : "+r"(src0),   // %0
+        "+r"(src1),   // %1
+        "+r"(alpha),  // %2
+        "+r"(dst),    // %3
+        "+r"(width)   // %4
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+        "q9", "q10", "q11", "q12", "q15");
+}
+
 // Adds Sobel X and Sobel Y and stores Sobel into ARGB.
 // A = 255
 // R = Sobel

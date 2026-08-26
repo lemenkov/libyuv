@@ -8292,6 +8292,66 @@ void BlendPlaneRow_AVX2(const uint8_t* src0,
 }
 #endif  // HAS_BLENDPLANEROW_AVX2
 
+#ifdef HAS_BLENDPLANEROW_AVX512BW
+// Blend 64 pixels at a time.
+// unsigned version of math
+// =((A2*C2)+(B2*(255-C2))+255)/256
+// signed version of math
+// =(((A2-128)*C2)+((B2-128)*(255-C2))+32768+127)/256
+void BlendPlaneRow_AVX512BW(const uint8_t* src0,
+                            const uint8_t* src1,
+                            const uint8_t* alpha,
+                            uint8_t* dst,
+                            int width) {
+  asm volatile(
+      "vpternlogd  $0xff,%%zmm17,%%zmm17,%%zmm17 \n"
+      "vpsllw      $0x8,%%zmm17,%%zmm16          \n"  // 0xff00
+      "vpabsb      %%zmm17,%%zmm17               \n"  // 0x0101
+      "vpsllw      $7,%%zmm17,%%zmm17            \n"  // 0x8080
+      "mov         $0x807f807f,%%eax             \n"
+      "vmovd       %%eax,%%xmm18                 \n"
+      "vbroadcastss %%xmm18,%%zmm18              \n"  // 0x807f
+      "sub         %2,%0                         \n"
+      "sub         %2,%1                         \n"
+      "sub         %2,%3                         \n"
+
+      // 64 pixel loop.
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu8    (%2),%%zmm0                   \n"
+      "vpunpckhbw  %%zmm0,%%zmm0,%%zmm3          \n"
+      "vpunpcklbw  %%zmm0,%%zmm0,%%zmm0          \n"
+      "vpxorq      %%zmm16,%%zmm3,%%zmm3         \n"
+      "vpxorq      %%zmm16,%%zmm0,%%zmm0         \n"
+      "vmovdqu8    (%0,%2,1),%%zmm1              \n"
+      "vmovdqu8    (%1,%2,1),%%zmm2              \n"
+      "vpunpckhbw  %%zmm2,%%zmm1,%%zmm4          \n"
+      "vpunpcklbw  %%zmm2,%%zmm1,%%zmm1          \n"
+      "vpsubb      %%zmm17,%%zmm4,%%zmm4         \n"
+      "vpsubb      %%zmm17,%%zmm1,%%zmm1         \n"
+      "vpmaddubsw  %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpmaddubsw  %%zmm1,%%zmm0,%%zmm0          \n"
+      "vpaddw      %%zmm18,%%zmm3,%%zmm3         \n"
+      "vpaddw      %%zmm18,%%zmm0,%%zmm0         \n"
+      "vpsrlw      $0x8,%%zmm3,%%zmm3            \n"
+      "vpsrlw      $0x8,%%zmm0,%%zmm0            \n"
+      "vpackuswb   %%zmm3,%%zmm0,%%zmm0          \n"
+      "vmovdqu8    %%zmm0,(%3,%2,1)              \n"
+      "add         $64,%2                        \n"
+      "sub         $64,%4                        \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : "+r"(src0),   // %0
+        "+r"(src1),   // %1
+        "+r"(alpha),  // %2
+        "+r"(dst),    // %3
+        "+rm"(width)  // %4
+      ::"memory",
+        "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm16", "xmm17",
+        "xmm18");
+}
+#endif  // HAS_BLENDPLANEROW_AVX512BW
+
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha.
 static const vec8 kAttenuateShuffle = {6,    -128, 6,    -128, 6,  -128,

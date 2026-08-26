@@ -2158,6 +2158,201 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
 }
 #endif  // HAS_I422TOAR30ROW_AVX512BW
 
+#ifdef HAS_ARGBBLENDROW_SSSE3
+static const uint8_t kShuffleAlpha[16] = {
+    3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
+    11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80};
+
+void ARGBBlendRow_SSSE3(const uint8_t* src_argb,
+                        const uint8_t* src_argb1,
+                        uint8_t* dst_argb,
+                        int width) {
+  __m128i shuff = _mm_loadu_si128((const __m128i*)kShuffleAlpha);
+  __m128i xmm_1 = _mm_set1_epi16(1);
+  __m128i mask_lo = _mm_set1_epi16(0x00ff);
+  __m128i mask_hi = _mm_set1_epi16((short)0xff00);
+  __m128i mask_alpha = _mm_set1_epi32((int)0xff000000);
+
+  while (width >= 4) {
+    __m128i xmm_s0 = _mm_loadu_si128((const __m128i*)src_argb);
+    __m128i xmm_s1 = _mm_loadu_si128((const __m128i*)src_argb1);
+    src_argb += 16;
+    src_argb1 += 16;
+
+    __m128i xmm_a = _mm_xor_si128(xmm_s0, mask_alpha);
+    xmm_a = _mm_shuffle_epi8(xmm_a, shuff);
+    xmm_a = _mm_add_epi16(xmm_a, xmm_1);
+
+    __m128i xmm_s1_lo = _mm_and_si128(xmm_s1, mask_lo);
+    __m128i xmm_s1_hi = _mm_srli_epi16(xmm_s1, 8);
+
+    xmm_s1_lo = _mm_mullo_epi16(xmm_s1_lo, xmm_a);
+    xmm_s1_hi = _mm_mullo_epi16(xmm_s1_hi, xmm_a);
+
+    xmm_s1_lo = _mm_srli_epi16(xmm_s1_lo, 8);
+    xmm_s1_hi = _mm_and_si128(xmm_s1_hi, mask_hi);
+
+    __m128i res = _mm_or_si128(xmm_s0, mask_alpha);
+    res = _mm_adds_epu8(res, xmm_s1_lo);
+    res = _mm_adds_epu8(res, xmm_s1_hi);
+
+    _mm_storeu_si128((__m128i*)dst_argb, res);
+    dst_argb += 16;
+    width -= 4;
+  }
+
+  while (width > 0) {
+    uint32_t s0 = *(const uint32_t*)src_argb;
+    uint32_t s1 = *(const uint32_t*)src_argb1;
+    src_argb += 4;
+    src_argb1 += 4;
+
+    uint32_t a = 256 - (s0 >> 24);
+    uint32_t b = (((s1 & 0x000000ff) * a) >> 8) + (s0 & 0x000000ff);
+    uint32_t g = (((s1 & 0x0000ff00) * a) >> 8) + (s0 & 0x0000ff00);
+    uint32_t r = (((s1 & 0x00ff0000) >> 8) * a) + (s0 & 0x00ff0000);
+
+    b = (b > 255) ? 255 : b;
+    g = (g > 0xff00) ? 0xff00 : (g & 0xff00);
+    r = (r > 0x00ff0000) ? 0x00ff0000 : (r & 0x00ff0000);
+
+    *(uint32_t*)dst_argb = 0xff000000 | r | g | b;
+    dst_argb += 4;
+    --width;
+  }
+}
+#endif  // HAS_ARGBBLENDROW_SSSE3
+
+#ifdef HAS_BLENDPLANEROW_SSSE3
+void BlendPlaneRow_SSSE3(const uint8_t* src0,
+                         const uint8_t* src1,
+                         const uint8_t* alpha,
+                         uint8_t* dst,
+                         int width) {
+  __m128i xmm_ff00 = _mm_set1_epi16((short)0xff00);
+  __m128i xmm_80 = _mm_set1_epi8((char)0x80);
+  __m128i xmm_round = _mm_set1_epi16((short)0x807f);
+
+  while (width > 0) {
+    __m128i xmm_a = _mm_loadl_epi64((const __m128i*)alpha);
+    __m128i xmm_s0 = _mm_loadl_epi64((const __m128i*)src0);
+    __m128i xmm_s1 = _mm_loadl_epi64((const __m128i*)src1);
+    alpha += 8;
+    src0 += 8;
+    src1 += 8;
+
+    xmm_a = _mm_unpacklo_epi8(xmm_a, xmm_a);
+    xmm_a = _mm_xor_si128(xmm_a, xmm_ff00);
+
+    __m128i xmm_s = _mm_unpacklo_epi8(xmm_s0, xmm_s1);
+    xmm_s = _mm_sub_epi8(xmm_s, xmm_80);
+
+    __m128i xmm_p = _mm_maddubs_epi16(xmm_a, xmm_s);
+    xmm_p = _mm_add_epi16(xmm_p, xmm_round);
+    xmm_p = _mm_srli_epi16(xmm_p, 8);
+
+    __m128i xmm_d = _mm_packus_epi16(xmm_p, xmm_p);
+    _mm_storel_epi64((__m128i*)dst, xmm_d);
+    dst += 8;
+    width -= 8;
+  }
+}
+#endif  // HAS_BLENDPLANEROW_SSSE3
+
+#ifdef HAS_BLENDPLANEROW_AVX2
+LIBYUV_TARGET_AVX2
+void BlendPlaneRow_AVX2(const uint8_t* src0,
+                        const uint8_t* src1,
+                        const uint8_t* alpha,
+                        uint8_t* dst,
+                        int width) {
+  __m256i ymm_ff00 = _mm256_set1_epi16((short)0xff00);
+  __m256i ymm_80 = _mm256_set1_epi8((char)0x80);
+  __m256i ymm_round = _mm256_set1_epi16((short)0x807f);
+
+  while (width > 0) {
+    __m256i ymm_a = _mm256_loadu_si256((const __m256i*)alpha);
+    __m256i ymm_s0 = _mm256_loadu_si256((const __m256i*)src0);
+    __m256i ymm_s1 = _mm256_loadu_si256((const __m256i*)src1);
+    alpha += 32;
+    src0 += 32;
+    src1 += 32;
+
+    __m256i ymm_a_lo = _mm256_unpacklo_epi8(ymm_a, ymm_a);
+    __m256i ymm_a_hi = _mm256_unpackhi_epi8(ymm_a, ymm_a);
+    ymm_a_lo = _mm256_xor_si256(ymm_a_lo, ymm_ff00);
+    ymm_a_hi = _mm256_xor_si256(ymm_a_hi, ymm_ff00);
+
+    __m256i ymm_s_lo = _mm256_unpacklo_epi8(ymm_s0, ymm_s1);
+    __m256i ymm_s_hi = _mm256_unpackhi_epi8(ymm_s0, ymm_s1);
+    ymm_s_lo = _mm256_sub_epi8(ymm_s_lo, ymm_80);
+    ymm_s_hi = _mm256_sub_epi8(ymm_s_hi, ymm_80);
+
+    __m256i ymm_p_lo = _mm256_maddubs_epi16(ymm_a_lo, ymm_s_lo);
+    __m256i ymm_p_hi = _mm256_maddubs_epi16(ymm_a_hi, ymm_s_hi);
+
+    ymm_p_lo = _mm256_add_epi16(ymm_p_lo, ymm_round);
+    ymm_p_hi = _mm256_add_epi16(ymm_p_hi, ymm_round);
+
+    ymm_p_lo = _mm256_srli_epi16(ymm_p_lo, 8);
+    ymm_p_hi = _mm256_srli_epi16(ymm_p_hi, 8);
+
+    __m256i ymm_d = _mm256_packus_epi16(ymm_p_lo, ymm_p_hi);
+    _mm256_storeu_si256((__m256i*)dst, ymm_d);
+    dst += 32;
+    width -= 32;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_BLENDPLANEROW_AVX2
+
+#ifdef HAS_BLENDPLANEROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void BlendPlaneRow_AVX512BW(const uint8_t* src0,
+                            const uint8_t* src1,
+                            const uint8_t* alpha,
+                            uint8_t* dst,
+                            int width) {
+  __m512i zmm_ff00 = _mm512_set1_epi16((short)0xff00);
+  __m512i zmm_80 = _mm512_set1_epi8((char)0x80);
+  __m512i zmm_round = _mm512_set1_epi16((short)0x807f);
+
+  while (width > 0) {
+    __m512i zmm_a = _mm512_loadu_si512((const __m512i*)alpha);
+    __m512i zmm_s0 = _mm512_loadu_si512((const __m512i*)src0);
+    __m512i zmm_s1 = _mm512_loadu_si512((const __m512i*)src1);
+    alpha += 64;
+    src0 += 64;
+    src1 += 64;
+
+    __m512i zmm_a_lo = _mm512_unpacklo_epi8(zmm_a, zmm_a);
+    __m512i zmm_a_hi = _mm512_unpackhi_epi8(zmm_a, zmm_a);
+    zmm_a_lo = _mm512_xor_si512(zmm_a_lo, zmm_ff00);
+    zmm_a_hi = _mm512_xor_si512(zmm_a_hi, zmm_ff00);
+
+    __m512i zmm_s_lo = _mm512_unpacklo_epi8(zmm_s0, zmm_s1);
+    __m512i zmm_s_hi = _mm512_unpackhi_epi8(zmm_s0, zmm_s1);
+    zmm_s_lo = _mm512_sub_epi8(zmm_s_lo, zmm_80);
+    zmm_s_hi = _mm512_sub_epi8(zmm_s_hi, zmm_80);
+
+    __m512i zmm_p_lo = _mm512_maddubs_epi16(zmm_a_lo, zmm_s_lo);
+    __m512i zmm_p_hi = _mm512_maddubs_epi16(zmm_a_hi, zmm_s_hi);
+
+    zmm_p_lo = _mm512_add_epi16(zmm_p_lo, zmm_round);
+    zmm_p_hi = _mm512_add_epi16(zmm_p_hi, zmm_round);
+
+    zmm_p_lo = _mm512_srli_epi16(zmm_p_lo, 8);
+    zmm_p_hi = _mm512_srli_epi16(zmm_p_hi, 8);
+
+    __m512i zmm_d = _mm512_packus_epi16(zmm_p_lo, zmm_p_hi);
+    _mm512_storeu_si512((__m512i*)dst, zmm_d);
+    dst += 64;
+    width -= 64;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_BLENDPLANEROW_AVX512BW
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
