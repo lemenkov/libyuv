@@ -25,7 +25,6 @@ config("libyuv_config") {
 
   # Define CHROMIUM to tell cpu_id to avoid sandbox unsafe system calls.
   defines = [ "CHROMIUM" ]
-  defines += [ "LIBYUV_UNBIASED_DATA" ]
   if (libyuv_enable_rowwin) {
     defines += [ "LIBYUV_ENABLE_ROWWIN=1" ]
   }

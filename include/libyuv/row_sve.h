@@ -39,15 +39,11 @@ extern "C" {
   "ld1rh  {z26.h}, p0/z, [%[kRGBCoeffBias], #4] \n" \
   "ld1rh  {z27.h}, p0/z, [%[kRGBCoeffBias], #6] \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SVE_SETUP_AR30                     \
   YUVTORGB_SVE_SETUP                                \
   "add        z25.h, z25.h, #24                 \n" \
   "sub        z26.h, z26.h, #24                 \n" \
   "add        z27.h, z27.h, #24                 \n"
-#else
-#define YUVTORGB_SVE_SETUP_AR30 YUVTORGB_SVE_SETUP
-#endif
 
 #define READYUV444_SVE                           \
   "ld1b       {z0.h}, p1/z, [%[src_y]]       \n" \

@@ -37,9 +37,6 @@ extern "C" {
 // LIBYUV_UNLIMITED_BT709
 // LIBYUV_UNLIMITED_BT2020
 
-// This macro fixes the AR30 rounding bias offset (+24 / -24) for 10-bit YUV to RGB conversions:
-// LIBYUV_UNBIASED_DATA
-
 // llvm x86 is poor at ternary operator, so use branchless min/max.
 
 #define USE_BRANCHLESS 1
@@ -1788,7 +1785,6 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
   int r16 = y1 + (vi * vr)
 #endif
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
 #define LOAD_YUV_CONSTANTS_AR30            \
   int ub = yuvconstants->kUVCoeff[0];      \
@@ -1807,9 +1803,6 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
   int vr = yuvconstants->kUVToR[1];  \
   int yg = yuvconstants->kYToRgb[0]; \
   int yb = yuvconstants->kYBiasToRgb[0] - 24
-#endif
-#else
-#define LOAD_YUV_CONSTANTS_AR30 LOAD_YUV_CONSTANTS
 #endif
 
 // C reference code that mimics the YUV assembly.

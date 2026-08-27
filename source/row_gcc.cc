@@ -2639,17 +2639,12 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
   "movdqa     96(%[yuvconstants]),%%xmm11                     \n" \
   "movdqa     128(%[yuvconstants]),%%xmm12                    \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SETUP_AR30(yuvconstants)                             \
   YUVTORGB_SETUP(yuvconstants)                                        \
   "pcmpeqb     %%xmm0,%%xmm0                                  \n"     \
   "psrlw       $14,%%xmm0                                     \n"     \
   "psllw       $3,%%xmm0                                      \n"     \
   "psubw       %%xmm0,%%xmm12                                 \n"
-#else
-#define YUVTORGB_SETUP_AR30(yuvconstants)                             \
-  YUVTORGB_SETUP(yuvconstants)
-#endif
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB16(yuvconstants)                                  \
@@ -3722,7 +3717,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovups    (%[dquadsplitperm]),%%zmm17                         \n" \
   "vmovups    (%[unperm]),%%zmm18                                 \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)                        \
   YUVTORGB_SETUP_AVX2(yuvconstants)                                   \
   "vpcmpeqb    %%ymm0,%%ymm0,%%ymm0                           \n"     \
@@ -3736,12 +3730,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpsrlw      $14,%%zmm0,%%zmm0                                  \n" \
   "vpsllw      $3,%%zmm0,%%zmm0                                   \n" \
   "vpsubw      %%zmm0,%%zmm12,%%zmm12                             \n"
-#else
-#define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)                        \
-  YUVTORGB_SETUP_AVX2(yuvconstants)
-#define YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)                    \
-  YUVTORGB_SETUP_AVX512BW(yuvconstants)
-#endif
 
 #define YUVTORGB16_AVX2(yuvconstants)                                 \
   "vpsubb      %%ymm13,%%ymm3,%%ymm3                              \n" \

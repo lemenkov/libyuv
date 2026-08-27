@@ -149,16 +149,12 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "ld4r       {v28.16b, v29.16b, v30.16b, v31.16b}, [%[kUVCoeff]] \n" \
   "ld4r       {v24.8h, v25.8h, v26.8h, v27.8h}, [%[kRGBCoeffBias]] \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SETUP_AR30                                           \
   YUVTORGB_SETUP                                                      \
   "movi       v2.8h, #24                                          \n" \
   "add        v25.8h, v25.8h, v2.8h                               \n" \
   "sub        v26.8h, v26.8h, v2.8h                               \n" \
   "add        v27.8h, v27.8h, v2.8h                               \n"
-#else
-#define YUVTORGB_SETUP_AR30 YUVTORGB_SETUP
-#endif
 
 // v16.8h: B
 // v17.8h: G
