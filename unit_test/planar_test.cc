@@ -1741,10 +1741,11 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Correctness) {
   int i, j;
 
   // orig is tiled.  Allocate enough memory for tiles.
-  int tile_width = (benchmark_width_ + 15) & ~15;
+  int uv_width = (benchmark_width_ + 1) & ~1;
+  int tile_width = (uv_width + 15) & ~15;
   int tile_height = (benchmark_height_ + 15) & ~15;
   int tile_plane_size = tile_width * tile_height;
-  int uv_plane_size = ((benchmark_width_ + 1) / 2) * benchmark_height_;
+  int uv_plane_size = (uv_width / 2) * benchmark_height_;
   align_buffer_page_end(tile_uv, tile_plane_size);
   align_buffer_page_end(detiled_uv, tile_plane_size);
   align_buffer_page_end(dst_u_two_stage, uv_plane_size);
@@ -1759,17 +1760,17 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Correctness) {
   memset(dst_v_two_stage, 0, uv_plane_size);
   memset(dst_v_opt, 0, uv_plane_size);
 
-  DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, (benchmark_width_ + 1) / 2,
-                     dst_v_opt, (benchmark_width_ + 1) / 2, benchmark_width_,
+  DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, uv_width / 2,
+                     dst_v_opt, uv_width / 2, uv_width,
                      benchmark_height_, 16);
 
   // Benchmark 2 step conversion for comparison.
   for (j = 0; j < benchmark_iterations_; j++) {
-    DetilePlane(tile_uv, tile_width, detiled_uv, benchmark_width_,
-                benchmark_width_, benchmark_height_, 16);
-    SplitUVPlane(detiled_uv, tile_width, dst_u_two_stage,
-                 (benchmark_width_ + 1) / 2, dst_v_two_stage,
-                 (benchmark_width_ + 1) / 2, (benchmark_width_ + 1) / 2,
+    DetilePlane(tile_uv, tile_width, detiled_uv, uv_width,
+                uv_width, benchmark_height_, 16);
+    SplitUVPlane(detiled_uv, uv_width, dst_u_two_stage,
+                 uv_width / 2, dst_v_two_stage,
+                 uv_width / 2, uv_width / 2,
                  benchmark_height_);
   }
 
@@ -1790,10 +1791,11 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
   int i, j;
 
   // orig is tiled.  Allocate enough memory for tiles.
-  int tile_width = (benchmark_width_ + 15) & ~15;
+  int uv_width = (benchmark_width_ + 1) & ~1;
+  int tile_width = (uv_width + 15) & ~15;
   int tile_height = (benchmark_height_ + 15) & ~15;
   int tile_plane_size = tile_width * tile_height;
-  int uv_plane_size = ((benchmark_width_ + 1) / 2) * benchmark_height_;
+  int uv_plane_size = (uv_width / 2) * benchmark_height_;
   align_buffer_page_end(tile_uv, tile_plane_size);
   align_buffer_page_end(dst_u_c, uv_plane_size);
   align_buffer_page_end(dst_u_opt, uv_plane_size);
@@ -1809,8 +1811,8 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags_);
 
-  DetileSplitUVPlane(tile_uv, tile_width, dst_u_c, (benchmark_width_ + 1) / 2,
-                     dst_v_c, (benchmark_width_ + 1) / 2, benchmark_width_,
+  DetileSplitUVPlane(tile_uv, tile_width, dst_u_c, uv_width / 2,
+                     dst_v_c, uv_width / 2, uv_width,
                      benchmark_height_, 16);
 
   // Enable optimizations.
@@ -1818,8 +1820,8 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
 
   for (j = 0; j < benchmark_iterations_; j++) {
     DetileSplitUVPlane(
-        tile_uv, tile_width, dst_u_opt, (benchmark_width_ + 1) / 2, dst_v_opt,
-        (benchmark_width_ + 1) / 2, benchmark_width_, benchmark_height_, 16);
+        tile_uv, tile_width, dst_u_opt, uv_width / 2, dst_v_opt,
+        uv_width / 2, uv_width, benchmark_height_, 16);
   }
 
   for (i = 0; i < uv_plane_size; ++i) {

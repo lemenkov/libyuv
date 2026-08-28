@@ -878,18 +878,15 @@ void ScaleARGBRowDown2_C(const uint8_t* src_argb,
                          ptrdiff_t src_stride,
                          uint8_t* dst_argb,
                          int dst_width) {
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
   int x;
   (void)src_stride;
-  for (x = 0; x < dst_width - 1; x += 2) {
-    dst[0] = src[1];
-    dst[1] = src[3];
-    src += 4;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[1];
+  for (x = 0; x < dst_width; ++x) {
+    dst_argb[0] = src_argb[4];
+    dst_argb[1] = src_argb[5];
+    dst_argb[2] = src_argb[6];
+    dst_argb[3] = src_argb[7];
+    src_argb += 8;
+    dst_argb += 4;
   }
 }
 
@@ -937,18 +934,15 @@ void ScaleARGBRowDownEven_C(const uint8_t* src_argb,
                             int src_stepx,
                             uint8_t* dst_argb,
                             int dst_width) {
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
-  (void)src_stride;
   int x;
-  for (x = 0; x < dst_width - 1; x += 2) {
-    dst[0] = src[0];
-    dst[1] = src[src_stepx];
-    src += src_stepx * 2;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[0];
+  (void)src_stride;
+  for (x = 0; x < dst_width; ++x) {
+    dst_argb[0] = src_argb[0];
+    dst_argb[1] = src_argb[1];
+    dst_argb[2] = src_argb[2];
+    dst_argb[3] = src_argb[3];
+    src_argb += src_stepx * 4;
+    dst_argb += 4;
   }
 }
 
@@ -982,18 +976,15 @@ void ScaleARGBCols_C(uint8_t* dst_argb,
                      int dst_width,
                      int x,
                      int dx) {
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    dst[0] = src[x >> 16];
+  for (j = 0; j < dst_width; ++j) {
+    const uint8_t* src = src_argb + (x >> 16) * 4;
+    dst_argb[0] = src[0];
+    dst_argb[1] = src[1];
+    dst_argb[2] = src[2];
+    dst_argb[3] = src[3];
+    dst_argb += 4;
     x += dx;
-    dst[1] = src[x >> 16];
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[x >> 16];
   }
 }
 
@@ -1003,18 +994,15 @@ void ScaleARGBCols64_C(uint8_t* dst_argb,
                        int x32,
                        int dx) {
   int64_t x = (int64_t)(x32);
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    dst[0] = src[x >> 16];
+  for (j = 0; j < dst_width; ++j) {
+    const uint8_t* src = src_argb + (x >> 16) * 4;
+    dst_argb[0] = src[0];
+    dst_argb[1] = src[1];
+    dst_argb[2] = src[2];
+    dst_argb[3] = src[3];
+    dst_argb += 4;
     x += dx;
-    dst[1] = src[x >> 16];
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[x >> 16];
   }
 }
 
@@ -1024,59 +1012,46 @@ void ScaleARGBColsUp2_C(uint8_t* dst_argb,
                         int dst_width,
                         int x,
                         int dx) {
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
   int j;
   (void)x;
   (void)dx;
   for (j = 0; j < dst_width - 1; j += 2) {
-    dst[1] = dst[0] = src[0];
-    src += 1;
-    dst += 2;
+    dst_argb[0] = dst_argb[4] = src_argb[0];
+    dst_argb[1] = dst_argb[5] = src_argb[1];
+    dst_argb[2] = dst_argb[6] = src_argb[2];
+    dst_argb[3] = dst_argb[7] = src_argb[3];
+    src_argb += 4;
+    dst_argb += 8;
   }
   if (dst_width & 1) {
-    dst[0] = src[0];
+    dst_argb[0] = src_argb[0];
+    dst_argb[1] = src_argb[1];
+    dst_argb[2] = src_argb[2];
+    dst_argb[3] = src_argb[3];
   }
 }
 
 // TODO(fbarchard): Replace 0x7f ^ f with 128-f.  bug=607.
 // Mimics SSSE3 blender
-#define BLENDER1(a, b, f) ((a) * (0x7f ^ f) + (b) * f) >> 7
-#define BLENDERC(a, b, f, s) \
-  (uint32_t)(BLENDER1(((a) >> s) & 255, ((b) >> s) & 255, f) << s)
-#define BLENDER(a, b, f)                                                 \
-  BLENDERC(a, b, f, 24) | BLENDERC(a, b, f, 16) | BLENDERC(a, b, f, 8) | \
-      BLENDERC(a, b, f, 0)
+#define BLENDER1(a, b, f) (((a) * (0x7f ^ (f)) + (b) * (f)) >> 7)
 
 void ScaleARGBFilterCols_C(uint8_t* dst_argb,
                            const uint8_t* src_argb,
                            int dst_width,
                            int x,
                            int dx) {
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    int xi = x >> 16;
+  for (j = 0; j < dst_width; ++j) {
+    int xi = (x >> 16) * 4;
     int xf = (x >> 9) & 0x7f;
-    uint32_t a = src[xi];
-    uint32_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
+    const uint8_t* a = src_argb + xi;
+    const uint8_t* b = a + 4;
+    dst_argb[0] = (uint8_t)BLENDER1(a[0], b[0], xf);
+    dst_argb[1] = (uint8_t)BLENDER1(a[1], b[1], xf);
+    dst_argb[2] = (uint8_t)BLENDER1(a[2], b[2], xf);
+    dst_argb[3] = (uint8_t)BLENDER1(a[3], b[3], xf);
+    dst_argb += 4;
     x += dx;
-    xi = x >> 16;
-    xf = (x >> 9) & 0x7f;
-    a = src[xi];
-    b = src[xi + 1];
-    dst[1] = BLENDER(a, b, xf);
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    int xi = x >> 16;
-    int xf = (x >> 9) & 0x7f;
-    uint32_t a = src[xi];
-    uint32_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
   }
 }
 
@@ -1086,35 +1061,21 @@ void ScaleARGBFilterCols64_C(uint8_t* dst_argb,
                              int x32,
                              int dx) {
   int64_t x = (int64_t)(x32);
-  const uint32_t* src = (const uint32_t*)(src_argb);
-  uint32_t* dst = (uint32_t*)(dst_argb);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    int64_t xi = x >> 16;
+  for (j = 0; j < dst_width; ++j) {
+    int64_t xi = (x >> 16) * 4;
     int xf = (x >> 9) & 0x7f;
-    uint32_t a = src[xi];
-    uint32_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
+    const uint8_t* a = src_argb + xi;
+    const uint8_t* b = a + 4;
+    dst_argb[0] = (uint8_t)BLENDER1(a[0], b[0], xf);
+    dst_argb[1] = (uint8_t)BLENDER1(a[1], b[1], xf);
+    dst_argb[2] = (uint8_t)BLENDER1(a[2], b[2], xf);
+    dst_argb[3] = (uint8_t)BLENDER1(a[3], b[3], xf);
+    dst_argb += 4;
     x += dx;
-    xi = x >> 16;
-    xf = (x >> 9) & 0x7f;
-    a = src[xi];
-    b = src[xi + 1];
-    dst[1] = BLENDER(a, b, xf);
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    int64_t xi = x >> 16;
-    int xf = (x >> 9) & 0x7f;
-    uint32_t a = src[xi];
-    uint32_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
   }
 }
 #undef BLENDER1
-#undef BLENDERC
-#undef BLENDER
 
 // UV scale row functions
 // same as ARGB but 2 channels
@@ -1169,18 +1130,13 @@ void ScaleUVRowDownEven_C(const uint8_t* src_uv,
                           int src_stepx,
                           uint8_t* dst_uv,
                           int dst_width) {
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
-  (void)src_stride;
   int x;
-  for (x = 0; x < dst_width - 1; x += 2) {
-    dst[0] = src[0];
-    dst[1] = src[src_stepx];
-    src += src_stepx * 2;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[0];
+  (void)src_stride;
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = src_uv[0];
+    dst_uv[1] = src_uv[1];
+    src_uv += src_stepx * 2;
+    dst_uv += 2;
   }
 }
 
@@ -1324,18 +1280,13 @@ void ScaleUVCols_C(uint8_t* dst_uv,
                    int dst_width,
                    int x,
                    int dx) {
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    dst[0] = src[x >> 16];
+  for (j = 0; j < dst_width; ++j) {
+    const uint8_t* src = src_uv + (x >> 16) * 2;
+    dst_uv[0] = src[0];
+    dst_uv[1] = src[1];
+    dst_uv += 2;
     x += dx;
-    dst[1] = src[x >> 16];
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[x >> 16];
   }
 }
 
@@ -1345,18 +1296,13 @@ void ScaleUVCols64_C(uint8_t* dst_uv,
                      int x32,
                      int dx) {
   int64_t x = (int64_t)(x32);
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    dst[0] = src[x >> 16];
+  for (j = 0; j < dst_width; ++j) {
+    const uint8_t* src = src_uv + (x >> 16) * 2;
+    dst_uv[0] = src[0];
+    dst_uv[1] = src[1];
+    dst_uv += 2;
     x += dx;
-    dst[1] = src[x >> 16];
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[x >> 16];
   }
 }
 
@@ -1366,57 +1312,40 @@ void ScaleUVColsUp2_C(uint8_t* dst_uv,
                       int dst_width,
                       int x,
                       int dx) {
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   int j;
   (void)x;
   (void)dx;
   for (j = 0; j < dst_width - 1; j += 2) {
-    dst[1] = dst[0] = src[0];
-    src += 1;
-    dst += 2;
+    dst_uv[0] = dst_uv[2] = src_uv[0];
+    dst_uv[1] = dst_uv[3] = src_uv[1];
+    src_uv += 2;
+    dst_uv += 4;
   }
   if (dst_width & 1) {
-    dst[0] = src[0];
+    dst_uv[0] = src_uv[0];
+    dst_uv[1] = src_uv[1];
   }
 }
 
 // Performs (a + ((f * (b - a) + 64) >> 7)) which is equivalent of
 // ((a * (128 - f) + b * f + 64) >> 7).
 #define BLENDER1(a, b, f) ((a) + (((f) * ((b) - (a)) + 64) >> 7))
-#define BLENDERC(a, b, f, s) \
-  (uint16_t)(BLENDER1(((a) >> s) & 255, ((b) >> s) & 255, f) << s)
-#define BLENDER(a, b, f) BLENDERC(a, b, f, 8) | BLENDERC(a, b, f, 0)
 
 void ScaleUVFilterCols_C(uint8_t* dst_uv,
                          const uint8_t* src_uv,
                          int dst_width,
                          int x,
                          int dx) {
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    int xi = x >> 16;
+  for (j = 0; j < dst_width; ++j) {
+    int xi = (x >> 16) * 2;
     int xf = (x >> 9) & 0x7f;
-    uint16_t a = src[xi];
-    uint16_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
+    const uint8_t* a = src_uv + xi;
+    const uint8_t* b = a + 2;
+    dst_uv[0] = (uint8_t)BLENDER1(a[0], b[0], xf);
+    dst_uv[1] = (uint8_t)BLENDER1(a[1], b[1], xf);
+    dst_uv += 2;
     x += dx;
-    xi = x >> 16;
-    xf = (x >> 9) & 0x7f;
-    a = src[xi];
-    b = src[xi + 1];
-    dst[1] = BLENDER(a, b, xf);
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    int xi = x >> 16;
-    int xf = (x >> 9) & 0x7f;
-    uint16_t a = src[xi];
-    uint16_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
   }
 }
 
@@ -1426,35 +1355,19 @@ void ScaleUVFilterCols64_C(uint8_t* dst_uv,
                            int x32,
                            int dx) {
   int64_t x = (int64_t)(x32);
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   int j;
-  for (j = 0; j < dst_width - 1; j += 2) {
-    int64_t xi = x >> 16;
+  for (j = 0; j < dst_width; ++j) {
+    int64_t xi = (x >> 16) * 2;
     int xf = (x >> 9) & 0x7f;
-    uint16_t a = src[xi];
-    uint16_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
+    const uint8_t* a = src_uv + xi;
+    const uint8_t* b = a + 2;
+    dst_uv[0] = (uint8_t)BLENDER1(a[0], b[0], xf);
+    dst_uv[1] = (uint8_t)BLENDER1(a[1], b[1], xf);
+    dst_uv += 2;
     x += dx;
-    xi = x >> 16;
-    xf = (x >> 9) & 0x7f;
-    a = src[xi];
-    b = src[xi + 1];
-    dst[1] = BLENDER(a, b, xf);
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    int64_t xi = x >> 16;
-    int xf = (x >> 9) & 0x7f;
-    uint16_t a = src[xi];
-    uint16_t b = src[xi + 1];
-    dst[0] = BLENDER(a, b, xf);
   }
 }
 #undef BLENDER1
-#undef BLENDERC
-#undef BLENDER
 
 // Scale plane vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
