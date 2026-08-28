@@ -13,6 +13,7 @@
 #include <limits.h>
 #include <string.h>  // For memcpy.
 
+#include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/row.h"
