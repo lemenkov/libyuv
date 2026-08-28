@@ -6556,6 +6556,11 @@ int I420ToAR30Matrix(const uint8_t* src_y,
     I422ToAR30Row = I422ToAR30Row_SME;
   }
 #endif
+#if defined(HAS_I422TOAR30ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I422ToAR30Row = I422ToAR30Row_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);

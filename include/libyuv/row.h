@@ -885,6 +885,7 @@ extern "C" {
 #define HAS_COPYROW_RVV
 #define HAS_HALFROW_16TO8_RVV
 #define HAS_HALFWIDTHROW_16TO8_RVV
+#define HAS_I422TOAR30ROW_RVV
 #define HAS_INTERPOLATEROW_RVV
 #define HAS_RGBTOUV444MATRIXROW_RVV
 #define HAS_RGBTOUVMATRIXROW_RVV
@@ -1600,6 +1601,12 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
                         uint8_t* dst_rgb24,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToAR30Row_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_ar30,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I444ToARGBRow_LSX(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
