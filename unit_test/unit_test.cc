@@ -52,18 +52,18 @@ static const int32_t FLAGS_libyuv_cpu_info = 0;
 // Test environment variable for disabling CPU features. Any non-zero value
 // to disable. Zero ignored to make it easy to set the variable on/off.
 #if !defined(__native_client__) && !defined(_M_ARM)
-static LIBYUV_BOOL TestEnv(const char* name) {
+static bool TestEnv(const char* name) {
   const char* var = getenv(name);
   if (var) {
     if (var[0] != '0') {
-      return LIBYUV_TRUE;
+      return true;
     }
   }
-  return LIBYUV_FALSE;
+  return false;
 }
 #else  // nacl does not support getenv().
-static LIBYUV_BOOL TestEnv(const char*) {
-  return LIBYUV_FALSE;
+static bool TestEnv(const char*) {
+  return false;
 }
 #endif
 

@@ -78,7 +78,7 @@ int ConvertToARGB(const uint8_t* sample,
   // and then rotate the ARGB to the final destination buffer.
   // For in-place conversion, if destination dst_argb is same as source sample,
   // also enable temporary buffer.
-  LIBYUV_BOOL need_buf =
+  int need_buf =
       (rotation && format != FOURCC_ARGB) || dst_argb == sample;
   uint8_t* dest_argb = dst_argb;
   int dest_dst_stride_argb = dst_stride_argb;

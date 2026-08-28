@@ -13,7 +13,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
 #include "libyuv/version.h"
 

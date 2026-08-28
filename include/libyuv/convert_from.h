@@ -11,6 +11,8 @@
 #ifndef INCLUDE_LIBYUV_CONVERT_FROM_H_
 #define INCLUDE_LIBYUV_CONVERT_FROM_H_
 
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 #include "libyuv/rotate.h"
 

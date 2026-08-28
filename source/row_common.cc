@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <string.h>  // For memcpy and memset.
 
-#include "libyuv/basic_types.h"
 #include "libyuv/convert_argb.h"       // For kYuvI601Constants
 #include "libyuv/convert_from_argb.h"  // For ArgbConstants
 

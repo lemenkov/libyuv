@@ -12,7 +12,6 @@
 
 #include <limits.h>
 
-#include "libyuv/basic_types.h"
 #include "libyuv/convert.h"  // For I420Copy
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"

@@ -11,8 +11,6 @@
 #include "libyuv/rotate.h"
 #include "libyuv/rotate_row.h"
 
-#include "libyuv/basic_types.h"
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {

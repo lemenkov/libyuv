@@ -144,13 +144,13 @@ A fourcc provided by capturer, can be thought of string, e.g. "ARGB".
 
 On little endian machines, as an int, this would have 'A' in the lowest byte.  The FOURCC macro reverses the order:
 
-    #define FOURCC(a, b, c, d) (((uint32)(a)) | ((uint32)(b) << 8) | ((uint32)(c) << 16) | ((uint32)(d) << 24))
+    #define FOURCC(a, b, c, d) (((uint32_t)(a)) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
-So the "ARGB" string, read as an uint32, is
+So the "ARGB" string, read as an uint32_t, is
 
     FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B')
 
-If you were to read ARGB pixels as uint32's, the alpha would be in the high byte, and the blue in the lowest byte.  In memory, these are stored little endian, so 'B' is first, then 'G', 'R' and 'A' last.
+If you were to read ARGB pixels as uint32_t's, the alpha would be in the high byte, and the blue in the lowest byte.  In memory, these are stored little endian, so 'B' is first, then 'G', 'R' and 'A' last.
 
 When calling conversion functions, the names match the FOURCC, so in this case it would be I420ToARGB().
 

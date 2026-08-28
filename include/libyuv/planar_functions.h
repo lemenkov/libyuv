@@ -11,6 +11,9 @@
 #ifndef INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 #define INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 // TODO(fbarchard): Remove the following headers includes.

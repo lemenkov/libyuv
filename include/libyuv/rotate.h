@@ -11,6 +11,8 @@
 #ifndef INCLUDE_LIBYUV_ROTATE_H_
 #define INCLUDE_LIBYUV_ROTATE_H_
 
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus

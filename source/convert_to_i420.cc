@@ -63,7 +63,7 @@ int ConvertToI420(const uint8_t* sample,
   const uint8_t* src;
   const uint8_t* src_uv;
   int r = 0;
-  LIBYUV_BOOL need_buf =
+  int need_buf =
       (rotation && format != FOURCC_I420 && format != FOURCC_NV12 &&
        format != FOURCC_NV21 && format != FOURCC_YV12) ||
       dst_y == sample;

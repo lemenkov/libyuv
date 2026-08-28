@@ -12,6 +12,7 @@
 #define INCLUDE_LIBYUV_ROW_H_
 
 #include <stddef.h>  // For NULL
+#include <stdint.h>
 #include <stdlib.h>  // For malloc
 
 #include "libyuv/basic_types.h"

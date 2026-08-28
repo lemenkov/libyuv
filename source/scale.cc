@@ -2688,7 +2688,7 @@ int Scale(const uint8_t* src_y,
           int dst_stride_v,
           int dst_width,
           int dst_height,
-          LIBYUV_BOOL interpolate) {
+          int interpolate) {
   return I420Scale(src_y, src_stride_y, src_u, src_stride_u, src_v,
                    src_stride_v, src_width, src_height, dst_y, dst_stride_y,
                    dst_u, dst_stride_u, dst_v, dst_stride_v, dst_width,

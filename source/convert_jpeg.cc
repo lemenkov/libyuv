@@ -94,7 +94,7 @@ int MJPGSize(const uint8_t* src_mjpg,
              int* width,
              int* height) {
   MJpegDecoder mjpeg_decoder;
-  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
+  bool ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
   if (ret) {
     *width = mjpeg_decoder.GetWidth();
     *height = mjpeg_decoder.GetHeight();
@@ -126,7 +126,7 @@ int MJPGToI420(const uint8_t* src_mjpg,
 
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
-  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
+  bool ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
   if (ret && (mjpeg_decoder.GetWidth() != src_width ||
               mjpeg_decoder.GetHeight() != src_height)) {
     // ERROR: MJPEG frame has unexpected dimensions
@@ -266,7 +266,7 @@ int MJPGToNV21(const uint8_t* src_mjpg,
 
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
-  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
+  bool ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
   if (ret && (mjpeg_decoder.GetWidth() != src_width ||
               mjpeg_decoder.GetHeight() != src_height)) {
     // ERROR: MJPEG frame has unexpected dimensions
@@ -399,7 +399,7 @@ int MJPGToNV12(const uint8_t* sample,
 
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
-  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret && (mjpeg_decoder.GetWidth() != src_width ||
               mjpeg_decoder.GetHeight() != src_height)) {
     // ERROR: MJPEG frame has unexpected dimensions
@@ -531,7 +531,7 @@ int MJPGToARGB(const uint8_t* src_mjpg,
 
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
-  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
+  bool ret = mjpeg_decoder.LoadFrame(src_mjpg, src_size_mjpg);
   if (ret && (mjpeg_decoder.GetWidth() != src_width ||
               mjpeg_decoder.GetHeight() != src_height)) {
     // ERROR: MJPEG frame has unexpected dimensions
