@@ -85,7 +85,30 @@ ALL_DEPS = NEON_DEPS + SVE_DEPS + PLATFORM_DEPS
 
 cc_library(
     name = "libyuv",
-    hdrs = native.glob([PREFIX + "include/**/*.h"]),
+    hdrs = [
+        PREFIX + "include/libyuv.h",
+        # Headers included by libyuv.h.
+        PREFIX + "include/libyuv/basic_types.h",
+        PREFIX + "include/libyuv/compare.h",
+        PREFIX + "include/libyuv/convert.h",
+        PREFIX + "include/libyuv/convert_argb.h",
+        PREFIX + "include/libyuv/convert_from.h",
+        PREFIX + "include/libyuv/convert_from_argb.h",
+        PREFIX + "include/libyuv/cpu_id.h",
+        PREFIX + "include/libyuv/mjpeg_decoder.h",
+        PREFIX + "include/libyuv/planar_functions.h",
+        PREFIX + "include/libyuv/rotate.h",
+        PREFIX + "include/libyuv/rotate_argb.h",
+        PREFIX + "include/libyuv/row.h",  # Bug 553148013: Should be private.
+        PREFIX + "include/libyuv/scale.h",
+        PREFIX + "include/libyuv/scale_argb.h",
+        PREFIX + "include/libyuv/scale_rgb.h",
+        PREFIX + "include/libyuv/scale_uv.h",
+        PREFIX + "include/libyuv/version.h",
+        PREFIX + "include/libyuv/video_common.h",
+        # Headers included by libyuv/row.h.
+        PREFIX + "include/libyuv/cpu_support.h",  # Bug 553148013: Should be private.
+    ],
     strip_include_prefix = PREFIX + "include",
     visibility = ["//visibility:public"],
     deps = [":libyuv_impl"],

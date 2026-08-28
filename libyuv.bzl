@@ -21,7 +21,7 @@ def libyuv_hdrs(prefix = ""):
         prefix + "include/libyuv/convert.h",
         prefix + "include/libyuv/convert_from_argb.h",
         prefix + "include/libyuv/cpu_id.h",
-        prefix + "include/libyuv/row.h",
+        prefix + "include/libyuv/row.h",  # Bug 553148013: Should be private.
     ]
 
 def libyuv_neon_srcs(prefix = ""):
