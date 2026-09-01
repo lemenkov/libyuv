@@ -834,12 +834,52 @@ TESTATOPLANARA(ARGB, 4, 1, I420Alpha, 2, 2)
 
 TESTATOBP(ARGB, 1, 4, NV12, 2, 2)
 TESTATOBP(ARGB, 1, 4, NV21, 2, 2)
+TESTATOBP(ARGB, 1, 4, NV16, 2, 1)
+TESTATOBP(ARGB, 1, 4, NV24, 1, 1)
 TESTATOBP(ABGR, 1, 4, NV12, 2, 2)
 TESTATOBP(ABGR, 1, 4, NV21, 2, 2)
 TESTATOBP(YUY2, 2, 4, NV12, 2, 2)
 TESTATOBP(UYVY, 2, 4, NV12, 2, 2)
 TESTATOBP(AYUV, 1, 4, NV12, 2, 2)
 TESTATOBP(AYUV, 1, 4, NV21, 2, 2)
+
+// Matrix API with I601 constants matches the non-matrix wrapper.
+#define TESTATOBPMATRIX(FMT_A, BPP_A, FMT_B, SUBSAMP_X, SUBSAMP_Y)           \
+  TEST_F(LibYUVConvertTest, Test##FMT_A##To##FMT_B##Matrix) {                \
+    const int kWidth = 16;                                                   \
+    const int kHeight = 16;                                                  \
+    const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                      \
+    const int kHeightUV = SUBSAMPLE(kHeight, SUBSAMP_Y);                     \
+    align_buffer_page_end(src_argb, kWidth * kHeight * BPP_A);               \
+    align_buffer_page_end(dst_y, kWidth * kHeight);                          \
+    align_buffer_page_end(dst_uv, kStrideUV * 2 * kHeightUV);                \
+    align_buffer_page_end(ref_y, kWidth * kHeight);                          \
+    align_buffer_page_end(ref_uv, kStrideUV * 2 * kHeightUV);                \
+                                                                             \
+    MemRandomize(src_argb, kWidth * kHeight * BPP_A);                        \
+                                                                             \
+    FMT_A##To##FMT_B##Matrix(src_argb, kWidth * BPP_A, dst_y, kWidth, dst_uv, \
+                             kStrideUV * 2, &kArgbI601Constants, kWidth,     \
+                             kHeight);                                       \
+    FMT_A##To##FMT_B(src_argb, kWidth * BPP_A, ref_y, kWidth, ref_uv,         \
+                     kStrideUV * 2, kWidth, kHeight);                        \
+    for (int i = 0; i < kWidth * kHeight; ++i) {                             \
+      ASSERT_EQ(dst_y[i], ref_y[i]);                                         \
+    }                                                                        \
+    for (int i = 0; i < kStrideUV * 2 * kHeightUV; ++i) {                    \
+      ASSERT_EQ(dst_uv[i], ref_uv[i]);                                       \
+    }                                                                        \
+                                                                             \
+    free_aligned_buffer_page_end(src_argb);                                  \
+    free_aligned_buffer_page_end(dst_y);                                     \
+    free_aligned_buffer_page_end(dst_uv);                                    \
+    free_aligned_buffer_page_end(ref_y);                                     \
+    free_aligned_buffer_page_end(ref_uv);                                    \
+  }
+
+TESTATOBPMATRIX(ARGB, 4, NV12, 2, 2)
+TESTATOBPMATRIX(ARGB, 4, NV16, 2, 1)
+TESTATOBPMATRIX(ARGB, 4, NV24, 1, 1)
 
 #if !defined(LEAN_TESTS)
 
@@ -2417,37 +2457,6 @@ TEST_F(LibYUVConvertTest, TestRGB24ToNV12) {
   free_aligned_buffer_page_end(ref_y);
   free_aligned_buffer_page_end(ref_u);
   free_aligned_buffer_page_end(ref_v);
-  free_aligned_buffer_page_end(ref_uv);
-}
-
-TEST_F(LibYUVConvertTest, TestARGBToNV12Matrix) {
-  const int kWidth = 16;
-  const int kHeight = 16;
-  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
-  align_buffer_page_end(dst_y, kWidth * kHeight);
-  align_buffer_page_end(dst_uv, kWidth * kHeight / 2);
-
-  MemRandomize(src_argb, kWidth * kHeight * 4);
-
-  // BT.601
-  ARGBToNV12Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_uv, kWidth,
-                   &kArgbI601Constants, kWidth, kHeight);
-  // Verify against non-matrix version
-  align_buffer_page_end(ref_y, kWidth * kHeight);
-  align_buffer_page_end(ref_uv, kWidth * kHeight / 2);
-  ARGBToNV12(src_argb, kWidth * 4, ref_y, kWidth, ref_uv, kWidth, kWidth,
-             kHeight);
-  for (int i = 0; i < kWidth * kHeight; ++i) {
-    ASSERT_EQ(dst_y[i], ref_y[i]);
-  }
-  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
-    ASSERT_EQ(dst_uv[i], ref_uv[i]);
-  }
-
-  free_aligned_buffer_page_end(src_argb);
-  free_aligned_buffer_page_end(dst_y);
-  free_aligned_buffer_page_end(dst_uv);
-  free_aligned_buffer_page_end(ref_y);
   free_aligned_buffer_page_end(ref_uv);
 }
 

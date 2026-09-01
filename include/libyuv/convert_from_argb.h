@@ -196,7 +196,7 @@ int ARGBToI444(const uint8_t* src_argb,
                int width,
                int height);
 
-// RGB to I444 with matrix. See ArgbConstants at the top of this file for usage.
+// ARGB to I444 with matrix. See ArgbConstants at the top of this file for usage.
 LIBYUV_API
 int ARGBToI444Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -260,7 +260,7 @@ int ABGRToI422(const uint8_t* src_abgr,
                int width,
                int height);
 
-// RGB to I444 with matrix. See ArgbConstants at the top of this file for usage.
+// ARGB to I422 with matrix. See ArgbConstants at the top of this file for usage.
 LIBYUV_API
 int ARGBToI422Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -408,7 +408,7 @@ int ARGBToNV12(const uint8_t* src_argb,
                int width,
                int height);
 
-// RGB to NV12 with matrix. See ArgbConstants at the top of this file for usage.
+// ARGB to NV12 with matrix. See ArgbConstants at the top of this file for usage.
 LIBYUV_API
 int ARGBToNV12Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -420,7 +420,53 @@ int ARGBToNV12Matrix(const uint8_t* src_argb,
                      int width,
                      int height);
 
-// RGB to NV21 with matrix. See ArgbConstants at the top of this file for usage.
+// Convert ARGB To NV16.
+LIBYUV_API
+int ARGBToNV16(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// ARGB to NV16 with matrix. See ArgbConstants at the top of this file for usage.
+LIBYUV_API
+int ARGBToNV16Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+// Convert ARGB To NV24.
+LIBYUV_API
+int ARGBToNV24(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// ARGB to NV24 with matrix. See ArgbConstants at the top of this file for usage.
+LIBYUV_API
+int ARGBToNV24Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+// ARGB to NV21 with matrix. See ArgbConstants at the top of this file for usage.
 LIBYUV_API
 int ARGBToNV21Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
