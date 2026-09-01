@@ -235,6 +235,14 @@ void Convert8To16Plane(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    Convert8To16Row = Convert8To16Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      Convert8To16Row = Convert8To16Row_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_CONVERT8TO16ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     Convert8To16Row = Convert8To16Row_Any_NEON;
@@ -246,6 +254,11 @@ void Convert8To16Plane(const uint8_t* src_y,
 #if defined(HAS_CONVERT8TO16ROW_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     Convert8To16Row = Convert8To16Row_SME;
+  }
+#endif
+#if defined(HAS_CONVERT8TO16ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    Convert8To16Row = Convert8To16Row_RVV;
   }
 #endif
 

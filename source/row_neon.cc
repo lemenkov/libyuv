@@ -3831,6 +3831,37 @@ void Convert8To8Row_NEON(const uint8_t* src_y,
       : "cc", "memory", "q0", "q1", "q2", "q3", "d8", "q5");
 }
 
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 512 = 9 bits
+// 1024 = 10 bits
+// 4096 = 12 bits
+// 65536 = 16 bits
+void Convert8To16Row_NEON(const uint8_t* src_y,
+                          uint16_t* dst_y,
+                          int scale,
+                          int width) {
+  // (src * 0x0101 * scale) >> 16.
+  // Since scale is a power of two, compute the shift to use to avoid needing
+  // to widen to int32.
+  const int shift = 15 - __builtin_clz(scale);
+  asm volatile(
+      "vdup.16     q2, %3                        \n"
+      "1:          \n"
+      "vld1.8      {q0}, [%0]!                   \n"
+      "vmov        q1, q0                        \n"
+      "vzip.8      q0, q1                        \n"
+      "subs        %2, %2, #16                   \n"
+      "vshl.u16    q0, q0, q2                    \n"
+      "vshl.u16    q1, q1, q2                    \n"
+      "vst1.16     {q0, q1}, [%1]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      : "r"(shift)    // %3
+      : "cc", "memory", "q0", "q1", "q2");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..
 
 #ifdef __cplusplus

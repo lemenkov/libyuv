@@ -1813,6 +1813,32 @@ void Convert16To8Row_RVV(const uint16_t* src_y,
 }
 #endif
 
+#ifdef HAS_CONVERT8TO16ROW_RVV
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 512 = 9 bits
+// 1024 = 10 bits
+// 4096 = 12 bits
+// 65536 = 16 bits
+void Convert8To16Row_RVV(const uint8_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width) {
+  size_t w = (size_t)width;
+  const int shift = __builtin_clz((int32_t)scale) - 15;
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_src = __riscv_vle8_v_u8m2(src_y, vl);
+    vuint16m4_t v_dst = __riscv_vwaddu_vx_u16m4(v_src, 0, vl);
+    v_dst = __riscv_vmul_vx_u16m4(v_dst, 0x0101, vl);
+    v_dst = __riscv_vsrl_vx_u16m4(v_dst, shift, vl);
+    __riscv_vse16_v_u16m4(dst_y, v_dst, vl);
+    w -= vl;
+    src_y += vl;
+    dst_y += vl;
+  } while (w > 0);
+}
+#endif
+
 #ifdef HAS_HALFROW_16TO8_RVV
 void HalfRow_16To8_RVV(const uint16_t* src_uv,
                        ptrdiff_t src_uv_stride,

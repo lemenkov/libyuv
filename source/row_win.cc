@@ -21,6 +21,9 @@
 #include <emmintrin.h>
 #include <immintrin.h>  // For AVX2 intrinsics
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#endif
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -761,6 +764,42 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
   _mm256_zeroupper();
 }
 #endif  // HAS_ARGBTOUVMATRIXROW_AVX2
+
+#ifdef HAS_CONVERT8TO16ROW_AVX2
+// Use scale to convert to lsb formats depending how many bits there are:
+// 512 = 9 bits
+// 1024 = 10 bits
+// 4096 = 12 bits
+// 65536 = 16 bits
+LIBYUV_TARGET_AVX2
+void Convert8To16Row_AVX2(const uint8_t* src_y,
+                          uint16_t* dst_y,
+                          int scale,
+                          int width) {
+#if defined(_MSC_VER) && !defined(__clang__)
+  unsigned long index;
+  _BitScanReverse(&index, (unsigned long)scale);
+  const int shift = 16 - (int)index;
+#else
+  const int shift = __builtin_clz(scale) - 15;
+#endif
+  __m128i shift128 = _mm_cvtsi32_si128(shift);
+  do {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_y);
+    ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+    __m256i row0 = _mm256_unpacklo_epi8(ymm0, ymm0);
+    __m256i row1 = _mm256_unpackhi_epi8(ymm0, ymm0);
+    row0 = _mm256_srl_epi16(row0, shift128);
+    row1 = _mm256_srl_epi16(row1, shift128);
+    _mm256_storeu_si256((__m256i*)dst_y, row0);
+    _mm256_storeu_si256((__m256i*)(dst_y + 16), row1);
+    src_y += 32;
+    dst_y += 32;
+    width -= 32;
+  } while (width > 0);
+  _mm256_zeroupper();
+}
+#endif  // HAS_CONVERT8TO16ROW_AVX2
 
 #ifdef HAS_MERGEUVROW_AVX2
 LIBYUV_TARGET_AVX2

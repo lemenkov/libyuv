@@ -1565,6 +1565,15 @@ ANY11C(Convert8To16Row_Any_AVX2,
        uint16_t,
        31)
 #endif
+#ifdef HAS_CONVERT8TO16ROW_AVX512BW
+ANY11C(Convert8To16Row_Any_AVX512BW,
+       Convert8To16Row_AVX512BW,
+       1,
+       2,
+       uint8_t,
+       uint16_t,
+       63)
+#endif
 #ifdef HAS_CONVERT8TO16ROW_NEON
 ANY11C(Convert8To16Row_Any_NEON,
        Convert8To16Row_NEON,

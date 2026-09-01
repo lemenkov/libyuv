@@ -3243,6 +3243,8 @@ void Convert16To8Row_C(const uint16_t* src_y,
 
 // Use scale to convert lsb formats to msb, depending how many bits there are:
 // 1024 = 10 bits
+// 4096 = 12 bits
+// 65536 = 16 bits
 void Convert8To16Row_C(const uint8_t* src_y,
                        uint16_t* dst_y,
                        int scale,

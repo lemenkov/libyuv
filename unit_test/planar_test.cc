@@ -4181,9 +4181,9 @@ TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
 
 #ifdef ENABLE_ROW_TESTS
 // TODO(fbarchard): Improve test for more platforms.
-#ifdef HAS_CONVERT8TO16ROW_AVX2
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW) || defined(HAS_CONVERT8TO16ROW_AVX2)
 TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 31) & ~31;
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 63) & ~63;
   align_buffer_page_end(src_pixels_y, kPixels);
   align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
@@ -4195,9 +4195,19 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
   Convert8To16Row_C(src_pixels_y, reinterpret_cast<uint16_t*>(dst_pixels_y_c),
                     1024, kPixels);
 
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW)
+  int has_avx512 = TestCpuFlag(kCpuHasAVX512BW);
+#endif
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   for (int i = 0; i < benchmark_iterations_; ++i) {
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW)
+    if (has_avx512) {
+      Convert8To16Row_AVX512BW(src_pixels_y,
+                               reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
+                               1024, kPixels);
+    } else
+#endif
     if (has_avx2) {
       Convert8To16Row_AVX2(src_pixels_y,
                            reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
@@ -4221,7 +4231,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
   free_aligned_buffer_page_end(dst_pixels_y_opt);
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
-#endif  // HAS_CONVERT8TO16ROW_AVX2
+#endif  // HAS_CONVERT8TO16ROW_AVX512BW || HAS_CONVERT8TO16ROW_AVX2
 
 float TestScaleMaxSamples(int benchmark_width,
                           int benchmark_height,
