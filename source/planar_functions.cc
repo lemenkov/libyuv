@@ -196,15 +196,24 @@ void Convert8To16Plane(const uint8_t* src_y,
                        int src_stride_y,
                        uint16_t* dst_y,
                        int dst_stride_y,
-                       int scale,  // 1024 for 10 bits
+                       int bits,  // 10, 12, 16 bits (or 1024, 4096, 65536 scale)
                        int width,
                        int height) {
   int y;
-  void (*Convert8To16Row)(const uint8_t* src_y, uint16_t* dst_y, int scale,
+  void (*Convert8To16Row)(const uint8_t* src_y, uint16_t* dst_y, int bits,
                           int width) = Convert8To16Row_C;
 
   if (width <= 0 || height == 0 || height == INT_MIN) {
     return;
+  }
+  // Convert legacy scale to bits if needed.
+  if (bits > 16) {
+    int b = 0;
+    while (bits > 1) {
+      bits >>= 1;
+      ++b;
+    }
+    bits = b;
   }
   // Negative height means invert the image.
   if (height < 0) {
@@ -264,7 +273,7 @@ void Convert8To16Plane(const uint8_t* src_y,
 
   // Convert plane
   for (y = 0; y < height; ++y) {
-    Convert8To16Row(src_y, dst_y, scale, width);
+    Convert8To16Row(src_y, dst_y, bits, width);
     src_y += src_stride_y;
     dst_y += dst_stride_y;
   }

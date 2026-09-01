@@ -38,13 +38,15 @@ This is how OSX formats map to libyuv
 
 The following is extracted from video_common.h as a complete list of formats supported by libyuv.
     enum FourCC {
-      // 10 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
+      // 12 Primary YUV formats: 5 planar, 4 biplanar, 2 packed.
       FOURCC_I420 = FOURCC('I', '4', '2', '0'),
       FOURCC_I422 = FOURCC('I', '4', '2', '2'),
       FOURCC_I444 = FOURCC('I', '4', '4', '4'),
       FOURCC_I400 = FOURCC('I', '4', '0', '0'),
       FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
       FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
+      FOURCC_NV16 = FOURCC('N', 'V', '1', '6'),
+      FOURCC_NV24 = FOURCC('N', 'V', '2', '4'),
       FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
       FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
       FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // unofficial fourcc. 10 bit lsb

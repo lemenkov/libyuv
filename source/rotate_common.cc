@@ -145,6 +145,13 @@ void TransposeWxH_16_C(const uint16_t* src,
   }
 }
 
+static inline void Copy4(uint8_t* dst, const uint8_t* src) {
+  dst[0] = src[0];
+  dst[1] = src[1];
+  dst[2] = src[2];
+  dst[3] = src[3];
+}
+
 // Transpose 32 bit values (ARGB)
 void Transpose4x4_32_C(const uint8_t* src,
                        int src_stride,
@@ -159,38 +166,22 @@ void Transpose4x4_32_C(const uint8_t* src,
   uint8_t* dst3 = dst2 + dst_stride;
   int i;
   for (i = 0; i < width; i += 4) {
-    uint32_t p00 = ((uint32_t*)(src))[0];
-    uint32_t p10 = ((uint32_t*)(src))[1];
-    uint32_t p20 = ((uint32_t*)(src))[2];
-    uint32_t p30 = ((uint32_t*)(src))[3];
-    uint32_t p01 = ((uint32_t*)(src1))[0];
-    uint32_t p11 = ((uint32_t*)(src1))[1];
-    uint32_t p21 = ((uint32_t*)(src1))[2];
-    uint32_t p31 = ((uint32_t*)(src1))[3];
-    uint32_t p02 = ((uint32_t*)(src2))[0];
-    uint32_t p12 = ((uint32_t*)(src2))[1];
-    uint32_t p22 = ((uint32_t*)(src2))[2];
-    uint32_t p32 = ((uint32_t*)(src2))[3];
-    uint32_t p03 = ((uint32_t*)(src3))[0];
-    uint32_t p13 = ((uint32_t*)(src3))[1];
-    uint32_t p23 = ((uint32_t*)(src3))[2];
-    uint32_t p33 = ((uint32_t*)(src3))[3];
-    ((uint32_t*)(dst))[0] = p00;
-    ((uint32_t*)(dst))[1] = p01;
-    ((uint32_t*)(dst))[2] = p02;
-    ((uint32_t*)(dst))[3] = p03;
-    ((uint32_t*)(dst1))[0] = p10;
-    ((uint32_t*)(dst1))[1] = p11;
-    ((uint32_t*)(dst1))[2] = p12;
-    ((uint32_t*)(dst1))[3] = p13;
-    ((uint32_t*)(dst2))[0] = p20;
-    ((uint32_t*)(dst2))[1] = p21;
-    ((uint32_t*)(dst2))[2] = p22;
-    ((uint32_t*)(dst2))[3] = p23;
-    ((uint32_t*)(dst3))[0] = p30;
-    ((uint32_t*)(dst3))[1] = p31;
-    ((uint32_t*)(dst3))[2] = p32;
-    ((uint32_t*)(dst3))[3] = p33;
+    Copy4(dst + 0, src + 0);
+    Copy4(dst + 4, src1 + 0);
+    Copy4(dst + 8, src2 + 0);
+    Copy4(dst + 12, src3 + 0);
+    Copy4(dst1 + 0, src + 4);
+    Copy4(dst1 + 4, src1 + 4);
+    Copy4(dst1 + 8, src2 + 4);
+    Copy4(dst1 + 12, src3 + 4);
+    Copy4(dst2 + 0, src + 8);
+    Copy4(dst2 + 4, src1 + 8);
+    Copy4(dst2 + 8, src2 + 8);
+    Copy4(dst2 + 12, src3 + 8);
+    Copy4(dst3 + 0, src + 12);
+    Copy4(dst3 + 4, src1 + 12);
+    Copy4(dst3 + 8, src2 + 12);
+    Copy4(dst3 + 12, src3 + 12);
     src += (ptrdiff_t)src_stride * 4;  // advance 4 rows
     src1 += (ptrdiff_t)src_stride * 4;
     src2 += (ptrdiff_t)src_stride * 4;

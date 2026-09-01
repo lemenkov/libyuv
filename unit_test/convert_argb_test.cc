@@ -1680,6 +1680,42 @@ TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
   ASSERT_EQ(dst[3], src[1]);
 }
 
+TEST_F(LibYUVConvertTest, ConvertToARGB_NV16) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int sample_size = kWidth * kHeight * 2;
+  align_buffer_page_end(src, sample_size);
+  align_buffer_page_end(dst, kWidth * kHeight * 4);
+  MemRandomize(src, sample_size);
+  memset(dst, 0, kWidth * kHeight * 4);
+
+  int r = ConvertToARGB(src, sample_size, dst, kWidth * 4,
+                        0, 0, kWidth, kHeight, kWidth, kHeight,
+                        kRotate0, FOURCC_NV16);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst);
+}
+
+TEST_F(LibYUVConvertTest, ConvertToARGB_NV24) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int sample_size = kWidth * kHeight * 3;
+  align_buffer_page_end(src, sample_size);
+  align_buffer_page_end(dst, kWidth * kHeight * 4);
+  MemRandomize(src, sample_size);
+  memset(dst, 0, kWidth * kHeight * 4);
+
+  int r = ConvertToARGB(src, sample_size, dst, kWidth * 4,
+                        0, 0, kWidth, kHeight, kWidth, kHeight,
+                        kRotate0, FOURCC_NV24);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst);
+}
+
 #ifdef HAS_ARGBTOAR30ROW_AVX2
 TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
   // ARGBToAR30Row_AVX2 expects a multiple of 8 pixels.

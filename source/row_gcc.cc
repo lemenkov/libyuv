@@ -6218,9 +6218,9 @@ void HalfWidthRow_16To8_AVX512BW(const uint16_t* src_uv,
 // 65536 = 16 bits
 void Convert8To16Row_SSE2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
-  const int shift = __builtin_clz(scale) - 15;
+  const int shift = 16 - bits;
   asm volatile(
       "movd        %3,%%xmm2                     \n"
 
@@ -6249,9 +6249,9 @@ void Convert8To16Row_SSE2(const uint8_t* src_y,
 #ifdef HAS_CONVERT8TO16ROW_AVX2
 void Convert8To16Row_AVX2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
-  const int shift = __builtin_clz(scale) - 15;
+  const int shift = 16 - bits;
   asm volatile("vmovd       %3,%%xmm2                     \n"
 
                // 32 pixels per loop.
@@ -6279,16 +6279,11 @@ void Convert8To16Row_AVX2(const uint8_t* src_y,
 #endif  // HAS_CONVERT8TO16ROW_AVX2
 
 #ifdef HAS_CONVERT8TO16ROW_AVX512BW
-// Use scale to convert to lsb formats depending how many bits there are:
-// 512 = 9 bits
-// 1024 = 10 bits
-// 4096 = 12 bits
-// 65536 = 16 bits
 void Convert8To16Row_AVX512BW(const uint8_t* src_y,
                               uint16_t* dst_y,
-                              int scale,
+                              int bits,
                               int width) {
-  const int shift = __builtin_clz(scale) - 15;
+  const int shift = 16 - bits;
   asm volatile(
       "vpbroadcastw %4,%%zmm2                    \n"
       "vmovd        %3,%%xmm3                    \n"

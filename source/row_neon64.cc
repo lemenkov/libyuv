@@ -5273,12 +5273,11 @@ void Convert8To8Row_NEON(const uint8_t* src_y,
 // 65536 = 16 bits
 void Convert8To16Row_NEON(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
-  // (src * 0x0101 * scale) >> 16.
-  // Since scale is a power of two, compute the shift to use to avoid needing
-  // to widen to int32.
-  const int shift = 15 - __builtin_clz(scale);
+  // (src * 0x0101) >> (16 - bits).
+  // Use negative shift for right shift with ushl.
+  const int shift = bits - 16;
   asm volatile(
       "dup         v2.8h, %w[shift]                 \n"
       "1:          \n"

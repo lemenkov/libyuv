@@ -1054,12 +1054,10 @@ __arm_locally_streaming void Convert8To8Row_SME(const uint8_t* src_y,
 
 __arm_locally_streaming void Convert8To16Row_SME(const uint8_t* src_y,
                                                  uint16_t* dst_y,
-                                                 int scale,
+                                                 int bits,
                                                  int width) {
-  // (src * 0x0101 * scale) >> 16.
-  // Since scale is a power of two, compute the shift to use to avoid needing
-  // to widen to int32.
-  const int shift = __builtin_clz(scale) - 15;
+  // (src * 0x0101) >> (16 - bits).
+  const int shift = 16 - bits;
 
   uint64_t vl;
   asm volatile(

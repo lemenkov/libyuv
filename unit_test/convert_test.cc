@@ -1923,6 +1923,100 @@ TEST_F(LibYUVConvertTest, NV12Crop) {
   free_aligned_buffer_page_end(src_y);
 }
 
+TEST_F(LibYUVConvertTest, ConvertToI420_NV16) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int sample_size = kWidth * kHeight * 2;
+  align_buffer_page_end(src, sample_size);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_v, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src, sample_size);
+  memset(dst_y, 0, kWidth * kHeight);
+  memset(dst_u, 0, (kWidth / 2) * (kHeight / 2));
+  memset(dst_v, 0, (kWidth / 2) * (kHeight / 2));
+
+  int r = ConvertToI420(src, sample_size, dst_y, kWidth, dst_u, kWidth / 2,
+                        dst_v, kWidth / 2, 0, 0, kWidth, kHeight, kWidth,
+                        kHeight, kRotate0, FOURCC_NV16);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+}
+
+TEST_F(LibYUVConvertTest, ConvertToI420_NV24) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int sample_size = kWidth * kHeight * 3;
+  align_buffer_page_end(src, sample_size);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_v, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src, sample_size);
+  memset(dst_y, 0, kWidth * kHeight);
+  memset(dst_u, 0, (kWidth / 2) * (kHeight / 2));
+  memset(dst_v, 0, (kWidth / 2) * (kHeight / 2));
+
+  int r = ConvertToI420(src, sample_size, dst_y, kWidth, dst_u, kWidth / 2,
+                        dst_v, kWidth / 2, 0, 0, kWidth, kHeight, kWidth,
+                        kHeight, kRotate0, FOURCC_NV24);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+}
+
+TEST_F(LibYUVConvertTest, ConvertFromI420_NV16) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int dst_size = kWidth * kHeight * 2;
+  align_buffer_page_end(src_y, kWidth * kHeight);
+  align_buffer_page_end(src_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(src_v, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst, dst_size);
+  MemRandomize(src_y, kWidth * kHeight);
+  MemRandomize(src_u, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src_v, (kWidth / 2) * (kHeight / 2));
+  memset(dst, 0, dst_size);
+
+  int r = ConvertFromI420(src_y, kWidth, src_u, kWidth / 2, src_v, kWidth / 2,
+                          dst, kWidth, kWidth, kHeight, FOURCC_NV16);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_v);
+  free_aligned_buffer_page_end(dst);
+}
+
+TEST_F(LibYUVConvertTest, ConvertFromI420_NV24) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int dst_size = kWidth * kHeight * 3;
+  align_buffer_page_end(src_y, kWidth * kHeight);
+  align_buffer_page_end(src_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(src_v, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst, dst_size);
+  MemRandomize(src_y, kWidth * kHeight);
+  MemRandomize(src_u, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src_v, (kWidth / 2) * (kHeight / 2));
+  memset(dst, 0, dst_size);
+
+  int r = ConvertFromI420(src_y, kWidth, src_u, kWidth / 2, src_v, kWidth / 2,
+                          dst, kWidth, kWidth, kHeight, FOURCC_NV24);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_v);
+  free_aligned_buffer_page_end(dst);
+}
+
 TEST_F(LibYUVConvertTest, I420CropOddY) {
   const int SUBSAMP_X = 2;
   const int SUBSAMP_Y = 2;

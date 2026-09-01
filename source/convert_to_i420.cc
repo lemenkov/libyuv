@@ -14,13 +14,169 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "libyuv/cpu_id.h"
+#include "libyuv/planar_functions.h"
+#include "libyuv/row.h"
 #include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
+
+static void HalfRow_C(const uint8_t* src_uv,
+                      ptrdiff_t src_uv_stride,
+                      uint8_t* dst_uv,
+                      int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
+  }
+}
+
+static int NV16ToI420(const uint8_t* src_y,
+                      int src_stride_y,
+                      const uint8_t* src_uv,
+                      int src_stride_uv,
+                      uint8_t* dst_y,
+                      int dst_stride_y,
+                      uint8_t* dst_u,
+                      int dst_stride_u,
+                      uint8_t* dst_v,
+                      int dst_stride_v,
+                      int width,
+                      int height) {
+  int y;
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
+                     int width) = SplitUVRow_C;
+  if ((!src_y && dst_y) || !src_uv || !dst_u || !dst_v || width <= 0 ||
+      height == 0 || height == INT_MIN) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_uv = src_uv + (ptrdiff_t)(height - 1) * src_stride_uv;
+    src_stride_y = -src_stride_y;
+    src_stride_uv = -src_stride_uv;
+  }
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+#if defined(HAS_SPLITUVROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SplitUVRow = SplitUVRow_Any_SSE2;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SplitUVRow = SplitUVRow_Any_AVX2;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      SplitUVRow = SplitUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SplitUVRow = SplitUVRow_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_NEON;
+    }
+  }
+#endif
+
+  align_buffer_64(row_uv, halfwidth * 2);
+  if (!row_uv) {
+    return 1;
+  }
+  for (y = 0; y < halfheight; ++y) {
+    if (y * 2 + 1 < height) {
+      HalfRow_C(src_uv, src_stride_uv, row_uv, halfwidth * 2);
+    } else {
+      memcpy(row_uv, src_uv, (size_t)halfwidth * 2);
+    }
+    SplitUVRow(row_uv, dst_u, dst_v, halfwidth);
+    src_uv += (ptrdiff_t)src_stride_uv * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  free_aligned_buffer_64(row_uv);
+  return 0;
+}
+
+static int NV24ToI420(const uint8_t* src_y,
+                      int src_stride_y,
+                      const uint8_t* src_uv,
+                      int src_stride_uv,
+                      uint8_t* dst_y,
+                      int dst_stride_y,
+                      uint8_t* dst_u,
+                      int dst_stride_u,
+                      uint8_t* dst_v,
+                      int dst_stride_v,
+                      int width,
+                      int height) {
+  int x, y;
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if ((!src_y && dst_y) || !src_uv || !dst_u || !dst_v || width <= 0 ||
+      height == 0 || height == INT_MIN) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_uv = src_uv + (ptrdiff_t)(height - 1) * src_stride_uv;
+    src_stride_y = -src_stride_y;
+    src_stride_uv = -src_stride_uv;
+  }
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+
+  align_buffer_64(row_uv, width * 2);
+  if (!row_uv) {
+    return 1;
+  }
+  for (y = 0; y < halfheight; ++y) {
+    if (y * 2 + 1 < height) {
+      HalfRow_C(src_uv, src_stride_uv, row_uv, width * 2);
+    } else {
+      memcpy(row_uv, src_uv, (size_t)width * 2);
+    }
+    for (x = 0; x < halfwidth - 1; ++x) {
+      dst_u[x] = (row_uv[x * 4 + 0] + row_uv[x * 4 + 2] + 1) >> 1;
+      dst_v[x] = (row_uv[x * 4 + 1] + row_uv[x * 4 + 3] + 1) >> 1;
+    }
+    if (width & 1) {
+      dst_u[halfwidth - 1] = row_uv[(halfwidth - 1) * 4 + 0];
+      dst_v[halfwidth - 1] = row_uv[(halfwidth - 1) * 4 + 1];
+    } else {
+      dst_u[halfwidth - 1] =
+          (row_uv[(halfwidth - 1) * 4 + 0] + row_uv[(halfwidth - 1) * 4 + 2] +
+           1) >>
+          1;
+      dst_v[halfwidth - 1] =
+          (row_uv[(halfwidth - 1) * 4 + 1] + row_uv[(halfwidth - 1) * 4 + 3] +
+           1) >>
+          1;
+    }
+    src_uv += (ptrdiff_t)src_stride_uv * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  free_aligned_buffer_64(row_uv);
+  return 0;
+}
 
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // src_width is used for source stride computation
@@ -203,6 +359,24 @@ int ConvertToI420(const uint8_t* sample,
       r = NV12ToI420Rotate(src, src_width, src_uv, aligned_src_width, dst_y,
                            dst_stride_y, dst_v, dst_stride_v, dst_u,
                            dst_stride_u, crop_width, inv_crop_height, rotation);
+      break;
+    case FOURCC_NV16:
+      src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
+      src_uv = sample + ((ptrdiff_t)aligned_src_width * abs_src_height) +
+               ((ptrdiff_t)crop_y * aligned_src_width) +
+               ((crop_x / 2) * 2);
+      r = NV16ToI420(src, src_width, src_uv, aligned_src_width, dst_y,
+                     dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                     crop_width, inv_crop_height);
+      break;
+    case FOURCC_NV24:
+      src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
+      src_uv = sample + ((ptrdiff_t)aligned_src_width * abs_src_height) +
+               ((ptrdiff_t)crop_y * aligned_src_width * 2) +
+               (crop_x * 2);
+      r = NV24ToI420(src, src_width, src_uv, aligned_src_width * 2, dst_y,
+                     dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                     crop_width, inv_crop_height);
       break;
     // Triplanar formats
     case FOURCC_I420:

@@ -814,6 +814,43 @@ int ConvertFromI420(const uint8_t* y,
                      height);
       break;
     }
+    case FOURCC_NV16: {
+      int dst_y_stride = dst_sample_stride ? dst_sample_stride : width;
+      int dst_uv_stride = dst_sample_stride ? dst_sample_stride : width;
+      uint8_t* dst_uv = dst_sample + (ptrdiff_t)dst_y_stride * height;
+      int halfwidth = (width + 1) / 2;
+      int halfheight = (height + 1) / 2;
+      CopyPlane(y, y_stride, dst_sample, dst_y_stride, width, height);
+      MergeUVPlane(u, u_stride, v, v_stride, dst_uv, dst_uv_stride * 2,
+                   halfwidth, halfheight);
+      if (height > 1) {
+        MergeUVPlane(u, u_stride, v, v_stride, dst_uv + dst_uv_stride,
+                     dst_uv_stride * 2, halfwidth, height / 2);
+      }
+      r = 0;
+      break;
+    }
+    case FOURCC_NV24: {
+      int dst_y_stride = dst_sample_stride ? dst_sample_stride : width;
+      int dst_uv_stride = dst_sample_stride ? dst_sample_stride * 2 : width * 2;
+      uint8_t* dst_uv = dst_sample + (ptrdiff_t)dst_y_stride * height;
+      align_buffer_64(temp_u, (size_t)width * height);
+      align_buffer_64(temp_v, (size_t)width * height);
+      if (!temp_u || !temp_v) {
+        free_aligned_buffer_64(temp_u);
+        free_aligned_buffer_64(temp_v);
+        return 1;
+      }
+      r = I420ToI444(y, y_stride, u, u_stride, v, v_stride, dst_sample,
+                     dst_y_stride, temp_u, width, temp_v, width, width, height);
+      if (r == 0) {
+        MergeUVPlane(temp_u, width, temp_v, width, dst_uv, dst_uv_stride, width,
+                     height);
+      }
+      free_aligned_buffer_64(temp_u);
+      free_aligned_buffer_64(temp_v);
+      break;
+    }
     // Triplanar formats
     case FOURCC_I420:
     case FOURCC_YV12: {

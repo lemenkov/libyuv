@@ -766,23 +766,12 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
 #endif  // HAS_ARGBTOUVMATRIXROW_AVX2
 
 #ifdef HAS_CONVERT8TO16ROW_AVX2
-// Use scale to convert to lsb formats depending how many bits there are:
-// 512 = 9 bits
-// 1024 = 10 bits
-// 4096 = 12 bits
-// 65536 = 16 bits
 LIBYUV_TARGET_AVX2
 void Convert8To16Row_AVX2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
-#if defined(_MSC_VER) && !defined(__clang__)
-  unsigned long index;
-  _BitScanReverse(&index, (unsigned long)scale);
-  const int shift = 16 - (int)index;
-#else
-  const int shift = __builtin_clz(scale) - 15;
-#endif
+  const int shift = 16 - bits;
   __m128i shift128 = _mm_cvtsi32_si128(shift);
   do {
     __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_y);

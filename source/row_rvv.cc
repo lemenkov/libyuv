@@ -1821,10 +1821,10 @@ void Convert16To8Row_RVV(const uint16_t* src_y,
 // 65536 = 16 bits
 void Convert8To16Row_RVV(const uint8_t* src_y,
                          uint16_t* dst_y,
-                         int scale,
+                         int bits,
                          int width) {
   size_t w = (size_t)width;
-  const int shift = __builtin_clz((int32_t)scale) - 15;
+  const int shift = 16 - bits;
   do {
     size_t vl = __riscv_vsetvl_e8m2(w);
     vuint8m2_t v_src = __riscv_vle8_v_u8m2(src_y, vl);

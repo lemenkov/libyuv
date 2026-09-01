@@ -4159,7 +4159,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
   MaskCpuFlags(disable_cpu_flags_);
   Convert8To16Plane(src_pixels_y, benchmark_width_,
                     reinterpret_cast<uint16_t*>(dst_pixels_y_c),
-                    benchmark_width_, 1024, benchmark_width_,
+                    benchmark_width_, 10, benchmark_width_,
                     benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
@@ -4193,7 +4193,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
   memset(dst_pixels_y_c, 1, kPixels * 2);
 
   Convert8To16Row_C(src_pixels_y, reinterpret_cast<uint16_t*>(dst_pixels_y_c),
-                    1024, kPixels);
+                    10, kPixels);
 
 #if defined(HAS_CONVERT8TO16ROW_AVX512BW)
   int has_avx512 = TestCpuFlag(kCpuHasAVX512BW);
@@ -4205,20 +4205,20 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
     if (has_avx512) {
       Convert8To16Row_AVX512BW(src_pixels_y,
                                reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
-                               1024, kPixels);
+                               10, kPixels);
     } else
 #endif
     if (has_avx2) {
       Convert8To16Row_AVX2(src_pixels_y,
-                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
+                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                            kPixels);
     } else if (has_sse2) {
       Convert8To16Row_SSE2(src_pixels_y,
-                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
+                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                            kPixels);
     } else {
       Convert8To16Row_C(src_pixels_y,
-                        reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
+                        reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                         kPixels);
     }
   }
