@@ -94,25 +94,45 @@ void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
 #endif
 
 #ifdef HAS_SCALEARGBROWDOWN2_RVV
-// TODO: Reimplement similar to linear with vlseg2 so u64 is not required
+#ifdef LIBYUV_RVV_HAS_TUPLE_TYPE
 void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
                            ptrdiff_t src_stride,
                            uint8_t* dst_argb,
                            int dst_width) {
   (void)src_stride;
   size_t w = (size_t)dst_width;
-  const uint64_t* src = (const uint64_t*)(src_argb);
+  const uint32_t* src = (const uint32_t*)(src_argb);
   uint32_t* dst = (uint32_t*)(dst_argb);
   do {
-    size_t vl = __riscv_vsetvl_e64m8(w);
-    vuint64m8_t v_data = __riscv_vle64_v_u64m8(src, vl);
-    vuint32m4_t v_dst = __riscv_vnsrl_wx_u32m4(v_data, 32, vl);
+    size_t vl = __riscv_vsetvl_e32m4(w);
+    vuint32m4x2_t v_src = __riscv_vlseg2e32_v_u32m4x2(src, vl);
+    vuint32m4_t v_dst = __riscv_vget_v_u32m4x2_u32m4(v_src, 1);
     __riscv_vse32_v_u32m4(dst, v_dst, vl);
     w -= vl;
-    src += vl;
+    src += vl * 2;
     dst += vl;
   } while (w > 0);
 }
+#else
+void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst_argb,
+                           int dst_width) {
+  (void)src_stride;
+  size_t w = (size_t)dst_width;
+  const uint32_t* src = (const uint32_t*)(src_argb);
+  uint32_t* dst = (uint32_t*)(dst_argb);
+  do {
+    vuint32m4_t v_even, v_odd;
+    size_t vl = __riscv_vsetvl_e32m4(w);
+    __riscv_vlseg2e32_v_u32m4(&v_even, &v_odd, src, vl);
+    __riscv_vse32_v_u32m4(dst, v_odd, vl);
+    w -= vl;
+    src += vl * 2;
+    dst += vl;
+  } while (w > 0);
+}
+#endif
 #endif
 
 #ifdef HAS_SCALEARGBROWDOWN2LINEAR_RVV
@@ -341,23 +361,41 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
 #endif
 
 #ifdef HAS_SCALEROWDOWN2_RVV
+#ifdef LIBYUV_RVV_HAS_TUPLE_TYPE
 void ScaleRowDown2_RVV(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst,
                        int dst_width) {
   size_t w = (size_t)dst_width;
-  const uint16_t* src = (const uint16_t*)src_ptr;
   (void)src_stride;
   do {
-    size_t vl = __riscv_vsetvl_e16m8(w);
-    vuint16m8_t v_src = __riscv_vle16_v_u16m8(src, vl);
-    vuint8m4_t v_dst = __riscv_vnsrl_wx_u8m4(v_src, 8, vl);
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    vuint8m4x2_t v_src = __riscv_vlseg2e8_v_u8m4x2(src_ptr, vl);
+    vuint8m4_t v_dst = __riscv_vget_v_u8m4x2_u8m4(v_src, 1);
     __riscv_vse8_v_u8m4(dst, v_dst, vl);
     w -= vl;
-    src += vl;
+    src_ptr += 2 * vl;
     dst += vl;
   } while (w > 0);
 }
+#else
+void ScaleRowDown2_RVV(const uint8_t* src_ptr,
+                       ptrdiff_t src_stride,
+                       uint8_t* dst,
+                       int dst_width) {
+  size_t w = (size_t)dst_width;
+  (void)src_stride;
+  do {
+    vuint8m4_t v_s0, v_s1;
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    __riscv_vlseg2e8_v_u8m4(&v_s0, &v_s1, src_ptr, vl);
+    __riscv_vse8_v_u8m4(dst, v_s1, vl);
+    w -= vl;
+    src_ptr += 2 * vl;
+    dst += vl;
+  } while (w > 0);
+}
+#endif
 #endif
 
 #ifdef HAS_SCALEROWDOWN2LINEAR_RVV
@@ -1485,24 +1523,43 @@ void ScaleRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
 #endif
 
 #ifdef HAS_SCALEUVROWDOWN2_RVV
+#ifdef LIBYUV_RVV_HAS_TUPLE_TYPE
 void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
                          ptrdiff_t src_stride,
                          uint8_t* dst_uv,
                          int dst_width) {
   size_t w = (size_t)dst_width;
-  const uint32_t* src = (const uint32_t*)src_uv;
-  uint16_t* dst = (uint16_t*)dst_uv;
   (void)src_stride;
   do {
-    size_t vl = __riscv_vsetvl_e32m8(w);
-    vuint32m8_t v_data = __riscv_vle32_v_u32m8(src, vl);
-    vuint16m4_t v_u1v1 = __riscv_vnsrl_wx_u16m4(v_data, 16, vl);
-    __riscv_vse16_v_u16m4(dst, v_u1v1, vl);
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2x4_t v_src = __riscv_vlseg4e8_v_u8m2x4(src_uv, vl);
+    vuint8m2_t v_u1 = __riscv_vget_v_u8m2x4_u8m2(v_src, 2);
+    vuint8m2_t v_v1 = __riscv_vget_v_u8m2x4_u8m2(v_src, 3);
+    vuint8m2x2_t v_dst = __riscv_vcreate_v_u8m2x2(v_u1, v_v1);
+    __riscv_vsseg2e8_v_u8m2x2(dst_uv, v_dst, vl);
     w -= vl;
-    src += vl;
-    dst += vl;
+    src_uv += 4 * vl;
+    dst_uv += 2 * vl;
   } while (w > 0);
 }
+#else
+void ScaleUVRowDown2_RVV(const uint8_t* src_uv,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst_uv,
+                         int dst_width) {
+  size_t w = (size_t)dst_width;
+  (void)src_stride;
+  do {
+    vuint8m2_t v_u0, v_v0, v_u1, v_v1;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_u0, &v_v0, &v_u1, &v_v1, src_uv, vl);
+    __riscv_vsseg2e8_v_u8m2(dst_uv, v_u1, v_v1, vl);
+    w -= vl;
+    src_uv += 4 * vl;
+    dst_uv += 2 * vl;
+  } while (w > 0);
+}
+#endif
 #endif
 
 #ifdef HAS_SCALEUVROWDOWN2LINEAR_RVV
@@ -1512,21 +1569,23 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
                                uint8_t* dst_uv,
                                int dst_width) {
   size_t w = (size_t)dst_width;
-  const uint16_t* src = (const uint16_t*)src_uv;
   (void)src_stride;
   do {
-    size_t vl = __riscv_vsetvl_e16m4(w);
-    vuint16m4x2_t v_src = __riscv_vlseg2e16_v_u16m4x2(src, vl);
-    vuint16m4_t v_u0v0_16 = __riscv_vget_v_u16m4x2_u16m4(v_src, 0);
-    vuint16m4_t v_u1v1_16 = __riscv_vget_v_u16m4x2_u16m4(v_src, 1);
-    vuint8m4_t v_u0v0 = __riscv_vreinterpret_v_u16m4_u8m4(v_u0v0_16);
-    vuint8m4_t v_u1v1 = __riscv_vreinterpret_v_u16m4_u8m4(v_u1v1_16);
-    vuint8m4_t v_avg =
-        __riscv_vaaddu_vv_u8m4(v_u0v0, v_u1v1, __RISCV_VXRM_RNU, vl * 2);
-    __riscv_vse8_v_u8m4(dst_uv, v_avg, vl * 2);
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2x4_t v_src = __riscv_vlseg4e8_v_u8m2x4(src_uv, vl);
+    vuint8m2_t v_u0 = __riscv_vget_v_u8m2x4_u8m2(v_src, 0);
+    vuint8m2_t v_v0 = __riscv_vget_v_u8m2x4_u8m2(v_src, 1);
+    vuint8m2_t v_u1 = __riscv_vget_v_u8m2x4_u8m2(v_src, 2);
+    vuint8m2_t v_v1 = __riscv_vget_v_u8m2x4_u8m2(v_src, 3);
+    vuint8m2_t v_u_avg =
+        __riscv_vaaddu_vv_u8m2(v_u0, v_u1, __RISCV_VXRM_RNU, vl);
+    vuint8m2_t v_v_avg =
+        __riscv_vaaddu_vv_u8m2(v_v0, v_v1, __RISCV_VXRM_RNU, vl);
+    vuint8m2x2_t v_dst = __riscv_vcreate_v_u8m2x2(v_u_avg, v_v_avg);
+    __riscv_vsseg2e8_v_u8m2x2(dst_uv, v_dst, vl);
     w -= vl;
-    src += vl * 2;
-    dst_uv += vl * 2;
+    src_uv += 4 * vl;
+    dst_uv += 2 * vl;
   } while (w > 0);
 }
 #else
@@ -1535,24 +1594,20 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
                                uint8_t* dst_uv,
                                int dst_width) {
   size_t w = (size_t)dst_width;
-  const uint16_t* src = (const uint16_t*)src_uv;
   (void)src_stride;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
   asm volatile("csrwi vxrm, 0");
   do {
-    vuint8m4_t v_u0v0, v_u1v1, v_avg;
-    vuint16m4_t v_u0v0_16, v_u1v1_16;
-    size_t vl = __riscv_vsetvl_e16m4(w);
-    __riscv_vlseg2e16_v_u16m4(&v_u0v0_16, &v_u1v1_16, src, vl);
-    v_u0v0 = __riscv_vreinterpret_v_u16m4_u8m4(v_u0v0_16);
-    v_u1v1 = __riscv_vreinterpret_v_u16m4_u8m4(v_u1v1_16);
-    // Use round-to-nearest-up mode for averaging add
-    v_avg = __riscv_vaaddu_vv_u8m4(v_u0v0, v_u1v1, vl * 2);
-    __riscv_vse8_v_u8m4(dst_uv, v_avg, vl * 2);
+    vuint8m2_t v_u0, v_v0, v_u1, v_v1;
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    __riscv_vlseg4e8_v_u8m2(&v_u0, &v_v0, &v_u1, &v_v1, src_uv, vl);
+    vuint8m2_t v_u_avg = __riscv_vaaddu_vv_u8m2(v_u0, v_u1, vl);
+    vuint8m2_t v_v_avg = __riscv_vaaddu_vv_u8m2(v_v0, v_v1, vl);
+    __riscv_vsseg2e8_v_u8m2(dst_uv, v_u_avg, v_v_avg, vl);
     w -= vl;
-    src += vl * 2;
-    dst_uv += vl * 2;
+    src_uv += 4 * vl;
+    dst_uv += 2 * vl;
   } while (w > 0);
 }
 #endif
@@ -1672,6 +1727,7 @@ void ScaleUVRowDown4_RVV(const uint8_t* src_uv,
 #endif
 
 #ifdef HAS_SCALEUVROWDOWNEVEN_RVV
+#ifdef LIBYUV_RVV_HAS_TUPLE_TYPE
 void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
                             ptrdiff_t src_stride,
                             int src_stepx,
@@ -1679,18 +1735,36 @@ void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
                             int dst_width) {
   size_t w = (size_t)dst_width;
   const ptrdiff_t stride_byte = (ptrdiff_t)src_stepx * 2;
-  const uint16_t* src = (const uint16_t*)(src_uv);
-  uint16_t* dst = (uint16_t*)(dst_uv);
   (void)src_stride;
   do {
-    size_t vl = __riscv_vsetvl_e16m8(w);
-    vuint16m8_t v_row = __riscv_vlse16_v_u16m8(src, stride_byte, vl);
-    __riscv_vse16_v_u16m8(dst, v_row, vl);
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    vuint8m4x2_t v_row = __riscv_vlsseg2e8_v_u8m4x2(src_uv, stride_byte, vl);
+    __riscv_vsseg2e8_v_u8m4x2(dst_uv, v_row, vl);
     w -= vl;
-    src += vl * src_stepx;
-    dst += vl;
+    src_uv += vl * stride_byte;
+    dst_uv += vl * 2;
   } while (w > 0);
 }
+#else
+void ScaleUVRowDownEven_RVV(const uint8_t* src_uv,
+                            ptrdiff_t src_stride,
+                            int src_stepx,
+                            uint8_t* dst_uv,
+                            int dst_width) {
+  size_t w = (size_t)dst_width;
+  const ptrdiff_t stride_byte = (ptrdiff_t)src_stepx * 2;
+  (void)src_stride;
+  do {
+    vuint8m4_t v_u, v_v;
+    size_t vl = __riscv_vsetvl_e8m4(w);
+    __riscv_vlsseg2e8_v_u8m4(&v_u, &v_v, src_uv, stride_byte, vl);
+    __riscv_vsseg2e8_v_u8m4(dst_uv, v_u, v_v, vl);
+    w -= vl;
+    src_uv += vl * stride_byte;
+    dst_uv += vl * 2;
+  } while (w > 0);
+}
+#endif
 #endif
 
 // ScaleUVRowUp2_(Bi)linear_RVV function is equal to other platforms'
@@ -1704,39 +1778,42 @@ void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
                               int dst_width) {
   size_t work_width = ((size_t)dst_width - 1u) & ~1u;
-  uint16_t* work_dst_ptr = (uint16_t*)dst_ptr + 1;
+  size_t src_pairs = work_width >> 1u;
+  uint8_t* work_dst_ptr = dst_ptr + 2;
   const uint8_t* work_src_ptr = src_ptr;
-  size_t vl = __riscv_vsetvlmax_e8m4();
-  vuint8m4_t v_3_u8 = __riscv_vmv_v_x_u8m4(3, vl);
+  size_t vlmax = __riscv_vsetvlmax_e8m2();
+  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vlmax);
   dst_ptr[0] = src_ptr[0];
   dst_ptr[1] = src_ptr[1];
-  while (work_width > 0) {
-    vuint8m4_t v_uv0, v_uv1, v_dst_odd_u8, v_dst_even_u8;
-    vuint16m4_t v_dst_odd, v_dst_even;
-    vuint16m8_t v_uv0_u16, v_uv1_u16;
-    vuint16m4x2_t v_dst;
-    size_t vl = __riscv_vsetvl_e8m4(work_width);
-    v_uv0 = __riscv_vle8_v_u8m4(work_src_ptr, vl);
-    v_uv1 = __riscv_vle8_v_u8m4(work_src_ptr + 2, vl);
+  while (src_pairs > 0) {
+    size_t vl = __riscv_vsetvl_e8m2(src_pairs);
+    vuint8m2x2_t v_uv0 = __riscv_vlseg2e8_v_u8m2x2(work_src_ptr, vl);
+    vuint8m2x2_t v_uv1 = __riscv_vlseg2e8_v_u8m2x2(work_src_ptr + 2, vl);
+    vuint8m2_t u0 = __riscv_vget_v_u8m2x2_u8m2(v_uv0, 0);
+    vuint8m2_t v0 = __riscv_vget_v_u8m2x2_u8m2(v_uv0, 1);
+    vuint8m2_t u1 = __riscv_vget_v_u8m2x2_u8m2(v_uv1, 0);
+    vuint8m2_t v1 = __riscv_vget_v_u8m2x2_u8m2(v_uv1, 1);
 
-    v_uv0_u16 = __riscv_vwaddu_vx_u16m8(v_uv0, 2, vl);
-    v_uv1_u16 = __riscv_vwaddu_vx_u16m8(v_uv1, 2, vl);
+    vuint16m4_t u0_16 = __riscv_vwaddu_vx_u16m4(u0, 2, vl);
+    vuint16m4_t u1_16 = __riscv_vwaddu_vx_u16m4(u1, 2, vl);
+    vuint16m4_t u_even_16 = __riscv_vwmaccu_vv_u16m4(u1_16, v_3_u8, u0, vl);
+    vuint16m4_t u_odd_16 = __riscv_vwmaccu_vv_u16m4(u0_16, v_3_u8, u1, vl);
+    vuint8m2_t u_even = __riscv_vnsrl_wx_u8m2(u_even_16, 2, vl);
+    vuint8m2_t u_odd = __riscv_vnsrl_wx_u8m2(u_odd_16, 2, vl);
 
-    v_uv0_u16 = __riscv_vwmaccu_vv_u16m8(v_uv0_u16, v_3_u8, v_uv1, vl);
-    v_uv1_u16 = __riscv_vwmaccu_vv_u16m8(v_uv1_u16, v_3_u8, v_uv0, vl);
+    vuint16m4_t v0_16 = __riscv_vwaddu_vx_u16m4(v0, 2, vl);
+    vuint16m4_t v1_16 = __riscv_vwaddu_vx_u16m4(v1, 2, vl);
+    vuint16m4_t v_even_16 = __riscv_vwmaccu_vv_u16m4(v1_16, v_3_u8, v0, vl);
+    vuint16m4_t v_odd_16 = __riscv_vwmaccu_vv_u16m4(v0_16, v_3_u8, v1, vl);
+    vuint8m2_t v_even = __riscv_vnsrl_wx_u8m2(v_even_16, 2, vl);
+    vuint8m2_t v_odd = __riscv_vnsrl_wx_u8m2(v_odd_16, 2, vl);
 
-    v_dst_odd_u8 = __riscv_vnsrl_wx_u8m4(v_uv0_u16, 2, vl);
-    v_dst_even_u8 = __riscv_vnsrl_wx_u8m4(v_uv1_u16, 2, vl);
+    vuint8m2x4_t v_dst = __riscv_vcreate_v_u8m2x4(u_even, v_even, u_odd, v_odd);
+    __riscv_vsseg4e8_v_u8m2x4(work_dst_ptr, v_dst, vl);
 
-    v_dst_even = __riscv_vreinterpret_v_u8m4_u16m4(v_dst_even_u8);
-    v_dst_odd = __riscv_vreinterpret_v_u8m4_u16m4(v_dst_odd_u8);
-
-    v_dst = __riscv_vcreate_v_u16m4x2(v_dst_even, v_dst_odd);
-    __riscv_vsseg2e16_v_u16m4x2(work_dst_ptr, v_dst, vl / 2);
-
-    work_width -= vl;
-    work_src_ptr += vl;
-    work_dst_ptr += vl;
+    src_pairs -= vl;
+    work_src_ptr += 2 * vl;
+    work_dst_ptr += 4 * vl;
   }
   dst_ptr[2 * dst_width - 2] = src_ptr[((dst_width + 1) & ~1) - 2];
   dst_ptr[2 * dst_width - 1] = src_ptr[((dst_width + 1) & ~1) - 1];
@@ -1746,37 +1823,38 @@ void ScaleUVRowUp2_Linear_RVV(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
                               int dst_width) {
   size_t work_width = ((size_t)dst_width - 1u) & ~1u;
-  uint16_t* work_dst_ptr = (uint16_t*)dst_ptr + 1;
+  size_t src_pairs = work_width >> 1u;
+  uint8_t* work_dst_ptr = dst_ptr + 2;
   const uint8_t* work_src_ptr = src_ptr;
-  size_t vl = __riscv_vsetvlmax_e8m4();
-  vuint8m4_t v_3_u8 = __riscv_vmv_v_x_u8m4(3, vl);
+  size_t vlmax = __riscv_vsetvlmax_e8m2();
+  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vlmax);
   dst_ptr[0] = src_ptr[0];
   dst_ptr[1] = src_ptr[1];
-  while (work_width > 0) {
-    vuint8m4_t v_uv0, v_uv1, v_dst_odd_u8, v_dst_even_u8;
-    vuint16m4_t v_dst_odd, v_dst_even;
-    vuint16m8_t v_uv0_u16, v_uv1_u16;
-    size_t vl = __riscv_vsetvl_e8m4(work_width);
-    v_uv0 = __riscv_vle8_v_u8m4(work_src_ptr, vl);
-    v_uv1 = __riscv_vle8_v_u8m4(work_src_ptr + 2, vl);
+  while (src_pairs > 0) {
+    vuint8m2_t u0, v0, u1, v1;
+    size_t vl = __riscv_vsetvl_e8m2(src_pairs);
+    __riscv_vlseg2e8_v_u8m2(&u0, &v0, work_src_ptr, vl);
+    __riscv_vlseg2e8_v_u8m2(&u1, &v1, work_src_ptr + 2, vl);
 
-    v_uv0_u16 = __riscv_vwaddu_vx_u16m8(v_uv0, 2, vl);
-    v_uv1_u16 = __riscv_vwaddu_vx_u16m8(v_uv1, 2, vl);
+    vuint16m4_t u0_16 = __riscv_vwaddu_vx_u16m4(u0, 2, vl);
+    vuint16m4_t u1_16 = __riscv_vwaddu_vx_u16m4(u1, 2, vl);
+    vuint16m4_t u_even_16 = __riscv_vwmaccu_vv_u16m4(u1_16, v_3_u8, u0, vl);
+    vuint16m4_t u_odd_16 = __riscv_vwmaccu_vv_u16m4(u0_16, v_3_u8, u1, vl);
+    vuint8m2_t u_even = __riscv_vnsrl_wx_u8m2(u_even_16, 2, vl);
+    vuint8m2_t u_odd = __riscv_vnsrl_wx_u8m2(u_odd_16, 2, vl);
 
-    v_uv0_u16 = __riscv_vwmaccu_vv_u16m8(v_uv0_u16, v_3_u8, v_uv1, vl);
-    v_uv1_u16 = __riscv_vwmaccu_vv_u16m8(v_uv1_u16, v_3_u8, v_uv0, vl);
+    vuint16m4_t v0_16 = __riscv_vwaddu_vx_u16m4(v0, 2, vl);
+    vuint16m4_t v1_16 = __riscv_vwaddu_vx_u16m4(v1, 2, vl);
+    vuint16m4_t v_even_16 = __riscv_vwmaccu_vv_u16m4(v1_16, v_3_u8, v0, vl);
+    vuint16m4_t v_odd_16 = __riscv_vwmaccu_vv_u16m4(v0_16, v_3_u8, v1, vl);
+    vuint8m2_t v_even = __riscv_vnsrl_wx_u8m2(v_even_16, 2, vl);
+    vuint8m2_t v_odd = __riscv_vnsrl_wx_u8m2(v_odd_16, 2, vl);
 
-    v_dst_odd_u8 = __riscv_vnsrl_wx_u8m4(v_uv0_u16, 2, vl);
-    v_dst_even_u8 = __riscv_vnsrl_wx_u8m4(v_uv1_u16, 2, vl);
+    __riscv_vsseg4e8_v_u8m2(work_dst_ptr, u_even, v_even, u_odd, v_odd, vl);
 
-    v_dst_even = __riscv_vreinterpret_v_u8m4_u16m4(v_dst_even_u8);
-    v_dst_odd = __riscv_vreinterpret_v_u8m4_u16m4(v_dst_odd_u8);
-
-    __riscv_vsseg2e16_v_u16m4(work_dst_ptr, v_dst_even, v_dst_odd, vl / 2);
-
-    work_width -= vl;
-    work_src_ptr += vl;
-    work_dst_ptr += vl;
+    src_pairs -= vl;
+    work_src_ptr += 2 * vl;
+    work_dst_ptr += 4 * vl;
   }
   dst_ptr[2 * dst_width - 2] = src_ptr[((dst_width + 1) & ~1) - 2];
   dst_ptr[2 * dst_width - 1] = src_ptr[((dst_width + 1) & ~1) - 1];
@@ -1792,73 +1870,96 @@ void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
                                 ptrdiff_t dst_stride,
                                 int dst_width) {
   size_t work_width = ((size_t)dst_width - 1u) & ~1u;
+  size_t src_pairs = work_width >> 1u;
   const uint8_t* work_s = src_ptr;
   const uint8_t* work_t = src_ptr + src_stride;
   const uint8_t* s = work_s;
   const uint8_t* t = work_t;
   uint8_t* d = dst_ptr;
   uint8_t* e = dst_ptr + dst_stride;
-  uint16_t* work_d = (uint16_t*)d + 1;
-  uint16_t* work_e = (uint16_t*)e + 1;
-  size_t vl = __riscv_vsetvlmax_e16m4();
-  vuint16m4_t v_3_u16 = __riscv_vmv_v_x_u16m4(3, vl);
-  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vl);
+  uint8_t* work_d = d + 2;
+  uint8_t* work_e = e + 2;
+  size_t vlmax = __riscv_vsetvlmax_e16m4();
+  vuint16m4_t v_3_u16 = __riscv_vmv_v_x_u16m4(3, vlmax);
+  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vlmax);
   d[0] = (3 * s[0] + t[0] + 2) >> 2;
   e[0] = (s[0] + 3 * t[0] + 2) >> 2;
   d[1] = (3 * s[1] + t[1] + 2) >> 2;
   e[1] = (s[1] + 3 * t[1] + 2) >> 2;
-  while (work_width > 0) {
-    vuint8m2_t v_s0, v_s1, v_t0, v_t1;
-    vuint16m4_t v_s0_u16, v_s1_u16, v_t0_u16, v_t1_u16;
-    vuint16m4_t v_t0_u16_, v_t1_u16_;
-    vuint8m2_t v_dst0_odd_u8, v_dst0_even_u8, v_dst1_odd_u8, v_dst1_even_u8;
-    vuint16m2_t v_dst0_even, v_dst0_odd, v_dst1_even, v_dst1_odd;
-    vuint16m2x2_t v_dst0, v_dst1;
-    size_t vl = __riscv_vsetvl_e8m2(work_width);
-    v_s0 = __riscv_vle8_v_u8m2(work_s, vl);
-    v_s1 = __riscv_vle8_v_u8m2(work_s + 2, vl);
+  while (src_pairs > 0) {
+    size_t vl = __riscv_vsetvl_e8m2(src_pairs);
+    vuint8m2x2_t v_s0 = __riscv_vlseg2e8_v_u8m2x2(work_s, vl);
+    vuint8m2x2_t v_s1 = __riscv_vlseg2e8_v_u8m2x2(work_s + 2, vl);
+    vuint8m2_t s_u0 = __riscv_vget_v_u8m2x2_u8m2(v_s0, 0);
+    vuint8m2_t s_v0 = __riscv_vget_v_u8m2x2_u8m2(v_s0, 1);
+    vuint8m2_t s_u1 = __riscv_vget_v_u8m2x2_u8m2(v_s1, 0);
+    vuint8m2_t s_v1 = __riscv_vget_v_u8m2x2_u8m2(v_s1, 1);
 
-    v_s0_u16 = __riscv_vwaddu_vx_u16m4(v_s0, 2, vl);
-    v_s1_u16 = __riscv_vwaddu_vx_u16m4(v_s1, 2, vl);
-    v_s0_u16 = __riscv_vwmaccu_vv_u16m4(v_s0_u16, v_3_u8, v_s1, vl);
-    v_s1_u16 = __riscv_vwmaccu_vv_u16m4(v_s1_u16, v_3_u8, v_s0, vl);
+    vuint8m2x2_t v_t0 = __riscv_vlseg2e8_v_u8m2x2(work_t, vl);
+    vuint8m2x2_t v_t1 = __riscv_vlseg2e8_v_u8m2x2(work_t + 2, vl);
+    vuint8m2_t t_u0 = __riscv_vget_v_u8m2x2_u8m2(v_t0, 0);
+    vuint8m2_t t_v0 = __riscv_vget_v_u8m2x2_u8m2(v_t0, 1);
+    vuint8m2_t t_u1 = __riscv_vget_v_u8m2x2_u8m2(v_t1, 0);
+    vuint8m2_t t_v1 = __riscv_vget_v_u8m2x2_u8m2(v_t1, 1);
 
-    v_t0 = __riscv_vle8_v_u8m2(work_t, vl);
-    v_t1 = __riscv_vle8_v_u8m2(work_t + 2, vl);
+    vuint16m4_t u_s0_16 = __riscv_vwaddu_vx_u16m4(s_u0, 2, vl);
+    vuint16m4_t u_s1_16 = __riscv_vwaddu_vx_u16m4(s_u1, 2, vl);
+    u_s0_16 = __riscv_vwmaccu_vv_u16m4(u_s0_16, v_3_u8, s_u1, vl);
+    u_s1_16 = __riscv_vwmaccu_vv_u16m4(u_s1_16, v_3_u8, s_u0, vl);
 
-    v_t0_u16 = __riscv_vwaddu_vx_u16m4(v_t0, 2, vl);
-    v_t1_u16 = __riscv_vwaddu_vx_u16m4(v_t1, 2, vl);
-    v_t0_u16 = __riscv_vwmaccu_vv_u16m4(v_t0_u16, v_3_u8, v_t1, vl);
-    v_t1_u16 = __riscv_vwmaccu_vv_u16m4(v_t1_u16, v_3_u8, v_t0, vl);
+    vuint16m4_t u_t0_16 = __riscv_vwaddu_vx_u16m4(t_u0, 2, vl);
+    vuint16m4_t u_t1_16 = __riscv_vwaddu_vx_u16m4(t_u1, 2, vl);
+    u_t0_16 = __riscv_vwmaccu_vv_u16m4(u_t0_16, v_3_u8, t_u1, vl);
+    u_t1_16 = __riscv_vwmaccu_vv_u16m4(u_t1_16, v_3_u8, t_u0, vl);
 
-    v_t0_u16_ = __riscv_vmv_v_v_u16m4(v_t0_u16, vl);
-    v_t1_u16_ = __riscv_vmv_v_v_u16m4(v_t1_u16, vl);
+    vuint16m4_t u_t0_16_ = __riscv_vmv_v_v_u16m4(u_t0_16, vl);
+    vuint16m4_t u_t1_16_ = __riscv_vmv_v_v_u16m4(u_t1_16, vl);
 
-    v_t0_u16 = __riscv_vmacc_vv_u16m4(v_t0_u16, v_3_u16, v_s0_u16, vl);
-    v_t1_u16 = __riscv_vmacc_vv_u16m4(v_t1_u16, v_3_u16, v_s1_u16, vl);
-    v_s0_u16 = __riscv_vmacc_vv_u16m4(v_s0_u16, v_3_u16, v_t0_u16_, vl);
-    v_s1_u16 = __riscv_vmacc_vv_u16m4(v_s1_u16, v_3_u16, v_t1_u16_, vl);
+    u_t0_16 = __riscv_vmacc_vv_u16m4(u_t0_16, v_3_u16, u_s0_16, vl);
+    u_t1_16 = __riscv_vmacc_vv_u16m4(u_t1_16, v_3_u16, u_s1_16, vl);
+    u_s0_16 = __riscv_vmacc_vv_u16m4(u_s0_16, v_3_u16, u_t0_16_, vl);
+    u_s1_16 = __riscv_vmacc_vv_u16m4(u_s1_16, v_3_u16, u_t1_16_, vl);
 
-    v_dst0_odd_u8 = __riscv_vnsrl_wx_u8m2(v_t0_u16, 4, vl);
-    v_dst0_even_u8 = __riscv_vnsrl_wx_u8m2(v_t1_u16, 4, vl);
-    v_dst1_odd_u8 = __riscv_vnsrl_wx_u8m2(v_s0_u16, 4, vl);
-    v_dst1_even_u8 = __riscv_vnsrl_wx_u8m2(v_s1_u16, 4, vl);
+    vuint8m2_t u_d_odd = __riscv_vnsrl_wx_u8m2(u_t0_16, 4, vl);
+    vuint8m2_t u_d_even = __riscv_vnsrl_wx_u8m2(u_t1_16, 4, vl);
+    vuint8m2_t u_e_odd = __riscv_vnsrl_wx_u8m2(u_s0_16, 4, vl);
+    vuint8m2_t u_e_even = __riscv_vnsrl_wx_u8m2(u_s1_16, 4, vl);
 
-    v_dst0_even = __riscv_vreinterpret_v_u8m2_u16m2(v_dst0_even_u8);
-    v_dst0_odd = __riscv_vreinterpret_v_u8m2_u16m2(v_dst0_odd_u8);
-    v_dst1_even = __riscv_vreinterpret_v_u8m2_u16m2(v_dst1_even_u8);
-    v_dst1_odd = __riscv_vreinterpret_v_u8m2_u16m2(v_dst1_odd_u8);
+    vuint16m4_t v_s0_16 = __riscv_vwaddu_vx_u16m4(s_v0, 2, vl);
+    vuint16m4_t v_s1_16 = __riscv_vwaddu_vx_u16m4(s_v1, 2, vl);
+    v_s0_16 = __riscv_vwmaccu_vv_u16m4(v_s0_16, v_3_u8, s_v1, vl);
+    v_s1_16 = __riscv_vwmaccu_vv_u16m4(v_s1_16, v_3_u8, s_v0, vl);
 
-    v_dst0 = __riscv_vcreate_v_u16m2x2(v_dst0_even, v_dst0_odd);
-    __riscv_vsseg2e16_v_u16m2x2(work_d, v_dst0, vl / 2);
-    v_dst1 = __riscv_vcreate_v_u16m2x2(v_dst1_even, v_dst1_odd);
-    __riscv_vsseg2e16_v_u16m2x2(work_e, v_dst1, vl / 2);
+    vuint16m4_t v_t0_16 = __riscv_vwaddu_vx_u16m4(t_v0, 2, vl);
+    vuint16m4_t v_t1_16 = __riscv_vwaddu_vx_u16m4(t_v1, 2, vl);
+    v_t0_16 = __riscv_vwmaccu_vv_u16m4(v_t0_16, v_3_u8, t_v1, vl);
+    v_t1_16 = __riscv_vwmaccu_vv_u16m4(v_t1_16, v_3_u8, t_v0, vl);
 
-    work_width -= vl;
-    work_s += vl;
-    work_t += vl;
-    work_d += vl;
-    work_e += vl;
+    vuint16m4_t v_t0_16_ = __riscv_vmv_v_v_u16m4(v_t0_16, vl);
+    vuint16m4_t v_t1_16_ = __riscv_vmv_v_v_u16m4(v_t1_16, vl);
+
+    v_t0_16 = __riscv_vmacc_vv_u16m4(v_t0_16, v_3_u16, v_s0_16, vl);
+    v_t1_16 = __riscv_vmacc_vv_u16m4(v_t1_16, v_3_u16, v_s1_16, vl);
+    v_s0_16 = __riscv_vmacc_vv_u16m4(v_s0_16, v_3_u16, v_t0_16_, vl);
+    v_s1_16 = __riscv_vmacc_vv_u16m4(v_s1_16, v_3_u16, v_t1_16_, vl);
+
+    vuint8m2_t v_d_odd = __riscv_vnsrl_wx_u8m2(v_t0_16, 4, vl);
+    vuint8m2_t v_d_even = __riscv_vnsrl_wx_u8m2(v_t1_16, 4, vl);
+    vuint8m2_t v_e_odd = __riscv_vnsrl_wx_u8m2(v_s0_16, 4, vl);
+    vuint8m2_t v_e_even = __riscv_vnsrl_wx_u8m2(v_s1_16, 4, vl);
+
+    vuint8m2x4_t v_dst0 =
+        __riscv_vcreate_v_u8m2x4(u_d_even, v_d_even, u_d_odd, v_d_odd);
+    __riscv_vsseg4e8_v_u8m2x4(work_d, v_dst0, vl);
+    vuint8m2x4_t v_dst1 =
+        __riscv_vcreate_v_u8m2x4(u_e_even, v_e_even, u_e_odd, v_e_odd);
+    __riscv_vsseg4e8_v_u8m2x4(work_e, v_dst1, vl);
+
+    src_pairs -= vl;
+    work_s += 2 * vl;
+    work_t += 2 * vl;
+    work_d += 4 * vl;
+    work_e += 4 * vl;
   }
   d[2 * dst_width - 2] =
       (3 * s[((dst_width + 1) & ~1) - 2] + t[((dst_width + 1) & ~1) - 2] + 2) >>
@@ -1880,70 +1981,85 @@ void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
                                 ptrdiff_t dst_stride,
                                 int dst_width) {
   size_t work_width = ((size_t)dst_width - 1u) & ~1u;
+  size_t src_pairs = work_width >> 1u;
   const uint8_t* work_s = src_ptr;
   const uint8_t* work_t = src_ptr + src_stride;
   const uint8_t* s = work_s;
   const uint8_t* t = work_t;
   uint8_t* d = dst_ptr;
   uint8_t* e = dst_ptr + dst_stride;
-  uint16_t* work_d = (uint16_t*)d + 1;
-  uint16_t* work_e = (uint16_t*)e + 1;
-  size_t vl = __riscv_vsetvlmax_e16m4();
-  vuint16m4_t v_3_u16 = __riscv_vmv_v_x_u16m4(3, vl);
-  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vl);
+  uint8_t* work_d = d + 2;
+  uint8_t* work_e = e + 2;
+  size_t vlmax = __riscv_vsetvlmax_e16m4();
+  vuint16m4_t v_3_u16 = __riscv_vmv_v_x_u16m4(3, vlmax);
+  vuint8m2_t v_3_u8 = __riscv_vmv_v_x_u8m2(3, vlmax);
   d[0] = (3 * s[0] + t[0] + 2) >> 2;
   e[0] = (s[0] + 3 * t[0] + 2) >> 2;
   d[1] = (3 * s[1] + t[1] + 2) >> 2;
   e[1] = (s[1] + 3 * t[1] + 2) >> 2;
-  while (work_width > 0) {
-    vuint8m2_t v_s0, v_s1, v_t0, v_t1;
-    vuint16m4_t v_s0_u16, v_s1_u16, v_t0_u16, v_t1_u16;
-    vuint16m4_t v_t0_u16_, v_t1_u16_;
-    vuint8m2_t v_dst0_odd_u8, v_dst0_even_u8, v_dst1_odd_u8, v_dst1_even_u8;
-    vuint16m2_t v_dst0_even, v_dst0_odd, v_dst1_even, v_dst1_odd;
-    size_t vl = __riscv_vsetvl_e8m2(work_width);
-    v_s0 = __riscv_vle8_v_u8m2(work_s, vl);
-    v_s1 = __riscv_vle8_v_u8m2(work_s + 2, vl);
+  while (src_pairs > 0) {
+    vuint8m2_t s_u0, s_v0, s_u1, s_v1;
+    vuint8m2_t t_u0, t_v0, t_u1, t_v1;
+    size_t vl = __riscv_vsetvl_e8m2(src_pairs);
+    __riscv_vlseg2e8_v_u8m2(&s_u0, &s_v0, work_s, vl);
+    __riscv_vlseg2e8_v_u8m2(&s_u1, &s_v1, work_s + 2, vl);
+    __riscv_vlseg2e8_v_u8m2(&t_u0, &t_v0, work_t, vl);
+    __riscv_vlseg2e8_v_u8m2(&t_u1, &t_v1, work_t + 2, vl);
 
-    v_s0_u16 = __riscv_vwaddu_vx_u16m4(v_s0, 2, vl);
-    v_s1_u16 = __riscv_vwaddu_vx_u16m4(v_s1, 2, vl);
-    v_s0_u16 = __riscv_vwmaccu_vv_u16m4(v_s0_u16, v_3_u8, v_s1, vl);
-    v_s1_u16 = __riscv_vwmaccu_vv_u16m4(v_s1_u16, v_3_u8, v_s0, vl);
+    vuint16m4_t u_s0_16 = __riscv_vwaddu_vx_u16m4(s_u0, 2, vl);
+    vuint16m4_t u_s1_16 = __riscv_vwaddu_vx_u16m4(s_u1, 2, vl);
+    u_s0_16 = __riscv_vwmaccu_vv_u16m4(u_s0_16, v_3_u8, s_u1, vl);
+    u_s1_16 = __riscv_vwmaccu_vv_u16m4(u_s1_16, v_3_u8, s_u0, vl);
 
-    v_t0 = __riscv_vle8_v_u8m2(work_t, vl);
-    v_t1 = __riscv_vle8_v_u8m2(work_t + 2, vl);
+    vuint16m4_t u_t0_16 = __riscv_vwaddu_vx_u16m4(t_u0, 2, vl);
+    vuint16m4_t u_t1_16 = __riscv_vwaddu_vx_u16m4(t_u1, 2, vl);
+    u_t0_16 = __riscv_vwmaccu_vv_u16m4(u_t0_16, v_3_u8, t_u1, vl);
+    u_t1_16 = __riscv_vwmaccu_vv_u16m4(u_t1_16, v_3_u8, t_u0, vl);
 
-    v_t0_u16 = __riscv_vwaddu_vx_u16m4(v_t0, 2, vl);
-    v_t1_u16 = __riscv_vwaddu_vx_u16m4(v_t1, 2, vl);
-    v_t0_u16 = __riscv_vwmaccu_vv_u16m4(v_t0_u16, v_3_u8, v_t1, vl);
-    v_t1_u16 = __riscv_vwmaccu_vv_u16m4(v_t1_u16, v_3_u8, v_t0, vl);
+    vuint16m4_t u_t0_16_ = __riscv_vmv_v_v_u16m4(u_t0_16, vl);
+    vuint16m4_t u_t1_16_ = __riscv_vmv_v_v_u16m4(u_t1_16, vl);
 
-    v_t0_u16_ = __riscv_vmv_v_v_u16m4(v_t0_u16, vl);
-    v_t1_u16_ = __riscv_vmv_v_v_u16m4(v_t1_u16, vl);
+    u_t0_16 = __riscv_vmacc_vv_u16m4(u_t0_16, v_3_u16, u_s0_16, vl);
+    u_t1_16 = __riscv_vmacc_vv_u16m4(u_t1_16, v_3_u16, u_s1_16, vl);
+    u_s0_16 = __riscv_vmacc_vv_u16m4(u_s0_16, v_3_u16, u_t0_16_, vl);
+    u_s1_16 = __riscv_vmacc_vv_u16m4(u_s1_16, v_3_u16, u_t1_16_, vl);
 
-    v_t0_u16 = __riscv_vmacc_vv_u16m4(v_t0_u16, v_3_u16, v_s0_u16, vl);
-    v_t1_u16 = __riscv_vmacc_vv_u16m4(v_t1_u16, v_3_u16, v_s1_u16, vl);
-    v_s0_u16 = __riscv_vmacc_vv_u16m4(v_s0_u16, v_3_u16, v_t0_u16_, vl);
-    v_s1_u16 = __riscv_vmacc_vv_u16m4(v_s1_u16, v_3_u16, v_t1_u16_, vl);
+    vuint8m2_t u_d_odd = __riscv_vnsrl_wx_u8m2(u_t0_16, 4, vl);
+    vuint8m2_t u_d_even = __riscv_vnsrl_wx_u8m2(u_t1_16, 4, vl);
+    vuint8m2_t u_e_odd = __riscv_vnsrl_wx_u8m2(u_s0_16, 4, vl);
+    vuint8m2_t u_e_even = __riscv_vnsrl_wx_u8m2(u_s1_16, 4, vl);
 
-    v_dst0_odd_u8 = __riscv_vnsrl_wx_u8m2(v_t0_u16, 4, vl);
-    v_dst0_even_u8 = __riscv_vnsrl_wx_u8m2(v_t1_u16, 4, vl);
-    v_dst1_odd_u8 = __riscv_vnsrl_wx_u8m2(v_s0_u16, 4, vl);
-    v_dst1_even_u8 = __riscv_vnsrl_wx_u8m2(v_s1_u16, 4, vl);
+    vuint16m4_t v_s0_16 = __riscv_vwaddu_vx_u16m4(s_v0, 2, vl);
+    vuint16m4_t v_s1_16 = __riscv_vwaddu_vx_u16m4(s_v1, 2, vl);
+    v_s0_16 = __riscv_vwmaccu_vv_u16m4(v_s0_16, v_3_u8, s_v1, vl);
+    v_s1_16 = __riscv_vwmaccu_vv_u16m4(v_s1_16, v_3_u8, s_v0, vl);
 
-    v_dst0_even = __riscv_vreinterpret_v_u8m2_u16m2(v_dst0_even_u8);
-    v_dst0_odd = __riscv_vreinterpret_v_u8m2_u16m2(v_dst0_odd_u8);
-    v_dst1_even = __riscv_vreinterpret_v_u8m2_u16m2(v_dst1_even_u8);
-    v_dst1_odd = __riscv_vreinterpret_v_u8m2_u16m2(v_dst1_odd_u8);
+    vuint16m4_t v_t0_16 = __riscv_vwaddu_vx_u16m4(t_v0, 2, vl);
+    vuint16m4_t v_t1_16 = __riscv_vwaddu_vx_u16m4(t_v1, 2, vl);
+    v_t0_16 = __riscv_vwmaccu_vv_u16m4(v_t0_16, v_3_u8, t_v1, vl);
+    v_t1_16 = __riscv_vwmaccu_vv_u16m4(v_t1_16, v_3_u8, t_v0, vl);
 
-    __riscv_vsseg2e16_v_u16m2(work_d, v_dst0_even, v_dst0_odd, vl / 2);
-    __riscv_vsseg2e16_v_u16m2(work_e, v_dst1_even, v_dst1_odd, vl / 2);
+    vuint16m4_t v_t0_16_ = __riscv_vmv_v_v_u16m4(v_t0_16, vl);
+    vuint16m4_t v_t1_16_ = __riscv_vmv_v_v_u16m4(v_t1_16, vl);
 
-    work_width -= vl;
-    work_s += vl;
-    work_t += vl;
-    work_d += vl;
-    work_e += vl;
+    v_t0_16 = __riscv_vmacc_vv_u16m4(v_t0_16, v_3_u16, v_s0_16, vl);
+    v_t1_16 = __riscv_vmacc_vv_u16m4(v_t1_16, v_3_u16, v_s1_16, vl);
+    v_s0_16 = __riscv_vmacc_vv_u16m4(v_s0_16, v_3_u16, v_t0_16_, vl);
+    v_s1_16 = __riscv_vmacc_vv_u16m4(v_s1_16, v_3_u16, v_t1_16_, vl);
+
+    vuint8m2_t v_d_odd = __riscv_vnsrl_wx_u8m2(v_t0_16, 4, vl);
+    vuint8m2_t v_d_even = __riscv_vnsrl_wx_u8m2(v_t1_16, 4, vl);
+    vuint8m2_t v_e_odd = __riscv_vnsrl_wx_u8m2(v_s0_16, 4, vl);
+    vuint8m2_t v_e_even = __riscv_vnsrl_wx_u8m2(v_s1_16, 4, vl);
+
+    __riscv_vsseg4e8_v_u8m2(work_d, u_d_even, v_d_even, u_d_odd, v_d_odd, vl);
+    __riscv_vsseg4e8_v_u8m2(work_e, u_e_even, v_e_even, u_e_odd, v_e_odd, vl);
+
+    src_pairs -= vl;
+    work_s += 2 * vl;
+    work_t += 2 * vl;
+    work_d += 4 * vl;
+    work_e += 4 * vl;
   }
   d[2 * dst_width - 2] =
       (3 * s[((dst_width + 1) & ~1) - 2] + t[((dst_width + 1) & ~1) - 2] + 2) >>
