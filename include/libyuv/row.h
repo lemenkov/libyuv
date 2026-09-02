@@ -404,6 +404,7 @@ extern "C" {
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_INTERPOLATEROW_16_AVX2
+#define HAS_MULTIPLYROW_16_AVX2
 #endif
 
 // The following are available for AVX512 clang x64 platforms:
@@ -422,6 +423,7 @@ extern "C" {
 #define HAS_CONVERT8TO16ROW_AVX512BW
 #define HAS_HALFROW_16TO8_AVX512BW
 #define HAS_HALFWIDTHROW_16TO8_AVX512BW
+#define HAS_MULTIPLYROW_16_AVX512BW
 #endif
 
 // The following are available for AVX512 clang x64 platforms:
@@ -887,6 +889,7 @@ extern "C" {
 #define HAS_HALFWIDTHROW_16TO8_RVV
 #define HAS_I422TOAR30ROW_RVV
 #define HAS_INTERPOLATEROW_RVV
+#define HAS_MULTIPLYROW_16_RVV
 #define HAS_RGBTOUV444MATRIXROW_RVV
 #define HAS_RGBTOUVMATRIXROW_RVV
 #define HAS_RGBTOYMATRIXROW_RVV
@@ -3539,6 +3542,14 @@ void MultiplyRow_16_Any_AVX2(const uint16_t* src_ptr,
                              uint16_t* dst_ptr,
                              int scale,
                              int width);
+void MultiplyRow_16_AVX512BW(const uint16_t* src_y,
+                             uint16_t* dst_y,
+                             int scale,
+                             int width);
+void MultiplyRow_16_Any_AVX512BW(const uint16_t* src_ptr,
+                                 uint16_t* dst_ptr,
+                                 int scale,
+                                 int width);
 void MultiplyRow_16_NEON(const uint16_t* src_y,
                          uint16_t* dst_y,
                          int scale,
@@ -3548,6 +3559,10 @@ void MultiplyRow_16_Any_NEON(const uint16_t* src_ptr,
                              int scale,
                              int width);
 void MultiplyRow_16_SME(const uint16_t* src_y,
+                        uint16_t* dst_y,
+                        int scale,
+                        int width);
+void MultiplyRow_16_RVV(const uint16_t* src_y,
                         uint16_t* dst_y,
                         int scale,
                         int width);

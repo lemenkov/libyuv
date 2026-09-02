@@ -955,6 +955,14 @@ void ConvertToMSBPlane_16(const uint16_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MULTIPLYROW_16_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MultiplyRow_16 = MultiplyRow_16_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      MultiplyRow_16 = MultiplyRow_16_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_MULTIPLYROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     MultiplyRow_16 = MultiplyRow_16_Any_NEON;
@@ -966,6 +974,11 @@ void ConvertToMSBPlane_16(const uint16_t* src_y,
 #if defined(HAS_MULTIPLYROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     MultiplyRow_16 = MultiplyRow_16_SME;
+  }
+#endif
+#if defined(HAS_MULTIPLYROW_16_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MultiplyRow_16 = MultiplyRow_16_RVV;
   }
 #endif
 

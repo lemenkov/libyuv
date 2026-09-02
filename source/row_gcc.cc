@@ -5789,10 +5789,8 @@ void MultiplyRow_16_AVX2(const uint16_t* src_y,
       // 32 pixels per loop.
       LABELALIGN
       "1:          \n"
-      "vmovdqu     (%0),%%ymm0                   \n"
-      "vmovdqu     0x20(%0),%%ymm1               \n"
-      "vpmullw     %%ymm3,%%ymm0,%%ymm0          \n"
-      "vpmullw     %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpmullw     (%0),%%ymm3,%%ymm0            \n"
+      "vpmullw     0x20(%0),%%ymm3,%%ymm1        \n"
       "vmovdqu     %%ymm0,(%0,%1)                \n"
       "vmovdqu     %%ymm1,0x20(%0,%1)            \n"
       "add         $0x40,%0                      \n"
@@ -5806,6 +5804,34 @@ void MultiplyRow_16_AVX2(const uint16_t* src_y,
       : "memory", "cc", "xmm0", "xmm1", "xmm3");
 }
 #endif  // HAS_MULTIPLYROW_16_AVX2
+
+#ifdef HAS_MULTIPLYROW_16_AVX512BW
+void MultiplyRow_16_AVX512BW(const uint16_t* src_y,
+                             uint16_t* dst_y,
+                             int scale,
+                             int width) {
+  asm volatile(
+      "vpbroadcastw %3,%%zmm2                    \n"
+
+      // 64 pixels per loop.
+      LABELALIGN
+      "1:          \n"
+      "vpmullw     (%0),%%zmm2,%%zmm0            \n"
+      "vpmullw     0x40(%0),%%zmm2,%%zmm1        \n"
+      "add         $0x80,%0                      \n"
+      "vmovdqu16   %%zmm0,(%1)                   \n"
+      "vmovdqu16   %%zmm1,0x40(%1)               \n"
+      "add         $0x80,%1                      \n"
+      "sub         $0x40,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      : "r"(scale)    // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+}
+#endif  // HAS_MULTIPLYROW_16_AVX512BW
 
 // Use scale to convert msb formats to lsb, depending how many bits there are:
 // 512 = 9 bits

@@ -2395,7 +2395,7 @@ int ARGBToI420Matrix(const uint8_t* src_argb,
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_NEON_I8MM)
-  if (TestCpuFlag(kCpuHasNEON) && TestCpuFlag(kCpuHasNeonI8MM)) {
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_NEON_I8MM;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVMatrixRow = ARGBToUVMatrixRow_NEON_I8MM;
@@ -2614,7 +2614,7 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_NEON_I8MM)
-  if (TestCpuFlag(kCpuHasNEON) && TestCpuFlag(kCpuHasNeonI8MM)) {
+  if (TestCpuFlag(kCpuHasNeonI8MM)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_NEON_I8MM;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVMatrixRow = ARGBToUVMatrixRow_NEON_I8MM;

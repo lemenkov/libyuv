@@ -790,6 +790,28 @@ void Convert8To16Row_AVX2(const uint8_t* src_y,
 }
 #endif  // HAS_CONVERT8TO16ROW_AVX2
 
+#ifdef HAS_MULTIPLYROW_16_AVX2
+LIBYUV_TARGET_AVX2
+void MultiplyRow_16_AVX2(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width) {
+  __m256i scale256 = _mm256_set1_epi16((short)scale);
+  do {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_y);
+    __m256i ymm1 = _mm256_loadu_si256((const __m256i*)(src_y + 16));
+    ymm0 = _mm256_mullo_epi16(ymm0, scale256);
+    ymm1 = _mm256_mullo_epi16(ymm1, scale256);
+    _mm256_storeu_si256((__m256i*)dst_y, ymm0);
+    _mm256_storeu_si256((__m256i*)(dst_y + 16), ymm1);
+    src_y += 32;
+    dst_y += 32;
+    width -= 32;
+  } while (width > 0);
+  _mm256_zeroupper();
+}
+#endif  // HAS_MULTIPLYROW_16_AVX2
+
 #ifdef HAS_MERGEUVROW_AVX2
 LIBYUV_TARGET_AVX2
 void MergeUVRow_AVX2(const uint8_t* src_u,

@@ -1906,6 +1906,24 @@ void Convert8To16Row_RVV(const uint8_t* src_y,
 }
 #endif
 
+#ifdef HAS_MULTIPLYROW_16_RVV
+void MultiplyRow_16_RVV(const uint16_t* src_y,
+                        uint16_t* dst_y,
+                        int scale,
+                        int width) {
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e16m8(w);
+    vuint16m8_t v_src = __riscv_vle16_v_u16m8(src_y, vl);
+    vuint16m8_t v_dst = __riscv_vmul_vx_u16m8(v_src, (uint16_t)scale, vl);
+    __riscv_vse16_v_u16m8(dst_y, v_dst, vl);
+    w -= vl;
+    src_y += vl;
+    dst_y += vl;
+  } while (w > 0);
+}
+#endif
+
 #ifdef HAS_HALFROW_16TO8_RVV
 void HalfRow_16To8_RVV(const uint16_t* src_uv,
                        ptrdiff_t src_uv_stride,
