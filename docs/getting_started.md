@@ -224,7 +224,61 @@ Install cmake: http://www.cmake.org/
 
 ## Building RISC-V target with cmake
 
-### Prerequisite: build risc-v clang toolchain and qemu
+### Native build on RISC-V SBC (e.g. SpacemiT K1/K3)
+
+On a 64-bit RISC-V system, CMake automatically detects `riscv64` and enables
+RVV with `-march=rv64gcv`:
+
+    cmake -B out/Release -DCMAKE_BUILD_TYPE=Release -DUNIT_TEST=ON
+    cmake --build out/Release
+
+To build for 32-bit RISC-V targets:
+
+    cmake -B out/Release -DCMAKE_BUILD_TYPE=Release -DRISCV_COMPILER_FLAGS="-march=rv32gcv"
+    cmake --build out/Release
+
+#### Customized Compiler Flags
+
+Customized compiler flags can be passed with `-DRISCV_COMPILER_FLAGS="xxx"`.
+When assigned, the specified flags are used instead of the default `-march=rv64gcv`:
+
+Targeting SiFive X280:
+
+    cmake -B out/Release -DUNIT_TEST=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DRISCV_COMPILER_FLAGS="-mcpu=sifive-x280"
+
+Targeting Coral (32-bit without floating point, Zve32x):
+
+    cmake -B out/Release -DUNIT_TEST=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DRISCV_COMPILER_FLAGS="-march=rv32imac_zve32x"
+
+To disable RVV:
+
+    cmake -B out/Release -DCMAKE_BUILD_TYPE=Release -DUSE_RVV=OFF
+
+### Building RISC-V with Bazel and Blaze
+
+To build with Bazel for 64-bit or 32-bit RISC-V targets:
+
+    bazel test --platforms=@platforms//cpu:riscv64 //...
+    bazel test --platforms=@platforms//cpu:riscv32 //...
+
+For custom targets such as SiFive X280 or Coral:
+
+    bazel test --platforms=@platforms//cpu:riscv64 --copt=-mcpu=sifive-x280 //...
+    bazel test --platforms=@platforms//cpu:riscv32 --copt=-march=rv32imac_zve32x //...
+
+In google3 using Blaze:
+
+    blaze test --config=mpu64 //third_party/libyuv:libyuv_test
+    blaze run --config=mpu64 //third_party/libyuv:cpuid
+    blaze run --config=mpu64 //third_party/libyuv:yuvconvert
+
+### Cross-compile for RISC-V target using QEMU
+
+#### Prerequisite: build risc-v clang toolchain and qemu
 
 If you don't have prebuilt clang and riscv64 qemu, run the script to download source and build them.
 
@@ -232,26 +286,13 @@ If you don't have prebuilt clang and riscv64 qemu, run the script to download so
 
 After running script, clang & qemu are built in `build-toolchain-qemu/riscv-clang/` & `build-toolchain-qemu/riscv-qemu/`.
 
-### Cross-compile for RISC-V target
+#### Cross-compile for RISC-V target
     cmake -B out/Release/ -DUNIT_TEST=ON \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE="./riscv_script/riscv-clang.cmake" \
           -DTOOLCHAIN_PATH={TOOLCHAIN_PATH} \
           -DUSE_RVV=ON .
     cmake --build out/Release/
-
-#### Customized Compiler Flags
-
-Customized compiler flags are supported by `-DRISCV_COMPILER_FLAGS="xxx"`.
-If `-DRISCV_COMPILER_FLAGS="xxx"` is manually assigned, other compile flags(e.g disable -march=xxx) will not be appended.
-
-Example:
-
-    cmake -B out/Release/ -DUNIT_TEST=ON \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE="./riscv_script/riscv-clang.cmake" \
-          -DRISCV_COMPILER_FLAGS="-mcpu=sifive-x280" \
-          .
 
 ### Run on QEMU
 

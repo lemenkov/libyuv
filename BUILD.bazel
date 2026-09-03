@@ -56,7 +56,21 @@ PLATFORM_COPTS = select({
     "-DGOOGLE_COMMANDLINEFLAGS_FULL_API",
 ]
 
-ALL_COPTS = PLATFORM_COPTS
+RVV_COPTS = select({
+    "@platforms//cpu:riscv64": [
+        "-march=rv64gcv",
+        "-fno-vectorize",
+        "-fno-slp-vectorize",
+    ],
+    "@platforms//cpu:riscv32": [
+        "-march=rv32gcv",
+        "-fno-vectorize",
+        "-fno-slp-vectorize",
+    ],
+    "//conditions:default": [],
+})
+
+ALL_COPTS = PLATFORM_COPTS + RVV_COPTS
 
 ALL_NEON_COPTS = NEON_COPTS + PLATFORM_COPTS
 
