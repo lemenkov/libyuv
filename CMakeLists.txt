@@ -25,10 +25,10 @@ set ( ly_common_source_files
   ${ly_src_dir}/compare_common.cc
   ${ly_src_dir}/compare_gcc.cc
   ${ly_src_dir}/compare_win.cc
-  ${ly_src_dir}/convert_argb.cc
   ${ly_src_dir}/convert.cc
-  ${ly_src_dir}/convert_from_argb.cc
+  ${ly_src_dir}/convert_argb.cc
   ${ly_src_dir}/convert_from.cc
+  ${ly_src_dir}/convert_from_argb.cc
   ${ly_src_dir}/convert_jpeg.cc
   ${ly_src_dir}/convert_to_argb.cc
   ${ly_src_dir}/convert_to_i420.cc
@@ -36,9 +36,9 @@ set ( ly_common_source_files
   ${ly_src_dir}/mjpeg_decoder.cc
   ${ly_src_dir}/mjpeg_validate.cc
   ${ly_src_dir}/planar_functions.cc
+  ${ly_src_dir}/rotate.cc
   ${ly_src_dir}/rotate_any.cc
   ${ly_src_dir}/rotate_argb.cc
-  ${ly_src_dir}/rotate.cc
   ${ly_src_dir}/rotate_common.cc
   ${ly_src_dir}/rotate_gcc.cc
   ${ly_src_dir}/rotate_win.cc
@@ -47,9 +47,9 @@ set ( ly_common_source_files
   ${ly_src_dir}/row_gcc.cc
   ${ly_src_dir}/row_rvv.cc
   ${ly_src_dir}/row_win.cc
+  ${ly_src_dir}/scale.cc
   ${ly_src_dir}/scale_any.cc
   ${ly_src_dir}/scale_argb.cc
-  ${ly_src_dir}/scale.cc
   ${ly_src_dir}/scale_common.cc
   ${ly_src_dir}/scale_gcc.cc
   ${ly_src_dir}/scale_rgb.cc

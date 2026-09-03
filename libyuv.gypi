@@ -27,6 +27,7 @@
       'include/libyuv/rotate_argb.h',
       'include/libyuv/rotate_row.h',
       'include/libyuv/row.h',
+      'include/libyuv/row_sve.h',
       'include/libyuv/scale.h',
       'include/libyuv/scale_argb.h',
       'include/libyuv/scale_rgb.h',

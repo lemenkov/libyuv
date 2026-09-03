@@ -127,6 +127,7 @@ cc_test {
         "unit_test/basictypes_test.cc",
         "unit_test/color_test.cc",
         "unit_test/compare_test.cc",
+        "unit_test/convert_argb_test.cc",
         "unit_test/convert_test.cc",
         "unit_test/cpu_test.cc",
         "unit_test/cpu_thread_test.cc",
