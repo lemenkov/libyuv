@@ -10498,12 +10498,14 @@ void NV21ToYUV24Row_AVX512(const uint8_t* src_y,
 
 #endif  // HAS_NV21ToYUV24ROW_AVX512
 
-#ifdef HAS_SWAPUVROW_SSSE3
+#if defined(HAS_SWAPUVROW_SSSE3) || defined(HAS_SWAPUVROW_AVX2)
 
 // Shuffle table for reversing the bytes.
 static const uvec8 kShuffleUVToVU = {1u, 0u, 3u,  2u,  5u,  4u,  7u,  6u,
                                      9u, 8u, 11u, 10u, 13u, 12u, 15u, 14u};
+#endif
 
+#ifdef HAS_SWAPUVROW_SSSE3
 // Convert UV plane of NV12 to VU of NV21.
 void SwapUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile("movdqu      %3,%%xmm5                     \n"

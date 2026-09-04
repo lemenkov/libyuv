@@ -405,6 +405,7 @@ extern "C" {
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_INTERPOLATEROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
+#define HAS_SWAPUVROW_AVX2
 #endif
 
 // The following are available for AVX512 clang x64 platforms:

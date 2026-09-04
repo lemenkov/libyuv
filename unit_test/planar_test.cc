@@ -4794,6 +4794,22 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
   MemRandomize(src_pixels_vu, kPixels * 2);
   memset(dst_pixels_uv, 1, kPixels * 2);
 
+#if defined(HAS_SWAPUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    SwapUVRow = SwapUVRow_Any_SSSE3;
+    if (IS_ALIGNED(kPixels, 16)) {
+      SwapUVRow = SwapUVRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_SWAPUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SwapUVRow = SwapUVRow_Any_AVX2;
+    if (IS_ALIGNED(kPixels, 32)) {
+      SwapUVRow = SwapUVRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_SWAPUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SwapUVRow = SwapUVRow_Any_NEON;

@@ -874,6 +874,26 @@ void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
 }
 #endif  // HAS_MIRRORUVROW_AVX2
 
+#ifdef HAS_SWAPUVROW_AVX2
+LIBYUV_TARGET_AVX2
+void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+  __m256i ymm_shuf = _mm256_broadcastsi128_si256(
+      _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14));
+  while (width > 0) {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_uv);
+    __m256i ymm1 = _mm256_loadu_si256((const __m256i*)(src_uv + 32));
+    ymm0 = _mm256_shuffle_epi8(ymm0, ymm_shuf);
+    ymm1 = _mm256_shuffle_epi8(ymm1, ymm_shuf);
+    _mm256_storeu_si256((__m256i*)dst_vu, ymm0);
+    _mm256_storeu_si256((__m256i*)(dst_vu + 32), ymm1);
+    src_uv += 64;
+    dst_vu += 64;
+    width -= 32;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_SWAPUVROW_AVX2
+
 #ifdef HAS_MIRRORSPLITUVROW_AVX2
 LIBYUV_TARGET_AVX2
 void MirrorSplitUVRow_AVX2(const uint8_t* src_uv,

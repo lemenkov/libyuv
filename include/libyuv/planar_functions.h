@@ -479,21 +479,21 @@ int UYVYToNV12(const uint8_t* src_uyvy,
                int width,
                int height);
 
-// Convert NV21 to NV12.
+// Convert NV12 to NV21.
 LIBYUV_API
-int NV21ToNV12(const uint8_t* src_y,
+int NV12ToNV21(const uint8_t* src_y,
                int src_stride_y,
-               const uint8_t* src_vu,
-               int src_stride_vu,
+               const uint8_t* src_uv,
+               int src_stride_uv,
                uint8_t* dst_y,
                int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
 
 // Alias
-#define NV12ToNV21 NV21ToNV12
+#define NV21ToNV12 NV12ToNV21
 
 LIBYUV_API
 int YUY2ToY(const uint8_t* src_yuy2,

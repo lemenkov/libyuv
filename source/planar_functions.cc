@@ -1108,22 +1108,22 @@ void SwapUVPlane(const uint8_t* src_uv,
   }
 }
 
-// Convert NV21 to NV12.
+// Convert NV12 to NV21.
 LIBYUV_API
-int NV21ToNV12(const uint8_t* src_y,
+int NV12ToNV21(const uint8_t* src_y,
                int src_stride_y,
-               const uint8_t* src_vu,
-               int src_stride_vu,
+               const uint8_t* src_uv,
+               int src_stride_uv,
                uint8_t* dst_y,
                int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
 
-  if (!src_vu || !dst_uv || width <= 0 || height == 0 || height == INT_MIN) {
+  if (!src_uv || !dst_vu || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
 
@@ -1135,11 +1135,11 @@ int NV21ToNV12(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_vu = src_vu + (ptrdiff_t)(halfheight - 1) * src_stride_vu;
-    src_stride_vu = -src_stride_vu;
+    src_uv = src_uv + (ptrdiff_t)(halfheight - 1) * src_stride_uv;
+    src_stride_uv = -src_stride_uv;
   }
 
-  SwapUVPlane(src_vu, src_stride_vu, dst_uv, dst_stride_uv, halfwidth,
+  SwapUVPlane(src_uv, src_stride_uv, dst_vu, dst_stride_vu, halfwidth,
               halfheight);
   return 0;
 }
