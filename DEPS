@@ -6,7 +6,7 @@ gclient_gn_args = [
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '2fec1883d8c89392206801daa91f95eb2f8ab3e1',
-  'gn_version': 'git_revision:304bbef6c7e9a86630c12986b99c8654eb7fe648',
+  'gn_version': 'git_revision:4f6a76b64b8279e98004f541f8e136307efe5e01',
   # ninja CIPD package version.
   # https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/ninja
   'ninja_version': 'version:3@1.12.1.chromium.4',
@@ -52,7 +52,7 @@ deps = {
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'bc3e93b3c459cfa0bb6bef8944b6398bbd9a7be8',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '6a18683f555b4ac8b05ac8395c29c84483ac9588',
+    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '136da69a1267b8db487354b96d44d0cc8add5aeb',
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + 'd274a4df83dc1781e42bade23902491faf30a0d2',
   'src/third_party':
