@@ -489,6 +489,75 @@ int ARGBToNV21(const uint8_t* src_argb,
                int width,
                int height);
 
+// Convert ARGB To P010.
+LIBYUV_API
+int ARGBToP010(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// ARGB to P010 with matrix. See ArgbConstants at the top of this file for usage.
+LIBYUV_API
+int ARGBToP010Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint16_t* dst_y,
+                     int dst_stride_y,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+// Convert ARGB To P210.
+LIBYUV_API
+int ARGBToP210(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// ARGB to P210 with matrix. See ArgbConstants at the top of this file for usage.
+LIBYUV_API
+int ARGBToP210Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint16_t* dst_y,
+                     int dst_stride_y,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+// Convert ARGB To P410.
+LIBYUV_API
+int ARGBToP410(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// ARGB to P410 with matrix. See ArgbConstants at the top of this file for usage.
+LIBYUV_API
+int ARGBToP410Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint16_t* dst_y,
+                     int dst_stride_y,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
 // Convert ABGR To NV12.
 LIBYUV_API
 int ABGRToNV12(const uint8_t* src_abgr,
