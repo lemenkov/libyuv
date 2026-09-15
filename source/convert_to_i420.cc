@@ -378,6 +378,42 @@ int ConvertToI420(const uint8_t* sample,
                      dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
                      crop_width, inv_crop_height);
       break;
+    case FOURCC_P010: {
+      const uint16_t* src16 = (const uint16_t*)sample;
+      const uint16_t* src_y16 =
+          src16 + ((ptrdiff_t)src_width * crop_y + crop_x);
+      const uint16_t* src_uv16 =
+          src16 + ((ptrdiff_t)src_width * abs_src_height) +
+          ((ptrdiff_t)(crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
+      r = P010ToI420(src_y16, src_width, src_uv16, aligned_src_width, dst_y,
+                     dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                     crop_width, inv_crop_height);
+      break;
+    }
+    case FOURCC_P210: {
+      const uint16_t* src16 = (const uint16_t*)sample;
+      const uint16_t* src_y16 =
+          src16 + ((ptrdiff_t)src_width * crop_y + crop_x);
+      const uint16_t* src_uv16 =
+          src16 + ((ptrdiff_t)src_width * abs_src_height) +
+          ((ptrdiff_t)crop_y * aligned_src_width) + ((crop_x / 2) * 2);
+      r = P210ToI420(src_y16, src_width, src_uv16, aligned_src_width, dst_y,
+                     dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                     crop_width, inv_crop_height);
+      break;
+    }
+    case FOURCC_P410: {
+      const uint16_t* src16 = (const uint16_t*)sample;
+      const uint16_t* src_y16 =
+          src16 + ((ptrdiff_t)src_width * crop_y + crop_x);
+      const uint16_t* src_uv16 =
+          src16 + ((ptrdiff_t)src_width * abs_src_height) +
+          ((ptrdiff_t)crop_y * src_width * 2) + crop_x * 2;
+      r = P410ToI420(src_y16, src_width, src_uv16, src_width * 2, dst_y,
+                     dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                     crop_width, inv_crop_height);
+      break;
+    }
     // Triplanar formats
     case FOURCC_I420:
     case FOURCC_YV12: {

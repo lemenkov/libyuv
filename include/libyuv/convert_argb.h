@@ -1702,6 +1702,18 @@ int P210ToARGBMatrix(const uint16_t* src_y,
                      int width,
                      int height);
 
+// Convert P410 to ARGB with matrix.
+LIBYUV_API
+int P410ToARGBMatrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint8_t* dst_argb,
+                     int dst_stride_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
 // Convert P010 to AR30 with matrix.
 LIBYUV_API
 int P010ToAR30Matrix(const uint16_t* src_y,
@@ -1726,6 +1738,18 @@ int P210ToAR30Matrix(const uint16_t* src_y,
                      int width,
                      int height);
 
+// Convert P410 to AR30 with matrix.
+LIBYUV_API
+int P410ToAR30Matrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint8_t* dst_ar30,
+                     int dst_stride_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
 // P012 and P010 use most significant bits so the conversion is the same.
 // Convert P012 to ARGB with matrix.
 #define P012ToARGBMatrix P010ToARGBMatrix
@@ -1735,6 +1759,10 @@ int P210ToAR30Matrix(const uint16_t* src_y,
 #define P212ToARGBMatrix P210ToARGBMatrix
 // Convert P212 to AR30 with matrix.
 #define P212ToAR30Matrix P210ToAR30Matrix
+// Convert P412 to ARGB with matrix.
+#define P412ToARGBMatrix P410ToARGBMatrix
+// Convert P412 to AR30 with matrix.
+#define P412ToAR30Matrix P410ToAR30Matrix
 
 // Convert P016 to ARGB with matrix.
 #define P016ToARGBMatrix P010ToARGBMatrix
@@ -1744,6 +1772,10 @@ int P210ToAR30Matrix(const uint16_t* src_y,
 #define P216ToARGBMatrix P210ToARGBMatrix
 // Convert P216 to AR30 with matrix.
 #define P216ToAR30Matrix P210ToAR30Matrix
+// Convert P416 to ARGB with matrix.
+#define P416ToARGBMatrix P410ToARGBMatrix
+// Convert P416 to AR30 with matrix.
+#define P416ToAR30Matrix P410ToAR30Matrix
 
 // Convert I420 with Alpha to preattenuated ARGB with matrix.
 LIBYUV_API

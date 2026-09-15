@@ -38,7 +38,7 @@ This is how OSX formats map to libyuv
 
 The following is extracted from video_common.h as a complete list of formats supported by libyuv.
     enum FourCC {
-      // 12 Primary YUV formats: 5 planar, 4 biplanar, 2 packed.
+      // 15 Primary YUV formats: 6 planar, 7 biplanar, 2 packed.
       FOURCC_I420 = FOURCC('I', '4', '2', '0'),
       FOURCC_I422 = FOURCC('I', '4', '2', '2'),
       FOURCC_I444 = FOURCC('I', '4', '4', '4'),
@@ -47,11 +47,13 @@ The following is extracted from video_common.h as a complete list of formats sup
       FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
       FOURCC_NV16 = FOURCC('N', 'V', '1', '6'),
       FOURCC_NV24 = FOURCC('N', 'V', '2', '4'),
+      FOURCC_P010 = FOURCC('P', '0', '1', '0'),
+      FOURCC_P210 = FOURCC('P', '2', '1', '0'),
+      FOURCC_P410 = FOURCC('P', '4', '1', '0'),
       FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
       FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
-      FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // unofficial fourcc. 10 bit lsb
-      FOURCC_U010 = FOURCC('U', '0', '1', '0'),  // bt.2020, unofficial fourcc.
-                                                 // 10 bit lsb
+      FOURCC_I010 = FOURCC('I', '0', '1', '0'),  // bt.601 10 bit 420
+      FOURCC_I210 = FOURCC('I', '2', '1', '0'),  // bt.601 10 bit 422
 
       // 1 Secondary YUV format: row biplanar.
       FOURCC_M420 = FOURCC('M', '4', '2', '0'),  // deprecated.
@@ -74,18 +76,34 @@ The following is extracted from video_common.h as a complete list of formats sup
       // 1 Primary Compressed YUV format.
       FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
 
-      // 11 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
+      // 23 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
       FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
       FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
       FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
       FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Linux version of I420.
-      FOURCC_J420 = FOURCC('J', '4', '2', '0'),
-      FOURCC_J400 = FOURCC('J', '4', '0', '0'),  // unofficial fourcc
-      FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // unofficial fourcc
-      FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // unofficial fourcc
+      FOURCC_J420 =
+          FOURCC('J', '4', '2', '0'),  // jpeg (bt.601 full), unofficial fourcc
+      FOURCC_J422 =
+          FOURCC('J', '4', '2', '2'),  // jpeg (bt.601 full), unofficial fourcc
+      FOURCC_J444 =
+          FOURCC('J', '4', '4', '4'),  // jpeg (bt.601 full), unofficial fourcc
+      FOURCC_J400 =
+          FOURCC('J', '4', '0', '0'),  // jpeg (bt.601 full), unofficial fourcc
+      FOURCC_F420 = FOURCC('F', '4', '2', '0'),  // bt.709 full, unofficial fourcc
+      FOURCC_F422 = FOURCC('F', '4', '2', '2'),  // bt.709 full, unofficial fourcc
+      FOURCC_F444 = FOURCC('F', '4', '4', '4'),  // bt.709 full, unofficial fourcc
+      FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // bt.709, unofficial fourcc
+      FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // bt.709, unofficial fourcc
+      FOURCC_H444 = FOURCC('H', '4', '4', '4'),  // bt.709, unofficial fourcc
       FOURCC_U420 = FOURCC('U', '4', '2', '0'),  // bt.2020, unofficial fourcc
       FOURCC_U422 = FOURCC('U', '4', '2', '2'),  // bt.2020, unofficial fourcc
       FOURCC_U444 = FOURCC('U', '4', '4', '4'),  // bt.2020, unofficial fourcc
+      FOURCC_F010 = FOURCC('F', '0', '1', '0'),  // bt.709 full range 10 bit 420
+      FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // bt.709 10 bit 420
+      FOURCC_U010 = FOURCC('U', '0', '1', '0'),  // bt.2020 10 bit 420
+      FOURCC_F210 = FOURCC('F', '2', '1', '0'),  // bt.709 full range 10 bit 422
+      FOURCC_H210 = FOURCC('H', '2', '1', '0'),  // bt.709 10 bit 422
+      FOURCC_U210 = FOURCC('U', '2', '1', '0'),  // bt.2020 10 bit 422
 
       // 14 Auxiliary aliases.  CanonicalFourCC() maps these to canonical fourcc.
       FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.
@@ -108,11 +126,12 @@ The following is extracted from video_common.h as a complete list of formats sup
 
 # Planar YUV
       The following formats contains a full size Y plane followed by 1 or 2
-        planes for UV: I420, I422, I444, I400, NV21, NV12, I400
+        planes for UV: I420, I422, I444, I400, NV21, NV12, NV16, NV24,
+        P010, P210, P410
       The size (subsampling) of the UV varies.
-        I420, NV12 and NV21 are half width, half height
-        I422, NV16 and NV61 are half width, full height
-        I444, NV24 and NV42 are full width, full height
+        I420, NV12, NV21 and P010 are half width, half height
+        I422, NV16, NV61 and P210 are half width, full height
+        I444, NV24, NV42 and P410 are full width, full height
         I400 and J400 have no chroma channel.
 
 # Color space

@@ -560,6 +560,21 @@ int I210ToP210(const uint16_t* src_y,
                int width,
                int height);
 
+// Convert I410 to P410
+LIBYUV_API
+int I410ToP410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
 // Convert I012 to P012
 LIBYUV_API
 int I012ToP012(const uint16_t* src_y,
@@ -578,6 +593,21 @@ int I012ToP012(const uint16_t* src_y,
 // Convert I212 to P212
 LIBYUV_API
 int I212ToP212(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert I412 to P412
+LIBYUV_API
+int I412ToP412(const uint16_t* src_y,
                int src_stride_y,
                const uint16_t* src_u,
                int src_stride_u,
@@ -700,6 +730,81 @@ int P010ToI010(const uint16_t* src_y,
                uint16_t* dst_u,
                int dst_stride_u,
                uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert P210 to I210.
+LIBYUV_API
+int P210ToI210(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert P410 to I410.
+LIBYUV_API
+int P410ToI410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert P010 to I420.
+LIBYUV_API
+int P010ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert P210 to I420.
+LIBYUV_API
+int P210ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert P410 to I420.
+LIBYUV_API
+int P410ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
                int dst_stride_v,
                int width,
                int height);

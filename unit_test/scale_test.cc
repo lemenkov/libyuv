@@ -740,21 +740,37 @@ static int I444TestFilter_16(int src_width,
 }
 
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
-static int NV12TestFilter(int src_width,
-                          int src_height,
-                          int dst_width,
-                          int dst_height,
-                          FilterMode f,
-                          int benchmark_iterations,
-                          int disable_cpu_flags,
-                          int benchmark_cpu_info) {
+static int NVTestFilter(int src_width,
+                        int src_height,
+                        int dst_width,
+                        int dst_height,
+                        FilterMode f,
+                        int subsample_x,
+                        int subsample_y,
+                        int (*NVScale)(const uint8_t* src_y,
+                                       int src_stride_y,
+                                       const uint8_t* src_uv,
+                                       int src_stride_uv,
+                                       int src_width,
+                                       int src_height,
+                                       uint8_t* dst_y,
+                                       int dst_stride_y,
+                                       uint8_t* dst_uv,
+                                       int dst_stride_uv,
+                                       int dst_width,
+                                       int dst_height,
+                                       enum FilterMode filtering),
+                        int benchmark_iterations,
+                        int disable_cpu_flags,
+                        int benchmark_cpu_info) {
   if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
     return 0;
   }
 
   int i, j;
-  int src_width_uv = (Abs(src_width) + 1) >> 1;
-  int src_height_uv = (Abs(src_height) + 1) >> 1;
+  int src_width_uv = subsample_x ? ((Abs(src_width) + 1) >> 1) : Abs(src_width);
+  int src_height_uv =
+      subsample_y ? ((Abs(src_height) + 1) >> 1) : Abs(src_height);
 
   int64_t src_y_plane_size = (Abs(src_width)) * (Abs(src_height));
   int64_t src_uv_plane_size = (src_width_uv) * (src_height_uv) * 2;
@@ -771,8 +787,8 @@ static int NV12TestFilter(int src_width,
   MemRandomize(src_y, src_y_plane_size);
   MemRandomize(src_uv, src_uv_plane_size);
 
-  int dst_width_uv = (dst_width + 1) >> 1;
-  int dst_height_uv = (dst_height + 1) >> 1;
+  int dst_width_uv = subsample_x ? ((dst_width + 1) >> 1) : dst_width;
+  int dst_height_uv = subsample_y ? ((dst_height + 1) >> 1) : dst_height;
 
   int64_t dst_y_plane_size = (dst_width) * (dst_height);
   int64_t dst_uv_plane_size = (dst_width_uv) * (dst_height_uv) * 2;
@@ -791,17 +807,17 @@ static int NV12TestFilter(int src_width,
 
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   double c_time = get_time();
-  NV12Scale(src_y, src_stride_y, src_uv, src_stride_uv, src_width, src_height,
-            dst_y_c, dst_stride_y, dst_uv_c, dst_stride_uv, dst_width,
-            dst_height, f);
+  NVScale(src_y, src_stride_y, src_uv, src_stride_uv, src_width, src_height,
+          dst_y_c, dst_stride_y, dst_uv_c, dst_stride_uv, dst_width, dst_height,
+          f);
   c_time = (get_time() - c_time);
 
   MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
   double opt_time = get_time();
   for (i = 0; i < benchmark_iterations; ++i) {
-    NV12Scale(src_y, src_stride_y, src_uv, src_stride_uv, src_width, src_height,
-              dst_y_opt, dst_stride_y, dst_uv_opt, dst_stride_uv, dst_width,
-              dst_height, f);
+    NVScale(src_y, src_stride_y, src_uv, src_stride_uv, src_width, src_height,
+            dst_y_opt, dst_stride_y, dst_uv_opt, dst_stride_uv, dst_width,
+            dst_height, f);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
   // Report performance of C vs OPT.
@@ -841,6 +857,219 @@ static int NV12TestFilter(int src_width,
   free_aligned_buffer_page_end(src_uv);
 
   return max_diff;
+}
+
+static int NV12TestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  return NVTestFilter(src_width, src_height, dst_width, dst_height, f, 1, 1,
+                      NV12Scale, benchmark_iterations, disable_cpu_flags,
+                      benchmark_cpu_info);
+}
+
+static int NV16TestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  return NVTestFilter(src_width, src_height, dst_width, dst_height, f, 1, 0,
+                      NV16Scale, benchmark_iterations, disable_cpu_flags,
+                      benchmark_cpu_info);
+}
+
+static int NV24TestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  return NVTestFilter(src_width, src_height, dst_width, dst_height, f, 0, 0,
+                      NV24Scale, benchmark_iterations, disable_cpu_flags,
+                      benchmark_cpu_info);
+}
+
+static int PxxxTestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int subsample_x,
+                          int subsample_y,
+                          int (*PxxxScale)(const uint16_t* src_y,
+                                           int src_stride_y,
+                                           const uint16_t* src_uv,
+                                           int src_stride_uv,
+                                           int src_width,
+                                           int src_height,
+                                           uint16_t* dst_y,
+                                           int dst_stride_y,
+                                           uint16_t* dst_uv,
+                                           int dst_stride_uv,
+                                           int dst_width,
+                                           int dst_height,
+                                           enum FilterMode filtering),
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
+    return 0;
+  }
+
+  int i, j;
+  int src_width_uv = subsample_x ? ((Abs(src_width) + 1) >> 1) : Abs(src_width);
+  int src_height_uv =
+      subsample_y ? ((Abs(src_height) + 1) >> 1) : Abs(src_height);
+
+  int64_t src_y_plane_size = (Abs(src_width)) * (Abs(src_height));
+  int64_t src_uv_plane_size = (src_width_uv) * (src_height_uv) * 2;
+
+  int src_stride_y = Abs(src_width);
+  int src_stride_uv = src_width_uv * 2;
+
+  align_buffer_page_end(src_y, src_y_plane_size * 2);
+  align_buffer_page_end(src_uv, src_uv_plane_size * 2);
+  if (!src_y || !src_uv) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
+  uint16_t* p_src_y = reinterpret_cast<uint16_t*>(src_y);
+  uint16_t* p_src_uv = reinterpret_cast<uint16_t*>(src_uv);
+  MemRandomize(src_y, src_y_plane_size * 2);
+  MemRandomize(src_uv, src_uv_plane_size * 2);
+  for (i = 0; i < src_y_plane_size; ++i) {
+    p_src_y[i] = static_cast<uint16_t>(p_src_y[i] & 0xffc0);
+  }
+  for (i = 0; i < src_uv_plane_size; ++i) {
+    p_src_uv[i] = static_cast<uint16_t>(p_src_uv[i] & 0xffc0);
+  }
+
+  int dst_width_uv = subsample_x ? ((dst_width + 1) >> 1) : dst_width;
+  int dst_height_uv = subsample_y ? ((dst_height + 1) >> 1) : dst_height;
+
+  int64_t dst_y_plane_size = (dst_width) * (dst_height);
+  int64_t dst_uv_plane_size = (dst_width_uv) * (dst_height_uv) * 2;
+
+  int dst_stride_y = dst_width;
+  int dst_stride_uv = dst_width_uv * 2;
+
+  align_buffer_page_end(dst_y_c, dst_y_plane_size * 2);
+  align_buffer_page_end(dst_uv_c, dst_uv_plane_size * 2);
+  align_buffer_page_end(dst_y_opt, dst_y_plane_size * 2);
+  align_buffer_page_end(dst_uv_opt, dst_uv_plane_size * 2);
+  if (!dst_y_c || !dst_uv_c || !dst_y_opt || !dst_uv_opt) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
+  uint16_t* p_dst_y_c = reinterpret_cast<uint16_t*>(dst_y_c);
+  uint16_t* p_dst_uv_c = reinterpret_cast<uint16_t*>(dst_uv_c);
+  uint16_t* p_dst_y_opt = reinterpret_cast<uint16_t*>(dst_y_opt);
+  uint16_t* p_dst_uv_opt = reinterpret_cast<uint16_t*>(dst_uv_opt);
+
+  MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
+  double c_time = get_time();
+  PxxxScale(p_src_y, src_stride_y, p_src_uv, src_stride_uv, src_width,
+            src_height, p_dst_y_c, dst_stride_y, p_dst_uv_c, dst_stride_uv,
+            dst_width, dst_height, f);
+  c_time = (get_time() - c_time);
+
+  MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
+  double opt_time = get_time();
+  for (i = 0; i < benchmark_iterations; ++i) {
+    PxxxScale(p_src_y, src_stride_y, p_src_uv, src_stride_uv, src_width,
+              src_height, p_dst_y_opt, dst_stride_y, p_dst_uv_opt,
+              dst_stride_uv, dst_width, dst_height, f);
+  }
+  opt_time = (get_time() - opt_time) / benchmark_iterations;
+  printf("filter %d - %8d us C - %8d us OPT\n", f,
+         static_cast<int>(c_time * 1e6), static_cast<int>(opt_time * 1e6));
+
+  int max_diff = 0;
+  for (i = 0; i < dst_height; ++i) {
+    for (j = 0; j < dst_width; ++j) {
+      uint16_t c = p_dst_y_c[(i * dst_stride_y) + j];
+      uint16_t opt = p_dst_y_opt[(i * dst_stride_y) + j];
+      // Scaled output is converted back to canonical 10-bit MSB.
+      if ((c & 0x3f) || (opt & 0x3f)) {
+        max_diff = 999;
+      }
+      int abs_diff = Abs((c >> 6) - (opt >> 6));
+      if (abs_diff > max_diff) {
+        max_diff = abs_diff;
+      }
+    }
+  }
+  for (i = 0; i < dst_height_uv; ++i) {
+    for (j = 0; j < (dst_width_uv * 2); ++j) {
+      uint16_t c = p_dst_uv_c[(i * dst_stride_uv) + j];
+      uint16_t opt = p_dst_uv_opt[(i * dst_stride_uv) + j];
+      // MergeUVPlane_16 depth=10 must produce canonical 10-bit MSB samples.
+      if ((c & 0x3f) || (opt & 0x3f)) {
+        max_diff = 999;
+      }
+      int abs_diff = Abs((c >> 6) - (opt >> 6));
+      if (abs_diff > max_diff) {
+        max_diff = abs_diff;
+      }
+    }
+  }
+
+  free_aligned_buffer_page_end(dst_y_c);
+  free_aligned_buffer_page_end(dst_uv_c);
+  free_aligned_buffer_page_end(dst_y_opt);
+  free_aligned_buffer_page_end(dst_uv_opt);
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_uv);
+
+  return max_diff;
+}
+
+static int P010TestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  return PxxxTestFilter(src_width, src_height, dst_width, dst_height, f, 1, 1,
+                        P010Scale, benchmark_iterations, disable_cpu_flags,
+                        benchmark_cpu_info);
+}
+
+static int P210TestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  return PxxxTestFilter(src_width, src_height, dst_width, dst_height, f, 1, 0,
+                        P210Scale, benchmark_iterations, disable_cpu_flags,
+                        benchmark_cpu_info);
+}
+
+static int P410TestFilter(int src_width,
+                          int src_height,
+                          int dst_width,
+                          int dst_height,
+                          FilterMode f,
+                          int benchmark_iterations,
+                          int disable_cpu_flags,
+                          int benchmark_cpu_info) {
+  return PxxxTestFilter(src_width, src_height, dst_width, dst_height, f, 0, 0,
+                        P410Scale, benchmark_iterations, disable_cpu_flags,
+                        benchmark_cpu_info);
 }
 
 // The following adjustments in dimensions ensure the scale factor will be
@@ -884,6 +1113,46 @@ static int NV12TestFilter(int src_width,
   }                                                                           \
   TEST_F(LibYUVScaleTest, NV12ScaleDownBy##name##_##filter) {                 \
     int diff = NV12TestFilter(                                                \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),  \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),  \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,           \
+        benchmark_cpu_info_);                                                 \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, NV16ScaleDownBy##name##_##filter) {                 \
+    int diff = NV16TestFilter(                                                \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),  \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),  \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,           \
+        benchmark_cpu_info_);                                                 \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, NV24ScaleDownBy##name##_##filter) {                 \
+    int diff = NV24TestFilter(                                                \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),  \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),  \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,           \
+        benchmark_cpu_info_);                                                 \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P010ScaleDownBy##name##_##filter) {                 \
+    int diff = P010TestFilter(                                                \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),  \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),  \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,           \
+        benchmark_cpu_info_);                                                 \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P210ScaleDownBy##name##_##filter) {                 \
+    int diff = P210TestFilter(                                                \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),  \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),  \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,           \
+        benchmark_cpu_info_);                                                 \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P410ScaleDownBy##name##_##filter) {                 \
+    int diff = P410TestFilter(                                                \
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),  \
         DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),  \
         kFilter##filter, benchmark_iterations_, disable_cpu_flags_,           \
@@ -973,6 +1242,36 @@ TEST_FACTOR(3, 1, 3, 0)
                               disable_cpu_flags_, benchmark_cpu_info_);       \
     ASSERT_LE(diff, max_diff);                                                \
   }                                                                           \
+  TEST_F(LibYUVScaleTest, NV16##name##To##width##x##height##_##filter) {      \
+    int diff = NV16TestFilter(benchmark_width_, benchmark_height_, width,     \
+                              height, kFilter##filter, benchmark_iterations_, \
+                              disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, NV24##name##To##width##x##height##_##filter) {      \
+    int diff = NV24TestFilter(benchmark_width_, benchmark_height_, width,     \
+                              height, kFilter##filter, benchmark_iterations_, \
+                              disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P010##name##To##width##x##height##_##filter) {      \
+    int diff = P010TestFilter(benchmark_width_, benchmark_height_, width,     \
+                              height, kFilter##filter, benchmark_iterations_, \
+                              disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P210##name##To##width##x##height##_##filter) {      \
+    int diff = P210TestFilter(benchmark_width_, benchmark_height_, width,     \
+                              height, kFilter##filter, benchmark_iterations_, \
+                              disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P410##name##To##width##x##height##_##filter) {      \
+    int diff = P410TestFilter(benchmark_width_, benchmark_height_, width,     \
+                              height, kFilter##filter, benchmark_iterations_, \
+                              disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
   TEST_F(LibYUVScaleTest, I420##name##From##width##x##height##_##filter) {    \
     int diff = I420TestFilter(width, height, Abs(benchmark_width_),           \
                               Abs(benchmark_height_), kFilter##filter,        \
@@ -1021,6 +1320,41 @@ TEST_FACTOR(3, 1, 3, 0)
   }                                                                           \
   TEST_F(LibYUVScaleTest, NV12##name##From##width##x##height##_##filter) {    \
     int diff = NV12TestFilter(width, height, Abs(benchmark_width_),           \
+                              Abs(benchmark_height_), kFilter##filter,        \
+                              benchmark_iterations_, disable_cpu_flags_,      \
+                              benchmark_cpu_info_);                           \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, NV16##name##From##width##x##height##_##filter) {    \
+    int diff = NV16TestFilter(width, height, Abs(benchmark_width_),           \
+                              Abs(benchmark_height_), kFilter##filter,        \
+                              benchmark_iterations_, disable_cpu_flags_,      \
+                              benchmark_cpu_info_);                           \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, NV24##name##From##width##x##height##_##filter) {    \
+    int diff = NV24TestFilter(width, height, Abs(benchmark_width_),           \
+                              Abs(benchmark_height_), kFilter##filter,        \
+                              benchmark_iterations_, disable_cpu_flags_,      \
+                              benchmark_cpu_info_);                           \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P010##name##From##width##x##height##_##filter) {    \
+    int diff = P010TestFilter(width, height, Abs(benchmark_width_),           \
+                              Abs(benchmark_height_), kFilter##filter,        \
+                              benchmark_iterations_, disable_cpu_flags_,      \
+                              benchmark_cpu_info_);                           \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P210##name##From##width##x##height##_##filter) {    \
+    int diff = P210TestFilter(width, height, Abs(benchmark_width_),           \
+                              Abs(benchmark_height_), kFilter##filter,        \
+                              benchmark_iterations_, disable_cpu_flags_,      \
+                              benchmark_cpu_info_);                           \
+    ASSERT_LE(diff, max_diff);                                                \
+  }                                                                           \
+  TEST_F(LibYUVScaleTest, P410##name##From##width##x##height##_##filter) {    \
+    int diff = P410TestFilter(width, height, Abs(benchmark_width_),           \
                               Abs(benchmark_height_), kFilter##filter,        \
                               benchmark_iterations_, disable_cpu_flags_,      \
                               benchmark_cpu_info_);                           \
@@ -1107,6 +1441,41 @@ TEST_SCALETO(Scale, 1080, 1920)  // for rotated phones
   }                                                                        \
   TEST_F(LibYUVScaleTest, NV12##name##SwapXY_##filter) {                   \
     int diff = NV12TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    ASSERT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, NV16##name##SwapXY_##filter) {                   \
+    int diff = NV16TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    ASSERT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, NV24##name##SwapXY_##filter) {                   \
+    int diff = NV24TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    ASSERT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, P010##name##SwapXY_##filter) {                   \
+    int diff = P010TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    ASSERT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, P210##name##SwapXY_##filter) {                   \
+    int diff = P210TestFilter(benchmark_width_, benchmark_height_,         \
+                              benchmark_height_, benchmark_width_,         \
+                              kFilter##filter, benchmark_iterations_,      \
+                              disable_cpu_flags_, benchmark_cpu_info_);    \
+    ASSERT_LE(diff, max_diff);                                             \
+  }                                                                        \
+  TEST_F(LibYUVScaleTest, P410##name##SwapXY_##filter) {                   \
+    int diff = P410TestFilter(benchmark_width_, benchmark_height_,         \
                               benchmark_height_, benchmark_width_,         \
                               kFilter##filter, benchmark_iterations_,      \
                               disable_cpu_flags_, benchmark_cpu_info_);    \

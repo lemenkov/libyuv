@@ -264,7 +264,7 @@ int I422Scale_12(const uint16_t* src_y,
                  int dst_height,
                  enum FilterMode filtering);
 
-// Scales an NV12 image from the src width and height to the
+// Scales an NV12, NV16 or NV24 image from the src width and height to the
 // dst width and height.
 // If filtering is kFilterNone, a simple nearest-neighbor algorithm is
 // used. This produces basic (blocky) quality at the fastest speed.
@@ -290,6 +290,21 @@ int NV12Scale(const uint8_t* src_y,
               enum FilterMode filtering);
 
 LIBYUV_API
+int NV16Scale(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_uv,
+              int src_stride_uv,
+              int src_width,
+              int src_height,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_uv,
+              int dst_stride_uv,
+              int dst_width,
+              int dst_height,
+              enum FilterMode filtering);
+
+LIBYUV_API
 int NV24Scale(const uint8_t* src_y,
               int src_stride_y,
               const uint8_t* src_uv,
@@ -299,6 +314,57 @@ int NV24Scale(const uint8_t* src_y,
               uint8_t* dst_y,
               int dst_stride_y,
               uint8_t* dst_uv,
+              int dst_stride_uv,
+              int dst_width,
+              int dst_height,
+              enum FilterMode filtering);
+
+// Scales a P010, P210 or P410 image (10-bit, samples in the MSBs of uint16).
+// Strides are in uint16 elements.  Y and UV are converted to 10-bit LSB,
+// scaled with ScalePlane_16 (kFilterBox included), then converted back to
+// 10-bit MSB.
+// Returns 0 if successful.
+
+LIBYUV_API
+int P010Scale(const uint16_t* src_y,
+              int src_stride_y,
+              const uint16_t* src_uv,
+              int src_stride_uv,
+              int src_width,
+              int src_height,
+              uint16_t* dst_y,
+              int dst_stride_y,
+              uint16_t* dst_uv,
+              int dst_stride_uv,
+              int dst_width,
+              int dst_height,
+              enum FilterMode filtering);
+
+LIBYUV_API
+int P210Scale(const uint16_t* src_y,
+              int src_stride_y,
+              const uint16_t* src_uv,
+              int src_stride_uv,
+              int src_width,
+              int src_height,
+              uint16_t* dst_y,
+              int dst_stride_y,
+              uint16_t* dst_uv,
+              int dst_stride_uv,
+              int dst_width,
+              int dst_height,
+              enum FilterMode filtering);
+
+LIBYUV_API
+int P410Scale(const uint16_t* src_y,
+              int src_stride_y,
+              const uint16_t* src_uv,
+              int src_stride_uv,
+              int src_width,
+              int src_height,
+              uint16_t* dst_y,
+              int dst_stride_y,
+              uint16_t* dst_uv,
               int dst_stride_uv,
               int dst_width,
               int dst_height,

@@ -53,7 +53,7 @@ extern "C" {
 // Secondary formats are converted in 2 steps.
 // Auxilliary formats call primary converters.
 enum FourCC {
-  // 12 Primary YUV formats: 5 planar, 4 biplanar, 2 packed.
+  // 15 Primary YUV formats: 6 planar, 7 biplanar, 2 packed.
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),
   FOURCC_I422 = FOURCC('I', '4', '2', '2'),
   FOURCC_I444 = FOURCC('I', '4', '4', '4'),
@@ -62,6 +62,9 @@ enum FourCC {
   FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
   FOURCC_NV16 = FOURCC('N', 'V', '1', '6'),
   FOURCC_NV24 = FOURCC('N', 'V', '2', '4'),
+  FOURCC_P010 = FOURCC('P', '0', '1', '0'),
+  FOURCC_P210 = FOURCC('P', '2', '1', '0'),
+  FOURCC_P410 = FOURCC('P', '4', '1', '0'),
   FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
   FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
   FOURCC_I010 = FOURCC('I', '0', '1', '0'),  // bt.601 10 bit 420
@@ -88,7 +91,7 @@ enum FourCC {
   // 1 Primary Compressed YUV format.
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
 
-  // 14 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
+  // 23 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
   FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
   FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
   FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
@@ -116,8 +119,6 @@ enum FourCC {
   FOURCC_F210 = FOURCC('F', '2', '1', '0'),  // bt.709 full range 10 bit 422
   FOURCC_H210 = FOURCC('H', '2', '1', '0'),  // bt.709 10 bit 422
   FOURCC_U210 = FOURCC('U', '2', '1', '0'),  // bt.2020 10 bit 422
-  FOURCC_P010 = FOURCC('P', '0', '1', '0'),
-  FOURCC_P210 = FOURCC('P', '2', '1', '0'),
 
   // 14 Auxiliary aliases.  CanonicalFourCC() maps these to canonical fourcc.
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.
@@ -197,6 +198,7 @@ enum FourCCBpp {
   FOURCC_BPP_H210 = 20,
   FOURCC_BPP_P010 = 15,
   FOURCC_BPP_P210 = 20,
+  FOURCC_BPP_P410 = 30,
   FOURCC_BPP_MJPG = 0,  // 0 means unknown.
   FOURCC_BPP_H264 = 0,
   FOURCC_BPP_IYUV = 12,
