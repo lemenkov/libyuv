@@ -58,3 +58,8 @@ declare_args() {
   # Defined here rather than in gtest.gni to match chromium.
   gtest_enable_absl_printers = true
 }
+
+vpython_spec_files = [
+  "//vpython.toml",
+  "//vpython.toml.uv.lock",
+]
