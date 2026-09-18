@@ -4818,6 +4818,11 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
     }
   }
 #endif
+#if defined(HAS_SWAPUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SwapUVRow = SwapUVRow_RVV;
+  }
+#endif
 
   for (int j = 0; j < benchmark_iterations_; j++) {
     SwapUVRow(src_pixels_vu, dst_pixels_uv, kPixels);

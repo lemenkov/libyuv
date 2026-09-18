@@ -1100,6 +1100,11 @@ void SwapUVPlane(const uint8_t* src_uv,
     }
   }
 #endif
+#if defined(HAS_SWAPUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SwapUVRow = SwapUVRow_RVV;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     SwapUVRow(src_uv, dst_vu, width);

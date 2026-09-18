@@ -1316,6 +1316,64 @@ void MergeUVRow_RVV(const uint8_t* src_u,
 }
 #endif
 
+#ifdef HAS_SWAPUVROW_RVV
+// TODO(fbarchard): RVV_ASM uses vle16.v/vse16.v which requires hardware
+// support for unaligned 16-bit vector loads and stores.
+void SwapUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+  assert(width != 0);
+#ifdef RVV_ASM
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvla"
+  size_t vl;
+  asm(
+      "1:          \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v8, (%[src_uv])               \n"
+      "vsrl.vi     v12, v8, 8                    \n"
+      "vsll.vi     v8, v8, 8                     \n"
+      "vor.vv      v8, v8, v12                   \n"
+      "vse16.v     v8, (%[dst_vu])               \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_uv], %[src_uv], %[vl]   \n"
+      "add         %[dst_vu], %[dst_vu], %[vl]   \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_uv] "+r"(src_uv),  // %[src_uv]
+        [dst_vu] "+r"(dst_vu),  // %[dst_vu]
+        [w] "+r"(width),        // %[w]
+        [vl] "=&r"(vl),         // %[vl]
+        "=m"(*(uint8_t (*)[width * 2])dst_vu)
+      : "m"(*(const uint8_t (*)[width * 2])src_uv)
+      : "vl", "vtype", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+#pragma GCC diagnostic pop
+#else
+  size_t w = (size_t)width;
+  do {
+    size_t vl = __riscv_vsetvl_e8m4(w);
+#if defined(LIBYUV_RVV_HAS_TUPLE_TYPE)
+    vuint8m4x2_t v_src = __riscv_vlseg2e8_v_u8m4x2(src_uv, vl);
+    vuint8m4_t v_u = __riscv_vget_v_u8m4x2_u8m4(v_src, 0);
+    vuint8m4_t v_v = __riscv_vget_v_u8m4x2_u8m4(v_src, 1);
+#if defined(LIBYUV_RVV_HAS_VCREATE)
+    vuint8m4x2_t v_dst = __riscv_vcreate_v_u8m4x2(v_v, v_u);
+#else
+    vuint8m4x2_t v_dst = __riscv_vset_v_u8m4_u8m4x2(v_src, 0, v_v);
+    v_dst = __riscv_vset_v_u8m4_u8m4x2(v_dst, 1, v_u);
+#endif
+    __riscv_vsseg2e8_v_u8m4x2(dst_vu, v_dst, vl);
+#else
+    vuint8m4_t v_u, v_v;
+    __riscv_vlseg2e8_v_u8m4(&v_u, &v_v, src_uv, vl);
+    __riscv_vsseg2e8_v_u8m4(dst_vu, v_v, v_u, vl);
+#endif
+    w -= vl;
+    src_uv += 2 * vl;
+    dst_vu += 2 * vl;
+  } while (w > 0);
+#endif
+}
+#endif
+
 // ARGB expects first 3 values to contain RGB and 4th value is ignored
 #ifdef HAS_ARGBTOYMATRIXROW_RVV
 void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,

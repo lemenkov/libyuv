@@ -898,6 +898,7 @@ extern "C" {
 #define HAS_SPLITRGBROW_RVV
 #define HAS_SPLITUVROW_RVV
 #define HAS_SPLITXRGBROW_RVV
+#define HAS_SWAPUVROW_RVV
 
 // The following are available for RVV v0.11 and RVV v1.0
 // TODO(fbarchard): Port to RVV v0.12 (tuple)
@@ -6334,6 +6335,7 @@ void SwapUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void SwapUVRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void SwapUVRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void SwapUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
 void AYUVToUVRow_C(const uint8_t* src_ayuv,
                    int src_stride_ayuv,
