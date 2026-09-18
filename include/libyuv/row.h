@@ -86,8 +86,7 @@ extern "C" {
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 #define HAS_ARGBMIRRORROW_SSE2
-// TODO: Re-enable once rounding behaviour is fixed.
-// #define HAS_ARGBMULTIPLYROW_SSE2
+#define HAS_ARGBMULTIPLYROW_SSE2
 #define HAS_ARGBPOLYNOMIALROW_SSE2
 #define HAS_ARGBQUANTIZEROW_SSE2
 #define HAS_ARGBSEPIAROW_SSSE3
@@ -187,8 +186,7 @@ extern "C" {
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
-// TODO: Re-enable once rounding behaviour is fixed.
-// #define HAS_ARGBMULTIPLYROW_AVX2
+#define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_BLENDPLANEROW_AVX2
 #endif
@@ -759,8 +757,7 @@ extern "C" {
 #define HAS_ARGBTORGB565ROW_LSX
 #define HAS_ARGBTORGB565DITHERROW_LSX
 #define HAS_ARGBMIRRORROW_LSX
-// TODO: Re-enable once rounding behaviour is fixed.
-// #define HAS_ARGBMULTIPLYROW_LSX
+#define HAS_ARGBMULTIPLYROW_LSX
 #define HAS_I400TOARGBROW_LSX
 #define HAS_I444TOARGBROW_LSX
 #define HAS_INTERPOLATEROW_LSX
@@ -818,8 +815,7 @@ extern "C" {
 #define HAS_ARGBATTENUATEROW_LASX
 #define HAS_ARGBGRAYROW_LASX
 #define HAS_ARGBMIRRORROW_LASX
-// TODO: Re-enable once rounding behaviour is fixed.
-// #define HAS_ARGBMULTIPLYROW_LASX
+#define HAS_ARGBMULTIPLYROW_LASX
 #define HAS_ARGBSEPIAROW_LASX
 #define HAS_ARGBSHADEROW_LASX
 #define HAS_ARGBSHUFFLEROW_LASX
@@ -879,6 +875,7 @@ extern "C" {
 #define HAS_AR64TOARGBROW_RVV
 #define HAS_ARGBCOPYYTOALPHAROW_RVV
 #define HAS_ARGBEXTRACTALPHAROW_RVV
+#define HAS_ARGBMULTIPLYROW_RVV
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBTOUV444MATRIXROW_RVV
 #define HAS_ARGBTOUVMATRIXROW_RVV
@@ -5494,6 +5491,10 @@ void ARGBMultiplyRow_Any_LASX(const uint8_t* y_buf,
                               const uint8_t* uv_buf,
                               uint8_t* dst_ptr,
                               int width);
+void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
+                         const uint8_t* src_argb1,
+                         uint8_t* dst_argb,
+                         int width);
 
 // ARGB add images.
 void ARGBAddRow_C(const uint8_t* src_argb,

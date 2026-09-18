@@ -930,19 +930,14 @@ void ARGBMultiplyRow_LSX(const uint8_t* src_argb0,
                          int width) {
   int x;
   int len = width / 4;
-  __m128i zero = __lsx_vldi(0);
+  __m128i half = __lsx_vldi(0x480);
   __m128i src0, src1, dst0, dst1;
-  __m128i tmp0, tmp1, tmp2, tmp3;
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lsx_vld, src_argb0, 0, src_argb1, 0, src0, src1);
-    tmp0 = __lsx_vilvl_b(src0, src0);
-    tmp1 = __lsx_vilvh_b(src0, src0);
-    tmp2 = __lsx_vilvl_b(zero, src1);
-    tmp3 = __lsx_vilvh_b(zero, src1);
-    dst0 = __lsx_vmuh_hu(tmp0, tmp2);
-    dst1 = __lsx_vmuh_hu(tmp1, tmp3);
-    dst0 = __lsx_vpickev_b(dst1, dst0);
+    dst0 = __lsx_vmaddwev_h_bu(half, src0, src1);
+    dst1 = __lsx_vmaddwod_h_bu(half, src0, src1);
+    dst0 = __lsx_vpackod_b(dst1, dst0);
     __lsx_vst(dst0, dst_argb, 0);
     src_argb0 += 16;
     src_argb1 += 16;

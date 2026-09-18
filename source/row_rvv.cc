@@ -1886,6 +1886,60 @@ void ARGBAttenuateRow_RVV(const uint8_t* src_argb,
 }
 #endif
 
+#ifdef HAS_ARGBMULTIPLYROW_RVV
+void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
+                         const uint8_t* src_argb1,
+                         uint8_t* dst_argb,
+                         int width) {
+  assert(width != 0);
+  size_t w = (size_t)width * 4;
+#ifdef RVV_ASM
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvla"
+  size_t vl;
+  asm(
+      "1:                                         \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
+      "vle8.v      v8, (%[src0])                  \n"
+      "vle8.v      v10, (%[src1])                 \n"
+      "vwmulu.vv   v12, v8, v10                   \n"
+      "vwaddu.wx   v12, v12, %[k128]              \n"
+      "vnsrl.wi    v8, v12, 8                     \n"
+      "vse8.v      v8, (%[dst])                   \n"
+      "sub         %[w], %[w], %[vl]              \n"
+      "add         %[src0], %[src0], %[vl]        \n"
+      "add         %[src1], %[src1], %[vl]        \n"
+      "add         %[dst], %[dst], %[vl]          \n"
+      "bgtz        %[w], 1b                       \n"
+      : [src0] "+r"(src_argb),   // %[src0]
+        [src1] "+r"(src_argb1),  // %[src1]
+        [dst] "+r"(dst_argb),    // %[dst]
+        [w] "+r"(w),             // %[w]
+        [vl] "=&r"(vl),          // %[vl]
+        "=m"(*(uint8_t (*)[w])dst_argb)
+      : [k128] "r"(128),         // %[k128]
+        "m"(*(const uint8_t (*)[w])src_argb),
+        "m"(*(const uint8_t (*)[w])src_argb1)
+      : "vl", "vtype", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+#pragma GCC diagnostic pop
+#else
+  do {
+    size_t vl = __riscv_vsetvl_e8m2(w);
+    vuint8m2_t v_src0 = __riscv_vle8_v_u8m2(src_argb, vl);
+    vuint8m2_t v_src1 = __riscv_vle8_v_u8m2(src_argb1, vl);
+    vuint16m4_t v_mul = __riscv_vwmulu_vv_u16m4(v_src0, v_src1, vl);
+    v_mul = __riscv_vwaddu_wx_u16m4(v_mul, 128, vl);
+    vuint8m2_t v_dst = __riscv_vnsrl_wx_u8m2(v_mul, 8, vl);
+    __riscv_vse8_v_u8m2(dst_argb, v_dst, vl);
+    w -= vl;
+    src_argb += vl;
+    src_argb1 += vl;
+    dst_argb += vl;
+  } while (w > 0);
+#endif
+}
+#endif
+
 #ifdef HAS_ARGBEXTRACTALPHAROW_RVV
 void ARGBExtractAlphaRow_RVV(const uint8_t* src_argb,
                              uint8_t* dst_a,

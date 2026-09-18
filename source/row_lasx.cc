@@ -964,19 +964,14 @@ void ARGBMultiplyRow_LASX(const uint8_t* src_argb0,
                           int width) {
   int x;
   int len = width / 8;
-  __m256i zero = __lasx_xvldi(0);
+  __m256i half = __lasx_xvldi(0x480);
   __m256i src0, src1, dst0, dst1;
-  __m256i tmp0, tmp1, tmp2, tmp3;
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lasx_xvld, src_argb0, 0, src_argb1, 0, src0, src1);
-    tmp0 = __lasx_xvilvl_b(src0, src0);
-    tmp1 = __lasx_xvilvh_b(src0, src0);
-    tmp2 = __lasx_xvilvl_b(zero, src1);
-    tmp3 = __lasx_xvilvh_b(zero, src1);
-    dst0 = __lasx_xvmuh_hu(tmp0, tmp2);
-    dst1 = __lasx_xvmuh_hu(tmp1, tmp3);
-    dst0 = __lasx_xvpickev_b(dst1, dst0);
+    dst0 = __lasx_xvmaddwev_h_bu(half, src0, src1);
+    dst1 = __lasx_xvmaddwod_h_bu(half, src0, src1);
+    dst0 = __lasx_xvpackod_b(dst1, dst0);
     __lasx_xvst(dst0, dst_argb, 0);
     src_argb0 += 32;
     src_argb1 += 32;

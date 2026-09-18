@@ -3370,6 +3370,11 @@ int ARGBMultiply(const uint8_t* src_argb0,
     }
   }
 #endif
+#if defined(HAS_ARGBMULTIPLYROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBMultiplyRow = ARGBMultiplyRow_RVV;
+  }
+#endif
 
   // Multiply plane
   for (y = 0; y < height; ++y) {

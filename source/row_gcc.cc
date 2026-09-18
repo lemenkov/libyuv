@@ -8898,6 +8898,9 @@ void ARGBMultiplyRow_SSE2(const uint8_t* src_argb,
                           uint8_t* dst_argb,
                           int width) {
   asm volatile("pxor        %%xmm5,%%xmm5                 \n"
+               "pcmpeqw     %%xmm4,%%xmm4                 \n"
+               "psrlw       $0xf,%%xmm4                   \n"
+               "psllw       $0x7,%%xmm4                   \n"
 
                // 4 pixel loop.
                LABELALIGN
@@ -8906,14 +8909,18 @@ void ARGBMultiplyRow_SSE2(const uint8_t* src_argb,
                "lea         0x10(%0),%0                   \n"
                "movdqu      (%1),%%xmm2                   \n"
                "lea         0x10(%1),%1                   \n"
-               "movdqu      %%xmm0,%%xmm1                 \n"
-               "movdqu      %%xmm2,%%xmm3                 \n"
-               "punpcklbw   %%xmm0,%%xmm0                 \n"
-               "punpckhbw   %%xmm1,%%xmm1                 \n"
+               "movdqa      %%xmm0,%%xmm1                 \n"
+               "movdqa      %%xmm2,%%xmm3                 \n"
+               "punpcklbw   %%xmm5,%%xmm0                 \n"
+               "punpckhbw   %%xmm5,%%xmm1                 \n"
                "punpcklbw   %%xmm5,%%xmm2                 \n"
                "punpckhbw   %%xmm5,%%xmm3                 \n"
-               "pmulhuw     %%xmm2,%%xmm0                 \n"
-               "pmulhuw     %%xmm3,%%xmm1                 \n"
+               "pmullw      %%xmm2,%%xmm0                 \n"
+               "pmullw      %%xmm3,%%xmm1                 \n"
+               "paddw       %%xmm4,%%xmm0                 \n"
+               "paddw       %%xmm4,%%xmm1                 \n"
+               "psrlw       $0x8,%%xmm0                   \n"
+               "psrlw       $0x8,%%xmm1                   \n"
                "packuswb    %%xmm1,%%xmm0                 \n"
                "movdqu      %%xmm0,(%2)                   \n"
                "lea         0x10(%2),%2                   \n"
@@ -8924,7 +8931,8 @@ void ARGBMultiplyRow_SSE2(const uint8_t* src_argb,
                  "+r"(dst_argb),   // %2
                  "+r"(width)       // %3
                :
-               : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
+               : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+                 "xmm5");
 }
 #endif  // HAS_ARGBMULTIPLYROW_SSE2
 
@@ -8936,19 +8944,21 @@ void ARGBMultiplyRow_AVX2(const uint8_t* src_argb,
                           int width) {
   asm volatile("vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
 
-               // 4 pixel loop.
+               // 8 pixel loop.
                LABELALIGN
                "1:          \n"
                "vmovdqu     (%0),%%ymm1                   \n"
                "lea         0x20(%0),%0                   \n"
                "vmovdqu     (%1),%%ymm3                   \n"
                "lea         0x20(%1),%1                   \n"
-               "vpunpcklbw  %%ymm1,%%ymm1,%%ymm0          \n"
-               "vpunpckhbw  %%ymm1,%%ymm1,%%ymm1          \n"
+               "vpunpcklbw  %%ymm1,%%ymm5,%%ymm0          \n"
+               "vpunpckhbw  %%ymm1,%%ymm5,%%ymm1          \n"
+               "vpsrlw      $0x1,%%ymm0,%%ymm0            \n"
+               "vpsrlw      $0x1,%%ymm1,%%ymm1            \n"
                "vpunpcklbw  %%ymm5,%%ymm3,%%ymm2          \n"
                "vpunpckhbw  %%ymm5,%%ymm3,%%ymm3          \n"
-               "vpmulhuw    %%ymm2,%%ymm0,%%ymm0          \n"
-               "vpmulhuw    %%ymm3,%%ymm1,%%ymm1          \n"
+               "vpmulhrsw   %%ymm2,%%ymm0,%%ymm0          \n"
+               "vpmulhrsw   %%ymm3,%%ymm1,%%ymm1          \n"
                "vpackuswb   %%ymm1,%%ymm0,%%ymm0          \n"
                "vmovdqu     %%ymm0,(%2)                   \n"
                "lea         0x20(%2),%2                   \n"
