@@ -248,12 +248,14 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
 static bool have_feature(const char* feature) {
   // For more information on sysctlbyname(), see:
   // https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics
+  // If feature is "hw.optional.arm.sme_max_svl_b", this function returns
+  // whether the value of sme_max_svl_b is nonzero.
   int64_t feature_present = 0;
   size_t size = sizeof(feature_present);
   if (sysctlbyname(feature, &feature_present, &size, NULL, 0) != 0) {
     return false;
   }
-  return feature_present;
+  return feature_present != 0;
 }
 
 // For AArch64, but public to allow testing on any CPU.
@@ -265,7 +267,14 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
     features |= kCpuHasNeonDotProd;
     if (have_feature("hw.optional.arm.FEAT_I8MM")) {
       features |= kCpuHasNeonI8MM;
-      if (have_feature("hw.optional.arm.FEAT_SME")) {
+      // An Apple processor may have SME hardware (e.g. A18/A19), but the XNU
+      // kernel only enables EL0 execution if sme_max_svl_b is nonzero.
+      // macOS and iPadOS (e.g. on M4) support and enable user-mode SME, but iOS
+      // disables user-mode SME, which causes SMSTART to trigger an
+      // EXC_BAD_INSTRUCTION fault. See
+      // https://github.com/pytorch/cpuinfo/issues/432.
+      if (have_feature("hw.optional.arm.sme_max_svl_b") &&
+          have_feature("hw.optional.arm.FEAT_SME")) {
         features |= kCpuHasSME;
         if (have_feature("hw.optional.arm.FEAT_SME2")) {
           features |= kCpuHasSME2;

@@ -366,7 +366,9 @@ TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
   expected |= kCpuHasSME;
   ASSERT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x82f3ffU));
 
-  // TODO: Check for SME2 feature detection from Apple M4
+  // Check for SME2 feature detection.
+  expected |= kCpuHasSME2;
+  ASSERT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x200082f3ffULL));
 }
 #endif
 

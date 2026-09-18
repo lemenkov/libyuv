@@ -89,6 +89,9 @@ static int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_SME")) {
     cpu_info &= ~libyuv::kCpuHasSME;
   }
+  if (TestEnv("LIBYUV_DISABLE_SME2")) {
+    cpu_info &= ~libyuv::kCpuHasSME2;
+  }
 #endif
 #if defined(__longarch__) && defined(__linux__)
   if (TestEnv("LIBYUV_DISABLE_LSX")) {
