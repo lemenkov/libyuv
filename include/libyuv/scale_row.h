@@ -151,19 +151,9 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_LSX
 #endif
 
-// The following are available on RVV with 64 bit elements
-// TODO: Update compiler to support 64 bit
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
-    defined(__riscv_zve64x)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #define HAS_SCALEUVROWDOWN4_RVV
 #define HAS_SCALEARGBROWDOWN2_RVV
-#endif
-
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
-    defined(__riscv_v_intrinsic)
-// The following are available on RVV v0.11 and RVV v1.0
-// TODO: Port to RVV v0.12
-#if __riscv_v_intrinsic == 11000 || __riscv_v_intrinsic >= 100000
 #define HAS_SCALEROWDOWN34_0_BOX_RVV
 #define HAS_SCALEROWDOWN34_1_BOX_RVV
 #define HAS_SCALEROWDOWN38_2_BOX_RVV
@@ -190,12 +180,7 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2_RVV
 #define HAS_SCALEUVROWDOWN2BOX_RVV
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
-#endif
-
-// The following are available on RVV v0.11
-#if __riscv_v_intrinsic == 11000
 #define HAS_SCALEARGBFILTERCOLS_RVV
-#endif
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.

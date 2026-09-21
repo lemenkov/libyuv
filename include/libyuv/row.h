@@ -627,14 +627,17 @@ extern "C" {
 #define HAS_ARGBTOYMATRIXROW_SVE2
 #define HAS_AYUVTOUVROW_SVE2
 #define HAS_AYUVTOVUROW_SVE2
-// #define HAS_CONVERT16TO8ROW_SVE2  // Disabled: NEON version is faster for 128 bit vectors.
+// Disabled: NEON version is faster for 128 bit vectors.
+// #define HAS_CONVERT16TO8ROW_SVE2
 #define HAS_CONVERT8TO8ROW_SVE2
 #define HAS_COPYROW_SVE2
 #define HAS_DIVIDEROW_16_SVE2
 #define HAS_HALFFLOATROW_SVE2
 #define HAS_HALFMERGEUVROW_SVE2
-// #define HAS_HALFROW_16TO8_SVE2  // Disabled: NEON version is faster for 128 bit vectors.
-// #define HAS_HALFWIDTHROW_16TO8_SVE2  // Disabled: NEON version is faster for 128 bit vectors.
+// Disabled: NEON version is faster for 128 bit vectors.
+// #define HAS_HALFROW_16TO8_SVE2
+// Disabled: NEON version is faster for 128 bit vectors.
+// #define HAS_HALFWIDTHROW_16TO8_SVE2
 #define HAS_I210ALPHATOARGBROW_SVE2
 #define HAS_I210TOAR30ROW_SVE2
 #define HAS_I210TOARGBROW_SVE2
@@ -858,20 +861,6 @@ extern "C" {
 #endif
 
 #if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
-#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 100000
-// Since v1.0, vcreate intrinsic is introduced
-#define LIBYUV_RVV_HAS_VCREATE
-#endif
-#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 12000
-// Since v0.12, TUPLE_TYPE is introduced for segment load and store.
-#define LIBYUV_RVV_HAS_TUPLE_TYPE
-// Since v0.12, VXRM(fixed-point rounding mode) is included in arguments of
-// fixed-point intrinsics.
-#define LIBYUV_RVV_HAS_VXRM_ARG
-#endif
-#endif
-
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #define HAS_AR64TOARGBROW_RVV
 #define HAS_ARGBCOPYYTOALPHAROW_RVV
 #define HAS_ARGBEXTRACTALPHAROW_RVV
@@ -896,20 +885,6 @@ extern "C" {
 #define HAS_SPLITUVROW_RVV
 #define HAS_SPLITXRGBROW_RVV
 #define HAS_SWAPUVROW_RVV
-
-// The following are available for RVV v0.11 and RVV v1.0
-// TODO(fbarchard): Port to RVV v0.12 (tuple)
-// missing support for vcreate_v:
-//  __riscv_vcreate_v_u16m2x2
-//  __riscv_vcreate_v_u16m2x4
-//  __riscv_vcreate_v_u16m4x2
-//  __riscv_vcreate_v_u8m1x3
-//  __riscv_vcreate_v_u8m1x4
-//  __riscv_vcreate_v_u8m2x2
-//  __riscv_vcreate_v_u8m2x3
-//  __riscv_vcreate_v_u8m2x4
-//  __riscv_vcreate_v_u8m4x2
-#if defined(LIBYUV_RVV_HAS_VCREATE)
 #define HAS_AB64TOARGBROW_RVV
 #define HAS_AR64TOAB64ROW_RVV
 #define HAS_ARGBATTENUATEROW_RVV
@@ -943,7 +918,6 @@ extern "C" {
 #define HAS_RAWTORGBAROW_RVV
 #define HAS_RGB24TOARGBROW_RVV
 #define HAS_RGBATOARGBROW_RVV
-#endif
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)

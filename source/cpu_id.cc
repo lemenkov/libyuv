@@ -304,7 +304,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
   int flag = 0;
   FILE* f = fopen(cpuinfo_name, "re");
   if (!f) {
-#if defined(__riscv_vector)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv) && __riscv_xlen == 64
     // Assume RVV if /proc/cpuinfo is unavailable.
     // This will occur for Chrome sandbox for Pepper or Render process.
     return kCpuHasRVV;
@@ -364,7 +364,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
         }
       }
     }
-#if defined(__riscv_vector)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv) && __riscv_xlen == 64
     // Assume RVV if /proc/cpuinfo is from x86 host running QEMU.
     else if ((memcmp(cpuinfo_line, "vendor_id\t: GenuineIntel", 24) == 0) ||
              (memcmp(cpuinfo_line, "vendor_id\t: AuthenticAMD", 24) == 0)) {
