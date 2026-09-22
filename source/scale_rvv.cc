@@ -174,11 +174,8 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
                               uint8_t* dst_argb,
                               int dst_width) {
   int vl;
-  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up mode(0).
   asm volatile(
       "add         %[src1], %[src0], %[src1]      \n"
-      "csrwi       vxrm, 0                        \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e32, m2, ta, ma   \n"
@@ -187,12 +184,11 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
       "sub         %[w], %[w], %[vl]              \n"
       "slli        %[vl], %[vl], 2                \n"
       "vsetvli     zero, %[vl], e8, m2, ta, ma    \n"
-      "vwaddu.vv   v8, v16, v18                   \n"
-      "vwaddu.vv   v12, v20, v22                  \n"
-      "vsetvli     zero, zero, e16, m4, ta, ma    \n"
-      "vadd.vv     v8, v8, v12                    \n"
-      "vsetvli     zero, zero, e8, m2, ta, ma     \n"
-      "vnclipu.wi  v16, v8, 2                     \n"
+      "vwaddu.vx   v8, v16, %[c2]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
+      "vwaddu.wv   v8, v8, v20                    \n"
+      "vwaddu.wv   v8, v8, v22                    \n"
+      "vnsrl.wi    v16, v8, 2                     \n"
       "vse8.v      v16, (%[dst_argb])             \n"
       "add         %[dst_argb], %[dst_argb], %[vl]\n"
       "slli        %[vl], %[vl], 1                \n"
@@ -204,9 +200,9 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
         [src1] "+r"(src_stride),    // %[src1]
         [dst_argb] "+r"(dst_argb),  // %[dst_argb]
         [vl] "=&r"(vl)              // %[vl]
-      :
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+      : [c2] "r"(2)                 // %[c2]
+      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+        "v19", "v20", "v21", "v22", "v23");
 }
 #endif
 
@@ -248,11 +244,8 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
                                  int dst_width) {
   int vl;
   ptrdiff_t src_step;
-  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up mode(0).
   asm volatile(
       "add         %[src1], %[src0], %[src1]      \n"
-      "csrwi       vxrm, 0                        \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e32, m2, ta, ma   \n"
@@ -262,26 +255,26 @@ void ScaleARGBRowDownEvenBox_RVV(const uint8_t* src_argb,
       "mul         %[src_step], %[vl], %[stride_byte]\n"
       "slli        %[vl], %[vl], 2                \n"
       "vsetvli     zero, %[vl], e8, m2, ta, ma    \n"
-      "vwaddu.vv   v8, v16, v18                   \n"
-      "vwaddu.vv   v12, v20, v22                  \n"
-      "vsetvli     zero, zero, e16, m4, ta, ma    \n"
-      "vadd.vv     v8, v8, v12                    \n"
-      "vsetvli     zero, zero, e8, m2, ta, ma     \n"
-      "vnclipu.wi  v16, v8, 2                     \n"
+      "vwaddu.vx   v8, v16, %[c2]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
+      "vwaddu.wv   v8, v8, v20                    \n"
+      "vwaddu.wv   v8, v8, v22                    \n"
+      "vnsrl.wi    v16, v8, 2                     \n"
       "vse8.v      v16, (%[dst_argb])             \n"
       "add         %[src0], %[src0], %[src_step]  \n"
       "add         %[src1], %[src1], %[src_step]  \n"
       "add         %[dst_argb], %[dst_argb], %[vl]\n"
       "bgtz        %[w], 1b                       \n"
-      : [w] "+r"(dst_width),                         // %[w]
-        [src0] "+r"(src_argb),                       // %[src0]
-        [src1] "+r"(src_stride),                     // %[src1]
-        [dst_argb] "+r"(dst_argb),                   // %[dst_argb]
-        [vl] "=&r"(vl),                              // %[vl]
-        [src_step] "=&r"(src_step)                   // %[src_step]
-      : [stride_byte] "r"((ptrdiff_t)src_stepx * 4)  // %[stride_byte]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+      : [w] "+r"(dst_width),                          // %[w]
+        [src0] "+r"(src_argb),                        // %[src0]
+        [src1] "+r"(src_stride),                      // %[src1]
+        [dst_argb] "+r"(dst_argb),                    // %[dst_argb]
+        [vl] "=&r"(vl),                               // %[vl]
+        [src_step] "=&r"(src_step)                    // %[src_step]
+      : [stride_byte] "r"((ptrdiff_t)src_stepx * 4),  // %[stride_byte]
+        [c2] "r"(2)                                   // %[c2]
+      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+        "v19", "v20", "v21", "v22", "v23");
 }
 #endif
 
@@ -352,20 +345,18 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
                           uint8_t* dst,
                           int dst_width) {
   int vl;
-  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up mode(0).
   asm volatile(
       "add         %[t], %[s], %[t]               \n"
-      "csrwi       vxrm, 0                        \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
       "vlseg2e8.v  v16, (%[s])                    \n"
       "vlseg2e8.v  v20, (%[t])                    \n"
-      "vwaddu.vv   v8, v16, v18                   \n"
+      "vwaddu.vx   v8, v16, %[c2]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
       "vwaddu.wv   v8, v8, v20                    \n"
       "vwaddu.wv   v8, v8, v22                    \n"
-      "vnclipu.wi  v16, v8, 2                     \n"
+      "vnsrl.wi    v16, v8, 2                     \n"
       "vse8.v      v16, (%[dst])                  \n"
       "sub         %[w], %[w], %[vl]              \n"
       "add         %[dst], %[dst], %[vl]          \n"
@@ -378,7 +369,7 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
         [t] "+r"(src_stride),  // %[t]
         [dst] "+r"(dst),       // %[dst]
         [vl] "=&r"(vl)         // %[vl]
-      :
+      : [c2] "r"(2)            // %[c2]
       : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
@@ -419,19 +410,17 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
   const uint8_t* src_ptr1;
   const uint8_t* src_ptr2;
   int vl;
-  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up mode(0).
   asm volatile(
       "add         %[src_ptr1], %[src_ptr], %[src_ptr3]\n"
       "add         %[src_ptr2], %[src_ptr1], %[src_ptr3]\n"
       "add         %[src_ptr3], %[src_ptr2], %[src_ptr3]\n"
-      "csrwi       vxrm, 0                        \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
       "vlseg4e8.v  v16, (%[src_ptr])              \n"
       "vlseg4e8.v  v24, (%[src_ptr1])             \n"
-      "vwaddu.vv   v8, v16, v18                   \n"
+      "vwaddu.vx   v8, v16, %[c8]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
       "vwaddu.wv   v8, v8, v20                    \n"
       "vwaddu.wv   v8, v8, v22                    \n"
       "vwaddu.wv   v8, v8, v24                    \n"
@@ -448,7 +437,7 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
       "vwaddu.wv   v8, v8, v26                    \n"
       "vwaddu.wv   v8, v8, v28                    \n"
       "vwaddu.wv   v8, v8, v30                    \n"
-      "vnclipu.wi  v16, v8, 4                     \n"
+      "vnsrl.wi    v16, v8, 4                     \n"
       "vse8.v      v16, (%[dst_ptr])              \n"
       "sub         %[w], %[w], %[vl]              \n"
       "add         %[dst_ptr], %[dst_ptr], %[vl]  \n"
@@ -465,7 +454,7 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
         [src_ptr3] "+r"(src_stride),  // %[src_ptr3]
         [dst_ptr] "+r"(dst_ptr),      // %[dst_ptr]
         [vl] "=&r"(vl)                // %[vl]
-      :
+      : [c8] "r"(8)                   // %[c8]
       : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28",
         "v29", "v30", "v31");
@@ -529,30 +518,30 @@ void ScaleRowDown34_0_Box_RVV(const uint8_t* src_ptr,
 
       "2:          \n"
       "vlseg4e8.v  v0, (%[t])                     \n"
-      "vwcvtu.x.x.v v20, v0                        \n"
-      "vwcvtu.x.x.v v16, v2                        \n"
-      "vwcvtu.x.x.v v12, v4                        \n"
-      "vwcvtu.x.x.v v8, v6                         \n"
+      "vwaddu.vx   v20, v0, %[c2]                 \n"
+      "vwaddu.vx   v16, v2, %[c2]                 \n"
+      "vwaddu.vx   v12, v4, %[c2]                 \n"
+      "vwaddu.vx   v8, v6, %[c2]                  \n"
 
       "3:          \n"
       "vwmaccu.vx  v20, %[c3], v24                \n"
-      "vnclipu.wi  v24, v20, 2                    \n"
+      "vnsrl.wi    v24, v20, 2                    \n"
       "vwmaccu.vx  v16, %[c3], v26                \n"
-      "vnclipu.wi  v20, v16, 2                    \n"
+      "vnsrl.wi    v20, v16, 2                    \n"
       "vwmaccu.vx  v12, %[c3], v28                \n"
-      "vnclipu.wi  v16, v12, 2                    \n"
+      "vnsrl.wi    v16, v12, 2                    \n"
       "vwmaccu.vx  v8, %[c3], v30                 \n"
-      "vnclipu.wi  v12, v8, 2                     \n"
+      "vnsrl.wi    v12, v8, 2                     \n"
       // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
-      "vwcvtu.x.x.v v8, v20                        \n"
+      "vwaddu.vx   v8, v20, %[c2]                 \n"
       "vwmaccu.vx  v8, %[c3], v24                 \n"
-      "vnclipu.wi  v14, v8, 2                     \n"
+      "vnsrl.wi    v14, v8, 2                     \n"
       // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
-      "vwcvtu.x.x.v v8, v16                        \n"
+      "vwaddu.vx   v8, v16, %[c2]                 \n"
       "vwmaccu.vx  v8, %[c3], v12                 \n"
       // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
       "vaaddu.vv   v16, v20, v16                  \n"
-      "vnclipu.wi  v18, v8, 2                     \n"
+      "vnsrl.wi    v18, v8, 2                     \n"
       "vsseg3e8.v  v14, (%[dst_ptr])              \n"
       "sub         %[w], %[w], %[vl]              \n"
       "add         %[dst_ptr], %[dst_ptr], %[vl]  \n"
@@ -610,15 +599,15 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
 
       "3:          \n"
       // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
-      "vwcvtu.x.x.v v16, v8                        \n"
+      "vwaddu.vx   v16, v8, %[c2]                 \n"
       "vwmaccu.vx  v16, %[c3], v14                \n"
-      "vnclipu.wi  v20, v16, 2                    \n"
+      "vnsrl.wi    v20, v16, 2                    \n"
       // a2 = (src[2] * 1 + s[3] * 3 + 2) >> 2
-      "vwcvtu.x.x.v v16, v10                       \n"
+      "vwaddu.vx   v16, v10, %[c2]                \n"
       "vwmaccu.vx  v16, %[c3], v12                \n"
       // a1 = (src[1] * 1 + s[2] * 1 + 1) >> 1
       "vaaddu.vv   v22, v8, v10                   \n"
-      "vnclipu.wi  v24, v16, 2                    \n"
+      "vnsrl.wi    v24, v16, 2                    \n"
       "vsseg3e8.v  v20, (%[dst_ptr])              \n"
       "sub         %[w], %[w], %[vl]              \n"
       "add         %[dst_ptr], %[dst_ptr], %[vl]  \n"
@@ -634,6 +623,7 @@ void ScaleRowDown34_1_Box_RVV(const uint8_t* src_ptr,
         [dst_ptr] "+r"(dst_ptr),       // %[dst_ptr]
         [vl] "=&r"(vl)                 // %[vl]
       : [src_stride] "r"(src_stride),  // %[src_stride]
+        [c2] "r"(2),                   // %[c2]
         [c3] "r"(3)                    // %[c3]
       : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
@@ -1016,24 +1006,23 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
                             uint8_t* dst_uv,
                             int dst_width) {
   int vl;
-  // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
-  // register) is set to round-to-nearest-up mode(0).
   asm volatile(
       "add         %[src_uv_row1], %[src_uv], %[src_uv_row1]\n"
-      "csrwi       vxrm, 0                        \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
       "vlseg4e8.v  v14, (%[src_uv])               \n"
       "vlseg4e8.v  v22, (%[src_uv_row1])          \n"
-      "vwaddu.vv   v8, v14, v18                   \n"
+      "vwaddu.vx   v8, v14, %[c2]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
       "vwaddu.wv   v8, v8, v22                    \n"
       "vwaddu.wv   v8, v8, v26                    \n"
-      "vwaddu.vv   v12, v16, v20                  \n"
+      "vwaddu.vx   v12, v16, %[c2]                \n"
+      "vwaddu.wv   v12, v12, v20                  \n"
       "vwaddu.wv   v12, v12, v24                  \n"
       "vwaddu.wv   v12, v12, v28                  \n"
-      "vnclipu.wi  v16, v8, 2                     \n"
-      "vnclipu.wi  v18, v12, 2                    \n"
+      "vnsrl.wi    v16, v8, 2                     \n"
+      "vnsrl.wi    v18, v12, 2                    \n"
       "vsseg2e8.v  v16, (%[dst_uv])               \n"
       "sub         %[w], %[w], %[vl]              \n"
       "slli        %[vl], %[vl], 1                \n"
@@ -1047,7 +1036,7 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
         [src_uv_row1] "+r"(src_stride),  // %[src_uv_row1]
         [dst_uv] "+r"(dst_uv),           // %[dst_uv]
         [vl] "=&r"(vl)                   // %[vl]
-      :
+      : [c2] "r"(2)                      // %[c2]
       : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29");

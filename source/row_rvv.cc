@@ -1389,29 +1389,33 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
   }
   // General purpose row blend.
   asm volatile(
-      "csrwi       vxrm, 0                       \n"
+      "vsetvli     zero, %[dst_w], e16, m4, ta, ma\n"
+      "vmv.v.x     v12, %[c128]                  \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[dst_w], e8, m2, ta, ma\n"
       "vle8.v      v16, (%[src_ptr])             \n"
-      "vwmulu.vx   v8, v16, %[y0_fraction]       \n"
+      "vmv4r.v     v8, v12                       \n"
+      "vwmaccu.vx  v8, %[y0_fraction], v16       \n"
       "vle8.v      v16, (%[src_ptr1])            \n"
       "vwmaccu.vx  v8, %[y1_fraction], v16       \n"
-      "vnclipu.wi  v16, v8, 8                    \n"
+      "vnsrl.wi    v16, v8, 8                    \n"
       "vse8.v      v16, (%[dst_ptr])             \n"
       "sub         %[dst_w], %[dst_w], %[vl]     \n"
       "add         %[src_ptr], %[src_ptr], %[vl] \n"
       "add         %[src_ptr1], %[src_ptr1], %[vl]\n"
       "add         %[dst_ptr], %[dst_ptr], %[vl] \n"
       "bgtz        %[dst_w], 1b                  \n"
-      : [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
-        [src_ptr] "+r"(src_ptr),         // %[src_ptr]
-        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
-        [dst_w] "+r"(dst_w),             // %[dst_w]
-        [vl] "=&r"(vl)                   // %[vl]
-      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
-        [y1_fraction] "r"(y1_fraction)   // %[y1_fraction]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : [dst_ptr] "+r"(dst_ptr),          // %[dst_ptr]
+        [src_ptr] "+r"(src_ptr),          // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),        // %[src_ptr1]
+        [dst_w] "+r"(dst_w),              // %[dst_w]
+        [vl] "=&r"(vl)                    // %[vl]
+      : [y0_fraction] "r"(y0_fraction),   // %[y0_fraction]
+        [y1_fraction] "r"(y1_fraction),   // %[y1_fraction]
+        [c128] "r"(128)                   // %[c128]
+      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17");
 }
 #endif
 
@@ -2521,18 +2525,16 @@ void HalfWidthRow_16To8_RVV(const uint16_t* src_uv,
   asm volatile(
       "slli        %[t], %[t], 1                 \n"
       "add         %[t], %[s], %[t]              \n"
-      "csrwi       vxrm, 0                       \n"
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e16, m2, ta, ma  \n"
       "vlseg2e16.v v16, (%[s])                   \n"
       "vlseg2e16.v v20, (%[t])                   \n"
-      "vwaddu.vv   v8, v16, v18                  \n"
-      "vwaddu.vv   v12, v20, v22                 \n"
-      "vsetvli     zero, zero, e32, m4, ta, ma   \n"
-      "vadd.vv     v8, v8, v12                   \n"
-      "vsetvli     zero, zero, e16, m2, ta, ma   \n"
-      "vnclipu.wi  v16, v8, 2                    \n"
+      "vwaddu.vx   v8, v16, %[c2]                \n"
+      "vwaddu.wv   v8, v8, v18                   \n"
+      "vwaddu.wv   v8, v8, v20                   \n"
+      "vwaddu.wv   v8, v8, v22                   \n"
+      "vnsrl.wi    v16, v8, 2                    \n"
       "vsetvli     zero, zero, e8, m1, ta, ma    \n"
       "vnsrl.wx    v8, v16, %[shift]             \n"
       "vse8.v      v8, (%[dst_uv])               \n"
@@ -2542,14 +2544,15 @@ void HalfWidthRow_16To8_RVV(const uint16_t* src_uv,
       "add         %[s], %[s], %[vl]             \n"
       "add         %[t], %[t], %[vl]             \n"
       "bgtz        %[w], 1b                      \n"
-      : [s] "+r"(src_uv),                                // %[s]
-        [t] "+r"(src_uv_stride),                         // %[t]
-        [dst_uv] "+r"(dst_uv),                           // %[dst_uv]
-        [w] "+r"(width),                                 // %[w]
-        [vl] "=&r"(vl)                                   // %[vl]
-      : [shift] "r"(__builtin_clz((int32_t)scale) - 15)  // %[shift]
-      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+      : [s] "+r"(src_uv),                                 // %[s]
+        [t] "+r"(src_uv_stride),                          // %[t]
+        [dst_uv] "+r"(dst_uv),                            // %[dst_uv]
+        [w] "+r"(width),                                  // %[w]
+        [vl] "=&r"(vl)                                    // %[vl]
+      : [shift] "r"(__builtin_clz((int32_t)scale) - 15),  // %[shift]
+        [c2] "r"(2)                                       // %[c2]
+      : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+        "v19", "v20", "v21", "v22", "v23");
 }
 #endif
 
