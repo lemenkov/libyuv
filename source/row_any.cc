@@ -29,6 +29,12 @@ extern "C" {
 // Subsampled source needs to be increase by 1 if not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
+#ifdef LIBYUV_MSAN
+#define MEMSET(a, b, c) memset(a, b, c)
+#else
+#define MEMSET(a, b, c)
+#endif
+
 // Any 4 planes to 1
 #define ANY41(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)               \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,                   \
@@ -39,7 +45,7 @@ extern "C" {
     SIMD_ALIGNED(uint8_t vout[64]);                                          \
     static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),              \
                   "vout buffer too small");                                  \
-    memset(vin, 0, sizeof(vin)); /* for msan */                              \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
@@ -76,7 +82,7 @@ ANY41(MergeARGBRow_Any_NEON, MergeARGBRow_NEON, 0, 0, 4, 15)
     SIMD_ALIGNED(uint8_t vout[64]);                                          \
     static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),              \
                   "vout buffer too small");                                  \
-    memset(vin, 0, sizeof(vin)); /* for msan */                              \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
@@ -133,7 +139,7 @@ ANY41C(I422AlphaToARGBRow_Any_LASX, I422AlphaToARGBRow_LASX, 1, 0, 4, 15)
     SIMD_ALIGNED(uint8_t vout[64]);                                            \
     static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),                \
                   "vout buffer too small");                                    \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                       \
+    MEMSET(vin, 0, sizeof(vin)); /* for YUY2 and msan */                       \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
     if (n > 0) {                                                               \
@@ -224,7 +230,7 @@ ANY41CT(I410AlphaToARGBRow_Any_AVX2,
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(DTYPE vout[64]);                                             \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -360,7 +366,7 @@ ANY31(BlendPlaneRow_Any_NEON, BlendPlaneRow_NEON, 0, 0, 1, 15)
     SIMD_ALIGNED(uint8_t vout[128]);                                       \
     static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),            \
                   "vout buffer too small");                                \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
+    MEMSET(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
     int r = width & MASK;                                                  \
     int n = width & ~MASK;                                                 \
     if (n > 0) {                                                           \
@@ -492,7 +498,7 @@ ANY31C(I444ToARGBRow_Any_LSX, I444ToARGBRow_LSX, 0, 0, 4, 15)
     SIMD_ALIGNED(uint8_t vout[64]);                                        \
     static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),            \
                   "vout buffer too small");                                \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
+    MEMSET(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
     int r = width & MASK;                                                  \
     int n = width & ~MASK;                                                 \
     if (n > 0) {                                                           \
@@ -571,7 +577,7 @@ ANY31CT(I212ToAR30Row_Any_NEON, I212ToAR30Row_NEON, 1, 0, uint16_t, 2, 4, 7)
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(DTYPE vout[64]);                                             \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
+    MEMSET(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -641,7 +647,7 @@ ANY31PT(MergeXRGB16To8Row_Any_NEON,
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[128]);                                          \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -765,7 +771,7 @@ ANY21(SobelXYRow_Any_LSX, SobelXYRow_LSX, 0, 1, 1, 4, 15)
                int width) {                                               \
     SIMD_ALIGNED(uint8_t vin[(MASK + 1) * SBPP * 2]);                     \
     SIMD_ALIGNED(uint8_t vout[(MASK + 1) * BPP]);                         \
-    memset(vin, 0, sizeof(vin)); /* for msan */                           \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                           \
     int awidth = (width + 1) / 2;                                         \
     int r = awidth & MASK;                                                \
     int n = awidth & ~MASK;                                               \
@@ -801,7 +807,7 @@ ANY21S(YUY2ToNVUVRow_Any_AVX2, YUY2ToNVUVRow_AVX2, 4, 2, 15)
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[128]);                                          \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -891,7 +897,7 @@ ANY21C(NV12ToRGB565Row_Any_LASX, NV12ToRGB565Row_LASX, 1, 1, 2, 2, 15)
     SIMD_ALIGNED(uint8_t vout[64]);                                            \
     static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),                \
                   "vout buffer too small");                                    \
-    memset(vin, 0, sizeof(vin)); /* for msan */                                \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                                \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
     if (n > 0) {                                                               \
@@ -953,7 +959,7 @@ ANY21CT(P410ToARGBRow_Any_NEON, P410ToARGBRow_NEON, 0, 0, uint16_t, 2, 4, 7)
     SIMD_ALIGNED(T vout[16]);                                        \
     static_assert((MASK + 1) * BPP * 2 <= sizeof(vout),              \
                   "vout buffer too small");                          \
-    memset(vin, 0, sizeof(vin)); /* for msan */                      \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                      \
     int r = width & MASK;                                            \
     int n = width & ~MASK;                                           \
     if (n > 0) {                                                     \
@@ -983,7 +989,7 @@ ANY21PT(MergeUVRow_16_Any_NEON, MergeUVRow_16_NEON, uint16_t, 2, 7)
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[256]);                                          \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
+    MEMSET(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1289,8 +1295,8 @@ ANY11(ARGBExtractAlphaRow_Any_LSX, ARGBExtractAlphaRow_LSX, 0, 4, 1, 15)
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[64]);                                           \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin));   /* for msan */                             \
-    memset(vout, 0, sizeof(vout)); /* for msan */                             \
+    MEMSET(vin, 0, sizeof(vin));   /* for msan */                             \
+    MEMSET(vout, 0, sizeof(vout)); /* for msan */                             \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1322,7 +1328,7 @@ ANY11B(ARGBCopyYToAlphaRow_Any_SSE2, ARGBCopyYToAlphaRow_SSE2, 0, 1, 4, 7)
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, T param, int width) { \
     SIMD_ALIGNED(uint8_t vin[(MASK + 1) * SBPP]);                              \
     SIMD_ALIGNED(uint8_t vout[(MASK + 1) * BPP]);                              \
-    memset(vin, 0, sizeof(vin)); /* for msan */                                \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                                \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
     if (n > 0) {                                                               \
@@ -1430,7 +1436,7 @@ ANY11P(ARGBShuffleRow_Any_LASX, ARGBShuffleRow_LASX, const uint8_t*, 4, 4, 15)
   void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int width) { \
     SIMD_ALIGNED(uint8_t vin[(MASK + 1) * SBPP]);                 \
     SIMD_ALIGNED(uint8_t vout[(MASK + 1) * BPP]);                 \
-    memset(vin, 0, sizeof(vin)); /* for msan */                   \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                   \
     int r = width & MASK;                                         \
     int n = width & ~MASK;                                        \
     if (n > 0) {                                                  \
@@ -1499,7 +1505,7 @@ ANY11T(AB64ToARGBRow_Any_NEON, AB64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
     static_assert((MASK + 1) * SBPP <= sizeof(vin), "vin buffer too small");  \
     SIMD_ALIGNED(DTYPE vout[64]);                                             \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1626,7 +1632,7 @@ ANY11C(DivideRow_16_Any_NEON, DivideRow_16_NEON, 2, 2, uint16_t, uint16_t, 15)
     static_assert((MASK + 1) * SBPP <= sizeof(vin), "vin buffer too small");  \
     SIMD_ALIGNED(DTYPE vout[64]);                                             \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1665,7 +1671,7 @@ ANY11SB(Convert8To8Row_Any_AVX2,
     static_assert((MASK + 1) * SBPP <= sizeof(vin), "vin buffer too small");  \
     SIMD_ALIGNED(T vout[32]);                                                 \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1710,7 +1716,7 @@ ANY11P16(HalfFloatRow_Any_LSX, HalfFloatRow_LSX, uint16_t, uint16_t, 2, 2, 31)
                   "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[256]);                                          \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
+    MEMSET(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1750,7 +1756,7 @@ ANY11C(UYVYToARGBRow_Any_LSX, UYVYToARGBRow_LSX, 1, 4, 4, 7)
     SIMD_ALIGNED(TD vout[64]);                                       \
     static_assert((MASK + 1) * BPP * sizeof(TD) <= sizeof(vout),     \
                   "vout buffer too small");                          \
-    memset(vin, 0, sizeof(vin)); /* for msan */                      \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                      \
     int r = width & MASK;                                            \
     int n = width & ~MASK;                                           \
     if (n > 0) {                                                     \
@@ -1797,26 +1803,26 @@ ANY11I(InterpolateRow_16_Any_AVX2,
 #undef ANY11I
 
 // Any 1 to 1 half row with scale param
-#define ANY11HS(NAMEANY, ANY_SIMD, TS, TD, MASK)                               \
-  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr,           \
-               int scale, int width) {                                         \
-    SIMD_ALIGNED(TS vin[64 * 2]);                                              \
-    static_assert((MASK + 1) * sizeof(TS) <= sizeof(vin) / 2,                  \
-                  "vin buffer too small");                                     \
-    SIMD_ALIGNED(TD vout[64]);                                                 \
-    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),                     \
-                  "vout buffer too small");                                    \
-    memset(vin, 0, sizeof(vin)); /* for msan */                                \
-    int r = width & MASK;                                                      \
-    int n = width & ~MASK;                                                     \
-    if (n > 0) {                                                               \
-      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);                        \
-    }                                                                          \
-    ptrdiff_t np = n;                                                          \
-    memcpy(vin, src_ptr + np, r * sizeof(TS));                                 \
-    memcpy(vin + 64, src_ptr + src_stride + np, r * sizeof(TS));               \
-    ANY_SIMD(vin, 64, vout, scale, MASK + 1);                                  \
-    memcpy(dst_ptr + np, vout, r * sizeof(TD));                                \
+#define ANY11HS(NAMEANY, ANY_SIMD, TS, TD, MASK)                     \
+  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr, \
+               int scale, int width) {                               \
+    SIMD_ALIGNED(TS vin[64 * 2]);                                    \
+    static_assert((MASK + 1) * sizeof(TS) <= sizeof(vin) / 2,        \
+                  "vin buffer too small");                           \
+    SIMD_ALIGNED(TD vout[64]);                                       \
+    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),           \
+                  "vout buffer too small");                          \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                      \
+    int r = width & MASK;                                            \
+    int n = width & ~MASK;                                           \
+    if (n > 0) {                                                     \
+      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);              \
+    }                                                                \
+    ptrdiff_t np = n;                                                \
+    memcpy(vin, src_ptr + np, r * sizeof(TS));                       \
+    memcpy(vin + 64, src_ptr + src_stride + np, r * sizeof(TS));     \
+    ANY_SIMD(vin, 64, vout, scale, MASK + 1);                        \
+    memcpy(dst_ptr + np, vout, r * sizeof(TD));                      \
   }
 
 #ifdef HAS_HALFROW_16TO8_SSSE3
@@ -1835,26 +1841,26 @@ ANY11HS(HalfRow_16To8_Any_NEON, HalfRow_16To8_NEON, uint16_t, uint8_t, 15)
 #undef ANY11HS
 
 // Any 2 to 1 half-width row with scale param
-#define ANY11HWS(NAMEANY, ANY_SIMD, TS, TD, MASK)                              \
-  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr,           \
-               int scale, int width) {                                         \
-    SIMD_ALIGNED(TS vin[128 * 2]);                                             \
-    static_assert((MASK + 1) * 2 * sizeof(TS) <= sizeof(vin),                  \
-                  "vin buffer too small");                                     \
-    SIMD_ALIGNED(TD vout[64]);                                                 \
-    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),                     \
-                  "vout buffer too small");                                    \
-    memset(vin, 0, sizeof(vin)); /* for msan */                                \
-    int r = width & MASK;                                                      \
-    int n = width & ~MASK;                                                     \
-    if (n > 0) {                                                               \
-      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);                        \
-    }                                                                          \
-    ptrdiff_t np = n;                                                          \
-    memcpy(vin, src_ptr + np * 2, r * 2 * sizeof(TS));                         \
-    memcpy(vin + 128, src_ptr + src_stride + np * 2, r * 2 * sizeof(TS));      \
-    ANY_SIMD(vin, 128, vout, scale, MASK + 1);                                 \
-    memcpy(dst_ptr + np, vout, r * sizeof(TD));                                \
+#define ANY11HWS(NAMEANY, ANY_SIMD, TS, TD, MASK)                         \
+  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr,      \
+               int scale, int width) {                                    \
+    SIMD_ALIGNED(TS vin[128 * 2]);                                        \
+    static_assert((MASK + 1) * 2 * sizeof(TS) <= sizeof(vin),             \
+                  "vin buffer too small");                                \
+    SIMD_ALIGNED(TD vout[64]);                                            \
+    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),                \
+                  "vout buffer too small");                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                           \
+    int r = width & MASK;                                                 \
+    int n = width & ~MASK;                                                \
+    if (n > 0) {                                                          \
+      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);                   \
+    }                                                                     \
+    ptrdiff_t np = n;                                                     \
+    memcpy(vin, src_ptr + np * 2, r * 2 * sizeof(TS));                    \
+    memcpy(vin + 128, src_ptr + src_stride + np * 2, r * 2 * sizeof(TS)); \
+    ANY_SIMD(vin, 128, vout, scale, MASK + 1);                            \
+    memcpy(dst_ptr + np, vout, r * sizeof(TD));                           \
   }
 
 #ifdef HAS_HALFWIDTHROW_16TO8_SSSE3
@@ -1879,7 +1885,7 @@ ANY11HWS(HalfWidthRow_16To8_Any_NEON, HalfWidthRow_16To8_NEON, uint16_t, uint8_t
     static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small");   \
     SIMD_ALIGNED(uint8_t vout[128]);                                          \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -1986,7 +1992,7 @@ ANY1(ARGBSetRow_Any_LSX, ARGBSetRow_LSX, uint32_t, 4, 3)
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                \
     static_assert(SS(MASK + 1, DUVSHIFT) <= sizeof(vout) / 2,           \
                   "vout buffer too small");                             \
-    memset(vin, 0, sizeof(vin)); /* for msan */                         \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                         \
     int r = width & MASK;                                               \
     int n = width & ~MASK;                                              \
     if (n > 0) {                                                        \
@@ -2045,7 +2051,7 @@ ANY12(UYVYToUV422Row_Any_LASX, UYVYToUV422Row_LASX, 1, 4, 1, 31)
     SIMD_ALIGNED(T vout[16 * 2]);                                           \
     static_assert((MASK + 1) * BPP <= sizeof(vout) / 2,                     \
                   "vout buffer too small");                                 \
-    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                             \
     int r = width & MASK;                                                   \
     int n = width & ~MASK;                                                  \
     if (n > 0) {                                                            \
@@ -2074,7 +2080,7 @@ ANY12PT(SplitUVRow_16_Any_NEON, SplitUVRow_16_NEON, uint16_t, 2, 7)
                uint8_t* dst_b, int width) {                                \
     SIMD_ALIGNED(uint8_t vin[(MASK + 1) * BPP]);                           \
     SIMD_ALIGNED(uint8_t vout[(MASK + 1) * 3]);                            \
-    memset(vin, 0, sizeof(vin)); /* for msan */                            \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                            \
     int r = width & MASK;                                                  \
     int n = width & ~MASK;                                                 \
     if (n > 0) {                                                           \
@@ -2121,7 +2127,7 @@ ANY13(SplitXRGBRow_Any_NEON, SplitXRGBRow_NEON, 4, 15)
     static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small"); \
     SIMD_ALIGNED(uint8_t vout[16 * 4]);                                     \
     static_assert(MASK + 1 <= sizeof(vout) / 4, "vout buffer too small");   \
-    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                             \
     int r = width & MASK;                                                   \
     int n = width & ~MASK;                                                  \
     if (n > 0) {                                                            \
@@ -2160,8 +2166,8 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
     static_assert(SS(MASK + 1, 1) <= sizeof(vout) / 2,                       \
                   "vout buffer too small");                                  \
-    memset(vin, 0, sizeof(vin));   /* for msan */                            \
-    memset(vout, 0, sizeof(vout)); /* for msan */                            \
+    MEMSET(vin, 0, sizeof(vin));   /* for msan */                            \
+    MEMSET(vout, 0, sizeof(vout)); /* for msan */                            \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
@@ -2189,7 +2195,7 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small"); \
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                    \
     static_assert(MASK + 1 <= sizeof(vout) / 2, "vout buffer too small");   \
-    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                             \
     int r = width & MASK;                                                   \
     int n = width & ~MASK;                                                  \
     if (n > 0) {                                                            \
@@ -2211,8 +2217,8 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
     static_assert(SS(MASK + 1, 1) <= sizeof(vout) / 2,                       \
                   "vout buffer too small");                                  \
-    memset(vin, 0, sizeof(vin));   /* for msan */                            \
-    memset(vout, 0, sizeof(vout)); /* for msan */                            \
+    MEMSET(vin, 0, sizeof(vin));   /* for msan */                            \
+    MEMSET(vout, 0, sizeof(vout)); /* for msan */                            \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
@@ -2312,7 +2318,7 @@ ANY12M(ARGBToUV444MatrixRow_Any_NEON_I8MM,
     static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small"); \
     SIMD_ALIGNED(uint8_t vout[256]);                                        \
     static_assert(MASK + 1 <= sizeof(vout), "vout buffer too small");       \
-    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                             \
     int r = width & MASK;                                                   \
     int n = width & ~MASK;                                                  \
     if (n > 0) {                                                            \
@@ -2458,7 +2464,7 @@ ANY12S(UYVYToUVRow_Any_LASX, UYVYToUVRow_LASX, 1, 4, 31)
     SIMD_ALIGNED(uint8_t vout[128]);                                         \
     static_assert(SS(MASK + 1, 1) * 2 <= sizeof(vout),                       \
                   "vout buffer too small");                                  \
-    memset(vin, 0, sizeof(vin)); /* for msan */                              \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
     if (n > 0) {                                                             \
@@ -2496,7 +2502,7 @@ ANY11S(AYUVToVURow_Any_SVE2, AYUVToVURow_SVE2, 0, 4, 1)
     static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small");   \
     SIMD_ALIGNED(T vout[16]);                                                 \
     static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
-    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
@@ -2561,7 +2567,7 @@ ANYDETILESPLITUV(DetileSplitUVRow_Any_SSSE3, DetileSplitUVRow_SSSE3, 15)
     static_assert(MASK + 1 <= sizeof(vin) / 2, "vin buffer too small");        \
     SIMD_ALIGNED(uint8_t vout[16 * 2]);                                        \
     static_assert(2 * (MASK + 1) <= sizeof(vout), "vout buffer too small");    \
-    memset(vin, 0, sizeof(vin)); /* for msan */                                \
+    MEMSET(vin, 0, sizeof(vin)); /* for msan */                                \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
     if (n > 0) {                                                               \
@@ -2582,6 +2588,8 @@ ANYDETILEMERGE(DetileToYUY2_Any_NEON, DetileToYUY2_NEON, 15)
 #ifdef HAS_DETILETOYUY2_SSE2
 ANYDETILEMERGE(DetileToYUY2_Any_SSE2, DetileToYUY2_SSE2, 15)
 #endif
+
+#undef MEMSET
 
 #ifdef __cplusplus
 }  // extern "C"
