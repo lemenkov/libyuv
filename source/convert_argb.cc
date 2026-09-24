@@ -5703,10 +5703,7 @@ int I420ToRGB24Matrix(const uint8_t* src_y,
 #endif
 #if defined(HAS_I422TORGB24ROW_AVX512VBMI)
   if (TestCpuFlag(kCpuHasAVX512VBMI)) {
-    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512VBMI;
-    if (IS_ALIGNED(width, 32)) {
-      I422ToRGB24Row = I422ToRGB24Row_AVX512VBMI;
-    }
+    I422ToRGB24Row = I422ToRGB24Row_AVX512VBMI;
   }
 #endif
 #if defined(HAS_I422TORGB24ROW_NEON)
@@ -5924,10 +5921,7 @@ int I422ToRGB24Matrix(const uint8_t* src_y,
 #endif
 #if defined(HAS_I422TORGB24ROW_AVX512VBMI)
   if (TestCpuFlag(kCpuHasAVX512VBMI)) {
-    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512VBMI;
-    if (IS_ALIGNED(width, 32)) {
-      I422ToRGB24Row = I422ToRGB24Row_AVX512VBMI;
-    }
+    I422ToRGB24Row = I422ToRGB24Row_AVX512VBMI;
   }
 #endif
 #if defined(HAS_I422TORGB24ROW_NEON)
