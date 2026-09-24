@@ -3506,6 +3506,27 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpord      %%zmm3,%%zmm4,%%zmm4                                \n" \
   "vmovdqa64  %%zmm1,%%zmm3                                       \n"
 
+#define READYUV422_MASK_AVX512BW                                      \
+  "mov         $-1,%[temp]                                        \n" \
+  "bzhi        %q[width],%[temp],%[temp]                          \n" \
+  "kmovd       %k[temp],%%k1                                      \n" \
+  "vpmovzxbw   (%[y_buf]),%%zmm4%{%%k1%}%{z%}                     \n" \
+  "mov         $-1,%[temp]                                        \n" \
+  "lea         1(%q[width]),%k[y_buf]                             \n" \
+  "shr         $1,%k[y_buf]                                       \n" \
+  "bzhi        %q[y_buf],%[temp],%[y_buf]                         \n" \
+  "kmovw       %k[y_buf],%%k2                                     \n" \
+  "vmovdqu8    (%[u_buf]),%%xmm3%{%%k2%}%{z%}                     \n" \
+  "vmovdqu8    0x00(%[u_buf],%[v_buf],1),%%xmm1%{%%k2%}%{z%}      \n" \
+  "vpunpcklbw  %%xmm1,%%xmm3,%%xmm2                               \n" \
+  "vpunpckhbw  %%xmm1,%%xmm3,%%xmm3                               \n" \
+  "vinserti64x2 $1,%%xmm3,%%ymm2,%%ymm3                           \n" \
+  "vmovdqa64   %%zmm16,%%zmm1                                     \n" \
+  "vpermi2w    %%zmm3,%%zmm3,%%zmm1                               \n" \
+  "vpsllw      $8,%%zmm4,%%zmm3                                   \n" \
+  "vpord       %%zmm3,%%zmm4,%%zmm4                               \n" \
+  "vmovdqa64   %%zmm1,%%zmm3                                      \n"
+
 // Read 8 UV from 210, upsample to 16 UV
 // TODO(fbarchard): Consider vpshufb to replace pack/unpack
 // TODO(fbarchard): Consider vunpcklpd to combine the 2 registers into 1.
@@ -3854,6 +3875,23 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovdqu8    %%ymm0,0x40(%[dst_rgb24])                          \n" \
   "lea         0x60(%[dst_rgb24]),%[dst_rgb24]                    \n"
 
+// Store masked RGB24 values with VBMI.
+#define STORERGB24_MASK_AVX512VBMI                                    \
+  "lea         (%q[width],%q[width],2),%k[width]                  \n" \
+  "bzhi        %q[width],%[temp],%[y_buf]                         \n" \
+  "kmovq       %[y_buf],%%k3                                      \n" \
+  "xor         %k[y_buf],%k[y_buf]                                \n" \
+  "sub         $0x40,%k[width]                                    \n" \
+  "cmovg       %[temp],%[y_buf]                                   \n" \
+  "bzhi        %q[width],%[y_buf],%[y_buf]                        \n" \
+  "kmovd       %k[y_buf],%%k4                                     \n" \
+  "vpermt2b    %%zmm1,%%zmm20,%%zmm0                              \n" \
+  "vmovdqa64   %%zmm0,%%zmm3                                      \n" \
+  "vpermt2b    %%zmm2,%%zmm21,%%zmm3                              \n" \
+  "vpermt2b    %%zmm2,%%zmm22,%%zmm0                              \n" \
+  "vmovdqu8    %%zmm3,(%[dst_rgb24])%{%%k3%}                      \n" \
+  "vmovdqu8    %%ymm0,0x40(%[dst_rgb24])%{%%k4%}                  \n"
+
 // Store 32 RGB24 values with AVX512BW.
 #define STORERGB24_AVX512BW                                           \
   "vpunpcklbw  %%zmm1,%%zmm0,%%zmm0                               \n" \
@@ -3871,6 +3909,31 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovdqu8    %%zmm3,(%[dst_rgb24])                              \n" \
   "vmovdqu8    %%ymm4,0x40(%[dst_rgb24])                          \n" \
   "lea         0x60(%[dst_rgb24]),%[dst_rgb24]                    \n"
+
+// Store masked RGB24 values with AVX512BW.
+#define STORERGB24_MASK_AVX512BW                                      \
+  "lea         (%q[width],%q[width],2),%k[width]                  \n" \
+  "bzhi        %q[width],%[temp],%[y_buf]                         \n" \
+  "kmovq       %[y_buf],%%k3                                      \n" \
+  "xor         %k[y_buf],%k[y_buf]                                \n" \
+  "sub         $0x40,%k[width]                                    \n" \
+  "cmovg       %[temp],%[y_buf]                                   \n" \
+  "bzhi        %q[width],%[y_buf],%[y_buf]                        \n" \
+  "kmovd       %k[y_buf],%%k4                                     \n" \
+  "vpunpcklbw  %%zmm1,%%zmm0,%%zmm0                               \n" \
+  "vpunpcklbw  %%zmm2,%%zmm2,%%zmm2                               \n" \
+  "vmovdqa64   %%zmm0,%%zmm1                                      \n" \
+  "vpunpcklwd  %%zmm2,%%zmm0,%%zmm0                               \n" \
+  "vpunpckhwd  %%zmm2,%%zmm1,%%zmm1                               \n" \
+  "vpshufb     %%zmm5,%%zmm0,%%zmm0                               \n" \
+  "vpshufb     %%zmm6,%%zmm1,%%zmm1                               \n" \
+  "vpalignr    $0xc,%%zmm0,%%zmm1,%%zmm1                          \n" \
+  "vmovdqa64   %%zmm20,%%zmm3                                     \n" \
+  "vpermi2q    %%zmm1,%%zmm0,%%zmm3                               \n" \
+  "vmovdqa64   %%zmm21,%%zmm4                                     \n" \
+  "vpermi2q    %%zmm1,%%zmm0,%%zmm4                               \n" \
+  "vmovdqu8    %%zmm3,(%[dst_rgb24])%{%%k3%}                      \n" \
+  "vmovdqu8    %%ymm4,0x40(%[dst_rgb24])%{%%k4%}                  \n"
 
 // Store 32 AR30 values.
 #define STOREAR30_AVX512BW                                            \
@@ -4142,42 +4205,9 @@ void OMITFP I422ToRGB24Row_AVX512VBMI(const uint8_t* y_buf,
       "add         $0x20,%[width]                \n"
       "je          99f                           \n"
 
-      // Calculate a mask for the final iteration to deal with the tail.
-      "mov         $-1,%[temp]                   \n"
-      "bzhi        %q[width],%[temp],%[temp]     \n"
-      "kmovd       %k[temp],%%k1                 \n"
-      "vpmovzxbw   (%[y_buf]),%%zmm4%{%%k1%}%{z%}\n"
-      "mov         $-1,%[temp]                   \n"
-      "lea         1(%q[width]),%k[y_buf]        \n"
-      "shr         $1,%k[y_buf]                  \n"
-      "bzhi        %q[y_buf],%[temp],%[y_buf]    \n"
-      "kmovw       %k[y_buf],%%k2                \n"
-      "vmovdqu8    (%[u_buf]),%%xmm3%{%%k2%}%{z%}\n"
-      "vmovdqu8    0x00(%[u_buf],%[v_buf],1),%%xmm1%{%%k2%}%{z%}\n"
-      "lea         (%q[width],%q[width],2),%k[width]\n"
-      "bzhi        %q[width],%[temp],%[y_buf]    \n"
-      "kmovq       %[y_buf],%%k3                 \n"
-      "xor         %k[y_buf],%k[y_buf]           \n"
-      "sub         $0x40,%k[width]               \n"
-      "cmovg       %[temp],%[y_buf]              \n"
-      "bzhi        %q[width],%[y_buf],%[y_buf]   \n"
-      "kmovd       %k[y_buf],%%k4                \n"
-
-      "vpunpcklbw  %%xmm1,%%xmm3,%%xmm2          \n"
-      "vpunpckhbw  %%xmm1,%%xmm3,%%xmm3          \n"
-      "vinserti64x2 $1,%%xmm3,%%ymm2,%%ymm3      \n"
-      "vmovdqa64   %%zmm16,%%zmm1                \n"
-      "vpermi2w    %%zmm3,%%zmm3,%%zmm1          \n"
-      "vpsllw      $8,%%zmm4,%%zmm3              \n"
-      "vpord       %%zmm3,%%zmm4,%%zmm4          \n"
-      "vmovdqa64   %%zmm1,%%zmm3                 \n"
+    READYUV422_MASK_AVX512BW
     YUVTORGB_AVX512BW(yuvconstants)
-      "vpermt2b    %%zmm1,%%zmm20,%%zmm0         \n"
-      "vmovdqa64   %%zmm0,%%zmm3                 \n"
-      "vpermt2b    %%zmm2,%%zmm21,%%zmm3         \n"
-      "vpermt2b    %%zmm2,%%zmm22,%%zmm0         \n"
-      "vmovdqu8    %%zmm3,(%[dst_rgb24])%{%%k3%} \n"
-      "vmovdqu8    %%ymm0,0x40(%[dst_rgb24])%{%%k4%}\n"
+    STORERGB24_MASK_AVX512VBMI
 
       "99:         \n"
       "vzeroupper  \n"
@@ -4215,6 +4245,7 @@ void OMITFP I422ToRGB24Row_AVX512BW(const uint8_t* y_buf,
                                     uint8_t* dst_rgb24,
                                     const struct YuvConstants* yuvconstants,
                                     int width) {
+  uintptr_t temp;
   asm volatile (
     YUVTORGB_SETUP_AVX512BW(yuvconstants)
       "vbroadcasti32x4 %[kShuffleMaskARGBToRGB24_1],%%zmm5 \n"
@@ -4222,6 +4253,8 @@ void OMITFP I422ToRGB24Row_AVX512BW(const uint8_t* y_buf,
       "vmovdqu64   %[kStitchRGB24_0],%%zmm20     \n"
       "vmovdqu64   %[kStitchRGB24_1],%%zmm21     \n"
       "sub         %[u_buf],%[v_buf]             \n"
+      "sub         $0x20,%[width]                \n"
+      "jl          2f                            \n"
 
     LABELALIGN
       "1:          \n"
@@ -4229,13 +4262,24 @@ void OMITFP I422ToRGB24Row_AVX512BW(const uint8_t* y_buf,
     YUVTORGB_AVX512BW(yuvconstants)
     STORERGB24_AVX512BW
       "sub         $0x20,%[width]                \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x20,%[width]                \n"
+      "je          99f                           \n"
+
+    READYUV422_MASK_AVX512BW
+    YUVTORGB_AVX512BW(yuvconstants)
+    STORERGB24_MASK_AVX512BW
+
+      "99:         \n"
       "vzeroupper  \n"
   : [y_buf]"+r"(y_buf),                         // %[y_buf]
     [u_buf]"+r"(u_buf),                         // %[u_buf]
     [v_buf]"+r"(v_buf),                         // %[v_buf]
     [dst_rgb24]"+r"(dst_rgb24),                 // %[dst_rgb24]
-    [width]"+rm"(width)                         // %[width]
+    [width]"+r"(width),                         // %[width]
+    [temp]"=&r"(temp)                           // %[temp]
   : [yuvconstants]"r"(yuvconstants),            // %[yuvconstants]
     [quadsplitperm]"r"(kSplitQuadWords),        // %[quadsplitperm]
     [dquadsplitperm]"r"(kSplitDoubleQuadWords), // %[dquadsplitperm]
@@ -4246,7 +4290,8 @@ void OMITFP I422ToRGB24Row_AVX512BW(const uint8_t* y_buf,
     [kStitchRGB24_1]"m"(kStitchRGB24_1)         // %[kStitchRGB24_1]
   : "memory", "cc", YUVTORGB_REGS_AVX512BW
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-    "xmm20", "xmm21"
+    "xmm20", "xmm21",
+    "k1", "k2", "k3", "k4"
   );
 }
 #endif  // defined(HAS_I422TORGB24ROW_AVX512BW)

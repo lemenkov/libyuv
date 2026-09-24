@@ -1907,6 +1907,119 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
 #endif  // defined(HAS_I422TORGB24ROW_AVX2) ||
         // defined(HAS_I422TORGB24ROW_AVX512BW)
 
+#if defined(HAS_I422TORGB24ROW_AVX512VBMI) || \
+    defined(HAS_I422TORGB24ROW_AVX512BW)
+#define READYUV422_AVX512BW                                          \
+  __m128i xmm_u = _mm_loadu_si128((const __m128i*)src_u);            \
+  __m128i xmm_v = _mm_loadu_si128((const __m128i*)(src_u + offset)); \
+  src_u += 16;                                                       \
+  __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);                 \
+  __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);                 \
+  zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);        \
+  zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);        \
+  __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);         \
+  zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);                          \
+  zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);                          \
+  __m256i ymm_y = _mm256_loadu_si256((const __m256i*)src_y);         \
+  src_y += 32;                                                       \
+  __m512i zmm4 = _mm512_castsi256_si512(ymm_y);                      \
+  zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);                \
+  zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);                          \
+  zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
+
+#define READYUV422_MASK_AVX512BW                                        \
+  __mmask16 mask_uv = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);     \
+  __mmask32 mask_y = (__mmask32)((1u << width) - 1u);                   \
+  __m128i xmm_u = _mm_maskz_loadu_epi8(mask_uv, src_u);                 \
+  __m128i xmm_v = _mm_maskz_loadu_epi8(mask_uv, src_u + offset);        \
+  __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);                    \
+  __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);                    \
+  zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);           \
+  zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);           \
+  __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);            \
+  zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);                             \
+  zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);                             \
+  __m256i ymm_y = _mm256_maskz_loadu_epi8(mask_y, src_y);               \
+  __m512i zmm4 = _mm512_castsi256_si512(ymm_y);                         \
+  zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);                   \
+  zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);                             \
+  zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
+
+#define YUVTORGB_AVX512BW                                 \
+  zmm3 = _mm512_sub_epi8(zmm3, zmm_128);                  \
+  zmm4 = _mm512_mulhi_epu16(zmm4, zmm_kYToRgb);           \
+  __m512i zmm0 = _mm512_maddubs_epi16(zmm_kUVToB, zmm3);  \
+  __m512i zmm1 = _mm512_maddubs_epi16(zmm_kUVToG, zmm3);  \
+  __m512i zmm2 = _mm512_maddubs_epi16(zmm_kUVToR, zmm3);  \
+  zmm4 = _mm512_add_epi16(zmm4, zmm_kYBiasToRgb);         \
+  zmm0 = _mm512_adds_epi16(zmm0, zmm4);                   \
+  zmm1 = _mm512_subs_epi16(zmm4, zmm1);                   \
+  zmm2 = _mm512_adds_epi16(zmm2, zmm4);                   \
+  zmm0 = _mm512_srai_epi16(zmm0, 6);                      \
+  zmm1 = _mm512_srai_epi16(zmm1, 6);                      \
+  zmm2 = _mm512_srai_epi16(zmm2, 6);                      \
+  zmm0 = _mm512_packus_epi16(zmm0, zmm0);                 \
+  zmm1 = _mm512_packus_epi16(zmm1, zmm1);                 \
+  zmm2 = _mm512_packus_epi16(zmm2, zmm2);
+
+#define STORERGB24_AVX512VBMI                                                \
+  __m512i zmm_BG = _mm512_permutex2var_epi8(zmm0, zmm_mask_BG, zmm1);        \
+  __m512i zmm_dst0 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST0, zmm2);  \
+  __m512i zmm_dst1 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST1, zmm2);  \
+  _mm512_storeu_si512((__m512i*)dst_rgb24, zmm_dst0);                        \
+  _mm256_storeu_si256((__m256i*)(dst_rgb24 + 64),                            \
+                      _mm512_castsi512_si256(zmm_dst1));                     \
+  dst_rgb24 += 96;
+
+#define STORERGB24_MASK_AVX512VBMI                                           \
+  int dst_bytes = width * 3;                                                 \
+  __mmask64 mask_dst0 =                                                      \
+      dst_bytes >= 64 ? ~0ull : (1ull << dst_bytes) - 1ull;                  \
+  __mmask32 mask_dst1 =                                                      \
+      dst_bytes > 64 ? (1u << (dst_bytes - 64)) - 1u : 0u;                   \
+  __m512i zmm_BG = _mm512_permutex2var_epi8(zmm0, zmm_mask_BG, zmm1);        \
+  __m512i zmm_dst0 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST0, zmm2);  \
+  __m512i zmm_dst1 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST1, zmm2);  \
+  _mm512_mask_storeu_epi8(dst_rgb24, mask_dst0, zmm_dst0);                   \
+  _mm256_mask_storeu_epi8(dst_rgb24 + 64, mask_dst1,                         \
+                          _mm512_castsi512_si256(zmm_dst1));
+
+#define STORERGB24_AVX512BW                                                  \
+  __m512i zmm_bg = _mm512_unpacklo_epi8(zmm0, zmm1);                         \
+  __m512i zmm_rr = _mm512_unpacklo_epi8(zmm2, zmm2);                         \
+  __m512i zmm_lo = _mm512_unpacklo_epi16(zmm_bg, zmm_rr);                    \
+  __m512i zmm_hi = _mm512_unpackhi_epi16(zmm_bg, zmm_rr);                    \
+  zmm_lo = _mm512_shuffle_epi8(zmm_lo, zmm_shuf0);                           \
+  zmm_hi = _mm512_shuffle_epi8(zmm_hi, zmm_shuf1);                           \
+  zmm_hi = _mm512_alignr_epi8(zmm_hi, zmm_lo, 12);                           \
+  __m512i zmm_dst0 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch0, zmm_hi); \
+  __m512i zmm_dst1 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch1, zmm_hi); \
+  _mm512_storeu_si512((__m512i*)dst_rgb24, zmm_dst0);                        \
+  _mm256_storeu_si256((__m256i*)(dst_rgb24 + 64),                            \
+                      _mm512_castsi512_si256(zmm_dst1));                     \
+  dst_rgb24 += 96;
+
+#define STORERGB24_MASK_AVX512BW                                             \
+  int dst_bytes = width * 3;                                                 \
+  __mmask64 mask_dst0 =                                                      \
+      dst_bytes >= 64 ? ~0ull : (1ull << dst_bytes) - 1ull;                  \
+  __mmask32 mask_dst1 =                                                      \
+      dst_bytes > 64 ? (1u << (dst_bytes - 64)) - 1u : 0u;                   \
+  __m512i zmm_bg = _mm512_unpacklo_epi8(zmm0, zmm1);                         \
+  __m512i zmm_rr = _mm512_unpacklo_epi8(zmm2, zmm2);                         \
+  __m512i zmm_lo = _mm512_unpacklo_epi16(zmm_bg, zmm_rr);                    \
+  __m512i zmm_hi = _mm512_unpackhi_epi16(zmm_bg, zmm_rr);                    \
+  zmm_lo = _mm512_shuffle_epi8(zmm_lo, zmm_shuf0);                           \
+  zmm_hi = _mm512_shuffle_epi8(zmm_hi, zmm_shuf1);                           \
+  zmm_hi = _mm512_alignr_epi8(zmm_hi, zmm_lo, 12);                           \
+  __m512i zmm_dst0 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch0, zmm_hi); \
+  __m512i zmm_dst1 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch1, zmm_hi); \
+  _mm512_mask_storeu_epi8(dst_rgb24, mask_dst0, zmm_dst0);                   \
+  _mm256_mask_storeu_epi8(dst_rgb24 + 64, mask_dst1,                         \
+                          _mm512_castsi512_si256(zmm_dst1));
+#endif  // defined(HAS_I422TORGB24ROW_AVX512VBMI) ||
+        // defined(HAS_I422TORGB24ROW_AVX512BW)
+
 #ifdef HAS_I422TORGB24ROW_AVX512VBMI
 LIBYUV_TARGET_AVX512VBMI
 void I422ToRGB24Row_AVX512VBMI(const uint8_t* src_y,
@@ -1958,60 +2071,15 @@ void I422ToRGB24Row_AVX512VBMI(const uint8_t* src_y,
   ptrdiff_t offset = src_v - src_u;
 
   while (width >= 32) {
-    // READYUV422_AVX512BW
-    __m128i xmm_u = _mm_loadu_si128((const __m128i*)src_u);
-    __m128i xmm_v = _mm_loadu_si128((const __m128i*)(src_u + offset));
-    src_u += 16;
-
-    __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);
-    __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);
-
-    zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);
-    zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);
-
-    __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);
-    zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);
-    zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);
-
-    __m256i ymm_y = _mm256_loadu_si256((const __m256i*)src_y);
-    src_y += 32;
-    __m512i zmm4 = _mm512_castsi256_si512(ymm_y);
-    zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);
-    zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);
-    zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
-
-    // YUVTORGB_AVX512BW
-    zmm3 = _mm512_sub_epi8(zmm3, zmm_128);
-    zmm4 = _mm512_mulhi_epu16(zmm4, zmm_kYToRgb);
-
-    __m512i zmm0 = _mm512_maddubs_epi16(zmm_kUVToB, zmm3);
-    __m512i zmm1 = _mm512_maddubs_epi16(zmm_kUVToG, zmm3);
-    __m512i zmm2 = _mm512_maddubs_epi16(zmm_kUVToR, zmm3);
-
-    zmm4 = _mm512_add_epi16(zmm4, zmm_kYBiasToRgb);
-
-    zmm0 = _mm512_adds_epi16(zmm0, zmm4);
-    zmm1 = _mm512_subs_epi16(zmm4, zmm1);
-    zmm2 = _mm512_adds_epi16(zmm2, zmm4);
-
-    zmm0 = _mm512_srai_epi16(zmm0, 6);
-    zmm1 = _mm512_srai_epi16(zmm1, 6);
-    zmm2 = _mm512_srai_epi16(zmm2, 6);
-
-    zmm0 = _mm512_packus_epi16(zmm0, zmm0);
-    zmm1 = _mm512_packus_epi16(zmm1, zmm1);
-    zmm2 = _mm512_packus_epi16(zmm2, zmm2);
-
-    // STORERGB24_AVX512VBMI
-    __m512i zmm_BG = _mm512_permutex2var_epi8(zmm0, zmm_mask_BG, zmm1);
-    __m512i zmm_dst0 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST0, zmm2);
-    __m512i zmm_dst1 = _mm512_permutex2var_epi8(zmm_BG, zmm_mask_DST1, zmm2);
-
-    _mm512_storeu_si512((__m512i*)dst_rgb24, zmm_dst0);
-    _mm256_storeu_si256((__m256i*)(dst_rgb24 + 64), _mm512_castsi512_si256(zmm_dst1));
-
-    dst_rgb24 += 96;
+    READYUV422_AVX512BW
+    YUVTORGB_AVX512BW
+    STORERGB24_AVX512VBMI
     width -= 32;
+  }
+  if (width > 0) {
+    READYUV422_MASK_AVX512BW
+    YUVTORGB_AVX512BW
+    STORERGB24_MASK_AVX512VBMI
   }
   _mm256_zeroupper();
 }
@@ -2050,71 +2118,30 @@ void I422ToRGB24Row_AVX512BW(const uint8_t* src_y,
   ptrdiff_t offset = src_v - src_u;
 
   while (width >= 32) {
-    // READYUV422_AVX512BW
-    __m128i xmm_u = _mm_loadu_si128((const __m128i*)src_u);
-    __m128i xmm_v = _mm_loadu_si128((const __m128i*)(src_u + offset));
-    src_u += 16;
-
-    __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);
-    __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);
-
-    zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);
-    zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);
-
-    __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);
-    zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);
-    zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);
-
-    __m256i ymm_y = _mm256_loadu_si256((const __m256i*)src_y);
-    src_y += 32;
-    __m512i zmm4 = _mm512_castsi256_si512(ymm_y);
-    zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);
-    zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);
-    zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
-
-    // YUVTORGB_AVX512BW
-    zmm3 = _mm512_sub_epi8(zmm3, zmm_128);
-    zmm4 = _mm512_mulhi_epu16(zmm4, zmm_kYToRgb);
-
-    __m512i zmm0 = _mm512_maddubs_epi16(zmm_kUVToB, zmm3);
-    __m512i zmm1 = _mm512_maddubs_epi16(zmm_kUVToG, zmm3);
-    __m512i zmm2 = _mm512_maddubs_epi16(zmm_kUVToR, zmm3);
-
-    zmm4 = _mm512_add_epi16(zmm4, zmm_kYBiasToRgb);
-
-    zmm0 = _mm512_adds_epi16(zmm0, zmm4);
-    zmm1 = _mm512_subs_epi16(zmm4, zmm1);
-    zmm2 = _mm512_adds_epi16(zmm2, zmm4);
-
-    zmm0 = _mm512_srai_epi16(zmm0, 6);
-    zmm1 = _mm512_srai_epi16(zmm1, 6);
-    zmm2 = _mm512_srai_epi16(zmm2, 6);
-
-    zmm0 = _mm512_packus_epi16(zmm0, zmm0);
-    zmm1 = _mm512_packus_epi16(zmm1, zmm1);
-    zmm2 = _mm512_packus_epi16(zmm2, zmm2);
-
-    // STORERGB24_AVX512BW
-    __m512i zmm_bg = _mm512_unpacklo_epi8(zmm0, zmm1);
-    __m512i zmm_rr = _mm512_unpacklo_epi8(zmm2, zmm2);
-    __m512i zmm_lo = _mm512_unpacklo_epi16(zmm_bg, zmm_rr);
-    __m512i zmm_hi = _mm512_unpackhi_epi16(zmm_bg, zmm_rr);
-    zmm_lo = _mm512_shuffle_epi8(zmm_lo, zmm_shuf0);
-    zmm_hi = _mm512_shuffle_epi8(zmm_hi, zmm_shuf1);
-    zmm_hi = _mm512_alignr_epi8(zmm_hi, zmm_lo, 12);
-
-    __m512i zmm_dst0 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch0, zmm_hi);
-    __m512i zmm_dst1 = _mm512_permutex2var_epi64(zmm_lo, zmm_stitch1, zmm_hi);
-
-    _mm512_storeu_si512((__m512i*)dst_rgb24, zmm_dst0);
-    _mm256_storeu_si256((__m256i*)(dst_rgb24 + 64), _mm512_castsi512_si256(zmm_dst1));
-
-    dst_rgb24 += 96;
+    READYUV422_AVX512BW
+    YUVTORGB_AVX512BW
+    STORERGB24_AVX512BW
     width -= 32;
+  }
+  if (width > 0) {
+    READYUV422_MASK_AVX512BW
+    YUVTORGB_AVX512BW
+    STORERGB24_MASK_AVX512BW
   }
   _mm256_zeroupper();
 }
 #endif  // HAS_I422TORGB24ROW_AVX512BW
+
+#if defined(HAS_I422TORGB24ROW_AVX512VBMI) || \
+    defined(HAS_I422TORGB24ROW_AVX512BW)
+#undef READYUV422_AVX512BW
+#undef READYUV422_MASK_AVX512BW
+#undef YUVTORGB_AVX512BW
+#undef STORERGB24_AVX512VBMI
+#undef STORERGB24_MASK_AVX512VBMI
+#undef STORERGB24_AVX512BW
+#undef STORERGB24_MASK_AVX512BW
+#endif
 
 #ifdef HAS_I422TOAR30ROW_AVX512BW
 LIBYUV_TARGET_AVX512BW
