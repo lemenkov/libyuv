@@ -469,6 +469,12 @@ SDAANY(ScaleUVRowDownEven_Any_NEON,
 #ifdef SASIMDONLY
 // This also works and uses memcpy and SIMD instead of C, but is slower on ARM
 
+#ifdef LIBYUV_MSAN
+#define MSAN_MEMSET(a, b, c) memset(a, b, c)
+#else
+#define MSAN_MEMSET(a, b, c)
+#endif
+
 // Add rows box filter scale down.  Using macro from row_any
 #define SAROW(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                      \
   void NAMEANY(const uint8_t* src_ptr, uint16_t* dst_ptr, int width) { \
@@ -478,7 +484,8 @@ SDAANY(ScaleUVRowDownEven_Any_NEON,
     SIMD_ALIGNED(uint16_t dst_temp[32]);                               \
     static_assert((MASK + 1) * BPP <= sizeof(dst_temp),                \
                   "dst_temp buffer too small");                        \
-    memset(src_temp, 0, sizeof(src_temp)); /* for msan */              \
+    MSAN_MEMSET(src_temp, 0, sizeof(src_temp)); /* for msan */         \
+    MSAN_MEMSET(dst_temp, 0, sizeof(dst_temp)); /* for msan */         \
     int r = width & MASK;                                              \
     int n = width & ~MASK;                                             \
     if (n > 0) {                                                       \
