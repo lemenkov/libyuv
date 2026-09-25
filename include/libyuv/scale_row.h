@@ -159,8 +159,15 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_LSX
 #endif
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+#if !defined(LIBYUV_DISABLE_RVV) &&                          \
+    ((defined(__riscv_vector) && defined(__riscv_zve64x)) || \
+     (defined(LIBYUV_RVV) &&                                 \
+      (!defined(__riscv_vector) || defined(__riscv_zve64x))))
 #define HAS_SCALEUVROWDOWN4_RVV
+#endif
+
+#if !defined(LIBYUV_DISABLE_RVV) && \
+    (defined(__riscv_vector) || defined(LIBYUV_RVV))
 #define HAS_SCALEARGBROWDOWN2_RVV
 #define HAS_SCALEROWDOWN34_0_BOX_RVV
 #define HAS_SCALEROWDOWN34_1_BOX_RVV

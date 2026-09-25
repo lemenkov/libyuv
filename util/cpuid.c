@@ -42,7 +42,7 @@ static void KernelVersion(int* version) {
 }
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
 static sigjmp_buf vdpphps_jmpbuf;
 static void vdpphps_sigill_handler(int sig) {
   (void)sig;

@@ -864,7 +864,8 @@ extern "C" {
 #define HAS_YUY2TOYROW_LASX
 #endif
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
+#if !defined(LIBYUV_DISABLE_RVV) && \
+    (defined(__riscv_vector) || defined(LIBYUV_RVV))
 #define HAS_AR64TOARGBROW_RVV
 #define HAS_ARGBCOPYYTOALPHAROW_RVV
 #define HAS_ARGBEXTRACTALPHAROW_RVV

@@ -39,6 +39,8 @@ config("libyuv_config") {
   }
   if (libyuv_disable_rvv) {
     defines += [ "LIBYUV_DISABLE_RVV" ]
+  } else if (libyuv_use_rvv) {
+    defines += [ "LIBYUV_RVV" ]
   }
   if (!libyuv_use_lsx) {
     defines += [ "LIBYUV_DISABLE_LSX" ]
@@ -86,6 +88,10 @@ group("libyuv") {
 
   if (libyuv_use_sme) {
     deps += [ ":libyuv_sme" ]
+  }
+
+  if (libyuv_use_rvv && !libyuv_disable_rvv) {
+    deps += [ ":libyuv_rvv" ]
   }
 
   if (libyuv_use_lsx) {
@@ -160,7 +166,6 @@ static_library("libyuv_internal") {
     "source/row_any.cc",
     "source/row_common.cc",
     "source/row_gcc.cc",
-    "source/row_rvv.cc",
     "source/row_win.cc",
     "source/scale.cc",
     "source/scale_any.cc",
@@ -168,7 +173,6 @@ static_library("libyuv_internal") {
     "source/scale_common.cc",
     "source/scale_gcc.cc",
     "source/scale_rgb.cc",
-    "source/scale_rvv.cc",
     "source/scale_uv.cc",
     "source/scale_win.cc",
     "source/video_common.cc",
@@ -271,6 +275,36 @@ if (libyuv_use_sme) {
     # SME is an Armv9-A feature, but use Armv8.5-A for compatibility with
     # processors like Apple M4/M5 that support SME without SVE.
     cflags = [ "-march=armv8.5-a+i8mm+sme" ]
+  }
+}
+
+if (libyuv_use_rvv && !libyuv_disable_rvv) {
+  static_library("libyuv_rvv") {
+    sources = [
+      "source/row_rvv.cc",
+      "source/scale_rvv.cc",
+    ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
+
+    if (current_cpu == "riscv64") {
+      cflags = [
+        "-march=rv64gcv",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+      ]
+    } else {
+      cflags = [
+        "-march=rv32gcv",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+      ]
+    }
   }
 }
 
