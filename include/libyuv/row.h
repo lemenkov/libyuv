@@ -311,6 +311,8 @@ extern "C" {
 #define HAS_I410TOAR30ROW_AVX2
 #define HAS_I410TOARGBROW_AVX2
 #if defined(__x86_64__)
+#define HAS_COMPUTECUMULATIVESUMROW_AVX2
+#define HAS_CUMULATIVESUMTOAVERAGEROW_AVX2
 #define HAS_I422TOAR30ROW_AVX2
 #define HAS_RAWTORGB24ROW_AVX2
 #endif
@@ -587,6 +589,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_ABGRTOAR30ROW_NEON
 #define HAS_ARGBTOAR30ROW_NEON
+#define HAS_COMPUTECUMULATIVESUMROW_NEON
+#define HAS_CUMULATIVESUMTOAVERAGEROW_NEON
 #define HAS_I210ALPHATOARGBROW_NEON
 #define HAS_I210TOAR30ROW_NEON
 #define HAS_I210TOARGBROW_NEON
@@ -6609,6 +6613,26 @@ void CumulativeSumToAverageRow_SSE2(const int32_t* topleft,
                                     uint8_t* dst,
                                     int count);
 void ComputeCumulativeSumRow_SSE2(const uint8_t* row,
+                                  int32_t* cumsum,
+                                  const int32_t* previous_cumsum,
+                                  int width);
+void CumulativeSumToAverageRow_AVX2(const int32_t* topleft,
+                                    const int32_t* botleft,
+                                    int width,
+                                    int area,
+                                    uint8_t* dst,
+                                    int count);
+void ComputeCumulativeSumRow_AVX2(const uint8_t* row,
+                                  int32_t* cumsum,
+                                  const int32_t* previous_cumsum,
+                                  int width);
+void CumulativeSumToAverageRow_NEON(const int32_t* topleft,
+                                    const int32_t* botleft,
+                                    int width,
+                                    int area,
+                                    uint8_t* dst,
+                                    int count);
+void ComputeCumulativeSumRow_NEON(const uint8_t* row,
                                   int32_t* cumsum,
                                   const int32_t* previous_cumsum,
                                   int width);

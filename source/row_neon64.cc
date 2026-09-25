@@ -4414,6 +4414,214 @@ void SobelXYRow_NEON(const uint8_t* src_sobelx,
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
+#ifdef HAS_COMPUTECUMULATIVESUMROW_NEON
+void ComputeCumulativeSumRow_NEON(const uint8_t* row,
+                                  int32_t* cumsum,
+                                  const int32_t* previous_cumsum,
+                                  int width) {
+  asm volatile(
+      "movi        v0.4s, #0                     \n"
+      "movi        v1.16b, #0                    \n"
+      "subs        %w3, %w3, #4                  \n"
+      "b.lt        49f                           \n"
+
+      // 4 pixel loop.
+      "40:                                       \n"
+      "ldr         q2, [%0], #16                 \n"
+      "ldp         q16, q17, [%2]                \n"
+      "ldp         q18, q19, [%2, #32]           \n"
+      "add         %2, %2, #64                   \n"
+      "ext         v3.16b, v1.16b, v2.16b, #12   \n"
+      "uaddl       v4.8h, v2.8b, v3.8b           \n"
+      "uaddl2      v5.8h, v2.16b, v3.16b         \n"
+      "add         v5.8h, v5.8h, v4.8h           \n"
+      "uaddw       v16.4s, v16.4s, v4.4h         \n"
+      "uaddw2      v17.4s, v17.4s, v4.8h         \n"
+      "uaddw       v18.4s, v18.4s, v5.4h         \n"
+      "uaddw2      v19.4s, v19.4s, v5.8h         \n"
+      "add         v16.4s, v16.4s, v0.4s         \n"
+      "add         v17.4s, v17.4s, v0.4s         \n"
+      "add         v18.4s, v18.4s, v0.4s         \n"
+      "add         v19.4s, v19.4s, v0.4s         \n"
+      "uaddw2      v0.4s, v0.4s, v5.8h           \n"
+      "stp         q16, q17, [%1]                \n"
+      "stp         q18, q19, [%1, #32]           \n"
+      "add         %1, %1, #64                   \n"
+      "subs        %w3, %w3, #4                  \n"
+      "b.ge        40b                           \n"
+
+      "49:                                       \n"
+      "adds        %w3, %w3, #3                  \n"
+      "b.lt        19f                           \n"
+
+      // 1 pixel loop.
+      "10:                                       \n"
+      "ldr         s2, [%0], #4                  \n"
+      "ldr         q16, [%2], #16                \n"
+      "ushll       v2.8h, v2.8b, #0              \n"
+      "uaddw       v0.4s, v0.4s, v2.4h           \n"
+      "add         v16.4s, v16.4s, v0.4s         \n"
+      "str         q16, [%1], #16                \n"
+      "subs        %w3, %w3, #1                  \n"
+      "b.ge        10b                           \n"
+
+      "19:                                       \n"
+      : "+r"(row),              // %0
+        "+r"(cumsum),           // %1
+        "+r"(previous_cumsum),  // %2
+        "+r"(width)             // %3
+      :
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v16", "v17",
+        "v18", "v19");
+}
+#endif  // HAS_COMPUTECUMULATIVESUMROW_NEON
+
+#ifdef HAS_CUMULATIVESUMTOAVERAGEROW_NEON
+void CumulativeSumToAverageRow_NEON(const int32_t* topleft,
+                                    const int32_t* botleft,
+                                    int width,
+                                    int area,
+                                    uint8_t* dst,
+                                    int count) {
+  const int32_t* topright;
+  const int32_t* botright;
+  int scale;
+  asm volatile(
+      "ucvtf       s4, %w7                       \n"
+      "fmov        s5, #1.0                      \n"
+      "fdiv        s4, s5, s4                    \n"
+      "subs        %w3, %w3, #4                  \n"
+      "b.lt        49f                           \n"
+      "add         %4, %0, %8                    \n"
+      "add         %5, %1, %8                    \n"
+      "sub         %w6, %w7, #2                  \n"
+      "cmp         %w6, #126                     \n"
+      "b.hi        40f                           \n"
+      "mov         %w6, #32767                   \n"
+      "add         %w6, %w6, %w7                 \n"
+      "udiv        %w6, %w6, %w7                 \n"
+      "dup         v6.8h, %w6                    \n"
+
+      // 4 pixel small loop.
+      "4:                                        \n"
+      "ldp         q0, q1, [%0]                  \n"
+      "ldp         q2, q3, [%0, #32]             \n"
+      "add         %0, %0, #64                   \n"
+      "ldp         q16, q17, [%4]                \n"
+      "ldp         q18, q19, [%4, #32]           \n"
+      "add         %4, %4, #64                   \n"
+      "ldp         q20, q21, [%1]                \n"
+      "ldp         q22, q23, [%1, #32]           \n"
+      "add         %1, %1, #64                   \n"
+      "ldp         q24, q25, [%5]                \n"
+      "ldp         q26, q27, [%5, #32]           \n"
+      "add         %5, %5, #64                   \n"
+      "sub         v0.4s, v0.4s, v16.4s          \n"
+      "sub         v1.4s, v1.4s, v17.4s          \n"
+      "sub         v2.4s, v2.4s, v18.4s          \n"
+      "sub         v3.4s, v3.4s, v19.4s          \n"
+      "sub         v24.4s, v24.4s, v20.4s        \n"
+      "sub         v25.4s, v25.4s, v21.4s        \n"
+      "sub         v26.4s, v26.4s, v22.4s        \n"
+      "sub         v27.4s, v27.4s, v23.4s        \n"
+      "add         v0.4s, v0.4s, v24.4s          \n"
+      "add         v1.4s, v1.4s, v25.4s          \n"
+      "add         v2.4s, v2.4s, v26.4s          \n"
+      "add         v3.4s, v3.4s, v27.4s          \n"
+      "uzp1        v0.8h, v0.8h, v1.8h           \n"
+      "uzp1        v2.8h, v2.8h, v3.8h           \n"
+      "sqdmulh     v0.8h, v0.8h, v6.8h           \n"
+      "sqdmulh     v2.8h, v2.8h, v6.8h           \n"
+      "uzp1        v0.16b, v0.16b, v2.16b        \n"
+      "str         q0, [%2], #16                 \n"
+      "subs        %w3, %w3, #4                  \n"
+      "b.ge        4b                            \n"
+      "b           49f                           \n"
+
+      // 4 pixel loop.
+      "40:                                       \n"
+      "ldp         q0, q1, [%0]                  \n"
+      "ldp         q2, q3, [%0, #32]             \n"
+      "add         %0, %0, #64                   \n"
+      "ldp         q16, q17, [%4]                \n"
+      "ldp         q18, q19, [%4, #32]           \n"
+      "add         %4, %4, #64                   \n"
+      "ldp         q20, q21, [%1]                \n"
+      "ldp         q22, q23, [%1, #32]           \n"
+      "add         %1, %1, #64                   \n"
+      "ldp         q24, q25, [%5]                \n"
+      "ldp         q26, q27, [%5, #32]           \n"
+      "add         %5, %5, #64                   \n"
+      "sub         v0.4s, v0.4s, v16.4s          \n"
+      "sub         v1.4s, v1.4s, v17.4s          \n"
+      "sub         v2.4s, v2.4s, v18.4s          \n"
+      "sub         v3.4s, v3.4s, v19.4s          \n"
+      "sub         v24.4s, v24.4s, v20.4s        \n"
+      "sub         v25.4s, v25.4s, v21.4s        \n"
+      "sub         v26.4s, v26.4s, v22.4s        \n"
+      "sub         v27.4s, v27.4s, v23.4s        \n"
+      "add         v0.4s, v0.4s, v24.4s          \n"
+      "add         v1.4s, v1.4s, v25.4s          \n"
+      "add         v2.4s, v2.4s, v26.4s          \n"
+      "add         v3.4s, v3.4s, v27.4s          \n"
+      "scvtf       v0.4s, v0.4s                  \n"
+      "scvtf       v1.4s, v1.4s                  \n"
+      "scvtf       v2.4s, v2.4s                  \n"
+      "scvtf       v3.4s, v3.4s                  \n"
+      "fmul        v0.4s, v0.4s, v4.s[0]         \n"
+      "fmul        v1.4s, v1.4s, v4.s[0]         \n"
+      "fmul        v2.4s, v2.4s, v4.s[0]         \n"
+      "fmul        v3.4s, v3.4s, v4.s[0]         \n"
+      "fcvtzs      v0.4s, v0.4s                  \n"
+      "fcvtzs      v1.4s, v1.4s                  \n"
+      "fcvtzs      v2.4s, v2.4s                  \n"
+      "fcvtzs      v3.4s, v3.4s                  \n"
+      "uqxtn       v0.4h, v0.4s                  \n"
+      "uqxtn2      v0.8h, v1.4s                  \n"
+      "uqxtn       v2.4h, v2.4s                  \n"
+      "uqxtn2      v2.8h, v3.4s                  \n"
+      "uqxtn       v0.8b, v0.8h                  \n"
+      "uqxtn2      v0.16b, v2.8h                 \n"
+      "str         q0, [%2], #16                 \n"
+      "subs        %w3, %w3, #4                  \n"
+      "b.ge        40b                           \n"
+
+      "49:                                       \n"
+      "adds        %w3, %w3, #3                  \n"
+      "b.lt        19f                           \n"
+
+      // 1 pixel loop.
+      "10:                                       \n"
+      "ldr         q1, [%0, %8]                  \n"
+      "ldr         q0, [%0], #16                 \n"
+      "ldr         q3, [%1, %8]                  \n"
+      "ldr         q2, [%1], #16                 \n"
+      "sub         v0.4s, v0.4s, v1.4s           \n"
+      "sub         v3.4s, v3.4s, v2.4s           \n"
+      "add         v0.4s, v0.4s, v3.4s           \n"
+      "scvtf       v0.4s, v0.4s                  \n"
+      "fmul        v0.4s, v0.4s, v4.s[0]         \n"
+      "fcvtzs      v0.4s, v0.4s                  \n"
+      "uqxtn       v0.4h, v0.4s                  \n"
+      "uqxtn       v0.8b, v0.8h                  \n"
+      "str         s0, [%2], #4                  \n"
+      "subs        %w3, %w3, #1                  \n"
+      "b.ge        10b                           \n"
+      "19:                                       \n"
+      : "+r"(topleft),               // %0
+        "+r"(botleft),               // %1
+        "+r"(dst),                   // %2
+        "+r"(count),                 // %3
+        "=&r"(topright),             // %4
+        "=&r"(botright),             // %5
+        "=&r"(scale)                 // %6
+      : "r"(area),                   // %7
+        "r"((ptrdiff_t)width * 4)    // %8
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v16", "v17",
+        "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27");
+}
+#endif  // HAS_CUMULATIVESUMTOAVERAGEROW_NEON
+
 // SobelX as a matrix is
 // -1  0  1
 // -2  0  2

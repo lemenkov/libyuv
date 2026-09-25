@@ -9629,6 +9629,199 @@ void CumulativeSumToAverageRow_SSE2(const int32_t* topleft,
 }
 #endif  // HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 
+#ifdef HAS_COMPUTECUMULATIVESUMROW_AVX2
+static const uvec8 kCumSumTranspose = {0, 4,  8,  12, 1, 5,  9,  13,
+                                       2, 6, 10, 14, 3, 7, 11, 15};
+static const vec8 kCumSumMaddLo[2] = {
+    {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
+    {1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0}};
+static const vec8 kCumSumMaddHi[2] = {
+    {1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+
+void ComputeCumulativeSumRow_AVX2(const uint8_t* row,
+                                  int32_t* cumsum,
+                                  const int32_t* previous_cumsum,
+                                  int width) {
+  asm volatile(
+      "vpxor          %%xmm0,%%xmm0,%%xmm0       \n"
+      "vbroadcasti128 %4,%%ymm5                  \n"
+      "vmovdqu        %5,%%ymm6                  \n"
+      "vmovdqu        %6,%%ymm7                  \n"
+      "vpcmpeqd       %%ymm8,%%ymm8,%%ymm8       \n"
+      "vpsrlw         $0xf,%%ymm8,%%ymm8         \n"
+      "sub            $0x4,%3                    \n"
+      "jl             49f                        \n"
+
+      // 4 pixel loop.
+      LABELALIGN
+      "40:            \n"
+      "vbroadcasti128 (%0),%%ymm2                \n"
+      "lea            0x10(%0),%0                \n"
+      "vpshufb        %%ymm5,%%ymm2,%%ymm2       \n"
+      "vpmaddubsw     %%ymm6,%%ymm2,%%ymm3       \n"
+      "vpmaddubsw     %%ymm7,%%ymm2,%%ymm4       \n"
+      "vpmaddwd       %%ymm8,%%ymm3,%%ymm3       \n"
+      "vpmaddwd       %%ymm8,%%ymm4,%%ymm4       \n"
+      "vperm2i128     $0x11,%%ymm4,%%ymm4,%%ymm2 \n"
+      "vpaddd         (%2),%%ymm3,%%ymm3         \n"
+      "vpaddd         0x20(%2),%%ymm4,%%ymm4     \n"
+      "lea            0x40(%2),%2                \n"
+      "vpaddd         %%ymm0,%%ymm3,%%ymm3       \n"
+      "vpaddd         %%ymm0,%%ymm4,%%ymm4       \n"
+      "vpaddd         %%ymm2,%%ymm0,%%ymm0       \n"
+      "vmovdqu        %%ymm3,(%1)                \n"
+      "vmovdqu        %%ymm4,0x20(%1)            \n"
+      "lea            0x40(%1),%1                \n"
+      "sub            $0x4,%3                    \n"
+      "jge            40b                        \n"
+
+      "49:            \n"
+      "add            $0x3,%3                    \n"
+      "jl             19f                        \n"
+
+      // 1 pixel loop.
+      LABELALIGN
+      "10:            \n"
+      "vpmovzxbd      (%0),%%xmm2                \n"
+      "lea            0x4(%0),%0                 \n"
+      "vpaddd         %%xmm2,%%xmm0,%%xmm0       \n"
+      "vpaddd         (%2),%%xmm0,%%xmm2         \n"
+      "lea            0x10(%2),%2                \n"
+      "vmovdqu        %%xmm2,(%1)                \n"
+      "lea            0x10(%1),%1                \n"
+      "sub            $0x1,%3                    \n"
+      "jge            10b                        \n"
+
+      "19:            \n"
+      "vzeroupper     \n"
+      : "+r"(row),              // %0
+        "+r"(cumsum),           // %1
+        "+r"(previous_cumsum),  // %2
+        "+r"(width)             // %3
+      : "m"(kCumSumTranspose),  // %4
+        "m"(kCumSumMaddLo),     // %5
+        "m"(kCumSumMaddHi)      // %6
+      : "memory", "cc", "xmm0", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
+        "xmm8");
+}
+#endif  // HAS_COMPUTECUMULATIVESUMROW_AVX2
+
+#ifdef HAS_CUMULATIVESUMTOAVERAGEROW_AVX2
+void CumulativeSumToAverageRow_AVX2(const int32_t* topleft,
+                                    const int32_t* botleft,
+                                    int width,
+                                    int area,
+                                    uint8_t* dst,
+                                    int count) {
+  asm volatile(
+      "vpxor          %%xmm5,%%xmm5,%%xmm5       \n"
+      "vcvtsi2ssl     %5,%%xmm5,%%xmm5           \n"
+      "vrcpss         %%xmm5,%%xmm5,%%xmm4       \n"
+      "vpshufd        $0x0,%%xmm4,%%xmm4         \n"
+      "sub            $0x4,%3                    \n"
+      "jl             19f                        \n"
+      "vinserti128    $0x1,%%xmm4,%%ymm4,%%ymm4  \n"
+      "cmpl           $0x80,%5                   \n"
+      "ja             10f                        \n"
+
+      "vpcmpeqb       %%xmm6,%%xmm6,%%xmm6       \n"
+      "vpsrld         $0x10,%%xmm6,%%xmm6        \n"
+      "vcvtdq2ps      %%xmm6,%%xmm6              \n"
+      "vaddss         %%xmm6,%%xmm5,%%xmm6       \n"
+      "vmulss         %%xmm4,%%xmm6,%%xmm6       \n"
+      "vcvtps2dq      %%xmm6,%%xmm6              \n"
+      "vpackssdw      %%xmm6,%%xmm6,%%xmm6       \n"
+      "vpbroadcastw   %%xmm6,%%ymm6              \n"
+
+      // 4 pixel small loop.
+      LABELALIGN
+      "4:             \n"
+      "vmovdqu        (%0),%%ymm0                \n"
+      "vmovdqu        0x20(%0),%%ymm1            \n"
+      "vpsubd         0x00(%0,%4,4),%%ymm0,%%ymm0\n"
+      "vpsubd         0x20(%0,%4,4),%%ymm1,%%ymm1\n"
+      "lea            0x40(%0),%0                \n"
+      "vpsubd         (%1),%%ymm0,%%ymm0         \n"
+      "vpsubd         0x20(%1),%%ymm1,%%ymm1     \n"
+      "vpaddd         0x00(%1,%4,4),%%ymm0,%%ymm0\n"
+      "vpaddd         0x20(%1,%4,4),%%ymm1,%%ymm1\n"
+      "lea            0x40(%1),%1                \n"
+      "vpackssdw      %%ymm1,%%ymm0,%%ymm0       \n"
+      "vpmulhuw       %%ymm6,%%ymm0,%%ymm0       \n"
+      "vextracti128   $0x1,%%ymm0,%%xmm1         \n"
+      "vpackuswb      %%xmm1,%%xmm0,%%xmm0       \n"
+      "vpshufd        $0xd8,%%xmm0,%%xmm0        \n"
+      "vmovdqu        %%xmm0,(%2)                \n"
+      "lea            0x10(%2),%2                \n"
+      "sub            $0x4,%3                    \n"
+      "jge            4b                         \n"
+      "vzeroupper     \n"
+      "jmp            19f                        \n"
+
+      // 4 pixel loop.
+      LABELALIGN
+      "10:            \n"
+      "vmovdqu        (%0),%%ymm0                \n"
+      "vmovdqu        0x20(%0),%%ymm1            \n"
+      "vpsubd         0x00(%0,%4,4),%%ymm0,%%ymm0\n"
+      "vpsubd         0x20(%0,%4,4),%%ymm1,%%ymm1\n"
+      "lea            0x40(%0),%0                \n"
+      "vpsubd         (%1),%%ymm0,%%ymm0         \n"
+      "vpsubd         0x20(%1),%%ymm1,%%ymm1     \n"
+      "vpaddd         0x00(%1,%4,4),%%ymm0,%%ymm0\n"
+      "vpaddd         0x20(%1,%4,4),%%ymm1,%%ymm1\n"
+      "lea            0x40(%1),%1                \n"
+      "vcvtdq2ps      %%ymm0,%%ymm0              \n"
+      "vcvtdq2ps      %%ymm1,%%ymm1              \n"
+      "vmulps         %%ymm4,%%ymm0,%%ymm0       \n"
+      "vmulps         %%ymm4,%%ymm1,%%ymm1       \n"
+      "vcvtps2dq      %%ymm0,%%ymm0              \n"
+      "vcvtps2dq      %%ymm1,%%ymm1              \n"
+      "vpackssdw      %%ymm1,%%ymm0,%%ymm0       \n"
+      "vextracti128   $0x1,%%ymm0,%%xmm1         \n"
+      "vpackuswb      %%xmm1,%%xmm0,%%xmm0       \n"
+      "vpshufd        $0xd8,%%xmm0,%%xmm0        \n"
+      "vmovdqu        %%xmm0,(%2)                \n"
+      "lea            0x10(%2),%2                \n"
+      "sub            $0x4,%3                    \n"
+      "jge            10b                        \n"
+      "vzeroupper     \n"
+
+      "19:            \n"
+      "add            $0x3,%3                    \n"
+      "jl             99f                        \n"
+
+      // 1 pixel loop.
+      LABELALIGN
+      "20:            \n"
+      "vmovdqu        (%0),%%xmm0                \n"
+      "vpsubd         0x00(%0,%4,4),%%xmm0,%%xmm0\n"
+      "lea            0x10(%0),%0                \n"
+      "vmovdqu        0x00(%1,%4,4),%%xmm1       \n"
+      "vpsubd         (%1),%%xmm1,%%xmm1         \n"
+      "lea            0x10(%1),%1                \n"
+      "vpaddd         %%xmm1,%%xmm0,%%xmm0       \n"
+      "vcvtdq2ps      %%xmm0,%%xmm0              \n"
+      "vmulps         %%xmm4,%%xmm0,%%xmm0       \n"
+      "vcvtps2dq      %%xmm0,%%xmm0              \n"
+      "vpackssdw      %%xmm0,%%xmm0,%%xmm0       \n"
+      "vpackuswb      %%xmm0,%%xmm0,%%xmm0       \n"
+      "vmovd          %%xmm0,(%2)                \n"
+      "lea            0x4(%2),%2                 \n"
+      "sub            $0x1,%3                    \n"
+      "jge            20b                        \n"
+      "99:            \n"
+      : "+r"(topleft),            // %0
+        "+r"(botleft),            // %1
+        "+r"(dst),                // %2
+        "+r"(count)               // %3
+      : "r"((ptrdiff_t)(width)),  // %4
+        "r"(area)                 // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm4", "xmm5", "xmm6");
+}
+#endif  // HAS_CUMULATIVESUMTOAVERAGEROW_AVX2
+
 #ifdef HAS_ARGBAFFINEROW_SSE2
 // Copy ARGB pixels from source image with slope to a row of destination.
 LIBYUV_API

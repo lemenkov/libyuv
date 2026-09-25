@@ -4354,9 +4354,19 @@ int ARGBComputeCumulativeSum(const uint8_t* src_argb,
   if (!dst_cumsum || !src_argb || width <= 0 || height <= 0) {
     return -1;
   }
-#if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
+#if defined(HAS_COMPUTECUMULATIVESUMROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
+  }
+#endif
+#if defined(HAS_COMPUTECUMULATIVESUMROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_AVX2;
+  }
+#endif
+#if defined(HAS_COMPUTECUMULATIVESUMROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_NEON;
   }
 #endif
 
@@ -4417,6 +4427,18 @@ int ARGBBlur(const uint8_t* src_argb,
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
     CumulativeSumToAverageRow = CumulativeSumToAverageRow_SSE2;
+  }
+#endif
+#if defined(HAS_CUMULATIVESUMTOAVERAGEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_AVX2;
+    CumulativeSumToAverageRow = CumulativeSumToAverageRow_AVX2;
+  }
+#endif
+#if defined(HAS_CUMULATIVESUMTOAVERAGEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_NEON;
+    CumulativeSumToAverageRow = CumulativeSumToAverageRow_NEON;
   }
 #endif
   // Compute enough CumulativeSum for first row to be blurred. After this
