@@ -900,6 +900,18 @@ static int ScalePlaneBox(int src_width,
       }
     }
 #endif
+#if defined(HAS_SCALEADDROW_AVX512BW)
+    if (TestCpuFlag(kCpuHasAVX512BW)) {
+      ScaleAddRow = ScaleAddRow_AVX512BW;
+    }
+#endif
+#if defined(HAS_SCALEADDCOLS_AVX512BW)
+    if (TestCpuFlag(kCpuHasAVX512BW) && dx > 0) {
+      ScaleAddCols = (dx & 0xffff) ? ScaleAddCols2_AVX512BW
+                                   : ((dx != 0x10000) ? ScaleAddCols1_AVX512BW
+                                                      : ScaleAddCols0_C);
+    }
+#endif
 #if defined(HAS_SCALEADDROW_NEON)
     if (TestCpuFlag(kCpuHasNEON)) {
       ScaleAddRow = ScaleAddRow_Any_NEON;
