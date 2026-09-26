@@ -871,8 +871,8 @@ int ARGBToNV16Matrix(const uint8_t* src_argb,
   }
 #endif
 
-  size_t row_size = (static_cast<size_t>(halfwidth) + 31) &
-                    ~static_cast<size_t>(31);
+  size_t row_size =
+      (static_cast<size_t>(halfwidth) + 31) & ~static_cast<size_t>(31);
   if (row_size > SIZE_MAX / 2) {
     return -1;
   }
@@ -1109,8 +1109,8 @@ int ARGBToNV24Matrix(const uint8_t* src_argb,
   }
 #endif
 
-  size_t row_size = (static_cast<size_t>(width) + 31) &
-                    ~static_cast<size_t>(31);
+  size_t row_size =
+      (static_cast<size_t>(width) + 31) & ~static_cast<size_t>(31);
   if (row_size > SIZE_MAX / 2) {
     return -1;
   }
@@ -3586,7 +3586,6 @@ int RGBAToJ400(const uint8_t* src_rgba,
                           &kRgbaJPEGConstants, width, height);
 }
 
-
 // Convert ABGR to J420. (JPeg full range I420).
 LIBYUV_API
 int ABGRToJ420(const uint8_t* src_abgr,
@@ -3767,21 +3766,20 @@ int ARGBToAB64(const uint8_t* src_argb,
 
 // Convert RAW to NV21 with Matrix.
 static int RAWToNVMatrix(const uint8_t* src_raw,
-                          int src_stride_raw,
-                          uint8_t* dst_y,
-                          int dst_stride_y,
-                          uint8_t* dst_uv,
-                          int dst_stride_uv,
-                          const struct ArgbConstants* argbconstants,
-                          int width,
-                          int height,
-                          int is_nv21) {
+                         int src_stride_raw,
+                         uint8_t* dst_y,
+                         int dst_stride_y,
+                         uint8_t* dst_uv,
+                         int dst_stride_uv,
+                         const struct ArgbConstants* argbconstants,
+                         int width,
+                         int height,
+                         int is_nv21) {
   int y;
   int halfwidth = (width + 1) >> 1;
   void (*RGBToUVMatrixRow)(const uint8_t* src_rgb, int src_stride_rgb,
                            uint8_t* dst_u, uint8_t* dst_v, int width,
-                           const struct ArgbConstants* c) =
-      RGBToUVMatrixRow_C;
+                           const struct ArgbConstants* c) = RGBToUVMatrixRow_C;
   void (*RGBToYMatrixRow)(const uint8_t* src_rgb, uint8_t* dst_y, int width,
                           const struct ArgbConstants* c) = RGBToYMatrixRow_C;
   void (*MergeUVRow)(const uint8_t* src_uj, const uint8_t* src_vj,
@@ -4034,9 +4032,8 @@ int RGB24ToNV12(const uint8_t* src_rgb24,
                 int dst_stride_uv,
                 int width,
                 int height) {
-  return RAWToNVMatrix(src_rgb24, src_stride_rgb24, dst_y, dst_stride_y,
-                       dst_uv, dst_stride_uv, &kArgbI601Constants, width,
-                       height, 0);
+  return RAWToNVMatrix(src_rgb24, src_stride_rgb24, dst_y, dst_stride_y, dst_uv,
+                       dst_stride_uv, &kArgbI601Constants, width, height, 0);
 }
 
 #ifdef __cplusplus

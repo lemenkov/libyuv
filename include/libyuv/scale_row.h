@@ -218,7 +218,6 @@ void ScalePlaneVertical_16(int src_height,
                            int wpp,
                            enum FilterMode filtering);
 
-
 // Simplify the filtering based on scale factors.
 enum FilterMode ScaleFilterReduce(int src_width,
                                   int src_height,

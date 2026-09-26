@@ -474,7 +474,7 @@ void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
       "movdqa      %[kShuf0],%%xmm3              \n"
       "movdqa      %[kShuf1],%%xmm4              \n"
       "movdqa      %[kShuf2],%%xmm5              \n"
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%[src_ptr]),%%xmm0           \n"
       "movdqu      0x10(%[src_ptr]),%%xmm2       \n"
       "lea         0x20(%[src_ptr]),%[src_ptr]   \n"
@@ -489,12 +489,9 @@ void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
       "lea         0x18(%[dst_ptr]),%[dst_ptr]   \n"
       "sub         $0x18,%[dst_width]            \n"
       "jg          1b                            \n"
-      : [src_ptr] "+r"(src_ptr),
-        [dst_ptr] "+r"(dst_ptr),
+      : [src_ptr] "+r"(src_ptr), [dst_ptr] "+r"(dst_ptr),
         [dst_width] "+r"(dst_width)
-      : [kShuf0] "m"(kShuf0),
-        [kShuf1] "m"(kShuf1),
-        [kShuf2] "m"(kShuf2)
+      : [kShuf0] "m"(kShuf0), [kShuf1] "m"(kShuf1), [kShuf2] "m"(kShuf2)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 
@@ -509,7 +506,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
       "movdqa      %[kMadd01],%%xmm5             \n"
       "movdqa      %[kMadd11],%%xmm0             \n"
       "movdqa      %[kRound34],%%xmm1            \n"
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%[src_ptr]),%%xmm6           \n"
       "movdqu      0x00(%[src_ptr],%[src_stride],1),%%xmm7 \n"
       "pavgb       %%xmm7,%%xmm6                 \n"
@@ -541,17 +538,11 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x18(%[dst_ptr]),%[dst_ptr]   \n"
       "sub         $0x18,%[dst_width]            \n"
       "jg          1b                            \n"
-      : [src_ptr] "+r"(src_ptr),
-        [dst_ptr] "+r"(dst_ptr),
+      : [src_ptr] "+r"(src_ptr), [dst_ptr] "+r"(dst_ptr),
         [dst_width] "+r"(dst_width)
-      : [src_stride] "r"(src_stride),
-        [kShuf01] "m"(kShuf01),
-        [kShuf11] "m"(kShuf11),
-        [kShuf21] "m"(kShuf21),
-        [kMadd01] "m"(kMadd01),
-        [kMadd11] "m"(kMadd11),
-        [kRound34] "m"(kRound34),
-        [kMadd21] "m"(kMadd21)
+      : [src_stride] "r"(src_stride), [kShuf01] "m"(kShuf01),
+        [kShuf11] "m"(kShuf11), [kShuf21] "m"(kShuf21), [kMadd01] "m"(kMadd01),
+        [kMadd11] "m"(kMadd11), [kRound34] "m"(kRound34), [kMadd21] "m"(kMadd21)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -567,7 +558,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
       "movdqa      %[kMadd01],%%xmm5             \n"  // kMadd01
       "movdqa      %[kMadd11],%%xmm0             \n"  // kMadd11
       "movdqa      %[kRound34],%%xmm1            \n"  // kRound34
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%[src_ptr]),%%xmm6           \n"
       "movdqu      0x00(%[src_ptr],%[src_stride],1),%%xmm7 \n"
       "pavgb       %%xmm6,%%xmm7                 \n"
@@ -602,17 +593,11 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x18(%[dst_ptr]),%[dst_ptr]   \n"
       "sub         $0x18,%[dst_width]            \n"
       "jg          1b                            \n"
-      : [src_ptr] "+r"(src_ptr),
-        [dst_ptr] "+r"(dst_ptr),
+      : [src_ptr] "+r"(src_ptr), [dst_ptr] "+r"(dst_ptr),
         [dst_width] "+r"(dst_width)
-      : [src_stride] "r"(src_stride),
-        [kShuf01] "m"(kShuf01),
-        [kShuf11] "m"(kShuf11),
-        [kShuf21] "m"(kShuf21),
-        [kMadd01] "m"(kMadd01),
-        [kMadd11] "m"(kMadd11),
-        [kRound34] "m"(kRound34),
-        [kMadd21] "m"(kMadd21)
+      : [src_stride] "r"(src_stride), [kShuf01] "m"(kShuf01),
+        [kShuf11] "m"(kShuf11), [kShuf21] "m"(kShuf21), [kMadd01] "m"(kMadd01),
+        [kMadd11] "m"(kMadd11), [kRound34] "m"(kRound34), [kMadd21] "m"(kMadd21)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -657,7 +642,7 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
       "movdqa      %[kShufAb1],%%xmm3            \n"
       "movdqa      %[kShufAb2],%%xmm4            \n"
       "movdqa      %[kScaleAb2],%%xmm5           \n"
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%[src_ptr]),%%xmm0           \n"
       "movdqu      0x00(%[src_ptr],%[src_stride],1),%%xmm1 \n"
       "lea         0x10(%[src_ptr]),%[src_ptr]   \n"
@@ -677,13 +662,10 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x6(%[dst_ptr]),%[dst_ptr]    \n"
       "sub         $0x6,%[dst_width]             \n"
       "jg          1b                            \n"
-      : [src_ptr] "+r"(src_ptr),
-        [dst_ptr] "+r"(dst_ptr),
+      : [src_ptr] "+r"(src_ptr), [dst_ptr] "+r"(dst_ptr),
         [dst_width] "+r"(dst_width)
-      : [src_stride] "r"(src_stride),
-        [kShufAb0] "m"(kShufAb0),
-        [kShufAb1] "m"(kShufAb1),
-        [kShufAb2] "m"(kShufAb2),
+      : [src_stride] "r"(src_stride), [kShufAb0] "m"(kShufAb0),
+        [kShufAb1] "m"(kShufAb1), [kShufAb2] "m"(kShufAb2),
         [kScaleAb2] "m"(kScaleAb2)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
@@ -697,7 +679,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
       "movdqa      %[kShufAc3],%%xmm3            \n"
       "movdqa      %[kScaleAc33],%%xmm4          \n"
       "pxor        %%xmm5,%%xmm5                 \n"
-      "1:                                        \n"
+      "1:          \n"
       "movdqu      (%[src_ptr]),%%xmm0           \n"
       "movdqu      0x00(%[src_ptr],%[src_stride],1),%%xmm6 \n"
       "movhlps     %%xmm0,%%xmm1                 \n"
@@ -736,13 +718,10 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
       "lea         0x6(%[dst_ptr]),%[dst_ptr]    \n"
       "sub         $0x6,%[dst_width]             \n"
       "jg          1b                            \n"
-      : [src_ptr] "+r"(src_ptr),
-        [dst_ptr] "+r"(dst_ptr),
+      : [src_ptr] "+r"(src_ptr), [dst_ptr] "+r"(dst_ptr),
         [dst_width] "+r"(dst_width)
-      : [src_stride] "r"(src_stride),
-        [kShufAc] "m"(kShufAc),
-        [kShufAc3] "m"(kShufAc3),
-        [kScaleAc33] "m"(kScaleAc33)
+      : [src_stride] "r"(src_stride), [kShufAc] "m"(kShufAc),
+        [kShufAc3] "m"(kShufAc3), [kScaleAc33] "m"(kScaleAc33)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
@@ -2914,14 +2893,9 @@ void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
 
       LABELALIGN "99:         \n"
 
-      : [dst_argb] "+r"(dst_argb),
-        [src_argb] "+r"(src_argb),
-        [dst_width] "+rm"(dst_width),
-        [x0] "=&r"(x0),
-        [x1] "=&r"(x1)
-      : [x] "rm"(x),
-        [dx] "rm"(dx),
-        [kShuffleColARGB] "m"(kShuffleColARGB),
+      : [dst_argb] "+r"(dst_argb), [src_argb] "+r"(src_argb),
+        [dst_width] "+rm"(dst_width), [x0] "=&r"(x0), [x1] "=&r"(x1)
+      : [x] "rm"(x), [dx] "rm"(dx), [kShuffleColARGB] "m"(kShuffleColARGB),
         [kShuffleFractions] "m"(kShuffleFractions)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }

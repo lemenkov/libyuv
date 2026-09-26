@@ -1785,12 +1785,12 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
 #endif
 
 #if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
-#define LOAD_YUV_CONSTANTS_AR30            \
-  int ub = yuvconstants->kUVCoeff[0];      \
-  int vr = yuvconstants->kUVCoeff[1];      \
-  int ug = yuvconstants->kUVCoeff[2];      \
-  int vg = yuvconstants->kUVCoeff[3];      \
-  int yg = yuvconstants->kRGBCoeffBias[0]; \
+#define LOAD_YUV_CONSTANTS_AR30                 \
+  int ub = yuvconstants->kUVCoeff[0];           \
+  int vr = yuvconstants->kUVCoeff[1];           \
+  int ug = yuvconstants->kUVCoeff[2];           \
+  int vg = yuvconstants->kUVCoeff[3];           \
+  int yg = yuvconstants->kRGBCoeffBias[0];      \
   int bb = yuvconstants->kRGBCoeffBias[1] + 24; \
   int bg = yuvconstants->kRGBCoeffBias[2] - 24; \
   int br = yuvconstants->kRGBCoeffBias[3] + 24
@@ -3704,19 +3704,16 @@ void HalfWidthRow_16To8_C(const uint16_t* src_uv,
   int x;
   for (x = 0; x < width - 1; x += 2) {
     dst_uv[0] = STATIC_CAST(
-        uint8_t,
-        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+        uint8_t, C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
     dst_uv[1] = STATIC_CAST(
-        uint8_t,
-        C16TO8((s[2] + s[3] + t[2] + t[3] + 2) >> 2, scale));
+        uint8_t, C16TO8((s[2] + s[3] + t[2] + t[3] + 2) >> 2, scale));
     dst_uv += 2;
     s += 4;
     t += 4;
   }
   if (width & 1) {
     dst_uv[0] = STATIC_CAST(
-        uint8_t,
-        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+        uint8_t, C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
   }
 }
 
@@ -3731,19 +3728,16 @@ void HalfWidthRow_16To8_Odd_C(const uint16_t* src_uv,
   width -= 1;
   for (x = 0; x < width - 1; x += 2) {
     dst_uv[0] = STATIC_CAST(
-        uint8_t,
-        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+        uint8_t, C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
     dst_uv[1] = STATIC_CAST(
-        uint8_t,
-        C16TO8((s[2] + s[3] + t[2] + t[3] + 2) >> 2, scale));
+        uint8_t, C16TO8((s[2] + s[3] + t[2] + t[3] + 2) >> 2, scale));
     dst_uv += 2;
     s += 4;
     t += 4;
   }
   if (width & 1) {
     dst_uv[0] = STATIC_CAST(
-        uint8_t,
-        C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
+        uint8_t, C16TO8((s[0] + s[1] + t[0] + t[1] + 2) >> 2, scale));
     dst_uv += 1;
     s += 2;
     t += 2;
@@ -4280,8 +4274,6 @@ void I422ToARGB4444Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-
-
 #if defined(HAS_I444TOARGBROW_AVX2) && defined(HAS_ARGBTORGB24ROW_AVX2)
 void I444ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_u,
@@ -4675,8 +4667,7 @@ void RGBToUVMatrixRow_AVX512BW(const uint8_t* src_rgb,
 }
 #endif
 
-#if defined(HAS_ARGBTOUV444MATRIXROW_SSSE3) && \
-    defined(HAS_RGB24TOARGBROW_SSSE3)
+#if defined(HAS_ARGBTOUV444MATRIXROW_SSSE3) && defined(HAS_RGB24TOARGBROW_SSSE3)
 void RGBToUV444MatrixRow_SSSE3(const uint8_t* src_rgb,
                                uint8_t* dst_u,
                                uint8_t* dst_v,
@@ -4695,8 +4686,7 @@ void RGBToUV444MatrixRow_SSSE3(const uint8_t* src_rgb,
 }
 #endif
 
-#if defined(HAS_ARGBTOUV444MATRIXROW_AVX2) && \
-    defined(HAS_RGB24TOARGBROW_AVX2)
+#if defined(HAS_ARGBTOUV444MATRIXROW_AVX2) && defined(HAS_RGB24TOARGBROW_AVX2)
 void RGBToUV444MatrixRow_AVX2(const uint8_t* src_rgb,
                               uint8_t* dst_u,
                               uint8_t* dst_v,

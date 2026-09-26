@@ -161,14 +161,12 @@ static int NV24ToI420(const uint8_t* src_y,
       dst_u[halfwidth - 1] = row_uv[(halfwidth - 1) * 4 + 0];
       dst_v[halfwidth - 1] = row_uv[(halfwidth - 1) * 4 + 1];
     } else {
-      dst_u[halfwidth - 1] =
-          (row_uv[(halfwidth - 1) * 4 + 0] + row_uv[(halfwidth - 1) * 4 + 2] +
-           1) >>
-          1;
-      dst_v[halfwidth - 1] =
-          (row_uv[(halfwidth - 1) * 4 + 1] + row_uv[(halfwidth - 1) * 4 + 3] +
-           1) >>
-          1;
+      dst_u[halfwidth - 1] = (row_uv[(halfwidth - 1) * 4 + 0] +
+                              row_uv[(halfwidth - 1) * 4 + 2] + 1) >>
+                             1;
+      dst_v[halfwidth - 1] = (row_uv[(halfwidth - 1) * 4 + 1] +
+                              row_uv[(halfwidth - 1) * 4 + 3] + 1) >>
+                             1;
     }
     src_uv += (ptrdiff_t)src_stride_uv * 2;
     dst_u += dst_stride_u;
@@ -219,10 +217,9 @@ int ConvertToI420(const uint8_t* sample,
   const uint8_t* src;
   const uint8_t* src_uv;
   int r = 0;
-  int need_buf =
-      (rotation && format != FOURCC_I420 && format != FOURCC_NV12 &&
-       format != FOURCC_NV21 && format != FOURCC_YV12) ||
-      dst_y == sample;
+  int need_buf = (rotation && format != FOURCC_I420 && format != FOURCC_NV12 &&
+                  format != FOURCC_NV21 && format != FOURCC_YV12) ||
+                 dst_y == sample;
   uint8_t* tmp_y = dst_y;
   uint8_t* tmp_u = dst_u;
   uint8_t* tmp_v = dst_v;
@@ -363,8 +360,7 @@ int ConvertToI420(const uint8_t* sample,
     case FOURCC_NV16:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
       src_uv = sample + ((ptrdiff_t)aligned_src_width * abs_src_height) +
-               ((ptrdiff_t)crop_y * aligned_src_width) +
-               ((crop_x / 2) * 2);
+               ((ptrdiff_t)crop_y * aligned_src_width) + ((crop_x / 2) * 2);
       r = NV16ToI420(src, src_width, src_uv, aligned_src_width, dst_y,
                      dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
                      crop_width, inv_crop_height);
@@ -372,8 +368,7 @@ int ConvertToI420(const uint8_t* sample,
     case FOURCC_NV24:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
       src_uv = sample + ((ptrdiff_t)aligned_src_width * abs_src_height) +
-               ((ptrdiff_t)crop_y * aligned_src_width * 2) +
-               (crop_x * 2);
+               ((ptrdiff_t)crop_y * aligned_src_width * 2) + (crop_x * 2);
       r = NV24ToI420(src, src_width, src_uv, aligned_src_width * 2, dst_y,
                      dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
                      crop_width, inv_crop_height);

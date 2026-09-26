@@ -192,13 +192,14 @@ void Convert16To8Plane(const uint16_t* src_y,
 
 // Convert a plane of 8 bit data to 16 bit
 LIBYUV_API
-void Convert8To16Plane(const uint8_t* src_y,
-                       int src_stride_y,
-                       uint16_t* dst_y,
-                       int dst_stride_y,
-                       int bits,  // 10, 12, 16 bits (or 1024, 4096, 65536 scale)
-                       int width,
-                       int height) {
+void Convert8To16Plane(
+    const uint8_t* src_y,
+    int src_stride_y,
+    uint16_t* dst_y,
+    int dst_stride_y,
+    int bits,  // 10, 12, 16 bits (or 1024, 4096, 65536 scale)
+    int width,
+    int height) {
   int y;
   void (*Convert8To16Row)(const uint8_t* src_y, uint16_t* dst_y, int bits,
                           int width) = Convert8To16Row_C;

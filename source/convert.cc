@@ -2091,9 +2091,9 @@ static int Px10ToI420(const uint16_t* src_y,
         SplitUVRow_16_C;
     void (*Half16To8)(const uint16_t* src_uv, ptrdiff_t src_uv_stride,
                       uint8_t* dst_uv, int scale, int width) =
-        subsample_x ? HalfRow_16To8_C
-                    : ((width & 1) ? HalfWidthRow_16To8_Odd_C
-                                   : HalfWidthRow_16To8_C);
+        subsample_x
+            ? HalfRow_16To8_C
+            : ((width & 1) ? HalfWidthRow_16To8_Odd_C : HalfWidthRow_16To8_C);
 
 #if defined(HAS_SPLITUVROW_16_AVX2)
     if (TestCpuFlag(kCpuHasAVX2)) {
@@ -3796,21 +3796,20 @@ int RAWToJ420(const uint8_t* src_raw,
 
 // Convert RAW to I444 with matrix.
 static int RAWToI444Matrix(const uint8_t* src_raw,
-                    int src_stride_raw,
-                    uint8_t* dst_y,
-                    int dst_stride_y,
-                    uint8_t* dst_u,
-                    int dst_stride_u,
-                    uint8_t* dst_v,
-                    int dst_stride_v,
-                    const struct ArgbConstants* argbconstants,
-                    int width,
-                    int height) {
+                           int src_stride_raw,
+                           uint8_t* dst_y,
+                           int dst_stride_y,
+                           uint8_t* dst_u,
+                           int dst_stride_u,
+                           uint8_t* dst_v,
+                           int dst_stride_v,
+                           const struct ArgbConstants* argbconstants,
+                           int width,
+                           int height) {
   int y;
-  void (*RGBToUV444MatrixRow)(const uint8_t* src_rgb, uint8_t* dst_u,
-                              uint8_t* dst_v, int width,
-                              const struct ArgbConstants* c) =
-      RGBToUV444MatrixRow_C;
+  void (*RGBToUV444MatrixRow)(
+      const uint8_t* src_rgb, uint8_t* dst_u, uint8_t* dst_v, int width,
+      const struct ArgbConstants* c) = RGBToUV444MatrixRow_C;
   void (*RGBToYMatrixRow)(const uint8_t* src_rgb, uint8_t* dst_y, int width,
                           const struct ArgbConstants* c) = RGBToYMatrixRow_C;
 
@@ -3948,8 +3947,8 @@ int RAWToI444(const uint8_t* src_raw,
               int width,
               int height) {
   return RAWToI444Matrix(src_raw, src_stride_raw, dst_y, dst_stride_y, dst_u,
-                         dst_stride_u, dst_v, dst_stride_v,
-                         &kAbgrI601Constants, width, height);
+                         dst_stride_u, dst_v, dst_stride_v, &kAbgrI601Constants,
+                         width, height);
 }
 
 // Convert RAW to J444.
@@ -3965,8 +3964,8 @@ int RAWToJ444(const uint8_t* src_raw,
               int width,
               int height) {
   return RAWToI444Matrix(src_raw, src_stride_raw, dst_y, dst_stride_y, dst_u,
-                         dst_stride_u, dst_v, dst_stride_v,
-                          &kAbgrJPEGConstants, width, height);
+                         dst_stride_u, dst_v, dst_stride_v, &kAbgrJPEGConstants,
+                         width, height);
 }
 
 // Convert RGB565 to I420.

@@ -1826,7 +1826,11 @@ ANY11HS(HalfRow_16To8_Any_SSSE3, HalfRow_16To8_SSSE3, uint16_t, uint8_t, 15)
 ANY11HS(HalfRow_16To8_Any_AVX2, HalfRow_16To8_AVX2, uint16_t, uint8_t, 31)
 #endif
 #ifdef HAS_HALFROW_16TO8_AVX512BW
-ANY11HS(HalfRow_16To8_Any_AVX512BW, HalfRow_16To8_AVX512BW, uint16_t, uint8_t, 63)
+ANY11HS(HalfRow_16To8_Any_AVX512BW,
+        HalfRow_16To8_AVX512BW,
+        uint16_t,
+        uint8_t,
+        63)
 #endif
 #ifdef HAS_HALFROW_16TO8_NEON
 ANY11HS(HalfRow_16To8_Any_NEON, HalfRow_16To8_NEON, uint16_t, uint8_t, 15)
@@ -1858,16 +1862,32 @@ ANY11HS(HalfRow_16To8_Any_NEON, HalfRow_16To8_NEON, uint16_t, uint8_t, 15)
   }
 
 #ifdef HAS_HALFWIDTHROW_16TO8_SSSE3
-ANY11HWS(HalfWidthRow_16To8_Any_SSSE3, HalfWidthRow_16To8_SSSE3, uint16_t, uint8_t, 7)
+ANY11HWS(HalfWidthRow_16To8_Any_SSSE3,
+         HalfWidthRow_16To8_SSSE3,
+         uint16_t,
+         uint8_t,
+         7)
 #endif
 #ifdef HAS_HALFWIDTHROW_16TO8_AVX2
-ANY11HWS(HalfWidthRow_16To8_Any_AVX2, HalfWidthRow_16To8_AVX2, uint16_t, uint8_t, 15)
+ANY11HWS(HalfWidthRow_16To8_Any_AVX2,
+         HalfWidthRow_16To8_AVX2,
+         uint16_t,
+         uint8_t,
+         15)
 #endif
 #ifdef HAS_HALFWIDTHROW_16TO8_AVX512BW
-ANY11HWS(HalfWidthRow_16To8_Any_AVX512BW, HalfWidthRow_16To8_AVX512BW, uint16_t, uint8_t, 31)
+ANY11HWS(HalfWidthRow_16To8_Any_AVX512BW,
+         HalfWidthRow_16To8_AVX512BW,
+         uint16_t,
+         uint8_t,
+         31)
 #endif
 #ifdef HAS_HALFWIDTHROW_16TO8_NEON
-ANY11HWS(HalfWidthRow_16To8_Any_NEON, HalfWidthRow_16To8_NEON, uint16_t, uint8_t, 7)
+ANY11HWS(HalfWidthRow_16To8_Any_NEON,
+         HalfWidthRow_16To8_NEON,
+         uint16_t,
+         uint8_t,
+         7)
 #endif
 
 #undef ANY11HWS
@@ -2299,10 +2319,7 @@ ANY12M(ARGBToUV444MatrixRow_Any_NEON, ARGBToUV444MatrixRow_NEON, 4, 7)
 ANY12M(RGBToUV444MatrixRow_Any_NEON, RGBToUV444MatrixRow_NEON, 3, 7)
 #endif
 #ifdef HAS_ARGBTOUV444MATRIXROW_NEON_I8MM
-ANY12M(ARGBToUV444MatrixRow_Any_NEON_I8MM,
-       ARGBToUV444MatrixRow_NEON_I8MM,
-       4,
-       7)
+ANY12M(ARGBToUV444MatrixRow_Any_NEON_I8MM, ARGBToUV444MatrixRow_NEON_I8MM, 4, 7)
 #endif
 
 #define ANY11MC(NAMEANY, ANY_SIMD, BPP, MASK)                               \

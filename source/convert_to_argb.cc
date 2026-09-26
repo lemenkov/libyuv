@@ -123,9 +123,9 @@ static int NV24ToARGB(const uint8_t* src_y,
                       int width,
                       int height) {
   int y;
-  void (*I444ToARGBRow)(
-      const uint8_t* y_buf, const uint8_t* u_buf, const uint8_t* v_buf,
-      uint8_t* rgb_buf, const struct YuvConstants* yuvconstants, int width) =
+  void (*I444ToARGBRow)(const uint8_t* y_buf, const uint8_t* u_buf,
+                        const uint8_t* v_buf, uint8_t* rgb_buf,
+                        const struct YuvConstants* yuvconstants, int width) =
       I444ToARGBRow_C;
   void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
                      int width) = SplitUVRow_C;
@@ -293,8 +293,7 @@ int ConvertToARGB(const uint8_t* sample,
   // and then rotate the ARGB to the final destination buffer.
   // For in-place conversion, if destination dst_argb is same as source sample,
   // also enable temporary buffer.
-  int need_buf =
-      (rotation && format != FOURCC_ARGB) || dst_argb == sample;
+  int need_buf = (rotation && format != FOURCC_ARGB) || dst_argb == sample;
   uint8_t* dest_argb = dst_argb;
   int dest_dst_stride_argb = dst_stride_argb;
   uint8_t* rotate_buffer = NULL;
@@ -428,8 +427,7 @@ int ConvertToARGB(const uint8_t* sample,
       break;
     case FOURCC_NV24:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample +
-               (ptrdiff_t)aligned_src_width * abs_src_height +
+      src_uv = sample + (ptrdiff_t)aligned_src_width * abs_src_height +
                (ptrdiff_t)aligned_src_width * 2 * crop_y +
                (ptrdiff_t)crop_x * 2;
       r = NV24ToARGB(src, src_width, src_uv, aligned_src_width * 2, dst_argb,

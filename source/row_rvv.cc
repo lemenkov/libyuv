@@ -1406,14 +1406,14 @@ void InterpolateRow_RVV(uint8_t* dst_ptr,
       "add         %[src_ptr1], %[src_ptr1], %[vl]\n"
       "add         %[dst_ptr], %[dst_ptr], %[vl] \n"
       "bgtz        %[dst_w], 1b                  \n"
-      : [dst_ptr] "+r"(dst_ptr),          // %[dst_ptr]
-        [src_ptr] "+r"(src_ptr),          // %[src_ptr]
-        [src_ptr1] "+r"(src_ptr1),        // %[src_ptr1]
-        [dst_w] "+r"(dst_w),              // %[dst_w]
-        [vl] "=&r"(vl)                    // %[vl]
-      : [y0_fraction] "r"(y0_fraction),   // %[y0_fraction]
-        [y1_fraction] "r"(y1_fraction),   // %[y1_fraction]
-        [c128] "r"(128)                   // %[c128]
+      : [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
+        [src_ptr] "+r"(src_ptr),         // %[src_ptr]
+        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
+        [dst_w] "+r"(dst_w),             // %[dst_w]
+        [vl] "=&r"(vl)                   // %[vl]
+      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
+        [y1_fraction] "r"(y1_fraction),  // %[y1_fraction]
+        [c128] "r"(128)                  // %[c128]
       : "vl", "vtype", "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17");
 }
@@ -2313,8 +2313,7 @@ void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wvla"
   size_t vl;
-  asm(
-      "1:                                         \n"
+  asm("1:                                         \n"
       "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
       "vle8.v      v8, (%[src0])                  \n"
       "vle8.v      v10, (%[src1])                 \n"
@@ -2333,7 +2332,7 @@ void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
         [w] "+r"(w),             // %[w]
         [vl] "=&r"(vl),          // %[vl]
         "=m"(*(uint8_t (*)[w])dst_argb)
-      : [k128] "r"(128),         // %[k128]
+      : [k128] "r"(128),  // %[k128]
         "m"(*(const uint8_t (*)[w])src_argb),
         "m"(*(const uint8_t (*)[w])src_argb1)
       : "vl", "vtype", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");

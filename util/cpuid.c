@@ -14,9 +14,9 @@
 
 #ifdef __linux__
 #include <ctype.h>
-#include <sys/utsname.h>
-#include <signal.h>
 #include <setjmp.h>
+#include <signal.h>
+#include <sys/utsname.h>
 #endif
 
 #include "libyuv/cpu_id.h"
@@ -230,7 +230,10 @@ int main(int argc, const char* argv[]) {
 
       if (sigsetjmp(vdpphps_jmpbuf, 1) == 0) {
         // VDPPHPS xmm0, xmm0, xmm0
-        __asm__ volatile(".byte 0x62, 0xf2, 0x7c, 0x08, 0x52, 0xc0" : : : "xmm0");
+        __asm__ volatile(".byte 0x62, 0xf2, 0x7c, 0x08, 0x52, 0xc0"
+                         :
+                         :
+                         : "xmm0");
         printf("Works!\n");
       } else {
         printf("Crashed (SIGILL)!\n");

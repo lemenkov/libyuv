@@ -604,7 +604,8 @@ TEST_F(LibYUVScaleTest, ARGBScale_LargeHeightOverflow) {
   align_buffer_page_end(dest_pixels, src_w * 2 * 4);
   memset(orig_pixels, 128, src_w * src_h * 4);
 
-  // Test both vertical-only scaling (dst_w == src_w) and 2D scaling (dst_w != src_w).
+  // Test both vertical-only scaling (dst_w == src_w) and 2D scaling (dst_w !=
+  // src_w).
   for (int dst_w : {4, 2}) {
     int res = ARGBScale(orig_pixels, src_w * 4, src_w, src_h, dest_pixels,
                         dst_w * 4, dst_w, 2, kFilterBilinear);

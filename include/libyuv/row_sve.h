@@ -2150,33 +2150,38 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
         "z27", "p0", "p1", "p2", "p3", "p4", "p5");
 }
 
-#define ARGBTOYMATRIX_SVE(p1, p2, p3, p4, p5)                               \
-  "ld1w     {z0.s}, " p1 "/z, [%[src]]             \n" /* load 4*vl pixels */\
-  "ld1w     {z1.s}, " p2 "/z, [%[src], #1, mul vl] \n"                       \
-  "ld1w     {z2.s}, " p3 "/z, [%[src], #2, mul vl] \n"                       \
-  "ld1w     {z3.s}, " p4 "/z, [%[src], #3, mul vl] \n"                       \
-  "incb     %[src], all, mul #4                    \n"                       \
-  "mov      z16.b, #0                              \n"                       \
-  "mov      z17.b, #0                              \n"                       \
-  "mov      z18.b, #0                              \n"                       \
-  "mov      z19.b, #0                              \n"                       \
-  "udot     z16.s, z0.b, z24.b                     \n"                       \
-  "udot     z17.s, z1.b, z24.b                     \n"                       \
-  "udot     z18.s, z2.b, z24.b                     \n"                       \
-  "udot     z19.s, z3.b, z24.b                     \n"                       \
-  "uzp1     z16.h, z16.h, z17.h                    \n"                       \
-  "uzp1     z18.h, z18.h, z19.h                    \n"                       \
-  "addhnb   z16.b, z16.h, z25.h                    \n"                       \
-  "addhnb   z18.b, z18.h, z25.h                    \n"                       \
-  "uzp1     z20.b, z16.b, z18.b                    \n"                       \
-  "st1b     {z20.b}, " p5 ", [%[dst_y]]            \n"                       \
-  "incb     %[dst_y]                               \n"                       \
+#define ARGBTOYMATRIX_SVE(p1, p2, p3, p4, p5)          \
+  "ld1w     {z0.s}, " p1                               \
+  "/z, [%[src]]             \n" /* load 4*vl pixels */ \
+  "ld1w     {z1.s}, " p2                               \
+  "/z, [%[src], #1, mul vl] \n"                        \
+  "ld1w     {z2.s}, " p3                               \
+  "/z, [%[src], #2, mul vl] \n"                        \
+  "ld1w     {z3.s}, " p4                               \
+  "/z, [%[src], #3, mul vl] \n"                        \
+  "incb     %[src], all, mul #4                    \n" \
+  "mov      z16.b, #0                              \n" \
+  "mov      z17.b, #0                              \n" \
+  "mov      z18.b, #0                              \n" \
+  "mov      z19.b, #0                              \n" \
+  "udot     z16.s, z0.b, z24.b                     \n" \
+  "udot     z17.s, z1.b, z24.b                     \n" \
+  "udot     z18.s, z2.b, z24.b                     \n" \
+  "udot     z19.s, z3.b, z24.b                     \n" \
+  "uzp1     z16.h, z16.h, z17.h                    \n" \
+  "uzp1     z18.h, z18.h, z19.h                    \n" \
+  "addhnb   z16.b, z16.h, z25.h                    \n" \
+  "addhnb   z18.b, z18.h, z25.h                    \n" \
+  "uzp1     z20.b, z16.b, z18.b                    \n" \
+  "st1b     {z20.b}, " p5                              \
+  ", [%[dst_y]]            \n"                         \
+  "incb     %[dst_y]                               \n" \
   "subs     %w[width], %w[width], %w[vl], lsl #2   \n"
 
 static inline void ARGBToYMatrixRow_SVE_SC(const uint8_t* src_argb,
-                                          uint8_t* dst_y,
-                                          int width,
-                                          const struct ArgbConstants* c)
+                                           uint8_t* dst_y,
+                                           int width,
+                                           const struct ArgbConstants* c)
     STREAMING_COMPATIBLE {
   uint64_t vl;
   asm("cntw %x0" : "=r"(vl));

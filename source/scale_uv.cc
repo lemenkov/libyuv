@@ -589,7 +589,8 @@ static int ScaleUVBilinearUp(int src_width,
     // 2. Swap buffer pointers (rowptr += rowstride; rowstride = -rowstride;)
     //    so rowptr points to yi and (rowptr + rowstride) points to yi + 1.
     // 3. Advance src by 1 row if row yi + 2 exists ((y + 65536) < max_y),
-    //    otherwise clamp src at (src_height - 1) to avoid reading out of bounds.
+    //    otherwise clamp src at (src_height - 1) to avoid reading out of
+    //    bounds.
     for (j = 0; j < dst_height; ++j) {
       if (y > max_y) {
         y = max_y;
