@@ -2567,17 +2567,17 @@ void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
                             int width) {
   asm volatile(
       "1:          \n"
-      "ld4         {v16.8b,v17.8b,v18.8b,v19.8b}, [%0], #32 \n"  // load 8
-                                                                 // pixels
+      "ld2         {v16.16b, v17.16b}, [%0], #32 \n"  // load 8 pixels
       "subs        %w2, %w2, #8                  \n"  // 8 processed per loop.
-      "prfm        pldl1keep, [%0, 448]          \n" ARGBTOARGB4444
-      "st1         {v0.16b}, [%1], #16           \n"  // store 8 pixels
+      "sri         v17.16b, v16.16b, #4          \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "st1         {v17.16b}, [%1], #16          \n"  // store 8 pixels
       "b.gt        1b                            \n"
       : "+r"(src_argb),      // %0
         "+r"(dst_argb4444),  // %1
         "+r"(width)          // %2
       :
-      : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19");
+      : "cc", "memory", "v16", "v17");
 }
 
 #if defined(LIBYUV_USE_ST2)
