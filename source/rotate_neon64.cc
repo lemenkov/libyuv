@@ -253,7 +253,9 @@ void TransposeWx4_32_NEON(const uint8_t* src,
 
       // Main loop transpose 4x4. Read a column, write a row.
       "1:                                          \n"
-      "ld4         {v0.s, v1.s, v2.s, v3.s}[0], [%0], %9 \n"
+      "ldp         s0, s1, [%0]                    \n"
+      "ldp         s2, s3, [%0, #8]                \n"
+      "add         %0, %0, %9                      \n"
       "ld4         {v0.s, v1.s, v2.s, v3.s}[1], [%1], %9 \n"
       "ld4         {v0.s, v1.s, v2.s, v3.s}[2], [%2], %9 \n"
       "ld4         {v0.s, v1.s, v2.s, v3.s}[3], [%3], %9 \n"
