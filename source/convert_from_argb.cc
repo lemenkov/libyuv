@@ -2964,12 +2964,9 @@ int ARGBToRGB24(const uint8_t* src_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBTORGB24ROW_AVX512VBMI)
-  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
-    ARGBToRGB24Row = ARGBToRGB24Row_Any_AVX512VBMI;
-    if (IS_ALIGNED(width, 32)) {
-      ARGBToRGB24Row = ARGBToRGB24Row_AVX512VBMI;
-    }
+#if defined(HAS_ARGBTORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTORGB24ROW_NEON)
@@ -3055,6 +3052,11 @@ int ARGBToRAW(const uint8_t* src_argb,
     if (IS_ALIGNED(width, 32)) {
       ARGBToRAWRow = ARGBToRAWRow_AVX2;
     }
+  }
+#endif
+#if defined(HAS_ARGBTORAWROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBToRAWRow = ARGBToRAWRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTORAWROW_NEON)

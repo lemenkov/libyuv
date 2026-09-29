@@ -411,7 +411,6 @@ extern "C" {
 
 // The following are available for AVX512 clang x64 platforms:
 // TODO(fbarchard): Port to GCC and Visual C
-// TODO(b/42280744): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI.
 #if !defined(LIBYUV_DISABLE_X86) &&                                          \
     (defined(__x86_64__) || defined(_M_X64)) && defined(CLANG_HAS_AVX512) && \
     !defined(LIBYUV_ENABLE_ROWWIN)
@@ -420,7 +419,8 @@ extern "C" {
 #define HAS_RGB24TOARGBROW_AVX512BW
 #define HAS_RAWTORGB24ROW_AVX512BW
 #define HAS_RAWTORGB24ROW_AVX512VBMI
-#define HAS_ARGBTORGB24ROW_AVX512VBMI
+#define HAS_ARGBTORGB24ROW_AVX512BW
+#define HAS_ARGBTORAWROW_AVX512BW
 #define HAS_CONVERT16TO8ROW_AVX512BW
 #define HAS_CONVERT8TO16ROW_AVX512BW
 #define HAS_HALFROW_16TO8_AVX512BW
@@ -4174,7 +4174,8 @@ void ARGBToAR30Row_SSSE3(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToRAWRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToRGB24Row_AVX2(const uint8_t* src, uint8_t* dst, int width);
 
-void ARGBToRGB24Row_AVX512VBMI(const uint8_t* src, uint8_t* dst, int width);
+void ARGBToRAWRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width);
+void ARGBToRGB24Row_AVX512BW(const uint8_t* src, uint8_t* dst, int width);
 
 void ARGBToRGB565DitherRow_C(const uint8_t* src_argb,
                              uint8_t* dst_rgb,
@@ -5584,9 +5585,6 @@ void ARGBToRAWRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBToRGB24Row_Any_AVX2(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
-void ARGBToRGB24Row_Any_AVX512VBMI(const uint8_t* src_ptr,
-                                   uint8_t* dst_ptr,
-                                   int width);
 
 void ARGBToRGB565DitherRow_Any_AVX2(const uint8_t* src_ptr,
                                     uint8_t* dst_ptr,
