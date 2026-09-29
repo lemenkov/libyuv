@@ -1018,6 +1018,81 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_AVX2
 
+#ifdef HAS_INTERPOLATEROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void InterpolateRow_AVX512BW(uint8_t* dst_ptr,
+                             const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             int width,
+                             int source_y_fraction) {
+  int y1 = source_y_fraction;
+  int y0 = 256 - y1;
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  __m512i zmm_y = _mm512_set1_epi16((short)((y1 << 8) | y0));
+  __m512i zmm_8080 = _mm512_set1_epi16((short)0x8080);
+  int i;
+
+  if (y1 == 0) {
+    for (i = 0; i <= width - 64; i += 64) {
+      _mm512_storeu_si512((__m512i*)(dst_ptr + i),
+                          _mm512_loadu_si512((const __m512i*)(src_ptr + i)));
+    }
+    if (i < width) {
+      __mmask64 mask = (__mmask64)((1ull << (width - i)) - 1ull);
+      _mm512_mask_storeu_epi8(dst_ptr + i, mask,
+                              _mm512_maskz_loadu_epi8(mask, src_ptr + i));
+    }
+  } else if (y1 == 128) {
+    for (i = 0; i <= width - 64; i += 64) {
+      __m512i row0 = _mm512_loadu_si512((const __m512i*)(src_ptr + i));
+      __m512i row1 = _mm512_loadu_si512((const __m512i*)(src_ptr1 + i));
+      _mm512_storeu_si512((__m512i*)(dst_ptr + i), _mm512_avg_epu8(row0, row1));
+    }
+    if (i < width) {
+      __mmask64 mask = (__mmask64)((1ull << (width - i)) - 1ull);
+      __m512i row0 = _mm512_maskz_loadu_epi8(mask, src_ptr + i);
+      __m512i row1 = _mm512_maskz_loadu_epi8(mask, src_ptr1 + i);
+      _mm512_mask_storeu_epi8(dst_ptr + i, mask, _mm512_avg_epu8(row0, row1));
+    }
+  } else {
+    for (i = 0; i <= width - 64; i += 64) {
+      __m512i row0 = _mm512_loadu_si512((const __m512i*)(src_ptr + i));
+      __m512i row1 = _mm512_loadu_si512((const __m512i*)(src_ptr1 + i));
+      __m512i low = _mm512_unpacklo_epi8(row0, row1);
+      __m512i high = _mm512_unpackhi_epi8(row0, row1);
+      low = _mm512_sub_epi8(low, zmm_8080);
+      high = _mm512_sub_epi8(high, zmm_8080);
+      low = _mm512_maddubs_epi16(zmm_y, low);
+      high = _mm512_maddubs_epi16(zmm_y, high);
+      low = _mm512_add_epi16(low, zmm_8080);
+      high = _mm512_add_epi16(high, zmm_8080);
+      low = _mm512_srli_epi16(low, 8);
+      high = _mm512_srli_epi16(high, 8);
+      _mm512_storeu_si512((__m512i*)(dst_ptr + i),
+                          _mm512_packus_epi16(low, high));
+    }
+    if (i < width) {
+      __mmask64 mask = (__mmask64)((1ull << (width - i)) - 1ull);
+      __m512i row0 = _mm512_maskz_loadu_epi8(mask, src_ptr + i);
+      __m512i row1 = _mm512_maskz_loadu_epi8(mask, src_ptr1 + i);
+      __m512i low = _mm512_unpacklo_epi8(row0, row1);
+      __m512i high = _mm512_unpackhi_epi8(row0, row1);
+      low = _mm512_sub_epi8(low, zmm_8080);
+      high = _mm512_sub_epi8(high, zmm_8080);
+      low = _mm512_maddubs_epi16(zmm_y, low);
+      high = _mm512_maddubs_epi16(zmm_y, high);
+      low = _mm512_add_epi16(low, zmm_8080);
+      high = _mm512_add_epi16(high, zmm_8080);
+      low = _mm512_srli_epi16(low, 8);
+      high = _mm512_srli_epi16(high, 8);
+      _mm512_mask_storeu_epi8(dst_ptr + i, mask,
+                              _mm512_packus_epi16(low, high));
+    }
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_INTERPOLATEROW_AVX512BW
+
 #ifdef HAS_INTERPOLATEROW_16_AVX2
 LIBYUV_TARGET_AVX2
 void InterpolateRow_16_AVX2(uint16_t* dst_ptr,

@@ -9978,6 +9978,132 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_AVX2
 
+#ifdef HAS_INTERPOLATEROW_AVX512BW
+// Bilinear filter 64x2 -> 64x1 with masked tail for any width.
+void InterpolateRow_AVX512BW(uint8_t* dst_ptr,
+                             const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             int width,
+                             int source_y_fraction) {
+  asm volatile(
+      "sub         %1,%0                         \n"
+      "cmp         $0x0,%3                       \n"
+      "je          100f                          \n"
+      "cmp         $0x80,%3                      \n"
+      "je          50f                           \n"
+
+      "imul        $0xff,%3,%3                   \n"
+      "add         $0x100,%3                     \n"
+      "vpbroadcastw %3,%%zmm5                    \n"
+      "vpternlogd  $0xff,%%zmm4,%%zmm4,%%zmm4    \n"
+      "vpabsb      %%zmm4,%%zmm4                 \n"
+      "vpsllw      $7,%%zmm4,%%zmm4              \n"
+
+      "sub         $0x40,%2                      \n"
+      "jl          2f                            \n"
+
+      // General purpose row blend.
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu64   (%1),%%zmm0                   \n"
+      "vmovdqu64   0x00(%1,%4,1),%%zmm2          \n"
+      "vpunpckhbw  %%zmm2,%%zmm0,%%zmm1          \n"
+      "vpunpcklbw  %%zmm2,%%zmm0,%%zmm0          \n"
+      "vpsubb      %%zmm4,%%zmm1,%%zmm1          \n"
+      "vpsubb      %%zmm4,%%zmm0,%%zmm0          \n"
+      "vpmaddubsw  %%zmm1,%%zmm5,%%zmm1          \n"
+      "vpmaddubsw  %%zmm0,%%zmm5,%%zmm0          \n"
+      "vpaddw      %%zmm4,%%zmm1,%%zmm1          \n"
+      "vpaddw      %%zmm4,%%zmm0,%%zmm0          \n"
+      "vpsrlw      $0x8,%%zmm1,%%zmm1            \n"
+      "vpsrlw      $0x8,%%zmm0,%%zmm0            \n"
+      "vpackuswb   %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu64   %%zmm0,0x00(%1,%0,1)          \n"
+      "lea         0x40(%1),%1                   \n"
+      "sub         $0x40,%2                      \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x40,%2                      \n"
+      "jle         99f                           \n"
+      "mov         $-1,%q3                       \n"
+      "bzhi        %q2,%q3,%q3                   \n"
+      "kmovq       %q3,%%k1                      \n"
+      "vmovdqu8    (%1),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu8    0x00(%1,%4,1),%%zmm2%{%%k1%}%{z%}\n"
+      "vpunpckhbw  %%zmm2,%%zmm0,%%zmm1          \n"
+      "vpunpcklbw  %%zmm2,%%zmm0,%%zmm0          \n"
+      "vpsubb      %%zmm4,%%zmm1,%%zmm1          \n"
+      "vpsubb      %%zmm4,%%zmm0,%%zmm0          \n"
+      "vpmaddubsw  %%zmm1,%%zmm5,%%zmm1          \n"
+      "vpmaddubsw  %%zmm0,%%zmm5,%%zmm0          \n"
+      "vpaddw      %%zmm4,%%zmm1,%%zmm1          \n"
+      "vpaddw      %%zmm4,%%zmm0,%%zmm0          \n"
+      "vpsrlw      $0x8,%%zmm1,%%zmm1            \n"
+      "vpsrlw      $0x8,%%zmm0,%%zmm0            \n"
+      "vpackuswb   %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu8    %%zmm0,0x00(%1,%0,1)%{%%k1%}  \n"
+      "jmp         99f                           \n"
+
+      // Blend 50 / 50.
+      LABELALIGN
+      "50:         \n"
+      "sub         $0x40,%2                      \n"
+      "jl          52f                           \n"
+      LABELALIGN
+      "51:         \n"
+      "vmovdqu64   (%1),%%zmm0                   \n"
+      "vpavgb      0x00(%1,%4,1),%%zmm0,%%zmm0   \n"
+      "vmovdqu64   %%zmm0,0x00(%1,%0,1)          \n"
+      "lea         0x40(%1),%1                   \n"
+      "sub         $0x40,%2                      \n"
+      "jge         51b                           \n"
+
+      "52:         \n"
+      "add         $0x40,%2                      \n"
+      "jle         99f                           \n"
+      "mov         $-1,%q3                       \n"
+      "bzhi        %q2,%q3,%q3                   \n"
+      "kmovq       %q3,%%k1                      \n"
+      "vmovdqu8    (%1),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu8    0x00(%1,%4,1),%%zmm2%{%%k1%}%{z%}\n"
+      "vpavgb      %%zmm2,%%zmm0,%%zmm0          \n"
+      "vmovdqu8    %%zmm0,0x00(%1,%0,1)%{%%k1%}  \n"
+      "jmp         99f                           \n"
+
+      // Blend 100 / 0 - Copy row unchanged.
+      LABELALIGN
+      "100:        \n"
+      "sub         $0x40,%2                      \n"
+      "jl          102f                          \n"
+      LABELALIGN
+      "101:        \n"
+      "vmovdqu64   (%1),%%zmm0                   \n"
+      "vmovdqu64   %%zmm0,0x00(%1,%0,1)          \n"
+      "lea         0x40(%1),%1                   \n"
+      "sub         $0x40,%2                      \n"
+      "jge         101b                          \n"
+
+      "102:        \n"
+      "add         $0x40,%2                      \n"
+      "jle         99f                           \n"
+      "mov         $-1,%q3                       \n"
+      "bzhi        %q2,%q3,%q3                   \n"
+      "kmovq       %q3,%%k1                      \n"
+      "vmovdqu8    (%1),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu8    %%zmm0,0x00(%1,%0,1)%{%%k1%}  \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : "+r"(dst_ptr),           // %0
+        "+r"(src_ptr),           // %1
+        "+r"(width),             // %2
+        "+r"(source_y_fraction)  // %3
+      : "r"(src_stride)          // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm4", "xmm5", "k1");
+}
+#endif  // HAS_INTERPOLATEROW_AVX512BW
+
 #ifdef HAS_INTERPOLATEROW_16_AVX2
 // Bilinear filter 16x2 -> 16x1
 void InterpolateRow_16_AVX2(uint16_t* dst_ptr,
