@@ -35,6 +35,9 @@ extern "C" {
 #ifndef HAS_SCALEUVDOWNEVEN
 #define HAS_SCALEUVDOWNEVEN 1
 #endif
+#ifndef HAS_SCALEUVBOX
+#define HAS_SCALEUVBOX 1
+#endif
 #ifndef HAS_SCALEUVBILINEARDOWN
 #define HAS_SCALEUVBILINEARDOWN 1
 #endif
@@ -51,6 +54,8 @@ extern "C" {
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
+
+#define MIN1(x) ((x) < 1 ? 1 : (x))
 
 // ScaleUV, 1/2
 // This is an optimized version for scaling down a UV to 1/2 of
@@ -248,6 +253,154 @@ static int ScaleUVDown4Box(int src_width,
   return 0;
 }
 #endif  // HAS_SCALEUVDOWN4BOX
+
+// ScaleUV, any dimensions, box filter.
+// The counterpart of ScalePlaneBox in scale.cc. Rows are summed into 16 bit
+// accumulators, then each destination pixel averages its box of source pixels.
+#if HAS_SCALEUVBOX
+static void ScaleUVAddCols1_C(int dst_width,
+                              int boxheight,
+                              int x,
+                              int dx,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv) {
+  int i, j;
+  int boxwidth = MIN1(dx >> 16);
+  int scaleval = 65536 / (boxwidth * boxheight);
+  x >>= 16;
+  for (i = 0; i < dst_width; ++i) {
+    int u = 0;
+    int v = 0;
+    for (j = 0; j < boxwidth; ++j) {
+      u += src_uv[(x + j) * 2];
+      v += src_uv[(x + j) * 2 + 1];
+    }
+    x += boxwidth;
+    *dst_uv++ = (uint8_t)(u * scaleval >> 16);
+    *dst_uv++ = (uint8_t)(v * scaleval >> 16);
+  }
+}
+
+static void ScaleUVAddCols2_C(int dst_width,
+                              int boxheight,
+                              int x,
+                              int dx,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv) {
+  int i, j;
+  int minboxwidth = dx >> 16;
+  int scaletbl[2];
+  scaletbl[0] = 65536 / (MIN1(minboxwidth) * boxheight);
+  scaletbl[1] = 65536 / (MIN1(minboxwidth + 1) * boxheight);
+  for (i = 0; i < dst_width; ++i) {
+    int ix = x >> 16;
+    int u = 0;
+    int v = 0;
+    int boxwidth;
+    int scaleval;
+    x += dx;
+    boxwidth = MIN1((x >> 16) - ix);
+    assert((boxwidth - minboxwidth == 0) || (boxwidth - minboxwidth == 1));
+    scaleval = scaletbl[boxwidth - minboxwidth];
+    for (j = 0; j < boxwidth; ++j) {
+      u += src_uv[(ix + j) * 2];
+      v += src_uv[(ix + j) * 2 + 1];
+    }
+    *dst_uv++ = (uint8_t)(u * scaleval >> 16);
+    *dst_uv++ = (uint8_t)(v * scaleval >> 16);
+  }
+}
+
+static int ScaleUVBox(int src_width,
+                      int src_height,
+                      int dst_width,
+                      int dst_height,
+                      ptrdiff_t src_stride,
+                      ptrdiff_t dst_stride,
+                      const uint8_t* src_uv,
+                      uint8_t* dst_uv,
+                      int x,
+                      int dx,
+                      int y,
+                      int dy) {
+  int j, k;
+  const int max_y = (src_height << 16);
+  // Sized on src_width to keep ScaleAddRow aligned.
+  const int row_samples = src_width * 2;
+  {
+    // Row accumulator, two uint16_t per source pixel.
+    align_buffer_64(row16, row_samples * 2);
+    if (!row16)
+      return 1;
+    {
+      void (*ScaleUVAddCols)(int dst_width, int boxheight, int x, int dx,
+                             const uint16_t* src_uv, uint8_t* dst_uv) =
+          (dx & 0xffff) ? ScaleUVAddCols2_C : ScaleUVAddCols1_C;
+      // Summing a row is position wise, so an interleaved UV row can be fed to
+      // the plane accumulator as src_width * 2 samples.
+      void (*ScaleAddRow)(const uint8_t* src_ptr, uint16_t* dst_ptr,
+                          int src_width) = ScaleAddRow_C;
+#if defined(HAS_SCALEADDROW_SSE2)
+      if (TestCpuFlag(kCpuHasSSE2)) {
+        ScaleAddRow = ScaleAddRow_Any_SSE2;
+        if (IS_ALIGNED(row_samples, 16)) {
+          ScaleAddRow = ScaleAddRow_SSE2;
+        }
+      }
+#endif
+#if defined(HAS_SCALEADDROW_AVX2)
+      if (TestCpuFlag(kCpuHasAVX2)) {
+        ScaleAddRow = ScaleAddRow_Any_AVX2;
+        if (IS_ALIGNED(row_samples, 32)) {
+          ScaleAddRow = ScaleAddRow_AVX2;
+        }
+      }
+#endif
+#if defined(HAS_SCALEADDROW_NEON)
+      if (TestCpuFlag(kCpuHasNEON)) {
+        ScaleAddRow = ScaleAddRow_Any_NEON;
+        if (IS_ALIGNED(row_samples, 16)) {
+          ScaleAddRow = ScaleAddRow_NEON;
+        }
+      }
+#endif
+#if defined(HAS_SCALEADDROW_LSX)
+      if (TestCpuFlag(kCpuHasLSX)) {
+        ScaleAddRow = ScaleAddRow_Any_LSX;
+        if (IS_ALIGNED(row_samples, 16)) {
+          ScaleAddRow = ScaleAddRow_LSX;
+        }
+      }
+#endif
+#if defined(HAS_SCALEADDROW_RVV)
+      if (TestCpuFlag(kCpuHasRVV)) {
+        ScaleAddRow = ScaleAddRow_RVV;
+      }
+#endif
+
+      for (j = 0; j < dst_height; ++j) {
+        int boxheight;
+        int iy = y >> 16;
+        const uint8_t* src = src_uv + iy * src_stride;
+        y += dy;
+        if (y > max_y) {
+          y = max_y;
+        }
+        boxheight = MIN1((y >> 16) - iy);
+        memset(row16, 0, row_samples * 2);
+        for (k = 0; k < boxheight; ++k) {
+          ScaleAddRow(src, (uint16_t*)(row16), row_samples);
+          src += src_stride;
+        }
+        ScaleUVAddCols(dst_width, boxheight, x, dx, (uint16_t*)(row16), dst_uv);
+        dst_uv += dst_stride;
+      }
+    }
+    free_aligned_buffer_64(row16);
+  }
+  return 0;
+}
+#endif  // HAS_SCALEUVBOX
 
 // ScaleUV Even
 // This is an optimized version for scaling down a UV to even
@@ -973,7 +1126,6 @@ static int ScaleUV(const uint8_t* src,
   int y = 0;
   int dx = 0;
   int dy = 0;
-  // UV does not support box filter yet, but allow the user to pass it.
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height, dst_width, dst_height,
                                 filtering);
@@ -999,6 +1151,16 @@ static int ScaleUV(const uint8_t* src,
     src += (clipf >> 16) * (ptrdiff_t)src_stride;
     dst += clip_y * (ptrdiff_t)dst_stride;
   }
+
+#if HAS_SCALEUVBOX
+  // Exactly 4 goes to the faster ScaleUVDown4Box below. Clipping is excluded
+  // because whole source rows are accumulated.
+  if (filtering == kFilterBox && !(dx == 0x40000 && dy == 0x40000) &&
+      clip_x == 0 && clip_y == 0) {
+    return ScaleUVBox(src_width, src_height, clip_width, clip_height,
+                      src_stride, dst_stride, src, dst, x, dx, y, dy);
+  }
+#endif
 
   // Special case for integer step values.
   if (((dx | dy) & 0xffff) == 0) {
