@@ -14,7 +14,7 @@
 // This module is for Visual C 32/64 bit
 #if !defined(LIBYUV_DISABLE_X86) &&                                 \
     (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
-     defined(_M_X86)) &&                                            \
+     defined(_M_IX86)) &&                                           \
     ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
      defined(LIBYUV_ENABLE_ROWWIN))
 
@@ -2545,6 +2545,6 @@ void BlendPlaneRow_AVX512BW(const uint8_t* src0,
 #endif
 
 #endif  // !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) ||
-        // defined(__i386__) || defined(_M_X64) || defined(_M_X86)) &&
+        // defined(__i386__) || defined(_M_X64) || defined(_M_IX86)) &&
         // ((defined(_MSC_VER) && !defined(__clang__)) ||
         // defined(LIBYUV_ENABLE_ROWWIN))

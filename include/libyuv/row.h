@@ -26,7 +26,7 @@ extern "C" {
 // This module is for Visual C 32/64 bit
 #if !defined(LIBYUV_DISABLE_X86) &&                                 \
     (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
-     defined(_M_X86))
+     defined(_M_IX86))
 #if ((defined(_MSC_VER) && !defined(__clang__)) || \
      defined(LIBYUV_ENABLE_ROWWIN))
 #define USE_ROW_WIN
@@ -128,7 +128,7 @@ extern "C" {
 // require VS2012, clang 3.4 or gcc 4.7.
 #if !defined(LIBYUV_DISABLE_X86) &&                                 \
     (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
-     defined(_M_X86))
+     defined(_M_IX86))
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_RGB24MIRRORROW_AVX2
 #define HAS_ARGBTOUVMATRIXROW_AVX2
@@ -351,7 +351,7 @@ extern "C" {
 // This module is for Visual C 32/64 bit
 #if !defined(LIBYUV_DISABLE_X86) && defined(USE_ROW_WIN) &&         \
     (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
-     defined(_M_X86)) &&                                            \
+     defined(_M_IX86)) &&                                           \
     ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
      defined(LIBYUV_ENABLE_ROWWIN))
 #define HAS_RAWTOARGBROW_AVX2
