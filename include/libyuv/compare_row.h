@@ -22,9 +22,9 @@ extern "C" {
 #endif
 
 // The following are available for Visual C and GCC:
-#if !defined(LIBYUV_DISABLE_X86) &&                             \
-    ((defined(__x86_64__) && !defined(LIBYUV_ENABLE_ROWWIN)) || \
-     defined(__i386__) || defined(_M_IX86))
+#if !defined(LIBYUV_DISABLE_X86) &&                                     \
+    (defined(_M_IX86) || ((defined(__x86_64__) || defined(__i386__)) && \
+                          !defined(LIBYUV_ENABLE_ROWWIN)))
 #define HAS_HASHDJB2_SSE41
 #define HAS_SUMSQUAREERROR_SSE2
 #define HAS_HAMMINGDISTANCE_SSE42

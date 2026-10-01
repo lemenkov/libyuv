@@ -23,10 +23,9 @@ extern "C" {
 #endif
 
 // The following are available on all x86 platforms:
-#if !defined(LIBYUV_DISABLE_X86) &&                             \
-    (defined(_M_IX86) ||                                        \
-     (defined(__x86_64__) && !defined(LIBYUV_ENABLE_ROWWIN)) || \
-     defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) &&                                     \
+    (defined(_M_IX86) || ((defined(__x86_64__) || defined(__i386__)) && \
+                          !defined(LIBYUV_ENABLE_ROWWIN)))
 #define HAS_FIXEDDIV1_X86
 #define HAS_FIXEDDIV_X86
 #define HAS_SCALEADDROW_SSE2

@@ -16,13 +16,11 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for GCC x86 and x64.
-#if !defined(LIBYUV_DISABLE_X86) &&               \
-    (defined(__x86_64__) || defined(__i386__)) && \
+// This module is for GCC and clang x64. 32 bit x86 uses rotate_win.cc.
+#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) && \
     !defined(LIBYUV_ENABLE_ROWWIN)
 
 #if defined(HAS_TRANSPOSEWX8_SSSE3)
-#if defined(__x86_64__)
 // Transpose 16x8. 64 bit.
 void TransposeWx8_SSSE3(const uint8_t* src,
                         int src_stride,
@@ -163,95 +161,6 @@ void TransposeWx8_SSSE3(const uint8_t* src,
         "xmm7", "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14",
         "xmm15");
 }
-#else   // defined(__x86_64__)
-// Transpose 8x8. 32 bit.
-void TransposeWx8_SSSE3(const uint8_t* src,
-                        int src_stride,
-                        uint8_t* dst,
-                        int dst_stride,
-                        int width) {
-  asm volatile(
-      // Read in the data from the source pointer.
-      // First round of bit swap.
-      LABELALIGN
-      "1:          \n"
-      "movq        (%0),%%xmm0                   \n"
-      "movq        (%0,%3),%%xmm1                \n"
-      "lea         (%0,%3,2),%0                  \n"
-      "punpcklbw   %%xmm1,%%xmm0                 \n"
-      "movq        (%0),%%xmm2                   \n"
-      "movdqa      %%xmm0,%%xmm1                 \n"
-      "palignr     $0x8,%%xmm1,%%xmm1            \n"
-      "movq        (%0,%3),%%xmm3                \n"
-      "lea         (%0,%3,2),%0                  \n"
-      "punpcklbw   %%xmm3,%%xmm2                 \n"
-      "movdqa      %%xmm2,%%xmm3                 \n"
-      "movq        (%0),%%xmm4                   \n"
-      "palignr     $0x8,%%xmm3,%%xmm3            \n"
-      "movq        (%0,%3),%%xmm5                \n"
-      "lea         (%0,%3,2),%0                  \n"
-      "punpcklbw   %%xmm5,%%xmm4                 \n"
-      "movdqa      %%xmm4,%%xmm5                 \n"
-      "movq        (%0),%%xmm6                   \n"
-      "palignr     $0x8,%%xmm5,%%xmm5            \n"
-      "movq        (%0,%3),%%xmm7                \n"
-      "lea         (%0,%3,2),%0                  \n"
-      "punpcklbw   %%xmm7,%%xmm6                 \n"
-      "neg         %3                            \n"
-      "movdqa      %%xmm6,%%xmm7                 \n"
-      "lea         0x8(%0,%3,8),%0               \n"
-      "palignr     $0x8,%%xmm7,%%xmm7            \n"
-      "neg         %3                            \n"
-      // Second round of bit swap.
-      "punpcklwd   %%xmm2,%%xmm0                 \n"
-      "punpcklwd   %%xmm3,%%xmm1                 \n"
-      "movdqa      %%xmm0,%%xmm2                 \n"
-      "movdqa      %%xmm1,%%xmm3                 \n"
-      "palignr     $0x8,%%xmm2,%%xmm2            \n"
-      "palignr     $0x8,%%xmm3,%%xmm3            \n"
-      "punpcklwd   %%xmm6,%%xmm4                 \n"
-      "punpcklwd   %%xmm7,%%xmm5                 \n"
-      "movdqa      %%xmm4,%%xmm6                 \n"
-      "movdqa      %%xmm5,%%xmm7                 \n"
-      "palignr     $0x8,%%xmm6,%%xmm6            \n"
-      "palignr     $0x8,%%xmm7,%%xmm7            \n"
-      // Third round of bit swap.
-      // Write to the destination pointer.
-      "punpckldq   %%xmm4,%%xmm0                 \n"
-      "movq        %%xmm0,(%1)                   \n"
-      "movdqa      %%xmm0,%%xmm4                 \n"
-      "palignr     $0x8,%%xmm4,%%xmm4            \n"
-      "movq        %%xmm4,(%1,%4)                \n"
-      "lea         (%1,%4,2),%1                  \n"
-      "punpckldq   %%xmm6,%%xmm2                 \n"
-      "movdqa      %%xmm2,%%xmm6                 \n"
-      "movq        %%xmm2,(%1)                   \n"
-      "palignr     $0x8,%%xmm6,%%xmm6            \n"
-      "punpckldq   %%xmm5,%%xmm1                 \n"
-      "movq        %%xmm6,(%1,%4)                \n"
-      "lea         (%1,%4,2),%1                  \n"
-      "movdqa      %%xmm1,%%xmm5                 \n"
-      "movq        %%xmm1,(%1)                   \n"
-      "palignr     $0x8,%%xmm5,%%xmm5            \n"
-      "movq        %%xmm5,(%1,%4)                \n"
-      "lea         (%1,%4,2),%1                  \n"
-      "punpckldq   %%xmm7,%%xmm3                 \n"
-      "movq        %%xmm3,(%1)                   \n"
-      "movdqa      %%xmm3,%%xmm7                 \n"
-      "palignr     $0x8,%%xmm7,%%xmm7            \n"
-      "sub         $0x8,%2                       \n"
-      "movq        %%xmm7,(%1,%4)                \n"
-      "lea         (%1,%4,2),%1                  \n"
-      "jg          1b                            \n"
-      : "+r"(src),                     // %0
-        "+r"(dst),                     // %1
-        "+r"(width)                    // %2
-      : "r"((ptrdiff_t)(src_stride)),  // %3
-        "r"((ptrdiff_t)(dst_stride))   // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
-}
-#endif  // defined(__x86_64__)
 #endif  // defined(HAS_TRANSPOSEWX8_SSSE3)
 
 #if defined(HAS_TRANSPOSEWX16_AVX512BW) || defined(HAS_TRANSPOSEUVWX16_AVX512BW)
@@ -877,7 +786,8 @@ void Transpose4x4_32_AVX2(const uint8_t* src,
 }
 #endif  // defined(HAS_TRANSPOSE4X4_32_AVX2)
 
-#endif  // defined(__x86_64__) || defined(__i386__)
+#endif  // !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) &&
+        // !defined(LIBYUV_ENABLE_ROWWIN)
 
 #ifdef __cplusplus
 }  // extern "C"

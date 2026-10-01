@@ -35,11 +35,7 @@ TANY(TransposeWx8_Any_NEON, TransposeWx8_NEON, TransposeWx8_C, 7)
 TANY(TransposeWx16_Any_NEON, TransposeWx16_NEON, TransposeWx16_C, 15)
 #endif
 #ifdef HAS_TRANSPOSEWX8_SSSE3
-#if defined(__x86_64__)
 TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 15)
-#else
-TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 7)
-#endif
 #endif
 #ifdef HAS_TRANSPOSEWX16_AVX2
 TANY(TransposeWx16_Any_AVX2, TransposeWx16_AVX2, TransposeWx16_C, 15)

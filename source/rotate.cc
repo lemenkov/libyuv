@@ -72,15 +72,9 @@ void TransposePlane(const uint8_t* src,
 #if defined(HAS_TRANSPOSEWX8_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     TransposeWx8 = TransposeWx8_Any_SSSE3;
-#if defined(__x86_64__)
     if (IS_ALIGNED(width, 16)) {
       TransposeWx8 = TransposeWx8_SSSE3;
     }
-#else
-    if (IS_ALIGNED(width, 8)) {
-      TransposeWx8 = TransposeWx8_SSSE3;
-    }
-#endif
   }
 #endif
 #if defined(HAS_TRANSPOSEWX16_AVX2)
