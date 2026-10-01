@@ -61,19 +61,6 @@ extern "C" {
     _dst += _stride2;                                   \
   }
 
-void TransposeUVWx16_C(const uint8_t* src,
-                       int src_stride,
-                       uint8_t* dst_a,
-                       int dst_stride_a,
-                       uint8_t* dst_b,
-                       int dst_stride_b,
-                       int width) {
-  TransposeUVWx8_C(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
-                   width);
-  TransposeUVWx8_C((src + 8 * src_stride), src_stride, (dst_a + 8),
-                   dst_stride_a, (dst_b + 8), dst_stride_b, width);
-}
-
 void TransposeWx16_LSX(const uint8_t* src,
                        int src_stride,
                        uint8_t* dst,

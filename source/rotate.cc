@@ -36,7 +36,7 @@ void TransposePlane(const uint8_t* src,
   void (*TransposeWxH)(const uint8_t* src, int src_stride, uint8_t* dst,
                        int dst_stride, int width, int height) = NULL;
 #endif
-#if defined(HAS_TRANSPOSEWX16_AVX512BW)
+#if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEWX16_AVX512BW)
   void (*TransposeWx16)(const uint8_t* src, int src_stride, uint8_t* dst,
                         int dst_stride, int width) = NULL;
 #elif defined(HAS_TRANSPOSEWX16_LSX) || defined(HAS_TRANSPOSEWX16_NEON)
@@ -83,6 +83,14 @@ void TransposePlane(const uint8_t* src,
 #endif
   }
 #endif
+#if defined(HAS_TRANSPOSEWX16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeWx16 = TransposeWx16_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx16 = TransposeWx16_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_TRANSPOSEWX16_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     TransposeWx16 = TransposeWx16_AVX512BW;
@@ -103,8 +111,8 @@ void TransposePlane(const uint8_t* src,
     return;
   }
 #endif
-#if defined(HAS_TRANSPOSEWX16_AVX512BW) || defined(HAS_TRANSPOSEWX16_LSX) || \
-    defined(HAS_TRANSPOSEWX16_NEON)
+#if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEWX16_AVX512BW) || \
+    defined(HAS_TRANSPOSEWX16_LSX) || defined(HAS_TRANSPOSEWX16_NEON)
   // Work across the source in 16x16 tiles
   if (TransposeWx16) {
     while (i >= 16) {
@@ -287,7 +295,7 @@ void SplitTransposeUV(const uint8_t* src,
                          int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
                          int width, int height) = TransposeUVWxH_C;
 #endif
-#if defined(HAS_TRANSPOSEUVWX16_AVX512BW)
+#if defined(HAS_TRANSPOSEUVWX16_AVX2) || defined(HAS_TRANSPOSEUVWX16_AVX512BW)
   void (*TransposeUVWx16)(const uint8_t* src, int src_stride, uint8_t* dst_a,
                           int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
                           int width) = NULL;
@@ -331,6 +339,14 @@ void SplitTransposeUV(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_TRANSPOSEUVWX16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeUVWx16 = TransposeUVWx16_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeUVWx16 = TransposeUVWx16_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_TRANSPOSEUVWX16_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     TransposeUVWx16 = TransposeUVWx16_AVX512BW;
@@ -344,7 +360,8 @@ void SplitTransposeUV(const uint8_t* src,
     return;
   }
 #endif
-#if defined(HAS_TRANSPOSEUVWX16_AVX512BW) || defined(HAS_TRANSPOSEUVWX16_LSX)
+#if defined(HAS_TRANSPOSEUVWX16_AVX2) || \
+    defined(HAS_TRANSPOSEUVWX16_AVX512BW) || defined(HAS_TRANSPOSEUVWX16_LSX)
   // Work through the source in 16x16 tiles.
   if (TransposeUVWx16) {
     while (i >= 16) {

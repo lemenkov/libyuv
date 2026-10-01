@@ -286,6 +286,8 @@ static const uint32_t kPermdTranspose_AVX512BW[32] = {
 // or 16-bit UV split transpose (dst_a = U plane, dst_b = V plane).
 // TODO(fbarchard): Port to rotate_win.cc using intrinsics.
 // TODO(fbarchard): Use for ARGB (32 bit) and 16 bit channel transposes.
+// TODO(fbarchard): Consider removing in favor of TransposeWx16_Byte_AVX2,
+// which is within 10% of AVX512BW on most CPUs.
 static void TransposeWx16_Byte_AVX512BW(const uint8_t* src,
                                         int src_stride,
                                         uint8_t* dst_a,
@@ -492,6 +494,145 @@ void TransposeUVWx16_AVX512BW(const uint8_t* src,
                               dst_stride_b, width * 2);
 }
 #endif  // defined(HAS_TRANSPOSEUVWX16_AVX512BW)
+
+#if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEUVWX16_AVX2)
+// Transpose 16x16 bytes using 2 lanes of AVX2. Source row r is in lane r / 8
+// of ymm(r % 8). 3 unpack stages leave each lane with 2 columns x 8 rows, and
+// vpermq joins the rows 0..7 and 8..15 halves. Lane 0 of each output is an
+// even column for dst_a and lane 1 an odd column for dst_b.
+// Width is a multiple of 16 bytes.
+static void TransposeWx16_Byte_AVX2(const uint8_t* src,
+                                    int src_stride,
+                                    uint8_t* dst_a,
+                                    int dst_stride_a,
+                                    uint8_t* dst_b,
+                                    int dst_stride_b,
+                                    int byte_width) {
+  uintptr_t temp;
+  asm volatile(
+      "1:          \n"
+      "vmovdqu     (%[src]),%%xmm0               \n"
+      "vmovdqu     (%[src],%[src_stride]),%%xmm1 \n"
+      "lea         (%[src],%[src_stride],2),%[temp] \n"
+      "lea         0x10(%[src]),%[src]           \n"
+      "vmovdqu     (%[temp]),%%xmm2              \n"
+      "vmovdqu     (%[temp],%[src_stride]),%%xmm3 \n"
+      "lea         (%[temp],%[src_stride],2),%[temp] \n"
+      "vmovdqu     (%[temp]),%%xmm4              \n"
+      "vmovdqu     (%[temp],%[src_stride]),%%xmm5 \n"
+      "lea         (%[temp],%[src_stride],2),%[temp] \n"
+      "vmovdqu     (%[temp]),%%xmm6              \n"
+      "vmovdqu     (%[temp],%[src_stride]),%%xmm7 \n"
+      "lea         (%[temp],%[src_stride],2),%[temp] \n"
+      "vinserti128 $1,(%[temp]),%%ymm0,%%ymm0    \n"
+      "vinserti128 $1,(%[temp],%[src_stride]),%%ymm1,%%ymm1 \n"
+      "lea         (%[temp],%[src_stride],2),%[temp] \n"
+      "vinserti128 $1,(%[temp]),%%ymm2,%%ymm2    \n"
+      "vinserti128 $1,(%[temp],%[src_stride]),%%ymm3,%%ymm3 \n"
+      "lea         (%[temp],%[src_stride],2),%[temp] \n"
+      "vinserti128 $1,(%[temp]),%%ymm4,%%ymm4    \n"
+      "vinserti128 $1,(%[temp],%[src_stride]),%%ymm5,%%ymm5 \n"
+      "lea         (%[temp],%[src_stride],2),%[temp] \n"
+      "vinserti128 $1,(%[temp]),%%ymm6,%%ymm6    \n"
+      "vinserti128 $1,(%[temp],%[src_stride]),%%ymm7,%%ymm7 \n"
+
+      "vpunpcklbw  %%ymm1,%%ymm0,%%ymm8          \n"
+      "vpunpckhbw  %%ymm1,%%ymm0,%%ymm9          \n"
+      "vpunpcklbw  %%ymm3,%%ymm2,%%ymm10         \n"
+      "vpunpckhbw  %%ymm3,%%ymm2,%%ymm11         \n"
+      "vpunpcklbw  %%ymm5,%%ymm4,%%ymm12         \n"
+      "vpunpckhbw  %%ymm5,%%ymm4,%%ymm13         \n"
+      "vpunpcklbw  %%ymm7,%%ymm6,%%ymm14         \n"
+      "vpunpckhbw  %%ymm7,%%ymm6,%%ymm15         \n"
+
+      "vpunpcklwd  %%ymm10,%%ymm8,%%ymm0         \n"
+      "vpunpckhwd  %%ymm10,%%ymm8,%%ymm1         \n"
+      "vpunpcklwd  %%ymm11,%%ymm9,%%ymm2         \n"
+      "vpunpckhwd  %%ymm11,%%ymm9,%%ymm3         \n"
+      "vpunpcklwd  %%ymm14,%%ymm12,%%ymm4        \n"
+      "vpunpckhwd  %%ymm14,%%ymm12,%%ymm5        \n"
+      "vpunpcklwd  %%ymm15,%%ymm13,%%ymm6        \n"
+      "vpunpckhwd  %%ymm15,%%ymm13,%%ymm7        \n"
+
+      "vpunpckldq  %%ymm4,%%ymm0,%%ymm8          \n"
+      "vpunpckhdq  %%ymm4,%%ymm0,%%ymm9          \n"
+      "vpunpckldq  %%ymm5,%%ymm1,%%ymm10         \n"
+      "vpunpckhdq  %%ymm5,%%ymm1,%%ymm11         \n"
+      "vpunpckldq  %%ymm6,%%ymm2,%%ymm12         \n"
+      "vpunpckhdq  %%ymm6,%%ymm2,%%ymm13         \n"
+      "vpunpckldq  %%ymm7,%%ymm3,%%ymm14         \n"
+      "vpunpckhdq  %%ymm7,%%ymm3,%%ymm15         \n"
+
+      "vpermq      $0xd8,%%ymm8,%%ymm8           \n"
+      "vpermq      $0xd8,%%ymm9,%%ymm9           \n"
+      "vpermq      $0xd8,%%ymm10,%%ymm10         \n"
+      "vpermq      $0xd8,%%ymm11,%%ymm11         \n"
+      "vpermq      $0xd8,%%ymm12,%%ymm12         \n"
+      "vpermq      $0xd8,%%ymm13,%%ymm13         \n"
+      "vpermq      $0xd8,%%ymm14,%%ymm14         \n"
+      "vpermq      $0xd8,%%ymm15,%%ymm15         \n"
+
+      "vmovdqu     %%xmm8,(%[dst_a])             \n"
+      "vextracti128 $1,%%ymm8,(%[dst_b])         \n"
+      "vmovdqu     %%xmm9,(%[dst_a],%[dst_stride_a]) \n"
+      "vextracti128 $1,%%ymm9,(%[dst_b],%[dst_stride_b]) \n"
+      "lea         (%[dst_a],%[dst_stride_a],2),%[dst_a] \n"
+      "lea         (%[dst_b],%[dst_stride_b],2),%[dst_b] \n"
+      "vmovdqu     %%xmm10,(%[dst_a])            \n"
+      "vextracti128 $1,%%ymm10,(%[dst_b])        \n"
+      "vmovdqu     %%xmm11,(%[dst_a],%[dst_stride_a]) \n"
+      "vextracti128 $1,%%ymm11,(%[dst_b],%[dst_stride_b]) \n"
+      "lea         (%[dst_a],%[dst_stride_a],2),%[dst_a] \n"
+      "lea         (%[dst_b],%[dst_stride_b],2),%[dst_b] \n"
+      "vmovdqu     %%xmm12,(%[dst_a])            \n"
+      "vextracti128 $1,%%ymm12,(%[dst_b])        \n"
+      "vmovdqu     %%xmm13,(%[dst_a],%[dst_stride_a]) \n"
+      "vextracti128 $1,%%ymm13,(%[dst_b],%[dst_stride_b]) \n"
+      "lea         (%[dst_a],%[dst_stride_a],2),%[dst_a] \n"
+      "lea         (%[dst_b],%[dst_stride_b],2),%[dst_b] \n"
+      "vmovdqu     %%xmm14,(%[dst_a])            \n"
+      "vextracti128 $1,%%ymm14,(%[dst_b])        \n"
+      "vmovdqu     %%xmm15,(%[dst_a],%[dst_stride_a]) \n"
+      "vextracti128 $1,%%ymm15,(%[dst_b],%[dst_stride_b]) \n"
+      "lea         (%[dst_a],%[dst_stride_a],2),%[dst_a] \n"
+      "lea         (%[dst_b],%[dst_stride_b],2),%[dst_b] \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : [src] "+r"(src), [dst_a] "+r"(dst_a), [dst_b] "+r"(dst_b),
+        [width] "+r"(byte_width), [temp] "=&r"(temp)
+      : [src_stride] "r"((ptrdiff_t)src_stride),
+        [dst_stride_a] "r"((ptrdiff_t)dst_stride_a),
+        [dst_stride_b] "r"((ptrdiff_t)dst_stride_b)
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7", "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14",
+        "xmm15");
+}
+#endif  // defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEUVWX16_AVX2)
+
+#if defined(HAS_TRANSPOSEWX16_AVX2)
+void TransposeWx16_AVX2(const uint8_t* src,
+                        int src_stride,
+                        uint8_t* dst,
+                        int dst_stride,
+                        int width) {
+  TransposeWx16_Byte_AVX2(src, src_stride, dst, dst_stride * 2,
+                          dst + dst_stride, dst_stride * 2, width);
+}
+#endif  // defined(HAS_TRANSPOSEWX16_AVX2)
+
+#if defined(HAS_TRANSPOSEUVWX16_AVX2)
+void TransposeUVWx16_AVX2(const uint8_t* src,
+                          int src_stride,
+                          uint8_t* dst_a,
+                          int dst_stride_a,
+                          uint8_t* dst_b,
+                          int dst_stride_b,
+                          int width) {
+  TransposeWx16_Byte_AVX2(src, src_stride, dst_a, dst_stride_a, dst_b,
+                          dst_stride_b, width * 2);
+}
+#endif  // defined(HAS_TRANSPOSEUVWX16_AVX2)
 
 // Transpose UV 8x8.  64 bit.
 #if defined(HAS_TRANSPOSEUVWX8_SSE2)

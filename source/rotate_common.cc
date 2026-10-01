@@ -77,6 +77,19 @@ void TransposeUVWx8_C(const uint8_t* src,
   }
 }
 
+void TransposeUVWx16_C(const uint8_t* src,
+                       int src_stride,
+                       uint8_t* dst_a,
+                       int dst_stride_a,
+                       uint8_t* dst_b,
+                       int dst_stride_b,
+                       int width) {
+  TransposeUVWx8_C(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                   width);
+  TransposeUVWx8_C((src + 8 * src_stride), src_stride, (dst_a + 8),
+                   dst_stride_a, (dst_b + 8), dst_stride_b, width);
+}
+
 void TransposeWxH_C(const uint8_t* src,
                     int src_stride,
                     uint8_t* dst,
