@@ -2926,10 +2926,7 @@ int ARGBToI420Matrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -3161,10 +3158,7 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -3416,10 +3410,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
-    }
+    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)
@@ -3564,10 +3555,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
-    }
+    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)
@@ -3717,10 +3705,7 @@ int RAWToI420(const uint8_t* src_raw,
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
-    }
+    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)
@@ -3855,10 +3840,7 @@ int RAWToJ420(const uint8_t* src_raw,
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
-    }
+    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)

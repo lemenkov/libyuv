@@ -258,7 +258,7 @@ void RotatePlane180(const uint8_t* src,
 #endif
 #if defined(HAS_COPYROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    CopyRow = IS_ALIGNED(width, 128) ? CopyRow_AVX512BW : CopyRow_Any_AVX512BW;
+    CopyRow = CopyRow_AVX512BW;
   }
 #endif
 #if defined(HAS_COPYROW_ERMS)
@@ -499,7 +499,7 @@ void SplitRotateUV180(const uint8_t* src,
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW) && IS_ALIGNED(width, 32)) {
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
     MirrorSplitUVRow = MirrorSplitUVRow_AVX512BW;
   }
 #endif

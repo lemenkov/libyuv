@@ -99,10 +99,7 @@ int I420ToARGBMatrix(const uint8_t* src_y,
 #if defined(HAS_I422TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
       (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
-    I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 32)) {
-      I422ToARGBRow = I422ToARGBRow_AVX512BW;
-    }
+    I422ToARGBRow = I422ToARGBRow_AVX512BW;
   }
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
@@ -365,10 +362,7 @@ int I422ToARGBMatrix(const uint8_t* src_y,
 #if defined(HAS_I422TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
       (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
-    I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 32)) {
-      I422ToARGBRow = I422ToARGBRow_AVX512BW;
-    }
+    I422ToARGBRow = I422ToARGBRow_AVX512BW;
   }
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
@@ -3874,10 +3868,7 @@ int RGB24ToARGB(const uint8_t* src_rgb24,
 #endif
 #if defined(HAS_RGB24TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RGB24ToARGBRow = RGB24ToARGBRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RGB24ToARGBRow = RGB24ToARGBRow_AVX512BW;
-    }
+    RGB24ToARGBRow = RGB24ToARGBRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RGB24TOARGBROW_NEON)
@@ -3975,10 +3966,7 @@ int RAWToARGB(const uint8_t* src_raw,
 #endif
 #if defined(HAS_RAWTOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RAWToARGBRow = RAWToARGBRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RAWToARGBRow = RAWToARGBRow_AVX512BW;
-    }
+    RAWToARGBRow = RAWToARGBRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RAWTOARGBROW_NEON)
@@ -6689,10 +6677,7 @@ int I420ToRGB565Dither(const uint8_t* src_y,
 #if defined(HAS_I422TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
       (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
-    I422ToARGBRow = I422ToARGBRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 32)) {
-      I422ToARGBRow = I422ToARGBRow_AVX512BW;
-    }
+    I422ToARGBRow = I422ToARGBRow_AVX512BW;
   }
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
@@ -6865,10 +6850,7 @@ int I420ToAR30Matrix(const uint8_t* src_y,
 #if defined(HAS_I422TOAR30ROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
       (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
-    I422ToAR30Row = I422ToAR30Row_Any_AVX512BW;
-    if (IS_ALIGNED(width, 32)) {
-      I422ToAR30Row = I422ToAR30Row_AVX512BW;
-    }
+    I422ToAR30Row = I422ToAR30Row_AVX512BW;
   }
 #endif
 #if defined(HAS_I422TOAR30ROW_NEON)

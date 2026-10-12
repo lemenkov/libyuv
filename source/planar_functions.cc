@@ -67,7 +67,7 @@ void CopyPlane(const uint8_t* src_y,
 #endif
 #if defined(HAS_COPYROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    CopyRow = IS_ALIGNED(width, 128) ? CopyRow_AVX512BW : CopyRow_Any_AVX512BW;
+    CopyRow = CopyRow_AVX512BW;
   }
 #endif
 #if defined(HAS_COPYROW_ERMS)
@@ -3219,10 +3219,7 @@ int BlendPlane(const uint8_t* src_y0,
 #endif
 #if defined(HAS_BLENDPLANEROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    BlendPlaneRow = BlendPlaneRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      BlendPlaneRow = BlendPlaneRow_AVX512BW;
-    }
+    BlendPlaneRow = BlendPlaneRow_AVX512BW;
   }
 #endif
 #if defined(HAS_BLENDPLANEROW_NEON)
@@ -3326,10 +3323,7 @@ int I420Blend(const uint8_t* src_y0,
 #endif
 #if defined(HAS_BLENDPLANEROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    BlendPlaneRow = BlendPlaneRow_Any_AVX512BW;
-    if (IS_ALIGNED(halfwidth, 64)) {
-      BlendPlaneRow = BlendPlaneRow_AVX512BW;
-    }
+    BlendPlaneRow = BlendPlaneRow_AVX512BW;
   }
 #endif
 #if defined(HAS_BLENDPLANEROW_NEON)
@@ -5008,10 +5002,7 @@ int ARGBShuffle(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBSHUFFLEROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBShuffleRow = ARGBShuffleRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 32)) {
-      ARGBShuffleRow = ARGBShuffleRow_AVX512BW;
-    }
+    ARGBShuffleRow = ARGBShuffleRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBSHUFFLEROW_NEON)
@@ -5103,10 +5094,7 @@ int AR64Shuffle(const uint16_t* src_ar64,
 #endif
 #if defined(HAS_ARGBSHUFFLEROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 16)) {
-      AR64ShuffleRow = ARGBShuffleRow_AVX512BW;
-    }
+    AR64ShuffleRow = ARGBShuffleRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBSHUFFLEROW_NEON)

@@ -458,21 +458,25 @@ void RGBToARGBRow_AVX512BW(const uint8_t* src_raw,
                            uint8_t* dst_argb,
                            const uint32_t* shuffler,
                            int width) {
+  uintptr_t temp;
+  uintptr_t mask;
   asm volatile(
-      "vmovdqu64   %4,%%zmm20                    \n"  // kPermqRGB24ToARGB0_AVX512BW
-      "vmovdqu64   %5,%%zmm21                    \n"  // kPermqRGB24ToARGB1_AVX512BW
-      "vmovdqu64   %6,%%zmm22                    \n"  // kPermqRGB24ToARGB2_AVX512BW
-      "vmovdqu64   %7,%%zmm23                    \n"  // kPermqRGB24ToARGB3_AVX512BW
-      "vbroadcasti64x4 %3,%%zmm4                 \n"  // shuffler (32 bytes)
+      "vmovdqu64   %[q0],%%zmm20                 \n"  // kPermqRGB24ToARGB0_AVX512BW
+      "vmovdqu64   %[q1],%%zmm21                 \n"  // kPermqRGB24ToARGB1_AVX512BW
+      "vmovdqu64   %[q2],%%zmm22                 \n"  // kPermqRGB24ToARGB2_AVX512BW
+      "vmovdqu64   %[q3],%%zmm23                 \n"  // kPermqRGB24ToARGB3_AVX512BW
+      "vbroadcasti64x4 (%[shuffler]),%%zmm4      \n"  // shuffler (32 bytes)
       "vpternlogd  $0xff,%%zmm16,%%zmm16,%%zmm16 \n"  // 0xffffffff
       "vpslld      $0x18,%%zmm16,%%zmm16         \n"  // 0xff000000
+      "sub         $0x40,%[width]                \n"
+      "jl          2f                            \n"
 
       LABELALIGN
       "1:          \n"
-      "vmovdqu8    (%0),%%zmm0                   \n"
-      "vmovdqu8    64(%0),%%zmm1                 \n"
-      "vmovdqu8    128(%0),%%zmm2                \n"
-      "lea         192(%0),%0                    \n"
+      "vmovdqu8    (%[src_raw]),%%zmm0           \n"
+      "vmovdqu8    64(%[src_raw]),%%zmm1         \n"
+      "vmovdqu8    128(%[src_raw]),%%zmm2        \n"
+      "lea         192(%[src_raw]),%[src_raw]    \n"
       "vpermq      %%zmm2,%%zmm23,%%zmm3         \n"
       "vmovdqa64   %%zmm22,%%zmm18               \n"
       "vpermi2q    %%zmm2,%%zmm1,%%zmm18         \n"
@@ -489,24 +493,71 @@ void RGBToARGBRow_AVX512BW(const uint8_t* src_raw,
       "vpord       %%zmm16,%%zmm1,%%zmm1         \n"
       "vpord       %%zmm16,%%zmm2,%%zmm2         \n"
       "vpord       %%zmm16,%%zmm3,%%zmm3         \n"
-      "vmovdqu32   %%zmm0,(%1)                   \n"
-      "vmovdqu32   %%zmm1,0x40(%1)               \n"
-      "vmovdqu32   %%zmm2,0x80(%1)               \n"
-      "vmovdqu32   %%zmm3,0xc0(%1)               \n"
-      "lea         0x100(%1),%1                  \n"
-      "sub         $0x40,%2                      \n"
-      "jg          1b                            \n"
+      "vmovdqu32   %%zmm0,(%[dst_argb])          \n"
+      "vmovdqu32   %%zmm1,0x40(%[dst_argb])      \n"
+      "vmovdqu32   %%zmm2,0x80(%[dst_argb])      \n"
+      "vmovdqu32   %%zmm3,0xc0(%[dst_argb])      \n"
+      "lea         0x100(%[dst_argb]),%[dst_argb]\n"
+      "sub         $0x40,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x40,%[width]                \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q[width],%[temp],%[mask]     \n"
+      "kmovq       %[mask],%%k1                  \n"
+      "kshiftrq    $16,%%k1,%%k2                 \n"
+      "kshiftrq    $32,%%k1,%%k3                 \n"
+      "kshiftrq    $48,%%k1,%%k4                 \n"
+      "lea         (%q[width],%q[width],2),%k[width] \n"
+      "bzhi        %q[width],%[temp],%[mask]     \n"
+      "kmovq       %[mask],%%k5                  \n"
+      "vmovdqu8    (%[src_raw]),%%zmm0%{%%k5%}%{z%} \n"
+      "xor         %k[mask],%k[mask]             \n"
+      "sub         $0x40,%k[width]               \n"
+      "cmovg       %[temp],%[mask]               \n"
+      "bzhi        %q[width],%[mask],%[mask]     \n"
+      "kmovq       %[mask],%%k5                  \n"
+      "vmovdqu8    64(%[src_raw]),%%zmm1%{%%k5%}%{z%} \n"
+      "xor         %k[mask],%k[mask]             \n"
+      "sub         $0x40,%k[width]               \n"
+      "cmovg       %[temp],%[mask]               \n"
+      "bzhi        %q[width],%[mask],%[mask]     \n"
+      "kmovq       %[mask],%%k5                  \n"
+      "vmovdqu8    128(%[src_raw]),%%zmm2%{%%k5%}%{z%} \n"
+      "vpermq      %%zmm2,%%zmm23,%%zmm3         \n"
+      "vpermi2q    %%zmm2,%%zmm1,%%zmm22         \n"
+      "vpermi2q    %%zmm1,%%zmm0,%%zmm21         \n"
+      "vpermq      %%zmm0,%%zmm20,%%zmm0         \n"
+      "vpshufb     %%zmm4,%%zmm0,%%zmm0          \n"
+      "vpshufb     %%zmm4,%%zmm21,%%zmm1         \n"
+      "vpshufb     %%zmm4,%%zmm22,%%zmm2         \n"
+      "vpshufb     %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpord       %%zmm16,%%zmm0,%%zmm0         \n"
+      "vpord       %%zmm16,%%zmm1,%%zmm1         \n"
+      "vpord       %%zmm16,%%zmm2,%%zmm2         \n"
+      "vpord       %%zmm16,%%zmm3,%%zmm3         \n"
+      "vmovdqu32   %%zmm0,(%[dst_argb])%{%%k1%}  \n"
+      "vmovdqu32   %%zmm1,0x40(%[dst_argb])%{%%k2%} \n"
+      "vmovdqu32   %%zmm2,0x80(%[dst_argb])%{%%k3%} \n"
+      "vmovdqu32   %%zmm3,0xc0(%[dst_argb])%{%%k4%} \n"
+
+      "99:         \n"
       "vzeroupper  \n"
-      : "+r"(src_raw),                     // %0
-        "+r"(dst_argb),                    // %1
-        "+r"(width)                        // %2
-      : "m"(*shuffler),                    // %3
-        "m"(kPermqRGB24ToARGB0_AVX512BW),  // %4
-        "m"(kPermqRGB24ToARGB1_AVX512BW),  // %5
-        "m"(kPermqRGB24ToARGB2_AVX512BW),  // %6
-        "m"(kPermqRGB24ToARGB3_AVX512BW)   // %7
+      : [src_raw] "+r"(src_raw),                // %[src_raw]
+        [dst_argb] "+r"(dst_argb),              // %[dst_argb]
+        [width] "+r"(width),                    // %[width]
+        [temp] "=&r"(temp),                     // %[temp]
+        [mask] "=&r"(mask)                      // %[mask]
+      : [shuffler] "r"(shuffler),               // %[shuffler]
+        [q0] "m"(kPermqRGB24ToARGB0_AVX512BW),  // %[q0]
+        [q1] "m"(kPermqRGB24ToARGB1_AVX512BW),  // %[q1]
+        [q2] "m"(kPermqRGB24ToARGB2_AVX512BW),  // %[q2]
+        [q3] "m"(kPermqRGB24ToARGB3_AVX512BW)   // %[q3]
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm16",
-        "xmm18", "xmm19", "xmm20", "xmm21", "xmm22", "xmm23");
+        "xmm18", "xmm19", "xmm20", "xmm21", "xmm22", "xmm23", "k1", "k2", "k3",
+        "k4", "k5");
 }
 
 void RAWToARGBRow_AVX512BW(const uint8_t* src_raw,
@@ -2410,23 +2461,26 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
                                 uint8_t* dst_v,
                                 int width,
                                 const struct ArgbConstants* c) {
+  uintptr_t temp;
   asm volatile(
-      "vbroadcasti32x4 0x20(%5),%%zmm4           \n"  // RGBToU
-      "vbroadcasti32x4 0x40(%5),%%zmm5           \n"  // RGBToV
+      "vbroadcasti32x4 0x20(%[c]),%%zmm4        \n"  // RGBToU
+      "vbroadcasti32x4 0x40(%[c]),%%zmm5        \n"  // RGBToV
       "vpternlogd  $0xff,%%zmm16,%%zmm16,%%zmm16 \n"
       "vpabsb      %%zmm16,%%zmm20               \n"  // 0x0101
       "vpsllw      $15,%%zmm16,%%zmm17           \n"  // 0x8000
-      "vbroadcasti32x4 %6,%%zmm21                \n"  // kShuffleAARRGGBB
-      "vmovups     %7,%%zmm18                    \n"  // kPermdARGBToY_AVX512BW
-      "vmovups     %8,%%zmm19                    \n"  // kPermdARGBToUV_AVX512BW
+      "vbroadcasti32x4 %[shuf],%%zmm21           \n"  // kShuffleAARRGGBB
+      "vmovups     %[permy],%%zmm18              \n"  // kPermdARGBToY_AVX512BW
+      "vmovups     %[permuv],%%zmm19             \n"  // kPermdARGBToUV_AVX512BW
       "sub         %1,%2                         \n"
+      "subl        $0x20,%3                      \n"
+      "jl          2f                            \n"
 
       LABELALIGN
       "1:          \n"
       "vmovups     (%0),%%zmm0                   \n"  // Read 32x2 ARGB Pixels
       "vmovups     0x40(%0),%%zmm1               \n"
-      "vmovups     0x00(%0,%4,1),%%zmm2          \n"
-      "vmovups     0x40(%0,%4,1),%%zmm3          \n"
+      "vmovups     0x00(%0,%[stride],1),%%zmm2   \n"
+      "vmovups     0x40(%0,%[stride],1),%%zmm3   \n"
       "vpshufb     %%zmm21,%%zmm0,%%zmm0         \n"  // aarrggbb
       "vpshufb     %%zmm21,%%zmm1,%%zmm1         \n"
       "vpshufb     %%zmm21,%%zmm2,%%zmm2         \n"
@@ -2463,23 +2517,76 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
       "lea         0x80(%0),%0                   \n"
       "lea         0x10(%1),%1                   \n"
       "subl        $0x20,%3                      \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "addl        $0x20,%3                      \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q3,%[temp],%[temp]           \n"
+      "kmovd       %k[temp],%%k1                 \n"
+      "kshiftrd    $16,%%k1,%%k2                 \n"
+      "knotw       %%k1,%%k3                     \n"
+      "knotw       %%k2,%%k4                     \n"
+      "vmovdqu32   (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu32   0x40(%0),%%zmm1%{%%k2%}%{z%}  \n"
+      "vmovdqu32   0x00(%0,%[stride],1),%%zmm2%{%%k1%}%{z%} \n"
+      "vmovdqu32   0x40(%0,%[stride],1),%%zmm3%{%%k2%}%{z%} \n"
+      "vpshufd     $0xa0,%%zmm0,%%zmm0%{%%k3%}   \n"
+      "vpshufd     $0xa0,%%zmm1,%%zmm1%{%%k4%}   \n"
+      "vpshufd     $0xa0,%%zmm2,%%zmm2%{%%k3%}   \n"
+      "vpshufd     $0xa0,%%zmm3,%%zmm3%{%%k4%}   \n"
+      "vpshufb     %%zmm21,%%zmm0,%%zmm0         \n"
+      "vpshufb     %%zmm21,%%zmm1,%%zmm1         \n"
+      "vpshufb     %%zmm21,%%zmm2,%%zmm2         \n"
+      "vpshufb     %%zmm21,%%zmm3,%%zmm3         \n"
+      "vpmaddubsw  %%zmm20,%%zmm0,%%zmm0         \n"
+      "vpmaddubsw  %%zmm20,%%zmm1,%%zmm1         \n"
+      "vpmaddubsw  %%zmm20,%%zmm2,%%zmm2         \n"
+      "vpmaddubsw  %%zmm20,%%zmm3,%%zmm3         \n"
+      "vpaddw      %%zmm0,%%zmm2,%%zmm0          \n"
+      "vpaddw      %%zmm1,%%zmm3,%%zmm1          \n"
+      "vpxorq      %%zmm2,%%zmm2,%%zmm2          \n"
+      "vpsrlw      $1,%%zmm0,%%zmm0              \n"
+      "vpsrlw      $1,%%zmm1,%%zmm1              \n"
+      "vpavgw      %%zmm2,%%zmm0,%%zmm0          \n"
+      "vpavgw      %%zmm2,%%zmm1,%%zmm1          \n"
+      "vpackuswb   %%zmm1,%%zmm0,%%zmm0          \n"
+      "vpermd      %%zmm0,%%zmm19,%%zmm0         \n"
+
+      "vpmaddubsw  %%zmm4,%%zmm0,%%zmm1          \n"
+      "vpmaddubsw  %%zmm5,%%zmm0,%%zmm0          \n"
+      "vpmaddwd    %%zmm16,%%zmm1,%%zmm1         \n"
+      "vpmaddwd    %%zmm16,%%zmm0,%%zmm0         \n"
+      "vpackssdw   %%zmm0,%%zmm1,%%zmm0          \n"
+      "vpaddw      %%zmm17,%%zmm0,%%zmm0         \n"
+      "vpsrlw      $0x8,%%zmm0,%%zmm0            \n"
+      "vpackuswb   %%zmm0,%%zmm0,%%zmm0          \n"
+      "vpermd      %%zmm0,%%zmm18,%%zmm0         \n"
+
+      "addl        $1,%3                         \n"
+      "shrl        $1,%3                         \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q3,%[temp],%[temp]           \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu8    %%xmm0,(%1)%{%%k1%}           \n"
+      "vextracti32x4 $0x1,%%zmm0,%%xmm0          \n"
+      "vmovdqu8    %%xmm0,0x00(%1,%2,1)%{%%k1%}  \n"
+
+      "99:         \n"
       "vzeroupper  \n"
-      : "+r"(src_argb),  // %0
-        "+r"(dst_u),     // %1
-        "+r"(dst_v),     // %2
-#if defined(__i386__)
-        "+m"(width)  // %3
-#else
-        "+rm"(width)  // %3
-#endif
-      : "r"((ptrdiff_t)(src_stride_argb)),  // %4
-        "r"(c),                             // %5
-        "m"(kShuffleAARRGGBB),              // %6
-        "m"(kPermdARGBToY_AVX512BW),        // %7
-        "m"(kPermdARGBToUV_AVX512BW)        // %8
+      : "+r"(src_argb),                              // %0
+        "+r"(dst_u),                                 // %1
+        "+r"(dst_v),                                 // %2
+        "+r"(width),                                 // %3
+        [temp] "=&r"(temp)                           // %[temp]
+      : [stride] "r"((ptrdiff_t)(src_stride_argb)),  // %[stride]
+        [c] "r"(c),                                  // %[c]
+        [shuf] "m"(kShuffleAARRGGBB),                // %[shuf]
+        [permy] "m"(kPermdARGBToY_AVX512BW),         // %[permy]
+        [permuv] "m"(kPermdARGBToUV_AVX512BW)        // %[permuv]
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm16",
-        "xmm17", "xmm18", "xmm19", "xmm20", "xmm21");
+        "xmm17", "xmm18", "xmm19", "xmm20", "xmm21", "k1", "k2", "k3", "k4");
 }
 #endif  // HAS_ARGBTOUVMATRIXROW_AVX512BW
 
@@ -3899,6 +4006,18 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovups    %%zmm0,0x40(%[dst_argb])                            \n" \
   "lea        0x80(%[dst_argb]), %[dst_argb]                      \n"
 
+// Store masked ARGB values with AVX512BW.
+#define STOREARGB_MASK_AVX512BW                                       \
+  "vpunpcklbw %%zmm1,%%zmm0,%%zmm0                                \n" \
+  "vpermq     %%zmm0,%%zmm18,%%zmm0                               \n" \
+  "vpunpcklbw %%zmm5,%%zmm2,%%zmm2                                \n" \
+  "vpermq     %%zmm2,%%zmm18,%%zmm2                               \n" \
+  "vpunpcklwd %%zmm2,%%zmm0,%%zmm1                                \n" \
+  "vpunpckhwd %%zmm2,%%zmm0,%%zmm0                                \n" \
+  "kshiftrd   $16,%%k1,%%k2                                       \n" \
+  "vmovdqu32  %%zmm1,(%[dst_argb])%{%%k1%}                        \n" \
+  "vmovdqu32  %%zmm0,0x40(%[dst_argb])%{%%k2%}                    \n"
+
 // Store 16 RGB24 values.
 #define STORERGB24_AVX2                                                 \
   "vpunpcklbw   %%ymm1,%%ymm0,%%ymm0                                \n" \
@@ -4008,6 +4127,27 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovdqu32   %%zmm0,(%[dst_ar30])                               \n" \
   "vmovdqu32   %%zmm3,0x40(%[dst_ar30])                           \n" \
   "lea         0x80(%[dst_ar30]), %[dst_ar30]                     \n"
+
+// Store masked AR30 values with AVX512BW.
+#define STOREAR30_MASK_AVX512BW                                       \
+  "vpminsw     %%zmm7,%%zmm0,%%zmm0                               \n" \
+  "vpminsw     %%zmm7,%%zmm1,%%zmm1                               \n" \
+  "vpminsw     %%zmm7,%%zmm2,%%zmm2                               \n" \
+  "vpmaxsw     %%zmm6,%%zmm0,%%zmm0                               \n" \
+  "vpmaxsw     %%zmm6,%%zmm1,%%zmm1                               \n" \
+  "vpmaxsw     %%zmm6,%%zmm2,%%zmm2                               \n" \
+  "vpsrlw      $4,%%zmm0,%%zmm0                                   \n" \
+  "vpsrlw      $10,%%zmm1,%%zmm3                                  \n" \
+  "vpsllw      $6,%%zmm1,%%zmm1                                   \n" \
+  "vpternlogd  $0xf8,%%zmm19,%%zmm1,%%zmm0                        \n" \
+  "vpternlogd  $0xe4,%%zmm7,%%zmm3,%%zmm2                         \n" \
+  "vpord       %%zmm5,%%zmm2,%%zmm2                               \n" \
+  "vmovdqa64   %%zmm0,%%zmm3                                      \n" \
+  "vpermt2w    %%zmm2,%%zmm20,%%zmm0                              \n" \
+  "vpermt2w    %%zmm2,%%zmm21,%%zmm3                              \n" \
+  "kshiftrd    $16,%%k1,%%k2                                      \n" \
+  "vmovdqu32   %%zmm0,(%[dst_ar30])%{%%k1%}                       \n" \
+  "vmovdqu32   %%zmm3,0x40(%[dst_ar30])%{%%k2%}                   \n"
 
 // Store 16 AR30 values.
 #define STOREAR30_AVX2                                                \
@@ -4177,10 +4317,13 @@ void OMITFP I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
                                    uint8_t* dst_argb,
                                    const struct YuvConstants* yuvconstants,
                                    int width) {
+  uintptr_t temp;
   asm volatile (
     YUVTORGB_SETUP_AVX512BW(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpternlogd  $0xff,%%zmm5,%%zmm5,%%zmm5    \n"
+      "sub         $0x20,%[width]                \n"
+      "jl          2f                            \n"
 
     LABELALIGN
       "1:          \n"
@@ -4188,20 +4331,31 @@ void OMITFP I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
     YUVTORGB_AVX512BW(yuvconstants)
     STOREARGB_AVX512BW
       "sub         $0x20,%[width]                \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
 
+      "2:          \n"
+      "add         $0x20,%[width]                \n"
+      "je          99f                           \n"
+
+    READYUV422_MASK_AVX512BW
+    YUVTORGB_AVX512BW(yuvconstants)
+    STOREARGB_MASK_AVX512BW
+
+      "99:         \n"
       "vzeroupper  \n"
   : [y_buf]"+r"(y_buf),                         // %[y_buf]
     [u_buf]"+r"(u_buf),                         // %[u_buf]
     [v_buf]"+r"(v_buf),                         // %[v_buf]
     [dst_argb]"+r"(dst_argb),                   // %[dst_argb]
-    [width]"+rm"(width)                         // %[width]
+    [width]"+r"(width),                         // %[width]
+    [temp]"=&r"(temp)                           // %[temp]
   : [yuvconstants]"r"(yuvconstants),            // %[yuvconstants]
     [quadsplitperm]"r"(kSplitQuadWords),        // %[quadsplitperm]
     [dquadsplitperm]"r"(kSplitDoubleQuadWords), // %[dquadsplitperm]
     [unperm]"r"(kUnpermuteAVX512)               // %[unperm]
   : "memory", "cc", YUVTORGB_REGS_AVX512BW
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+    "k1", "k2"
   );
 }
 #endif  // defined(HAS_I422TOARGBROW_AVX512BW)
@@ -4361,6 +4515,7 @@ void OMITFP I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
                                    uint8_t* dst_ar30,
                                    const struct YuvConstants* yuvconstants,
                                    int width) {
+  uintptr_t temp;
   asm volatile (
     YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
@@ -4372,6 +4527,8 @@ void OMITFP I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
       "vpxord      %%zmm6,%%zmm6,%%zmm6          \n"  // 0 for min
       "vmovdqu16   (%[permar30_0]),%%zmm20       \n"
       "vmovdqu16   (%[permar30_1]),%%zmm21       \n"
+      "sub         $0x20,%[width]                \n"
+      "jl          2f                            \n"
 
     LABELALIGN
       "1:          \n"
@@ -4379,14 +4536,24 @@ void OMITFP I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
     YUVTORGB16_AVX512BW(yuvconstants)
     STOREAR30_AVX512BW
       "sub         $0x20,%[width]                \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
 
+      "2:          \n"
+      "add         $0x20,%[width]                \n"
+      "je          99f                           \n"
+
+    READYUV422_MASK_AVX512BW
+    YUVTORGB16_AVX512BW(yuvconstants)
+    STOREAR30_MASK_AVX512BW
+
+      "99:         \n"
       "vzeroupper  \n"
   : [y_buf]"+r"(y_buf),                         // %[y_buf]
     [u_buf]"+r"(u_buf),                         // %[u_buf]
     [v_buf]"+r"(v_buf),                         // %[v_buf]
     [dst_ar30]"+r"(dst_ar30),                   // %[dst_ar30]
-    [width]"+rm"(width)                         // %[width]
+    [width]"+r"(width),                         // %[width]
+    [temp]"=&r"(temp)                           // %[temp]
   : [yuvconstants]"r"(yuvconstants),            // %[yuvconstants]
     [quadsplitperm]"r"(kSplitQuadWords),        // %[quadsplitperm]
     [dquadsplitperm]"r"(kSplitDoubleQuadWords), // %[dquadsplitperm]
@@ -4395,7 +4562,7 @@ void OMITFP I422ToAR30Row_AVX512BW(const uint8_t* y_buf,
     [permar30_1]"r"(kPermAR30_1)                // %[permar30_1]
   : "memory", "cc", YUVTORGB_REGS_AVX512BW
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
-    "xmm19", "xmm20", "xmm21"
+    "xmm19", "xmm20", "xmm21", "k1", "k2"
   );
 }
 #endif  // defined(HAS_I422TOAR30ROW_AVX512BW)
@@ -5239,6 +5406,14 @@ static const uvec8 kShuffleMirrorSplitUV = {14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u,
 #endif  // defined(HAS_MIRRORSPLITUVROW_AVX2) ||
         // defined(HAS_MIRRORSPLITUVROW_AVX512BW)
 
+#if defined(HAS_MIRRORSPLITUVROW_AVX512BW) || defined(HAS_MIRRORUVROW_AVX512BW)
+static const uint16_t kMirrorUVPermute_AVX512[32] = {
+    31u, 30u, 29u, 28u, 27u, 26u, 25u, 24u, 23u, 22u, 21u,
+    20u, 19u, 18u, 17u, 16u, 15u, 14u, 13u, 12u, 11u, 10u,
+    9u,  8u,  7u,  6u,  5u,  4u,  3u,  2u,  1u,  0u};
+#endif  // defined(HAS_MIRRORSPLITUVROW_AVX512BW) ||
+        // defined(HAS_MIRRORUVROW_AVX512BW)
+
 #ifdef HAS_MIRRORSPLITUVROW_AVX512BW
 static const uint64_t kMirrorSplitUVPermute[8] = {6, 4, 2, 0, 7, 5, 3, 1};
 
@@ -5247,16 +5422,17 @@ void MirrorSplitUVRow_AVX512BW(const uint8_t* src,
                                uint8_t* dst_v,
                                int width) {
   ptrdiff_t temp_width = (ptrdiff_t)(width);
+  uintptr_t temp;
   asm volatile(
-      "vbroadcasti32x4 %4,%%zmm1                 \n"
-      "lea         -0x40(%0,%3,2),%0             \n"
+      "vbroadcasti32x4 %[shuf],%%zmm1            \n"
       "sub         %1,%2                         \n"
-      "vmovdqu64   %5,%%zmm3                     \n"
+      "vmovdqu64   %[perm],%%zmm3                \n"
+      "sub         $0x20,%3                      \n"
+      "jl          2f                            \n"
 
       LABELALIGN
       "1:          \n"
-      "vmovdqu8    (%0),%%zmm0                   \n"
-      "lea         -0x40(%0),%0                  \n"
+      "vmovdqu8    (%0,%3,2),%%zmm0              \n"
       "vpshufb     %%zmm1,%%zmm0,%%zmm0          \n"
       "vpermq      %%zmm0,%%zmm3,%%zmm0          \n"
       "vextracti64x4 $0x1,%%zmm0,%%ymm2          \n"
@@ -5264,15 +5440,36 @@ void MirrorSplitUVRow_AVX512BW(const uint8_t* src,
       "vmovdqu     %%ymm2,0x00(%1,%2,1)          \n"
       "lea         0x20(%1),%1                   \n"
       "sub         $0x20,%3                      \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x20,%3                      \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q3,%[temp],%[temp]           \n"
+      "kmovd       %k[temp],%%k1                 \n"
+      "vmovdqu16   (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "mov         $0x20,%k[temp]                \n"
+      "sub         %k3,%k[temp]                  \n"
+      "vpbroadcastw %k[temp],%%zmm2              \n"
+      "vmovdqu16   %[mirror_uv],%%zmm4           \n"
+      "vpsubw      %%zmm2,%%zmm4,%%zmm2          \n"
+      "vpermw      %%zmm0,%%zmm2,%%zmm0          \n"
+      "vpmovwb     %%zmm0,(%1)%{%%k1%}           \n"
+      "vpsrlw      $0x8,%%zmm0,%%zmm0            \n"
+      "vpmovwb     %%zmm0,0x00(%1,%2,1)%{%%k1%}  \n"
+
+      "99:         \n"
       "vzeroupper  \n"
-      : "+r"(src),                   // %0
-        "+r"(dst_u),                 // %1
-        "+r"(dst_v),                 // %2
-        "+r"(temp_width)             // %3
-      : "m"(kShuffleMirrorSplitUV),  // %4
-        "m"(kMirrorSplitUVPermute)   // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+      : "+r"(src),                                // %0
+        "+r"(dst_u),                              // %1
+        "+r"(dst_v),                              // %2
+        "+r"(temp_width),                         // %3
+        [temp] "=&r"(temp)                        // %[temp]
+      : [shuf] "m"(kShuffleMirrorSplitUV),        // %[shuf]
+        [perm] "m"(kMirrorSplitUVPermute),        // %[perm]
+        [mirror_uv] "m"(kMirrorUVPermute_AVX512)  // %[mirror_uv]
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "k1");
 }
 #endif  // HAS_MIRRORSPLITUVROW_AVX512BW
 
@@ -5358,10 +5555,6 @@ void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
 #endif  // HAS_MIRRORUVROW_AVX2
 
 #ifdef HAS_MIRRORUVROW_AVX512BW
-static const uint16_t kMirrorUVPermute_AVX512[32] = {
-    31u, 30u, 29u, 28u, 27u, 26u, 25u, 24u, 23u, 22u, 21u,
-    20u, 19u, 18u, 17u, 16u, 15u, 14u, 13u, 12u, 11u, 10u,
-    9u,  8u,  7u,  6u,  5u,  4u,  3u,  2u,  1u,  0u};
 void MirrorUVRow_AVX512BW(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   ptrdiff_t temp_width = (ptrdiff_t)(width);
   asm volatile("vmovdqu16   %3,%%zmm5                     \n"
@@ -7773,7 +7966,12 @@ void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width) {
 
 #ifdef HAS_COPYROW_AVX512BW
 void CopyRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
+  uintptr_t temp;
   asm volatile(
+      "sub         $0x80,%2                      \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
       "1:          \n"
       "vmovups     (%0),%%zmm0                   \n"
       "vmovups     0x40(%0),%%zmm1               \n"
@@ -7782,13 +7980,35 @@ void CopyRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
       "vmovups     %%zmm1,0x40(%1)               \n"
       "lea         0x80(%1),%1                   \n"
       "sub         $0x80,%2                      \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x80,%2                      \n"
+      "je          99f                           \n"
+      "cmp         $0x40,%2                      \n"
+      "jl          3f                            \n"
+      "vmovups     (%0),%%zmm0                   \n"
+      "lea         0x40(%0),%0                   \n"
+      "vmovups     %%zmm0,(%1)                   \n"
+      "lea         0x40(%1),%1                   \n"
+      "sub         $0x40,%2                      \n"
+      "je          99f                           \n"
+
+      "3:          \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q2,%[temp],%[temp]           \n"
+      "kmovq       %[temp],%%k1                  \n"
+      "vmovdqu8    (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu8    %%zmm0,(%1)%{%%k1%}           \n"
+
+      "99:         \n"
       "vzeroupper  \n"
-      : "+r"(src),   // %0
-        "+r"(dst),   // %1
-        "+r"(width)  // %2
+      : "+r"(src),          // %0
+        "+r"(dst),          // %1
+        "+r"(width),        // %2
+        [temp] "=&r"(temp)  // %[temp]
       :
-      : "memory", "cc", "xmm0", "xmm1");
+      : "memory", "cc", "xmm0", "xmm1", "k1");
 }
 #endif  // HAS_COPYROW_AVX512BW
 
@@ -8812,17 +9032,20 @@ void BlendPlaneRow_AVX512BW(const uint8_t* src0,
                             const uint8_t* alpha,
                             uint8_t* dst,
                             int width) {
+  uintptr_t temp;
   asm volatile(
       "vpternlogd  $0xff,%%zmm17,%%zmm17,%%zmm17 \n"
       "vpsllw      $0x8,%%zmm17,%%zmm16          \n"  // 0xff00
       "vpabsb      %%zmm17,%%zmm17               \n"  // 0x0101
       "vpsllw      $7,%%zmm17,%%zmm17            \n"  // 0x8080
-      "mov         $0x807f807f,%%eax             \n"
-      "vmovd       %%eax,%%xmm18                 \n"
+      "mov         $0x807f807f,%k[temp]          \n"
+      "vmovd       %k[temp],%%xmm18              \n"
       "vbroadcastss %%xmm18,%%zmm18              \n"  // 0x807f
       "sub         %2,%0                         \n"
       "sub         %2,%1                         \n"
       "sub         %2,%3                         \n"
+      "sub         $64,%4                        \n"
+      "jl          2f                            \n"
 
       // 64 pixel loop.
       LABELALIGN
@@ -8848,16 +9071,45 @@ void BlendPlaneRow_AVX512BW(const uint8_t* src0,
       "vmovdqu8    %%zmm0,(%3,%2,1)              \n"
       "add         $64,%2                        \n"
       "sub         $64,%4                        \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $64,%4                        \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q4,%[temp],%[temp]           \n"
+      "kmovq       %[temp],%%k1                  \n"
+      "vmovdqu8    (%2),%%zmm0%{%%k1%}%{z%}      \n"
+      "vpunpckhbw  %%zmm0,%%zmm0,%%zmm3          \n"
+      "vpunpcklbw  %%zmm0,%%zmm0,%%zmm0          \n"
+      "vpxorq      %%zmm16,%%zmm3,%%zmm3         \n"
+      "vpxorq      %%zmm16,%%zmm0,%%zmm0         \n"
+      "vmovdqu8    (%0,%2,1),%%zmm1%{%%k1%}%{z%} \n"
+      "vmovdqu8    (%1,%2,1),%%zmm2%{%%k1%}%{z%} \n"
+      "vpunpckhbw  %%zmm2,%%zmm1,%%zmm4          \n"
+      "vpunpcklbw  %%zmm2,%%zmm1,%%zmm1          \n"
+      "vpsubb      %%zmm17,%%zmm4,%%zmm4         \n"
+      "vpsubb      %%zmm17,%%zmm1,%%zmm1         \n"
+      "vpmaddubsw  %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpmaddubsw  %%zmm1,%%zmm0,%%zmm0          \n"
+      "vpaddw      %%zmm18,%%zmm3,%%zmm3         \n"
+      "vpaddw      %%zmm18,%%zmm0,%%zmm0         \n"
+      "vpsrlw      $0x8,%%zmm3,%%zmm3            \n"
+      "vpsrlw      $0x8,%%zmm0,%%zmm0            \n"
+      "vpackuswb   %%zmm3,%%zmm0,%%zmm0          \n"
+      "vmovdqu8    %%zmm0,(%3,%2,1)%{%%k1%}      \n"
+
+      "99:         \n"
       "vzeroupper  \n"
-      : "+r"(src0),   // %0
-        "+r"(src1),   // %1
-        "+r"(alpha),  // %2
-        "+r"(dst),    // %3
-        "+rm"(width)  // %4
+      : "+r"(src0),         // %0
+        "+r"(src1),         // %1
+        "+r"(alpha),        // %2
+        "+r"(dst),          // %3
+        "+r"(width),        // %4
+        [temp] "=&r"(temp)  // %[temp]
         ::"memory",
-        "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm16", "xmm17",
-        "xmm18");
+        "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm16", "xmm17", "xmm18",
+        "k1");
 }
 #endif  // HAS_BLENDPLANEROW_AVX512BW
 
@@ -10624,26 +10876,47 @@ void ARGBShuffleRow_AVX512BW(const uint8_t* src_argb,
                              uint8_t* dst_argb,
                              const uint8_t* shuffler,
                              int width) {
-  asm volatile("vbroadcasti32x4 (%3),%%zmm5               \n"
+  uintptr_t temp;
+  asm volatile(
+      "vbroadcasti32x4 (%[shuffler]),%%zmm5     \n"
+      "sub         $0x20,%2                      \n"
+      "jl          2f                            \n"
 
-               LABELALIGN
-               "1:          \n"
-               "vmovdqu8    (%0),%%zmm0                   \n"
-               "vmovdqu8    0x40(%0),%%zmm1               \n"
-               "lea         0x80(%0),%0                   \n"
-               "vpshufb     %%zmm5,%%zmm0,%%zmm0          \n"
-               "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
-               "vmovdqu8    %%zmm0,(%1)                   \n"
-               "vmovdqu8    %%zmm1,0x40(%1)               \n"
-               "lea         0x80(%1),%1                   \n"
-               "sub         $0x20,%2                      \n"
-               "jg          1b                            \n"
-               "vzeroupper  \n"
-               : "+r"(src_argb),  // %0
-                 "+r"(dst_argb),  // %1
-                 "+r"(width)      // %2
-               : "r"(shuffler)    // %3
-               : "memory", "cc", "xmm0", "xmm1", "xmm5");
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu8    (%0),%%zmm0                   \n"
+      "vmovdqu8    0x40(%0),%%zmm1               \n"
+      "lea         0x80(%0),%0                   \n"
+      "vpshufb     %%zmm5,%%zmm0,%%zmm0          \n"
+      "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
+      "vmovdqu8    %%zmm0,(%1)                   \n"
+      "vmovdqu8    %%zmm1,0x40(%1)               \n"
+      "lea         0x80(%1),%1                   \n"
+      "sub         $0x20,%2                      \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x20,%2                      \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q2,%[temp],%[temp]           \n"
+      "kmovd       %k[temp],%%k1                 \n"
+      "kshiftrd    $16,%%k1,%%k2                 \n"
+      "vmovdqu32   (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu32   0x40(%0),%%zmm1%{%%k2%}%{z%}  \n"
+      "vpshufb     %%zmm5,%%zmm0,%%zmm0          \n"
+      "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
+      "vmovdqu32   %%zmm0,(%1)%{%%k1%}           \n"
+      "vmovdqu32   %%zmm1,0x40(%1)%{%%k2%}       \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : "+r"(src_argb),           // %0
+        "+r"(dst_argb),           // %1
+        "+r"(width),              // %2
+        [temp] "=&r"(temp)        // %[temp]
+      : [shuffler] "r"(shuffler)  // %[shuffler]
+      : "memory", "cc", "xmm0", "xmm1", "xmm5", "k1", "k2");
 }
 #endif  // HAS_ARGBSHUFFLEROW_AVX512BW
 

@@ -380,10 +380,7 @@ int ARGBToI422Matrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -856,10 +853,7 @@ int ARGBToNV16Matrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -1660,10 +1654,7 @@ int ARGBToYUY2Matrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_NEON)
@@ -1829,10 +1820,7 @@ int ARGBToUYVYMatrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_NEON)
@@ -2095,10 +2083,7 @@ int ARGBToP010Matrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -2496,10 +2481,7 @@ int ARGBToP210Matrix(const uint8_t* src_argb,
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ARGBToUVMatrixRow = ARGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
-    }
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -4206,10 +4188,7 @@ static int RAWToNVMatrix(const uint8_t* src_raw,
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    RGBToUVMatrixRow = RGBToUVMatrixRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
-    }
+    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)

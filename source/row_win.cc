@@ -428,7 +428,7 @@ static void RGBToARGBRow_AVX512BW(const uint8_t* src_raw,
   __m512i zmm_shuf =
       _mm512_broadcast_i64x4(_mm256_loadu_si256((const __m256i*)shuffler));
 
-  while (width > 0) {
+  while (width >= 64) {
     __m512i zmm_raw0 = _mm512_loadu_si512((const __m512i*)src_raw);
     __m512i zmm_raw1 = _mm512_loadu_si512((const __m512i*)(src_raw + 64));
     __m512i zmm_raw2 = _mm512_loadu_si512((const __m512i*)(src_raw + 128));
@@ -456,6 +456,42 @@ static void RGBToARGBRow_AVX512BW(const uint8_t* src_raw,
     src_raw += 192;
     dst_argb += 256;
     width -= 64;
+  }
+  if (width > 0) {
+    uint64_t dst_mask = (1ULL << width) - 1ULL;
+    int src_bytes = width * 3;
+    __mmask64 src_mask0 =
+        (src_bytes >= 64) ? ~0ULL : ((1ULL << src_bytes) - 1ULL);
+    __mmask64 src_mask1 =
+        (src_bytes >= 128)
+            ? ~0ULL
+            : ((src_bytes > 64) ? ((1ULL << (src_bytes - 64)) - 1ULL) : 0ULL);
+    __mmask64 src_mask2 =
+        (src_bytes > 128) ? ((1ULL << (src_bytes - 128)) - 1ULL) : 0ULL;
+
+    __m512i zmm_raw0 = _mm512_maskz_loadu_epi8(src_mask0, src_raw);
+    __m512i zmm_raw1 = _mm512_maskz_loadu_epi8(src_mask1, src_raw + 64);
+    __m512i zmm_raw2 = _mm512_maskz_loadu_epi8(src_mask2, src_raw + 128);
+
+    __m512i zmm0 = _mm512_permutexvar_epi64(zmm_q0, zmm_raw0);
+    __m512i zmm1 = _mm512_permutex2var_epi64(zmm_raw0, zmm_q1, zmm_raw1);
+    __m512i zmm2 = _mm512_permutex2var_epi64(zmm_raw1, zmm_q2, zmm_raw2);
+    __m512i zmm3 = _mm512_permutexvar_epi64(zmm_q3, zmm_raw2);
+
+    zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
+    zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
+    zmm2 = _mm512_shuffle_epi8(zmm2, zmm_shuf);
+    zmm3 = _mm512_shuffle_epi8(zmm3, zmm_shuf);
+
+    zmm0 = _mm512_or_si512(zmm0, zmm_alpha);
+    zmm1 = _mm512_or_si512(zmm1, zmm_alpha);
+    zmm2 = _mm512_or_si512(zmm2, zmm_alpha);
+    zmm3 = _mm512_or_si512(zmm3, zmm_alpha);
+
+    _mm512_mask_storeu_epi32(dst_argb, (__mmask16)dst_mask, zmm0);
+    _mm512_mask_storeu_epi32(dst_argb + 64, (__mmask16)(dst_mask >> 16), zmm1);
+    _mm512_mask_storeu_epi32(dst_argb + 128, (__mmask16)(dst_mask >> 32), zmm2);
+    _mm512_mask_storeu_epi32(dst_argb + 192, (__mmask16)(dst_mask >> 48), zmm3);
   }
   _mm256_zeroupper();
 }
@@ -1630,6 +1666,18 @@ void ARGBShuffleRow_AVX512BW(const uint8_t* src_argb,
     dst_argb += 128;
     width -= 32;
   }
+  if (width > 0) {
+    uint32_t mask = (1u << width) - 1u;
+    __mmask16 mask0 = (__mmask16)mask;
+    __mmask16 mask1 = (__mmask16)(mask >> 16);
+    __m512i row = _mm512_maskz_loadu_epi32(mask0, src_argb);
+    __m512i row1 = _mm512_maskz_loadu_epi32(mask1, src_argb + 64);
+    row = _mm512_shuffle_epi8(row, control);
+    row1 = _mm512_shuffle_epi8(row1, control);
+    _mm512_mask_storeu_epi32(dst_argb, mask0, row);
+    _mm512_mask_storeu_epi32(dst_argb + 64, mask1, row1);
+  }
+  _mm256_zeroupper();
 }
 #endif  // HAS_ARGBSHUFFLEROW_AVX512BW
 
@@ -2401,6 +2449,62 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
     dst_ar30 += 128;
     width -= 32;
   }
+  if (width > 0) {
+    __mmask16 mask_uv = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
+    __mmask32 mask_y = (__mmask32)((1u << width) - 1u);
+    __m128i xmm_u = _mm_maskz_loadu_epi8(mask_uv, src_u);
+    __m128i xmm_v = _mm_maskz_loadu_epi8(mask_uv, src_u + offset);
+
+    __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);
+    __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);
+
+    zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);
+    zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);
+
+    __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);
+    zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);
+    zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);
+
+    __m256i ymm_y = _mm256_maskz_loadu_epi8(mask_y, src_y);
+    __m512i zmm4 = _mm512_castsi256_si512(ymm_y);
+    zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);
+    zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);
+    zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
+
+    zmm3 = _mm512_sub_epi8(zmm3, zmm_128);
+    zmm4 = _mm512_mulhi_epu16(zmm4, zmm_kYToRgb);
+
+    __m512i zmm0 = _mm512_maddubs_epi16(zmm_kUVToB, zmm3);
+    __m512i zmm1 = _mm512_maddubs_epi16(zmm_kUVToG, zmm3);
+    __m512i zmm2 = _mm512_maddubs_epi16(zmm_kUVToR, zmm3);
+
+    zmm4 = _mm512_add_epi16(zmm4, zmm_kYBiasToRgb);
+
+    zmm0 = _mm512_adds_epi16(zmm0, zmm4);
+    zmm1 = _mm512_subs_epi16(zmm4, zmm1);
+    zmm2 = _mm512_adds_epi16(zmm2, zmm4);
+
+    zmm0 = _mm512_min_epi16(zmm0, zmm_3ff0);
+    zmm1 = _mm512_min_epi16(zmm1, zmm_3ff0);
+    zmm2 = _mm512_min_epi16(zmm2, zmm_3ff0);
+    zmm0 = _mm512_max_epi16(zmm0, zmm_zero);
+    zmm1 = _mm512_max_epi16(zmm1, zmm_zero);
+    zmm2 = _mm512_max_epi16(zmm2, zmm_zero);
+
+    zmm0 = _mm512_srli_epi16(zmm0, 4);
+    zmm3 = _mm512_srli_epi16(zmm1, 10);
+    zmm1 = _mm512_slli_epi16(zmm1, 6);
+    zmm0 = _mm512_ternarylogic_epi32(zmm0, zmm1, zmm_fc00, 0xf8);
+    zmm2 = _mm512_ternarylogic_epi32(zmm2, zmm3, zmm_3ff0, 0xe4);
+    zmm2 = _mm512_or_si512(zmm2, zmm_c000);
+
+    __m512i zmm_dst0 = _mm512_permutex2var_epi16(zmm0, zmm_perm0, zmm2);
+    __m512i zmm_dst1 = _mm512_permutex2var_epi16(zmm0, zmm_perm1, zmm2);
+
+    _mm512_mask_storeu_epi32(dst_ar30, (__mmask16)mask_y, zmm_dst0);
+    _mm512_mask_storeu_epi32(dst_ar30 + 64, (__mmask16)(mask_y >> 16),
+                             zmm_dst1);
+  }
   _mm256_zeroupper();
 }
 #endif  // HAS_I422TOAR30ROW_AVX512BW
@@ -2564,7 +2668,7 @@ void BlendPlaneRow_AVX512BW(const uint8_t* src0,
   __m512i zmm_80 = _mm512_set1_epi8((char)0x80);
   __m512i zmm_round = _mm512_set1_epi16((short)0x807f);
 
-  while (width > 0) {
+  while (width >= 64) {
     __m512i zmm_a = _mm512_loadu_si512((const __m512i*)alpha);
     __m512i zmm_s0 = _mm512_loadu_si512((const __m512i*)src0);
     __m512i zmm_s1 = _mm512_loadu_si512((const __m512i*)src1);
@@ -2595,6 +2699,34 @@ void BlendPlaneRow_AVX512BW(const uint8_t* src0,
     _mm512_storeu_si512((__m512i*)dst, zmm_d);
     dst += 64;
     width -= 64;
+  }
+  if (width > 0) {
+    __mmask64 mask = (1ULL << width) - 1ULL;
+    __m512i zmm_a = _mm512_maskz_loadu_epi8(mask, alpha);
+    __m512i zmm_s0 = _mm512_maskz_loadu_epi8(mask, src0);
+    __m512i zmm_s1 = _mm512_maskz_loadu_epi8(mask, src1);
+
+    __m512i zmm_a_lo = _mm512_unpacklo_epi8(zmm_a, zmm_a);
+    __m512i zmm_a_hi = _mm512_unpackhi_epi8(zmm_a, zmm_a);
+    zmm_a_lo = _mm512_xor_si512(zmm_a_lo, zmm_ff00);
+    zmm_a_hi = _mm512_xor_si512(zmm_a_hi, zmm_ff00);
+
+    __m512i zmm_s_lo = _mm512_unpacklo_epi8(zmm_s0, zmm_s1);
+    __m512i zmm_s_hi = _mm512_unpackhi_epi8(zmm_s0, zmm_s1);
+    zmm_s_lo = _mm512_sub_epi8(zmm_s_lo, zmm_80);
+    zmm_s_hi = _mm512_sub_epi8(zmm_s_hi, zmm_80);
+
+    __m512i zmm_p_lo = _mm512_maddubs_epi16(zmm_a_lo, zmm_s_lo);
+    __m512i zmm_p_hi = _mm512_maddubs_epi16(zmm_a_hi, zmm_s_hi);
+
+    zmm_p_lo = _mm512_add_epi16(zmm_p_lo, zmm_round);
+    zmm_p_hi = _mm512_add_epi16(zmm_p_hi, zmm_round);
+
+    zmm_p_lo = _mm512_srli_epi16(zmm_p_lo, 8);
+    zmm_p_hi = _mm512_srli_epi16(zmm_p_hi, 8);
+
+    __m512i zmm_d = _mm512_packus_epi16(zmm_p_lo, zmm_p_hi);
+    _mm512_mask_storeu_epi8(dst, mask, zmm_d);
   }
   _mm256_zeroupper();
 }
