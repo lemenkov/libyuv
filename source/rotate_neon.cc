@@ -177,9 +177,9 @@ void TransposeUVWx8_NEON(const uint8_t* src,
       : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11");
 }
 
-// Transpose 32 bit values (ARGB) in Nx4 tiles using vld4.32 with lane insertion
+// Transpose 32 bit values (ARGB) in Wx4 tiles using vld4.32 with lane insertion
 // and lane stores for 1..3 remainder rows.
-void TransposeNx4_32_NEON(const uint8_t* src,
+void TransposeWx4_32_NEON(const uint8_t* src,
                           int src_stride,
                           uint8_t* dst,
                           int dst_stride,
@@ -264,7 +264,7 @@ void TransposeWxH_32_NEON(const uint8_t* src,
                           int height) {
   const ptrdiff_t d = dst_stride;
   while (width >= 4) {
-    TransposeNx4_32_NEON(src, src_stride, dst, dst_stride, height);
+    TransposeWx4_32_NEON(src, src_stride, dst, dst_stride, height);
     src += 16;
     dst += 4 * d;
     width -= 4;
@@ -417,6 +417,64 @@ void TransposeWxH_32_NEON(const uint8_t* src,
         : "r"(s * 4)    // %6
         : "memory", "cc", "q0");
   }
+}
+
+void TransposeWx8_16_NEON(const uint16_t* src,
+                          int src_stride,
+                          uint16_t* dst,
+                          int dst_stride,
+                          int width) {
+  const ptrdiff_t s = (ptrdiff_t)src_stride * 2;
+  const ptrdiff_t d = (ptrdiff_t)dst_stride * 2;
+  const uint8_t* temp;
+  asm volatile(
+      "1:                                          \n"
+      "mov         %[temp], %[src]                 \n"
+      "vld1.8      {q0}, [%[temp]], %[s]           \n"
+      "vld1.8      {q1}, [%[temp]], %[s]           \n"
+      "vld1.8      {q2}, [%[temp]], %[s]           \n"
+      "vld1.8      {q3}, [%[temp]], %[s]           \n"
+      "vld1.8      {q8}, [%[temp]], %[s]           \n"
+      "vld1.8      {q9}, [%[temp]], %[s]           \n"
+      "vld1.8      {q10}, [%[temp]], %[s]          \n"
+      "vld1.8      {q11}, [%[temp]]                \n"
+      "add         %[src], %[src], #16             \n"
+
+      // Stage 1: 16-bit transpose
+      "vtrn.16     q0, q1                          \n"
+      "vtrn.16     q2, q3                          \n"
+      "vtrn.16     q8, q9                          \n"
+      "vtrn.16     q10, q11                        \n"
+
+      // Stage 2: 32-bit transpose
+      "vtrn.32     q0, q2                          \n"
+      "vtrn.32     q1, q3                          \n"
+      "vtrn.32     q8, q10                         \n"
+      "vtrn.32     q9, q11                         \n"
+
+      // Stage 3: 64-bit swap
+      "vswp        d1, d16                         \n"
+      "vswp        d3, d18                         \n"
+      "vswp        d5, d20                         \n"
+      "vswp        d7, d22                         \n"
+
+      "subs        %[w], %[w], #8                  \n"
+      "vst1.8      {q0}, [%[dst]], %[d]            \n"
+      "vst1.8      {q1}, [%[dst]], %[d]            \n"
+      "vst1.8      {q2}, [%[dst]], %[d]            \n"
+      "vst1.8      {q3}, [%[dst]], %[d]            \n"
+      "vst1.8      {q8}, [%[dst]], %[d]            \n"
+      "vst1.8      {q9}, [%[dst]], %[d]            \n"
+      "vst1.8      {q10}, [%[dst]], %[d]           \n"
+      "vst1.8      {q11}, [%[dst]], %[d]           \n"
+      "bgt         1b                              \n"
+      : [src] "+r"(src),    // %[src]
+        [dst] "+r"(dst),    // %[dst]
+        [w] "+r"(width),    // %[w]
+        [temp] "=&r"(temp)  // %[temp]
+      : [s] "r"(s),         // %[s]
+        [d] "r"(d)          // %[d]
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11");
 }
 
 #endif  // defined(__ARM_NEON__) && !defined(__aarch64__)

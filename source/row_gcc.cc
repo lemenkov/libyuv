@@ -5357,6 +5357,31 @@ void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
 }
 #endif  // HAS_MIRRORUVROW_AVX2
 
+#ifdef HAS_MIRRORUVROW_AVX512BW
+static const uint16_t kMirrorUVPermute_AVX512[32] = {
+    31u, 30u, 29u, 28u, 27u, 26u, 25u, 24u, 23u, 22u, 21u,
+    20u, 19u, 18u, 17u, 16u, 15u, 14u, 13u, 12u, 11u, 10u,
+    9u,  8u,  7u,  6u,  5u,  4u,  3u,  2u,  1u,  0u};
+void MirrorUVRow_AVX512BW(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  ptrdiff_t temp_width = (ptrdiff_t)(width);
+  asm volatile("vmovdqu16   %3,%%zmm5                     \n"
+
+               LABELALIGN
+               "1:          \n"
+               "vpermw      -0x40(%0,%2,2),%%zmm5,%%zmm0  \n"
+               "vmovdqu16   %%zmm0,(%1)                   \n"
+               "lea         0x40(%1),%1                   \n"
+               "sub         $0x20,%2                      \n"
+               "jg          1b                            \n"
+               "vzeroupper  \n"
+               : "+r"(src_uv),                 // %0
+                 "+r"(dst_uv),                 // %1
+                 "+r"(temp_width)              // %2
+               : "m"(kMirrorUVPermute_AVX512)  // %3
+               : "memory", "cc", "xmm0", "xmm5");
+}
+#endif  // HAS_MIRRORUVROW_AVX512BW
+
 #ifdef HAS_RGB24MIRRORROW_SSSE3
 
 // Shuffle first 5 pixels to last 5 mirrored.  first byte zero

@@ -212,7 +212,7 @@ void TransposeUVWx16_LSX(const uint8_t* src,
   }
 }
 
-void Transpose4x4_32_LSX(const uint8_t* src,
+void TransposeWx4_32_LSX(const uint8_t* src,
                          int src_stride,
                          uint8_t* dst,
                          int dst_stride,
@@ -239,6 +239,57 @@ void Transpose4x4_32_LSX(const uint8_t* src,
     __lsx_vstx(dst3, dst, dst_stride3);
     dst += 16;
     src += src_stride4;
+  }
+}
+
+void TransposeWx8_16_LSX(const uint16_t* src,
+                         int src_stride,
+                         uint16_t* dst,
+                         int dst_stride,
+                         int width) {
+  const ptrdiff_t s = (ptrdiff_t)src_stride * 2;
+  const ptrdiff_t d = (ptrdiff_t)dst_stride * 2;
+  const uint8_t* src_b = (const uint8_t*)src;
+  uint8_t* dst_b = (uint8_t*)dst;
+  while (width > 0) {
+    __m128i r0 = __lsx_vld(src_b, 0);
+    __m128i r1 = __lsx_vldx(src_b, s);
+    __m128i r2 = __lsx_vldx(src_b, s * 2);
+    __m128i r3 = __lsx_vldx(src_b, s * 3);
+    __m128i r4 = __lsx_vldx(src_b, s * 4);
+    __m128i r5 = __lsx_vldx(src_b, s * 5);
+    __m128i r6 = __lsx_vldx(src_b, s * 6);
+    __m128i r7 = __lsx_vldx(src_b, s * 7);
+
+    __m128i t0 = __lsx_vilvl_h(r1, r0);
+    __m128i t1 = __lsx_vilvh_h(r1, r0);
+    __m128i t2 = __lsx_vilvl_h(r3, r2);
+    __m128i t3 = __lsx_vilvh_h(r3, r2);
+    __m128i t4 = __lsx_vilvl_h(r5, r4);
+    __m128i t5 = __lsx_vilvh_h(r5, r4);
+    __m128i t6 = __lsx_vilvl_h(r7, r6);
+    __m128i t7 = __lsx_vilvh_h(r7, r6);
+
+    __m128i u0 = __lsx_vilvl_w(t2, t0);
+    __m128i u1 = __lsx_vilvh_w(t2, t0);
+    __m128i u2 = __lsx_vilvl_w(t3, t1);
+    __m128i u3 = __lsx_vilvh_w(t3, t1);
+    __m128i u4 = __lsx_vilvl_w(t6, t4);
+    __m128i u5 = __lsx_vilvh_w(t6, t4);
+    __m128i u6 = __lsx_vilvl_w(t7, t5);
+    __m128i u7 = __lsx_vilvh_w(t7, t5);
+
+    __lsx_vst(__lsx_vilvl_d(u4, u0), dst_b, 0);
+    __lsx_vstx(__lsx_vilvh_d(u4, u0), dst_b, d);
+    __lsx_vstx(__lsx_vilvl_d(u5, u1), dst_b, d * 2);
+    __lsx_vstx(__lsx_vilvh_d(u5, u1), dst_b, d * 3);
+    __lsx_vstx(__lsx_vilvl_d(u6, u2), dst_b, d * 4);
+    __lsx_vstx(__lsx_vilvh_d(u6, u2), dst_b, d * 5);
+    __lsx_vstx(__lsx_vilvl_d(u7, u3), dst_b, d * 6);
+    __lsx_vstx(__lsx_vilvh_d(u7, u3), dst_b, d * 7);
+    src_b += 16;
+    dst_b += d * 8;
+    width -= 8;
   }
 }
 

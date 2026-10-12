@@ -2088,8 +2088,14 @@ ANY11M(MirrorRow_Any_LSX, MirrorRow_LSX, 1, 31)
 #ifdef HAS_MIRRORROW_LASX
 ANY11M(MirrorRow_Any_LASX, MirrorRow_LASX, 1, 63)
 #endif
+#ifdef HAS_MIRRORUVROW_AVX512BW
+ANY11M(MirrorUVRow_Any_AVX512BW, MirrorUVRow_AVX512BW, 2, 31)
+#endif
 #ifdef HAS_MIRRORUVROW_AVX2
 ANY11M(MirrorUVRow_Any_AVX2, MirrorUVRow_AVX2, 2, 15)
+#endif
+#ifdef HAS_MIRRORUVROW_SSSE3
+ANY11M(MirrorUVRow_Any_SSSE3, MirrorUVRow_SSSE3, 2, 7)
 #endif
 #ifdef HAS_MIRRORUVROW_NEON
 ANY11M(MirrorUVRow_Any_NEON, MirrorUVRow_NEON, 2, 31)

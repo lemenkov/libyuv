@@ -105,22 +105,70 @@ TUVANY(TransposeUVWx16_Any_WASMSIMD,
     }                                                            \
   }
 
-#ifdef HAS_TRANSPOSE4X4_32_SSE2
-TANY32(Transpose4x4_32_Any_SSE2, Transpose4x4_32_SSE2, TransposeWxH_32_C, 3)
+#ifdef HAS_TRANSPOSEWX4_32_SSE2
+TANY32(TransposeWx4_32_Any_SSE2, TransposeWx4_32_SSE2, TransposeWxH_32_C, 3)
 #endif
-#ifdef HAS_TRANSPOSE4X4_32_LSX
-TANY32(Transpose4x4_32_Any_LSX, Transpose4x4_32_LSX, TransposeWxH_32_C, 3)
+#ifdef HAS_TRANSPOSEWX4_32_LSX
+TANY32(TransposeWx4_32_Any_LSX, TransposeWx4_32_LSX, TransposeWxH_32_C, 3)
 #endif
-#ifdef HAS_TRANSPOSE4X4_32_LASX
-TANY32(Transpose4x4_32_Any_LASX, Transpose4x4_32_LASX, TransposeWxH_32_C, 7)
+#ifdef HAS_TRANSPOSEWX4_32_LASX
+TANY32(TransposeWx4_32_Any_LASX, TransposeWx4_32_LASX, TransposeWxH_32_C, 7)
 #endif
-#ifdef HAS_TRANSPOSE4X4_32_WASMSIMD
-TANY32(Transpose4x4_32_Any_WASMSIMD,
-       Transpose4x4_32_WASMSIMD,
+#ifdef HAS_TRANSPOSEWX4_32_WASMSIMD
+TANY32(TransposeWx4_32_Any_WASMSIMD,
+       TransposeWx4_32_WASMSIMD,
        TransposeWxH_32_C,
        3)
 #endif
 #undef TANY32
+
+#define TANY32_SRC(NAMEANY, TPOS_SIMD, MASK, HEIGHT)                   \
+  void NAMEANY(const uint8_t* src, int src_stride, uint8_t* dst,       \
+               int dst_stride, int width) {                            \
+    int r = width & MASK;                                              \
+    int n = width - r;                                                 \
+    if (n > 0) {                                                       \
+      TPOS_SIMD(src, src_stride, dst, dst_stride, n);                  \
+    }                                                                  \
+    ptrdiff_t np = n;                                                  \
+    TransposeWxH_32_C(src + np * 4, src_stride, dst + np * dst_stride, \
+                      dst_stride, r, HEIGHT);                          \
+  }
+
+#ifdef HAS_TRANSPOSEWX8_32_AVX2
+TANY32_SRC(TransposeWx8_32_Any_AVX2, TransposeWx8_32_AVX2, 3, 8)
+#endif
+#undef TANY32_SRC
+
+#define TANY16(NAMEANY, TPOS_SIMD, MASK, HEIGHT)                               \
+  void NAMEANY(const uint16_t* src, int src_stride, uint16_t* dst,             \
+               int dst_stride, int width) {                                    \
+    int r = width & MASK;                                                      \
+    int n = width - r;                                                         \
+    if (n > 0) {                                                               \
+      TPOS_SIMD(src, src_stride, dst, dst_stride, n);                          \
+    }                                                                          \
+    ptrdiff_t np = n;                                                          \
+    TransposeWxH_16_C(src + np, src_stride, dst + np * dst_stride, dst_stride, \
+                      r, HEIGHT);                                              \
+  }
+
+#ifdef HAS_TRANSPOSEWX8_16_NEON
+TANY16(TransposeWx8_16_Any_NEON, TransposeWx8_16_NEON, 7, 8)
+#endif
+#ifdef HAS_TRANSPOSEWX16_16_AVX2
+TANY16(TransposeWx16_16_Any_AVX2, TransposeWx16_16_AVX2, 7, 16)
+#endif
+#ifdef HAS_TRANSPOSEWX8_16_LSX
+TANY16(TransposeWx8_16_Any_LSX, TransposeWx8_16_LSX, 7, 8)
+#endif
+#ifdef HAS_TRANSPOSEWX16_16_LASX
+TANY16(TransposeWx16_16_Any_LASX, TransposeWx16_16_LASX, 7, 16)
+#endif
+#ifdef HAS_TRANSPOSEWX8_16_WASMSIMD
+TANY16(TransposeWx8_16_Any_WASMSIMD, TransposeWx8_16_WASMSIMD, 7, 8)
+#endif
+#undef TANY16
 
 #ifdef __cplusplus
 }  // extern "C"

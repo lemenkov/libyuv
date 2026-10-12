@@ -18,9 +18,9 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
-// Transpose 32 bit values (ARGB) in Nx4 tiles using SVE2 with predication
+// Transpose 32 bit values (ARGB) in Wx4 tiles using SVE2 with predication
 // for tail widths.
-void TransposeNx4_32_SVE2(const uint8_t* src,
+void TransposeWx4_32_SVE2(const uint8_t* src,
                           int src_stride,
                           uint8_t* dst,
                           int dst_stride,
@@ -107,6 +107,168 @@ void TransposeNx4_32_SVE2(const uint8_t* src,
         [width] "+r"(width)  // %[width]
       : [s4] "r"(s4)         // %[s4]
       : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
+}
+
+void TransposeWx8_16_SVE2(const uint16_t* src,
+                          int src_stride,
+                          uint16_t* dst,
+                          int dst_stride,
+                          int width) {
+  const ptrdiff_t s = (ptrdiff_t)src_stride * 2;
+  const ptrdiff_t d = (ptrdiff_t)dst_stride * 2;
+  const uint16_t* temp;
+  asm volatile(
+      "ptrue       p0.h, vl8                       \n"
+      "subs        %w[w], %w[w], #8                \n"
+      "b.lt        2f                              \n"
+
+      "1:                                          \n"
+      "mov         %[temp], %[src]                 \n"
+      "ld1h        {z0.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z1.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z2.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z3.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z4.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z5.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z6.h}, p0/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z7.h}, p0/z, [%[temp]]         \n"
+      "add         %[src], %[src], #16             \n"
+
+      "trn1        z16.h, z0.h, z1.h               \n"
+      "trn2        z17.h, z0.h, z1.h               \n"
+      "trn1        z18.h, z2.h, z3.h               \n"
+      "trn2        z19.h, z2.h, z3.h               \n"
+      "trn1        z20.h, z4.h, z5.h               \n"
+      "trn2        z21.h, z4.h, z5.h               \n"
+      "trn1        z22.h, z6.h, z7.h               \n"
+      "trn2        z23.h, z6.h, z7.h               \n"
+
+      "trn1        z0.s, z16.s, z18.s              \n"
+      "trn1        z1.s, z17.s, z19.s              \n"
+      "trn2        z2.s, z16.s, z18.s              \n"
+      "trn2        z3.s, z17.s, z19.s              \n"
+      "trn1        z4.s, z20.s, z22.s              \n"
+      "trn1        z5.s, z21.s, z23.s              \n"
+      "trn2        z6.s, z20.s, z22.s              \n"
+      "trn2        z7.s, z21.s, z23.s              \n"
+
+      "trn1        z16.d, z0.d, z4.d               \n"
+      "trn1        z17.d, z1.d, z5.d               \n"
+      "trn1        z18.d, z2.d, z6.d               \n"
+      "trn1        z19.d, z3.d, z7.d               \n"
+      "trn2        z20.d, z0.d, z4.d               \n"
+      "trn2        z21.d, z1.d, z5.d               \n"
+      "trn2        z22.d, z2.d, z6.d               \n"
+      "trn2        z23.d, z3.d, z7.d               \n"
+
+      "st1h        {z16.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z17.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z18.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z19.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z20.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z21.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z22.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z23.h}, p0, [%[dst]]           \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "subs        %w[w], %w[w], #8                \n"
+      "b.ge        1b                              \n"
+
+      "2:                                          \n"
+      "adds        %w[w], %w[w], #8                \n"
+      "b.eq        3f                              \n"
+      "whilelt     p1.h, wzr, %w[w]                \n"
+      "mov         %[temp], %[src]                 \n"
+      "ld1h        {z0.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z1.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z2.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z3.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z4.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z5.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z6.h}, p1/z, [%[temp]]         \n"
+      "add         %[temp], %[temp], %[s]          \n"
+      "ld1h        {z7.h}, p1/z, [%[temp]]         \n"
+
+      "trn1        z16.h, z0.h, z1.h               \n"
+      "trn2        z17.h, z0.h, z1.h               \n"
+      "trn1        z18.h, z2.h, z3.h               \n"
+      "trn2        z19.h, z2.h, z3.h               \n"
+      "trn1        z20.h, z4.h, z5.h               \n"
+      "trn2        z21.h, z4.h, z5.h               \n"
+      "trn1        z22.h, z6.h, z7.h               \n"
+      "trn2        z23.h, z6.h, z7.h               \n"
+
+      "trn1        z0.s, z16.s, z18.s              \n"
+      "trn1        z1.s, z17.s, z19.s              \n"
+      "trn2        z2.s, z16.s, z18.s              \n"
+      "trn2        z3.s, z17.s, z19.s              \n"
+      "trn1        z4.s, z20.s, z22.s              \n"
+      "trn1        z5.s, z21.s, z23.s              \n"
+      "trn2        z6.s, z20.s, z22.s              \n"
+      "trn2        z7.s, z21.s, z23.s              \n"
+
+      "trn1        z16.d, z0.d, z4.d               \n"
+      "trn1        z17.d, z1.d, z5.d               \n"
+      "trn1        z18.d, z2.d, z6.d               \n"
+      "trn1        z19.d, z3.d, z7.d               \n"
+      "trn2        z20.d, z0.d, z4.d               \n"
+      "trn2        z21.d, z1.d, z5.d               \n"
+      "trn2        z22.d, z2.d, z6.d               \n"
+      "trn2        z23.d, z3.d, z7.d               \n"
+
+      "st1h        {z16.h}, p0, [%[dst]]           \n"
+      "subs        %w[w], %w[w], #1                \n"
+      "b.eq        3f                              \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z17.h}, p0, [%[dst]]           \n"
+      "subs        %w[w], %w[w], #1                \n"
+      "b.eq        3f                              \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z18.h}, p0, [%[dst]]           \n"
+      "subs        %w[w], %w[w], #1                \n"
+      "b.eq        3f                              \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z19.h}, p0, [%[dst]]           \n"
+      "subs        %w[w], %w[w], #1                \n"
+      "b.eq        3f                              \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z20.h}, p0, [%[dst]]           \n"
+      "subs        %w[w], %w[w], #1                \n"
+      "b.eq        3f                              \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z21.h}, p0, [%[dst]]           \n"
+      "subs        %w[w], %w[w], #1                \n"
+      "b.eq        3f                              \n"
+      "add         %[dst], %[dst], %[d]            \n"
+      "st1h        {z22.h}, p0, [%[dst]]           \n"
+      "3:                                          \n"
+      : [src] "+r"(src),    // %[src]
+        [dst] "+r"(dst),    // %[dst]
+        [w] "+r"(width),    // %[w]
+        [temp] "=&r"(temp)  // %[temp]
+      : [s] "r"(s),         // %[s]
+        [d] "r"(d)          // %[d]
+      : "memory", "cc", "p0", "p1", "z0", "z1", "z2", "z3", "z4", "z5", "z6",
+        "z7", "z16", "z17", "z18", "z19", "z20", "z21", "z22", "z23");
 }
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)

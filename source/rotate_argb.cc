@@ -30,35 +30,44 @@ static int ARGBTranspose(const uint8_t* src_argb,
                          int dst_stride_argb,
                          int width,
                          int height) {
-#if defined(HAS_TRANSPOSEWXH_32_AVX2) ||                                     \
-    defined(HAS_TRANSPOSEWXH_32_AVX512BW) ||                                 \
-    defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
+#if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
     defined(HAS_TRANSPOSEWXH_32_RVV)
   void (*TransposeWxH_32)(const uint8_t* src, int src_stride, uint8_t* dst,
                           int dst_stride, int width, int height) = NULL;
 #endif
-  void (*Transpose4x4_32)(const uint8_t* src, int src_stride, uint8_t* dst,
+#if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
+  void (*TransposeWx16_32)(const uint8_t* src, int src_stride, uint8_t* dst,
+                           int dst_stride, int width) = NULL;
+#endif
+#if defined(HAS_TRANSPOSEWX8_32_AVX2)
+  void (*TransposeWx8_32)(const uint8_t* src, int src_stride, uint8_t* dst,
+                          int dst_stride, int width) = NULL;
+#endif
+  void (*TransposeWx4_32)(const uint8_t* src, int src_stride, uint8_t* dst,
                           int dst_stride, int width) = NULL;
   // Check stride is a multiple of 4.
   if (src_stride_argb & 3) {
     return -1;
   }
-#if defined(HAS_TRANSPOSE4X4_32_SSE2)
+#if defined(HAS_TRANSPOSEWX4_32_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    Transpose4x4_32 = Transpose4x4_32_Any_SSE2;
+    TransposeWx4_32 = TransposeWx4_32_Any_SSE2;
     if (IS_ALIGNED(height, 4)) {  // Width of dest.
-      Transpose4x4_32 = Transpose4x4_32_SSE2;
+      TransposeWx4_32 = TransposeWx4_32_SSE2;
     }
   }
 #endif
-#if defined(HAS_TRANSPOSEWXH_32_AVX2)
+#if defined(HAS_TRANSPOSEWX8_32_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    TransposeWxH_32 = TransposeWxH_32_AVX2;
+    TransposeWx8_32 = TransposeWx8_32_Any_AVX2;
+    if (IS_ALIGNED(width, 4)) {
+      TransposeWx8_32 = TransposeWx8_32_AVX2;
+    }
   }
 #endif
-#if defined(HAS_TRANSPOSEWXH_32_AVX512BW)
+#if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    TransposeWxH_32 = TransposeWxH_32_AVX512BW;
+    TransposeWx16_32 = TransposeWx16_32_AVX512BW;
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_32_NEON)
@@ -66,9 +75,9 @@ static int ARGBTranspose(const uint8_t* src_argb,
     TransposeWxH_32 = TransposeWxH_32_NEON;
   }
 #endif
-#if defined(HAS_TRANSPOSENX4_32_SVE2)
+#if defined(HAS_TRANSPOSEWX4_32_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
-    Transpose4x4_32 = TransposeNx4_32_SVE2;
+    TransposeWx4_32 = TransposeWx4_32_SVE2;
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_32_SME)
@@ -81,34 +90,32 @@ static int ARGBTranspose(const uint8_t* src_argb,
     TransposeWxH_32 = TransposeWxH_32_RVV;
   }
 #endif
-#if defined(HAS_TRANSPOSE4X4_32_LSX)
+#if defined(HAS_TRANSPOSEWX4_32_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
-    Transpose4x4_32 = Transpose4x4_32_Any_LSX;
+    TransposeWx4_32 = TransposeWx4_32_Any_LSX;
     if (IS_ALIGNED(height, 4)) {  // Width of dest.
-      Transpose4x4_32 = Transpose4x4_32_LSX;
+      TransposeWx4_32 = TransposeWx4_32_LSX;
     }
   }
 #endif
-#if defined(HAS_TRANSPOSE4X4_32_LASX)
+#if defined(HAS_TRANSPOSEWX4_32_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
-    Transpose4x4_32 = Transpose4x4_32_Any_LASX;
+    TransposeWx4_32 = TransposeWx4_32_Any_LASX;
     if (IS_ALIGNED(height, 8)) {  // Width of dest.
-      Transpose4x4_32 = Transpose4x4_32_LASX;
+      TransposeWx4_32 = TransposeWx4_32_LASX;
     }
   }
 #endif
-#if defined(HAS_TRANSPOSE4X4_32_WASMSIMD)
+#if defined(HAS_TRANSPOSEWX4_32_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
-    Transpose4x4_32 = Transpose4x4_32_Any_WASMSIMD;
+    TransposeWx4_32 = TransposeWx4_32_Any_WASMSIMD;
     if (IS_ALIGNED(height, 4)) {  // Width of dest.
-      Transpose4x4_32 = Transpose4x4_32_WASMSIMD;
+      TransposeWx4_32 = TransposeWx4_32_WASMSIMD;
     }
   }
 #endif
 
-#if defined(HAS_TRANSPOSEWXH_32_AVX2) ||                                     \
-    defined(HAS_TRANSPOSEWXH_32_AVX512BW) ||                                 \
-    defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
+#if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
     defined(HAS_TRANSPOSEWXH_32_RVV)
   if (TransposeWxH_32) {
     TransposeWxH_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb, width,
@@ -116,18 +123,42 @@ static int ARGBTranspose(const uint8_t* src_argb,
     return 0;
   }
 #endif
-  if (Transpose4x4_32) {
-    while (width >= 4) {
-      Transpose4x4_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
-                      height);
-      src_argb += 4 * 4;
-      dst_argb += 4 * (ptrdiff_t)dst_stride_argb;
-      width -= 4;
+#if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
+  if (TransposeWx16_32) {
+    while (height >= 16) {
+      TransposeWx16_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                       width);
+      src_argb += 16 * (ptrdiff_t)src_stride_argb;
+      dst_argb += 16 * 4;
+      height -= 16;
     }
   }
-  if (width > 0) {
-    TransposeWxH_32_C(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
-                      width, height);
+#endif
+#if defined(HAS_TRANSPOSEWX8_32_AVX2)
+  if (TransposeWx8_32) {
+    while (height >= 8) {
+      TransposeWx8_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                      width);
+      src_argb += 8 * (ptrdiff_t)src_stride_argb;
+      dst_argb += 8 * 4;
+      height -= 8;
+    }
+  }
+#endif
+  if (height > 0) {
+    if (TransposeWx4_32) {
+      while (width >= 4) {
+        TransposeWx4_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                        height);
+        src_argb += 4 * 4;
+        dst_argb += 4 * (ptrdiff_t)dst_stride_argb;
+        width -= 4;
+      }
+    }
+    if (width > 0) {
+      TransposeWxH_32_C(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                        width, height);
+    }
   }
   return 0;
 }

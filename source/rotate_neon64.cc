@@ -232,9 +232,9 @@ void TransposeUVWx8_NEON(const uint8_t* src,
         "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v30", "v31");
 }
 
-// Transpose 32 bit values (ARGB) in Nx4 tiles using ld4 with lane insertion
+// Transpose 32 bit values (ARGB) in Wx4 tiles using ld4 with lane insertion
 // and lane stores for 1..3 remainder rows.
-void TransposeNx4_32_NEON(const uint8_t* src,
+void TransposeWx4_32_NEON(const uint8_t* src,
                           int src_stride,
                           uint8_t* dst,
                           int dst_stride,
@@ -319,7 +319,7 @@ void TransposeWxH_32_NEON(const uint8_t* src,
                           int height) {
   const ptrdiff_t d = dst_stride;
   while (width >= 4) {
-    TransposeNx4_32_NEON(src, src_stride, dst, dst_stride, height);
+    TransposeWx4_32_NEON(src, src_stride, dst, dst_stride, height);
     src += 16;
     dst += 4 * d;
     width -= 4;
@@ -472,6 +472,77 @@ void TransposeWxH_32_NEON(const uint8_t* src,
         : "r"(s * 4)    // %6
         : "memory", "cc", "v0");
   }
+}
+
+void TransposeWx8_16_NEON(const uint16_t* src,
+                          int src_stride,
+                          uint16_t* dst,
+                          int dst_stride,
+                          int width) {
+  const ptrdiff_t s = (ptrdiff_t)src_stride * 2;
+  const ptrdiff_t d = (ptrdiff_t)dst_stride * 2;
+  const uint16_t* temp;
+  asm volatile(
+      "1:                                          \n"
+      "mov         %[temp], %[src]                 \n"
+      "ld1         {v0.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v1.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v2.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v3.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v4.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v5.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v6.8h}, [%[temp]], %[s]        \n"
+      "ld1         {v7.8h}, [%[temp]]             \n"
+      "add         %[src], %[src], #16             \n"
+
+      // Stage 1: 16-bit transpose
+      "trn1        v16.8h, v0.8h, v1.8h            \n"
+      "trn2        v17.8h, v0.8h, v1.8h            \n"
+      "trn1        v18.8h, v2.8h, v3.8h            \n"
+      "trn2        v19.8h, v2.8h, v3.8h            \n"
+      "trn1        v20.8h, v4.8h, v5.8h            \n"
+      "trn2        v21.8h, v4.8h, v5.8h            \n"
+      "trn1        v22.8h, v6.8h, v7.8h            \n"
+      "trn2        v23.8h, v6.8h, v7.8h            \n"
+
+      // Stage 2: 32-bit transpose
+      "trn1        v0.4s, v16.4s, v18.4s           \n"
+      "trn1        v1.4s, v17.4s, v19.4s           \n"
+      "trn2        v2.4s, v16.4s, v18.4s           \n"
+      "trn2        v3.4s, v17.4s, v19.4s           \n"
+      "trn1        v4.4s, v20.4s, v22.4s           \n"
+      "trn1        v5.4s, v21.4s, v23.4s           \n"
+      "trn2        v6.4s, v20.4s, v22.4s           \n"
+      "trn2        v7.4s, v21.4s, v23.4s           \n"
+
+      // Stage 3: 64-bit transpose
+      "trn1        v16.2d, v0.2d, v4.2d            \n"
+      "trn1        v17.2d, v1.2d, v5.2d            \n"
+      "trn1        v18.2d, v2.2d, v6.2d            \n"
+      "trn1        v19.2d, v3.2d, v7.2d            \n"
+      "trn2        v20.2d, v0.2d, v4.2d            \n"
+      "trn2        v21.2d, v1.2d, v5.2d            \n"
+      "trn2        v22.2d, v2.2d, v6.2d            \n"
+      "trn2        v23.2d, v3.2d, v7.2d            \n"
+
+      "subs        %w[w], %w[w], #8                \n"
+      "st1         {v16.8h}, [%[dst]], %[d]        \n"
+      "st1         {v17.8h}, [%[dst]], %[d]        \n"
+      "st1         {v18.8h}, [%[dst]], %[d]        \n"
+      "st1         {v19.8h}, [%[dst]], %[d]        \n"
+      "st1         {v20.8h}, [%[dst]], %[d]        \n"
+      "st1         {v21.8h}, [%[dst]], %[d]        \n"
+      "st1         {v22.8h}, [%[dst]], %[d]        \n"
+      "st1         {v23.8h}, [%[dst]], %[d]        \n"
+      "b.gt        1b                              \n"
+      : [src] "+r"(src),    // %[src]
+        [dst] "+r"(dst),    // %[dst]
+        [w] "+r"(width),    // %[w]
+        [temp] "=&r"(temp)  // %[temp]
+      : [s] "r"(s),         // %[s]
+        [d] "r"(d)          // %[d]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)

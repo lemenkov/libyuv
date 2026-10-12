@@ -2785,6 +2785,7 @@ void MirrorUVPlane(const uint8_t* src_uv,
 #endif
 #if defined(HAS_MIRRORUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
+    MirrorUVRow = MirrorUVRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       MirrorUVRow = MirrorUVRow_SSSE3;
     }
@@ -2795,6 +2796,14 @@ void MirrorUVPlane(const uint8_t* src_uv,
     MirrorUVRow = MirrorUVRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       MirrorUVRow = MirrorUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MirrorUVRow = MirrorUVRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorUVRow = MirrorUVRow_AVX512BW;
     }
   }
 #endif
@@ -2812,6 +2821,11 @@ void MirrorUVPlane(const uint8_t* src_uv,
     if (IS_ALIGNED(width, 16)) {
       MirrorUVRow = MirrorUVRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MirrorUVRow = MirrorUVRow_RVV;
   }
 #endif
 #if defined(HAS_MIRRORUVROW_WASMSIMD)

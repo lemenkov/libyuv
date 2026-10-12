@@ -166,7 +166,7 @@ static inline void Copy4(uint8_t* dst, const uint8_t* src) {
 }
 
 // Transpose 32 bit values (ARGB)
-void Transpose4x4_32_C(const uint8_t* src,
+void TransposeWx4_32_C(const uint8_t* src,
                        int src_stride,
                        uint8_t* dst,
                        int dst_stride,

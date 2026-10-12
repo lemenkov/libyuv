@@ -191,10 +191,10 @@ void TransposeUVWx16_WASMSIMD(const uint8_t* src,
 }
 #endif  // HAS_TRANSPOSEUVWX16_WASMSIMD
 
-#if defined(HAS_TRANSPOSE4X4_32_WASMSIMD)
-// Transpose 32 bit values (ARGB) in 4x4 tiles, moving down 4 rows of source
+#if defined(HAS_TRANSPOSEWX4_32_WASMSIMD)
+// Transpose 32 bit values (ARGB) in Wx4 tiles, moving down 4 rows of source
 // and across 4 columns of destination. Width is a multiple of 4.
-void Transpose4x4_32_WASMSIMD(const uint8_t* src,
+void TransposeWx4_32_WASMSIMD(const uint8_t* src,
                               int src_stride,
                               uint8_t* dst,
                               int dst_stride,
@@ -258,7 +258,58 @@ void Transpose4x4_32_WASMSIMD(const uint8_t* src,
     width -= 4;
   }
 }
-#endif  // HAS_TRANSPOSE4X4_32_WASMSIMD
+#endif  // HAS_TRANSPOSEWX4_32_WASMSIMD
+
+#if defined(HAS_TRANSPOSEWX8_16_WASMSIMD)
+void TransposeWx8_16_WASMSIMD(const uint16_t* src,
+                              int src_stride,
+                              uint16_t* dst,
+                              int dst_stride,
+                              int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t d = dst_stride;
+  while (width > 0) {
+    v128_t r0 = wasm_v128_load(src);
+    v128_t r1 = wasm_v128_load(src + s);
+    v128_t r2 = wasm_v128_load(src + s * 2);
+    v128_t r3 = wasm_v128_load(src + s * 3);
+    v128_t r4 = wasm_v128_load(src + s * 4);
+    v128_t r5 = wasm_v128_load(src + s * 5);
+    v128_t r6 = wasm_v128_load(src + s * 6);
+    v128_t r7 = wasm_v128_load(src + s * 7);
+
+    v128_t t0 = ZIPLO16(r0, r1);
+    v128_t t1 = ZIPHI16(r0, r1);
+    v128_t t2 = ZIPLO16(r2, r3);
+    v128_t t3 = ZIPHI16(r2, r3);
+    v128_t t4 = ZIPLO16(r4, r5);
+    v128_t t5 = ZIPHI16(r4, r5);
+    v128_t t6 = ZIPLO16(r6, r7);
+    v128_t t7 = ZIPHI16(r6, r7);
+
+    v128_t u0 = ZIPLO32(t0, t2);
+    v128_t u1 = ZIPHI32(t0, t2);
+    v128_t u2 = ZIPLO32(t1, t3);
+    v128_t u3 = ZIPHI32(t1, t3);
+    v128_t u4 = ZIPLO32(t4, t6);
+    v128_t u5 = ZIPHI32(t4, t6);
+    v128_t u6 = ZIPLO32(t5, t7);
+    v128_t u7 = ZIPHI32(t5, t7);
+
+    wasm_v128_store(dst, ZIPLO64(u0, u4));
+    wasm_v128_store(dst + d, ZIPHI64(u0, u4));
+    wasm_v128_store(dst + d * 2, ZIPLO64(u1, u5));
+    wasm_v128_store(dst + d * 3, ZIPHI64(u1, u5));
+    wasm_v128_store(dst + d * 4, ZIPLO64(u2, u6));
+    wasm_v128_store(dst + d * 5, ZIPHI64(u2, u6));
+    wasm_v128_store(dst + d * 6, ZIPLO64(u3, u7));
+    wasm_v128_store(dst + d * 7, ZIPHI64(u3, u7));
+    src += 8;
+    dst += d * 8;
+    width -= 8;
+  }
+}
+#endif  // HAS_TRANSPOSEWX8_16_WASMSIMD
 
 #undef ZIPLO8
 #undef ZIPHI8

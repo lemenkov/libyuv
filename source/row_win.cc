@@ -915,6 +915,25 @@ void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
 }
 #endif  // HAS_MIRRORUVROW_AVX2
 
+#ifdef HAS_MIRRORUVROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void MirrorUVRow_AVX512BW(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  const __m512i zmm_idx = _mm512_set_epi16(
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
+  src_uv += width * 2;
+  while (width > 0) {
+    src_uv -= 64;
+    __m512i zmm0 = _mm512_loadu_si512((const __m512i*)src_uv);
+    zmm0 = _mm512_permutexvar_epi16(zmm_idx, zmm0);
+    _mm512_storeu_si512((__m512i*)dst_uv, zmm0);
+    dst_uv += 64;
+    width -= 32;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_MIRRORUVROW_AVX512BW
+
 #ifdef HAS_SWAPUVROW_AVX2
 LIBYUV_TARGET_AVX2
 void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width) {

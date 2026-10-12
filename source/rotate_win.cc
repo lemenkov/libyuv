@@ -417,10 +417,302 @@ void TransposeUVWx16_AVX512BW(const uint8_t* src,
 }
 #endif  // defined(HAS_TRANSPOSEUVWX16_AVX512BW)
 
-#if defined(HAS_TRANSPOSE4X4_32_SSE2)
+#if defined(HAS_TRANSPOSEWX16_16_AVX2)
+LIBYUV_TARGET_AVX2
+void TransposeWx16_16_AVX2(const uint16_t* src,
+                           int src_stride,
+                           uint16_t* dst,
+                           int dst_stride,
+                           int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t d = dst_stride;
+  while (width > 0) {
+    __m256i r0 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src))),
+        _mm_loadu_si128((const __m128i*)(src + s * 8)), 1);
+    __m256i r1 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s))),
+        _mm_loadu_si128((const __m128i*)(src + s * 9)), 1);
+    __m256i r2 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 2))),
+        _mm_loadu_si128((const __m128i*)(src + s * 10)), 1);
+    __m256i r3 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 3))),
+        _mm_loadu_si128((const __m128i*)(src + s * 11)), 1);
+    __m256i r4 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 4))),
+        _mm_loadu_si128((const __m128i*)(src + s * 12)), 1);
+    __m256i r5 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 5))),
+        _mm_loadu_si128((const __m128i*)(src + s * 13)), 1);
+    __m256i r6 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 6))),
+        _mm_loadu_si128((const __m128i*)(src + s * 14)), 1);
+    __m256i r7 = _mm256_inserti128_si256(
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 7))),
+        _mm_loadu_si128((const __m128i*)(src + s * 15)), 1);
+
+    __m256i t0 = _mm256_unpacklo_epi16(r0, r1);
+    __m256i t1 = _mm256_unpackhi_epi16(r0, r1);
+    __m256i t2 = _mm256_unpacklo_epi16(r2, r3);
+    __m256i t3 = _mm256_unpackhi_epi16(r2, r3);
+    __m256i t4 = _mm256_unpacklo_epi16(r4, r5);
+    __m256i t5 = _mm256_unpackhi_epi16(r4, r5);
+    __m256i t6 = _mm256_unpacklo_epi16(r6, r7);
+    __m256i t7 = _mm256_unpackhi_epi16(r6, r7);
+
+    __m256i u0 = _mm256_unpacklo_epi32(t0, t2);
+    __m256i u1 = _mm256_unpackhi_epi32(t0, t2);
+    __m256i u2 = _mm256_unpacklo_epi32(t1, t3);
+    __m256i u3 = _mm256_unpackhi_epi32(t1, t3);
+    __m256i u4 = _mm256_unpacklo_epi32(t4, t6);
+    __m256i u5 = _mm256_unpackhi_epi32(t4, t6);
+    __m256i u6 = _mm256_unpacklo_epi32(t5, t7);
+    __m256i u7 = _mm256_unpackhi_epi32(t5, t7);
+
+    _mm256_storeu_si256((__m256i*)(dst), _mm256_unpacklo_epi64(u0, u4));
+    _mm256_storeu_si256((__m256i*)(dst + d), _mm256_unpackhi_epi64(u0, u4));
+    _mm256_storeu_si256((__m256i*)(dst + d * 2), _mm256_unpacklo_epi64(u1, u5));
+    _mm256_storeu_si256((__m256i*)(dst + d * 3), _mm256_unpackhi_epi64(u1, u5));
+    _mm256_storeu_si256((__m256i*)(dst + d * 4), _mm256_unpacklo_epi64(u2, u6));
+    _mm256_storeu_si256((__m256i*)(dst + d * 5), _mm256_unpackhi_epi64(u2, u6));
+    _mm256_storeu_si256((__m256i*)(dst + d * 6), _mm256_unpacklo_epi64(u3, u7));
+    _mm256_storeu_si256((__m256i*)(dst + d * 7), _mm256_unpackhi_epi64(u3, u7));
+    src += 8;
+    dst += d * 8;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif  // defined(HAS_TRANSPOSEWX16_16_AVX2)
+
+#if defined(HAS_TRANSPOSEWX32_16_AVX512BW)
+LIBYUV_TARGET_AVX512BW
+void TransposeWx32_16_AVX512BW(const uint16_t* src,
+                               int src_stride,
+                               uint16_t* dst,
+                               int dst_stride,
+                               int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t d = dst_stride;
+  while (width >= 8) {
+    __m512i r0 = _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src)));
+    __m512i r1 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s)));
+    __m512i r2 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 2)));
+    __m512i r3 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 3)));
+    __m512i r4 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 4)));
+    __m512i r5 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 5)));
+    __m512i r6 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 6)));
+    __m512i r7 =
+        _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 7)));
+
+    r0 = _mm512_inserti32x4(r0, _mm_loadu_si128((const __m128i*)(src + s * 8)),
+                            1);
+    r1 = _mm512_inserti32x4(r1, _mm_loadu_si128((const __m128i*)(src + s * 9)),
+                            1);
+    r2 = _mm512_inserti32x4(r2, _mm_loadu_si128((const __m128i*)(src + s * 10)),
+                            1);
+    r3 = _mm512_inserti32x4(r3, _mm_loadu_si128((const __m128i*)(src + s * 11)),
+                            1);
+    r4 = _mm512_inserti32x4(r4, _mm_loadu_si128((const __m128i*)(src + s * 12)),
+                            1);
+    r5 = _mm512_inserti32x4(r5, _mm_loadu_si128((const __m128i*)(src + s * 13)),
+                            1);
+    r6 = _mm512_inserti32x4(r6, _mm_loadu_si128((const __m128i*)(src + s * 14)),
+                            1);
+    r7 = _mm512_inserti32x4(r7, _mm_loadu_si128((const __m128i*)(src + s * 15)),
+                            1);
+
+    r0 = _mm512_inserti32x4(r0, _mm_loadu_si128((const __m128i*)(src + s * 16)),
+                            2);
+    r1 = _mm512_inserti32x4(r1, _mm_loadu_si128((const __m128i*)(src + s * 17)),
+                            2);
+    r2 = _mm512_inserti32x4(r2, _mm_loadu_si128((const __m128i*)(src + s * 18)),
+                            2);
+    r3 = _mm512_inserti32x4(r3, _mm_loadu_si128((const __m128i*)(src + s * 19)),
+                            2);
+    r4 = _mm512_inserti32x4(r4, _mm_loadu_si128((const __m128i*)(src + s * 20)),
+                            2);
+    r5 = _mm512_inserti32x4(r5, _mm_loadu_si128((const __m128i*)(src + s * 21)),
+                            2);
+    r6 = _mm512_inserti32x4(r6, _mm_loadu_si128((const __m128i*)(src + s * 22)),
+                            2);
+    r7 = _mm512_inserti32x4(r7, _mm_loadu_si128((const __m128i*)(src + s * 23)),
+                            2);
+
+    r0 = _mm512_inserti32x4(r0, _mm_loadu_si128((const __m128i*)(src + s * 24)),
+                            3);
+    r1 = _mm512_inserti32x4(r1, _mm_loadu_si128((const __m128i*)(src + s * 25)),
+                            3);
+    r2 = _mm512_inserti32x4(r2, _mm_loadu_si128((const __m128i*)(src + s * 26)),
+                            3);
+    r3 = _mm512_inserti32x4(r3, _mm_loadu_si128((const __m128i*)(src + s * 27)),
+                            3);
+    r4 = _mm512_inserti32x4(r4, _mm_loadu_si128((const __m128i*)(src + s * 28)),
+                            3);
+    r5 = _mm512_inserti32x4(r5, _mm_loadu_si128((const __m128i*)(src + s * 29)),
+                            3);
+    r6 = _mm512_inserti32x4(r6, _mm_loadu_si128((const __m128i*)(src + s * 30)),
+                            3);
+    r7 = _mm512_inserti32x4(r7, _mm_loadu_si128((const __m128i*)(src + s * 31)),
+                            3);
+
+    __m512i t0 = _mm512_unpacklo_epi16(r0, r1);
+    __m512i t1 = _mm512_unpackhi_epi16(r0, r1);
+    __m512i t2 = _mm512_unpacklo_epi16(r2, r3);
+    __m512i t3 = _mm512_unpackhi_epi16(r2, r3);
+    __m512i t4 = _mm512_unpacklo_epi16(r4, r5);
+    __m512i t5 = _mm512_unpackhi_epi16(r4, r5);
+    __m512i t6 = _mm512_unpacklo_epi16(r6, r7);
+    __m512i t7 = _mm512_unpackhi_epi16(r6, r7);
+
+    __m512i u0 = _mm512_unpacklo_epi32(t0, t2);
+    __m512i u1 = _mm512_unpackhi_epi32(t0, t2);
+    __m512i u2 = _mm512_unpacklo_epi32(t1, t3);
+    __m512i u3 = _mm512_unpackhi_epi32(t1, t3);
+    __m512i u4 = _mm512_unpacklo_epi32(t4, t6);
+    __m512i u5 = _mm512_unpackhi_epi32(t4, t6);
+    __m512i u6 = _mm512_unpacklo_epi32(t5, t7);
+    __m512i u7 = _mm512_unpackhi_epi32(t5, t7);
+
+    _mm512_storeu_si512((__m512i*)(dst), _mm512_unpacklo_epi64(u0, u4));
+    _mm512_storeu_si512((__m512i*)(dst + d), _mm512_unpackhi_epi64(u0, u4));
+    _mm512_storeu_si512((__m512i*)(dst + d * 2), _mm512_unpacklo_epi64(u1, u5));
+    _mm512_storeu_si512((__m512i*)(dst + d * 3), _mm512_unpackhi_epi64(u1, u5));
+    _mm512_storeu_si512((__m512i*)(dst + d * 4), _mm512_unpacklo_epi64(u2, u6));
+    _mm512_storeu_si512((__m512i*)(dst + d * 5), _mm512_unpackhi_epi64(u2, u6));
+    _mm512_storeu_si512((__m512i*)(dst + d * 6), _mm512_unpacklo_epi64(u3, u7));
+    _mm512_storeu_si512((__m512i*)(dst + d * 7), _mm512_unpackhi_epi64(u3, u7));
+    src += 8;
+    dst += d * 8;
+    width -= 8;
+  }
+  if (width > 0) {
+    const __mmask8 col_mask = (1u << width) - 1;
+    __m512i r0 = _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src));
+    __m512i r1 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s));
+    __m512i r2 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s * 2));
+    __m512i r3 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s * 3));
+    __m512i r4 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s * 4));
+    __m512i r5 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s * 5));
+    __m512i r6 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s * 6));
+    __m512i r7 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi16(col_mask, src + s * 7));
+
+    r0 =
+        _mm512_inserti32x4(r0, _mm_maskz_loadu_epi16(col_mask, src + s * 8), 1);
+    r1 =
+        _mm512_inserti32x4(r1, _mm_maskz_loadu_epi16(col_mask, src + s * 9), 1);
+    r2 = _mm512_inserti32x4(r2, _mm_maskz_loadu_epi16(col_mask, src + s * 10),
+                            1);
+    r3 = _mm512_inserti32x4(r3, _mm_maskz_loadu_epi16(col_mask, src + s * 11),
+                            1);
+    r4 = _mm512_inserti32x4(r4, _mm_maskz_loadu_epi16(col_mask, src + s * 12),
+                            1);
+    r5 = _mm512_inserti32x4(r5, _mm_maskz_loadu_epi16(col_mask, src + s * 13),
+                            1);
+    r6 = _mm512_inserti32x4(r6, _mm_maskz_loadu_epi16(col_mask, src + s * 14),
+                            1);
+    r7 = _mm512_inserti32x4(r7, _mm_maskz_loadu_epi16(col_mask, src + s * 15),
+                            1);
+
+    r0 = _mm512_inserti32x4(r0, _mm_maskz_loadu_epi16(col_mask, src + s * 16),
+                            2);
+    r1 = _mm512_inserti32x4(r1, _mm_maskz_loadu_epi16(col_mask, src + s * 17),
+                            2);
+    r2 = _mm512_inserti32x4(r2, _mm_maskz_loadu_epi16(col_mask, src + s * 18),
+                            2);
+    r3 = _mm512_inserti32x4(r3, _mm_maskz_loadu_epi16(col_mask, src + s * 19),
+                            2);
+    r4 = _mm512_inserti32x4(r4, _mm_maskz_loadu_epi16(col_mask, src + s * 20),
+                            2);
+    r5 = _mm512_inserti32x4(r5, _mm_maskz_loadu_epi16(col_mask, src + s * 21),
+                            2);
+    r6 = _mm512_inserti32x4(r6, _mm_maskz_loadu_epi16(col_mask, src + s * 22),
+                            2);
+    r7 = _mm512_inserti32x4(r7, _mm_maskz_loadu_epi16(col_mask, src + s * 23),
+                            2);
+
+    r0 = _mm512_inserti32x4(r0, _mm_maskz_loadu_epi16(col_mask, src + s * 24),
+                            3);
+    r1 = _mm512_inserti32x4(r1, _mm_maskz_loadu_epi16(col_mask, src + s * 25),
+                            3);
+    r2 = _mm512_inserti32x4(r2, _mm_maskz_loadu_epi16(col_mask, src + s * 26),
+                            3);
+    r3 = _mm512_inserti32x4(r3, _mm_maskz_loadu_epi16(col_mask, src + s * 27),
+                            3);
+    r4 = _mm512_inserti32x4(r4, _mm_maskz_loadu_epi16(col_mask, src + s * 28),
+                            3);
+    r5 = _mm512_inserti32x4(r5, _mm_maskz_loadu_epi16(col_mask, src + s * 29),
+                            3);
+    r6 = _mm512_inserti32x4(r6, _mm_maskz_loadu_epi16(col_mask, src + s * 30),
+                            3);
+    r7 = _mm512_inserti32x4(r7, _mm_maskz_loadu_epi16(col_mask, src + s * 31),
+                            3);
+
+    __m512i t0 = _mm512_unpacklo_epi16(r0, r1);
+    __m512i t1 = _mm512_unpackhi_epi16(r0, r1);
+    __m512i t2 = _mm512_unpacklo_epi16(r2, r3);
+    __m512i t3 = _mm512_unpackhi_epi16(r2, r3);
+    __m512i t4 = _mm512_unpacklo_epi16(r4, r5);
+    __m512i t5 = _mm512_unpackhi_epi16(r4, r5);
+    __m512i t6 = _mm512_unpacklo_epi16(r6, r7);
+    __m512i t7 = _mm512_unpackhi_epi16(r6, r7);
+
+    __m512i u0 = _mm512_unpacklo_epi32(t0, t2);
+    __m512i u1 = _mm512_unpackhi_epi32(t0, t2);
+    __m512i u2 = _mm512_unpacklo_epi32(t1, t3);
+    __m512i u3 = _mm512_unpackhi_epi32(t1, t3);
+    __m512i u4 = _mm512_unpacklo_epi32(t4, t6);
+    __m512i u5 = _mm512_unpackhi_epi32(t4, t6);
+    __m512i u6 = _mm512_unpacklo_epi32(t5, t7);
+    __m512i u7 = _mm512_unpackhi_epi32(t5, t7);
+
+    _mm512_storeu_si512((__m512i*)(dst), _mm512_unpacklo_epi64(u0, u4));
+    if (width > 1) {
+      _mm512_storeu_si512((__m512i*)(dst + d), _mm512_unpackhi_epi64(u0, u4));
+    }
+    if (width > 2) {
+      _mm512_storeu_si512((__m512i*)(dst + d * 2),
+                          _mm512_unpacklo_epi64(u1, u5));
+    }
+    if (width > 3) {
+      _mm512_storeu_si512((__m512i*)(dst + d * 3),
+                          _mm512_unpackhi_epi64(u1, u5));
+    }
+    if (width > 4) {
+      _mm512_storeu_si512((__m512i*)(dst + d * 4),
+                          _mm512_unpacklo_epi64(u2, u6));
+    }
+    if (width > 5) {
+      _mm512_storeu_si512((__m512i*)(dst + d * 5),
+                          _mm512_unpackhi_epi64(u2, u6));
+    }
+    if (width > 6) {
+      _mm512_storeu_si512((__m512i*)(dst + d * 6),
+                          _mm512_unpacklo_epi64(u3, u7));
+    }
+  }
+  _mm256_zeroupper();
+}
+#endif  // defined(HAS_TRANSPOSEWX32_16_AVX512BW)
+
+#if defined(HAS_TRANSPOSEWX4_32_SSE2)
 // Transpose 32 bit values (ARGB). Read a column of 4 pixels, write a row.
 LIBYUV_TARGET_SSE2
-void Transpose4x4_32_SSE2(const uint8_t* src,
+void TransposeWx4_32_SSE2(const uint8_t* src,
                           int src_stride,
                           uint8_t* dst,
                           int dst_stride,
@@ -445,20 +737,18 @@ void Transpose4x4_32_SSE2(const uint8_t* src,
     width -= 4;
   }
 }
-#endif  // defined(HAS_TRANSPOSE4X4_32_SSE2)
+#endif  // defined(HAS_TRANSPOSEWX4_32_SSE2)
 
-#if defined(HAS_TRANSPOSENX4_32_AVX2)
-// Transpose 32 bit values (ARGB) in Nx4 tiles with 2 blocks of 4x4 at a time
-// in ymm0..ymm3 and _mm_maskstore_epi32 tail for arbitrary N.
+#if defined(HAS_TRANSPOSEWX8_32_AVX2)
 LIBYUV_TARGET_AVX2
-void TransposeNx4_32_AVX2(const uint8_t* src,
+void TransposeWx8_32_AVX2(const uint8_t* src,
                           int src_stride,
                           uint8_t* dst,
                           int dst_stride,
                           int width) {
   const ptrdiff_t s = src_stride;
   const ptrdiff_t d = dst_stride;
-  while (width >= 8) {
+  while (width > 0) {
     __m256i r0 = _mm256_inserti128_si256(
         _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src))),
         _mm_loadu_si128((const __m128i*)(src + s * 4)), 1);
@@ -471,208 +761,34 @@ void TransposeNx4_32_AVX2(const uint8_t* src,
     __m256i r3 = _mm256_inserti128_si256(
         _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(src + s * 3))),
         _mm_loadu_si128((const __m128i*)(src + s * 7)), 1);
-    __m256i t0 = _mm256_unpacklo_epi32(r0, r1);  // a e b f
-    __m256i t1 = _mm256_unpacklo_epi32(r2, r3);  // i m j n
-    __m256i t2 = _mm256_unpackhi_epi32(r0, r1);  // c g d h
-    __m256i t3 = _mm256_unpackhi_epi32(r2, r3);  // k o l p
+
+    __m256i t0 = _mm256_unpacklo_epi32(r0, r1);
+    __m256i t1 = _mm256_unpacklo_epi32(r2, r3);
+    __m256i t2 = _mm256_unpackhi_epi32(r0, r1);
+    __m256i t3 = _mm256_unpackhi_epi32(r2, r3);
+
     _mm256_storeu_si256((__m256i*)(dst), _mm256_unpacklo_epi64(t0, t1));
     _mm256_storeu_si256((__m256i*)(dst + d), _mm256_unpackhi_epi64(t0, t1));
     _mm256_storeu_si256((__m256i*)(dst + d * 2), _mm256_unpacklo_epi64(t2, t3));
     _mm256_storeu_si256((__m256i*)(dst + d * 3), _mm256_unpackhi_epi64(t2, t3));
-    src += s * 8;
-    dst += 32;
-    width -= 8;
-  }
-  if (width >= 4) {
-    __m128i r0 = _mm_loadu_si128((const __m128i*)(src));
-    __m128i r1 = _mm_loadu_si128((const __m128i*)(src + s));
-    __m128i r2 = _mm_loadu_si128((const __m128i*)(src + s * 2));
-    __m128i r3 = _mm_loadu_si128((const __m128i*)(src + s * 3));
-    __m128i t0 = _mm_unpacklo_epi32(r0, r1);
-    __m128i t1 = _mm_unpacklo_epi32(r2, r3);
-    __m128i t2 = _mm_unpackhi_epi32(r0, r1);
-    __m128i t3 = _mm_unpackhi_epi32(r2, r3);
-    _mm_storeu_si128((__m128i*)(dst), _mm_unpacklo_epi64(t0, t1));
-    _mm_storeu_si128((__m128i*)(dst + d), _mm_unpackhi_epi64(t0, t1));
-    _mm_storeu_si128((__m128i*)(dst + d * 2), _mm_unpacklo_epi64(t2, t3));
-    _mm_storeu_si128((__m128i*)(dst + d * 3), _mm_unpackhi_epi64(t2, t3));
-    src += s * 4;
-    dst += 16;
+    src += 16;
+    dst += d * 4;
     width -= 4;
   }
-  if (width > 0) {
-    const __m128i mask =
-        _mm_cvtepi8_epi32(_mm_cvtsi32_si128((1 << (width * 8)) - 1));
-    __m128i r0 = _mm_loadu_si128((const __m128i*)(src));
-    __m128i r1 = (width > 1) ? _mm_loadu_si128((const __m128i*)(src + s)) : r0;
-    __m128i r2 =
-        (width > 2) ? _mm_loadu_si128((const __m128i*)(src + s * 2)) : r1;
-    __m128i t0 = _mm_unpacklo_epi32(r0, r1);
-    __m128i t1 = _mm_unpacklo_epi32(r2, r2);
-    __m128i t2 = _mm_unpackhi_epi32(r0, r1);
-    __m128i t3 = _mm_unpackhi_epi32(r2, r2);
-    _mm_maskstore_epi32((int*)(dst), mask, _mm_unpacklo_epi64(t0, t1));
-    _mm_maskstore_epi32((int*)(dst + d), mask, _mm_unpackhi_epi64(t0, t1));
-    _mm_maskstore_epi32((int*)(dst + d * 2), mask, _mm_unpacklo_epi64(t2, t3));
-    _mm_maskstore_epi32((int*)(dst + d * 3), mask, _mm_unpackhi_epi64(t2, t3));
-  }
   _mm256_zeroupper();
 }
-#endif  // defined(HAS_TRANSPOSENX4_32_AVX2)
+#endif  // defined(HAS_TRANSPOSEWX8_32_AVX2)
 
-#if defined(HAS_TRANSPOSEWXH_32_AVX2)
-LIBYUV_TARGET_AVX2
-void TransposeWxH_32_AVX2(const uint8_t* src,
-                          int src_stride,
-                          uint8_t* dst,
-                          int dst_stride,
-                          int width,
-                          int height) {
-  const ptrdiff_t s = src_stride;
-  const ptrdiff_t d = dst_stride;
-  while (height >= 8) {
-    const uint8_t* src_row = src;
-    uint8_t* dst_col = dst;
-    int w = width;
-    while (w >= 8) {
-      __m256i r0 = _mm256_loadu_si256((const __m256i*)(src_row));
-      __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_row + s));
-      __m256i r2 = _mm256_loadu_si256((const __m256i*)(src_row + s * 2));
-      __m256i r3 = _mm256_loadu_si256((const __m256i*)(src_row + s * 3));
-      __m256i r4 = _mm256_loadu_si256((const __m256i*)(src_row + s * 4));
-      __m256i r5 = _mm256_loadu_si256((const __m256i*)(src_row + s * 5));
-      __m256i r6 = _mm256_loadu_si256((const __m256i*)(src_row + s * 6));
-      __m256i r7 = _mm256_loadu_si256((const __m256i*)(src_row + s * 7));
-
-      __m256i t0 = _mm256_unpacklo_epi32(r0, r1);
-      __m256i t1 = _mm256_unpackhi_epi32(r0, r1);
-      __m256i t2 = _mm256_unpacklo_epi32(r2, r3);
-      __m256i t3 = _mm256_unpackhi_epi32(r2, r3);
-      __m256i t4 = _mm256_unpacklo_epi32(r4, r5);
-      __m256i t5 = _mm256_unpackhi_epi32(r4, r5);
-      __m256i t6 = _mm256_unpacklo_epi32(r6, r7);
-      __m256i t7 = _mm256_unpackhi_epi32(r6, r7);
-
-      __m256i u0 = _mm256_unpacklo_epi64(t0, t2);
-      __m256i u1 = _mm256_unpackhi_epi64(t0, t2);
-      __m256i u2 = _mm256_unpacklo_epi64(t1, t3);
-      __m256i u3 = _mm256_unpackhi_epi64(t1, t3);
-      __m256i u4 = _mm256_unpacklo_epi64(t4, t6);
-      __m256i u5 = _mm256_unpackhi_epi64(t4, t6);
-      __m256i u6 = _mm256_unpacklo_epi64(t5, t7);
-      __m256i u7 = _mm256_unpackhi_epi64(t5, t7);
-
-      _mm256_storeu_si256((__m256i*)(dst_col),
-                          _mm256_permute2x128_si256(u0, u4, 0x20));
-      _mm256_storeu_si256((__m256i*)(dst_col + d),
-                          _mm256_permute2x128_si256(u1, u5, 0x20));
-      _mm256_storeu_si256((__m256i*)(dst_col + d * 2),
-                          _mm256_permute2x128_si256(u2, u6, 0x20));
-      _mm256_storeu_si256((__m256i*)(dst_col + d * 3),
-                          _mm256_permute2x128_si256(u3, u7, 0x20));
-      _mm256_storeu_si256((__m256i*)(dst_col + d * 4),
-                          _mm256_permute2x128_si256(u0, u4, 0x31));
-      _mm256_storeu_si256((__m256i*)(dst_col + d * 5),
-                          _mm256_permute2x128_si256(u1, u5, 0x31));
-      _mm256_storeu_si256((__m256i*)(dst_col + d * 6),
-                          _mm256_permute2x128_si256(u2, u6, 0x31));
-      _mm256_storeu_si256((__m256i*)(dst_col + d * 7),
-                          _mm256_permute2x128_si256(u3, u7, 0x31));
-      src_row += 32;
-      dst_col += 8 * d;
-      w -= 8;
-    }
-    if (w >= 4) {
-      TransposeNx4_32_AVX2(src_row, src_stride, dst_col, dst_stride, 8);
-      src_row += 16;
-      dst_col += 4 * d;
-      w -= 4;
-    }
-    if (w > 0) {
-      const __m128i col_mask =
-          _mm_cvtepi8_epi32(_mm_cvtsi32_si128((1 << (w * 8)) - 1));
-      uint8_t* dst0 = dst_col;
-      uint8_t* dst1 = (w > 1) ? dst0 + d : dst0;
-      uint8_t* dst2 = (w > 2) ? dst1 + d : dst1;
-      for (int y = 0; y < 8; y += 4) {
-        __m128i r0 =
-            _mm_maskload_epi32((const int*)(src_row + y * s), col_mask);
-        __m128i r1 =
-            _mm_maskload_epi32((const int*)(src_row + (y + 1) * s), col_mask);
-        __m128i r2 =
-            _mm_maskload_epi32((const int*)(src_row + (y + 2) * s), col_mask);
-        __m128i r3 =
-            _mm_maskload_epi32((const int*)(src_row + (y + 3) * s), col_mask);
-        __m128i t0 = _mm_unpacklo_epi32(r0, r1);
-        __m128i t1 = _mm_unpacklo_epi32(r2, r3);
-        __m128i t2 = _mm_unpackhi_epi32(r0, r1);
-        __m128i t3 = _mm_unpackhi_epi32(r2, r3);
-        _mm_storeu_si128((__m128i*)(dst2 + y * 4), _mm_unpacklo_epi64(t2, t3));
-        _mm_storeu_si128((__m128i*)(dst1 + y * 4), _mm_unpackhi_epi64(t0, t1));
-        _mm_storeu_si128((__m128i*)(dst0 + y * 4), _mm_unpacklo_epi64(t0, t1));
-      }
-    }
-    src += 8 * s;
-    dst += 32;
-    height -= 8;
-  }
-  while (height > 0) {
-    const int bh = (height >= 4) ? 4 : height;
-    const uint8_t* src_row = src;
-    uint8_t* dst_col = dst;
-    int w = width;
-    while (w >= 4) {
-      TransposeNx4_32_AVX2(src_row, src_stride, dst_col, dst_stride, bh);
-      src_row += 16;
-      dst_col += 4 * d;
-      w -= 4;
-    }
-    if (w > 0) {
-      const __m128i col_mask =
-          _mm_cvtepi8_epi32(_mm_cvtsi32_si128((1 << (w * 8)) - 1));
-      const __m128i row_mask =
-          _mm_cvtepi8_epi32(_mm_cvtsi32_si128((1 << (bh * 8)) - 1));
-      uint8_t* dst0 = dst_col;
-      uint8_t* dst1 = (w > 1) ? dst0 + d : dst0;
-      uint8_t* dst2 = (w > 2) ? dst1 + d : dst1;
-      __m128i r0 = _mm_maskload_epi32((const int*)(src_row), col_mask);
-      __m128i r1 = (bh > 1)
-                       ? _mm_maskload_epi32((const int*)(src_row + s), col_mask)
-                       : r0;
-      __m128i r2 =
-          (bh > 2) ? _mm_maskload_epi32((const int*)(src_row + s * 2), col_mask)
-                   : r1;
-      __m128i r3 =
-          (bh > 3) ? _mm_maskload_epi32((const int*)(src_row + s * 3), col_mask)
-                   : r2;
-      __m128i t0 = _mm_unpacklo_epi32(r0, r1);
-      __m128i t1 = _mm_unpacklo_epi32(r2, r3);
-      __m128i t2 = _mm_unpackhi_epi32(r0, r1);
-      __m128i t3 = _mm_unpackhi_epi32(r2, r3);
-      _mm_maskstore_epi32((int*)dst2, row_mask, _mm_unpacklo_epi64(t2, t3));
-      _mm_maskstore_epi32((int*)dst1, row_mask, _mm_unpackhi_epi64(t0, t1));
-      _mm_maskstore_epi32((int*)dst0, row_mask, _mm_unpacklo_epi64(t0, t1));
-    }
-    src += bh * s;
-    dst += bh * 4;
-    height -= bh;
-  }
-  _mm256_zeroupper();
-}
-#endif  // defined(HAS_TRANSPOSEWXH_32_AVX2)
-
-#if defined(HAS_TRANSPOSENX4_32_AVX512BW)
-// Transpose 32 bit values (ARGB) in Nx4 tiles with 4 blocks of 4x4 at a time
-// in zmm0..zmm3 and masked tail for arbitrary N.
+#if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
 LIBYUV_TARGET_AVX512BW
-void TransposeNx4_32_AVX512BW(const uint8_t* src,
-                              int src_stride,
-                              uint8_t* dst,
-                              int dst_stride,
-                              int width) {
+void TransposeWx16_32_AVX512BW(const uint8_t* src,
+                               int src_stride,
+                               uint8_t* dst,
+                               int dst_stride,
+                               int width) {
   const ptrdiff_t s = src_stride;
   const ptrdiff_t d = dst_stride;
-  while (width >= 16) {
+  while (width >= 4) {
     __m512i r0 = _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src)));
     __m512i r1 =
         _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s)));
@@ -680,6 +796,7 @@ void TransposeNx4_32_AVX512BW(const uint8_t* src,
         _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 2)));
     __m512i r3 =
         _mm512_castsi128_si512(_mm_loadu_si128((const __m128i*)(src + s * 3)));
+
     r0 = _mm512_inserti32x4(r0, _mm_loadu_si128((const __m128i*)(src + s * 4)),
                             1);
     r1 = _mm512_inserti32x4(r1, _mm_loadu_si128((const __m128i*)(src + s * 5)),
@@ -688,6 +805,7 @@ void TransposeNx4_32_AVX512BW(const uint8_t* src,
                             1);
     r3 = _mm512_inserti32x4(r3, _mm_loadu_si128((const __m128i*)(src + s * 7)),
                             1);
+
     r0 = _mm512_inserti32x4(r0, _mm_loadu_si128((const __m128i*)(src + s * 8)),
                             2);
     r1 = _mm512_inserti32x4(r1, _mm_loadu_si128((const __m128i*)(src + s * 9)),
@@ -696,6 +814,7 @@ void TransposeNx4_32_AVX512BW(const uint8_t* src,
                             2);
     r3 = _mm512_inserti32x4(r3, _mm_loadu_si128((const __m128i*)(src + s * 11)),
                             2);
+
     r0 = _mm512_inserti32x4(r0, _mm_loadu_si128((const __m128i*)(src + s * 12)),
                             3);
     r1 = _mm512_inserti32x4(r1, _mm_loadu_si128((const __m128i*)(src + s * 13)),
@@ -704,215 +823,74 @@ void TransposeNx4_32_AVX512BW(const uint8_t* src,
                             3);
     r3 = _mm512_inserti32x4(r3, _mm_loadu_si128((const __m128i*)(src + s * 15)),
                             3);
+
     __m512i t0 = _mm512_unpacklo_epi32(r0, r1);
     __m512i t1 = _mm512_unpacklo_epi32(r2, r3);
     __m512i t2 = _mm512_unpackhi_epi32(r0, r1);
     __m512i t3 = _mm512_unpackhi_epi32(r2, r3);
+
     _mm512_storeu_si512((__m512i*)(dst), _mm512_unpacklo_epi64(t0, t1));
     _mm512_storeu_si512((__m512i*)(dst + d), _mm512_unpackhi_epi64(t0, t1));
     _mm512_storeu_si512((__m512i*)(dst + d * 2), _mm512_unpacklo_epi64(t2, t3));
     _mm512_storeu_si512((__m512i*)(dst + d * 3), _mm512_unpackhi_epi64(t2, t3));
-    src += s * 16;
-    dst += 64;
-    width -= 16;
-  }
-  while (width >= 4) {
-    __m128i r0 = _mm_loadu_si128((const __m128i*)(src));
-    __m128i r1 = _mm_loadu_si128((const __m128i*)(src + s));
-    __m128i r2 = _mm_loadu_si128((const __m128i*)(src + s * 2));
-    __m128i r3 = _mm_loadu_si128((const __m128i*)(src + s * 3));
-    __m128i t0 = _mm_unpacklo_epi32(r0, r1);
-    __m128i t1 = _mm_unpacklo_epi32(r2, r3);
-    __m128i t2 = _mm_unpackhi_epi32(r0, r1);
-    __m128i t3 = _mm_unpackhi_epi32(r2, r3);
-    _mm_storeu_si128((__m128i*)(dst), _mm_unpacklo_epi64(t0, t1));
-    _mm_storeu_si128((__m128i*)(dst + d), _mm_unpackhi_epi64(t0, t1));
-    _mm_storeu_si128((__m128i*)(dst + d * 2), _mm_unpacklo_epi64(t2, t3));
-    _mm_storeu_si128((__m128i*)(dst + d * 3), _mm_unpackhi_epi64(t2, t3));
-    src += s * 4;
-    dst += 16;
+    src += 16;
+    dst += d * 4;
     width -= 4;
   }
   if (width > 0) {
-    const __mmask8 mask = (1u << width) - 1;
-    __m128i r0 = _mm_loadu_si128((const __m128i*)(src));
-    __m128i r1 = (width > 1) ? _mm_loadu_si128((const __m128i*)(src + s)) : r0;
-    __m128i r2 =
-        (width > 2) ? _mm_loadu_si128((const __m128i*)(src + s * 2)) : r1;
-    __m128i t0 = _mm_unpacklo_epi32(r0, r1);
-    __m128i t1 = _mm_unpacklo_epi32(r2, r2);
-    __m128i t2 = _mm_unpackhi_epi32(r0, r1);
-    __m128i t3 = _mm_unpackhi_epi32(r2, r2);
-    _mm_mask_storeu_epi32(dst, mask, _mm_unpacklo_epi64(t0, t1));
-    _mm_mask_storeu_epi32(dst + d, mask, _mm_unpackhi_epi64(t0, t1));
-    _mm_mask_storeu_epi32(dst + d * 2, mask, _mm_unpacklo_epi64(t2, t3));
-    _mm_mask_storeu_epi32(dst + d * 3, mask, _mm_unpackhi_epi64(t2, t3));
-  }
-  _mm256_zeroupper();
-}
-#endif  // defined(HAS_TRANSPOSENX4_32_AVX512BW)
+    const __mmask8 col_mask = (1u << width) - 1;
+    __m512i r0 = _mm512_castsi128_si512(_mm_maskz_loadu_epi32(col_mask, src));
+    __m512i r1 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi32(col_mask, src + s));
+    __m512i r2 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi32(col_mask, src + s * 2));
+    __m512i r3 =
+        _mm512_castsi128_si512(_mm_maskz_loadu_epi32(col_mask, src + s * 3));
 
-#if defined(HAS_TRANSPOSEWXH_32_AVX512BW)
-LIBYUV_TARGET_AVX512BW
-void TransposeWxH_32_AVX512BW(const uint8_t* src,
-                              int src_stride,
-                              uint8_t* dst,
-                              int dst_stride,
-                              int width,
-                              int height) {
-  const ptrdiff_t s = src_stride;
-  const ptrdiff_t d = dst_stride;
-  while (height > 0) {
-    const int bh = (height >= 16) ? 16 : height;
-    const __mmask16 row_mask = (1u << bh) - 1;
-    const uint8_t* src_row = src;
-    uint8_t* dst_col = dst;
-    int w = width;
-    while (w > 0) {
-      const int bw = (w >= 16) ? 16 : w;
-      const __mmask16 col_mask = (1u << bw) - 1;
-      __m512i z = _mm512_setzero_si512();
-      __m512i r0 = _mm512_maskz_loadu_epi32(col_mask, src_row);
-      __m512i r1 =
-          (bh > 1) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s) : z;
-      __m512i r2 =
-          (bh > 2) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 2) : z;
-      __m512i r3 =
-          (bh > 3) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 3) : z;
-      __m512i r4 =
-          (bh > 4) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 4) : z;
-      __m512i r5 =
-          (bh > 5) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 5) : z;
-      __m512i r6 =
-          (bh > 6) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 6) : z;
-      __m512i r7 =
-          (bh > 7) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 7) : z;
-      __m512i r8 =
-          (bh > 8) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 8) : z;
-      __m512i r9 =
-          (bh > 9) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 9) : z;
-      __m512i r10 =
-          (bh > 10) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 10) : z;
-      __m512i r11 =
-          (bh > 11) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 11) : z;
-      __m512i r12 =
-          (bh > 12) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 12) : z;
-      __m512i r13 =
-          (bh > 13) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 13) : z;
-      __m512i r14 =
-          (bh > 14) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 14) : z;
-      __m512i r15 =
-          (bh > 15) ? _mm512_maskz_loadu_epi32(col_mask, src_row + s * 15) : z;
+    r0 =
+        _mm512_inserti32x4(r0, _mm_maskz_loadu_epi32(col_mask, src + s * 4), 1);
+    r1 =
+        _mm512_inserti32x4(r1, _mm_maskz_loadu_epi32(col_mask, src + s * 5), 1);
+    r2 =
+        _mm512_inserti32x4(r2, _mm_maskz_loadu_epi32(col_mask, src + s * 6), 1);
+    r3 =
+        _mm512_inserti32x4(r3, _mm_maskz_loadu_epi32(col_mask, src + s * 7), 1);
 
-      __m512i t0 = _mm512_unpacklo_epi32(r0, r1);
-      __m512i t1 = _mm512_unpackhi_epi32(r0, r1);
-      __m512i t2 = _mm512_unpacklo_epi32(r2, r3);
-      __m512i t3 = _mm512_unpackhi_epi32(r2, r3);
-      __m512i t4 = _mm512_unpacklo_epi32(r4, r5);
-      __m512i t5 = _mm512_unpackhi_epi32(r4, r5);
-      __m512i t6 = _mm512_unpacklo_epi32(r6, r7);
-      __m512i t7 = _mm512_unpackhi_epi32(r6, r7);
-      __m512i t8 = _mm512_unpacklo_epi32(r8, r9);
-      __m512i t9 = _mm512_unpackhi_epi32(r8, r9);
-      __m512i t10 = _mm512_unpacklo_epi32(r10, r11);
-      __m512i t11 = _mm512_unpackhi_epi32(r10, r11);
-      __m512i t12 = _mm512_unpacklo_epi32(r12, r13);
-      __m512i t13 = _mm512_unpackhi_epi32(r12, r13);
-      __m512i t14 = _mm512_unpacklo_epi32(r14, r15);
-      __m512i t15 = _mm512_unpackhi_epi32(r14, r15);
+    r0 =
+        _mm512_inserti32x4(r0, _mm_maskz_loadu_epi32(col_mask, src + s * 8), 2);
+    r1 =
+        _mm512_inserti32x4(r1, _mm_maskz_loadu_epi32(col_mask, src + s * 9), 2);
+    r2 = _mm512_inserti32x4(r2, _mm_maskz_loadu_epi32(col_mask, src + s * 10),
+                            2);
+    r3 = _mm512_inserti32x4(r3, _mm_maskz_loadu_epi32(col_mask, src + s * 11),
+                            2);
 
-      r0 = _mm512_unpacklo_epi64(t0, t2);
-      r1 = _mm512_unpackhi_epi64(t0, t2);
-      r2 = _mm512_unpacklo_epi64(t1, t3);
-      r3 = _mm512_unpackhi_epi64(t1, t3);
-      r4 = _mm512_unpacklo_epi64(t4, t6);
-      r5 = _mm512_unpackhi_epi64(t4, t6);
-      r6 = _mm512_unpacklo_epi64(t5, t7);
-      r7 = _mm512_unpackhi_epi64(t5, t7);
-      r8 = _mm512_unpacklo_epi64(t8, t10);
-      r9 = _mm512_unpackhi_epi64(t8, t10);
-      r10 = _mm512_unpacklo_epi64(t9, t11);
-      r11 = _mm512_unpackhi_epi64(t9, t11);
-      r12 = _mm512_unpacklo_epi64(t12, t14);
-      r13 = _mm512_unpackhi_epi64(t12, t14);
-      r14 = _mm512_unpacklo_epi64(t13, t15);
-      r15 = _mm512_unpackhi_epi64(t13, t15);
+    r0 = _mm512_inserti32x4(r0, _mm_maskz_loadu_epi32(col_mask, src + s * 12),
+                            3);
+    r1 = _mm512_inserti32x4(r1, _mm_maskz_loadu_epi32(col_mask, src + s * 13),
+                            3);
+    r2 = _mm512_inserti32x4(r2, _mm_maskz_loadu_epi32(col_mask, src + s * 14),
+                            3);
+    r3 = _mm512_inserti32x4(r3, _mm_maskz_loadu_epi32(col_mask, src + s * 15),
+                            3);
 
-      t0 = _mm512_shuffle_i32x4(r0, r4, 0x88);
-      t1 = _mm512_shuffle_i32x4(r1, r5, 0x88);
-      t2 = _mm512_shuffle_i32x4(r2, r6, 0x88);
-      t3 = _mm512_shuffle_i32x4(r3, r7, 0x88);
-      t4 = _mm512_shuffle_i32x4(r0, r4, 0xdd);
-      t5 = _mm512_shuffle_i32x4(r1, r5, 0xdd);
-      t6 = _mm512_shuffle_i32x4(r2, r6, 0xdd);
-      t7 = _mm512_shuffle_i32x4(r3, r7, 0xdd);
-      t8 = _mm512_shuffle_i32x4(r8, r12, 0x88);
-      t9 = _mm512_shuffle_i32x4(r9, r13, 0x88);
-      t10 = _mm512_shuffle_i32x4(r10, r14, 0x88);
-      t11 = _mm512_shuffle_i32x4(r11, r15, 0x88);
-      t12 = _mm512_shuffle_i32x4(r8, r12, 0xdd);
-      t13 = _mm512_shuffle_i32x4(r9, r13, 0xdd);
-      t14 = _mm512_shuffle_i32x4(r10, r14, 0xdd);
-      t15 = _mm512_shuffle_i32x4(r11, r15, 0xdd);
+    __m512i t0 = _mm512_unpacklo_epi32(r0, r1);
+    __m512i t1 = _mm512_unpacklo_epi32(r2, r3);
+    __m512i t2 = _mm512_unpackhi_epi32(r0, r1);
+    __m512i t3 = _mm512_unpackhi_epi32(r2, r3);
 
-      _mm512_mask_storeu_epi32(dst_col, row_mask,
-                               _mm512_shuffle_i32x4(t0, t8, 0x88));
-      if (bw > 1)
-        _mm512_mask_storeu_epi32(dst_col + d, row_mask,
-                                 _mm512_shuffle_i32x4(t1, t9, 0x88));
-      if (bw > 2)
-        _mm512_mask_storeu_epi32(dst_col + d * 2, row_mask,
-                                 _mm512_shuffle_i32x4(t2, t10, 0x88));
-      if (bw > 3)
-        _mm512_mask_storeu_epi32(dst_col + d * 3, row_mask,
-                                 _mm512_shuffle_i32x4(t3, t11, 0x88));
-      if (bw > 4)
-        _mm512_mask_storeu_epi32(dst_col + d * 4, row_mask,
-                                 _mm512_shuffle_i32x4(t4, t12, 0x88));
-      if (bw > 5)
-        _mm512_mask_storeu_epi32(dst_col + d * 5, row_mask,
-                                 _mm512_shuffle_i32x4(t5, t13, 0x88));
-      if (bw > 6)
-        _mm512_mask_storeu_epi32(dst_col + d * 6, row_mask,
-                                 _mm512_shuffle_i32x4(t6, t14, 0x88));
-      if (bw > 7)
-        _mm512_mask_storeu_epi32(dst_col + d * 7, row_mask,
-                                 _mm512_shuffle_i32x4(t7, t15, 0x88));
-      if (bw > 8)
-        _mm512_mask_storeu_epi32(dst_col + d * 8, row_mask,
-                                 _mm512_shuffle_i32x4(t0, t8, 0xdd));
-      if (bw > 9)
-        _mm512_mask_storeu_epi32(dst_col + d * 9, row_mask,
-                                 _mm512_shuffle_i32x4(t1, t9, 0xdd));
-      if (bw > 10)
-        _mm512_mask_storeu_epi32(dst_col + d * 10, row_mask,
-                                 _mm512_shuffle_i32x4(t2, t10, 0xdd));
-      if (bw > 11)
-        _mm512_mask_storeu_epi32(dst_col + d * 11, row_mask,
-                                 _mm512_shuffle_i32x4(t3, t11, 0xdd));
-      if (bw > 12)
-        _mm512_mask_storeu_epi32(dst_col + d * 12, row_mask,
-                                 _mm512_shuffle_i32x4(t4, t12, 0xdd));
-      if (bw > 13)
-        _mm512_mask_storeu_epi32(dst_col + d * 13, row_mask,
-                                 _mm512_shuffle_i32x4(t5, t13, 0xdd));
-      if (bw > 14)
-        _mm512_mask_storeu_epi32(dst_col + d * 14, row_mask,
-                                 _mm512_shuffle_i32x4(t6, t14, 0xdd));
-      if (bw > 15)
-        _mm512_mask_storeu_epi32(dst_col + d * 15, row_mask,
-                                 _mm512_shuffle_i32x4(t7, t15, 0xdd));
-      src_row += 64;
-      dst_col += 16 * d;
-      w -= 16;
+    _mm512_storeu_si512((__m512i*)(dst), _mm512_unpacklo_epi64(t0, t1));
+    if (width > 1) {
+      _mm512_storeu_si512((__m512i*)(dst + d), _mm512_unpackhi_epi64(t0, t1));
     }
-    src += 16 * s;
-    dst += 64;
-    height -= 16;
+    if (width > 2) {
+      _mm512_storeu_si512((__m512i*)(dst + d * 2),
+                          _mm512_unpacklo_epi64(t2, t3));
+    }
   }
   _mm256_zeroupper();
 }
-#endif  // defined(HAS_TRANSPOSEWXH_32_AVX512BW)
+#endif  // defined(HAS_TRANSPOSEWX16_32_AVX512BW)
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -412,6 +412,9 @@ extern "C" {
 #define HAS_INTERPOLATEROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
 #define HAS_SWAPUVROW_AVX2
+#if defined(__x86_64__) || defined(_M_X64)
+#define HAS_MIRRORUVROW_AVX512BW
+#endif
 #endif
 
 // The following are available for AVX512 clang x64 platforms:
@@ -452,6 +455,7 @@ extern "C" {
 #define HAS_J400TOARGBROW_AVX512BW
 #define HAS_MERGEUVROW_AVX512BW
 #define HAS_MIRRORROW_AVX512BW
+#define HAS_MIRRORUVROW_AVX512BW
 #define HAS_MIRRORSPLITUVROW_AVX512BW
 #define HAS_SPLITUVROW_AVX512BW
 #define HAS_RGBTOUVMATRIXROW_AVX512BW
@@ -930,6 +934,7 @@ extern "C" {
 #define HAS_MERGERGBROW_RVV
 #define HAS_MERGEUVROW_RVV
 #define HAS_MERGEXRGBROW_RVV
+#define HAS_MIRRORUVROW_RVV
 #define HAS_NV12TOARGBROW_RVV
 #define HAS_NV12TORGB24ROW_RVV
 #define HAS_NV21TOARGBROW_RVV
@@ -2749,13 +2754,19 @@ void MirrorRow_Any_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorUVRow_AVX512BW(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_LSX(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_LASX(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_uv, int width);
 void MirrorUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_Any_AVX512BW(const uint8_t* src_ptr,
+                              uint8_t* dst_ptr,
+                              int width);
 void MirrorUVRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorUVRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorUVRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
