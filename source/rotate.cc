@@ -222,6 +222,14 @@ void RotatePlane180(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MirrorRow = MirrorRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      MirrorRow = MirrorRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_MIRRORROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     MirrorRow = MirrorRow_Any_LSX;
@@ -768,8 +776,7 @@ static void RotatePlane180_16(const uint16_t* src,
                               int width,
                               int height) {
   // Rotate by 180 is a vertical flip (negative height) and horizontal mirror.
-  MirrorUVPlane((const uint8_t*)src, src_stride * 2, (uint8_t*)dst,
-                dst_stride * 2, width, -height);
+  MirrorPlane_16(src, src_stride, dst, dst_stride, width, -height);
 }
 
 LIBYUV_API

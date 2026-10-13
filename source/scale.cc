@@ -1275,6 +1275,11 @@ static int ScalePlaneBilinearDown_16(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_16_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    InterpolateRow = InterpolateRow_16_AVX512BW;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     InterpolateRow = InterpolateRow_16_Any_NEON;
@@ -1892,6 +1897,11 @@ static int ScalePlaneBilinearUp_16(int src_width,
     if (IS_ALIGNED(dst_width, 32)) {
       InterpolateRow = InterpolateRow_16_AVX2;
     }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    InterpolateRow = InterpolateRow_16_AVX512BW;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_16_NEON)

@@ -65,6 +65,11 @@ static int NV16ToARGB(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_NV12TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    NV12ToARGBRow = NV12ToARGBRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_NV12TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
@@ -162,6 +167,14 @@ static int NV24ToARGB(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I444TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I444ToARGBRow = I444ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I444ToARGBRow = I444ToARGBRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_I444TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I444ToARGBRow = I444ToARGBRow_Any_NEON;
@@ -215,6 +228,14 @@ static int NV24ToARGB(const uint8_t* src_y,
     SplitUVRow = SplitUVRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       SplitUVRow = SplitUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    SplitUVRow = SplitUVRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      SplitUVRow = SplitUVRow_AVX512BW;
     }
   }
 #endif

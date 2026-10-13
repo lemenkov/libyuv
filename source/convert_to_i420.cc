@@ -84,6 +84,14 @@ static int NV16ToI420(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_SPLITUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    SplitUVRow = SplitUVRow_Any_AVX512BW;
+    if (IS_ALIGNED(halfwidth, 64)) {
+      SplitUVRow = SplitUVRow_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_SPLITUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SplitUVRow = SplitUVRow_Any_NEON;
@@ -331,7 +339,18 @@ int ConvertToI420(const uint8_t* sample,
                      dst_stride_u, dst_v, dst_stride_v, crop_width,
                      inv_crop_height);
       break;
-    // TODO(fbarchard): Add AR30 and AB30
+    case FOURCC_AR30:
+      src = sample + ((ptrdiff_t)src_width * crop_y + crop_x) * 4;
+      r = AR30ToI420(src, src_width * 4, dst_y, dst_stride_y, dst_u,
+                     dst_stride_u, dst_v, dst_stride_v, crop_width,
+                     inv_crop_height);
+      break;
+    case FOURCC_AB30:
+      src = sample + ((ptrdiff_t)src_width * crop_y + crop_x) * 4;
+      r = AB30ToI420(src, src_width * 4, dst_y, dst_stride_y, dst_u,
+                     dst_stride_u, dst_v, dst_stride_v, crop_width,
+                     inv_crop_height);
+      break;
     case FOURCC_I400:
       src = sample + (ptrdiff_t)src_width * crop_y + crop_x;
       r = I400ToI420(src, src_width, dst_y, dst_stride_y, dst_u, dst_stride_u,

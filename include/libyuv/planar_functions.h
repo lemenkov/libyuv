@@ -609,6 +609,15 @@ void MirrorPlane(const uint8_t* src_y,
                  int width,
                  int height);
 
+// Mirror a plane of 16-bit data.
+LIBYUV_API
+void MirrorPlane_16(const uint16_t* src_y,
+                    int src_stride_y,
+                    uint16_t* dst_y,
+                    int dst_stride_y,
+                    int width,
+                    int height);
+
 // Mirror a plane of UV data.
 LIBYUV_API
 void MirrorUVPlane(const uint8_t* src_uv,

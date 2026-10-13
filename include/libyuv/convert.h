@@ -996,6 +996,32 @@ int ABGRToI420(const uint8_t* src_abgr,
                int width,
                int height);
 
+// Convert AR30 to I420.
+LIBYUV_API
+int AR30ToI420(const uint8_t* src_ar30,
+               int src_stride_ar30,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert AB30 to I420.
+LIBYUV_API
+int AB30ToI420(const uint8_t* src_ab30,
+               int src_stride_ab30,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
 // BGRA little endian (argb in memory) to I422.
 LIBYUV_API
 int BGRAToI422(const uint8_t* src_bgra,
