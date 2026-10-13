@@ -130,7 +130,7 @@ static void ScalePlaneDown2(int src_width,
             ? ScaleRowDown2_Any_LSX
             : (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_LSX
                                           : ScaleRowDown2Box_Any_LSX);
-    if (IS_ALIGNED(dst_width, 32)) {
+    if (IS_ALIGNED(dst_width, 16)) {
       ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_LSX
                                                : (filtering == kFilterLinear
                                                       ? ScaleRowDown2Linear_LSX
@@ -288,7 +288,7 @@ static void ScalePlaneDown4(int src_width,
   if (TestCpuFlag(kCpuHasLSX)) {
     ScaleRowDown4 =
         filtering ? ScaleRowDown4Box_Any_LSX : ScaleRowDown4_Any_LSX;
-    if (IS_ALIGNED(dst_width, 16)) {
+    if (IS_ALIGNED(dst_width, 8)) {
       ScaleRowDown4 = filtering ? ScaleRowDown4Box_LSX : ScaleRowDown4_LSX;
     }
   }
@@ -415,7 +415,7 @@ static void ScalePlaneDown34(int src_width,
 #endif
 #if defined(HAS_SCALEROWDOWN34_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
-    if (dst_width % 48 == 0) {
+    if (dst_width % 12 == 0) {
       if (!filtering) {
         ScaleRowDown34_0 = ScaleRowDown34_LSX;
         ScaleRowDown34_1 = ScaleRowDown34_LSX;
@@ -1157,8 +1157,16 @@ static int ScalePlaneBilinearDown(int src_width,
 #if defined(HAS_INTERPOLATEROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     InterpolateRow = InterpolateRow_Any_LSX;
-    if (IS_ALIGNED(src_width, 32)) {
+    if (IS_ALIGNED(src_width, 16)) {
       InterpolateRow = InterpolateRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_Any_LASX;
+    if (IS_ALIGNED(src_width, 32)) {
+      InterpolateRow = InterpolateRow_LASX;
     }
   }
 #endif
@@ -1192,7 +1200,7 @@ static int ScalePlaneBilinearDown(int src_width,
 #if defined(HAS_SCALEFILTERCOLS_LSX)
   if (TestCpuFlag(kCpuHasLSX) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_Any_LSX;
-    if (IS_ALIGNED(dst_width, 16)) {
+    if (IS_ALIGNED(dst_width, 4)) {
       ScaleFilterCols = ScaleFilterCols_LSX;
     }
   }
@@ -1426,7 +1434,7 @@ static int ScalePlaneBilinearUp(int src_width,
 #if defined(HAS_SCALEFILTERCOLS_LSX)
   if (filtering && TestCpuFlag(kCpuHasLSX) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_Any_LSX;
-    if (IS_ALIGNED(dst_width, 16)) {
+    if (IS_ALIGNED(dst_width, 4)) {
       ScaleFilterCols = ScaleFilterCols_LSX;
     }
   }

@@ -154,19 +154,19 @@ SDANY(ScaleUVRowDown2Box_Any_NEON,
       7)
 #endif
 #ifdef HAS_SCALEROWDOWN2_LSX
-SDANY(ScaleRowDown2_Any_LSX, ScaleRowDown2_LSX, ScaleRowDown2_C, 2, 1, 31)
+SDANY(ScaleRowDown2_Any_LSX, ScaleRowDown2_LSX, ScaleRowDown2_C, 2, 1, 15)
 SDANY(ScaleRowDown2Linear_Any_LSX,
       ScaleRowDown2Linear_LSX,
       ScaleRowDown2Linear_C,
       2,
       1,
-      31)
+      15)
 SDANY(ScaleRowDown2Box_Any_LSX,
       ScaleRowDown2Box_LSX,
       ScaleRowDown2Box_C,
       2,
       1,
-      31)
+      15)
 #endif
 #ifdef HAS_SCALEROWDOWN4_SSSE3
 SDANY(ScaleRowDown4_Any_SSSE3, ScaleRowDown4_SSSE3, ScaleRowDown4_C, 4, 1, 7)
@@ -196,13 +196,13 @@ SDANY(ScaleRowDown4Box_Any_NEON,
       7)
 #endif
 #ifdef HAS_SCALEROWDOWN4_LSX
-SDANY(ScaleRowDown4_Any_LSX, ScaleRowDown4_LSX, ScaleRowDown4_C, 4, 1, 15)
+SDANY(ScaleRowDown4_Any_LSX, ScaleRowDown4_LSX, ScaleRowDown4_C, 4, 1, 7)
 SDANY(ScaleRowDown4Box_Any_LSX,
       ScaleRowDown4Box_LSX,
       ScaleRowDown4Box_C,
       4,
       1,
-      15)
+      7)
 #endif
 #ifdef HAS_SCALEROWDOWN34_SSSE3
 SDANY(ScaleRowDown34_Any_SSSE3,
@@ -271,19 +271,19 @@ SDANY(ScaleRowDown34_Any_LSX,
       ScaleRowDown34_C,
       4 / 3,
       1,
-      47)
+      11)
 SDANY(ScaleRowDown34_0_Box_Any_LSX,
       ScaleRowDown34_0_Box_LSX,
       ScaleRowDown34_0_Box_C,
       4 / 3,
       1,
-      47)
+      11)
 SDANY(ScaleRowDown34_1_Box_Any_LSX,
       ScaleRowDown34_1_Box_LSX,
       ScaleRowDown34_1_Box_C,
       4 / 3,
       1,
-      47)
+      11)
 #endif
 #ifdef HAS_SCALEROWDOWN38_SSSE3
 SDANY(ScaleRowDown38_Any_SSSE3,
@@ -669,7 +669,7 @@ SAANY(ScaleAddRow_Any_LSX, ScaleAddRow_LSX, ScaleAddRow_C, 15)
 CANY(ScaleFilterCols_Any_NEON, ScaleFilterCols_NEON, ScaleFilterCols_C, 1, 7)
 #endif
 #ifdef HAS_SCALEFILTERCOLS_LSX
-CANY(ScaleFilterCols_Any_LSX, ScaleFilterCols_LSX, ScaleFilterCols_C, 1, 15)
+CANY(ScaleFilterCols_Any_LSX, ScaleFilterCols_LSX, ScaleFilterCols_C, 1, 3)
 #endif
 #ifdef HAS_SCALEARGBCOLS_NEON
 CANY(ScaleARGBCols_Any_NEON, ScaleARGBCols_NEON, ScaleARGBCols_C, 4, 7)
@@ -689,7 +689,7 @@ CANY(ScaleARGBFilterCols_Any_LSX,
      ScaleARGBFilterCols_LSX,
      ScaleARGBFilterCols_C,
      4,
-     7)
+     3)
 #endif
 #ifdef HAS_SCALEFILTERCOLS_WASMSIMD
 CANY(ScaleFilterCols_Any_WASMSIMD,

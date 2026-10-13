@@ -40,8 +40,11 @@ TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 15)
 #ifdef HAS_TRANSPOSEWX16_AVX2
 TANY(TransposeWx16_Any_AVX2, TransposeWx16_AVX2, TransposeWx16_C, 15)
 #endif
-#ifdef HAS_TRANSPOSEWX16_LSX
-TANY(TransposeWx16_Any_LSX, TransposeWx16_LSX, TransposeWx16_C, 15)
+#ifdef HAS_TRANSPOSEWX8_LSX
+TANY(TransposeWx8_Any_LSX, TransposeWx8_LSX, TransposeWx8_C, 15)
+#endif
+#ifdef HAS_TRANSPOSEWX16_LASX
+TANY(TransposeWx16_Any_LASX, TransposeWx16_LASX, TransposeWx16_C, 15)
 #endif
 #ifdef HAS_TRANSPOSEWX8_WASMSIMD
 TANY(TransposeWx8_Any_WASMSIMD, TransposeWx8_WASMSIMD, TransposeWx8_C, 15)
@@ -74,8 +77,11 @@ TUVANY(TransposeUVWx8_Any_SSE2, TransposeUVWx8_SSE2, TransposeUVWx8_C, 7)
 #ifdef HAS_TRANSPOSEUVWX16_AVX2
 TUVANY(TransposeUVWx16_Any_AVX2, TransposeUVWx16_AVX2, TransposeUVWx16_C, 7)
 #endif
-#ifdef HAS_TRANSPOSEUVWX16_LSX
-TUVANY(TransposeUVWx16_Any_LSX, TransposeUVWx16_LSX, TransposeUVWx16_C, 7)
+#ifdef HAS_TRANSPOSEUVWX8_LSX
+TUVANY(TransposeUVWx8_Any_LSX, TransposeUVWx8_LSX, TransposeUVWx8_C, 7)
+#endif
+#ifdef HAS_TRANSPOSEUVWX16_LASX
+TUVANY(TransposeUVWx16_Any_LASX, TransposeUVWx16_LASX, TransposeUVWx16_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEUVWX8_WASMSIMD
 TUVANY(TransposeUVWx8_Any_WASMSIMD,

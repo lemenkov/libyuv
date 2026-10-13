@@ -1,8 +1,6 @@
 /*
  *  Copyright 2022 The LibYuv Project Authors. All rights reserved.
  *
- *  Copyright (c) 2022 Loongson Technology Corporation Limited
- *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
@@ -13,203 +11,221 @@
 #include "libyuv/rotate_row.h"
 
 #if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
-#include "libyuv/loongson_intrinsics.h"
 
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
 
-#define ILVLH_B(in0, in1, in2, in3, out0, out1, out2, out3)   \
-  {                                                           \
-    DUP2_ARG2(__lsx_vilvl_b, in1, in0, in3, in2, out0, out2); \
-    DUP2_ARG2(__lsx_vilvh_b, in1, in0, in3, in2, out1, out3); \
-  }
+void TransposeWx8_LSX(const uint8_t* src,
+                      int src_stride,
+                      uint8_t* dst,
+                      int dst_stride,
+                      int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t d = dst_stride;
+  const uint8_t* t;
+  asm volatile(
+      "srli.w     %[w], %[w], 4                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "move       %[t], %[src]                         \n"
+      "vld        $vr0, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr1, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr2, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr3, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr4, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr5, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr6, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr7, %[t], 0                        \n"
+      "addi.d     %[src], %[src], 16                   \n"
 
-#define ILVLH_H(in0, in1, in2, in3, out0, out1, out2, out3)   \
-  {                                                           \
-    DUP2_ARG2(__lsx_vilvl_h, in1, in0, in3, in2, out0, out2); \
-    DUP2_ARG2(__lsx_vilvh_h, in1, in0, in3, in2, out1, out3); \
-  }
+      "vilvl.b    $vr8, $vr1, $vr0                     \n"
+      "vilvh.b    $vr9, $vr1, $vr0                     \n"
+      "vilvl.b    $vr10, $vr3, $vr2                    \n"
+      "vilvh.b    $vr11, $vr3, $vr2                    \n"
+      "vilvl.b    $vr12, $vr5, $vr4                    \n"
+      "vilvh.b    $vr13, $vr5, $vr4                    \n"
+      "vilvl.b    $vr14, $vr7, $vr6                    \n"
+      "vilvh.b    $vr15, $vr7, $vr6                    \n"
 
-#define ILVLH_W(in0, in1, in2, in3, out0, out1, out2, out3)   \
-  {                                                           \
-    DUP2_ARG2(__lsx_vilvl_w, in1, in0, in3, in2, out0, out2); \
-    DUP2_ARG2(__lsx_vilvh_w, in1, in0, in3, in2, out1, out3); \
-  }
+      "vilvl.h    $vr0, $vr10, $vr8                    \n"
+      "vilvh.h    $vr1, $vr10, $vr8                    \n"
+      "vilvl.h    $vr2, $vr11, $vr9                    \n"
+      "vilvh.h    $vr3, $vr11, $vr9                    \n"
+      "vilvl.h    $vr4, $vr14, $vr12                   \n"
+      "vilvh.h    $vr5, $vr14, $vr12                   \n"
+      "vilvl.h    $vr6, $vr15, $vr13                   \n"
+      "vilvh.h    $vr7, $vr15, $vr13                   \n"
 
-#define ILVLH_D(in0, in1, in2, in3, out0, out1, out2, out3)   \
-  {                                                           \
-    DUP2_ARG2(__lsx_vilvl_d, in1, in0, in3, in2, out0, out2); \
-    DUP2_ARG2(__lsx_vilvh_d, in1, in0, in3, in2, out1, out3); \
-  }
+      "vilvl.w    $vr8, $vr4, $vr0                     \n"
+      "vilvh.w    $vr9, $vr4, $vr0                     \n"
+      "vilvl.w    $vr10, $vr5, $vr1                    \n"
+      "vilvh.w    $vr11, $vr5, $vr1                    \n"
+      "vilvl.w    $vr12, $vr6, $vr2                    \n"
+      "vilvh.w    $vr13, $vr6, $vr2                    \n"
+      "vilvl.w    $vr14, $vr7, $vr3                    \n"
+      "vilvh.w    $vr15, $vr7, $vr3                    \n"
 
-#define LSX_ST_4(_dst0, _dst1, _dst2, _dst3, _dst, _stride, _stride2, \
-                 _stride3, _stride4)                                  \
-  {                                                                   \
-    __lsx_vst(_dst0, _dst, 0);                                        \
-    __lsx_vstx(_dst1, _dst, _stride);                                 \
-    __lsx_vstx(_dst2, _dst, _stride2);                                \
-    __lsx_vstx(_dst3, _dst, _stride3);                                \
-    _dst += _stride4;                                                 \
-  }
-
-#define LSX_ST_2(_dst0, _dst1, _dst, _stride, _stride2) \
-  {                                                     \
-    __lsx_vst(_dst0, _dst, 0);                          \
-    __lsx_vstx(_dst1, _dst, _stride);                   \
-    _dst += _stride2;                                   \
-  }
-
-void TransposeWx16_LSX(const uint8_t* src,
-                       int src_stride,
-                       uint8_t* dst,
-                       int dst_stride,
-                       int width) {
-  int x;
-  int len = width / 16;
-  uint8_t* s;
-  int src_stride2 = src_stride << 1;
-  int src_stride3 = src_stride + src_stride2;
-  int src_stride4 = src_stride2 << 1;
-  int dst_stride2 = dst_stride << 1;
-  int dst_stride3 = dst_stride + dst_stride2;
-  int dst_stride4 = dst_stride2 << 1;
-  __m128i src0, src1, src2, src3, dst0, dst1, dst2, dst3;
-  __m128i tmp0, tmp1, tmp2, tmp3;
-  __m128i reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7;
-  __m128i res0, res1, res2, res3, res4, res5, res6, res7, res8, res9;
-
-  for (x = 0; x < len; x++) {
-    s = (uint8_t*)src;
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg0, reg1, reg2, reg3);
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg4, reg5, reg6, reg7);
-    ILVLH_W(reg0, reg4, reg1, reg5, res0, res1, res2, res3);
-    ILVLH_W(reg2, reg6, reg3, reg7, res4, res5, res6, res7);
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg0, reg1, reg2, reg3);
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg4, reg5, reg6, reg7);
-    res8 = __lsx_vilvl_w(reg4, reg0);
-    res9 = __lsx_vilvh_w(reg4, reg0);
-    ILVLH_D(res0, res8, res1, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
-             dst_stride4);
-    res8 = __lsx_vilvl_w(reg5, reg1);
-    res9 = __lsx_vilvh_w(reg5, reg1);
-    ILVLH_D(res2, res8, res3, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
-             dst_stride4);
-    res8 = __lsx_vilvl_w(reg6, reg2);
-    res9 = __lsx_vilvh_w(reg6, reg2);
-    ILVLH_D(res4, res8, res5, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
-             dst_stride4);
-    res8 = __lsx_vilvl_w(reg7, reg3);
-    res9 = __lsx_vilvh_w(reg7, reg3);
-    ILVLH_D(res6, res8, res7, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_4(dst0, dst1, dst2, dst3, dst, dst_stride, dst_stride2, dst_stride3,
-             dst_stride4);
-    src += 16;
-  }
+      "vstelm.d   $vr8, %[dst], 0, 0                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr8, %[dst], 0, 1                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr9, %[dst], 0, 0                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr9, %[dst], 0, 1                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr10, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr10, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr11, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr11, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr12, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr12, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr13, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr13, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr14, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr14, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr15, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vstelm.d   $vr15, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src),  // %[src]
+        [dst] "+r"(dst),  // %[dst]
+        [w] "+r"(width),  // %[w]
+        [t] "=&r"(t)      // %[t]
+      : [s] "r"(s),       // %[s]
+        [d] "r"(d)        // %[d]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14",
+        "$vr15");
 }
 
-void TransposeUVWx16_LSX(const uint8_t* src,
-                         int src_stride,
-                         uint8_t* dst_a,
-                         int dst_stride_a,
-                         uint8_t* dst_b,
-                         int dst_stride_b,
-                         int width) {
-  int x;
-  int len = width / 8;
-  uint8_t* s;
-  int src_stride2 = src_stride << 1;
-  int src_stride3 = src_stride + src_stride2;
-  int src_stride4 = src_stride2 << 1;
-  int dst_stride_a2 = dst_stride_a << 1;
-  int dst_stride_b2 = dst_stride_b << 1;
-  __m128i src0, src1, src2, src3, dst0, dst1, dst2, dst3;
-  __m128i tmp0, tmp1, tmp2, tmp3;
-  __m128i reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7;
-  __m128i res0, res1, res2, res3, res4, res5, res6, res7, res8, res9;
+void TransposeUVWx8_LSX(const uint8_t* src,
+                        int src_stride,
+                        uint8_t* dst_a,
+                        int dst_stride_a,
+                        uint8_t* dst_b,
+                        int dst_stride_b,
+                        int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t da = dst_stride_a;
+  const ptrdiff_t db = dst_stride_b;
+  const uint8_t* t;
+  asm volatile(
+      "srli.w     %[w], %[w], 3                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "move       %[t], %[src]                         \n"
+      "vld        $vr0, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr1, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr2, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr3, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr4, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr5, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr6, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr7, %[t], 0                        \n"
+      "addi.d     %[src], %[src], 16                   \n"
 
-  for (x = 0; x < len; x++) {
-    s = (uint8_t*)src;
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg0, reg1, reg2, reg3);
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg4, reg5, reg6, reg7);
-    ILVLH_W(reg0, reg4, reg1, reg5, res0, res1, res2, res3);
-    ILVLH_W(reg2, reg6, reg3, reg7, res4, res5, res6, res7);
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg0, reg1, reg2, reg3);
-    src0 = __lsx_vld(s, 0);
-    src1 = __lsx_vldx(s, src_stride);
-    src2 = __lsx_vldx(s, src_stride2);
-    src3 = __lsx_vldx(s, src_stride3);
-    s += src_stride4;
-    ILVLH_B(src0, src1, src2, src3, tmp0, tmp1, tmp2, tmp3);
-    ILVLH_H(tmp0, tmp2, tmp1, tmp3, reg4, reg5, reg6, reg7);
-    res8 = __lsx_vilvl_w(reg4, reg0);
-    res9 = __lsx_vilvh_w(reg4, reg0);
-    ILVLH_D(res0, res8, res1, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_2(dst0, dst2, dst_a, dst_stride_a, dst_stride_a2);
-    LSX_ST_2(dst1, dst3, dst_b, dst_stride_b, dst_stride_b2);
-    res8 = __lsx_vilvl_w(reg5, reg1);
-    res9 = __lsx_vilvh_w(reg5, reg1);
-    ILVLH_D(res2, res8, res3, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_2(dst0, dst2, dst_a, dst_stride_a, dst_stride_a2);
-    LSX_ST_2(dst1, dst3, dst_b, dst_stride_b, dst_stride_b2);
-    res8 = __lsx_vilvl_w(reg6, reg2);
-    res9 = __lsx_vilvh_w(reg6, reg2);
-    ILVLH_D(res4, res8, res5, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_2(dst0, dst2, dst_a, dst_stride_a, dst_stride_a2);
-    LSX_ST_2(dst1, dst3, dst_b, dst_stride_b, dst_stride_b2);
-    res8 = __lsx_vilvl_w(reg7, reg3);
-    res9 = __lsx_vilvh_w(reg7, reg3);
-    ILVLH_D(res6, res8, res7, res9, dst0, dst1, dst2, dst3);
-    LSX_ST_2(dst0, dst2, dst_a, dst_stride_a, dst_stride_a2);
-    LSX_ST_2(dst1, dst3, dst_b, dst_stride_b, dst_stride_b2);
-    src += 16;
-  }
+      "vilvl.b    $vr8, $vr1, $vr0                     \n"
+      "vilvh.b    $vr9, $vr1, $vr0                     \n"
+      "vilvl.b    $vr10, $vr3, $vr2                    \n"
+      "vilvh.b    $vr11, $vr3, $vr2                    \n"
+      "vilvl.b    $vr12, $vr5, $vr4                    \n"
+      "vilvh.b    $vr13, $vr5, $vr4                    \n"
+      "vilvl.b    $vr14, $vr7, $vr6                    \n"
+      "vilvh.b    $vr15, $vr7, $vr6                    \n"
+
+      "vilvl.h    $vr0, $vr10, $vr8                    \n"
+      "vilvh.h    $vr1, $vr10, $vr8                    \n"
+      "vilvl.h    $vr2, $vr11, $vr9                    \n"
+      "vilvh.h    $vr3, $vr11, $vr9                    \n"
+      "vilvl.h    $vr4, $vr14, $vr12                   \n"
+      "vilvh.h    $vr5, $vr14, $vr12                   \n"
+      "vilvl.h    $vr6, $vr15, $vr13                   \n"
+      "vilvh.h    $vr7, $vr15, $vr13                   \n"
+
+      "vilvl.w    $vr8, $vr4, $vr0                     \n"
+      "vilvh.w    $vr9, $vr4, $vr0                     \n"
+      "vilvl.w    $vr10, $vr5, $vr1                    \n"
+      "vilvh.w    $vr11, $vr5, $vr1                    \n"
+      "vilvl.w    $vr12, $vr6, $vr2                    \n"
+      "vilvh.w    $vr13, $vr6, $vr2                    \n"
+      "vilvl.w    $vr14, $vr7, $vr3                    \n"
+      "vilvh.w    $vr15, $vr7, $vr3                    \n"
+
+      "vstelm.d   $vr8, %[dst_a], 0, 0                 \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr8, %[dst_b], 0, 1                 \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr9, %[dst_a], 0, 0                 \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr9, %[dst_b], 0, 1                 \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr10, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr10, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr11, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr11, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr12, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr12, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr13, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr13, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr14, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr14, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "vstelm.d   $vr15, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "vstelm.d   $vr15, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src),      // %[src]
+        [dst_a] "+r"(dst_a),  // %[dst_a]
+        [dst_b] "+r"(dst_b),  // %[dst_b]
+        [w] "+r"(width),      // %[w]
+        [t] "=&r"(t)          // %[t]
+      : [s] "r"(s),           // %[s]
+        [da] "r"(da),         // %[da]
+        [db] "r"(db)          // %[db]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14",
+        "$vr15");
 }
 
 void TransposeWx4_32_LSX(const uint8_t* src,
@@ -217,29 +233,57 @@ void TransposeWx4_32_LSX(const uint8_t* src,
                          uint8_t* dst,
                          int dst_stride,
                          int width) {
-  int x;
-  int len = width / 4;
-  ptrdiff_t src_stride2 = src_stride * 2;
-  ptrdiff_t src_stride3 = src_stride + src_stride2;
-  ptrdiff_t src_stride4 = src_stride * 4;
-  ptrdiff_t dst_stride2 = dst_stride * 2;
-  ptrdiff_t dst_stride3 = dst_stride + dst_stride2;
-  __m128i src0, src1, src2, src3;
-  __m128i dst0, dst1, dst2, dst3;
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t s2 = s * 2;
+  const ptrdiff_t s3 = s + s2;
+  const ptrdiff_t s4 = s * 4;
+  uint8_t* dst0 = dst;
+  uint8_t* dst1 = dst0 + dst_stride;
+  uint8_t* dst2 = dst1 + dst_stride;
+  uint8_t* dst3 = dst2 + dst_stride;
+  asm volatile(
+      "srli.w     %[w], %[w], 2                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "vld        $vr0, %[src], 0                      \n"
+      "vldx       $vr1, %[src], %[s]                   \n"
+      "vldx       $vr2, %[src], %[s2]                  \n"
+      "vldx       $vr3, %[src], %[s3]                  \n"
+      "add.d      %[src], %[src], %[s4]                \n"
 
-  for (x = 0; x < len; x++) {
-    src0 = __lsx_vld(src, 0);
-    src1 = __lsx_vldx(src, src_stride);
-    src2 = __lsx_vldx(src, src_stride2);
-    src3 = __lsx_vldx(src, src_stride3);
-    LSX_TRANSPOSE4x4_W(src0, src1, src2, src3, dst0, dst1, dst2, dst3);
-    __lsx_vst(dst0, dst, 0);
-    __lsx_vstx(dst1, dst, dst_stride);
-    __lsx_vstx(dst2, dst, dst_stride2);
-    __lsx_vstx(dst3, dst, dst_stride3);
-    dst += 16;
-    src += src_stride4;
-  }
+      "vilvl.w    $vr4, $vr1, $vr0                     \n"
+      "vilvh.w    $vr5, $vr1, $vr0                     \n"
+      "vilvl.w    $vr6, $vr3, $vr2                     \n"
+      "vilvh.w    $vr7, $vr3, $vr2                     \n"
+
+      "vilvl.d    $vr0, $vr6, $vr4                     \n"
+      "vilvh.d    $vr1, $vr6, $vr4                     \n"
+      "vilvl.d    $vr2, $vr7, $vr5                     \n"
+      "vilvh.d    $vr3, $vr7, $vr5                     \n"
+
+      "vst        $vr0, %[dst0], 0                     \n"
+      "vst        $vr1, %[dst1], 0                     \n"
+      "vst        $vr2, %[dst2], 0                     \n"
+      "vst        $vr3, %[dst3], 0                     \n"
+      "addi.d     %[dst0], %[dst0], 16                 \n"
+      "addi.d     %[dst1], %[dst1], 16                 \n"
+      "addi.d     %[dst2], %[dst2], 16                 \n"
+      "addi.d     %[dst3], %[dst3], 16                 \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src),    // %[src]
+        [dst0] "+r"(dst0),  // %[dst0]
+        [dst1] "+r"(dst1),  // %[dst1]
+        [dst2] "+r"(dst2),  // %[dst2]
+        [dst3] "+r"(dst3),  // %[dst3]
+        [w] "+r"(width)     // %[w]
+      : [s] "r"(s),         // %[s]
+        [s2] "r"(s2),       // %[s2]
+        [s3] "r"(s3),       // %[s3]
+        [s4] "r"(s4)        // %[s4]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
 }
 
 void TransposeWx8_16_LSX(const uint16_t* src,
@@ -251,46 +295,84 @@ void TransposeWx8_16_LSX(const uint16_t* src,
   const ptrdiff_t d = (ptrdiff_t)dst_stride * 2;
   const uint8_t* src_b = (const uint8_t*)src;
   uint8_t* dst_b = (uint8_t*)dst;
-  while (width > 0) {
-    __m128i r0 = __lsx_vld(src_b, 0);
-    __m128i r1 = __lsx_vldx(src_b, s);
-    __m128i r2 = __lsx_vldx(src_b, s * 2);
-    __m128i r3 = __lsx_vldx(src_b, s * 3);
-    __m128i r4 = __lsx_vldx(src_b, s * 4);
-    __m128i r5 = __lsx_vldx(src_b, s * 5);
-    __m128i r6 = __lsx_vldx(src_b, s * 6);
-    __m128i r7 = __lsx_vldx(src_b, s * 7);
+  const uint8_t* t;
+  asm volatile(
+      "srli.w     %[w], %[w], 3                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "move       %[t], %[src]                         \n"
+      "vld        $vr0, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr1, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr2, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr3, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr4, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr5, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr6, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "vld        $vr7, %[t], 0                        \n"
+      "addi.d     %[src], %[src], 16                   \n"
 
-    __m128i t0 = __lsx_vilvl_h(r1, r0);
-    __m128i t1 = __lsx_vilvh_h(r1, r0);
-    __m128i t2 = __lsx_vilvl_h(r3, r2);
-    __m128i t3 = __lsx_vilvh_h(r3, r2);
-    __m128i t4 = __lsx_vilvl_h(r5, r4);
-    __m128i t5 = __lsx_vilvh_h(r5, r4);
-    __m128i t6 = __lsx_vilvl_h(r7, r6);
-    __m128i t7 = __lsx_vilvh_h(r7, r6);
+      "vilvl.h    $vr8, $vr1, $vr0                     \n"
+      "vilvh.h    $vr9, $vr1, $vr0                     \n"
+      "vilvl.h    $vr10, $vr3, $vr2                    \n"
+      "vilvh.h    $vr11, $vr3, $vr2                    \n"
+      "vilvl.h    $vr12, $vr5, $vr4                    \n"
+      "vilvh.h    $vr13, $vr5, $vr4                    \n"
+      "vilvl.h    $vr14, $vr7, $vr6                    \n"
+      "vilvh.h    $vr15, $vr7, $vr6                    \n"
 
-    __m128i u0 = __lsx_vilvl_w(t2, t0);
-    __m128i u1 = __lsx_vilvh_w(t2, t0);
-    __m128i u2 = __lsx_vilvl_w(t3, t1);
-    __m128i u3 = __lsx_vilvh_w(t3, t1);
-    __m128i u4 = __lsx_vilvl_w(t6, t4);
-    __m128i u5 = __lsx_vilvh_w(t6, t4);
-    __m128i u6 = __lsx_vilvl_w(t7, t5);
-    __m128i u7 = __lsx_vilvh_w(t7, t5);
+      "vilvl.w    $vr0, $vr10, $vr8                    \n"
+      "vilvh.w    $vr1, $vr10, $vr8                    \n"
+      "vilvl.w    $vr2, $vr11, $vr9                    \n"
+      "vilvh.w    $vr3, $vr11, $vr9                    \n"
+      "vilvl.w    $vr4, $vr14, $vr12                   \n"
+      "vilvh.w    $vr5, $vr14, $vr12                   \n"
+      "vilvl.w    $vr6, $vr15, $vr13                   \n"
+      "vilvh.w    $vr7, $vr15, $vr13                   \n"
 
-    __lsx_vst(__lsx_vilvl_d(u4, u0), dst_b, 0);
-    __lsx_vstx(__lsx_vilvh_d(u4, u0), dst_b, d);
-    __lsx_vstx(__lsx_vilvl_d(u5, u1), dst_b, d * 2);
-    __lsx_vstx(__lsx_vilvh_d(u5, u1), dst_b, d * 3);
-    __lsx_vstx(__lsx_vilvl_d(u6, u2), dst_b, d * 4);
-    __lsx_vstx(__lsx_vilvh_d(u6, u2), dst_b, d * 5);
-    __lsx_vstx(__lsx_vilvl_d(u7, u3), dst_b, d * 6);
-    __lsx_vstx(__lsx_vilvh_d(u7, u3), dst_b, d * 7);
-    src_b += 16;
-    dst_b += d * 8;
-    width -= 8;
-  }
+      "vilvl.d    $vr8, $vr4, $vr0                     \n"
+      "vilvh.d    $vr9, $vr4, $vr0                     \n"
+      "vilvl.d    $vr10, $vr5, $vr1                    \n"
+      "vilvh.d    $vr11, $vr5, $vr1                    \n"
+      "vilvl.d    $vr12, $vr6, $vr2                    \n"
+      "vilvh.d    $vr13, $vr6, $vr2                    \n"
+      "vilvl.d    $vr14, $vr7, $vr3                    \n"
+      "vilvh.d    $vr15, $vr7, $vr3                    \n"
+
+      "vst        $vr8, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr9, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr10, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr11, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr12, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr13, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr14, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr15, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src_b),  // %[src]
+        [dst] "+r"(dst_b),  // %[dst]
+        [w] "+r"(width),    // %[w]
+        [t] "=&r"(t)        // %[t]
+      : [s] "r"(s),         // %[s]
+        [d] "r"(d)          // %[d]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14",
+        "$vr15");
 }
 
 #ifdef __cplusplus
