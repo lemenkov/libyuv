@@ -1711,10 +1711,9 @@ void MergeUVRow_RVV(const uint8_t* src_u,
 #ifdef HAS_SWAPUVROW_RVV
 void SwapUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   assert(width != 0);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvla"
   size_t vl;
-  asm("1:          \n"
+  asm volatile(
+      "1:          \n"
       "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
       "vle16.v     v8, (%[src_uv])               \n"
       "vsrl.vi     v12, v8, 8                    \n"
@@ -1729,11 +1728,10 @@ void SwapUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
       : [src_uv] "+r"(src_uv),  // %[src_uv]
         [dst_vu] "+r"(dst_vu),  // %[dst_vu]
         [w] "+r"(width),        // %[w]
-        [vl] "=&r"(vl),         // %[vl]
-        "=m"(*(uint8_t (*)[width * 2]) dst_vu)
-      : "m"(*(const uint8_t (*)[width * 2]) src_uv)
-      : RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
-#pragma GCC diagnostic pop
+        [vl] "=&r"(vl)          // %[vl]
+      :
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15");
 }
 #endif
 
@@ -2330,10 +2328,9 @@ void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
                          int width) {
   assert(width != 0);
   size_t w = (size_t)width * 4;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvla"
   size_t vl;
-  asm("1:                                         \n"
+  asm volatile(
+      "1:                                         \n"
       "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
       "vle8.v      v8, (%[src0])                  \n"
       "vle8.v      v10, (%[src1])                 \n"
@@ -2350,13 +2347,10 @@ void ARGBMultiplyRow_RVV(const uint8_t* src_argb,
         [src1] "+r"(src_argb1),  // %[src1]
         [dst] "+r"(dst_argb),    // %[dst]
         [w] "+r"(w),             // %[w]
-        [vl] "=&r"(vl),          // %[vl]
-        "=m"(*(uint8_t (*)[w])dst_argb)
-      : [k128] "r"(128),  // %[k128]
-        "m"(*(const uint8_t (*)[w])src_argb),
-        "m"(*(const uint8_t (*)[w])src_argb1)
-      : RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
-#pragma GCC diagnostic pop
+        [vl] "=&r"(vl)           // %[vl]
+      : [k128] "r"(128)          // %[k128]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15");
 }
 #endif
 

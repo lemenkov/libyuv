@@ -145,12 +145,12 @@ uint32_t HashDjb2_NEON(const uint8_t* src, int count, uint32_t seed) {
       "add         %w[tmp], %w[tmp], %w[tmp2]    \n"
       "madd        %w[hash], %w[hash], %w[c16], %w[tmp] \n"
       "b.gt        1b                            \n"
-      : [hash] "+r"(hash),                // %[hash]
+      : [src] "+r"(src),                  // %[src]
+        [hash] "+r"(hash),                // %[hash]
         [count] "+r"(count),              // %[count]
         [tmp] "=&r"(tmp),                 // %[tmp]
         [tmp2] "=&r"(tmp2)                // %[tmp2]
-      : [src] "r"(src),                   // %[src]
-        [kMuls] "r"(kDjb2Multiplicands),  // %[kMuls]
+      : [kMuls] "r"(kDjb2Multiplicands),  // %[kMuls]
         [kIdx] "r"(kDjb2WidenIndices),    // %[kIdx]
         [c16] "r"(c16)                    // %[c16]
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",

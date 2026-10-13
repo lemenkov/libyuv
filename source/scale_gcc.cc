@@ -3084,8 +3084,9 @@ int FixedDiv1_X86(int num, int div) {
       "sub         $0x1,%1                       \n"
       "idiv        %1                            \n"
       "mov         %0, %%eax                     \n"
-      : "+a"(num)  // %0
-      : "c"(div)   // %1
+      : "+a"(num),  // %0
+        "+c"(div)   // %1
+      :
       : "memory", "cc", "edx");
   return num;
 }
