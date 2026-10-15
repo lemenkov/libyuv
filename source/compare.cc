@@ -427,20 +427,143 @@ double CalcFrameSsim(const uint8_t* src_a,
                      int height) {
   int samples = 0;
   double ssim_total = 0;
-  double (*Ssim8x8)(const uint8_t* src_a, int stride_a, const uint8_t* src_b,
-                    int stride_b) = Ssim8x8_C;
+  if (width <= 8 || height <= 8) {
+    return ssim_total / samples;
+  }
 
-  // sample point start with each 4x4 location
-  int i;
-  for (i = 0; i < height - 8; i += 4) {
-    int j;
-    for (j = 0; j < width - 8; j += 4) {
-      ssim_total += Ssim8x8(src_a + j, stride_a, src_b + j, stride_b);
-      samples++;
+  int simd_size = 4;
+  void (*Ssim4x4Row)(const uint8_t* src_a, int stride_a, const uint8_t* src_b,
+                     int stride_b, uint32_t* dst, int width) = Ssim4x4Row_C;
+#if defined(HAS_SSIM4X4ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    Ssim4x4Row = Ssim4x4Row_SSE2;
+    simd_size = 16;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    Ssim4x4Row = Ssim4x4Row_AVX2;
+    simd_size = 32;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    Ssim4x4Row = Ssim4x4Row_AVX512BW;
+    simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    Ssim4x4Row = Ssim4x4Row_NEON;
+    simd_size = 16;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_NEON_DOTPROD)
+  if (TestCpuFlag(kCpuHasNeonDotProd)) {
+    Ssim4x4Row = Ssim4x4Row_NEON_DotProd;
+    simd_size = 16;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    Ssim4x4Row = Ssim4x4Row_SVE2;
+    simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    Ssim4x4Row = Ssim4x4Row_SME;
+    simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    Ssim4x4Row = Ssim4x4Row_RVV;
+    simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    Ssim4x4Row = Ssim4x4Row_LSX;
+    simd_size = 16;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    Ssim4x4Row = Ssim4x4Row_LASX;
+    simd_size = 32;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    Ssim4x4Row = Ssim4x4Row_WASMSIMD;
+    simd_size = 16;
+  }
+#endif
+
+  const int num_windows = (width - 8 + 3) >> 2;
+  const int num_tiles = num_windows + 1;
+  const int tile_width = num_tiles * 4;
+  const int main_width = tile_width & ~(simd_size - 1);
+  const int rem_width = tile_width & (simd_size - 1);
+
+#ifdef _OPENMP
+#pragma omp parallel reduction(+ : ssim_total, samples)
+#endif
+  {
+    align_buffer_64(row_buf, (size_t)tile_width * 2 * sizeof(uint32_t));
+    if (row_buf) {
+      uint32_t* row0 = (uint32_t*)row_buf;
+      uint32_t* row1 = row0 + tile_width;
+      int prev_i = -8;
+      int i;
+#ifdef _OPENMP
+#pragma omp for schedule(static)
+#endif
+      for (i = 0; i < height - 8; i += 4) {
+        const uint8_t* a = src_a + (ptrdiff_t)i * stride_a;
+        const uint8_t* b = src_b + (ptrdiff_t)i * stride_b;
+        if (prev_i + 4 != i) {
+          if (main_width > 0) {
+            Ssim4x4Row(a, stride_a, b, stride_b, row0, main_width);
+          }
+          if (rem_width > 0) {
+            Ssim4x4Row_C(a + main_width, stride_a, b + main_width, stride_b,
+                         row0 + main_width, rem_width);
+          }
+        }
+        a += (ptrdiff_t)stride_a * 4;
+        b += (ptrdiff_t)stride_b * 4;
+        if (main_width > 0) {
+          Ssim4x4Row(a, stride_a, b, stride_b, row1, main_width);
+        }
+        if (rem_width > 0) {
+          Ssim4x4Row_C(a + main_width, stride_a, b + main_width, stride_b,
+                       row1 + main_width, rem_width);
+        }
+        ssim_total += SsimWindowRow_C(row0, row1, num_windows);
+        samples += num_windows;
+        uint32_t* tmp = row0;
+        row0 = row1;
+        row1 = tmp;
+        prev_i = i;
+      }
+      free_aligned_buffer_64(row_buf);
+    } else {
+      int i;
+#ifdef _OPENMP
+#pragma omp for schedule(static)
+#endif
+      for (i = 0; i < height - 8; i += 4) {
+        const uint8_t* a = src_a + (ptrdiff_t)i * stride_a;
+        const uint8_t* b = src_b + (ptrdiff_t)i * stride_b;
+        int j;
+        for (j = 0; j < width - 8; j += 4) {
+          ssim_total += Ssim8x8_C(a + j, stride_a, b + j, stride_b);
+          samples++;
+        }
+      }
     }
-
-    src_a += stride_a * 4;
-    src_b += stride_b * 4;
   }
 
   ssim_total /= samples;

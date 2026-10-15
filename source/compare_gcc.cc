@@ -407,8 +407,9 @@ uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed) {
         "xmm7");
   return hash;
 }
-#if defined(HAS_HAMMINGDISTANCE_AVX512BW) || \
-    defined(HAS_SUMSQUAREERROR_AVX512BW) || defined(HAS_HASHDJB2_AVX512BW)
+#if defined(HAS_HAMMINGDISTANCE_AVX512BW) ||                                  \
+    defined(HAS_SUMSQUAREERROR_AVX512BW) || defined(HAS_HASHDJB2_AVX512BW) || \
+    defined(HAS_SSIM4X4ROW_AVX512BW)
 // Mask of the low n bytes, for n = 0 to 63.
 static uint64_t LowBytesMask64(int n) {
   return n ? ~0ULL >> (64 - n) : 0ULL;
@@ -748,6 +749,377 @@ uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed) {
 }
 #undef HASH64_AVX512BW
 #endif  // HAS_HASHDJB2_AVX512BW
+
+#ifdef HAS_SSIM4X4ROW_SSE2
+#define SSIM_ROW0_SSE2(LOAD_A, LOAD_B)     \
+  LOAD_A                                   \
+  LOAD_B                                   \
+  "movdqa      %%xmm0,%%xmm2           \n" \
+  "psrlw       $0x8,%%xmm0             \n" \
+  "psllw       $0x8,%%xmm2             \n" \
+  "psrlw       $0x8,%%xmm2             \n" \
+  "movdqa      %%xmm0,%%xmm4           \n" \
+  "paddw       %%xmm2,%%xmm4           \n" \
+  "movdqa      %%xmm0,%%xmm6           \n" \
+  "pmaddwd     %%xmm6,%%xmm6           \n" \
+  "movdqa      %%xmm2,%%xmm3           \n" \
+  "pmaddwd     %%xmm3,%%xmm3           \n" \
+  "paddd       %%xmm3,%%xmm6           \n" \
+  "movdqa      %%xmm1,%%xmm3           \n" \
+  "psrlw       $0x8,%%xmm1             \n" \
+  "psllw       $0x8,%%xmm3             \n" \
+  "psrlw       $0x8,%%xmm3             \n" \
+  "movdqa      %%xmm1,%%xmm5           \n" \
+  "paddw       %%xmm3,%%xmm5           \n" \
+  "pmaddwd     %%xmm1,%%xmm0           \n" \
+  "pmaddwd     %%xmm3,%%xmm2           \n" \
+  "movdqa      %%xmm0,%%xmm7           \n" \
+  "paddd       %%xmm2,%%xmm7           \n" \
+  "pmaddwd     %%xmm1,%%xmm1           \n" \
+  "pmaddwd     %%xmm3,%%xmm3           \n" \
+  "paddd       %%xmm1,%%xmm6           \n" \
+  "paddd       %%xmm3,%%xmm6           \n"
+
+#define SSIM_ROW_SSE2(LOAD_A, LOAD_B)      \
+  LOAD_A                                   \
+  LOAD_B                                   \
+  "movdqa      %%xmm0,%%xmm2           \n" \
+  "psrlw       $0x8,%%xmm0             \n" \
+  "psllw       $0x8,%%xmm2             \n" \
+  "psrlw       $0x8,%%xmm2             \n" \
+  "paddw       %%xmm0,%%xmm4           \n" \
+  "paddw       %%xmm2,%%xmm4           \n" \
+  "movdqa      %%xmm0,%%xmm3           \n" \
+  "pmaddwd     %%xmm3,%%xmm3           \n" \
+  "paddd       %%xmm3,%%xmm6           \n" \
+  "movdqa      %%xmm2,%%xmm3           \n" \
+  "pmaddwd     %%xmm3,%%xmm3           \n" \
+  "paddd       %%xmm3,%%xmm6           \n" \
+  "movdqa      %%xmm1,%%xmm3           \n" \
+  "psrlw       $0x8,%%xmm1             \n" \
+  "psllw       $0x8,%%xmm3             \n" \
+  "psrlw       $0x8,%%xmm3             \n" \
+  "paddw       %%xmm1,%%xmm5           \n" \
+  "paddw       %%xmm3,%%xmm5           \n" \
+  "pmaddwd     %%xmm1,%%xmm0           \n" \
+  "pmaddwd     %%xmm3,%%xmm2           \n" \
+  "paddd       %%xmm0,%%xmm7           \n" \
+  "paddd       %%xmm2,%%xmm7           \n" \
+  "pmaddwd     %%xmm1,%%xmm1           \n" \
+  "pmaddwd     %%xmm3,%%xmm3           \n" \
+  "paddd       %%xmm1,%%xmm6           \n" \
+  "paddd       %%xmm3,%%xmm6           \n"
+
+void Ssim4x4Row_SSE2(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  asm volatile(
+      LABELALIGN "1:                                        \n"  //
+      SSIM_ROW0_SSE2("movdqu (%[src_a]),%%xmm0\n",
+                     "movdqu (%[src_b]),%%xmm1\n")  //
+      "add         %[stride_a],%[src_a]          \n"
+      "add         %[stride_b],%[src_b]          \n"  //
+      SSIM_ROW_SSE2("movdqu (%[src_a]),%%xmm0\n",
+                    "movdqu (%[src_b]),%%xmm1\n")  //
+      SSIM_ROW_SSE2("movdqu (%[src_a],%[stride_a]),%%xmm0\n",
+                    "movdqu (%[src_b],%[stride_b]),%%xmm1\n")  //
+      SSIM_ROW_SSE2("movdqu (%[src_a],%[stride_a],2),%%xmm0\n",
+                    "movdqu (%[src_b],%[stride_b],2),%%xmm1\n")  //
+      "sub         %[stride_a],%[src_a]          \n"
+      "sub         %[stride_b],%[src_b]          \n"
+      "add         $0x10,%[src_a]                \n"
+      "add         $0x10,%[src_b]                \n"
+      "pcmpeqd     %%xmm0,%%xmm0                 \n"
+      "psrlw       $0xf,%%xmm0                   \n"
+      "pmaddwd     %%xmm0,%%xmm4                 \n"
+      "pmaddwd     %%xmm0,%%xmm5                 \n"
+      "movdqa      %%xmm4,%%xmm0                 \n"
+      "punpckldq   %%xmm5,%%xmm0                 \n"
+      "punpckhdq   %%xmm5,%%xmm4                 \n"
+      "movdqa      %%xmm6,%%xmm1                 \n"
+      "punpckldq   %%xmm7,%%xmm1                 \n"
+      "punpckhdq   %%xmm7,%%xmm6                 \n"
+      "movdqa      %%xmm0,%%xmm2                 \n"
+      "punpcklqdq  %%xmm1,%%xmm2                 \n"
+      "punpckhqdq  %%xmm1,%%xmm0                 \n"
+      "movdqa      %%xmm4,%%xmm3                 \n"
+      "punpcklqdq  %%xmm6,%%xmm3                 \n"
+      "punpckhqdq  %%xmm6,%%xmm4                 \n"
+      "movdqu      %%xmm2,0x00(%[dst])           \n"
+      "movdqu      %%xmm0,0x10(%[dst])           \n"
+      "movdqu      %%xmm3,0x20(%[dst])           \n"
+      "movdqu      %%xmm4,0x30(%[dst])           \n"
+      "add         $0x40,%[dst]                  \n"
+      "sub         $0x10,%[width]                \n"
+      "jg          1b                            \n"
+      : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [dst] "+r"(dst),
+        [width] "+r"(width)
+      : [stride_a] "r"((ptrdiff_t)stride_a), [stride_b] "r"((ptrdiff_t)stride_b)
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#undef SSIM_ROW0_SSE2
+#undef SSIM_ROW_SSE2
+#endif  // HAS_SSIM4X4ROW_SSE2
+
+#ifdef HAS_SSIM4X4ROW_AVX2
+#define SSIM_ROW0_AVX2(LOAD_A, LOAD_B)           \
+  LOAD_A                                         \
+  LOAD_B                                         \
+  "vpsrlw      $0x8,%%ymm0,%%ymm2            \n" \
+  "vpsllw      $0x8,%%ymm0,%%ymm0            \n" \
+  "vpsrlw      $0x8,%%ymm0,%%ymm0            \n" \
+  "vpaddw      %%ymm0,%%ymm2,%%ymm4          \n" \
+  "vpmaddwd    %%ymm2,%%ymm2,%%ymm6          \n" \
+  "vpmaddwd    %%ymm0,%%ymm0,%%ymm3          \n" \
+  "vpaddd      %%ymm3,%%ymm6,%%ymm6          \n" \
+  "vpsrlw      $0x8,%%ymm1,%%ymm3            \n" \
+  "vpsllw      $0x8,%%ymm1,%%ymm1            \n" \
+  "vpsrlw      $0x8,%%ymm1,%%ymm1            \n" \
+  "vpaddw      %%ymm1,%%ymm3,%%ymm5          \n" \
+  "vpmaddwd    %%ymm3,%%ymm2,%%ymm7          \n" \
+  "vpmaddwd    %%ymm1,%%ymm0,%%ymm0          \n" \
+  "vpaddd      %%ymm0,%%ymm7,%%ymm7          \n" \
+  "vpmaddwd    %%ymm3,%%ymm3,%%ymm3          \n" \
+  "vpmaddwd    %%ymm1,%%ymm1,%%ymm1          \n" \
+  "vpaddd      %%ymm3,%%ymm6,%%ymm6          \n" \
+  "vpaddd      %%ymm1,%%ymm6,%%ymm6          \n"
+
+#define SSIM_ROW_AVX2(LOAD_A, LOAD_B)            \
+  LOAD_A                                         \
+  LOAD_B                                         \
+  "vpsrlw      $0x8,%%ymm0,%%ymm2            \n" \
+  "vpsllw      $0x8,%%ymm0,%%ymm0            \n" \
+  "vpsrlw      $0x8,%%ymm0,%%ymm0            \n" \
+  "vpaddw      %%ymm2,%%ymm4,%%ymm4          \n" \
+  "vpaddw      %%ymm0,%%ymm4,%%ymm4          \n" \
+  "vpmaddwd    %%ymm2,%%ymm2,%%ymm3          \n" \
+  "vpaddd      %%ymm3,%%ymm6,%%ymm6          \n" \
+  "vpmaddwd    %%ymm0,%%ymm0,%%ymm3          \n" \
+  "vpaddd      %%ymm3,%%ymm6,%%ymm6          \n" \
+  "vpsrlw      $0x8,%%ymm1,%%ymm3            \n" \
+  "vpsllw      $0x8,%%ymm1,%%ymm1            \n" \
+  "vpsrlw      $0x8,%%ymm1,%%ymm1            \n" \
+  "vpaddw      %%ymm3,%%ymm5,%%ymm5          \n" \
+  "vpaddw      %%ymm1,%%ymm5,%%ymm5          \n" \
+  "vpmaddwd    %%ymm3,%%ymm2,%%ymm2          \n" \
+  "vpmaddwd    %%ymm1,%%ymm0,%%ymm0          \n" \
+  "vpaddd      %%ymm2,%%ymm7,%%ymm7          \n" \
+  "vpaddd      %%ymm0,%%ymm7,%%ymm7          \n" \
+  "vpmaddwd    %%ymm3,%%ymm3,%%ymm3          \n" \
+  "vpmaddwd    %%ymm1,%%ymm1,%%ymm1          \n" \
+  "vpaddd      %%ymm3,%%ymm6,%%ymm6          \n" \
+  "vpaddd      %%ymm1,%%ymm6,%%ymm6          \n"
+
+void Ssim4x4Row_AVX2(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  asm volatile(
+      LABELALIGN "1:                                        \n"  //
+      SSIM_ROW0_AVX2("vmovdqu (%[src_a]),%%ymm0\n",
+                     "vmovdqu (%[src_b]),%%ymm1\n")  //
+      "add         %[stride_a],%[src_a]          \n"
+      "add         %[stride_b],%[src_b]          \n"  //
+      SSIM_ROW_AVX2("vmovdqu (%[src_a]),%%ymm0\n",
+                    "vmovdqu (%[src_b]),%%ymm1\n")  //
+      SSIM_ROW_AVX2("vmovdqu (%[src_a],%[stride_a]),%%ymm0\n",
+                    "vmovdqu (%[src_b],%[stride_b]),%%ymm1\n")  //
+      SSIM_ROW_AVX2("vmovdqu (%[src_a],%[stride_a],2),%%ymm0\n",
+                    "vmovdqu (%[src_b],%[stride_b],2),%%ymm1\n")  //
+      "sub         %[stride_a],%[src_a]          \n"
+      "sub         %[stride_b],%[src_b]          \n"
+      "add         $0x20,%[src_a]                \n"
+      "add         $0x20,%[src_b]                \n"
+      "vpcmpeqd    %%ymm0,%%ymm0,%%ymm0          \n"
+      "vpsrlw      $0xf,%%ymm0,%%ymm0            \n"
+      "vpmaddwd    %%ymm0,%%ymm4,%%ymm4          \n"
+      "vpmaddwd    %%ymm0,%%ymm5,%%ymm5          \n"
+      "vpunpckldq  %%ymm5,%%ymm4,%%ymm0          \n"
+      "vpunpckhdq  %%ymm5,%%ymm4,%%ymm1          \n"
+      "vpunpckldq  %%ymm7,%%ymm6,%%ymm2          \n"
+      "vpunpckhdq  %%ymm7,%%ymm6,%%ymm3          \n"
+      "vpunpcklqdq %%ymm2,%%ymm0,%%ymm4          \n"
+      "vpunpckhqdq %%ymm2,%%ymm0,%%ymm5          \n"
+      "vpunpcklqdq %%ymm3,%%ymm1,%%ymm6          \n"
+      "vpunpckhqdq %%ymm3,%%ymm1,%%ymm7          \n"
+      "vperm2i128  $0x20,%%ymm5,%%ymm4,%%ymm0    \n"
+      "vperm2i128  $0x20,%%ymm7,%%ymm6,%%ymm1    \n"
+      "vperm2i128  $0x31,%%ymm5,%%ymm4,%%ymm2    \n"
+      "vperm2i128  $0x31,%%ymm7,%%ymm6,%%ymm3    \n"
+      "vmovdqu     %%ymm0,0x00(%[dst])           \n"
+      "vmovdqu     %%ymm1,0x20(%[dst])           \n"
+      "vmovdqu     %%ymm2,0x40(%[dst])           \n"
+      "vmovdqu     %%ymm3,0x60(%[dst])           \n"
+      "add         $0x80,%[dst]                  \n"
+      "sub         $0x20,%[width]                \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [dst] "+r"(dst),
+        [width] "+r"(width)
+      : [stride_a] "r"((ptrdiff_t)stride_a), [stride_b] "r"((ptrdiff_t)stride_b)
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#undef SSIM_ROW0_AVX2
+#undef SSIM_ROW_AVX2
+#endif  // HAS_SSIM4X4ROW_AVX2
+
+#ifdef HAS_SSIM4X4ROW_AVX512BW
+#define SSIM_ROW0_AVX512BW(LOAD_A, LOAD_B)       \
+  LOAD_A                                         \
+  LOAD_B                                         \
+  "vpsrlw      $0x8,%%zmm0,%%zmm2            \n" \
+  "vpsllw      $0x8,%%zmm0,%%zmm0            \n" \
+  "vpsrlw      $0x8,%%zmm0,%%zmm0            \n" \
+  "vpaddw      %%zmm0,%%zmm2,%%zmm4          \n" \
+  "vpmaddwd    %%zmm2,%%zmm2,%%zmm6          \n" \
+  "vpmaddwd    %%zmm0,%%zmm0,%%zmm3          \n" \
+  "vpaddd      %%zmm3,%%zmm6,%%zmm6          \n" \
+  "vpsrlw      $0x8,%%zmm1,%%zmm3            \n" \
+  "vpsllw      $0x8,%%zmm1,%%zmm1            \n" \
+  "vpsrlw      $0x8,%%zmm1,%%zmm1            \n" \
+  "vpaddw      %%zmm1,%%zmm3,%%zmm5          \n" \
+  "vpmaddwd    %%zmm3,%%zmm2,%%zmm7          \n" \
+  "vpmaddwd    %%zmm1,%%zmm0,%%zmm0          \n" \
+  "vpaddd      %%zmm0,%%zmm7,%%zmm7          \n" \
+  "vpmaddwd    %%zmm3,%%zmm3,%%zmm3          \n" \
+  "vpmaddwd    %%zmm1,%%zmm1,%%zmm1          \n" \
+  "vpaddd      %%zmm3,%%zmm6,%%zmm6          \n" \
+  "vpaddd      %%zmm1,%%zmm6,%%zmm6          \n"
+
+#define SSIM_ROW_AVX512BW(LOAD_A, LOAD_B)        \
+  LOAD_A                                         \
+  LOAD_B                                         \
+  "vpsrlw      $0x8,%%zmm0,%%zmm2            \n" \
+  "vpsllw      $0x8,%%zmm0,%%zmm0            \n" \
+  "vpsrlw      $0x8,%%zmm0,%%zmm0            \n" \
+  "vpaddw      %%zmm2,%%zmm4,%%zmm4          \n" \
+  "vpaddw      %%zmm0,%%zmm4,%%zmm4          \n" \
+  "vpmaddwd    %%zmm2,%%zmm2,%%zmm3          \n" \
+  "vpaddd      %%zmm3,%%zmm6,%%zmm6          \n" \
+  "vpmaddwd    %%zmm0,%%zmm0,%%zmm3          \n" \
+  "vpaddd      %%zmm3,%%zmm6,%%zmm6          \n" \
+  "vpsrlw      $0x8,%%zmm1,%%zmm3            \n" \
+  "vpsllw      $0x8,%%zmm1,%%zmm1            \n" \
+  "vpsrlw      $0x8,%%zmm1,%%zmm1            \n" \
+  "vpaddw      %%zmm3,%%zmm5,%%zmm5          \n" \
+  "vpaddw      %%zmm1,%%zmm5,%%zmm5          \n" \
+  "vpmaddwd    %%zmm3,%%zmm2,%%zmm2          \n" \
+  "vpmaddwd    %%zmm1,%%zmm0,%%zmm0          \n" \
+  "vpaddd      %%zmm2,%%zmm7,%%zmm7          \n" \
+  "vpaddd      %%zmm0,%%zmm7,%%zmm7          \n" \
+  "vpmaddwd    %%zmm3,%%zmm3,%%zmm3          \n" \
+  "vpmaddwd    %%zmm1,%%zmm1,%%zmm1          \n" \
+  "vpaddd      %%zmm3,%%zmm6,%%zmm6          \n" \
+  "vpaddd      %%zmm1,%%zmm6,%%zmm6          \n"
+
+#define SSIM_TRANSPOSE_AVX512BW                  \
+  "vpternlogd  $0xff,%%zmm0,%%zmm0,%%zmm0    \n" \
+  "vpsrlw      $0xf,%%zmm0,%%zmm0            \n" \
+  "vpmaddwd    %%zmm0,%%zmm4,%%zmm4          \n" \
+  "vpmaddwd    %%zmm0,%%zmm5,%%zmm5          \n" \
+  "vpunpckldq  %%zmm5,%%zmm4,%%zmm0          \n" \
+  "vpunpckhdq  %%zmm5,%%zmm4,%%zmm1          \n" \
+  "vpunpckldq  %%zmm7,%%zmm6,%%zmm2          \n" \
+  "vpunpckhdq  %%zmm7,%%zmm6,%%zmm3          \n" \
+  "vpunpcklqdq %%zmm2,%%zmm0,%%zmm4          \n" \
+  "vpunpckhqdq %%zmm2,%%zmm0,%%zmm5          \n" \
+  "vpunpcklqdq %%zmm3,%%zmm1,%%zmm6          \n" \
+  "vpunpckhqdq %%zmm3,%%zmm1,%%zmm7          \n" \
+  "vshufi32x4  $0x44,%%zmm5,%%zmm4,%%zmm0    \n" \
+  "vshufi32x4  $0x44,%%zmm7,%%zmm6,%%zmm1    \n" \
+  "vshufi32x4  $0xee,%%zmm5,%%zmm4,%%zmm2    \n" \
+  "vshufi32x4  $0xee,%%zmm7,%%zmm6,%%zmm3    \n" \
+  "vshufi32x4  $0x88,%%zmm1,%%zmm0,%%zmm4    \n" \
+  "vshufi32x4  $0xdd,%%zmm1,%%zmm0,%%zmm5    \n" \
+  "vshufi32x4  $0x88,%%zmm3,%%zmm2,%%zmm6    \n" \
+  "vshufi32x4  $0xdd,%%zmm3,%%zmm2,%%zmm7    \n"
+
+// Process 64 pixels (16 4x4 tiles) per loop and the remainder of 4 to 60
+// pixels (1 to 15 tiles) with masked loads and stores.
+void Ssim4x4Row_AVX512BW(const uint8_t* src_a,
+                         int stride_a,
+                         const uint8_t* src_b,
+                         int stride_b,
+                         uint32_t* dst,
+                         int width) {
+  const int rem = width & 60;
+  const uint16_t load_mask = rem ? (uint16_t)((1U << (rem >> 2)) - 1U) : 0U;
+  const uint64_t store_mask = LowBytesMask64(rem);
+  asm volatile(
+      "sub         $0x40,%[width]                \n"
+      "jl          2f                            \n"
+
+      LABELALIGN "1:                                        \n"  //
+      SSIM_ROW0_AVX512BW("vmovdqu8 (%[src_a]),%%zmm0\n",
+                         "vmovdqu8 (%[src_b]),%%zmm1\n")  //
+      "add         %[stride_a],%[src_a]          \n"
+      "add         %[stride_b],%[src_b]          \n"  //
+      SSIM_ROW_AVX512BW("vmovdqu8 (%[src_a]),%%zmm0\n",
+                        "vmovdqu8 (%[src_b]),%%zmm1\n")  //
+      SSIM_ROW_AVX512BW("vmovdqu8 (%[src_a],%[stride_a]),%%zmm0\n",
+                        "vmovdqu8 (%[src_b],%[stride_b]),%%zmm1\n")  //
+      SSIM_ROW_AVX512BW("vmovdqu8 (%[src_a],%[stride_a],2),%%zmm0\n",
+                        "vmovdqu8 (%[src_b],%[stride_b],2),%%zmm1\n")  //
+      "sub         %[stride_a],%[src_a]          \n"
+      "sub         %[stride_b],%[src_b]          \n"
+      "add         $0x40,%[src_a]                \n"
+      "add         $0x40,%[src_b]                \n"  //
+      SSIM_TRANSPOSE_AVX512BW
+      "vmovdqu32   %%zmm4,0x00(%[dst])           \n"
+      "vmovdqu32   %%zmm5,0x40(%[dst])           \n"
+      "vmovdqu32   %%zmm6,0x80(%[dst])           \n"
+      "vmovdqu32   %%zmm7,0xc0(%[dst])           \n"
+      "add         $0x100,%[dst]                 \n"
+      "sub         $0x40,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:                                        \n"
+      "add         $0x40,%[width]                \n"
+      "je          3f                            \n"
+      "kmovw       %[load_mask],%%k1             \n"  //
+      SSIM_ROW0_AVX512BW("vmovdqu32 (%[src_a]),%%zmm0%{%%k1%}%{z%}\n",
+                         "vmovdqu32 (%[src_b]),%%zmm1%{%%k1%}%{z%}\n")  //
+      "add         %[stride_a],%[src_a]          \n"
+      "add         %[stride_b],%[src_b]          \n"  //
+      SSIM_ROW_AVX512BW("vmovdqu32 (%[src_a]),%%zmm0%{%%k1%}%{z%}\n",
+                        "vmovdqu32 (%[src_b]),%%zmm1%{%%k1%}%{z%}\n")  //
+      SSIM_ROW_AVX512BW(
+          "vmovdqu32 (%[src_a],%[stride_a]),%%zmm0%{%%k1%}%{z%}\n",
+          "vmovdqu32 (%[src_b],%[stride_b]),%%zmm1%{%%k1%}%{z%}\n")  //
+      SSIM_ROW_AVX512BW(
+          "vmovdqu32 (%[src_a],%[stride_a],2),%%zmm0%{%%k1%}%{z%}\n",
+          "vmovdqu32 (%[src_b],%[stride_b],2),%%zmm1%{%%k1%}%{z%}\n")  //
+      SSIM_TRANSPOSE_AVX512BW
+      "kmovq       %[store_mask],%%k1            \n"
+      "vmovdqu32   %%zmm4,0x00(%[dst])%{%%k1%}   \n"
+      "kshiftrq    $0x10,%%k1,%%k1               \n"
+      "vmovdqu32   %%zmm5,0x40(%[dst])%{%%k1%}   \n"
+      "kshiftrq    $0x10,%%k1,%%k1               \n"
+      "vmovdqu32   %%zmm6,0x80(%[dst])%{%%k1%}   \n"
+      "kshiftrq    $0x10,%%k1,%%k1               \n"
+      "vmovdqu32   %%zmm7,0xc0(%[dst])%{%%k1%}   \n"
+
+      "3:                                        \n"
+      "vzeroupper  \n"
+      : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [dst] "+r"(dst),
+        [width] "+r"(width)
+      : [stride_a] "r"((ptrdiff_t)stride_a),
+        [stride_b] "r"((ptrdiff_t)stride_b), [load_mask] "m"(load_mask),
+        [store_mask] "m"(store_mask)
+      : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+        "xmm6", "xmm7");
+}
+#undef SSIM_ROW0_AVX512BW
+#undef SSIM_ROW_AVX512BW
+#undef SSIM_TRANSPOSE_AVX512BW
+#endif  // HAS_SSIM4X4ROW_AVX512BW
 
 #endif  // !defined(LIBYUV_DISABLE_X86) && (x86 or x64) &&
         // !defined(LIBYUV_ENABLE_ROWWIN)

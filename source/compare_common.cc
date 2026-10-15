@@ -10,6 +10,8 @@
 
 #include "libyuv/compare_row.h"
 
+#include <float.h>
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -64,6 +66,108 @@ uint32_t HashDjb2_C(const uint8_t* src, int count, uint32_t seed) {
     hash += (hash << 5) + src[i];
   }
   return hash;
+}
+
+// Compute 4x4 tile statistics (sum_a, sum_b, sum_sq_a + sum_sq_b, sum_axb)
+// across 4 rows for width pixels (width is a multiple of 4).
+void Ssim4x4Row_C(const uint8_t* src_a,
+                  int stride_a,
+                  const uint8_t* src_b,
+                  int stride_b,
+                  uint32_t* dst,
+                  int width) {
+  const ptrdiff_t sa = stride_a;
+  const ptrdiff_t sb = stride_b;
+  const uint8_t* a0 = src_a;
+  const uint8_t* a1 = a0 + sa;
+  const uint8_t* a2 = a1 + sa;
+  const uint8_t* a3 = a2 + sa;
+  const uint8_t* b0 = src_b;
+  const uint8_t* b1 = b0 + sb;
+  const uint8_t* b2 = b1 + sb;
+  const uint8_t* b3 = b2 + sb;
+  int x;
+  for (x = 0; x < width; x += 4) {
+    uint32_t sum_a = a0[0] + a0[1] + a0[2] + a0[3] + a1[0] + a1[1] + a1[2] +
+                     a1[3] + a2[0] + a2[1] + a2[2] + a2[3] + a3[0] + a3[1] +
+                     a3[2] + a3[3];
+    uint32_t sum_b = b0[0] + b0[1] + b0[2] + b0[3] + b1[0] + b1[1] + b1[2] +
+                     b1[3] + b2[0] + b2[1] + b2[2] + b2[3] + b3[0] + b3[1] +
+                     b3[2] + b3[3];
+    uint32_t sum_sq_ab =
+        a0[0] * a0[0] + a0[1] * a0[1] + a0[2] * a0[2] + a0[3] * a0[3] +
+        a1[0] * a1[0] + a1[1] * a1[1] + a1[2] * a1[2] + a1[3] * a1[3] +
+        a2[0] * a2[0] + a2[1] * a2[1] + a2[2] * a2[2] + a2[3] * a2[3] +
+        a3[0] * a3[0] + a3[1] * a3[1] + a3[2] * a3[2] + a3[3] * a3[3] +
+        b0[0] * b0[0] + b0[1] * b0[1] + b0[2] * b0[2] + b0[3] * b0[3] +
+        b1[0] * b1[0] + b1[1] * b1[1] + b1[2] * b1[2] + b1[3] * b1[3] +
+        b2[0] * b2[0] + b2[1] * b2[1] + b2[2] * b2[2] + b2[3] * b2[3] +
+        b3[0] * b3[0] + b3[1] * b3[1] + b3[2] * b3[2] + b3[3] * b3[3];
+    uint32_t sum_axb =
+        a0[0] * b0[0] + a0[1] * b0[1] + a0[2] * b0[2] + a0[3] * b0[3] +
+        a1[0] * b1[0] + a1[1] * b1[1] + a1[2] * b1[2] + a1[3] * b1[3] +
+        a2[0] * b2[0] + a2[1] * b2[1] + a2[2] * b2[2] + a2[3] * b2[3] +
+        a3[0] * b3[0] + a3[1] * b3[1] + a3[2] * b3[2] + a3[3] * b3[3];
+    dst[0] = sum_a;
+    dst[1] = sum_b;
+    dst[2] = sum_sq_ab;
+    dst[3] = sum_axb;
+    a0 += 4;
+    a1 += 4;
+    a2 += 4;
+    a3 += 4;
+    b0 += 4;
+    b1 += 4;
+    b2 += 4;
+    b3 += 4;
+    dst += 4;
+  }
+}
+
+// Combine two consecutive 4x4 tile rows (row0 and row1) into 8x8 windows
+// stepped on a 4-pixel horizontal grid and return the sum of SSIM values.
+double SsimWindowRow_C(const uint32_t* row0,
+                       const uint32_t* row1,
+                       int num_windows) {
+  const int64_t count = 64;
+  // scale the constants by number of pixels
+  const int64_t cc1 = 26634;   // (64^2*(.01*255)^2)
+  const int64_t cc2 = 239708;  // (64^2*(.03*255)^2)
+  const int64_t c1 = (cc1 * count * count) >> 12;
+  const int64_t c2 = (cc2 * count * count) >> 12;
+
+  double ssim_total = 0.0;
+  uint32_t prev_a = row0[0] + row1[0];
+  uint32_t prev_b = row0[1] + row1[1];
+  uint32_t prev_sq = row0[2] + row1[2];
+  uint32_t prev_axb = row0[3] + row1[3];
+  int w;
+  for (w = 0; w < num_windows; ++w) {
+    row0 += 4;
+    row1 += 4;
+    const uint32_t next_a = row0[0] + row1[0];
+    const uint32_t next_b = row0[1] + row1[1];
+    const uint32_t next_sq = row0[2] + row1[2];
+    const uint32_t next_axb = row0[3] + row1[3];
+    const int64_t sum_a = prev_a + next_a;
+    const int64_t sum_b = prev_b + next_b;
+    const int64_t sum_sq_ab = prev_sq + next_sq;
+    const int64_t sum_axb = prev_axb + next_axb;
+    prev_a = next_a;
+    prev_b = next_b;
+    prev_sq = next_sq;
+    prev_axb = next_axb;
+
+    const int64_t sum_a_x_sum_b = sum_a * sum_b;
+    const int64_t ssim_n = (2 * sum_a_x_sum_b + c1) *
+                           (2 * count * sum_axb - 2 * sum_a_x_sum_b + c2);
+    const int64_t sum_a_sq = sum_a * sum_a;
+    const int64_t sum_b_sq = sum_b * sum_b;
+    const int64_t ssim_d = (sum_a_sq + sum_b_sq + c1) *
+                           (count * sum_sq_ab - sum_a_sq - sum_b_sq + c2);
+    ssim_total += ssim_n * 1.0 / ssim_d;
+  }
+  return ssim_total;
 }
 
 #ifdef __cplusplus

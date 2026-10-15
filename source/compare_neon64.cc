@@ -220,6 +220,135 @@ uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
   return sse;
 }
 
+#define SSIM_ROW_NEON64(VA, VB, PADD_U8, PADD_U16)                      \
+  PADD_U8 "    v4.8h, " #VA ".16b                  \n" PADD_U8          \
+          "    v5.8h, " #VB                                             \
+          ".16b                  \n"                                    \
+          "umull       v6.8h, " #VA ".8b, " #VA                         \
+          ".8b       \n"                                                \
+          "umull2      v7.8h, " #VA ".16b, " #VA ".16b     \n" PADD_U16 \
+          "   v20.4s, v6.8h                       \n" PADD_U16          \
+          "   v21.4s, v7.8h                       \n"                   \
+          "umull       v6.8h, " #VB ".8b, " #VB                         \
+          ".8b       \n"                                                \
+          "umull2      v7.8h, " #VB ".16b, " #VB                        \
+          ".16b     \n"                                                 \
+          "uadalp      v20.4s, v6.8h                       \n"          \
+          "uadalp      v21.4s, v7.8h                       \n"          \
+          "umull       v6.8h, " #VA ".8b, " #VB                         \
+          ".8b       \n"                                                \
+          "umull2      v7.8h, " #VA ".16b, " #VB ".16b     \n" PADD_U16 \
+          "   v22.4s, v6.8h                       \n" PADD_U16          \
+          "   v23.4s, v7.8h                       \n"
+
+void Ssim4x4Row_NEON(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  const ptrdiff_t sa = stride_a;
+  const ptrdiff_t sb = stride_b;
+  const uint8_t* a0 = src_a;
+  const uint8_t* a1 = a0 + sa;
+  const uint8_t* a2 = a1 + sa;
+  const uint8_t* a3 = a2 + sa;
+  const uint8_t* b0 = src_b;
+  const uint8_t* b1 = b0 + sb;
+  const uint8_t* b2 = b1 + sb;
+  const uint8_t* b3 = b2 + sb;
+  asm volatile(
+      "1:                                        \n"
+      "ldr         q0, [%[a0]], #16              \n"
+      "ldr         q1, [%[b0]], #16              \n"
+      "ldr         q2, [%[a1]], #16              \n"
+      "ldr         q3, [%[b1]], #16              \n"  //
+      SSIM_ROW_NEON64(v0, v1, "uaddlp", "uaddlp")     //
+      SSIM_ROW_NEON64(v2, v3, "uadalp", "uadalp")     //
+      "ldr         q0, [%[a2]], #16              \n"
+      "ldr         q1, [%[b2]], #16              \n"
+      "ldr         q2, [%[a3]], #16              \n"
+      "ldr         q3, [%[b3]], #16              \n"  //
+      SSIM_ROW_NEON64(v0, v1, "uadalp", "uadalp")     //
+      SSIM_ROW_NEON64(v2, v3, "uadalp", "uadalp")     //
+      "uaddlp      v16.4s, v4.8h                 \n"
+      "uaddlp      v17.4s, v5.8h                 \n"
+      "addp        v18.4s, v20.4s, v21.4s        \n"
+      "addp        v19.4s, v22.4s, v23.4s        \n"
+      "subs        %w[width], %w[width], #16     \n"
+      "st4         {v16.4s, v17.4s, v18.4s, v19.4s}, [%[dst]], #64 \n"
+      "b.gt        1b                            \n"
+      : [a0] "+r"(a0), [a1] "+r"(a1), [a2] "+r"(a2), [a3] "+r"(a3),
+        [b0] "+r"(b0), [b1] "+r"(b1), [b2] "+r"(b2), [b3] "+r"(b3),
+        [dst] "+r"(dst), [width] "+r"(width)
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#undef SSIM_ROW_NEON64
+
+void Ssim4x4Row_NEON_DotProd(const uint8_t* src_a,
+                             int stride_a,
+                             const uint8_t* src_b,
+                             int stride_b,
+                             uint32_t* dst,
+                             int width) {
+  const ptrdiff_t sa = stride_a;
+  const ptrdiff_t sb = stride_b;
+  const uint8_t* a0 = src_a;
+  const uint8_t* a1 = a0 + sa;
+  const uint8_t* a2 = a1 + sa;
+  const uint8_t* a3 = a2 + sa;
+  const uint8_t* b0 = src_b;
+  const uint8_t* b1 = b0 + sb;
+  const uint8_t* b2 = b1 + sb;
+  const uint8_t* b3 = b2 + sb;
+  asm volatile(
+      "movi        v6.16b, #1                    \n"
+      "1:                                        \n"
+      "movi        v16.4s, #0                    \n"
+      "movi        v17.4s, #0                    \n"
+      "movi        v18.4s, #0                    \n"
+      "movi        v19.4s, #0                    \n"
+      "ldr         q0, [%[a0]], #16              \n"
+      "ldr         q1, [%[b0]], #16              \n"
+      "ldr         q2, [%[a1]], #16              \n"
+      "ldr         q3, [%[b1]], #16              \n"
+      "udot        v16.4s, v0.16b, v6.16b        \n"
+      "udot        v17.4s, v1.16b, v6.16b        \n"
+      "udot        v18.4s, v0.16b, v0.16b        \n"
+      "udot        v18.4s, v1.16b, v1.16b        \n"
+      "udot        v19.4s, v0.16b, v1.16b        \n"
+      "udot        v16.4s, v2.16b, v6.16b        \n"
+      "udot        v17.4s, v3.16b, v6.16b        \n"
+      "udot        v18.4s, v2.16b, v2.16b        \n"
+      "udot        v18.4s, v3.16b, v3.16b        \n"
+      "udot        v19.4s, v2.16b, v3.16b        \n"
+      "ldr         q0, [%[a2]], #16              \n"
+      "ldr         q1, [%[b2]], #16              \n"
+      "ldr         q2, [%[a3]], #16              \n"
+      "ldr         q3, [%[b3]], #16              \n"
+      "udot        v16.4s, v0.16b, v6.16b        \n"
+      "udot        v17.4s, v1.16b, v6.16b        \n"
+      "udot        v18.4s, v0.16b, v0.16b        \n"
+      "udot        v18.4s, v1.16b, v1.16b        \n"
+      "udot        v19.4s, v0.16b, v1.16b        \n"
+      "udot        v16.4s, v2.16b, v6.16b        \n"
+      "udot        v17.4s, v3.16b, v6.16b        \n"
+      "udot        v18.4s, v2.16b, v2.16b        \n"
+      "udot        v18.4s, v3.16b, v3.16b        \n"
+      "udot        v19.4s, v2.16b, v3.16b        \n"
+      "subs        %w[width], %w[width], #16     \n"
+      "st4         {v16.4s, v17.4s, v18.4s, v19.4s}, [%[dst]], #64 \n"
+      "b.gt        1b                            \n"
+      : [a0] "+r"(a0), [a1] "+r"(a1), [a2] "+r"(a2), [a3] "+r"(a3),
+        [b0] "+r"(b0), [b1] "+r"(b1), [b2] "+r"(b2), [b3] "+r"(b3),
+        [dst] "+r"(dst), [width] "+r"(width)
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v6", "v16", "v17", "v18",
+        "v19");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

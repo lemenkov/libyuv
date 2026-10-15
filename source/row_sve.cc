@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/row_sve.h"
+#include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 
 #ifdef __cplusplus
@@ -1723,6 +1724,17 @@ void HalfWidthRow_16To8_SVE2(const uint16_t* src_uv,
         "p0", "p1", "p2");
 }
 #endif  // HAS_HALFWIDTHROW_16TO8_SVE2
+
+#ifdef HAS_SSIM4X4ROW_SVE2
+void Ssim4x4Row_SVE2(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  Ssim4x4Row_SVE_SC(src_a, stride_a, src_b, stride_b, dst, width);
+}
+#endif  // HAS_SSIM4X4ROW_SVE2
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 

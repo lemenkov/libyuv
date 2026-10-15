@@ -10,6 +10,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 
 // Note: every register written by an inline asm block (vector, general
@@ -2714,6 +2715,119 @@ void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
         "$vr7", "$vr8", "$vr9", "$vr10", "$vr12", "$vr13", "$vr14", "$vr15",
         "$vr16", "$vr17");
 }
+
+#ifdef HAS_SSIM4X4ROW_LSX
+void Ssim4x4Row_LSX(const uint8_t* src_a,
+                    int stride_a,
+                    const uint8_t* src_b,
+                    int stride_b,
+                    uint32_t* dst,
+                    int width) {
+  int x;
+  int len = width / 16;
+  const uint8_t* src_a1 = src_a + stride_a;
+  const uint8_t* src_a2 = src_a1 + stride_a;
+  const uint8_t* src_a3 = src_a2 + stride_a;
+  const uint8_t* src_b1 = src_b + stride_b;
+  const uint8_t* src_b2 = src_b1 + stride_b;
+  const uint8_t* src_b3 = src_b2 + stride_b;
+
+  for (x = 0; x < len; x++) {
+    __m128i a0 = __lsx_vld(src_a, 0);
+    __m128i a1 = __lsx_vld(src_a1, 0);
+    __m128i a2 = __lsx_vld(src_a2, 0);
+    __m128i a3 = __lsx_vld(src_a3, 0);
+    __m128i b0 = __lsx_vld(src_b, 0);
+    __m128i b1 = __lsx_vld(src_b1, 0);
+    __m128i b2 = __lsx_vld(src_b2, 0);
+    __m128i b3 = __lsx_vld(src_b3, 0);
+
+    __m128i sum_a_16 = __lsx_vadd_h(
+        __lsx_vadd_h(__lsx_vhaddw_hu_bu(a0, a0), __lsx_vhaddw_hu_bu(a1, a1)),
+        __lsx_vadd_h(__lsx_vhaddw_hu_bu(a2, a2), __lsx_vhaddw_hu_bu(a3, a3)));
+    __m128i sum_b_16 = __lsx_vadd_h(
+        __lsx_vadd_h(__lsx_vhaddw_hu_bu(b0, b0), __lsx_vhaddw_hu_bu(b1, b1)),
+        __lsx_vadd_h(__lsx_vhaddw_hu_bu(b2, b2), __lsx_vhaddw_hu_bu(b3, b3)));
+    __m128i sum_a = __lsx_vhaddw_wu_hu(sum_a_16, sum_a_16);
+    __m128i sum_b = __lsx_vhaddw_wu_hu(sum_b_16, sum_b_16);
+
+    __m128i ab0_ev = __lsx_vmulwev_h_bu(a0, b0);
+    __m128i ab0_od = __lsx_vmulwod_h_bu(a0, b0);
+    __m128i ab1_ev = __lsx_vmulwev_h_bu(a1, b1);
+    __m128i ab1_od = __lsx_vmulwod_h_bu(a1, b1);
+    __m128i ab2_ev = __lsx_vmulwev_h_bu(a2, b2);
+    __m128i ab2_od = __lsx_vmulwod_h_bu(a2, b2);
+    __m128i ab3_ev = __lsx_vmulwev_h_bu(a3, b3);
+    __m128i ab3_od = __lsx_vmulwod_h_bu(a3, b3);
+    __m128i sum_axb = __lsx_vadd_w(
+        __lsx_vadd_w(__lsx_vadd_w(__lsx_vhaddw_wu_hu(ab0_ev, ab0_ev),
+                                  __lsx_vhaddw_wu_hu(ab0_od, ab0_od)),
+                     __lsx_vadd_w(__lsx_vhaddw_wu_hu(ab1_ev, ab1_ev),
+                                  __lsx_vhaddw_wu_hu(ab1_od, ab1_od))),
+        __lsx_vadd_w(__lsx_vadd_w(__lsx_vhaddw_wu_hu(ab2_ev, ab2_ev),
+                                  __lsx_vhaddw_wu_hu(ab2_od, ab2_od)),
+                     __lsx_vadd_w(__lsx_vhaddw_wu_hu(ab3_ev, ab3_ev),
+                                  __lsx_vhaddw_wu_hu(ab3_od, ab3_od))));
+
+    __m128i sq0 = __lsx_vadd_w(
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(a0, a0),
+                                        __lsx_vmulwev_h_bu(a0, a0)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(a0, a0),
+                                        __lsx_vmulwod_h_bu(a0, a0))),
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(b0, b0),
+                                        __lsx_vmulwev_h_bu(b0, b0)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(b0, b0),
+                                        __lsx_vmulwod_h_bu(b0, b0))));
+    __m128i sq1 = __lsx_vadd_w(
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(a1, a1),
+                                        __lsx_vmulwev_h_bu(a1, a1)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(a1, a1),
+                                        __lsx_vmulwod_h_bu(a1, a1))),
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(b1, b1),
+                                        __lsx_vmulwev_h_bu(b1, b1)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(b1, b1),
+                                        __lsx_vmulwod_h_bu(b1, b1))));
+    __m128i sq2 = __lsx_vadd_w(
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(a2, a2),
+                                        __lsx_vmulwev_h_bu(a2, a2)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(a2, a2),
+                                        __lsx_vmulwod_h_bu(a2, a2))),
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(b2, b2),
+                                        __lsx_vmulwev_h_bu(b2, b2)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(b2, b2),
+                                        __lsx_vmulwod_h_bu(b2, b2))));
+    __m128i sq3 = __lsx_vadd_w(
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(a3, a3),
+                                        __lsx_vmulwev_h_bu(a3, a3)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(a3, a3),
+                                        __lsx_vmulwod_h_bu(a3, a3))),
+        __lsx_vadd_w(__lsx_vhaddw_wu_hu(__lsx_vmulwev_h_bu(b3, b3),
+                                        __lsx_vmulwev_h_bu(b3, b3)),
+                     __lsx_vhaddw_wu_hu(__lsx_vmulwod_h_bu(b3, b3),
+                                        __lsx_vmulwod_h_bu(b3, b3))));
+    __m128i sum_sq_ab =
+        __lsx_vadd_w(__lsx_vadd_w(sq0, sq1), __lsx_vadd_w(sq2, sq3));
+
+    __m128i out0, out1, out2, out3;
+    LSX_TRANSPOSE4x4_W(sum_a, sum_b, sum_sq_ab, sum_axb, out0, out1, out2,
+                       out3);
+    __lsx_vst(out0, dst, 0);
+    __lsx_vst(out1, dst, 16);
+    __lsx_vst(out2, dst, 32);
+    __lsx_vst(out3, dst, 48);
+
+    src_a += 16;
+    src_a1 += 16;
+    src_a2 += 16;
+    src_a3 += 16;
+    src_b += 16;
+    src_b1 += 16;
+    src_b2 += 16;
+    src_b3 += 16;
+    dst += 16;
+  }
+}
+#endif  // HAS_SSIM4X4ROW_LSX
 
 // undef for unified sources build
 #undef YUVTORGB_SETUP

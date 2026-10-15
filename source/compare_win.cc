@@ -422,6 +422,261 @@ uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed) {
 }
 #endif  // HAS_HASHDJB2_AVX512BW
 
+#if defined(HAS_SSIM4X4ROW_SSE2)
+// Width is a multiple of 16.
+LIBYUV_TARGET_SSE2
+void Ssim4x4Row_SSE2(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  const ptrdiff_t sa = stride_a;
+  const ptrdiff_t sb = stride_b;
+  const uint8_t* a0 = src_a;
+  const uint8_t* a1 = a0 + sa;
+  const uint8_t* a2 = a1 + sa;
+  const uint8_t* a3 = a2 + sa;
+  const uint8_t* b0 = src_b;
+  const uint8_t* b1 = b0 + sb;
+  const uint8_t* b2 = b1 + sb;
+  const uint8_t* b3 = b2 + sb;
+  const __m128i kMaskFF = _mm_set1_epi16(0x00ff);
+  const __m128i kOnes16 = _mm_set1_epi16(1);
+  int x;
+  for (x = 0; x < width; x += 16) {
+    __m128i acc_a = _mm_setzero_si128();
+    __m128i acc_b = _mm_setzero_si128();
+    __m128i acc_sq = _mm_setzero_si128();
+    __m128i acc_axb = _mm_setzero_si128();
+#define SSIM_ROW_SSE2_WIN(ar, br)                                              \
+  do {                                                                         \
+    __m128i va = _mm_loadu_si128((const __m128i*)((ar) + x));                  \
+    __m128i vb = _mm_loadu_si128((const __m128i*)((br) + x));                  \
+    __m128i a_ev = _mm_and_si128(va, kMaskFF);                                 \
+    __m128i a_od = _mm_srli_epi16(va, 8);                                      \
+    __m128i b_ev = _mm_and_si128(vb, kMaskFF);                                 \
+    __m128i b_od = _mm_srli_epi16(vb, 8);                                      \
+    acc_a = _mm_add_epi16(acc_a, _mm_add_epi16(a_ev, a_od));                   \
+    acc_b = _mm_add_epi16(acc_b, _mm_add_epi16(b_ev, b_od));                   \
+    acc_sq = _mm_add_epi32(acc_sq, _mm_add_epi32(_mm_madd_epi16(a_ev, a_ev),   \
+                                                 _mm_madd_epi16(a_od, a_od))); \
+    acc_sq = _mm_add_epi32(acc_sq, _mm_add_epi32(_mm_madd_epi16(b_ev, b_ev),   \
+                                                 _mm_madd_epi16(b_od, b_od))); \
+    acc_axb =                                                                  \
+        _mm_add_epi32(acc_axb, _mm_add_epi32(_mm_madd_epi16(a_ev, b_ev),       \
+                                             _mm_madd_epi16(a_od, b_od)));     \
+  } while (0)
+    SSIM_ROW_SSE2_WIN(a0, b0);
+    SSIM_ROW_SSE2_WIN(a1, b1);
+    SSIM_ROW_SSE2_WIN(a2, b2);
+    SSIM_ROW_SSE2_WIN(a3, b3);
+#undef SSIM_ROW_SSE2_WIN
+    acc_a = _mm_madd_epi16(acc_a, kOnes16);
+    acc_b = _mm_madd_epi16(acc_b, kOnes16);
+    {
+      __m128i t0 = _mm_unpacklo_epi32(acc_a, acc_b);
+      __m128i t1 = _mm_unpackhi_epi32(acc_a, acc_b);
+      __m128i t2 = _mm_unpacklo_epi32(acc_sq, acc_axb);
+      __m128i t3 = _mm_unpackhi_epi32(acc_sq, acc_axb);
+      _mm_storeu_si128((__m128i*)(dst + 0), _mm_unpacklo_epi64(t0, t2));
+      _mm_storeu_si128((__m128i*)(dst + 4), _mm_unpackhi_epi64(t0, t2));
+      _mm_storeu_si128((__m128i*)(dst + 8), _mm_unpacklo_epi64(t1, t3));
+      _mm_storeu_si128((__m128i*)(dst + 12), _mm_unpackhi_epi64(t1, t3));
+    }
+    dst += 16;
+  }
+}
+#endif  // HAS_SSIM4X4ROW_SSE2
+
+#if defined(HAS_SSIM4X4ROW_AVX2)
+// Width is a multiple of 32.
+LIBYUV_TARGET_AVX2
+void Ssim4x4Row_AVX2(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  const ptrdiff_t sa = stride_a;
+  const ptrdiff_t sb = stride_b;
+  const uint8_t* a0 = src_a;
+  const uint8_t* a1 = a0 + sa;
+  const uint8_t* a2 = a1 + sa;
+  const uint8_t* a3 = a2 + sa;
+  const uint8_t* b0 = src_b;
+  const uint8_t* b1 = b0 + sb;
+  const uint8_t* b2 = b1 + sb;
+  const uint8_t* b3 = b2 + sb;
+  const __m256i kMaskFF = _mm256_set1_epi16(0x00ff);
+  const __m256i kOnes16 = _mm256_set1_epi16(1);
+  int x;
+  for (x = 0; x < width; x += 32) {
+    __m256i acc_a = _mm256_setzero_si256();
+    __m256i acc_b = _mm256_setzero_si256();
+    __m256i acc_sq = _mm256_setzero_si256();
+    __m256i acc_axb = _mm256_setzero_si256();
+#define SSIM_ROW_AVX2_WIN(ar, br)                                  \
+  do {                                                             \
+    __m256i va = _mm256_loadu_si256((const __m256i*)((ar) + x));   \
+    __m256i vb = _mm256_loadu_si256((const __m256i*)((br) + x));   \
+    __m256i a_ev = _mm256_and_si256(va, kMaskFF);                  \
+    __m256i a_od = _mm256_srli_epi16(va, 8);                       \
+    __m256i b_ev = _mm256_and_si256(vb, kMaskFF);                  \
+    __m256i b_od = _mm256_srli_epi16(vb, 8);                       \
+    acc_a = _mm256_add_epi16(acc_a, _mm256_add_epi16(a_ev, a_od)); \
+    acc_b = _mm256_add_epi16(acc_b, _mm256_add_epi16(b_ev, b_od)); \
+    acc_sq = _mm256_add_epi32(                                     \
+        acc_sq, _mm256_add_epi32(_mm256_madd_epi16(a_ev, a_ev),    \
+                                 _mm256_madd_epi16(a_od, a_od)));  \
+    acc_sq = _mm256_add_epi32(                                     \
+        acc_sq, _mm256_add_epi32(_mm256_madd_epi16(b_ev, b_ev),    \
+                                 _mm256_madd_epi16(b_od, b_od)));  \
+    acc_axb = _mm256_add_epi32(                                    \
+        acc_axb, _mm256_add_epi32(_mm256_madd_epi16(a_ev, b_ev),   \
+                                  _mm256_madd_epi16(a_od, b_od))); \
+  } while (0)
+    SSIM_ROW_AVX2_WIN(a0, b0);
+    SSIM_ROW_AVX2_WIN(a1, b1);
+    SSIM_ROW_AVX2_WIN(a2, b2);
+    SSIM_ROW_AVX2_WIN(a3, b3);
+#undef SSIM_ROW_AVX2_WIN
+    acc_a = _mm256_madd_epi16(acc_a, kOnes16);
+    acc_b = _mm256_madd_epi16(acc_b, kOnes16);
+    {
+      __m256i t0 = _mm256_unpacklo_epi32(acc_a, acc_b);
+      __m256i t1 = _mm256_unpackhi_epi32(acc_a, acc_b);
+      __m256i t2 = _mm256_unpacklo_epi32(acc_sq, acc_axb);
+      __m256i t3 = _mm256_unpackhi_epi32(acc_sq, acc_axb);
+      __m256i u0 = _mm256_unpacklo_epi64(t0, t2);
+      __m256i u1 = _mm256_unpackhi_epi64(t0, t2);
+      __m256i u2 = _mm256_unpacklo_epi64(t1, t3);
+      __m256i u3 = _mm256_unpackhi_epi64(t1, t3);
+      _mm256_storeu_si256((__m256i*)(dst + 0),
+                          _mm256_permute2x128_si256(u0, u1, 0x20));
+      _mm256_storeu_si256((__m256i*)(dst + 8),
+                          _mm256_permute2x128_si256(u2, u3, 0x20));
+      _mm256_storeu_si256((__m256i*)(dst + 16),
+                          _mm256_permute2x128_si256(u0, u1, 0x31));
+      _mm256_storeu_si256((__m256i*)(dst + 24),
+                          _mm256_permute2x128_si256(u2, u3, 0x31));
+    }
+    dst += 32;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_SSIM4X4ROW_AVX2
+
+#if defined(HAS_SSIM4X4ROW_AVX512BW)
+// Width is a multiple of 4.
+LIBYUV_TARGET_AVX512BW
+void Ssim4x4Row_AVX512BW(const uint8_t* src_a,
+                         int stride_a,
+                         const uint8_t* src_b,
+                         int stride_b,
+                         uint32_t* dst,
+                         int width) {
+  const ptrdiff_t sa = stride_a;
+  const ptrdiff_t sb = stride_b;
+  const uint8_t* a0 = src_a;
+  const uint8_t* a1 = a0 + sa;
+  const uint8_t* a2 = a1 + sa;
+  const uint8_t* a3 = a2 + sa;
+  const uint8_t* b0 = src_b;
+  const uint8_t* b1 = b0 + sb;
+  const uint8_t* b2 = b1 + sb;
+  const uint8_t* b3 = b2 + sb;
+  const __m512i kMaskFF = _mm512_set1_epi16(0x00ff);
+  const __m512i kOnes16 = _mm512_set1_epi16(1);
+#define SSIM_ROW_AVX512_WIN(va, vb)                                \
+  do {                                                             \
+    __m512i a_ev = _mm512_and_si512(va, kMaskFF);                  \
+    __m512i a_od = _mm512_srli_epi16(va, 8);                       \
+    __m512i b_ev = _mm512_and_si512(vb, kMaskFF);                  \
+    __m512i b_od = _mm512_srli_epi16(vb, 8);                       \
+    acc_a = _mm512_add_epi16(acc_a, _mm512_add_epi16(a_ev, a_od)); \
+    acc_b = _mm512_add_epi16(acc_b, _mm512_add_epi16(b_ev, b_od)); \
+    acc_sq = _mm512_add_epi32(                                     \
+        acc_sq, _mm512_add_epi32(_mm512_madd_epi16(a_ev, a_ev),    \
+                                 _mm512_madd_epi16(a_od, a_od)));  \
+    acc_sq = _mm512_add_epi32(                                     \
+        acc_sq, _mm512_add_epi32(_mm512_madd_epi16(b_ev, b_ev),    \
+                                 _mm512_madd_epi16(b_od, b_od)));  \
+    acc_axb = _mm512_add_epi32(                                    \
+        acc_axb, _mm512_add_epi32(_mm512_madd_epi16(a_ev, b_ev),   \
+                                  _mm512_madd_epi16(a_od, b_od))); \
+  } while (0)
+#define SSIM_TRANSPOSE_AVX512_WIN()                    \
+  acc_a = _mm512_madd_epi16(acc_a, kOnes16);           \
+  acc_b = _mm512_madd_epi16(acc_b, kOnes16);           \
+  __m512i t0 = _mm512_unpacklo_epi32(acc_a, acc_b);    \
+  __m512i t1 = _mm512_unpackhi_epi32(acc_a, acc_b);    \
+  __m512i t2 = _mm512_unpacklo_epi32(acc_sq, acc_axb); \
+  __m512i t3 = _mm512_unpackhi_epi32(acc_sq, acc_axb); \
+  __m512i u0 = _mm512_unpacklo_epi64(t0, t2);          \
+  __m512i u1 = _mm512_unpackhi_epi64(t0, t2);          \
+  __m512i u2 = _mm512_unpacklo_epi64(t1, t3);          \
+  __m512i u3 = _mm512_unpackhi_epi64(t1, t3);          \
+  __m512i v0 = _mm512_shuffle_i32x4(u0, u1, 0x44);     \
+  __m512i v1 = _mm512_shuffle_i32x4(u2, u3, 0x44);     \
+  __m512i v2 = _mm512_shuffle_i32x4(u0, u1, 0xee);     \
+  __m512i v3 = _mm512_shuffle_i32x4(u2, u3, 0xee);     \
+  __m512i out0 = _mm512_shuffle_i32x4(v0, v1, 0x88);   \
+  __m512i out1 = _mm512_shuffle_i32x4(v0, v1, 0xdd);   \
+  __m512i out2 = _mm512_shuffle_i32x4(v2, v3, 0x88);   \
+  __m512i out3 = _mm512_shuffle_i32x4(v2, v3, 0xdd)
+
+  while (width >= 64) {
+    __m512i acc_a = _mm512_setzero_si512();
+    __m512i acc_b = _mm512_setzero_si512();
+    __m512i acc_sq = _mm512_setzero_si512();
+    __m512i acc_axb = _mm512_setzero_si512();
+    SSIM_ROW_AVX512_WIN(_mm512_loadu_si512(a0), _mm512_loadu_si512(b0));
+    SSIM_ROW_AVX512_WIN(_mm512_loadu_si512(a1), _mm512_loadu_si512(b1));
+    SSIM_ROW_AVX512_WIN(_mm512_loadu_si512(a2), _mm512_loadu_si512(b2));
+    SSIM_ROW_AVX512_WIN(_mm512_loadu_si512(a3), _mm512_loadu_si512(b3));
+    SSIM_TRANSPOSE_AVX512_WIN();
+    _mm512_storeu_si512(dst + 0, out0);
+    _mm512_storeu_si512(dst + 16, out1);
+    _mm512_storeu_si512(dst + 32, out2);
+    _mm512_storeu_si512(dst + 48, out3);
+    a0 += 64;
+    a1 += 64;
+    a2 += 64;
+    a3 += 64;
+    b0 += 64;
+    b1 += 64;
+    b2 += 64;
+    b3 += 64;
+    dst += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    const __mmask16 load_mask = (__mmask16)((1U << (width >> 2)) - 1U);
+    const uint64_t store_mask = LowBytesMask64(width);
+    __m512i acc_a = _mm512_setzero_si512();
+    __m512i acc_b = _mm512_setzero_si512();
+    __m512i acc_sq = _mm512_setzero_si512();
+    __m512i acc_axb = _mm512_setzero_si512();
+    SSIM_ROW_AVX512_WIN(_mm512_maskz_loadu_epi32(load_mask, a0),
+                        _mm512_maskz_loadu_epi32(load_mask, b0));
+    SSIM_ROW_AVX512_WIN(_mm512_maskz_loadu_epi32(load_mask, a1),
+                        _mm512_maskz_loadu_epi32(load_mask, b1));
+    SSIM_ROW_AVX512_WIN(_mm512_maskz_loadu_epi32(load_mask, a2),
+                        _mm512_maskz_loadu_epi32(load_mask, b2));
+    SSIM_ROW_AVX512_WIN(_mm512_maskz_loadu_epi32(load_mask, a3),
+                        _mm512_maskz_loadu_epi32(load_mask, b3));
+    SSIM_TRANSPOSE_AVX512_WIN();
+    _mm512_mask_storeu_epi32(dst + 0, (__mmask16)store_mask, out0);
+    _mm512_mask_storeu_epi32(dst + 16, (__mmask16)(store_mask >> 16), out1);
+    _mm512_mask_storeu_epi32(dst + 32, (__mmask16)(store_mask >> 32), out2);
+    _mm512_mask_storeu_epi32(dst + 48, (__mmask16)(store_mask >> 48), out3);
+  }
+#undef SSIM_ROW_AVX512_WIN
+#undef SSIM_TRANSPOSE_AVX512_WIN
+}
+#endif  // HAS_SSIM4X4ROW_AVX512BW
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -15,6 +15,7 @@
  * Contributed by Bruce Lai <bruce.lai@sifive.com>
  */
 
+#include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 
 // Note: every register written by an inline asm block (vector, general
@@ -2668,6 +2669,117 @@ void MirrorUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
         "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif  // HAS_MIRRORUVROW_RVV
+
+#ifdef HAS_SSIM4X4ROW_RVV
+#define SSIM4X4_LOAD_RVV(ptr_a, ptr_b)          \
+  "vlseg4e8.v  v0, (" #ptr_a                    \
+  ")             \n"                            \
+  "vlseg4e8.v  v4, (" #ptr_b                    \
+  ")             \n"                            \
+  "vwaddu.vv   v10, v0, v1                  \n" \
+  "vwaddu.vv   v11, v2, v3                  \n" \
+  "vwaddu.vv   v12, v4, v5                  \n" \
+  "vwaddu.vv   v13, v6, v7                  \n" \
+  "vwmulu.vv   v14, v0, v4                  \n" \
+  "vwmulu.vv   v15, v1, v5                  \n" \
+  "vwmulu.vv   v24, v2, v6                  \n" \
+  "vwmulu.vv   v25, v3, v7                  \n" \
+  "vwmulu.vv   v26, v0, v0                  \n" \
+  "vwmulu.vv   v27, v1, v1                  \n" \
+  "vwmulu.vv   v28, v2, v2                  \n" \
+  "vwmulu.vv   v29, v3, v3                  \n" \
+  "vwmulu.vv   v0, v4, v4                   \n" \
+  "vwmulu.vv   v1, v5, v5                   \n" \
+  "vwmulu.vv   v2, v6, v6                   \n" \
+  "vwmulu.vv   v3, v7, v7                   \n"
+
+#define SSIM4X4_ACCUM_RVV(ptr_a, ptr_b) \
+  "vsetvli     zero, zero, e8, mf2, ta, ma  \n" \
+  SSIM4X4_LOAD_RVV(ptr_a, ptr_b)                \
+  "vsetvli     zero, zero, e16, m1, ta, ma  \n" \
+  "vadd.vv     v10, v10, v11                \n" \
+  "vadd.vv     v12, v12, v13                \n" \
+  "vadd.vv     v8, v8, v10                  \n" \
+  "vadd.vv     v9, v9, v12                  \n" \
+  "vwaddu.wv   v22, v22, v14                \n" \
+  "vwaddu.wv   v22, v22, v15                \n" \
+  "vwaddu.wv   v22, v22, v24                \n" \
+  "vwaddu.wv   v22, v22, v25                \n" \
+  "vwaddu.wv   v20, v20, v26                \n" \
+  "vwaddu.wv   v20, v20, v27                \n" \
+  "vwaddu.wv   v20, v20, v28                \n" \
+  "vwaddu.wv   v20, v20, v29                \n" \
+  "vwaddu.wv   v20, v20, v0                 \n" \
+  "vwaddu.wv   v20, v20, v1                 \n" \
+  "vwaddu.wv   v20, v20, v2                 \n" \
+  "vwaddu.wv   v20, v20, v3                 \n"
+
+void Ssim4x4Row_RVV(const uint8_t* src_a,
+                    int stride_a,
+                    const uint8_t* src_b,
+                    int stride_b,
+                    uint32_t* dst,
+                    int width) {
+  size_t vl;
+  size_t byte_vl;
+  const uint8_t* tmp_a;
+  const uint8_t* tmp_b;
+  width >>= 2;
+  asm volatile(
+      "1:                                       \n"
+      "vsetvli     %[vl], %[w], e8, mf2, ta, ma \n"
+      "add         %[tmp_a], %[src_a], %[stride_a]\n"
+      "add         %[tmp_b], %[src_b], %[stride_b]\n"
+      SSIM4X4_LOAD_RVV(%[src_a], %[src_b])
+      "vsetvli     zero, zero, e16, m1, ta, ma  \n"
+      "vadd.vv     v8, v10, v11                 \n"
+      "vadd.vv     v9, v12, v13                 \n"
+      "vwaddu.vv   v22, v14, v15                \n"
+      "vwaddu.wv   v22, v22, v24                \n"
+      "vwaddu.wv   v22, v22, v25                \n"
+      "vwaddu.vv   v20, v26, v27                \n"
+      "vwaddu.wv   v20, v20, v28                \n"
+      "vwaddu.wv   v20, v20, v29                \n"
+      "vwaddu.wv   v20, v20, v0                 \n"
+      "vwaddu.wv   v20, v20, v1                 \n"
+      "vwaddu.wv   v20, v20, v2                 \n"
+      "vwaddu.wv   v20, v20, v3                 \n"
+      SSIM4X4_ACCUM_RVV(%[tmp_a], %[tmp_b])
+      "add         %[tmp_a], %[tmp_a], %[stride_a]\n"
+      "add         %[tmp_b], %[tmp_b], %[stride_b]\n"
+      SSIM4X4_ACCUM_RVV(%[tmp_a], %[tmp_b])
+      "add         %[tmp_a], %[tmp_a], %[stride_a]\n"
+      "add         %[tmp_b], %[tmp_b], %[stride_b]\n"
+      SSIM4X4_ACCUM_RVV(%[tmp_a], %[tmp_b])
+      "vwcvtu.x.x.v v16, v8                     \n"
+      "vwcvtu.x.x.v v18, v9                     \n"
+      "vsetvli     zero, zero, e32, m2, ta, ma  \n"
+      "vsseg4e32.v v16, (%[dst])                \n"
+      "sub         %[w], %[w], %[vl]            \n"
+      "slli        %[byte_vl], %[vl], 2         \n"
+      "add         %[src_a], %[src_a], %[byte_vl]\n"
+      "add         %[src_b], %[src_b], %[byte_vl]\n"
+      "slli        %[byte_vl], %[vl], 4         \n"
+      "add         %[dst], %[dst], %[byte_vl]   \n"
+      "bgtz        %[w], 1b                     \n"
+      : [src_a] "+r"(src_a),                  // %[src_a]
+        [src_b] "+r"(src_b),                  // %[src_b]
+        [dst] "+r"(dst),                      // %[dst]
+        [w] "+r"(width),                      // %[w]
+        [vl] "=&r"(vl),                       // %[vl]
+        [byte_vl] "=&r"(byte_vl),             // %[byte_vl]
+        [tmp_a] "=&r"(tmp_a),                 // %[tmp_a]
+        [tmp_b] "=&r"(tmp_b)                  // %[tmp_b]
+      : [stride_a] "r"((ptrdiff_t)stride_a),  // %[stride_a]
+        [stride_b] "r"((ptrdiff_t)stride_b)   // %[stride_b]
+      : RVV_VL_CLOBBER "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",
+        "v27", "v28", "v29");
+}
+#undef SSIM4X4_LOAD_RVV
+#undef SSIM4X4_ACCUM_RVV
+#endif  // HAS_SSIM4X4ROW_RVV
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -654,7 +654,7 @@ TEST_F(LibYUVCompareTest, Psnr) {
   free_aligned_buffer_page_end(src_b);
 }
 
-TEST_F(LibYUVCompareTest, DISABLED_BenchmarkSsim_Opt) {
+TEST_F(LibYUVCompareTest, BenchmarkSsim_Opt) {
   align_buffer_page_end(src_a, benchmark_width_ * benchmark_height_);
   align_buffer_page_end(src_b, benchmark_width_ * benchmark_height_);
   for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
@@ -674,6 +674,57 @@ TEST_F(LibYUVCompareTest, DISABLED_BenchmarkSsim_Opt) {
   printf("BenchmarkSsim_Opt - %8.2f us opt\n", opt_time * 1e6);
 
   ASSERT_EQ(0, 0);  // Pass if we get this far.
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
+TEST_F(LibYUVCompareTest, BenchmarkSsim_Unaligned) {
+  align_buffer_page_end(src_a, benchmark_width_ * benchmark_height_ + 1);
+  align_buffer_page_end(src_b, benchmark_width_ * benchmark_height_);
+  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
+    src_a[i + 1] = i;
+    src_b[i] = i;
+  }
+
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  double opt_time = get_time();
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    CalcFrameSsim(src_a + 1, benchmark_width_, src_b, benchmark_width_,
+                  benchmark_width_, benchmark_height_);
+  }
+
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  printf("BenchmarkSsim_Opt - %8.2f us opt\n", opt_time * 1e6);
+
+  ASSERT_EQ(0, 0);
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
+TEST_F(LibYUVCompareTest, TestSsimAnyWidth) {
+  const int kMaxWidth = 140;
+  const int kHeight = 16;
+  const int kPlaneSize = kMaxWidth * kHeight + 1;
+  align_buffer_page_end(src_a, kPlaneSize);
+  align_buffer_page_end(src_b, kPlaneSize);
+  MemRandomize(src_a, kPlaneSize);
+  MemRandomize(src_b, kPlaneSize);
+
+  for (int width = 9; width <= kMaxWidth; ++width) {
+    for (int offset = 0; offset < 2; ++offset) {
+      const int size = width * kHeight;
+      const uint8_t* a = src_a + kPlaneSize - size - offset;
+      const uint8_t* b = src_b + kPlaneSize - size - offset;
+      MaskCpuFlags(disable_cpu_flags_);
+      double c_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
+      MaskCpuFlags(benchmark_cpu_info_);
+      double opt_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
+      EXPECT_EQ(c_ssim, opt_ssim) << "width " << width << " offset " << offset;
+    }
+  }
 
   free_aligned_buffer_page_end(src_a);
   free_aligned_buffer_page_end(src_b);

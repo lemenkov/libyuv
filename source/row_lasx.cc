@@ -10,6 +10,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 
 // Note: every register written by an inline asm block (vector, general
@@ -2045,6 +2046,133 @@ void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
         "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
         "$xr15", "$xr16", "$xr17");
 }
+
+#ifdef HAS_SSIM4X4ROW_LASX
+void Ssim4x4Row_LASX(const uint8_t* src_a,
+                     int stride_a,
+                     const uint8_t* src_b,
+                     int stride_b,
+                     uint32_t* dst,
+                     int width) {
+  int x;
+  int len = width / 32;
+  const uint8_t* src_a1 = src_a + stride_a;
+  const uint8_t* src_a2 = src_a1 + stride_a;
+  const uint8_t* src_a3 = src_a2 + stride_a;
+  const uint8_t* src_b1 = src_b + stride_b;
+  const uint8_t* src_b2 = src_b1 + stride_b;
+  const uint8_t* src_b3 = src_b2 + stride_b;
+
+  for (x = 0; x < len; x++) {
+    __m256i a0 = __lasx_xvld(src_a, 0);
+    __m256i a1 = __lasx_xvld(src_a1, 0);
+    __m256i a2 = __lasx_xvld(src_a2, 0);
+    __m256i a3 = __lasx_xvld(src_a3, 0);
+    __m256i b0 = __lasx_xvld(src_b, 0);
+    __m256i b1 = __lasx_xvld(src_b1, 0);
+    __m256i b2 = __lasx_xvld(src_b2, 0);
+    __m256i b3 = __lasx_xvld(src_b3, 0);
+
+    __m256i sum_a_16 =
+        __lasx_xvadd_h(__lasx_xvadd_h(__lasx_xvhaddw_hu_bu(a0, a0),
+                                      __lasx_xvhaddw_hu_bu(a1, a1)),
+                       __lasx_xvadd_h(__lasx_xvhaddw_hu_bu(a2, a2),
+                                      __lasx_xvhaddw_hu_bu(a3, a3)));
+    __m256i sum_b_16 =
+        __lasx_xvadd_h(__lasx_xvadd_h(__lasx_xvhaddw_hu_bu(b0, b0),
+                                      __lasx_xvhaddw_hu_bu(b1, b1)),
+                       __lasx_xvadd_h(__lasx_xvhaddw_hu_bu(b2, b2),
+                                      __lasx_xvhaddw_hu_bu(b3, b3)));
+    __m256i sum_a = __lasx_xvhaddw_wu_hu(sum_a_16, sum_a_16);
+    __m256i sum_b = __lasx_xvhaddw_wu_hu(sum_b_16, sum_b_16);
+
+    __m256i ab0_ev = __lasx_xvmulwev_h_bu(a0, b0);
+    __m256i ab0_od = __lasx_xvmulwod_h_bu(a0, b0);
+    __m256i ab1_ev = __lasx_xvmulwev_h_bu(a1, b1);
+    __m256i ab1_od = __lasx_xvmulwod_h_bu(a1, b1);
+    __m256i ab2_ev = __lasx_xvmulwev_h_bu(a2, b2);
+    __m256i ab2_od = __lasx_xvmulwod_h_bu(a2, b2);
+    __m256i ab3_ev = __lasx_xvmulwev_h_bu(a3, b3);
+    __m256i ab3_od = __lasx_xvmulwod_h_bu(a3, b3);
+    __m256i sum_axb = __lasx_xvadd_w(
+        __lasx_xvadd_w(__lasx_xvadd_w(__lasx_xvhaddw_wu_hu(ab0_ev, ab0_ev),
+                                      __lasx_xvhaddw_wu_hu(ab0_od, ab0_od)),
+                       __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(ab1_ev, ab1_ev),
+                                      __lasx_xvhaddw_wu_hu(ab1_od, ab1_od))),
+        __lasx_xvadd_w(__lasx_xvadd_w(__lasx_xvhaddw_wu_hu(ab2_ev, ab2_ev),
+                                      __lasx_xvhaddw_wu_hu(ab2_od, ab2_od)),
+                       __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(ab3_ev, ab3_ev),
+                                      __lasx_xvhaddw_wu_hu(ab3_od, ab3_od))));
+
+    __m256i sq0 = __lasx_xvadd_w(
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(a0, a0),
+                                            __lasx_xvmulwev_h_bu(a0, a0)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(a0, a0),
+                                            __lasx_xvmulwod_h_bu(a0, a0))),
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(b0, b0),
+                                            __lasx_xvmulwev_h_bu(b0, b0)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(b0, b0),
+                                            __lasx_xvmulwod_h_bu(b0, b0))));
+    __m256i sq1 = __lasx_xvadd_w(
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(a1, a1),
+                                            __lasx_xvmulwev_h_bu(a1, a1)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(a1, a1),
+                                            __lasx_xvmulwod_h_bu(a1, a1))),
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(b1, b1),
+                                            __lasx_xvmulwev_h_bu(b1, b1)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(b1, b1),
+                                            __lasx_xvmulwod_h_bu(b1, b1))));
+    __m256i sq2 = __lasx_xvadd_w(
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(a2, a2),
+                                            __lasx_xvmulwev_h_bu(a2, a2)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(a2, a2),
+                                            __lasx_xvmulwod_h_bu(a2, a2))),
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(b2, b2),
+                                            __lasx_xvmulwev_h_bu(b2, b2)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(b2, b2),
+                                            __lasx_xvmulwod_h_bu(b2, b2))));
+    __m256i sq3 = __lasx_xvadd_w(
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(a3, a3),
+                                            __lasx_xvmulwev_h_bu(a3, a3)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(a3, a3),
+                                            __lasx_xvmulwod_h_bu(a3, a3))),
+        __lasx_xvadd_w(__lasx_xvhaddw_wu_hu(__lasx_xvmulwev_h_bu(b3, b3),
+                                            __lasx_xvmulwev_h_bu(b3, b3)),
+                       __lasx_xvhaddw_wu_hu(__lasx_xvmulwod_h_bu(b3, b3),
+                                            __lasx_xvmulwod_h_bu(b3, b3))));
+    __m256i sum_sq_ab =
+        __lasx_xvadd_w(__lasx_xvadd_w(sq0, sq1), __lasx_xvadd_w(sq2, sq3));
+
+    __m256i t0 = __lasx_xvilvl_w(sum_b, sum_a);
+    __m256i t1 = __lasx_xvilvh_w(sum_b, sum_a);
+    __m256i t2 = __lasx_xvilvl_w(sum_axb, sum_sq_ab);
+    __m256i t3 = __lasx_xvilvh_w(sum_axb, sum_sq_ab);
+    __m256i p0 = __lasx_xvilvl_d(t2, t0);
+    __m256i p1 = __lasx_xvilvh_d(t2, t0);
+    __m256i p2 = __lasx_xvilvl_d(t3, t1);
+    __m256i p3 = __lasx_xvilvh_d(t3, t1);
+    __m256i out0 = __lasx_xvpermi_q(p1, p0, 0x20);
+    __m256i out1 = __lasx_xvpermi_q(p3, p2, 0x20);
+    __m256i out2 = __lasx_xvpermi_q(p1, p0, 0x31);
+    __m256i out3 = __lasx_xvpermi_q(p3, p2, 0x31);
+    __lasx_xvst(out0, dst, 0);
+    __lasx_xvst(out1, dst, 32);
+    __lasx_xvst(out2, dst, 64);
+    __lasx_xvst(out3, dst, 96);
+
+    src_a += 32;
+    src_a1 += 32;
+    src_a2 += 32;
+    src_a3 += 32;
+    src_b += 32;
+    src_b1 += 32;
+    src_b2 += 32;
+    src_b3 += 32;
+    dst += 32;
+  }
+}
+#endif  // HAS_SSIM4X4ROW_LASX
+
 // undef for unified sources build
 #undef ALPHA_VAL
 #undef YUVTORGB_SETUP

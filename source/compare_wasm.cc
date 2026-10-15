@@ -129,6 +129,118 @@ uint32_t HashDjb2_WASMSIMD(const uint8_t* src, int count, uint32_t seed) {
 }
 #endif  // HAS_HASHDJB2_WASMSIMD
 
+#if defined(HAS_SSIM4X4ROW_WASMSIMD)
+void Ssim4x4Row_WASMSIMD(const uint8_t* src_a,
+                         int stride_a,
+                         const uint8_t* src_b,
+                         int stride_b,
+                         uint32_t* dst,
+                         int width) {
+  const uint8_t* src_a1 = src_a + stride_a;
+  const uint8_t* src_a2 = src_a1 + stride_a;
+  const uint8_t* src_a3 = src_a2 + stride_a;
+  const uint8_t* src_b1 = src_b + stride_b;
+  const uint8_t* src_b2 = src_b1 + stride_b;
+  const uint8_t* src_b3 = src_b2 + stride_b;
+  const v128_t mask = wasm_i16x8_splat(0x00ff);
+  for (; width > 0; width -= 16) {
+    v128_t a0 = wasm_v128_load(src_a);
+    v128_t a1 = wasm_v128_load(src_a1);
+    v128_t a2 = wasm_v128_load(src_a2);
+    v128_t a3 = wasm_v128_load(src_a3);
+    v128_t b0 = wasm_v128_load(src_b);
+    v128_t b1 = wasm_v128_load(src_b1);
+    v128_t b2 = wasm_v128_load(src_b2);
+    v128_t b3 = wasm_v128_load(src_b3);
+
+    v128_t a0_ev = wasm_v128_and(a0, mask);
+    v128_t a0_od = wasm_u16x8_shr(a0, 8);
+    v128_t a1_ev = wasm_v128_and(a1, mask);
+    v128_t a1_od = wasm_u16x8_shr(a1, 8);
+    v128_t a2_ev = wasm_v128_and(a2, mask);
+    v128_t a2_od = wasm_u16x8_shr(a2, 8);
+    v128_t a3_ev = wasm_v128_and(a3, mask);
+    v128_t a3_od = wasm_u16x8_shr(a3, 8);
+
+    v128_t b0_ev = wasm_v128_and(b0, mask);
+    v128_t b0_od = wasm_u16x8_shr(b0, 8);
+    v128_t b1_ev = wasm_v128_and(b1, mask);
+    v128_t b1_od = wasm_u16x8_shr(b1, 8);
+    v128_t b2_ev = wasm_v128_and(b2, mask);
+    v128_t b2_od = wasm_u16x8_shr(b2, 8);
+    v128_t b3_ev = wasm_v128_and(b3, mask);
+    v128_t b3_od = wasm_u16x8_shr(b3, 8);
+
+    v128_t sum_a_16 =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_add(a0_ev, a0_od),
+                                      wasm_i16x8_add(a1_ev, a1_od)),
+                       wasm_i16x8_add(wasm_i16x8_add(a2_ev, a2_od),
+                                      wasm_i16x8_add(a3_ev, a3_od)));
+    v128_t sum_b_16 =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_add(b0_ev, b0_od),
+                                      wasm_i16x8_add(b1_ev, b1_od)),
+                       wasm_i16x8_add(wasm_i16x8_add(b2_ev, b2_od),
+                                      wasm_i16x8_add(b3_ev, b3_od)));
+
+    v128_t sum_a = wasm_u32x4_extadd_pairwise_u16x8(sum_a_16);
+    v128_t sum_b = wasm_u32x4_extadd_pairwise_u16x8(sum_b_16);
+
+    v128_t sum_axb = wasm_i32x4_add(
+        wasm_i32x4_add(wasm_i32x4_add(wasm_i32x4_dot_i16x8(a0_ev, b0_ev),
+                                      wasm_i32x4_dot_i16x8(a0_od, b0_od)),
+                       wasm_i32x4_add(wasm_i32x4_dot_i16x8(a1_ev, b1_ev),
+                                      wasm_i32x4_dot_i16x8(a1_od, b1_od))),
+        wasm_i32x4_add(wasm_i32x4_add(wasm_i32x4_dot_i16x8(a2_ev, b2_ev),
+                                      wasm_i32x4_dot_i16x8(a2_od, b2_od)),
+                       wasm_i32x4_add(wasm_i32x4_dot_i16x8(a3_ev, b3_ev),
+                                      wasm_i32x4_dot_i16x8(a3_od, b3_od))));
+
+    v128_t sq0 =
+        wasm_i32x4_add(wasm_i32x4_add(wasm_i32x4_dot_i16x8(a0_ev, a0_ev),
+                                      wasm_i32x4_dot_i16x8(a0_od, a0_od)),
+                       wasm_i32x4_add(wasm_i32x4_dot_i16x8(b0_ev, b0_ev),
+                                      wasm_i32x4_dot_i16x8(b0_od, b0_od)));
+    v128_t sq1 =
+        wasm_i32x4_add(wasm_i32x4_add(wasm_i32x4_dot_i16x8(a1_ev, a1_ev),
+                                      wasm_i32x4_dot_i16x8(a1_od, a1_od)),
+                       wasm_i32x4_add(wasm_i32x4_dot_i16x8(b1_ev, b1_ev),
+                                      wasm_i32x4_dot_i16x8(b1_od, b1_od)));
+    v128_t sq2 =
+        wasm_i32x4_add(wasm_i32x4_add(wasm_i32x4_dot_i16x8(a2_ev, a2_ev),
+                                      wasm_i32x4_dot_i16x8(a2_od, a2_od)),
+                       wasm_i32x4_add(wasm_i32x4_dot_i16x8(b2_ev, b2_ev),
+                                      wasm_i32x4_dot_i16x8(b2_od, b2_od)));
+    v128_t sq3 =
+        wasm_i32x4_add(wasm_i32x4_add(wasm_i32x4_dot_i16x8(a3_ev, a3_ev),
+                                      wasm_i32x4_dot_i16x8(a3_od, a3_od)),
+                       wasm_i32x4_add(wasm_i32x4_dot_i16x8(b3_ev, b3_ev),
+                                      wasm_i32x4_dot_i16x8(b3_od, b3_od)));
+    v128_t sum_sq_ab =
+        wasm_i32x4_add(wasm_i32x4_add(sq0, sq1), wasm_i32x4_add(sq2, sq3));
+
+    v128_t t0 = wasm_i32x4_shuffle(sum_a, sum_b, 0, 4, 1, 5);
+    v128_t t1 = wasm_i32x4_shuffle(sum_a, sum_b, 2, 6, 3, 7);
+    v128_t t2 = wasm_i32x4_shuffle(sum_sq_ab, sum_axb, 0, 4, 1, 5);
+    v128_t t3 = wasm_i32x4_shuffle(sum_sq_ab, sum_axb, 2, 6, 3, 7);
+
+    wasm_v128_store(dst, wasm_i64x2_shuffle(t0, t2, 0, 2));
+    wasm_v128_store(dst + 4, wasm_i64x2_shuffle(t0, t2, 1, 3));
+    wasm_v128_store(dst + 8, wasm_i64x2_shuffle(t1, t3, 0, 2));
+    wasm_v128_store(dst + 12, wasm_i64x2_shuffle(t1, t3, 1, 3));
+
+    src_a += 16;
+    src_a1 += 16;
+    src_a2 += 16;
+    src_a3 += 16;
+    src_b += 16;
+    src_b1 += 16;
+    src_b2 += 16;
+    src_b3 += 16;
+    dst += 16;
+  }
+}
+#endif  // HAS_SSIM4X4ROW_WASMSIMD
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
