@@ -636,4 +636,46 @@ TEST_F(LibYUVScaleTest, ARGBScale_LargeHeightOverflow) {
   free_aligned_buffer_page_end(orig_pixels);
 }
 
+TEST_F(LibYUVScaleTest, ARGBScaleDimensionOverflow) {
+  uint8_t src[16] = {};
+  uint8_t dst[4] = {};
+  EXPECT_EQ(-1, ARGBScale(src, 4, 32769, 1, dst, 4, 1, 1, kFilterNone));
+  EXPECT_EQ(-1, ARGBScale(src, 4, -32769, 1, dst, 4, 1, 1, kFilterNone));
+  EXPECT_EQ(-1, ARGBScale(src, 4, 1, 32769, dst, 4, 1, 1, kFilterNone));
+  EXPECT_EQ(-1, ARGBScale(src, 4, 1, -32769, dst, 4, 1, 1, kFilterNone));
+  EXPECT_EQ(-1, ARGBScaleClip(src, 4, 32769, 1, dst, 4, 1, 1, 0, 0, 1, 1,
+                              kFilterNone));
+  EXPECT_EQ(-1, ARGBScaleClip(src, 4, -32769, 1, dst, 4, 1, 1, 0, 0, 1, 1,
+                              kFilterNone));
+  EXPECT_EQ(-1, ARGBScaleClip(src, 4, 1, 32769, dst, 4, 1, 1, 0, 0, 1, 1,
+                              kFilterNone));
+  EXPECT_EQ(-1, ARGBScaleClip(src, 4, 1, -32769, dst, 4, 1, 1, 0, 0, 1, 1,
+                              kFilterNone));
+}
+
+#if defined(__LP64__) || defined(_WIN64)
+TEST_F(LibYUVScaleTest, ARGBScaleLargeImageOver2GB) {
+  const int kSrcWidth = 4;
+  const int kSrcHeight = 32768;
+  const int kSrcStride = 131072;  // 32768 * 131072 = 4 GB (> INT_MAX)
+  const size_t kSrcSize = (size_t)kSrcStride * kSrcHeight;
+  uint8_t* src = static_cast<uint8_t*>(calloc(1, kSrcSize));
+  if (!src) {
+    GTEST_SKIP() << "could not allocate " << kSrcSize << " bytes";
+  }
+  uint8_t dst[8 * 4 * 4] = {};
+
+  for (int dst_w : {4, 2}) {
+    for (FilterMode f :
+         {kFilterNone, kFilterLinear, kFilterBilinear, kFilterBox}) {
+      EXPECT_EQ(0, ARGBScale(src, kSrcStride, kSrcWidth, kSrcHeight, dst,
+                             dst_w * 4, dst_w, 2, f));
+      EXPECT_EQ(0, ARGBScale(src, kSrcStride, kSrcWidth, -kSrcHeight, dst,
+                             dst_w * 4, dst_w, 2, f));
+    }
+  }
+  free(src);
+}
+#endif
+
 }  // namespace libyuv

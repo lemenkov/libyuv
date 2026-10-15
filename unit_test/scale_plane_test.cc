@@ -19,6 +19,7 @@
 #include "../unit_test/unit_test.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale.h"
+#include "libyuv/scale_uv.h"
 
 #ifdef ENABLE_ROW_TESTS
 #include "libyuv/scale_row.h"  // For ScaleRowDown2Box_Odd_C
@@ -804,5 +805,69 @@ TEST_F(LibYUVScaleTest, ScalePlane_12_InvalidInputs) {
   EXPECT_EQ(-1, ScalePlane_12(src, 4, 32769, 4, dst, 4, 4, 4, kFilterNone));
   EXPECT_EQ(-1, ScalePlane_12(src, 4, 4, -32769, dst, 4, 4, 4, kFilterNone));
 }
+
+TEST_F(LibYUVScaleTest, ScalePlaneOversizeHeight) {
+  const int kSrcWidth = 4;
+  const int kSrcHeight = 32768;
+  uint8_t* src = new uint8_t[kSrcWidth * kSrcHeight];
+  memset(src, 0, kSrcWidth * kSrcHeight);
+  uint8_t dst[4 * 2] = {};
+
+  for (int dst_w : {4, 2}) {
+    for (int dst_h : {1, 2}) {
+      for (FilterMode f :
+           {kFilterNone, kFilterLinear, kFilterBilinear, kFilterBox}) {
+        EXPECT_EQ(0, ScalePlane(src, kSrcWidth, kSrcWidth, kSrcHeight, dst,
+                                dst_w, dst_w, dst_h, f));
+        EXPECT_EQ(0, ScalePlane(src, kSrcWidth, kSrcWidth, -kSrcHeight, dst,
+                                dst_w, dst_w, dst_h, f));
+      }
+    }
+  }
+  delete[] src;
+}
+
+TEST_F(LibYUVScaleTest, ScalePlaneBoxMaxSrcHeight) {
+  const int kSrcWidth = 4;
+  const int kSrcHeight = 32768;
+  uint8_t* src = new uint8_t[kSrcWidth * kSrcHeight];
+  memset(src, 0, kSrcWidth * kSrcHeight);
+  uint8_t dst[2 * 4] = {};
+
+  EXPECT_EQ(0, ScalePlane(src, kSrcWidth, kSrcWidth, kSrcHeight, dst, 2, 2, 4,
+                          kFilterBox));
+  delete[] src;
+}
+
+#if defined(__LP64__) || defined(_WIN64)
+TEST_F(LibYUVScaleTest, ScaleLargeImageOver2GB) {
+  const int kSrcWidth = 4;
+  const int kSrcHeight = 32768;
+  const int kSrcStride = 131072;  // 32768 * 131072 = 4 GB (> INT_MAX)
+  const size_t kSrcSize = (size_t)kSrcStride * kSrcHeight;
+  uint8_t* src = static_cast<uint8_t*>(calloc(1, kSrcSize));
+  if (!src) {
+    GTEST_SKIP() << "could not allocate " << kSrcSize << " bytes";
+  }
+  uint8_t dst[8 * 4 * 4] = {};
+
+  for (FilterMode f :
+       {kFilterNone, kFilterLinear, kFilterBilinear, kFilterBox}) {
+    EXPECT_EQ(
+        0, ScalePlane(src, kSrcStride, kSrcWidth, kSrcHeight, dst, 4, 4, 2, f));
+    EXPECT_EQ(0, ScalePlane(src, kSrcStride, kSrcWidth, -kSrcHeight, dst, 4, 4,
+                            2, f));
+    EXPECT_EQ(
+        0, ScalePlane(src, kSrcStride, kSrcWidth, kSrcHeight, dst, 8, 8, 2, f));
+    EXPECT_EQ(0, UVScale(src, kSrcStride, kSrcWidth, kSrcHeight, dst, 4 * 2, 4,
+                         2, f));
+    EXPECT_EQ(0, UVScale(src, kSrcStride, kSrcWidth, -kSrcHeight, dst, 4 * 2, 4,
+                         2, f));
+    EXPECT_EQ(0, UVScale(src, kSrcStride, kSrcWidth, kSrcHeight, dst, 8 * 2, 8,
+                         2, f));
+  }
+  free(src);
+}
+#endif
 
 }  // namespace libyuv

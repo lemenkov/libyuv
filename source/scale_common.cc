@@ -1640,8 +1640,10 @@ void ScaleSlope(int src_width,
   assert(dst_width > 0);
   assert(dst_height > 0);
   // Check for 1 pixel and avoid FixedDiv overflow.
-  if (dst_width == 1 && src_width >= 32768) {
-    dst_width = src_width;
+  // TODO(b/573815252): Fix center coordinate calculation when dst == 1 and
+  // src == 32768.
+  if (dst_width == 1 && Abs(src_width) >= 32768) {
+    dst_width = Abs(src_width);
   }
   if (dst_height == 1 && src_height >= 32768) {
     dst_height = src_height;
