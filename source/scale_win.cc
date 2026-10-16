@@ -11,6 +11,19 @@
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h"
 
+#if !defined(LIBYUV_DISABLE_X86) &&                                 \
+    (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
+     defined(_M_IX86)) &&                                           \
+    ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
+     defined(LIBYUV_ENABLE_ROWWIN))
+#include <emmintrin.h>
+#include <immintrin.h>
+#include <tmmintrin.h>
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#endif
+#endif
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -54,40 +67,6 @@ static const uvec8 kMadd21 = {2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3};
 
 // Coefficients for source bytes 21 to 31
 static const vec16 kRound34 = {2, 2, 2, 2, 2, 2, 2, 2};
-
-static const uvec8 kShuf38a = {0,   3,   6,   8,   11,  14,  128, 128,
-                               128, 128, 128, 128, 128, 128, 128, 128};
-
-static const uvec8 kShuf38b = {128, 128, 128, 128, 128, 128, 0,   3,
-                               6,   8,   11,  14,  128, 128, 128, 128};
-
-// Arrange words 0,3,6 into 0,1,2
-static const uvec8 kShufAc = {0,   1,   6,   7,   12,  13,  128, 128,
-                              128, 128, 128, 128, 128, 128, 128, 128};
-
-// Arrange words 0,3,6 into 3,4,5
-static const uvec8 kShufAc3 = {128, 128, 128, 128, 128, 128, 0,   1,
-                               6,   7,   12,  13,  128, 128, 128, 128};
-
-// Scaling values for boxes of 3x3 and 2x3
-static const uvec16 kScaleAc33 = {65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9,
-                                  65536 / 9, 65536 / 6, 0,         0};
-
-// Arrange first value for pixels 0,1,2,3,4,5
-static const uvec8 kShufAb0 = {0,  128, 3,  128, 6,   128, 8,   128,
-                               11, 128, 14, 128, 128, 128, 128, 128};
-
-// Arrange second value for pixels 0,1,2,3,4,5
-static const uvec8 kShufAb1 = {1,  128, 4,  128, 7,   128, 9,   128,
-                               12, 128, 15, 128, 128, 128, 128, 128};
-
-// Arrange third value for pixels 0,1,2,3,4,5
-static const uvec8 kShufAb2 = {2,  128, 5,   128, 128, 128, 10,  128,
-                               13, 128, 128, 128, 128, 128, 128, 128};
-
-// Scaling values for boxes of 3x2 and 2x2
-static const uvec16 kScaleAb2 = {65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3,
-                                 65536 / 3, 65536 / 2, 0,         0};
 
 // Reads 32 pixels, throws half away and writes 16 pixels.
 __declspec(naked) void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
@@ -664,212 +643,6 @@ __declspec(naked) void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
   }
 }
 
-// 3/8 point sampler
-
-// Scale 32 pixels to 12
-__declspec(naked) void ScaleRowDown38_SSSE3(const uint8_t* src_ptr,
-                                            ptrdiff_t src_stride,
-                                            uint8_t* dst_ptr,
-                                            int dst_width) {
-  __asm {
-    mov        eax, [esp + 4]  // src_ptr
-    // src_stride ignored
-    mov        edx, [esp + 12]  // dst_ptr
-    mov        ecx, [esp + 16]  // dst_width
-    movdqa     xmm4, xmmword ptr kShuf38a
-    movdqa     xmm5, xmmword ptr kShuf38b
-
-  xloop:
-    movdqu     xmm0, [eax]  // 16 pixels -> 0,1,2,3,4,5
-    movdqu     xmm1, [eax + 16]  // 16 pixels -> 6,7,8,9,10,11
-    lea        eax, [eax + 32]
-    pshufb     xmm0, xmm4
-    pshufb     xmm1, xmm5
-    paddusb    xmm0, xmm1
-
-    movq       qword ptr [edx], xmm0    // write 12 pixels
-    movhlps    xmm1, xmm0
-    movd       [edx + 8], xmm1
-    lea        edx, [edx + 12]
-    sub        ecx, 12
-    jg         xloop
-
-    ret
-  }
-}
-
-// Scale 16x3 pixels to 6x1 with interpolation
-__declspec(naked) void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
-                                                  ptrdiff_t src_stride,
-                                                  uint8_t* dst_ptr,
-                                                  int dst_width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]  // src_ptr
-    mov        esi, [esp + 4 + 8]  // src_stride
-    mov        edx, [esp + 4 + 12]  // dst_ptr
-    mov        ecx, [esp + 4 + 16]  // dst_width
-    movdqa     xmm2, xmmword ptr kShufAc
-    movdqa     xmm3, xmmword ptr kShufAc3
-    movdqa     xmm4, xmmword ptr kScaleAc33
-    pxor       xmm5, xmm5
-
-  xloop:
-    movdqu     xmm0, [eax]  // sum up 3 rows into xmm0/1
-    movdqu     xmm6, [eax + esi]
-    movhlps    xmm1, xmm0
-    movhlps    xmm7, xmm6
-    punpcklbw  xmm0, xmm5
-    punpcklbw  xmm1, xmm5
-    punpcklbw  xmm6, xmm5
-    punpcklbw  xmm7, xmm5
-    paddusw    xmm0, xmm6
-    paddusw    xmm1, xmm7
-    movdqu     xmm6, [eax + esi * 2]
-    lea        eax, [eax + 16]
-    movhlps    xmm7, xmm6
-    punpcklbw  xmm6, xmm5
-    punpcklbw  xmm7, xmm5
-    paddusw    xmm0, xmm6
-    paddusw    xmm1, xmm7
-
-    movdqa     xmm6, xmm0  // 8 pixels -> 0,1,2 of xmm6
-    psrldq     xmm0, 2
-    paddusw    xmm6, xmm0
-    psrldq     xmm0, 2
-    paddusw    xmm6, xmm0
-    pshufb     xmm6, xmm2
-
-    movdqa     xmm7, xmm1  // 8 pixels -> 3,4,5 of xmm6
-    psrldq     xmm1, 2
-    paddusw    xmm7, xmm1
-    psrldq     xmm1, 2
-    paddusw    xmm7, xmm1
-    pshufb     xmm7, xmm3
-    paddusw    xmm6, xmm7
-
-    pmulhuw    xmm6, xmm4  // divide by 9,9,6, 9,9,6
-    packuswb   xmm6, xmm6
-
-    movd       [edx], xmm6  // write 6 pixels
-    psrlq      xmm6, 16
-    movd       [edx + 2], xmm6
-    lea        edx, [edx + 6]
-    sub        ecx, 6
-    jg         xloop
-
-    pop        esi
-    ret
-  }
-}
-
-// Scale 16x2 pixels to 6x1 with interpolation
-__declspec(naked) void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
-                                                  ptrdiff_t src_stride,
-                                                  uint8_t* dst_ptr,
-                                                  int dst_width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]  // src_ptr
-    mov        esi, [esp + 4 + 8]  // src_stride
-    mov        edx, [esp + 4 + 12]  // dst_ptr
-    mov        ecx, [esp + 4 + 16]  // dst_width
-    movdqa     xmm2, xmmword ptr kShufAb0
-    movdqa     xmm3, xmmword ptr kShufAb1
-    movdqa     xmm4, xmmword ptr kShufAb2
-    movdqa     xmm5, xmmword ptr kScaleAb2
-
-  xloop:
-    movdqu     xmm0, [eax]  // average 2 rows into xmm0
-    movdqu     xmm1, [eax + esi]
-    lea        eax, [eax + 16]
-    pavgb      xmm0, xmm1
-
-    movdqa     xmm1, xmm0  // 16 pixels -> 0,1,2,3,4,5 of xmm1
-    pshufb     xmm1, xmm2
-    movdqa     xmm6, xmm0
-    pshufb     xmm6, xmm3
-    paddusw    xmm1, xmm6
-    pshufb     xmm0, xmm4
-    paddusw    xmm1, xmm0
-
-    pmulhuw    xmm1, xmm5  // divide by 3,3,2, 3,3,2
-    packuswb   xmm1, xmm1
-
-    movd       [edx], xmm1  // write 6 pixels
-    psrlq      xmm1, 16
-    movd       [edx + 2], xmm1
-    lea        edx, [edx + 6]
-    sub        ecx, 6
-    jg         xloop
-
-    pop        esi
-    ret
-  }
-}
-
-// Reads 16 bytes and accumulates to 16 shorts at a time.
-__declspec(naked) void ScaleAddRow_SSE2(const uint8_t* src_ptr,
-                                        uint16_t* dst_ptr,
-                                        int src_width) {
-  __asm {
-    mov        eax, [esp + 4]  // src_ptr
-    mov        edx, [esp + 8]  // dst_ptr
-    mov        ecx, [esp + 12]  // src_width
-    pxor       xmm5, xmm5
-
-        // sum rows
-  xloop:
-    movdqu     xmm3, [eax]  // read 16 bytes
-    lea        eax, [eax + 16]
-    movdqu     xmm0, [edx]  // read 16 words from destination
-    movdqu     xmm1, [edx + 16]
-    movdqa     xmm2, xmm3
-    punpcklbw  xmm2, xmm5
-    punpckhbw  xmm3, xmm5
-    paddusw    xmm0, xmm2  // sum 16 words
-    paddusw    xmm1, xmm3
-    movdqu     [edx], xmm0  // write 16 words to destination
-    movdqu     [edx + 16], xmm1
-    lea        edx, [edx + 32]
-    sub        ecx, 16
-    jg         xloop
-    ret
-  }
-}
-
-#ifdef HAS_SCALEADDROW_AVX2
-// Reads 32 bytes and accumulates to 32 shorts at a time.
-__declspec(naked) void ScaleAddRow_AVX2(const uint8_t* src_ptr,
-                                        uint16_t* dst_ptr,
-                                        int src_width) {
-  __asm {
-    mov         eax, [esp + 4]  // src_ptr
-    mov         edx, [esp + 8]  // dst_ptr
-    mov         ecx, [esp + 12]  // src_width
-    vpxor       ymm5, ymm5, ymm5
-
-        // sum rows
-  xloop:
-    vmovdqu     ymm3, [eax]  // read 32 bytes
-    lea         eax, [eax + 32]
-    vpermq      ymm3, ymm3, 0xd8  // unmutate for vpunpck
-    vpunpcklbw  ymm2, ymm3, ymm5
-    vpunpckhbw  ymm3, ymm3, ymm5
-    vpaddusw    ymm0, ymm2, [edx]  // sum 16 words
-    vpaddusw    ymm1, ymm3, [edx + 32]
-    vmovdqu     [edx], ymm0  // write 32 words to destination
-    vmovdqu     [edx + 32], ymm1
-    lea         edx, [edx + 64]
-    sub         ecx, 32
-    jg          xloop
-
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_SCALEADDROW_AVX2
-
 static const uvec16 kFadd40 = {0x0040, 0x0040, 0x0040, 0x0040,
                                0x0040, 0x0040, 0x0040, 0x0040};
 
@@ -1381,6 +1154,772 @@ __declspec(naked) int FixedDiv1_X86(int num, int div) {
   }
 }
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+
+// The following are available for Visual C 32/64 bit, and for clang with
+// LIBYUV_ENABLE_ROWWIN:
+#if !defined(LIBYUV_DISABLE_X86) &&                                 \
+    (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
+     defined(_M_IX86)) &&                                           \
+    ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
+     defined(LIBYUV_ENABLE_ROWWIN))
+
+#if defined(__clang__) || defined(__GNUC__)
+#define LIBYUV_TARGET_SSSE3 __attribute__((target("ssse3")))
+#define LIBYUV_TARGET_AVX2 __attribute__((target("avx2")))
+#define LIBYUV_TARGET_AVX512BW \
+  __attribute__((target("avx512bw,avx512vl,avx512f")))
+#define LIBYUV_TARGET_AVX512VBMI \
+  __attribute__((target("avx512vbmi,avx512bw,avx512vl,avx512f")))
+#else
+#define LIBYUV_TARGET_SSSE3
+#define LIBYUV_TARGET_AVX2
+#define LIBYUV_TARGET_AVX512BW
+#define LIBYUV_TARGET_AVX512VBMI
+#endif  // defined(__clang__) || defined(__GNUC__)
+
+#ifdef HAS_SCALEROWDOWN38_SSSE3
+static const uvec8 kShuf38a = {0,   3,   6,   8,   11,  14,  128, 128,
+                               128, 128, 128, 128, 128, 128, 128, 128};
+
+static const uvec8 kShuf38b = {128, 128, 128, 128, 128, 128, 0,   3,
+                               6,   8,   11,  14,  128, 128, 128, 128};
+
+// Arrange words 0,3,6 into 0,1,2
+static const uvec8 kShufAc = {0,   1,   6,   7,   12,  13,  128, 128,
+                              128, 128, 128, 128, 128, 128, 128, 128};
+
+// Arrange words 0,3,6 into 3,4,5
+static const uvec8 kShufAc3 = {128, 128, 128, 128, 128, 128, 0,   1,
+                               6,   7,   12,  13,  128, 128, 128, 128};
+
+// Scaling values for boxes of 3x3 and 2x3
+static const uvec16 kScaleAc33 = {65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9,
+                                  65536 / 9, 65536 / 6, 0,         0};
+
+// Arrange first value for pixels 0,1,2,3,4,5
+static const uvec8 kShufAb0 = {0,  128, 3,  128, 6,   128, 8,   128,
+                               11, 128, 14, 128, 128, 128, 128, 128};
+
+// Arrange second value for pixels 0,1,2,3,4,5
+static const uvec8 kShufAb1 = {1,  128, 4,  128, 7,   128, 9,   128,
+                               12, 128, 15, 128, 128, 128, 128, 128};
+
+// Arrange third value for pixels 0,1,2,3,4,5
+static const uvec8 kShufAb2 = {2,  128, 5,   128, 128, 128, 10,  128,
+                               13, 128, 128, 128, 128, 128, 128, 128};
+
+// Scaling values for boxes of 3x2 and 2x2
+static const uvec16 kScaleAb2 = {65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3,
+                                 65536 / 3, 65536 / 2, 0,         0};
+
+// Scale 32 pixels to 12
+LIBYUV_TARGET_SSSE3
+void ScaleRowDown38_SSSE3(const uint8_t* src_ptr,
+                          ptrdiff_t src_stride,
+                          uint8_t* dst_ptr,
+                          int dst_width) {
+  (void)src_stride;
+  const __m128i shuf38a = _mm_loadu_si128((const __m128i*)&kShuf38a);
+  const __m128i shuf38b = _mm_loadu_si128((const __m128i*)&kShuf38b);
+  while (dst_width > 0) {
+    __m128i s0 = _mm_loadu_si128((const __m128i*)src_ptr);
+    __m128i s1 = _mm_loadu_si128((const __m128i*)(src_ptr + 16));
+    src_ptr += 32;
+    s0 = _mm_shuffle_epi8(s0, shuf38a);
+    s1 = _mm_shuffle_epi8(s1, shuf38b);
+    s0 = _mm_adds_epu8(s0, s1);
+    _mm_storel_epi64((__m128i*)dst_ptr, s0);
+    *(uint32_t*)(dst_ptr + 8) =
+        (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(s0, 8));
+    dst_ptr += 12;
+    dst_width -= 12;
+  }
+}
+
+// Scale 16x3 pixels to 6x1 with interpolation
+LIBYUV_TARGET_SSSE3
+void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width) {
+  const __m128i shuf_ac = _mm_loadu_si128((const __m128i*)&kShufAc);
+  const __m128i shuf_ac3 = _mm_loadu_si128((const __m128i*)&kShufAc3);
+  const __m128i scale_ac33 = _mm_loadu_si128((const __m128i*)&kScaleAc33);
+  const __m128i zero = _mm_setzero_si128();
+  while (dst_width > 0) {
+    __m128i r0 = _mm_loadu_si128((const __m128i*)src_ptr);
+    __m128i r1 = _mm_loadu_si128((const __m128i*)(src_ptr + src_stride));
+    __m128i r2 = _mm_loadu_si128((const __m128i*)(src_ptr + src_stride * 2));
+    src_ptr += 16;
+    __m128i s0 = _mm_adds_epu16(_mm_adds_epu16(_mm_unpacklo_epi8(r0, zero),
+                                               _mm_unpacklo_epi8(r1, zero)),
+                                _mm_unpacklo_epi8(r2, zero));
+    __m128i s1 = _mm_adds_epu16(_mm_adds_epu16(_mm_unpackhi_epi8(r0, zero),
+                                               _mm_unpackhi_epi8(r1, zero)),
+                                _mm_unpackhi_epi8(r2, zero));
+    __m128i t0 = _mm_adds_epu16(_mm_adds_epu16(s0, _mm_srli_si128(s0, 2)),
+                                _mm_srli_si128(s0, 4));
+    __m128i t1 = _mm_adds_epu16(_mm_adds_epu16(s1, _mm_srli_si128(s1, 2)),
+                                _mm_srli_si128(s1, 4));
+    t0 = _mm_shuffle_epi8(t0, shuf_ac);
+    t1 = _mm_shuffle_epi8(t1, shuf_ac3);
+    t0 = _mm_adds_epu16(t0, t1);
+    t0 = _mm_mulhi_epu16(t0, scale_ac33);
+    t0 = _mm_packus_epi16(t0, t0);
+    *(uint32_t*)dst_ptr = (uint32_t)_mm_cvtsi128_si32(t0);
+    *(uint16_t*)(dst_ptr + 4) =
+        (uint16_t)_mm_cvtsi128_si32(_mm_srli_si128(t0, 4));
+    dst_ptr += 6;
+    dst_width -= 6;
+  }
+}
+
+// Scale 16x2 pixels to 6x1 with interpolation
+LIBYUV_TARGET_SSSE3
+void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width) {
+  const __m128i shuf_ab0 = _mm_loadu_si128((const __m128i*)&kShufAb0);
+  const __m128i shuf_ab1 = _mm_loadu_si128((const __m128i*)&kShufAb1);
+  const __m128i shuf_ab2 = _mm_loadu_si128((const __m128i*)&kShufAb2);
+  const __m128i scale_ab2 = _mm_loadu_si128((const __m128i*)&kScaleAb2);
+  while (dst_width > 0) {
+    __m128i r0 = _mm_loadu_si128((const __m128i*)src_ptr);
+    __m128i r1 = _mm_loadu_si128((const __m128i*)(src_ptr + src_stride));
+    src_ptr += 16;
+    r0 = _mm_avg_epu8(r0, r1);
+    __m128i t0 = _mm_shuffle_epi8(r0, shuf_ab0);
+    __m128i t1 = _mm_shuffle_epi8(r0, shuf_ab1);
+    __m128i t2 = _mm_shuffle_epi8(r0, shuf_ab2);
+    t0 = _mm_adds_epu16(_mm_adds_epu16(t0, t1), t2);
+    t0 = _mm_mulhi_epu16(t0, scale_ab2);
+    t0 = _mm_packus_epi16(t0, t0);
+    *(uint32_t*)dst_ptr = (uint32_t)_mm_cvtsi128_si32(t0);
+    *(uint16_t*)(dst_ptr + 4) =
+        (uint16_t)_mm_cvtsi128_si32(_mm_srli_si128(t0, 4));
+    dst_ptr += 6;
+    dst_width -= 6;
+  }
+}
+#endif  // HAS_SCALEROWDOWN38_SSSE3
+
+#ifdef HAS_SCALEADDROW_SSE2
+// Reads 16 bytes and accumulates to 16 shorts at a time.
+void ScaleAddRow_SSE2(const uint8_t* src_ptr,
+                      uint16_t* dst_ptr,
+                      int src_width) {
+  const __m128i zero = _mm_setzero_si128();
+  while (src_width > 0) {
+    __m128i s = _mm_loadu_si128((const __m128i*)src_ptr);
+    src_ptr += 16;
+    __m128i d0 = _mm_loadu_si128((const __m128i*)dst_ptr);
+    __m128i d1 = _mm_loadu_si128((const __m128i*)(dst_ptr + 8));
+    d0 = _mm_adds_epu16(d0, _mm_unpacklo_epi8(s, zero));
+    d1 = _mm_adds_epu16(d1, _mm_unpackhi_epi8(s, zero));
+    _mm_storeu_si128((__m128i*)dst_ptr, d0);
+    _mm_storeu_si128((__m128i*)(dst_ptr + 8), d1);
+    dst_ptr += 16;
+    src_width -= 16;
+  }
+}
+#endif  // HAS_SCALEADDROW_SSE2
+
+#ifdef HAS_SCALEADDROW_AVX2
+// Reads 32 bytes and accumulates to 32 shorts at a time.
+LIBYUV_TARGET_AVX2
+void ScaleAddRow_AVX2(const uint8_t* src_ptr,
+                      uint16_t* dst_ptr,
+                      int src_width) {
+  while (src_width > 0) {
+    __m256i s0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i*)src_ptr));
+    __m256i s1 =
+        _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i*)(src_ptr + 16)));
+    src_ptr += 32;
+    __m256i d0 = _mm256_loadu_si256((const __m256i*)dst_ptr);
+    __m256i d1 = _mm256_loadu_si256((const __m256i*)(dst_ptr + 16));
+    d0 = _mm256_adds_epu16(d0, s0);
+    d1 = _mm256_adds_epu16(d1, s1);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d0);
+    _mm256_storeu_si256((__m256i*)(dst_ptr + 16), d1);
+    dst_ptr += 32;
+    src_width -= 32;
+  }
+}
+#endif  // HAS_SCALEADDROW_AVX2
+
+#ifdef HAS_SCALEADDROW_AVX512BW
+// Reads 64 bytes and accumulates to 64 shorts at a time, with masked tail.
+LIBYUV_TARGET_AVX512BW
+void ScaleAddRow_AVX512BW(const uint8_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int src_width) {
+  while (src_width >= 64) {
+    __m512i s0 =
+        _mm512_cvtepu8_epi16(_mm256_loadu_si256((const __m256i*)src_ptr));
+    __m512i s1 = _mm512_cvtepu8_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)));
+    src_ptr += 64;
+    __m512i d0 = _mm512_loadu_si512((const __m512i*)dst_ptr);
+    __m512i d1 = _mm512_loadu_si512((const __m512i*)(dst_ptr + 32));
+    d0 = _mm512_adds_epu16(d0, s0);
+    d1 = _mm512_adds_epu16(d1, s1);
+    _mm512_storeu_si512((__m512i*)dst_ptr, d0);
+    _mm512_storeu_si512((__m512i*)(dst_ptr + 32), d1);
+    dst_ptr += 64;
+    src_width -= 64;
+  }
+  if (src_width >= 32) {
+    __m512i s0 =
+        _mm512_cvtepu8_epi16(_mm256_loadu_si256((const __m256i*)src_ptr));
+    src_ptr += 32;
+    __m512i d0 = _mm512_loadu_si512((const __m512i*)dst_ptr);
+    d0 = _mm512_adds_epu16(d0, s0);
+    _mm512_storeu_si512((__m512i*)dst_ptr, d0);
+    dst_ptr += 32;
+    src_width -= 32;
+  }
+  if (src_width > 0) {
+    __mmask32 k = (__mmask32)((1ULL << src_width) - 1);
+    __m512i s0 = _mm512_maskz_cvtepu8_epi16(
+        k, _mm256_maskz_loadu_epi8(k, (const void*)src_ptr));
+    __m512i d0 = _mm512_maskz_loadu_epi16(k, (const void*)dst_ptr);
+    d0 = _mm512_maskz_adds_epu16(k, d0, s0);
+    _mm512_mask_storeu_epi16((void*)dst_ptr, k, d0);
+  }
+}
+#endif  // HAS_SCALEADDROW_AVX512BW
+
+#ifdef HAS_SCALEADDCOLS_AVX512BW
+static const uint8_t kSequence0_15[16] = {0, 1, 2,  3,  4,  5,  6,  7,
+                                          8, 9, 10, 11, 12, 13, 14, 15};
+
+LIBYUV_TARGET_AVX512BW
+void ScaleAddCols1_AVX512BW(int dst_width,
+                            int boxheight,
+                            int x,
+                            int dx,
+                            const uint16_t* src_ptr,
+                            uint8_t* dst_ptr) {
+  int boxwidth = dx >> 16;
+  if (boxwidth < 1) {
+    boxwidth = 1;
+  }
+  int scaleval = 65536 / (boxwidth * boxheight);
+  src_ptr += (x >> 16);
+  const __m512i mask_ffff = _mm512_set1_epi32(0x0000ffff);
+  const __m512i vscale = _mm512_set1_epi32(scaleval);
+  if (boxwidth <= 4) {
+    __m512i seq =
+        _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)kSequence0_15));
+    seq = _mm512_or_si512(seq, _mm512_slli_epi32(seq, 16));
+    __m512i vbw = _mm512_set1_epi16((int16_t)boxwidth);
+    __m512i base = _mm512_mullo_epi16(seq, vbw);
+    __m512i c01 = _mm512_set1_epi32(0x00010000);
+    __m512i c23 = _mm512_set1_epi32(0x00030002);
+    __m512i idx01 = _mm512_add_epi16(base, c01);
+    __m512i idx23 = _mm512_add_epi16(base, c23);
+    __mmask32 k2 = _mm512_cmpgt_epu16_mask(vbw, c01);
+    __mmask32 k3 = _mm512_cmpgt_epu16_mask(vbw, c23);
+    int span = boxwidth * 16;
+    uint64_t m64 = (span >= 64) ? ~0ULL : ((1ULL << span) - 1);
+    __mmask32 k1 = (__mmask32)m64;
+    __mmask32 k4 = (__mmask32)(m64 >> 32);
+    while (dst_width >= 16) {
+      __m512i s0 = _mm512_maskz_loadu_epi16(k1, src_ptr);
+      __m512i s1 = _mm512_maskz_loadu_epi16(k4, src_ptr + 32);
+      src_ptr += span;
+      __m512i p01 = _mm512_maskz_permutex2var_epi16(k2, s0, idx01, s1);
+      __m512i p23 = _mm512_maskz_permutex2var_epi16(k3, s0, idx23, s1);
+      __m512i sum01 = _mm512_add_epi32(_mm512_and_si512(p01, mask_ffff),
+                                       _mm512_srli_epi32(p01, 16));
+      __m512i sum23 = _mm512_add_epi32(_mm512_and_si512(p23, mask_ffff),
+                                       _mm512_srli_epi32(p23, 16));
+      __m512i sum = _mm512_add_epi32(sum01, sum23);
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vscale), 16);
+      _mm_storeu_si128((__m128i*)dst_ptr, _mm512_cvtepi32_epi8(sum));
+      dst_ptr += 16;
+      dst_width -= 16;
+    }
+    if (dst_width > 0) {
+      int rem_span = dst_width * boxwidth;
+      uint64_t rm64 = (rem_span >= 64) ? ~0ULL : ((1ULL << rem_span) - 1);
+      __m512i s0 = _mm512_maskz_loadu_epi16((__mmask32)rm64, src_ptr);
+      __m512i s1 =
+          _mm512_maskz_loadu_epi16((__mmask32)(rm64 >> 32), src_ptr + 32);
+      __m512i p01 = _mm512_maskz_permutex2var_epi16(k2, s0, idx01, s1);
+      __m512i p23 = _mm512_maskz_permutex2var_epi16(k3, s0, idx23, s1);
+      __m512i sum01 = _mm512_add_epi32(_mm512_and_si512(p01, mask_ffff),
+                                       _mm512_srli_epi32(p01, 16));
+      __m512i sum23 = _mm512_add_epi32(_mm512_and_si512(p23, mask_ffff),
+                                       _mm512_srli_epi32(p23, 16));
+      __m512i sum = _mm512_add_epi32(sum01, sum23);
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vscale), 16);
+      __mmask16 km = (__mmask16)((1U << dst_width) - 1);
+      _mm512_mask_cvtepi32_storeu_epi8(dst_ptr, km, sum);
+    }
+  } else if (boxwidth <= 8) {
+    __m512i seq =
+        _mm512_cvtepu8_epi64(_mm_loadu_si128((const __m128i*)kSequence0_15));
+    seq = _mm512_or_si512(seq, _mm512_slli_epi64(seq, 16));
+    seq = _mm512_or_si512(seq, _mm512_slli_epi64(seq, 32));
+    __m512i vbw = _mm512_set1_epi16((int16_t)boxwidth);
+    __m512i base = _mm512_mullo_epi16(seq, vbw);
+    __m512i c03 = _mm512_set1_epi64(0x0003000200010000ULL);
+    __m512i c47 = _mm512_set1_epi64(0x0007000600050004ULL);
+    __m512i idx03 = _mm512_add_epi16(base, c03);
+    __m512i idx47 = _mm512_add_epi16(base, c47);
+    __mmask32 k3 = _mm512_cmpgt_epu16_mask(vbw, c47);
+    int span = boxwidth * 8;
+    uint64_t m64 = (span >= 64) ? ~0ULL : ((1ULL << span) - 1);
+    __mmask32 k1 = (__mmask32)m64;
+    __mmask32 k4 = (__mmask32)(m64 >> 32);
+    while (dst_width >= 8) {
+      __m512i s0 = _mm512_maskz_loadu_epi16(k1, src_ptr);
+      __m512i s1 = _mm512_maskz_loadu_epi16(k4, src_ptr + 32);
+      src_ptr += span;
+      __m512i p03 = _mm512_permutex2var_epi16(s0, idx03, s1);
+      __m512i p47 = _mm512_maskz_permutex2var_epi16(k3, s0, idx47, s1);
+      __m512i sum03 = _mm512_add_epi32(_mm512_and_si512(p03, mask_ffff),
+                                       _mm512_srli_epi32(p03, 16));
+      __m512i sum47 = _mm512_add_epi32(_mm512_and_si512(p47, mask_ffff),
+                                       _mm512_srli_epi32(p47, 16));
+      __m512i sum = _mm512_add_epi32(sum03, sum47);
+      sum = _mm512_add_epi32(sum, _mm512_srli_epi64(sum, 32));
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vscale), 16);
+      _mm_storel_epi64((__m128i*)dst_ptr, _mm512_cvtepi64_epi8(sum));
+      dst_ptr += 8;
+      dst_width -= 8;
+    }
+    if (dst_width > 0) {
+      int rem_span = dst_width * boxwidth;
+      uint64_t rm64 = (rem_span >= 64) ? ~0ULL : ((1ULL << rem_span) - 1);
+      __m512i s0 = _mm512_maskz_loadu_epi16((__mmask32)rm64, src_ptr);
+      __m512i s1 =
+          _mm512_maskz_loadu_epi16((__mmask32)(rm64 >> 32), src_ptr + 32);
+      __m512i p03 = _mm512_permutex2var_epi16(s0, idx03, s1);
+      __m512i p47 = _mm512_maskz_permutex2var_epi16(k3, s0, idx47, s1);
+      __m512i sum03 = _mm512_add_epi32(_mm512_and_si512(p03, mask_ffff),
+                                       _mm512_srli_epi32(p03, 16));
+      __m512i sum47 = _mm512_add_epi32(_mm512_and_si512(p47, mask_ffff),
+                                       _mm512_srli_epi32(p47, 16));
+      __m512i sum = _mm512_add_epi32(sum03, sum47);
+      sum = _mm512_add_epi32(sum, _mm512_srli_epi64(sum, 32));
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vscale), 16);
+      __mmask8 km = (__mmask8)((1U << dst_width) - 1);
+      _mm512_mask_cvtepi64_storeu_epi8(dst_ptr, km, sum);
+    }
+  } else {
+    int rem = boxwidth & 31;
+    __mmask32 k1 = (__mmask32)((1ULL << rem) - 1);
+    while (dst_width > 0) {
+      __m512i acc = _mm512_setzero_si512();
+      const uint16_t* p = src_ptr;
+      src_ptr += boxwidth;
+      int n = boxwidth;
+      while (n >= 32) {
+        __m512i s = _mm512_loadu_si512((const __m512i*)p);
+        p += 32;
+        acc = _mm512_add_epi32(acc,
+                               _mm512_add_epi32(_mm512_and_si512(s, mask_ffff),
+                                                _mm512_srli_epi32(s, 16)));
+        n -= 32;
+      }
+      if (n > 0) {
+        __m512i s = _mm512_maskz_loadu_epi16(k1, p);
+        acc = _mm512_add_epi32(acc,
+                               _mm512_add_epi32(_mm512_and_si512(s, mask_ffff),
+                                                _mm512_srli_epi32(s, 16)));
+      }
+      uint32_t total = (uint32_t)_mm512_reduce_add_epi32(acc);
+      *dst_ptr++ = (uint8_t)((total * (uint32_t)scaleval) >> 16);
+      --dst_width;
+    }
+  }
+}
+
+LIBYUV_TARGET_AVX512BW
+void ScaleAddCols2_AVX512BW(int dst_width,
+                            int boxheight,
+                            int x,
+                            int dx,
+                            const uint16_t* src_ptr,
+                            uint8_t* dst_ptr) {
+  int minboxwidth = dx >> 16;
+  int scale0 = 65536 / ((minboxwidth < 1 ? 1 : minboxwidth) * boxheight);
+  int scale1 =
+      65536 / (((minboxwidth + 1) < 1 ? 1 : (minboxwidth + 1)) * boxheight);
+  const __m512i mask_ffff = _mm512_set1_epi32(0x0000ffff);
+  const __m512i vscale0 = _mm512_set1_epi32(scale0);
+  const __m512i vscale1 = _mm512_set1_epi32(scale1);
+  if (minboxwidth >= 1 && minboxwidth <= 3) {
+    __m512i seq =
+        _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)kSequence0_15));
+    __m512i vdx = _mm512_set1_epi32(dx);
+    __m512i step0 = _mm512_mullo_epi32(seq, vdx);
+    __m512i step1 = _mm512_add_epi32(step0, vdx);
+    __m512i c01 = _mm512_set1_epi32(0x00010000);
+    __m512i c23 = _mm512_set1_epi32(0x00030002);
+    __m512i vminbw = _mm512_set1_epi32(minboxwidth);
+    while (dst_width >= 16) {
+      int base_ix = x >> 16;
+      __m512i xfrac = _mm512_set1_epi32(x & 0xffff);
+      x += dx * 16;
+      int span = (x >> 16) - base_ix;
+      uint64_t m64 = (span >= 64) ? ~0ULL : ((1ULL << span) - 1);
+      __m512i s0 = _mm512_maskz_loadu_epi16((__mmask32)m64, src_ptr + base_ix);
+      __m512i s1 = _mm512_maskz_loadu_epi16((__mmask32)(m64 >> 32),
+                                            src_ptr + base_ix + 32);
+      __m512i ix0 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step0), 16);
+      __m512i ix1 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step1), 16);
+      __m512i bw = _mm512_sub_epi32(ix1, ix0);
+      __mmask16 k4 = _mm512_cmpgt_epi32_mask(bw, vminbw);
+      __m512i ix0_16 = _mm512_or_si512(ix0, _mm512_slli_epi32(ix0, 16));
+      __m512i bw_16 = _mm512_or_si512(bw, _mm512_slli_epi32(bw, 16));
+      __m512i idx01 = _mm512_add_epi16(ix0_16, c01);
+      __m512i idx23 = _mm512_add_epi16(ix0_16, c23);
+      __mmask32 k2 = _mm512_cmpgt_epu16_mask(bw_16, c01);
+      __mmask32 k3 = _mm512_cmpgt_epu16_mask(bw_16, c23);
+      __m512i p01 = _mm512_maskz_permutex2var_epi16(k2, s0, idx01, s1);
+      __m512i p23 = _mm512_maskz_permutex2var_epi16(k3, s0, idx23, s1);
+      __m512i sum01 = _mm512_add_epi32(_mm512_and_si512(p01, mask_ffff),
+                                       _mm512_srli_epi32(p01, 16));
+      __m512i sum23 = _mm512_add_epi32(_mm512_and_si512(p23, mask_ffff),
+                                       _mm512_srli_epi32(p23, 16));
+      __m512i sum = _mm512_add_epi32(sum01, sum23);
+      __m512i vsc = _mm512_mask_blend_epi32(k4, vscale0, vscale1);
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vsc), 16);
+      _mm_storeu_si128((__m128i*)dst_ptr, _mm512_cvtepi32_epi8(sum));
+      dst_ptr += 16;
+      dst_width -= 16;
+    }
+    if (dst_width > 0) {
+      int base_ix = x >> 16;
+      __m512i xfrac = _mm512_set1_epi32(x & 0xffff);
+      int end_x = x + dx * dst_width;
+      int span = (end_x >> 16) - base_ix;
+      uint64_t m64 = (span >= 64) ? ~0ULL : ((1ULL << span) - 1);
+      __m512i s0 = _mm512_maskz_loadu_epi16((__mmask32)m64, src_ptr + base_ix);
+      __m512i s1 = _mm512_maskz_loadu_epi16((__mmask32)(m64 >> 32),
+                                            src_ptr + base_ix + 32);
+      __m512i ix0 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step0), 16);
+      __m512i ix1 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step1), 16);
+      __m512i bw = _mm512_sub_epi32(ix1, ix0);
+      __mmask16 k4 = _mm512_cmpgt_epi32_mask(bw, vminbw);
+      __m512i ix0_16 = _mm512_or_si512(ix0, _mm512_slli_epi32(ix0, 16));
+      __m512i bw_16 = _mm512_or_si512(bw, _mm512_slli_epi32(bw, 16));
+      __m512i idx01 = _mm512_add_epi16(ix0_16, c01);
+      __m512i idx23 = _mm512_add_epi16(ix0_16, c23);
+      __mmask32 k2 = _mm512_cmpgt_epu16_mask(bw_16, c01);
+      __mmask32 k3 = _mm512_cmpgt_epu16_mask(bw_16, c23);
+      __m512i p01 = _mm512_maskz_permutex2var_epi16(k2, s0, idx01, s1);
+      __m512i p23 = _mm512_maskz_permutex2var_epi16(k3, s0, idx23, s1);
+      __m512i sum01 = _mm512_add_epi32(_mm512_and_si512(p01, mask_ffff),
+                                       _mm512_srli_epi32(p01, 16));
+      __m512i sum23 = _mm512_add_epi32(_mm512_and_si512(p23, mask_ffff),
+                                       _mm512_srli_epi32(p23, 16));
+      __m512i sum = _mm512_add_epi32(sum01, sum23);
+      __m512i vsc = _mm512_mask_blend_epi32(k4, vscale0, vscale1);
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vsc), 16);
+      __mmask16 km = (__mmask16)((1U << dst_width) - 1);
+      _mm512_mask_cvtepi32_storeu_epi8(dst_ptr, km, sum);
+    }
+  } else if (minboxwidth >= 4 && minboxwidth <= 7) {
+    __m512i seq =
+        _mm512_cvtepu8_epi64(_mm_loadu_si128((const __m128i*)kSequence0_15));
+    __m512i vdx = _mm512_set1_epi64(dx);
+    __m512i step0 = _mm512_mullo_epi32(seq, vdx);
+    __m512i step1 = _mm512_add_epi64(step0, vdx);
+    __m512i c03 = _mm512_set1_epi64(0x0003000200010000ULL);
+    __m512i c47 = _mm512_set1_epi64(0x0007000600050004ULL);
+    __m512i vminbw = _mm512_set1_epi64(minboxwidth);
+    while (dst_width >= 8) {
+      int base_ix = x >> 16;
+      __m512i xfrac = _mm512_set1_epi64(x & 0xffff);
+      x += dx * 8;
+      int span = (x >> 16) - base_ix;
+      uint64_t m64 = (span >= 64) ? ~0ULL : ((1ULL << span) - 1);
+      __m512i s0 = _mm512_maskz_loadu_epi16((__mmask32)m64, src_ptr + base_ix);
+      __m512i s1 = _mm512_maskz_loadu_epi16((__mmask32)(m64 >> 32),
+                                            src_ptr + base_ix + 32);
+      __m512i ix0 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step0), 16);
+      __m512i ix1 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step1), 16);
+      __m512i bw = _mm512_sub_epi32(ix1, ix0);
+      __mmask8 k4 = _mm512_cmpgt_epi64_mask(bw, vminbw);
+      __m512i ix0_16 = _mm512_or_si512(ix0, _mm512_slli_epi64(ix0, 16));
+      ix0_16 = _mm512_or_si512(ix0_16, _mm512_slli_epi64(ix0_16, 32));
+      __m512i bw_16 = _mm512_or_si512(bw, _mm512_slli_epi64(bw, 16));
+      bw_16 = _mm512_or_si512(bw_16, _mm512_slli_epi64(bw_16, 32));
+      __m512i idx03 = _mm512_add_epi16(ix0_16, c03);
+      __m512i idx47 = _mm512_add_epi16(ix0_16, c47);
+      __mmask32 k3 = _mm512_cmpgt_epu16_mask(bw_16, c47);
+      __m512i p03 = _mm512_permutex2var_epi16(s0, idx03, s1);
+      __m512i p47 = _mm512_maskz_permutex2var_epi16(k3, s0, idx47, s1);
+      __m512i sum03 = _mm512_add_epi32(_mm512_and_si512(p03, mask_ffff),
+                                       _mm512_srli_epi32(p03, 16));
+      __m512i sum47 = _mm512_add_epi32(_mm512_and_si512(p47, mask_ffff),
+                                       _mm512_srli_epi32(p47, 16));
+      __m512i sum = _mm512_add_epi32(sum03, sum47);
+      sum = _mm512_add_epi32(sum, _mm512_srli_epi64(sum, 32));
+      __m512i vsc = _mm512_mask_blend_epi64(k4, vscale0, vscale1);
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vsc), 16);
+      _mm_storel_epi64((__m128i*)dst_ptr, _mm512_cvtepi64_epi8(sum));
+      dst_ptr += 8;
+      dst_width -= 8;
+    }
+    if (dst_width > 0) {
+      int base_ix = x >> 16;
+      __m512i xfrac = _mm512_set1_epi64(x & 0xffff);
+      int end_x = x + dx * dst_width;
+      int span = (end_x >> 16) - base_ix;
+      uint64_t m64 = (span >= 64) ? ~0ULL : ((1ULL << span) - 1);
+      __m512i s0 = _mm512_maskz_loadu_epi16((__mmask32)m64, src_ptr + base_ix);
+      __m512i s1 = _mm512_maskz_loadu_epi16((__mmask32)(m64 >> 32),
+                                            src_ptr + base_ix + 32);
+      __m512i ix0 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step0), 16);
+      __m512i ix1 = _mm512_srli_epi32(_mm512_add_epi32(xfrac, step1), 16);
+      __m512i bw = _mm512_sub_epi32(ix1, ix0);
+      __mmask8 k4 = _mm512_cmpgt_epi64_mask(bw, vminbw);
+      __m512i ix0_16 = _mm512_or_si512(ix0, _mm512_slli_epi64(ix0, 16));
+      ix0_16 = _mm512_or_si512(ix0_16, _mm512_slli_epi64(ix0_16, 32));
+      __m512i bw_16 = _mm512_or_si512(bw, _mm512_slli_epi64(bw, 16));
+      bw_16 = _mm512_or_si512(bw_16, _mm512_slli_epi64(bw_16, 32));
+      __m512i idx03 = _mm512_add_epi16(ix0_16, c03);
+      __m512i idx47 = _mm512_add_epi16(ix0_16, c47);
+      __mmask32 k3 = _mm512_cmpgt_epu16_mask(bw_16, c47);
+      __m512i p03 = _mm512_permutex2var_epi16(s0, idx03, s1);
+      __m512i p47 = _mm512_maskz_permutex2var_epi16(k3, s0, idx47, s1);
+      __m512i sum03 = _mm512_add_epi32(_mm512_and_si512(p03, mask_ffff),
+                                       _mm512_srli_epi32(p03, 16));
+      __m512i sum47 = _mm512_add_epi32(_mm512_and_si512(p47, mask_ffff),
+                                       _mm512_srli_epi32(p47, 16));
+      __m512i sum = _mm512_add_epi32(sum03, sum47);
+      sum = _mm512_add_epi32(sum, _mm512_srli_epi64(sum, 32));
+      __m512i vsc = _mm512_mask_blend_epi64(k4, vscale0, vscale1);
+      sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vsc), 16);
+      __mmask8 km = (__mmask8)((1U << dst_width) - 1);
+      _mm512_mask_cvtepi64_storeu_epi8(dst_ptr, km, sum);
+    }
+  } else {
+    while (dst_width > 0) {
+      int ix = x >> 16;
+      x += dx;
+      int bw = (x >> 16) - ix;
+      if (bw < 1) {
+        bw = 1;
+      }
+      int sc = (bw > minboxwidth) ? scale1 : scale0;
+      __m512i acc = _mm512_setzero_si512();
+      const uint16_t* p = src_ptr + ix;
+      int n = bw;
+      while (n >= 32) {
+        __m512i s = _mm512_loadu_si512((const __m512i*)p);
+        p += 32;
+        acc = _mm512_add_epi32(acc,
+                               _mm512_add_epi32(_mm512_and_si512(s, mask_ffff),
+                                                _mm512_srli_epi32(s, 16)));
+        n -= 32;
+      }
+      if (n > 0) {
+        __mmask32 k1 = (__mmask32)((1ULL << n) - 1);
+        __m512i s = _mm512_maskz_loadu_epi16(k1, p);
+        acc = _mm512_add_epi32(acc,
+                               _mm512_add_epi32(_mm512_and_si512(s, mask_ffff),
+                                                _mm512_srli_epi32(s, 16)));
+      }
+      uint32_t total = (uint32_t)_mm512_reduce_add_epi32(acc);
+      *dst_ptr++ = (uint8_t)((total * (uint32_t)sc) >> 16);
+      --dst_width;
+    }
+  }
+}
+#endif  // HAS_SCALEADDCOLS_AVX512BW
+
+#ifdef HAS_SCALEUVADDCOLS3_AVX2
+static const ulvec32 kPermUV3_0 = {0, 3, 6, 1, 4, 7, 2, 5};
+static const ulvec32 kPermUV3_1 = {3, 4, 5, 6, 7, 0, 1, 2};
+static const ulvec32 kPermUV3_2 = {6, 7, 0, 1, 2, 3, 4, 5};
+
+// Scale UV columns by 3 box filter.
+// Reads 96 bytes (24 UV pixels) and writes 16 bytes (8 UV pixels) per block.
+LIBYUV_TARGET_AVX2
+void ScaleUVAddCols3_AVX2(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv) {
+  const __m256i vscale = _mm256_set1_epi16((int16_t)scaleval);
+  const __m256i perm0 = _mm256_loadu_si256((const __m256i*)&kPermUV3_0);
+  const __m256i perm1 = _mm256_loadu_si256((const __m256i*)&kPermUV3_1);
+  const __m256i perm2 = _mm256_loadu_si256((const __m256i*)&kPermUV3_2);
+  while (dst_width >= 16) {
+    __m256i a0 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)src_uv), perm0);
+    __m256i a1 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 16)), perm0);
+    __m256i a2 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 32)), perm0);
+    __m256i c0 = _mm256_blend_epi32(_mm256_blend_epi32(a0, a1, 0x38), a2, 0xc0);
+    __m256i c1 = _mm256_permutevar8x32_epi32(
+        _mm256_blend_epi32(_mm256_blend_epi32(a0, a1, 0xc0), a2, 0x07), perm1);
+    __m256i c2 = _mm256_permutevar8x32_epi32(
+        _mm256_blend_epi32(_mm256_blend_epi32(a0, a1, 0x07), a2, 0x38), perm2);
+    __m256i sum0 = _mm256_mulhi_epu16(
+        _mm256_add_epi16(_mm256_add_epi16(c0, c1), c2), vscale);
+
+    __m256i b0 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 48)), perm0);
+    __m256i b1 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 64)), perm0);
+    __m256i b2 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 80)), perm0);
+    src_uv += 96;
+    __m256i d0 = _mm256_blend_epi32(_mm256_blend_epi32(b0, b1, 0x38), b2, 0xc0);
+    __m256i d1 = _mm256_permutevar8x32_epi32(
+        _mm256_blend_epi32(_mm256_blend_epi32(b0, b1, 0xc0), b2, 0x07), perm1);
+    __m256i d2 = _mm256_permutevar8x32_epi32(
+        _mm256_blend_epi32(_mm256_blend_epi32(b0, b1, 0x07), b2, 0x38), perm2);
+    __m256i sum1 = _mm256_mulhi_epu16(
+        _mm256_add_epi16(_mm256_add_epi16(d0, d1), d2), vscale);
+
+    __m256i packed =
+        _mm256_permute4x64_epi64(_mm256_packus_epi16(sum0, sum1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_uv, packed);
+    dst_uv += 32;
+    dst_width -= 16;
+  }
+  while (dst_width > 0) {
+    __m256i a0 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)src_uv), perm0);
+    __m256i a1 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 16)), perm0);
+    __m256i a2 = _mm256_permutevar8x32_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 32)), perm0);
+    src_uv += 48;
+    __m256i c0 = _mm256_blend_epi32(_mm256_blend_epi32(a0, a1, 0x38), a2, 0xc0);
+    __m256i c1 = _mm256_permutevar8x32_epi32(
+        _mm256_blend_epi32(_mm256_blend_epi32(a0, a1, 0xc0), a2, 0x07), perm1);
+    __m256i c2 = _mm256_permutevar8x32_epi32(
+        _mm256_blend_epi32(_mm256_blend_epi32(a0, a1, 0x07), a2, 0x38), perm2);
+    __m256i sum = _mm256_mulhi_epu16(
+        _mm256_add_epi16(_mm256_add_epi16(c0, c1), c2), vscale);
+    __m128i lo = _mm256_castsi256_si128(sum);
+    __m128i hi = _mm256_extracti128_si256(sum, 1);
+    _mm_storeu_si128((__m128i*)dst_uv, _mm_packus_epi16(lo, hi));
+    dst_uv += 16;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEUVADDCOLS3_AVX2
+
+#ifdef HAS_SCALEUVADDCOLS3_AVX512VBMI
+static const uint8_t kPerm512_Col0[16] = {0,  3,  6,  9, 12, 15, 18, 21,
+                                          24, 27, 30, 1, 4,  7,  10, 13};
+static const uint8_t kPerm512_Col1[16] = {1,  4,  7,  10, 13, 16, 19, 22,
+                                          25, 28, 31, 2,  5,  8,  11, 14};
+static const uint8_t kPerm512_Col2[16] = {2,  5,  8, 11, 14, 17, 20, 23,
+                                          26, 29, 0, 3,  6,  9,  12, 15};
+static const uint8_t kPackEvenBytes[64] = {
+    0,   2,   4,   6,   8,   10,  12,  14,  16,  18,  20,  22,  24,
+    26,  28,  30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  50,
+    52,  54,  56,  58,  60,  62,  64,  66,  68,  70,  72,  74,  76,
+    78,  80,  82,  84,  86,  88,  90,  92,  94,  96,  98,  100, 102,
+    104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126};
+
+// Scale UV columns by 3 box filter using AVX512VBMI.
+// Processes 32 UV pixels (384 input bytes -> 64 output bytes) per main loop
+// iteration, followed by a 16-pixel block and a k-masked tail (1..15 pixels).
+LIBYUV_TARGET_AVX512VBMI
+void ScaleUVAddCols3_AVX512VBMI(int dst_width,
+                                int scaleval,
+                                const uint16_t* src_uv,
+                                uint8_t* dst_uv) {
+  const __m512i vscale = _mm512_set1_epi16((int16_t)scaleval);
+  const __m512i col0 =
+      _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)kPerm512_Col0));
+  const __m512i col1 =
+      _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)kPerm512_Col1));
+  const __m512i col2 =
+      _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)kPerm512_Col2));
+  const __m512i pack_even = _mm512_loadu_si512((const __m512i*)kPackEvenBytes);
+  const __mmask16 k5 = 0xf800;
+  const __mmask16 k6 = 0xfc00;
+
+  while (dst_width >= 32) {
+    __m512i s0 = _mm512_loadu_si512((const __m512i*)src_uv);
+    __m512i s1 = _mm512_loadu_si512((const __m512i*)(src_uv + 32));
+    __m512i s2 = _mm512_loadu_si512((const __m512i*)(src_uv + 64));
+    __m512i a0 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col0, s1), k5, col0, s2);
+    __m512i a1 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col1, s1), k5, col1, s2);
+    __m512i a2 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col2, s1), k6, col2, s2);
+    __m512i sum0 = _mm512_mulhi_epu16(
+        _mm512_add_epi16(_mm512_add_epi16(a0, a1), a2), vscale);
+
+    __m512i s3 = _mm512_loadu_si512((const __m512i*)(src_uv + 96));
+    __m512i s4 = _mm512_loadu_si512((const __m512i*)(src_uv + 128));
+    __m512i s5 = _mm512_loadu_si512((const __m512i*)(src_uv + 160));
+    src_uv += 192;
+    __m512i b0 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s3, col0, s4), k5, col0, s5);
+    __m512i b1 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s3, col1, s4), k5, col1, s5);
+    __m512i b2 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s3, col2, s4), k6, col2, s5);
+    __m512i sum1 = _mm512_mulhi_epu16(
+        _mm512_add_epi16(_mm512_add_epi16(b0, b1), b2), vscale);
+
+    __m512i out = _mm512_permutex2var_epi8(sum0, pack_even, sum1);
+    _mm512_storeu_si512((__m512i*)dst_uv, out);
+    dst_uv += 64;
+    dst_width -= 32;
+  }
+  if (dst_width >= 16) {
+    __m512i s0 = _mm512_loadu_si512((const __m512i*)src_uv);
+    __m512i s1 = _mm512_loadu_si512((const __m512i*)(src_uv + 32));
+    __m512i s2 = _mm512_loadu_si512((const __m512i*)(src_uv + 64));
+    src_uv += 96;
+    __m512i a0 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col0, s1), k5, col0, s2);
+    __m512i a1 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col1, s1), k5, col1, s2);
+    __m512i a2 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col2, s1), k6, col2, s2);
+    __m512i sum0 = _mm512_mulhi_epu16(
+        _mm512_add_epi16(_mm512_add_epi16(a0, a1), a2), vscale);
+    _mm256_storeu_si256((__m256i*)dst_uv, _mm512_cvtepi16_epi8(sum0));
+    dst_uv += 32;
+    dst_width -= 16;
+  }
+  if (dst_width > 0) {
+    uint64_t m64 = (1ULL << (dst_width * 3)) - 1;
+    __mmask16 k1 = (__mmask16)m64;
+    __mmask16 k2 = (__mmask16)(m64 >> 16);
+    __mmask16 k3 = (__mmask16)(m64 >> 32);
+    __mmask16 k4 = (__mmask16)((1U << dst_width) - 1);
+    __m512i s0 = _mm512_maskz_loadu_epi32(k1, src_uv);
+    __m512i s1 = _mm512_maskz_loadu_epi32(k2, src_uv + 32);
+    __m512i s2 = _mm512_maskz_loadu_epi32(k3, src_uv + 64);
+    __m512i a0 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col0, s1), k5, col0, s2);
+    __m512i a1 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col1, s1), k5, col1, s2);
+    __m512i a2 = _mm512_mask_permutexvar_epi32(
+        _mm512_permutex2var_epi32(s0, col2, s1), k6, col2, s2);
+    __m512i sum0 = _mm512_mulhi_epu16(
+        _mm512_add_epi16(_mm512_add_epi16(a0, a1), a2), vscale);
+    _mm256_mask_storeu_epi16(dst_uv, k4, _mm512_cvtepi16_epi8(sum0));
+  }
+}
+#endif  // HAS_SCALEUVADDCOLS3_AVX512VBMI
+
+#undef LIBYUV_TARGET_SSSE3
+#undef LIBYUV_TARGET_AVX2
+#undef LIBYUV_TARGET_AVX512BW
+#undef LIBYUV_TARGET_AVX512VBMI
+
+#endif  // !defined(LIBYUV_DISABLE_X86) && ...
 
 #ifdef __cplusplus
 }  // extern "C"

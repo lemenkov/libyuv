@@ -637,6 +637,74 @@ void ScaleARGBColsUp2_WASMSIMD(uint8_t* dst_argb,
 }
 #endif  // HAS_SCALEARGBCOLSUP2_WASMSIMD
 
+#ifdef HAS_SCALEADDROW_WASMSIMD
+// Reads 16 bytes and accumulates to 16 shorts at a time.
+void ScaleAddRow_WASMSIMD(const uint8_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int src_width) {
+  while (src_width > 0) {
+    v128_t s = wasm_v128_load(src_ptr);
+    v128_t d0 = wasm_v128_load(dst_ptr);
+    v128_t d1 = wasm_v128_load(dst_ptr + 8);
+    d0 = wasm_i16x8_add(d0, wasm_u16x8_extend_low_u8x16(s));
+    d1 = wasm_i16x8_add(d1, wasm_u16x8_extend_high_u8x16(s));
+    wasm_v128_store(dst_ptr, d0);
+    wasm_v128_store(dst_ptr + 8, d1);
+    src_ptr += 16;
+    dst_ptr += 16;
+    src_width -= 16;
+  }
+}
+#endif  // HAS_SCALEADDROW_WASMSIMD
+
+#ifdef HAS_SCALEUVADDCOLS3_WASMSIMD
+// Reads 24 UV pixels (48 uint16_t) and writes 8 UV pixels (16 bytes).
+void ScaleUVAddCols3_WASMSIMD(int dst_width,
+                              int scaleval,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv) {
+  const v128_t scale = wasm_i16x8_splat((int16_t)scaleval);
+  while (dst_width > 0) {
+    v128_t s0 = wasm_v128_load(src_uv);
+    v128_t s1 = wasm_v128_load(src_uv + 8);
+    v128_t s2 = wasm_v128_load(src_uv + 16);
+    v128_t s3 = wasm_v128_load(src_uv + 24);
+    v128_t s4 = wasm_v128_load(src_uv + 32);
+    v128_t s5 = wasm_v128_load(src_uv + 40);
+    src_uv += 48;
+
+    // Group 0..3 of 3 UV pairs from s0, s1, s2 (dwords 0..11)
+    v128_t a0 = wasm_i32x4_shuffle(s0, s1, 0, 3, 6, 1);
+    v128_t b0 = wasm_i32x4_shuffle(s0, s1, 1, 4, 7, 2);
+    v128_t c0 = wasm_i32x4_shuffle(s0, s1, 2, 5, 0, 3);
+    a0 = wasm_i32x4_shuffle(a0, s2, 0, 1, 2, 5);
+    b0 = wasm_i32x4_shuffle(b0, s2, 0, 1, 2, 6);
+    c0 = wasm_i32x4_shuffle(c0, s2, 0, 1, 4, 7);
+    v128_t sum0 = wasm_i16x8_add(wasm_i16x8_add(a0, b0), c0);
+
+    // Group 4..7 of 3 UV pairs from s3, s4, s5 (dwords 0..11)
+    v128_t a1 = wasm_i32x4_shuffle(s3, s4, 0, 3, 6, 1);
+    v128_t b1 = wasm_i32x4_shuffle(s3, s4, 1, 4, 7, 2);
+    v128_t c1 = wasm_i32x4_shuffle(s3, s4, 2, 5, 0, 3);
+    a1 = wasm_i32x4_shuffle(a1, s5, 0, 1, 2, 5);
+    b1 = wasm_i32x4_shuffle(b1, s5, 0, 1, 2, 6);
+    c1 = wasm_i32x4_shuffle(c1, s5, 0, 1, 4, 7);
+    v128_t sum1 = wasm_i16x8_add(wasm_i16x8_add(a1, b1), c1);
+
+    // Multiply unsigned 16-bit sums by scaleval and shift right by 16.
+    v128_t lo0 = wasm_u32x4_shr(wasm_u32x4_extmul_low_u16x8(sum0, scale), 16);
+    v128_t hi0 = wasm_u32x4_shr(wasm_u32x4_extmul_high_u16x8(sum0, scale), 16);
+    v128_t lo1 = wasm_u32x4_shr(wasm_u32x4_extmul_low_u16x8(sum1, scale), 16);
+    v128_t hi1 = wasm_u32x4_shr(wasm_u32x4_extmul_high_u16x8(sum1, scale), 16);
+    v128_t p0 = wasm_i16x8_narrow_i32x4(lo0, hi0);
+    v128_t p1 = wasm_i16x8_narrow_i32x4(lo1, hi1);
+    wasm_v128_store(dst_uv, wasm_u8x16_narrow_i16x8(p0, p1));
+    dst_uv += 16;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEUVADDCOLS3_WASMSIMD
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

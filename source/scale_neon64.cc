@@ -1551,6 +1551,38 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
       : "memory", "cc", "v0", "v1", "v2", "v3");
 }
 
+// Scale UV columns by 3 box filter.
+// Reads 96 bytes (24 UV pixels) and writes 16 bytes (8 UV pixels) per loop.
+void ScaleUVAddCols3_NEON(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv) {
+  asm volatile(
+      "dup         v6.8h, %w[scaleval]           \n"
+      "1:                                        \n"
+      "ld3         {v0.4s, v1.4s, v2.4s}, [%[src_uv]], #48 \n"
+      "ld3         {v3.4s, v4.4s, v5.4s}, [%[src_uv]], #48 \n"
+      "subs        %w[dst_width], %w[dst_width], #8 \n"
+      "add         v0.8h, v0.8h, v1.8h           \n"
+      "add         v3.8h, v3.8h, v4.8h           \n"
+      "add         v0.8h, v0.8h, v2.8h           \n"
+      "add         v3.8h, v3.8h, v5.8h           \n"
+      "umull       v1.4s, v0.4h, v6.4h           \n"
+      "umull2      v2.4s, v0.8h, v6.8h           \n"
+      "umull       v4.4s, v3.4h, v6.4h           \n"
+      "umull2      v5.4s, v3.8h, v6.8h           \n"
+      "uzp2        v0.8h, v1.8h, v2.8h           \n"
+      "uzp2        v3.8h, v4.8h, v5.8h           \n"
+      "uzp1        v0.16b, v0.16b, v3.16b        \n"
+      "st1         {v0.16b}, [%[dst_uv]], #16    \n"
+      "b.gt        1b                            \n"
+      : [src_uv] "+r"(src_uv),       // %[src_uv]
+        [dst_uv] "+r"(dst_uv),       // %[dst_uv]
+        [dst_width] "+r"(dst_width)  // %[dst_width]
+      : [scaleval] "r"(scaleval)     // %[scaleval]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

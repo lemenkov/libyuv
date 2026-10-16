@@ -554,6 +554,71 @@ __arm_locally_streaming void ScaleARGBRowDown2Box_SME(const uint8_t* src_argb,
         "p1");
 }
 
+// Scale UV columns by 3 box filter using Streaming SVE.
+__arm_locally_streaming void ScaleUVAddCols3_SME(int dst_width,
+                                                 int scaleval,
+                                                 const uint16_t* src_uv,
+                                                 uint8_t* dst_uv) {
+  // Streaming-SVE only, no use of ZA tile.
+  int vl;
+  int vl_w;
+  asm volatile(
+      "cnth     %x[vl]                                       \n"
+      "cntw     %x[vl_w]                                     \n"
+      "dup      z6.h, %w[scaleval]                           \n"
+      "ptrue    p3.h                                         \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.lt     2f                                           \n"
+
+      "ptrue    p0.s                                         \n"
+      "ptrue    p1.h                                         \n"
+      "1:                                                    \n"
+      "ld3w     {z0.s, z1.s, z2.s}, p0/z, [%[src_uv]]        \n"
+      "incb     %[src_uv], all, mul #3                       \n"
+      "ld3w     {z3.s, z4.s, z5.s}, p0/z, [%[src_uv]]        \n"
+      "incb     %[src_uv], all, mul #3                       \n"
+      "subs     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "add      z0.h, z0.h, z1.h                             \n"
+      "add      z3.h, z3.h, z4.h                             \n"
+      "add      z0.h, z0.h, z2.h                             \n"
+      "add      z3.h, z3.h, z5.h                             \n"
+      "umulh    z0.h, p3/m, z0.h, z6.h                       \n"
+      "umulh    z3.h, p3/m, z3.h, z6.h                       \n"
+      "uzp1     z0.b, z0.b, z3.b                             \n"
+      "st1h     {z0.h}, p1, [%[dst_uv]]                      \n"
+      "incb     %[dst_uv]                                    \n"
+      "b.ge     1b                                           \n"
+
+      "2:                                                    \n"
+      "adds     %w[dst_width], %w[dst_width], %w[vl]         \n"
+      "b.eq     99f                                          \n"
+
+      "whilelt  p0.s, wzr, %w[dst_width]                     \n"
+      "whilelt  p2.s, %w[vl_w], %w[dst_width]                \n"
+      "whilelt  p1.h, wzr, %w[dst_width]                     \n"
+      "ld3w     {z0.s, z1.s, z2.s}, p0/z, [%[src_uv]]        \n"
+      "incb     %[src_uv], all, mul #3                       \n"
+      "ld3w     {z3.s, z4.s, z5.s}, p2/z, [%[src_uv]]        \n"
+      "add      z0.h, z0.h, z1.h                             \n"
+      "add      z3.h, z3.h, z4.h                             \n"
+      "add      z0.h, z0.h, z2.h                             \n"
+      "add      z3.h, z3.h, z5.h                             \n"
+      "umulh    z0.h, p3/m, z0.h, z6.h                       \n"
+      "umulh    z3.h, p3/m, z3.h, z6.h                       \n"
+      "uzp1     z0.b, z0.b, z3.b                             \n"
+      "st1h     {z0.h}, p1, [%[dst_uv]]                      \n"
+
+      "99:                                                   \n"
+      : [src_uv] "+r"(src_uv),        // %[src_uv]
+        [dst_uv] "+r"(dst_uv),        // %[dst_uv]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [vl] "=&r"(vl),               // %[vl]
+        [vl_w] "=&r"(vl_w)            // %[vl_w]
+      : [scaleval] "r"(scaleval)      // %[scaleval]
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "p0", "p1",
+        "p2", "p3");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 

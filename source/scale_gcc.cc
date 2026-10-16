@@ -3708,6 +3708,316 @@ void ScaleUVRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
 }
 #endif
 
+#ifdef HAS_SCALEUVADDCOLS3_AVX2
+static const ulvec32 kPermUV3_0 = {0, 3, 6, 1, 4, 7, 2, 5};
+static const ulvec32 kPermUV3_1 = {3, 4, 5, 6, 7, 0, 1, 2};
+static const ulvec32 kPermUV3_2 = {6, 7, 0, 1, 2, 3, 4, 5};
+
+// Scale UV columns by 3 box filter.
+// Reads 96 bytes (24 UV pixels) and writes 16 bytes (8 UV pixels) per block.
+void ScaleUVAddCols3_AVX2(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv) {
+#if defined(__x86_64__)
+  asm volatile(
+      "vmovd       %k[scaleval],%%xmm7           \n"
+      "vpbroadcastw %%xmm7,%%ymm7                \n"
+      "vmovdqa     %[kPerm0],%%ymm4              \n"
+      "vmovdqa     %[kPerm1],%%ymm5              \n"
+      "vmovdqa     %[kPerm2],%%ymm6              \n"
+      "sub         $0x10,%[dst_width]            \n"
+      "jl          2f                            \n"
+
+      // Process 16 output UV pixels (192 input bytes -> 32 output bytes).
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%[src_uv]),%%ymm0            \n"
+      "vmovdqu     0x20(%[src_uv]),%%ymm1        \n"
+      "vpermd      %%ymm0,%%ymm4,%%ymm0          \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm3    \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm0,%%ymm2    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vmovdqu     0x40(%[src_uv]),%%ymm1        \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm3,%%ymm3    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm2,%%ymm2    \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vpermd      %%ymm2,%%ymm5,%%ymm2          \n"
+      "vpermd      %%ymm0,%%ymm6,%%ymm0          \n"
+      "vpaddw      %%ymm2,%%ymm3,%%ymm3          \n"
+      "vpaddw      %%ymm0,%%ymm3,%%ymm8          \n"
+      "vpmulhuw    %%ymm7,%%ymm8,%%ymm8          \n"
+
+      "vmovdqu     0x60(%[src_uv]),%%ymm0        \n"
+      "vmovdqu     0x80(%[src_uv]),%%ymm1        \n"
+      "lea         0xc0(%[src_uv]),%[src_uv]     \n"
+      "vpermd      %%ymm0,%%ymm4,%%ymm0          \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm3    \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm0,%%ymm2    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vmovdqu     -0x20(%[src_uv]),%%ymm1       \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm3,%%ymm3    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm2,%%ymm2    \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vpermd      %%ymm2,%%ymm5,%%ymm2          \n"
+      "vpermd      %%ymm0,%%ymm6,%%ymm0          \n"
+      "vpaddw      %%ymm2,%%ymm3,%%ymm3          \n"
+      "vpaddw      %%ymm0,%%ymm3,%%ymm3          \n"
+      "vpmulhuw    %%ymm7,%%ymm3,%%ymm3          \n"
+
+      "vpackuswb   %%ymm3,%%ymm8,%%ymm0          \n"
+      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+      "vmovdqu     %%ymm0,(%[dst_uv])            \n"
+      "lea         0x20(%[dst_uv]),%[dst_uv]     \n"
+      "sub         $0x10,%[dst_width]            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x10,%[dst_width]            \n"
+      "jle         99f                           \n"
+
+      // 8-pixel remainder.
+      "vmovdqu     (%[src_uv]),%%ymm0            \n"
+      "vmovdqu     0x20(%[src_uv]),%%ymm1        \n"
+      "vpermd      %%ymm0,%%ymm4,%%ymm0          \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm3    \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm0,%%ymm2    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vmovdqu     0x40(%[src_uv]),%%ymm1        \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm3,%%ymm3    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm2,%%ymm2    \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vpermd      %%ymm2,%%ymm5,%%ymm2          \n"
+      "vpermd      %%ymm0,%%ymm6,%%ymm0          \n"
+      "vpaddw      %%ymm2,%%ymm3,%%ymm3          \n"
+      "vpaddw      %%ymm0,%%ymm3,%%ymm3          \n"
+      "vpmulhuw    %%ymm7,%%ymm3,%%ymm3          \n"
+      "vextracti128 $1,%%ymm3,%%xmm2             \n"
+      "vpackuswb   %%xmm2,%%xmm3,%%xmm3          \n"
+      "vmovdqu     %%xmm3,(%[dst_uv])            \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : [src_uv] "+r"(src_uv),       // %[src_uv]
+        [dst_uv] "+r"(dst_uv),       // %[dst_uv]
+        [dst_width] "+r"(dst_width)  // %[dst_width]
+      : [scaleval] "r"(scaleval),    // %[scaleval]
+        [kPerm0] "m"(kPermUV3_0),    // %[kPerm0]
+        [kPerm1] "m"(kPermUV3_1),    // %[kPerm1]
+        [kPerm2] "m"(kPermUV3_2)     // %[kPerm2]
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7", "xmm8");
+#else   // defined(__x86_64__)
+  asm volatile(
+      "vmovd       %[scaleval],%%xmm7            \n"
+      "vpbroadcastw %%xmm7,%%ymm7                \n"
+      "vmovdqa     %[kPerm0],%%ymm4              \n"
+      "vmovdqa     %[kPerm1],%%ymm5              \n"
+      "vmovdqa     %[kPerm2],%%ymm6              \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu     (%[src_uv]),%%ymm0            \n"
+      "vmovdqu     0x20(%[src_uv]),%%ymm1        \n"
+      "vpermd      %%ymm0,%%ymm4,%%ymm0          \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm3    \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm0,%%ymm2    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vmovdqu     0x40(%[src_uv]),%%ymm1        \n"
+      "lea         0x60(%[src_uv]),%[src_uv]     \n"
+      "vpermd      %%ymm1,%%ymm4,%%ymm1          \n"
+      "vpblendd    $0xc0,%%ymm1,%%ymm3,%%ymm3    \n"
+      "vpblendd    $0x07,%%ymm1,%%ymm2,%%ymm2    \n"
+      "vpblendd    $0x38,%%ymm1,%%ymm0,%%ymm0    \n"
+      "vpermd      %%ymm2,%%ymm5,%%ymm2          \n"
+      "vpermd      %%ymm0,%%ymm6,%%ymm0          \n"
+      "vpaddw      %%ymm2,%%ymm3,%%ymm3          \n"
+      "vpaddw      %%ymm0,%%ymm3,%%ymm3          \n"
+      "vpmulhuw    %%ymm7,%%ymm3,%%ymm3          \n"
+      "vextracti128 $1,%%ymm3,%%xmm2             \n"
+      "vpackuswb   %%xmm2,%%xmm3,%%xmm3          \n"
+      "vmovdqu     %%xmm3,(%[dst_uv])            \n"
+      "lea         0x10(%[dst_uv]),%[dst_uv]     \n"
+      "sub         $0x8,%[dst_width]             \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : [src_uv] "+r"(src_uv),       // %[src_uv]
+        [dst_uv] "+r"(dst_uv),       // %[dst_uv]
+        [dst_width] "+r"(dst_width)  // %[dst_width]
+      : [scaleval] "rm"(scaleval),   // %[scaleval]
+        [kPerm0] "m"(kPermUV3_0),    // %[kPerm0]
+        [kPerm1] "m"(kPermUV3_1),    // %[kPerm1]
+        [kPerm2] "m"(kPermUV3_2)     // %[kPerm2]
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+#endif  // defined(__x86_64__)
+}
+#endif  // HAS_SCALEUVADDCOLS3_AVX2
+
+#ifdef HAS_SCALEUVADDCOLS3_AVX512VBMI
+static const uint8_t kPerm512_Col0[16] = {0,  3,  6,  9, 12, 15, 18, 21,
+                                          24, 27, 30, 1, 4,  7,  10, 13};
+static const uint8_t kPerm512_Col1[16] = {1,  4,  7,  10, 13, 16, 19, 22,
+                                          25, 28, 31, 2,  5,  8,  11, 14};
+static const uint8_t kPerm512_Col2[16] = {2,  5,  8, 11, 14, 17, 20, 23,
+                                          26, 29, 0, 3,  6,  9,  12, 15};
+static const uint8_t kPackEvenBytes[64] = {
+    0,   2,   4,   6,   8,   10,  12,  14,  16,  18,  20,  22,  24,
+    26,  28,  30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  50,
+    52,  54,  56,  58,  60,  62,  64,  66,  68,  70,  72,  74,  76,
+    78,  80,  82,  84,  86,  88,  90,  92,  94,  96,  98,  100, 102,
+    104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126};
+
+// Scale UV columns by 3 box filter using AVX512VBMI.
+// Processes 32 UV pixels (384 input bytes -> 64 output bytes) per main loop
+// iteration, followed by a 16-pixel block and a k-masked tail (1..15 pixels).
+void ScaleUVAddCols3_AVX512VBMI(int dst_width,
+                                int scaleval,
+                                const uint16_t* src_uv,
+                                uint8_t* dst_uv) {
+  intptr_t temp, mask;
+  asm volatile(
+      "vpbroadcastw %k[scaleval],%%zmm20         \n"
+      "vpmovzxbd   %[kCol0],%%zmm16              \n"
+      "vpmovzxbd   %[kCol1],%%zmm17              \n"
+      "vpmovzxbd   %[kCol2],%%zmm18              \n"
+      "vmovdqu8    %[kPack],%%zmm19              \n"
+      "mov         $0xf800,%k[temp]              \n"
+      "kmovw       %k[temp],%%k5                 \n"
+      "mov         $0xfc00,%k[temp]              \n"
+      "kmovw       %k[temp],%%k6                 \n"
+
+      "sub         $0x20,%[dst_width]            \n"
+      "jl          2f                            \n"
+
+      // Main loop: 32 output UV pixels (64 output bytes) per iteration.
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu32   (%[src_uv]),%%zmm0            \n"
+      "vmovdqu32   0x40(%[src_uv]),%%zmm1        \n"
+      "vmovdqu32   0x80(%[src_uv]),%%zmm2        \n"
+      "vmovdqa32   %%zmm16,%%zmm3                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm3          \n"
+      "vmovdqa32   %%zmm17,%%zmm4                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm4          \n"
+      "vmovdqa32   %%zmm18,%%zmm5                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm5          \n"
+      "vpermd      %%zmm2,%%zmm16,%%zmm3%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm17,%%zmm4%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm18,%%zmm5%{%%k6%} \n"
+      "vpaddw      %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpaddw      %%zmm5,%%zmm3,%%zmm3          \n"
+      "vpmulhuw    %%zmm20,%%zmm3,%%zmm0         \n"
+
+      "vmovdqu32   0xc0(%[src_uv]),%%zmm6        \n"
+      "vmovdqu32   0x100(%[src_uv]),%%zmm1       \n"
+      "vmovdqu32   0x140(%[src_uv]),%%zmm2       \n"
+      "lea         0x180(%[src_uv]),%[src_uv]    \n"
+      "vmovdqa32   %%zmm16,%%zmm3                \n"
+      "vpermi2d    %%zmm1,%%zmm6,%%zmm3          \n"
+      "vmovdqa32   %%zmm17,%%zmm4                \n"
+      "vpermi2d    %%zmm1,%%zmm6,%%zmm4          \n"
+      "vmovdqa32   %%zmm18,%%zmm5                \n"
+      "vpermi2d    %%zmm1,%%zmm6,%%zmm5          \n"
+      "vpermd      %%zmm2,%%zmm16,%%zmm3%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm17,%%zmm4%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm18,%%zmm5%{%%k6%} \n"
+      "vpaddw      %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpaddw      %%zmm5,%%zmm3,%%zmm3          \n"
+      "vpmulhuw    %%zmm20,%%zmm3,%%zmm3         \n"
+
+      "vmovdqa64   %%zmm19,%%zmm2                \n"
+      "vpermi2b    %%zmm3,%%zmm0,%%zmm2          \n"
+      "vmovdqu8    %%zmm2,(%[dst_uv])            \n"
+      "lea         0x40(%[dst_uv]),%[dst_uv]     \n"
+      "sub         $0x20,%[dst_width]            \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x20,%[dst_width]            \n"
+      "jle         99f                           \n"
+      "cmp         $0x10,%[dst_width]            \n"
+      "jl          3f                            \n"
+
+      // 16-pixel half-block (32 output bytes).
+      "vmovdqu32   (%[src_uv]),%%zmm0            \n"
+      "vmovdqu32   0x40(%[src_uv]),%%zmm1        \n"
+      "vmovdqu32   0x80(%[src_uv]),%%zmm2        \n"
+      "lea         0xc0(%[src_uv]),%[src_uv]     \n"
+      "vmovdqa32   %%zmm16,%%zmm3                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm3          \n"
+      "vmovdqa32   %%zmm17,%%zmm4                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm4          \n"
+      "vmovdqa32   %%zmm18,%%zmm5                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm5          \n"
+      "vpermd      %%zmm2,%%zmm16,%%zmm3%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm17,%%zmm4%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm18,%%zmm5%{%%k6%} \n"
+      "vpaddw      %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpaddw      %%zmm5,%%zmm3,%%zmm3          \n"
+      "vpmulhuw    %%zmm20,%%zmm3,%%zmm0         \n"
+      "vpmovwb     %%zmm0,(%[dst_uv])            \n"
+      "lea         0x20(%[dst_uv]),%[dst_uv]     \n"
+      "sub         $0x10,%[dst_width]            \n"
+      "jle         99f                           \n"
+
+      // Tail: 1..15 output UV pixels (3..45 input dwords, 2..30 output bytes).
+      "3:          \n"
+      "lea         (%q[dst_width],%q[dst_width],2),%q[temp] \n"
+      "mov         $-1,%q[mask]                  \n"
+      "bzhi        %q[temp],%q[mask],%q[mask]    \n"
+      "kmovw       %k[mask],%%k1                 \n"
+      "shr         $16,%q[mask]                  \n"
+      "kmovw       %k[mask],%%k2                 \n"
+      "shr         $16,%q[mask]                  \n"
+      "kmovw       %k[mask],%%k3                 \n"
+      "mov         $-1,%q[mask]                  \n"
+      "bzhi        %q[dst_width],%q[mask],%q[mask] \n"
+      "kmovw       %k[mask],%%k4                 \n"
+
+      "vmovdqu32   (%[src_uv]),%%zmm0%{%%k1%}%{z%}     \n"
+      "vmovdqu32   0x40(%[src_uv]),%%zmm1%{%%k2%}%{z%} \n"
+      "vmovdqu32   0x80(%[src_uv]),%%zmm2%{%%k3%}%{z%} \n"
+      "vmovdqa32   %%zmm16,%%zmm3                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm3          \n"
+      "vmovdqa32   %%zmm17,%%zmm4                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm4          \n"
+      "vmovdqa32   %%zmm18,%%zmm5                \n"
+      "vpermi2d    %%zmm1,%%zmm0,%%zmm5          \n"
+      "vpermd      %%zmm2,%%zmm16,%%zmm3%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm17,%%zmm4%{%%k5%} \n"
+      "vpermd      %%zmm2,%%zmm18,%%zmm5%{%%k6%} \n"
+      "vpaddw      %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpaddw      %%zmm5,%%zmm3,%%zmm3          \n"
+      "vpmulhuw    %%zmm20,%%zmm3,%%zmm0         \n"
+      "vpmovwb     %%zmm0,%%ymm0                 \n"
+      "vmovdqu16   %%ymm0,(%[dst_uv])%{%%k4%}    \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : [src_uv] "+r"(src_uv),        // %[src_uv]
+        [dst_uv] "+r"(dst_uv),        // %[dst_uv]
+        [dst_width] "+r"(dst_width),  // %[dst_width]
+        [temp] "=&r"(temp),           // %[temp]
+        [mask] "=&r"(mask)            // %[mask]
+      : [scaleval] "r"(scaleval),     // %[scaleval]
+        [kCol0] "m"(kPerm512_Col0),   // %[kCol0]
+        [kCol1] "m"(kPerm512_Col1),   // %[kCol1]
+        [kCol2] "m"(kPerm512_Col2),   // %[kCol2]
+        [kPack] "m"(kPackEvenBytes)   // %[kPack]
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm16", "xmm17", "xmm18", "xmm19", "xmm20", "k1", "k2", "k3", "k4",
+        "k5", "k6");
+}
+#endif  // HAS_SCALEUVADDCOLS3_AVX512VBMI
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

@@ -28,7 +28,6 @@ extern "C" {
                           !defined(LIBYUV_ENABLE_ROWWIN)))
 #define HAS_FIXEDDIV1_X86
 #define HAS_FIXEDDIV_X86
-#define HAS_SCALEADDROW_SSE2
 #define HAS_SCALEARGBCOLS_SSE2
 #define HAS_SCALEARGBCOLSUP2_SSE2
 #define HAS_SCALEARGBFILTERCOLS_SSSE3
@@ -38,7 +37,6 @@ extern "C" {
 #define HAS_SCALEFILTERCOLS_SSSE3
 #define HAS_SCALEROWDOWN2_SSSE3
 #define HAS_SCALEROWDOWN34_SSSE3
-#define HAS_SCALEROWDOWN38_SSSE3
 #define HAS_SCALEROWDOWN4_SSSE3
 #endif
 
@@ -47,6 +45,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) &&               \
     (defined(__x86_64__) || defined(__i386__)) && \
     !defined(LIBYUV_ENABLE_ROWWIN)
+#define HAS_SCALEADDROW_SSE2
+#define HAS_SCALEROWDOWN38_SSSE3
 #define HAS_SCALEUVROWDOWN2BOX_SSSE3
 #define HAS_SCALEROWUP2_LINEAR_SSE2
 #define HAS_SCALEROWUP2_LINEAR_SSSE3
@@ -65,9 +65,12 @@ extern "C" {
 // The following are available for gcc/clang x86 platforms, but
 // require clang 3.4 or gcc 4.7.
 // TODO(fbarchard): Port to Visual C
-#if !defined(LIBYUV_DISABLE_X86) &&               \
-    (defined(__x86_64__) || defined(__i386__)) && \
-    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
+#if !defined(LIBYUV_DISABLE_X86) &&                       \
+    (defined(__x86_64__) || defined(__i386__)) &&         \
+    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN)
+#define HAS_SCALEADDROW_AVX2
+#define HAS_SCALEUVADDCOLS3_AVX2
 #define HAS_SCALEUVROWDOWN2BOX_AVX2
 #define HAS_SCALEROWUP2_LINEAR_AVX2
 #define HAS_SCALEROWUP2_BILINEAR_AVX2
@@ -87,7 +90,6 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) &&                          \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2) || \
      defined(GCC_HAS_AVX2))
-#define HAS_SCALEADDROW_AVX2
 #define HAS_SCALEROWDOWN2_AVX2
 #define HAS_SCALEROWDOWN4_AVX2
 #endif
@@ -98,7 +100,26 @@ extern "C" {
     !defined(LIBYUV_ENABLE_ROWWIN)
 #define HAS_SCALEADDROW_AVX512BW
 #define HAS_SCALEADDCOLS_AVX512BW
+#define HAS_SCALEUVADDCOLS3_AVX512VBMI
 #define HAS_SCALEROWDOWN2_AVX512BW
+#endif
+
+// The following are available for Visual C 32/64 bit, and for clang with
+// LIBYUV_ENABLE_ROWWIN, which is also enabled for MemorySanitizer:
+#if !defined(LIBYUV_DISABLE_X86) &&                                 \
+    (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
+     defined(_M_IX86)) &&                                           \
+    ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
+     defined(LIBYUV_ENABLE_ROWWIN))
+#define HAS_SCALEADDROW_SSE2
+#define HAS_SCALEROWDOWN38_SSSE3
+#define HAS_SCALEADDROW_AVX2
+#define HAS_SCALEUVADDCOLS3_AVX2
+#if defined(__x86_64__) || defined(_M_X64)
+#define HAS_SCALEADDROW_AVX512BW
+#define HAS_SCALEADDCOLS_AVX512BW
+#define HAS_SCALEUVADDCOLS3_AVX512VBMI
+#endif
 #endif
 
 // The following are available on Neon platforms:
@@ -114,6 +135,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_NEON
 #define HAS_SCALEROWDOWN38_NEON
 #define HAS_SCALEROWDOWN4_NEON
+#define HAS_SCALEUVADDCOLS3_NEON
 #define HAS_SCALEUVROWDOWN2_NEON
 #define HAS_SCALEUVROWDOWN2LINEAR_NEON
 #define HAS_SCALEUVROWDOWN2BOX_NEON
@@ -141,6 +163,7 @@ extern "C" {
 #define HAS_SCALEARGBROWDOWN2_SME
 #define HAS_SCALEROWDOWN2_16_SME
 #define HAS_SCALEROWDOWN2_SME
+#define HAS_SCALEUVADDCOLS3_SME
 #define HAS_SCALEUVROWDOWN2BOX_SME
 #define HAS_SCALEUVROWDOWN2LINEAR_SME
 #define HAS_SCALEUVROWDOWN2_SME
@@ -157,6 +180,7 @@ extern "C" {
 #define HAS_SCALEARGBCOLS_LSX
 #define HAS_SCALEARGBFILTERCOLS_LSX
 #define HAS_SCALEROWDOWN34_LSX
+#define HAS_SCALEUVADDCOLS3_LSX
 #endif
 
 #if !defined(LIBYUV_DISABLE_RVV) &&                          \
@@ -192,6 +216,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN2LINEAR_RVV
 #define HAS_SCALEROWDOWN4_RVV
 #define HAS_SCALEROWDOWN4BOX_RVV
+#define HAS_SCALEUVADDCOLS3_RVV
 #define HAS_SCALEUVROWDOWN2_RVV
 #define HAS_SCALEUVROWDOWN2BOX_RVV
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
@@ -200,6 +225,7 @@ extern "C" {
 
 // The following are available for WebAssembly SIMD128:
 #if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#define HAS_SCALEADDROW_WASMSIMD
 #define HAS_SCALEARGBCOLS_WASMSIMD
 #define HAS_SCALEARGBCOLSUP2_WASMSIMD
 #define HAS_SCALEARGBFILTERCOLS_WASMSIMD
@@ -210,6 +236,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_WASMSIMD
 #define HAS_SCALEROWDOWN38_WASMSIMD
 #define HAS_SCALEROWDOWN4_WASMSIMD
+#define HAS_SCALEUVADDCOLS3_WASMSIMD
 #endif
 
 // The following are available for Hexagon HVX:
@@ -219,6 +246,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN2_16_HVX
 #define HAS_SCALEROWDOWN2_HVX
 #define HAS_SCALEROWDOWN4_HVX
+#define HAS_SCALEUVADDCOLS3_HVX
 #define HAS_SCALEUVROWDOWN2_HVX
 #define HAS_SCALEUVROWDOWN2BOX_HVX
 #define HAS_SCALEUVROWDOWN2LINEAR_HVX
@@ -581,6 +609,10 @@ void ScaleUVFilterCols64_C(uint8_t* dst_uv,
                            int dst_width,
                            int x32,
                            int dx);
+void ScaleUVAddCols3_C(int dst_width,
+                       int scaleval,
+                       const uint16_t* src_uv,
+                       uint8_t* dst_uv);
 
 // Specialized scalers for x86.
 void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
@@ -1333,6 +1365,54 @@ void ScaleUVRowUp2_Bilinear_16_Any_NEON(const uint16_t* src_ptr,
                                         uint16_t* dst_ptr,
                                         ptrdiff_t dst_stride,
                                         int dst_width);
+void ScaleUVAddCols3_AVX2(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv);
+void ScaleUVAddCols3_Any_AVX2(int dst_width,
+                              int scaleval,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv);
+void ScaleUVAddCols3_AVX512VBMI(int dst_width,
+                                int scaleval,
+                                const uint16_t* src_uv,
+                                uint8_t* dst_uv);
+void ScaleUVAddCols3_NEON(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv);
+void ScaleUVAddCols3_Any_NEON(int dst_width,
+                              int scaleval,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv);
+void ScaleUVAddCols3_SME(int dst_width,
+                         int scaleval,
+                         const uint16_t* src_uv,
+                         uint8_t* dst_uv);
+void ScaleUVAddCols3_RVV(int dst_width,
+                         int scaleval,
+                         const uint16_t* src_uv,
+                         uint8_t* dst_uv);
+void ScaleUVAddCols3_LSX(int dst_width,
+                         int scaleval,
+                         const uint16_t* src_uv,
+                         uint8_t* dst_uv);
+void ScaleUVAddCols3_Any_LSX(int dst_width,
+                             int scaleval,
+                             const uint16_t* src_uv,
+                             uint8_t* dst_uv);
+void ScaleUVAddCols3_WASMSIMD(int dst_width,
+                              int scaleval,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv);
+void ScaleUVAddCols3_Any_WASMSIMD(int dst_width,
+                                  int scaleval,
+                                  const uint16_t* src_uv,
+                                  uint8_t* dst_uv);
+void ScaleUVAddCols3_HVX(int dst_width,
+                         int scaleval,
+                         const uint16_t* src_uv,
+                         uint8_t* dst_uv);
 
 // ScaleRowDown2Box also used by planar functions
 // NEON/SME downscalers with interpolation.
@@ -1815,6 +1895,12 @@ void ScaleRowDown38_2_Box_Any_WASMSIMD(const uint8_t* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8_t* dst_ptr,
                                        int dst_width);
+void ScaleAddRow_WASMSIMD(const uint8_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int src_width);
+void ScaleAddRow_Any_WASMSIMD(const uint8_t* src_ptr,
+                              uint16_t* dst_ptr,
+                              int src_width);
 void ScaleFilterCols_WASMSIMD(uint8_t* dst_ptr,
                               const uint8_t* src_ptr,
                               int dst_width,

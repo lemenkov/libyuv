@@ -1366,6 +1366,22 @@ void ScaleUVFilterCols64_C(uint8_t* dst_uv,
 }
 #undef BLENDER1
 
+// Scale UV columns by 3 box filter.
+void ScaleUVAddCols3_C(int dst_width,
+                       int scaleval,
+                       const uint16_t* src_uv,
+                       uint8_t* dst_uv) {
+  int i;
+  for (i = 0; i < dst_width; ++i) {
+    uint32_t u = src_uv[0] + src_uv[2] + src_uv[4];
+    uint32_t v = src_uv[1] + src_uv[3] + src_uv[5];
+    src_uv += 6;
+    dst_uv[0] = (uint8_t)((u * scaleval) >> 16);
+    dst_uv[1] = (uint8_t)((v * scaleval) >> 16);
+    dst_uv += 2;
+  }
+}
+
 // Scale plane vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width,

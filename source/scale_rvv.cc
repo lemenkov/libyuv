@@ -1304,6 +1304,42 @@ void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
 }
 #endif
 
+#ifdef HAS_SCALEUVADDCOLS3_RVV
+void ScaleUVAddCols3_RVV(int dst_width,
+                         int scaleval,
+                         const uint16_t* src_uv,
+                         uint8_t* dst_uv) {
+  size_t vl, vl2;
+  size_t w = (size_t)dst_width;
+  asm volatile(
+      "1:                                                    \n"
+      "vsetvli     %[vl], %[w], e32, m2, ta, ma              \n"
+      "vlseg3e32.v v8, (%[src_uv])                           \n"
+      "sub         %[w], %[w], %[vl]                         \n"
+      "slli        %[vl2], %[vl], 2                          \n"
+      "add         %[src_uv], %[src_uv], %[vl2]              \n"
+      "slli        %[vl2], %[vl2], 1                         \n"
+      "add         %[src_uv], %[src_uv], %[vl2]              \n"
+      "slli        %[vl], %[vl], 1                           \n"
+      "vsetvli     zero, %[vl], e16, m2, ta, ma              \n"
+      "vadd.vv     v8, v8, v10                               \n"
+      "vadd.vv     v8, v8, v12                               \n"
+      "vmulhu.vx   v8, v8, %[scaleval]                       \n"
+      "vsetvli     zero, %[vl], e8, m1, ta, ma               \n"
+      "vnsrl.wi    v4, v8, 0                                 \n"
+      "vse8.v      v4, (%[dst_uv])                           \n"
+      "add         %[dst_uv], %[dst_uv], %[vl]               \n"
+      "bgtz        %[w], 1b                                  \n"
+      : [w] "+r"(w),              // %[w]
+        [src_uv] "+r"(src_uv),    // %[src_uv]
+        [dst_uv] "+r"(dst_uv),    // %[dst_uv]
+        [vl] "=&r"(vl),           // %[vl]
+        [vl2] "=&r"(vl2)          // %[vl2]
+      : [scaleval] "r"(scaleval)  // %[scaleval]
+      : RVV_VL_CLOBBER "memory", "v4", "v8", "v9", "v10", "v11", "v12", "v13");
+}
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

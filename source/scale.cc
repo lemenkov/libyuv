@@ -1034,6 +1034,14 @@ static int ScalePlaneBox(int src_width,
       ScaleAddRow = ScaleAddRow_HVX;
     }
 #endif
+#if defined(HAS_SCALEADDROW_WASMSIMD)
+    if (TestCpuFlag(kCpuHasWASM)) {
+      ScaleAddRow = ScaleAddRow_Any_WASMSIMD;
+      if (IS_ALIGNED(src_width, 16)) {
+        ScaleAddRow = ScaleAddRow_WASMSIMD;
+      }
+    }
+#endif
 
     uint32_t uy = y;
     for (j = 0; j < dst_height; ++j) {

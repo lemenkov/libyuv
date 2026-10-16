@@ -331,6 +331,10 @@ TEST_BOXPLANE(By3_75, 960, 540, 256, 144, 0)      /* 1080p to 512x288 */
 TEST_BOXPLANE(By6, 640, 360, 106, 60, 0)          /* 720p to 213x120 */
 TEST_BOXPLANE(By8, 640, 360, 80, 45, 0)           /* 720p to 160x90 */
 TEST_BOXPLANE(OddTail, 33, 17, 7, 5, 0)           /* not a multiple of 8 wide */
+TEST_BOXPLANE(By3OddTail7, 21, 15, 7, 5, 0)       /* 3x, dst_width = 7 */
+TEST_BOXPLANE(By3OddTail23, 69, 15, 23, 5, 0)     /* 3x, dst_width = 23 */
+TEST_BOXPLANE(By3OddTail47, 141, 15, 47, 5, 0)    /* 3x, dst_width = 47 */
+TEST_BOXPLANE(By3OddTail79, 237, 15, 79, 5, 0)    /* 3x, dst_width = 79 */
 TEST_BOXPLANE(Tiny, 80, 60, 3, 2, 0)              /* dst below one SIMD group */
 #undef TEST_BOXPLANE
 

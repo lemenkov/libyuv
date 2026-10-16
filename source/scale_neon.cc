@@ -1448,6 +1448,43 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
       : "memory", "cc", "d0");
 }
 
+// Scale UV columns by 3 box filter.
+// Reads 96 bytes (24 UV pixels) and writes 16 bytes (8 UV pixels) per loop.
+void ScaleUVAddCols3_NEON(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv) {
+  asm volatile(
+      "vdup.16     d16, %[scaleval]              \n"
+      "1:                                        \n"
+      "vld3.32     {d0, d2, d4}, [%[src_uv]]!    \n"
+      "vld3.32     {d1, d3, d5}, [%[src_uv]]!    \n"
+      "vadd.u16    q0, q0, q1                    \n"
+      "vadd.u16    q0, q0, q2                    \n"
+      "vld3.32     {d2, d4, d6}, [%[src_uv]]!    \n"
+      "vld3.32     {d3, d5, d7}, [%[src_uv]]!    \n"
+      "vadd.u16    q1, q1, q2                    \n"
+      "vadd.u16    q1, q1, q3                    \n"
+      "vmull.u16   q2, d0, d16                   \n"
+      "vmull.u16   q3, d1, d16                   \n"
+      "vmull.u16   q9, d2, d16                   \n"
+      "vmull.u16   q10, d3, d16                  \n"
+      "vshrn.i32   d0, q2, #16                   \n"
+      "vshrn.i32   d1, q3, #16                   \n"
+      "vshrn.i32   d2, q9, #16                   \n"
+      "vshrn.i32   d3, q10, #16                  \n"
+      "vmovn.i16   d0, q0                        \n"
+      "vmovn.i16   d1, q1                        \n"
+      "subs        %[dst_width], %[dst_width], #8 \n"
+      "vst1.8      {q0}, [%[dst_uv]]!            \n"
+      "bgt         1b                            \n"
+      : [src_uv] "+r"(src_uv),       // %[src_uv]
+        [dst_uv] "+r"(dst_uv),       // %[dst_uv]
+        [dst_width] "+r"(dst_width)  // %[dst_width]
+      : [scaleval] "r"(scaleval)     // %[scaleval]
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10");
+}
+
 #endif  // defined(__ARM_NEON__) && !defined(__aarch64__)
 
 #ifdef __cplusplus

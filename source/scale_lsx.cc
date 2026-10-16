@@ -581,6 +581,67 @@ void ScaleAddRow_LSX(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5");
 }
 
+static const uint8_t kScaleUVAddCols3Shuf[] = {
+    0, 1, 2,  3,  12, 13, 14, 15, 24, 25, 26, 27, 4,  5,  6,  7,
+    4, 5, 6,  7,  16, 17, 18, 19, 28, 29, 30, 31, 8,  9,  10, 11,
+    8, 9, 10, 11, 20, 21, 22, 23, 0,  1,  2,  3,  12, 13, 14, 15,
+    0, 1, 2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 20, 21, 22, 23,
+    0, 1, 2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 24, 25, 26, 27,
+    0, 1, 2,  3,  4,  5,  6,  7,  16, 17, 18, 19, 28, 29, 30, 31,
+};
+
+void ScaleUVAddCols3_LSX(int dst_width,
+                         int scaleval,
+                         const uint16_t* src_uv,
+                         uint8_t* dst_uv) {
+  asm volatile(
+      "vld        $vr6, %[shuf], 0                     \n"
+      "vld        $vr7, %[shuf], 16                    \n"
+      "vld        $vr8, %[shuf], 32                    \n"
+      "vld        $vr9, %[shuf], 48                    \n"
+      "vld        $vr10, %[shuf], 64                   \n"
+      "vld        $vr11, %[shuf], 80                   \n"
+      "vreplgr2vr.h $vr12, %[scaleval]                 \n"
+      "1:                                              \n"
+      "vld        $vr0, %[src_uv], 0                   \n"
+      "vld        $vr1, %[src_uv], 16                  \n"
+      "vld        $vr2, %[src_uv], 32                  \n"
+      "vshuf.b    $vr3, $vr1, $vr0, $vr6               \n"
+      "vshuf.b    $vr4, $vr1, $vr0, $vr7               \n"
+      "vshuf.b    $vr5, $vr1, $vr0, $vr8               \n"
+      "vshuf.b    $vr3, $vr2, $vr3, $vr9               \n"
+      "vshuf.b    $vr4, $vr2, $vr4, $vr10              \n"
+      "vshuf.b    $vr5, $vr2, $vr5, $vr11              \n"
+      "vadd.h     $vr3, $vr3, $vr4                     \n"
+      "vadd.h     $vr3, $vr3, $vr5                     \n"
+      "vmuh.hu    $vr3, $vr3, $vr12                    \n"
+      "vld        $vr0, %[src_uv], 48                  \n"
+      "vld        $vr1, %[src_uv], 64                  \n"
+      "vld        $vr2, %[src_uv], 80                  \n"
+      "addi.d     %[src_uv], %[src_uv], 96             \n"
+      "vshuf.b    $vr13, $vr1, $vr0, $vr6              \n"
+      "vshuf.b    $vr4, $vr1, $vr0, $vr7               \n"
+      "vshuf.b    $vr5, $vr1, $vr0, $vr8               \n"
+      "vshuf.b    $vr13, $vr2, $vr13, $vr9             \n"
+      "vshuf.b    $vr4, $vr2, $vr4, $vr10              \n"
+      "vshuf.b    $vr5, $vr2, $vr5, $vr11              \n"
+      "vadd.h     $vr13, $vr13, $vr4                   \n"
+      "vadd.h     $vr13, $vr13, $vr5                   \n"
+      "vmuh.hu    $vr13, $vr13, $vr12                  \n"
+      "vpickev.b  $vr0, $vr13, $vr3                    \n"
+      "vst        $vr0, %[dst_uv], 0                   \n"
+      "addi.d     %[dst_uv], %[dst_uv], 16             \n"
+      "addi.w     %[dst_width], %[dst_width], -8       \n"
+      "bgtz       %[dst_width], 1b                     \n"
+      : [src_uv] "+r"(src_uv),       // %[src_uv]
+        [dst_uv] "+r"(dst_uv),       // %[dst_uv]
+        [dst_width] "+r"(dst_width)  // %[dst_width]
+      : [scaleval] "r"(scaleval),    // %[scaleval]
+        [shuf] "r"(kScaleUVAddCols3Shuf)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13");
+}
+
 void ScaleFilterCols_LSX(uint8_t* dst_ptr,
                          const uint8_t* src_ptr,
                          int dst_width,
