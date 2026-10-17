@@ -172,6 +172,15 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   }
 #endif  // defined(__wasm__)
 
+#if defined(__hexagon__)
+  int has_hexagon = TestCpuFlag(kCpuHasHexagon);
+  if (has_hexagon) {
+    int has_hvx = TestCpuFlag(kCpuHasHVX);
+    printf("Has Hexagon 0x%x\n", has_hexagon);
+    printf("Has HVX 0x%x\n", has_hvx);
+  }
+#endif  // defined(__hexagon__)
+
 #if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
     defined(_M_X64)
   int has_x86 = TestCpuFlag(kCpuHasX86);
@@ -302,6 +311,18 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #endif
 #ifdef __wasm_simd128__
   printf("__wasm_simd128__ %d\n", __wasm_simd128__);
+#endif
+#ifdef __hexagon__
+  printf("__hexagon__ %d\n", __hexagon__);
+#endif
+#ifdef __HVX__
+  printf("__HVX__ %d\n", __HVX__);
+#endif
+#ifdef __HVX_ARCH__
+  printf("__HVX_ARCH__ %d\n", __HVX_ARCH__);
+#endif
+#ifdef __HVX_LENGTH__
+  printf("__HVX_LENGTH__ %d\n", __HVX_LENGTH__);
 #endif
 #ifdef _WIN32
   printf("_WIN32 %d\n", _WIN32);

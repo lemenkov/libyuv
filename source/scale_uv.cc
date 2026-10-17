@@ -138,6 +138,15 @@ static void ScaleUVDown2(int src_width,
                                           : ScaleUVRowDown2Box_RVV);
   }
 #endif
+#if defined(HAS_SCALEUVROWDOWN2_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    ScaleUVRowDown2 =
+        filtering == kFilterNone
+            ? ScaleUVRowDown2_HVX
+            : (filtering == kFilterLinear ? ScaleUVRowDown2Linear_HVX
+                                          : ScaleUVRowDown2Box_HVX);
+  }
+#endif
 
 // This code is not enabled.  Only box filter is available at this time.
 #if defined(HAS_SCALEUVROWDOWN2_SSSE3)
@@ -234,6 +243,11 @@ static int ScaleUVDown4Box(int src_width,
 #if defined(HAS_SCALEUVROWDOWN2BOX_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     ScaleUVRowDown2 = ScaleUVRowDown2Box_RVV;
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2BOX_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    ScaleUVRowDown2 = ScaleUVRowDown2Box_HVX;
   }
 #endif
 
@@ -371,6 +385,11 @@ static int ScaleUVBox(int src_width,
 #if defined(HAS_SCALEADDROW_RVV)
       if (TestCpuFlag(kCpuHasRVV)) {
         ScaleAddRow = ScaleAddRow_RVV;
+      }
+#endif
+#if defined(HAS_SCALEADDROW_HVX)
+      if (TestCpuFlag(kCpuHasHVX)) {
+        ScaleAddRow = ScaleAddRow_HVX;
       }
 #endif
 
@@ -566,6 +585,11 @@ static int ScaleUVBilinearDown(int src_width,
     InterpolateRow = InterpolateRow_RVV;
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    InterpolateRow = InterpolateRow_HVX;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     InterpolateRow = InterpolateRow_Any_WASMSIMD;
@@ -700,6 +724,11 @@ static int ScaleUVBilinearUp(int src_width,
 #if defined(HAS_INTERPOLATEROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    InterpolateRow = InterpolateRow_HVX;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_WASMSIMD)

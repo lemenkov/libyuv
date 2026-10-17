@@ -145,6 +145,21 @@ int main(int argc, const char* argv[]) {
   }
 #endif  // defined(__wasm__)
 
+#if defined(__hexagon__)
+  int has_hexagon = TestCpuFlag(kCpuHasHexagon);
+  if (has_hexagon) {
+    int has_hvx = TestCpuFlag(kCpuHasHVX);
+    printf("Has Hexagon 0x%x\n", has_hexagon);
+    printf("Has HVX 0x%x\n", has_hvx);
+#if defined(__HVX_ARCH__)
+    printf("HVX arch: v%d\n", __HVX_ARCH__);
+#endif
+#if defined(__HVX_LENGTH__)
+    printf("HVX vector length: %d bytes\n", __HVX_LENGTH__);
+#endif
+  }
+#endif  // defined(__hexagon__)
+
 #if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
     defined(_M_X64)
   int has_x86 = TestCpuFlag(kCpuHasX86);

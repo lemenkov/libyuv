@@ -119,6 +119,14 @@ extern "C" {
 #define HAS_SSIM4X4ROW_WASMSIMD
 #endif
 
+// The following are available for Hexagon HVX:
+#if !defined(LIBYUV_DISABLE_HVX) && defined(__HVX__)
+#define HAS_HAMMINGDISTANCE_HVX
+#define HAS_SUMSQUAREERROR_HVX
+#define HAS_HASHDJB2_HVX
+#define HAS_SSIM4X4ROW_HVX
+#endif
+
 uint32_t HammingDistance_C(const uint8_t* src_a,
                            const uint8_t* src_b,
                            int count);
@@ -143,6 +151,9 @@ uint32_t HammingDistance_NEON_DotProd(const uint8_t* src_a,
 uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count);
+uint32_t HammingDistance_HVX(const uint8_t* src_a,
+                             const uint8_t* src_b,
+                             int count);
 uint32_t SumSquareError_C(const uint8_t* src_a,
                           const uint8_t* src_b,
                           int count);
@@ -164,6 +175,9 @@ uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
 uint32_t SumSquareError_WASMSIMD(const uint8_t* src_a,
                                  const uint8_t* src_b,
                                  int count);
+uint32_t SumSquareError_HVX(const uint8_t* src_a,
+                            const uint8_t* src_b,
+                            int count);
 
 uint32_t HashDjb2_C(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed);
@@ -171,6 +185,7 @@ uint32_t HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_NEON(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_WASMSIMD(const uint8_t* src, int count, uint32_t seed);
+uint32_t HashDjb2_HVX(const uint8_t* src, int count, uint32_t seed);
 
 void Ssim4x4Row_C(const uint8_t* src_a,
                   int stride_a,
@@ -244,6 +259,12 @@ void Ssim4x4Row_WASMSIMD(const uint8_t* src_a,
                          int stride_b,
                          uint32_t* dst,
                          int width);
+void Ssim4x4Row_HVX(const uint8_t* src_a,
+                    int stride_a,
+                    const uint8_t* src_b,
+                    int stride_b,
+                    uint32_t* dst,
+                    int width);
 double SsimWindowRow_C(const uint32_t* row0,
                        const uint32_t* row1,
                        int num_windows);

@@ -109,6 +109,11 @@ static int NV16ToARGB(const uint8_t* src_y,
     NV12ToARGBRow = NV12ToARGBRow_RVV;
   }
 #endif
+#if defined(HAS_NV12TOARGBROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    NV12ToARGBRow = NV12ToARGBRow_HVX;
+  }
+#endif
 #if defined(HAS_NV12TOARGBROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     NV12ToARGBRow = NV12ToARGBRow_Any_WASMSIMD;
@@ -214,6 +219,11 @@ static int NV24ToARGB(const uint8_t* src_y,
     I444ToARGBRow = I444ToARGBRow_RVV;
   }
 #endif
+#if defined(HAS_I444TOARGBROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    I444ToARGBRow = I444ToARGBRow_HVX;
+  }
+#endif
 
 #if defined(HAS_SPLITUVROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
@@ -250,6 +260,11 @@ static int NV24ToARGB(const uint8_t* src_y,
 #if defined(HAS_SPLITUVROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     SplitUVRow = SplitUVRow_RVV;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    SplitUVRow = SplitUVRow_HVX;
   }
 #endif
 

@@ -1455,6 +1455,11 @@ void ScalePlaneVertical(int src_height,
     InterpolateRow = InterpolateRow_RVV;
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    InterpolateRow = InterpolateRow_HVX;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     InterpolateRow = InterpolateRow_Any_WASMSIMD;
@@ -1547,6 +1552,11 @@ void ScalePlaneVertical_16(int src_height,
 #if defined(HAS_INTERPOLATEROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     InterpolateRow = InterpolateRow_16_SME;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    InterpolateRow = InterpolateRow_16_HVX;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_16_WASMSIMD)

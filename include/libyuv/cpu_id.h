@@ -73,6 +73,10 @@ static const int kCpuHasLASX = 0x200;
 static const int kCpuHasWASM = 0x40;
 static const int kCpuHasWASMSIMD = 0x100;
 
+// These flags are only valid on Hexagon processors.
+static const int kCpuHasHexagon = 0x80;
+static const int kCpuHasHVX = 0x100;
+
 // Optional init function. TestCpuFlag does an auto-init.
 // Returns cpu_info flags.
 LIBYUV_API

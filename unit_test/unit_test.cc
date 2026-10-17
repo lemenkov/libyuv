@@ -11,8 +11,35 @@
 #include "../unit_test/unit_test.h"
 
 #include <stdlib.h>  // For getenv()
+#if defined(__hexagon__)
+#include <sys/mman.h>
+#endif
 
 #include <cstring>
+
+#if defined(__hexagon__)
+// Hexagon QuRT sys/mman.h declares mmap/munmap without extern "C", and the
+// runtime does not provide them. Emulate anonymous mappings with malloc/free.
+__attribute__((nothrow)) void* mmap(void* addr,
+                                    size_t length,
+                                    int prot,
+                                    int flags,
+                                    int fd,
+                                    off_t offset) {
+  (void)addr;
+  (void)prot;
+  (void)flags;
+  (void)fd;
+  (void)offset;
+  return malloc(length);
+}
+
+__attribute__((nothrow)) int munmap(void* addr, size_t length) {
+  (void)length;
+  free(addr);
+  return 0;
+}
+#endif
 
 #ifdef LIBYUV_USE_ABSL_FLAGS
 #include "absl/flags/flag.h"
@@ -109,6 +136,11 @@ static int TestCpuEnv(int cpu_info) {
 #if defined(__wasm__)
   if (TestEnv("LIBYUV_DISABLE_WASM")) {
     cpu_info &= ~libyuv::kCpuHasWASMSIMD;
+  }
+#endif
+#if defined(__hexagon__)
+  if (TestEnv("LIBYUV_DISABLE_HVX")) {
+    cpu_info &= ~libyuv::kCpuHasHVX;
   }
 #endif
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \

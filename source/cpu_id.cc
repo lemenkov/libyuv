@@ -498,6 +498,12 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   cpu_info |= kCpuHasWASMSIMD;
 #endif
 #endif  // __wasm__
+#if defined(__hexagon__)
+  cpu_info = kCpuHasHexagon;
+#if !defined(LIBYUV_DISABLE_HVX) && defined(__HVX__)
+  cpu_info |= kCpuHasHVX;
+#endif
+#endif  // __hexagon__
   cpu_info |= kCpuInitialized;
   return cpu_info;
 }

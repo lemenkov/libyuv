@@ -799,6 +799,11 @@ static int I4xxToPxxx(const uint8_t* src_y,
     Convert8To16Row = Convert8To16Row_RVV;
   }
 #endif
+#if defined(HAS_CONVERT8TO16ROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    Convert8To16Row = Convert8To16Row_HVX;
+  }
+#endif
 #if defined(HAS_CONVERT8TO16ROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     Convert8To16Row = Convert8To16Row_Any_WASMSIMD;
@@ -826,6 +831,11 @@ static int I4xxToPxxx(const uint8_t* src_y,
 #if defined(HAS_MERGEUVROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     MergeUVRow_16 = MergeUVRow_16_SME;
+  }
+#endif
+#if defined(HAS_MERGEUVROW_16_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    MergeUVRow_16 = MergeUVRow_16_HVX;
   }
 #endif
 

@@ -121,6 +121,13 @@ extern "C" {
 #define HAS_TRANSPOSEWX4_32_WASMSIMD
 #endif
 
+#if !defined(LIBYUV_DISABLE_HVX) && defined(__HVX__)
+#define HAS_TRANSPOSEWXH_HVX
+#define HAS_TRANSPOSEUVWXH_HVX
+#define HAS_TRANSPOSEWXH_16_HVX
+#define HAS_TRANSPOSEWXH_32_HVX
+#endif
+
 void TransposeWxH_C(const uint8_t* src,
                     int src_stride,
                     uint8_t* dst,
@@ -149,6 +156,12 @@ void TransposeWx16_NEON(const uint8_t* src,
                         int dst_stride,
                         int width);
 void TransposeWxH_SME(const uint8_t* src,
+                      int src_stride,
+                      uint8_t* dst,
+                      int dst_stride,
+                      int width,
+                      int height);
+void TransposeWxH_HVX(const uint8_t* src,
                       int src_stride,
                       uint8_t* dst,
                       int dst_stride,
@@ -290,6 +303,14 @@ void TransposeUVWxH_SME(const uint8_t* src,
                         int dst_stride_b,
                         int width,
                         int height);
+void TransposeUVWxH_HVX(const uint8_t* src,
+                        int src_stride,
+                        uint8_t* dst_a,
+                        int dst_stride_a,
+                        uint8_t* dst_b,
+                        int dst_stride_b,
+                        int width,
+                        int height);
 void TransposeUVWx8_LSX(const uint8_t* src,
                         int src_stride,
                         uint8_t* dst_a,
@@ -412,6 +433,12 @@ void TransposeWxH_16_RVV(const uint16_t* src,
                          int dst_stride,
                          int width,
                          int height);
+void TransposeWxH_16_HVX(const uint16_t* src,
+                         int src_stride,
+                         uint16_t* dst,
+                         int dst_stride,
+                         int width,
+                         int height);
 void TransposeWx8_16_LSX(const uint16_t* src,
                          int src_stride,
                          uint16_t* dst,
@@ -511,6 +538,12 @@ void TransposeWx4_32_RVV(const uint8_t* src,
                          int width);
 
 void TransposeWxH_32_RVV(const uint8_t* src,
+                         int src_stride,
+                         uint8_t* dst,
+                         int dst_stride,
+                         int width,
+                         int height);
+void TransposeWxH_32_HVX(const uint8_t* src,
                          int src_stride,
                          uint8_t* dst,
                          int dst_stride,

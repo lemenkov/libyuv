@@ -3798,7 +3798,8 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 
 #if defined(HAS_MULTIPLYROW_16_AVX512BW) ||                                 \
     defined(HAS_MULTIPLYROW_16_AVX2) || defined(HAS_MULTIPLYROW_16_NEON) || \
-    defined(HAS_MULTIPLYROW_16_SME) || defined(HAS_MULTIPLYROW_16_RVV)
+    defined(HAS_MULTIPLYROW_16_SME) || defined(HAS_MULTIPLYROW_16_RVV) ||   \
+    defined(HAS_MULTIPLYROW_16_HVX)
 TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
   // Round count up to multiple of 64
   const int kPixels = (benchmark_width_ * benchmark_height_ + 63) & ~63;
@@ -3828,6 +3829,9 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
 #endif
 #if defined(HAS_MULTIPLYROW_16_RVV)
   int has_rvv = TestCpuFlag(kCpuHasRVV);
+#endif
+#if defined(HAS_MULTIPLYROW_16_HVX)
+  int has_hvx = TestCpuFlag(kCpuHasHVX);
 #endif
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
@@ -3862,6 +3866,13 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
 #if defined(HAS_MULTIPLYROW_16_RVV)
         if (has_rvv) {
       MultiplyRow_16_RVV(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                         reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                         kPixels);
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_HVX)
+        if (has_hvx) {
+      MultiplyRow_16_HVX(reinterpret_cast<const uint16_t*>(src_pixels_y),
                          reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                          kPixels);
     } else
@@ -4852,6 +4863,11 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
 #if defined(HAS_SWAPUVROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     SwapUVRow = SwapUVRow_RVV;
+  }
+#endif
+#if defined(HAS_SWAPUVROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    SwapUVRow = SwapUVRow_HVX;
   }
 #endif
 

@@ -62,6 +62,12 @@ uint32_t HashDjb2(const uint8_t* src, uint64_t count, uint32_t seed) {
     HashDjb2_SSE = HashDjb2_WASMSIMD;
   }
 #endif
+#if defined(HAS_HASHDJB2_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    HashDjb2_SSE = HashDjb2_HVX;
+    simd_size = 1;  // Any count.
+  }
+#endif
 
   while (count >= (uint64_t)kBlockSize) {
     seed = HashDjb2_SSE(src, kBlockSize, seed);
@@ -185,6 +191,12 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
     HammingDistance = HammingDistance_WASMSIMD;
   }
 #endif
+#if defined(HAS_HAMMINGDISTANCE_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    HammingDistance = HammingDistance_HVX;
+    simd_size = 1;  // Any count.
+  }
+#endif
   remainder = count & (kBlockSize - 1) & ~(simd_size - 1);
 
 #ifdef _OPENMP
@@ -253,6 +265,12 @@ uint64_t ComputeSumSquareError(const uint8_t* src_a,
 #if defined(HAS_SUMSQUAREERROR_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     SumSquareError = SumSquareError_WASMSIMD;
+  }
+#endif
+#if defined(HAS_SUMSQUAREERROR_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    SumSquareError = SumSquareError_HVX;
+    simd_size = 1;  // Any count.
   }
 #endif
   remainder = count & (kBlockSize - 1) & ~(simd_size - 1);
@@ -498,6 +516,12 @@ double CalcFrameSsim(const uint8_t* src_a,
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     Ssim4x4Row = Ssim4x4Row_WASMSIMD;
     simd_size = 16;
+  }
+#endif
+#if defined(HAS_SSIM4X4ROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    Ssim4x4Row = Ssim4x4Row_HVX;
+    simd_size = 4;
   }
 #endif
 

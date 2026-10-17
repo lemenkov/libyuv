@@ -212,6 +212,18 @@ extern "C" {
 #define HAS_SCALEROWDOWN4_WASMSIMD
 #endif
 
+// The following are available for Hexagon HVX:
+#if !defined(LIBYUV_DISABLE_HVX) && defined(__HVX__)
+#define HAS_SCALEADDROW_HVX
+#define HAS_SCALEARGBROWDOWN2_HVX
+#define HAS_SCALEROWDOWN2_16_HVX
+#define HAS_SCALEROWDOWN2_HVX
+#define HAS_SCALEROWDOWN4_HVX
+#define HAS_SCALEUVROWDOWN2_HVX
+#define HAS_SCALEUVROWDOWN2BOX_HVX
+#define HAS_SCALEUVROWDOWN2LINEAR_HVX
+#endif
+
 // Scale ARGB vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width,
@@ -1882,6 +1894,68 @@ void ScaleARGBColsUp2_WASMSIMD(uint8_t* dst_argb,
                                int dst_width,
                                int x,
                                int dx);
+
+void ScaleAddRow_HVX(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width);
+void ScaleRowDown2_HVX(const uint8_t* src_ptr,
+                       ptrdiff_t src_stride,
+                       uint8_t* dst,
+                       int dst_width);
+void ScaleRowDown2Linear_HVX(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst,
+                             int dst_width);
+void ScaleRowDown2Box_HVX(const uint8_t* src_ptr,
+                          ptrdiff_t src_stride,
+                          uint8_t* dst,
+                          int dst_width);
+void ScaleRowDown2Box_Odd_HVX(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst,
+                              int dst_width);
+void ScaleRowDown2_16_HVX(const uint16_t* src_ptr,
+                          ptrdiff_t src_stride,
+                          uint16_t* dst,
+                          int dst_width);
+void ScaleRowDown2Linear_16_HVX(const uint16_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint16_t* dst,
+                                int dst_width);
+void ScaleRowDown2Box_16_HVX(const uint16_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint16_t* dst,
+                             int dst_width);
+void ScaleRowDown4_HVX(const uint8_t* src_ptr,
+                       ptrdiff_t src_stride,
+                       uint8_t* dst_ptr,
+                       int dst_width);
+void ScaleRowDown4Box_HVX(const uint8_t* src_ptr,
+                          ptrdiff_t src_stride,
+                          uint8_t* dst_ptr,
+                          int dst_width);
+void ScaleARGBRowDown2_HVX(const uint8_t* src_argb,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst_argb,
+                           int dst_width);
+void ScaleARGBRowDown2Linear_HVX(const uint8_t* src_argb,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_argb,
+                                 int dst_width);
+void ScaleARGBRowDown2Box_HVX(const uint8_t* src_argb,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_argb,
+                              int dst_width);
+void ScaleUVRowDown2_HVX(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst_uv,
+                         int dst_width);
+void ScaleUVRowDown2Linear_HVX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_uv,
+                               int dst_width);
+void ScaleUVRowDown2Box_HVX(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_uv,
+                            int dst_width);
 
 #ifdef __cplusplus
 }  // extern "C"

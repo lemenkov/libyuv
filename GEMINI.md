@@ -41,6 +41,8 @@ and compiler compatibility.
 
 *   **row_rvv.cc**: RISC-V Vector (RVV). Implemented using intrinsics. Optimized
     for SiFive X280.
+*   **row_hvx.cc**: Qualcomm Hexagon Vector Extensions (HVX). Implemented using
+    intrinsics.
 *   **row_lsx.cc / row_lasx.cc**: Loongarch MIPS-like extensions.
 
 ### Utility and Fallbacks
@@ -48,8 +50,8 @@ and compiler compatibility.
 *   **row_common.cc**: Portable C/C++ versions. This is the reference
     implementation.
 *   **row_any.cc**: Handles "remainder" pixels for widths not multiples of SIMD
-    register size. Used for x86, Neon, and MIPS. Not required for SVE2, SME, or
-    RVV due to hardware-level masking.
+    register size. Used for x86, Neon, and MIPS. Not required for SVE2, SME,
+    RVV, or HVX due to hardware-level masking.
 
 ## Coding Guidelines
 
