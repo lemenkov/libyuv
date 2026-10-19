@@ -153,13 +153,11 @@ extern "C" {
 #define HAS_ARGBCOPYALPHAROW_AVX2
 #define HAS_ARGBCOPYYTOALPHAROW_AVX2
 #define HAS_ARGBEXTRACTALPHAROW_AVX2
-#define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
 #define HAS_COPYROW_AVX
 #define HAS_HALFFLOATROW_AVX2
-#define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TORGB24ROW_AVX2
 #define HAS_I422TORGBAROW_AVX2
 #define HAS_I422TORGB565ROW_AVX2
@@ -168,12 +166,8 @@ extern "C" {
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_I444TORGB24ROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
-#define HAS_MIRRORROW_AVX2
-#define HAS_MIRRORSPLITUVROW_AVX2
-#define HAS_NV12TOARGBROW_AVX2
 #define HAS_NV12TORGB24ROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
-#define HAS_NV21TOARGBROW_AVX2
 #define HAS_NV21TORGB24ROW_AVX2
 #define HAS_SPLITUVROW_AVX2
 #define HAS_UYVYTOARGBROW_AVX2
@@ -230,6 +224,7 @@ extern "C" {
 #define HAS_MIRRORUVROW_SSSE3
 #define HAS_NV21TOYUV24ROW_SSSE3
 #define HAS_P210TOAR30ROW_SSSE3
+#define HAS_RGB24MIRRORROW_SSSE3
 #define HAS_P210TOARGBROW_SSSE3
 #define HAS_P410TOAR30ROW_SSSE3
 #define HAS_P410TOARGBROW_SSSE3
@@ -474,7 +469,6 @@ extern "C" {
 #define HAS_RGBTOUV444MATRIXROW_AVX512BW
 #define HAS_ARGBTOYMATRIXROW_AVX512BW
 #define HAS_I422TORGB24ROW_AVX512VBMI
-#define HAS_RAWTORGB24ROW_AVX512VBMI
 #define HAS_I422TORGB24ROW_AVX512BW
 #define HAS_ARGBTOUVMATRIXROW_AVX512BW
 #define HAS_J400TOARGBROW_AVX512BW
@@ -796,6 +790,7 @@ extern "C" {
 #define HAS_P210TOARGBROW_SME
 #define HAS_P410TOAR30ROW_SME
 #define HAS_P410TOARGBROW_SME
+#define HAS_UYVYTOARGBROW_SME
 #define HAS_YUY2TOARGBROW_SME
 #endif
 
@@ -959,6 +954,8 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_RVV
 #define HAS_ARGBTOAR64ROW_RVV
 #define HAS_ARGBMIRRORROW_RVV
+#define HAS_ARGBSETROW_RVV
+#define HAS_ARGBSHUFFLEROW_RVV
 #define HAS_ARGBTOUV444MATRIXROW_RVV
 #define HAS_ARGBTOUVMATRIXROW_RVV
 #define HAS_ARGBTOYMATRIXROW_RVV
@@ -2972,6 +2969,9 @@ void ARGBMirrorRow_Any_LASX(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
 
+void RGB24MirrorRow_SSSE3(const uint8_t* src_rgb24,
+                          uint8_t* dst_rgb24,
+                          int width);
 void RGB24MirrorRow_AVX2(const uint8_t* src_rgb24,
                          uint8_t* dst_rgb24,
                          int width);
@@ -2982,6 +2982,9 @@ void RGB24MirrorRow_NEON(const uint8_t* src_rgb24,
                          uint8_t* dst_rgb24,
                          int width);
 void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24, int width);
+void RGB24MirrorRow_Any_SSSE3(const uint8_t* src_ptr,
+                              uint8_t* dst_ptr,
+                              int width);
 void RGB24MirrorRow_Any_AVX2(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
@@ -4215,6 +4218,7 @@ void SetRow_Any_LASX(uint8_t* dst_ptr, uint8_t v32, int width);
 void ARGBSetRow_C(uint8_t* dst_argb, uint32_t v32, int width);
 void ARGBSetRow_X86(uint8_t* dst_argb, uint32_t v32, int width);
 void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int width);
+void ARGBSetRow_RVV(uint8_t* dst_argb, uint32_t v32, int width);
 void ARGBSetRow_Any_NEON(uint8_t* dst_ptr, uint32_t v32, int width);
 void ARGBSetRow_LSX(uint8_t* dst_argb, uint32_t v32, int width);
 void ARGBSetRow_LASX(uint8_t* dst_argb, uint32_t v32, int width);
@@ -4242,6 +4246,10 @@ void ARGBShuffleRow_NEON(const uint8_t* src_argb,
                          uint8_t* dst_argb,
                          const uint8_t* shuffler,
                          int width);
+void ARGBShuffleRow_RVV(const uint8_t* src_argb,
+                        uint8_t* dst_argb,
+                        const uint8_t* shuffler,
+                        int width);
 void ARGBShuffleRow_LSX(const uint8_t* src_argb,
                         uint8_t* dst_argb,
                         const uint8_t* shuffler,

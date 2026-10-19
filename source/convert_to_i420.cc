@@ -51,8 +51,13 @@ static int NV16ToI420(const uint8_t* src_y,
   int y;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
+  // UV rows are halfwidth * 2 (even) bytes.
+  int awidth = halfwidth * 2;
   void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
                      int width) = SplitUVRow_C;
+  void (*InterpolateRow)(uint8_t* dst_ptr, const uint8_t* src_ptr,
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) = InterpolateRow_C;
   if ((!src_y && dst_y) || !src_uv || !dst_u || !dst_v || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
@@ -100,18 +105,105 @@ static int NV16ToI420(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_SPLITUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    SplitUVRow = SplitUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    SplitUVRow = SplitUVRow_Any_LSX;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    SplitUVRow = SplitUVRow_Any_LASX;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      SplitUVRow = SplitUVRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitUVRow = SplitUVRow_RVV;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(awidth, 32)) {
+      InterpolateRow = InterpolateRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    InterpolateRow = InterpolateRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    InterpolateRow = InterpolateRow_Any_NEON;
+    if (IS_ALIGNED(awidth, 16)) {
+      InterpolateRow = InterpolateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    InterpolateRow = InterpolateRow_SVE2;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    InterpolateRow = InterpolateRow_SME;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_Any_LSX;
+    if (IS_ALIGNED(awidth, 16)) {
+      InterpolateRow = InterpolateRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_Any_LASX;
+    if (IS_ALIGNED(awidth, 32)) {
+      InterpolateRow = InterpolateRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    InterpolateRow = InterpolateRow_Any_WASMSIMD;
+    if (IS_ALIGNED(awidth, 16)) {
+      InterpolateRow = InterpolateRow_WASMSIMD;
+    }
+  }
+#endif
 
-  align_buffer_64(row_uv, halfwidth * 2);
+  align_buffer_64(row_uv, awidth);
   if (!row_uv) {
     return 1;
   }
   for (y = 0; y < halfheight; ++y) {
     if (y * 2 + 1 < height) {
-      HalfRow_C(src_uv, src_stride_uv, row_uv, halfwidth * 2);
+      // Average 2 rows of UV with rounding (source_y_fraction 128).
+      InterpolateRow(row_uv, src_uv, src_stride_uv, awidth, 128);
+      SplitUVRow(row_uv, dst_u, dst_v, halfwidth);
     } else {
-      memcpy(row_uv, src_uv, (size_t)halfwidth * 2);
+      SplitUVRow(src_uv, dst_u, dst_v, halfwidth);
     }
-    SplitUVRow(row_uv, dst_u, dst_v, halfwidth);
     src_uv += (ptrdiff_t)src_stride_uv * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;

@@ -53,10 +53,10 @@ void TransposeWx4_32_SVE2(const uint8_t* src,
       "trn2        z5.s, z0.s, z1.s              \n"
       "trn1        z6.s, z2.s, z3.s              \n"
       "trn2        z7.s, z2.s, z3.s              \n"
-      "trn1        z0.d, z4.d, z6.d              \n"
-      "trn2        z1.d, z4.d, z6.d              \n"
-      "trn1        z2.d, z5.d, z7.d              \n"
-      "trn2        z3.d, z5.d, z7.d              \n"
+      "trn1        z0.d, z4.d, z6.d              \n"  // column 0
+      "trn1        z1.d, z5.d, z7.d              \n"  // column 1
+      "trn2        z2.d, z4.d, z6.d              \n"  // column 2
+      "trn2        z3.d, z5.d, z7.d              \n"  // column 3
       "subs        %w[width], %w[width], #4      \n"
       "st1w        {z0.s}, p0, [%[dst0]]         \n"
       "st1w        {z1.s}, p0, [%[dst1]]         \n"
@@ -86,10 +86,10 @@ void TransposeWx4_32_SVE2(const uint8_t* src,
       "trn2        z5.s, z0.s, z1.s              \n"
       "trn1        z6.s, z2.s, z3.s              \n"
       "trn2        z7.s, z2.s, z3.s              \n"
-      "trn1        z0.d, z4.d, z6.d              \n"
-      "trn2        z1.d, z4.d, z6.d              \n"
-      "trn1        z2.d, z5.d, z7.d              \n"
-      "trn2        z3.d, z5.d, z7.d              \n"
+      "trn1        z0.d, z4.d, z6.d              \n"  // column 0
+      "trn1        z1.d, z5.d, z7.d              \n"  // column 1
+      "trn2        z2.d, z4.d, z6.d              \n"  // column 2
+      "trn2        z3.d, z5.d, z7.d              \n"  // column 3
       "whilelt     p0.s, wzr, %w[width]          \n"
       "st1w        {z0.s}, p0, [%[dst0]]         \n"
       "st1w        {z1.s}, p0, [%[dst1]]         \n"

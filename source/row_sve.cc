@@ -777,7 +777,7 @@ void DivideRow_16_SVE2(const uint16_t* src_y,
       "cnth   %x[vl]                                     \n"
       "dup    z0.h, %w[scale]                            \n"
       "subs   %w[width], %w[width], %w[vl], lsl #1       \n"
-      "b.le    2f                                        \n"
+      "b.lt    2f                                        \n"
 
       // Run bulk of computation with the same predicates to avoid predicate
       // generation overhead.
@@ -792,7 +792,7 @@ void DivideRow_16_SVE2(const uint16_t* src_y,
       "st1h   {z1.h}, p0, [%[dst]]                       \n"
       "st1h   {z2.h}, p0, [%[dst], #1, mul vl]           \n"
       "incb   %[dst], all, mul #2                        \n"
-      "b.gt    1b                                        \n"
+      "b.ge    1b                                        \n"
 
       "2:                                                \n"
       "adds     %w[width], %w[width], %w[vl], lsl #1     \n"
@@ -827,6 +827,10 @@ void DivideRow_16_SVE2(const uint16_t* src_y,
   "fmul        z1.s, z1.s, z4.s                      \n" \
   "fmul        z2.s, z2.s, z4.s                      \n" \
   "fmul        z3.s, z3.s, z4.s                      \n" \
+  "fmul        z0.s, z0.s, z5.s                      \n" \
+  "fmul        z1.s, z1.s, z5.s                      \n" \
+  "fmul        z2.s, z2.s, z5.s                      \n" \
+  "fmul        z3.s, z3.s, z5.s                      \n" \
   "uqshrnb     z0.h, z0.s, #13                       \n" \
   "uqshrnb     z1.h, z1.s, #13                       \n" \
   "uqshrnb     z2.h, z2.s, #13                       \n" \
@@ -840,6 +844,7 @@ void HalfFloatRow_SVE2(const uint16_t* src,
   asm("cntw %x0" : "=r"(vl));
   asm volatile(
       "mov         z4.s, %s[scale]                       \n"
+      "mov         z5.s, %s[bias]                        \n"
       "subs        %w[width], %w[width], %w[vl], lsl #2  \n"
       "b.lt        2f                                    \n"
 
@@ -881,14 +886,16 @@ void HalfFloatRow_SVE2(const uint16_t* src,
       "st1h        {z3.s}, p3, [%[dst], #3, mul vl]      \n"
 
       "99:                                               \n"
-      : [src] "+r"(src),                        // %[src]
-        [dst] "+r"(dst),                        // %[dst]
-        [width] "+r"(width)                     // %[width]
-      : [vl] "r"(vl),                           // %[vl]
-        [vl2] "r"(vl * 2),                      // %[vl2]
-        [vl3] "r"(vl * 3),                      // %[vl3]
-        [scale] "w"(scale * 1.9259299444e-34f)  // %[scale]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0", "p1", "p2", "p3");
+      : [src] "+r"(src),               // %[src]
+        [dst] "+r"(dst),               // %[dst]
+        [width] "+r"(width)            // %[width]
+      : [vl] "r"(vl),                  // %[vl]
+        [vl2] "r"(vl * 2),             // %[vl2]
+        [vl3] "r"(vl * 3),             // %[vl3]
+        [scale] "w"(scale),            // %[scale]
+        [bias] "w"(1.9259299444e-34f)  // %[bias] 2^-112
+      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "p0", "p1", "p2",
+        "p3");
 }
 
 void HalfFloat1Row_SVE2(const uint16_t* src,
@@ -1221,7 +1228,7 @@ void CopyRow_SVE2(const uint8_t* src, uint8_t* dst, int width) {
       "st1b     {z0.b}, p0, [%[dst], #0, mul vl]        \n"
       "st1b     {z1.b}, p0, [%[dst], #1, mul vl]        \n"
       "incb     %[dst], all, mul #2                     \n"
-      "b.gt     1b                                      \n"
+      "b.ge     1b                                      \n"
 
       "2:                                               \n"
       "adds     %w[width], %w[width], %w[vl2]           \n"

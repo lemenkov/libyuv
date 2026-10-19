@@ -482,7 +482,8 @@ static int ScaleARGBBilinearDown(int src_width,
   // TODO(fbarchard): Consider not allocating row buffer for kFilterLinear.
   // Allocate a row of ARGB.
   {
-    align_buffer_64(row, clip_src_width * 4);
+    // clip_src_width is already in bytes (4 per ARGB pixel).
+    align_buffer_64(row, clip_src_width);
     if (!row)
       return 1;
 

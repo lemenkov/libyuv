@@ -1013,9 +1013,9 @@ void ScaleAddRow_NEON(const uint8_t* src_ptr,
 }
 
 #define SCALE_FILTER_COLS_STEP_ADDR                         \
-  "lsr        %[tmp_offset], %x[x], #16                 \n" \
+  "sbfx       %[tmp_offset], %x[x], #16, #16            \n" \
   "add        %[tmp_ptr], %[src_ptr], %[tmp_offset]     \n" \
-  "add        %x[x], %x[x], %x[dx]                      \n"
+  "add        %w[x], %w[x], %w[dx]                      \n"
 
 // The Neon version mimics this formula (from scale_common.cc):
 // #define BLENDER(a, b, f) (uint8_t)((int)(a) +

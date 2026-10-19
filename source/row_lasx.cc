@@ -2341,9 +2341,10 @@ void HalfFloatRow_LASX(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
                        int width) {
-  float mult = 1.9259299444e-34f * scale;
+  const float bias = 1.9259299444e-34f;  // 2^-112, see HalfFloatRow_C
   asm volatile(
-      "xvldrepl.w $xr3, %[mult], 0\n\t"
+      "xvldrepl.w $xr3, %[scale], 0\n\t"
+      "xvldrepl.w $xr5, %[bias], 0\n\t"
       "xvldi $xr4, 0\n\t"
       "1:\n\t"
       "xvld $xr0, %[src], 0\n\t"
@@ -2353,6 +2354,8 @@ void HalfFloatRow_LASX(const uint16_t* src,
       "xvffint.s.wu $xr2, $xr2\n\t"
       "xvfmul.s $xr1, $xr1, $xr3\n\t"
       "xvfmul.s $xr2, $xr2, $xr3\n\t"
+      "xvfmul.s $xr1, $xr1, $xr5\n\t"
+      "xvfmul.s $xr2, $xr2, $xr5\n\t"
       "xvsrlni.h.w $xr2, $xr1, 13\n\t"
       "xvst $xr2, %[dst], 0\n\t"
       "addi.d %[src], %[src], 32\n\t"
@@ -2360,8 +2363,8 @@ void HalfFloatRow_LASX(const uint16_t* src,
       "addi.d %[cnt], %[cnt], -16\n\t"
       "bnez %[cnt], 1b\n\t"
       : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
-      : [mult] "r"(&mult)
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+      : [scale] "r"(&scale), [bias] "r"(&bias)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
 }
 
 void ARGBToYMatrixRow_LASX(const uint8_t* src_argb,

@@ -938,6 +938,7 @@ static void ScaleAddCols1_16_C(int dst_width,
   int boxwidth = MIN1(dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
   int i;
+  x >>= 16;
   for (i = 0; i < dst_width; ++i) {
     *dst_ptr++ = SumPixels_16(boxwidth, src_ptr + x) * scaleval >> 16;
     x += boxwidth;
@@ -1498,7 +1499,7 @@ static int ScalePlaneBilinearUp(int src_width,
 #endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
     ScaleFilterCols = ScaleColsUp2_C;
-#if defined(HAS_SCALECOLS_SSE2)
+#if defined(HAS_SCALECOLSUP2_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
       ScaleFilterCols = ScaleColsUp2_SSE2;
     }
@@ -2092,7 +2093,7 @@ static void ScalePlaneSimple(int src_width,
 
   if (src_width * 2 == dst_width && x < 0x8000) {
     ScaleCols = ScaleColsUp2_C;
-#if defined(HAS_SCALECOLS_SSE2)
+#if defined(HAS_SCALECOLSUP2_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
       ScaleCols = ScaleColsUp2_SSE2;
     }

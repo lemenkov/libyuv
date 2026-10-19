@@ -2623,6 +2623,76 @@ void ARGBMirrorRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif  // HAS_ARGBMIRRORROW_RVV
 
+#ifdef HAS_ARGBSETROW_RVV
+void ARGBSetRow_RVV(uint8_t* dst_argb, uint32_t v32, int width) {
+  size_t vl;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
+      "vmv.v.x     v8, %[v32]                    \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
+      "vse32.v     v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bnez        %[w], 1b                      \n"
+      : [dst] "+r"(dst_argb),  // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      : [v32] "r"(v32)         // %[v32]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15");
+}
+#endif  // HAS_ARGBSETROW_RVV
+
+#ifdef HAS_ARGBSHUFFLEROW_RVV
+// Shuffle the 4 bytes of each ARGB pixel with a 16 byte shuffler table (only
+// the first 4 entries are used, the pattern repeats every pixel), e.g.
+// {0, 1, 2, 3} is a copy and {2, 1, 0, 3} swaps R and B.
+// Byte index vector: index[i] = (i & ~3) + shuffler[i & 3], gathered with a
+// 16 bit index so any VLEN works (e8 indices would be limited to 256 bytes).
+void ARGBShuffleRow_RVV(const uint8_t* src_argb,
+                        uint8_t* dst_argb,
+                        const uint8_t* shuffler,
+                        int width) {
+  size_t vl;
+  size_t w = (size_t)width * 4;  // bytes
+  // The 4 shuffler bytes packed little endian so a 32 bit broadcast lays them
+  // out as s0 s1 s2 s3 s0 s1 s2 s3 ... in memory order.
+  uint32_t pattern = (uint32_t)shuffler[0] | ((uint32_t)shuffler[1] << 8) |
+                     ((uint32_t)shuffler[2] << 16) |
+                     ((uint32_t)shuffler[3] << 24);
+  asm volatile(
+      // v16..v23 (e16, m8): index = (i & ~3) + shuffler[i & 3].
+      "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "vand.vi     v16, v16, -4                  \n"
+      "srli        %[vl], %[vl], 2               \n"
+      "vsetvli     zero, %[vl], e32, m4, ta, ma  \n"
+      "vmv.v.x     v8, %[pattern]                \n"  // s0 s1 s2 s3 ...
+      "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
+      "vzext.vf2   v24, v8                       \n"  // bytes -> e16
+      "vadd.vv     v16, v16, v24                 \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vse8.v      v0, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bnez        %[w], 1b                      \n"
+      : [src] "+r"(src_argb),   // %[src]
+        [dst] "+r"(dst_argb),   // %[dst]
+        [w] "+r"(w),            // %[w]
+        [vl] "=&r"(vl)          // %[vl]
+      : [pattern] "r"(pattern)  // %[pattern]
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v8", "v9", "v10",
+        "v11", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
+        "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+}
+#endif  // HAS_ARGBSHUFFLEROW_RVV
+
 #ifdef HAS_MIRRORUVROW_RVV
 void MirrorUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   int vl;

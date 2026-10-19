@@ -7056,6 +7056,7 @@ void SplitRGBRow_AVX2(const uint8_t* src_rgb,
       "lea         0x20(%3),%3                   \n"
       "sub         $0x20,%4                      \n"
       "jg          1b                            \n"
+      "vzeroupper                                \n"
       : "+r"(src_rgb),                  // %0
         "+r"(dst_r),                    // %1
         "+r"(dst_g),                    // %2
@@ -8223,7 +8224,8 @@ void ARGBCopyYToAlphaRow_SSE2(const uint8_t* src, uint8_t* dst, int width) {
       "movq        (%0),%%xmm2                   \n"
       "lea         0x8(%0),%0                    \n"
       "punpcklbw   %%xmm2,%%xmm2                 \n"
-      "punpckhwd   %%xmm2,%%xmm3                 \n"
+      "movdqa      %%xmm2,%%xmm3                 \n"
+      "punpckhwd   %%xmm3,%%xmm3                 \n"
       "punpcklwd   %%xmm2,%%xmm2                 \n"
       "movdqu      (%1),%%xmm4                   \n"
       "movdqu      0x10(%1),%%xmm5               \n"
@@ -11102,7 +11104,7 @@ void ARGBPolynomialRow_SSE2(const uint8_t* src_argb,
                "addps       %%xmm5,%%xmm4                 \n"
                "cvttps2dq   %%xmm0,%%xmm0                 \n"
                "cvttps2dq   %%xmm4,%%xmm4                 \n"
-               "packuswb    %%xmm4,%%xmm0                 \n"
+               "packssdw    %%xmm4,%%xmm0                 \n"
                "packuswb    %%xmm0,%%xmm0                 \n"
                "movq        %%xmm0,(%1)                   \n"
                "lea         0x8(%1),%1                    \n"
@@ -11159,14 +11161,17 @@ void ARGBPolynomialRow_AVX2(const uint8_t* src_argb,
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
 #ifdef HAS_HALFFLOATROW_AVX2
-static float kScaleBias = 1.9259299444e-34f;
+// 2^-112 moves the float exponent into half float position. Applied as a
+// separate multiply after scale so no denormal constant is formed when
+// scale < 2^-14 (see HalfFloatRow_C).
+static const float kScaleBias = 1.9259299444e-34f;
 void HalfFloatRow_AVX2(const uint16_t* src,
                        uint16_t* dst,
                        float scale,
                        int width) {
-  scale *= kScaleBias;
   asm volatile(
       "vbroadcastss %3, %%ymm4                   \n"
+      "vbroadcastss %4, %%ymm6                   \n"
       "vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
       "sub         %0,%1                         \n"
 
@@ -11179,8 +11184,10 @@ void HalfFloatRow_AVX2(const uint16_t* src,
       "vpunpcklwd  %%ymm5,%%ymm2,%%ymm2          \n"
       "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
       "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
-      "vmulps      %%ymm3,%%ymm4,%%ymm3          \n"
+      "vmulps      %%ymm3,%%ymm4,%%ymm3          \n"  // * scale
       "vmulps      %%ymm2,%%ymm4,%%ymm2          \n"
+      "vmulps      %%ymm3,%%ymm6,%%ymm3          \n"  // * 2^-112
+      "vmulps      %%ymm2,%%ymm6,%%ymm2          \n"
       "vpsrld      $0xd,%%ymm3,%%ymm3            \n"
       "vpsrld      $0xd,%%ymm2,%%ymm2            \n"
       "vpackssdw   %%ymm3, %%ymm2, %%ymm2        \n"  // unmutates
@@ -11193,11 +11200,13 @@ void HalfFloatRow_AVX2(const uint16_t* src,
         "+r"(dst),   // %1
         "+r"(width)  // %2
 #if defined(__x86_64__)
-      : "x"(scale)  // %3
+      : "x"(scale),      // %3
+        "x"(kScaleBias)  // %4
 #else
-      : "m"(scale)  // %3
+      : "m"(scale),      // %3
+        "m"(kScaleBias)  // %4
 #endif
-      : "memory", "cc", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "memory", "cc", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif  // HAS_HALFFLOATROW_AVX2
 
@@ -11716,10 +11725,10 @@ void ClampFloatToZero_SSE2(const float* src_x, float* dst_y, int width) {
       "1:          \n"
       "movd        (%0),%%xmm0                   \n"  // load float
       "maxss       %%xmm1, %%xmm0                \n"  // clamp to zero
-      "add         4, %0                         \n"
+      "lea         0x4(%0),%0                    \n"
       "movd        %%xmm0, (%1)                  \n"  // store float
-      "add         4, %1                         \n"
-      "sub         $0x4,%2                       \n"  // 1 float per loop
+      "lea         0x4(%1),%1                    \n"
+      "sub         $0x1,%2                       \n"  // 1 float per loop
       "jg          1b                            \n"
       : "+r"(src_x),  // %0
         "+r"(dst_y),  // %1

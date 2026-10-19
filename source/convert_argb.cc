@@ -4223,7 +4223,8 @@ int RAWToRGBA(const uint8_t* src_raw,
   }
 #endif
 #if defined(HAS_RAWTORGBAROW_AVX512VBMI)
-  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
+  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
     RAWToRGBARow = RAWToRGBARow_AVX512VBMI;
   }
 #endif
@@ -5100,7 +5101,8 @@ int NV12ToRGB24Matrix(const uint8_t* src_y,
   }
 #endif
 #if defined(HAS_NV12TORGB24ROW_AVX512VBMI)
-  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
+  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
     NV12ToRGB24Row = NV12ToRGB24Row_AVX512VBMI;
   }
 #endif
@@ -5182,7 +5184,8 @@ int NV21ToRGB24Matrix(const uint8_t* src_y,
   }
 #endif
 #if defined(HAS_NV21TORGB24ROW_AVX512VBMI)
-  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
+  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
     NV21ToRGB24Row = NV21ToRGB24Row_AVX512VBMI;
   }
 #endif
@@ -6121,7 +6124,7 @@ int I420ToRGB24Matrix(const uint8_t* src_y,
 #if defined(HAS_I422TORGB24ROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     I422ToRGB24Row = I422ToRGB24Row_Any_WASMSIMD;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       I422ToRGB24Row = I422ToRGB24Row_WASMSIMD;
     }
   }
@@ -6352,7 +6355,7 @@ int I422ToRGB24Matrix(const uint8_t* src_y,
 #if defined(HAS_I422TORGB24ROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     I422ToRGB24Row = I422ToRGB24Row_Any_WASMSIMD;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       I422ToRGB24Row = I422ToRGB24Row_WASMSIMD;
     }
   }

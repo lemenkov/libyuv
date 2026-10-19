@@ -583,6 +583,8 @@ void AR64ToAB64Row_C(const uint16_t* src_ar64, uint16_t* dst_ab64, int width) {
 }
 
 // TODO(fbarchard): Make shuffle compatible with SIMD versions
+// width is in units of 32 bit ARGB pixels (2 per AR64 pixel) so that
+// AR64Shuffle can share the ARGBShuffleRow SIMD kernels.
 void AR64ShuffleRow_C(const uint8_t* src_ar64,
                       uint8_t* dst_ar64,
                       const uint8_t* shuffler,
@@ -2938,8 +2940,10 @@ void DetileToYUY2_C(const uint8_t* src_y,
                     ptrdiff_t src_uv_tile_stride,
                     uint8_t* dst_yuy2,
                     int width) {
-  for (int x = 0; x < width - 15; x += 16) {
-    for (int i = 0; i < 8; i++) {
+  int x;
+  for (x = 0; x < width - 15; x += 16) {
+    int i;
+    for (i = 0; i < 8; i++) {
       dst_yuy2[0] = src_y[0];
       dst_yuy2[1] = src_uv[0];
       dst_yuy2[2] = src_y[1];
@@ -2950,6 +2954,16 @@ void DetileToYUY2_C(const uint8_t* src_y,
     }
     src_y += src_y_tile_stride - 16;
     src_uv += src_uv_tile_stride - 16;
+  }
+  // Remaining pixels of a partial 16 pixel tile.
+  for (x = 0; x < (width & 15); x += 2) {
+    dst_yuy2[0] = src_y[0];
+    dst_yuy2[1] = src_uv[0];
+    dst_yuy2[2] = src_y[1];
+    dst_yuy2[3] = src_uv[1];
+    dst_yuy2 += 4;
+    src_y += 2;
+    src_uv += 2;
   }
 }
 
@@ -3214,8 +3228,10 @@ void DivideRow_16_C(const uint16_t* src_y,
                     int scale,
                     int width) {
   int x;
+  // scale can be 65536 so multiply unsigned to avoid signed overflow.
   for (x = 0; x < width; ++x) {
-    dst_y[x] = (src_y[x] * scale) >> 16;
+    dst_y[x] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_y[x] * (uint32_t)scale) >> 16);
   }
 }
 
@@ -3225,7 +3241,8 @@ void DivideRow_16_C(const uint16_t* src_y,
 // 4096 = 12 bits
 // 256 = 16 bits
 // TODO(fbarchard): change scale to bits
-#define C16TO8(v, scale) clamp255(((v) * (scale)) >> 16)
+#define C16TO8(v, scale) \
+  clamp255((int32_t)(((uint32_t)(v) * (uint32_t)(scale)) >> 16))
 
 void Convert16To8Row_C(const uint16_t* src_y,
                        uint8_t* dst_y,
@@ -3943,9 +3960,15 @@ void HalfFloatRow_C(const uint16_t* src,
                     float scale,
                     int width) {
   int i;
-  float mult = 1.9259299444e-34f * scale;
+  // Multiply by scale first, then by 2^-112 to move the exponent into half
+  // float position. Doing the scale and bias as two multiplies keeps every
+  // intermediate normal; a combined (scale * 2^-112) constant is a denormal
+  // for scale < 2^-14 (e.g. 1/65535), which costs a microcode assist per
+  // multiply on Intel CPUs (50x slower). 2^-112 is a power of 2 so the
+  // result is identical to the single multiply when that was representable.
+  const float kScaleBias = 1.9259299444e-34f;  // 2^-112
   for (i = 0; i < width; ++i) {
-    float value = src[i] * mult;
+    float value = (src[i] * scale) * kScaleBias;
     dst[i] = (uint16_t)((*(const uint32_alias_t*)&value) >> 13);
   }
 }

@@ -4767,20 +4767,25 @@ void HalfFloatRow_NEON(const uint16_t* src,
       "scvtf       v4.4s, v4.4s                  \n"
       "scvtf       v3.4s, v3.4s                  \n"
       "scvtf       v5.4s, v5.4s                  \n"
-      "fmul        v2.4s, v2.4s, %3.s[0]         \n"  // adjust exponent
+      "fmul        v2.4s, v2.4s, %3.s[0]         \n"  // * scale
       "fmul        v4.4s, v4.4s, %3.s[0]         \n"
       "fmul        v3.4s, v3.4s, %3.s[0]         \n"
       "fmul        v5.4s, v5.4s, %3.s[0]         \n"
+      "fmul        v2.4s, v2.4s, %4.s[0]         \n"  // adjust exponent
+      "fmul        v4.4s, v4.4s, %4.s[0]         \n"
+      "fmul        v3.4s, v3.4s, %4.s[0]         \n"
+      "fmul        v5.4s, v5.4s, %4.s[0]         \n"
       "uqshrn      v0.4h, v2.4s, #13             \n"  // isolate halffloat
       "uqshrn      v1.4h, v4.4s, #13             \n"
       "uqshrn2     v0.8h, v3.4s, #13             \n"
       "uqshrn2     v1.8h, v5.4s, #13             \n"
       "stp         q0, q1, [%1], #32             \n"  // store 16 fp16
       "b.gt        1b                            \n"
-      : "+r"(src),                      // %0
-        "+r"(dst),                      // %1
-        "+r"(width)                     // %2
-      : "w"(scale * 1.9259299444e-34f)  // %3
+      : "+r"(src),              // %0
+        "+r"(dst),              // %1
+        "+r"(width)             // %2
+      : "w"(scale),             // %3
+        "w"(1.9259299444e-34f)  // %4  2^-112, see HalfFloatRow_C
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5");
 }
 
@@ -4836,8 +4841,8 @@ void ConvertFP16ToFP32Column_NEON(const uint16_t* src,  // fp16
                                   float* dst,
                                   int width) {
   asm volatile(
-      "cmp         %w2, #8                       \n"  // Is there 8 rows?
-      "b.lo        2f                            \n"
+      "subs        %w2, %w2, #8                  \n"  // Is there 8 rows?
+      "b.lt        2f                            \n"
       "1:          \n"
       "ld1         {v0.h}[0], [%0], %3           \n"  // load 8 halffloats
       "ld1         {v0.h}[1], [%0], %3           \n"
@@ -4852,15 +4857,16 @@ void ConvertFP16ToFP32Column_NEON(const uint16_t* src,  // fp16
       "fcvtl       v2.4s, v0.4h                  \n"  // 4 floats
       "fcvtl       v3.4s, v1.4h                  \n"  // 4 more floats
       "stp         q2, q3, [%1], #32             \n"  // store 8 floats
-      "b.gt        1b                            \n"
-      "cmp         %w2, #1                       \n"  // Is there 1 value?
-      "b.lo        3f                            \n"
+      "b.ge        1b                            \n"
       "2:          \n"
+      "adds        %w2, %w2, #8                  \n"  // Restore remainder.
+      "b.eq        3f                            \n"
+      "4:          \n"
       "ld1         {v1.h}[0], [%0], %3           \n"  // load 1 halffloats
       "subs        %w2, %w2, #1                  \n"  // 1 floats per loop
       "fcvtl       v2.4s, v1.4h                  \n"  // 1 floats
       "str         s2, [%1], #4                  \n"  // store 1 floats
-      "b.gt        2b                            \n"
+      "b.gt        4b                            \n"
       "3:          \n"
       : "+r"(src),                      // %0
         "+r"(dst),                      // %1

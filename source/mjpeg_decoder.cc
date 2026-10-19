@@ -127,7 +127,11 @@ bool MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
   AllocOutputBuffers(GetNumComponents());
   for (int i = 0; i < num_outbufs_; ++i) {
     int scanlines_size = GetComponentScanlinesPerImcuRow(i);
-    if (scanlines_sizes_[i] != scanlines_size) {
+    // databuf_[i] is sized by scanlines_size * stride, so a change in either
+    // must trigger reallocation below. Remember the change before
+    // scanlines_sizes_[i] is overwritten.
+    bool scanlines_changed = scanlines_sizes_[i] != scanlines_size;
+    if (scanlines_changed) {
       free(scanlines_[i]);
       scanlines_[i] =
           static_cast<uint8_t**>(malloc(scanlines_size * sizeof(uint8_t*)));
@@ -147,7 +151,7 @@ bool MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
     //    DCTSIZE) is at most slightly larger than UINT16_MAX.
     //  - Sampling factor is stored in 4 bits, so scanlines_size is < 16.
     int databuf_size = scanlines_size * databuf_stride;
-    if (databuf_strides_[i] != databuf_stride) {
+    if (scanlines_changed || databuf_strides_[i] != databuf_stride) {
       free(databuf_[i]);
       databuf_[i] = static_cast<uint8_t*>(malloc(databuf_size));
       databuf_strides_[i] = databuf_stride;
@@ -268,9 +272,11 @@ bool MJpegDecoder::DecodeToBuffers(uint8_t** planes,
   SetScanlinePointers(databuf_);
   int lines_left = dst_height;
   // Compute amount of lines to skip to implement vertical crop.
-  // TODO(fbarchard): Ensure skip is a multiple of maximum component
-  // subsample. ie 2
+  // Round skip down to a multiple of the maximum vertical sampling factor so
+  // that every component skips a whole number of rows. The rows remaining
+  // below the crop are still >= dst_height.
   int skip = (GetHeight() - dst_height) / 2;
+  skip -= skip % decompress_struct_->max_v_samp_factor;
   if (skip > 0) {
     // There is no API to skip lines in the output data, so we read them
     // into the temp buffer.
@@ -288,19 +294,23 @@ bool MJpegDecoder::DecodeToBuffers(uint8_t** planes,
         FinishDecode();
         return false;
       }
+      // Image lines wanted from this iMCU row, clamped to the destination.
+      int image_lines_to_copy = GetImageScanlinesPerImcuRow() - skip;
+      if (image_lines_to_copy > lines_left) {
+        image_lines_to_copy = lines_left;
+      }
       for (int i = 0; i < num_outbufs_; ++i) {
-        // TODO(fbarchard): Compute skip to avoid this
         assert(skip % GetVertSubSampFactor(i) == 0);
         int rows_to_skip = DivideAndRoundDown(skip, GetVertSubSampFactor(i));
         int scanlines_to_copy =
-            GetComponentScanlinesPerImcuRow(i) - rows_to_skip;
+            DivideAndRoundUp(image_lines_to_copy, GetVertSubSampFactor(i));
         int data_to_skip = rows_to_skip * GetComponentStride(i);
         CopyPlane(databuf_[i] + data_to_skip, GetComponentStride(i), planes[i],
                   GetComponentWidth(i), GetComponentWidth(i),
                   scanlines_to_copy);
         planes[i] += scanlines_to_copy * GetComponentWidth(i);
       }
-      lines_left -= (GetImageScanlinesPerImcuRow() - skip);
+      lines_left -= image_lines_to_copy;
     }
   }
 
@@ -357,8 +367,12 @@ bool MJpegDecoder::DecodeToCallback(CallbackFunction fn,
   }
   SetScanlinePointers(databuf_);
   int lines_left = dst_height;
-  // TODO(fbarchard): Compute amount of lines to skip to implement vertical crop
+  // Compute amount of lines to skip to implement vertical crop.
+  // Round skip down to a multiple of the maximum vertical sampling factor so
+  // that every component skips a whole number of rows. The rows remaining
+  // below the crop are still >= dst_height.
   int skip = (GetHeight() - dst_height) / 2;
+  skip -= skip % decompress_struct_->max_v_samp_factor;
   if (skip > 0) {
     while (skip >= GetImageScanlinesPerImcuRow()) {
       if (!DecodeImcuRow()) {
@@ -374,7 +388,6 @@ bool MJpegDecoder::DecodeToCallback(CallbackFunction fn,
         return false;
       }
       for (int i = 0; i < num_outbufs_; ++i) {
-        // TODO(fbarchard): Compute skip to avoid this
         assert(skip % GetVertSubSampFactor(i) == 0);
         int rows_to_skip = DivideAndRoundDown(skip, GetVertSubSampFactor(i));
         int data_to_skip = rows_to_skip * GetComponentStride(i);
@@ -382,7 +395,11 @@ bool MJpegDecoder::DecodeToCallback(CallbackFunction fn,
         // callback.
         databuf_[i] += data_to_skip;
       }
+      // Image lines wanted from this iMCU row, clamped to the destination.
       int scanlines_to_copy = GetImageScanlinesPerImcuRow() - skip;
+      if (scanlines_to_copy > lines_left) {
+        scanlines_to_copy = lines_left;
+      }
       (*fn)(opaque, databuf_, databuf_strides_, scanlines_to_copy);
       // Now change them back.
       for (int i = 0; i < num_outbufs_; ++i) {

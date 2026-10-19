@@ -78,6 +78,9 @@ static int ARGBTranspose(const uint8_t* src_argb,
 #if defined(HAS_TRANSPOSEWX4_32_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     TransposeWx4_32 = TransposeWx4_32_SVE2;
+#if defined(HAS_TRANSPOSEWXH_32_NEON)
+    TransposeWxH_32 = NULL;
+#endif
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_32_SME)

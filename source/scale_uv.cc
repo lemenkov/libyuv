@@ -235,7 +235,7 @@ static int ScaleUVDown4Box(int src_width,
     }
   }
 #endif
-#if defined(HAS_SCALEUVROWDOWN2BOX_SME)
+#if defined(HAS_SCALEUVROWDOWN2_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     ScaleUVRowDown2 = ScaleUVRowDown2Box_SME;
   }
@@ -693,7 +693,8 @@ static int ScaleUVBilinearDown(int src_width,
   {
     const uint32_t max_y = (uint32_t)(src_height - 1) << 16;
     uint32_t uy = y;
-    align_buffer_64(row, clip_src_width * 2);
+    // clip_src_width is already in bytes (2 per UV pixel).
+    align_buffer_64(row, clip_src_width);
     if (!row)
       return 1;
     if (uy > max_y) {
@@ -1449,6 +1450,14 @@ int UVScale_16(const uint16_t* src_uv,
                      dst_height);
   }
 #endif
+
+  // ScaleFilterReduce reduces a 1 pixel wide source to kFilterNone, which has
+  // no 16 bit implementation other than the copy above. The Up2 kernels only
+  // read the pixels they need, so restore Linear or Bilinear for a 2x upscale
+  // so P010ToP410 and P210ToP410 work on 1 pixel wide images.
+  if (filtering == kFilterNone && src_width == 1 && dst_width <= 2) {
+    filtering = (src_height == dst_height) ? kFilterLinear : kFilterBilinear;
+  }
 
   if ((filtering == kFilterLinear) && ((dst_width + 1) / 2 == src_width)) {
     ScaleUVLinearUp2_16(src_width, src_height, dst_width, dst_height,

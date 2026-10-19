@@ -3369,20 +3369,25 @@ void HalfFloatRow_NEON(const uint16_t* src,
       "vcvt.f32.u32 q9, q9                       \n"
       "vcvt.f32.u32 q10, q10                     \n"
       "vcvt.f32.u32 q11, q11                     \n"
-      "vmul.f32    q8, q8, %y3                   \n"  // adjust exponent
+      "vmul.f32    q8, q8, %y3                   \n"  // * scale
       "vmul.f32    q9, q9, %y3                   \n"
       "vmul.f32    q10, q10, %y3                 \n"
       "vmul.f32    q11, q11, %y3                 \n"
+      "vmul.f32    q8, q8, %y4                   \n"  // adjust exponent
+      "vmul.f32    q9, q9, %y4                   \n"
+      "vmul.f32    q10, q10, %y4                 \n"
+      "vmul.f32    q11, q11, %y4                 \n"
       "vqshrn.u32  d0, q8, #13                   \n"  // isolate halffloat
       "vqshrn.u32  d1, q9, #13                   \n"
       "vqshrn.u32  d2, q10, #13                  \n"
       "vqshrn.u32  d3, q11, #13                  \n"
       "vst1.16     {q0, q1}, [%1]!               \n"  // store 16 fp16
       "bgt         1b                            \n"
-      : "+r"(src),                      // %0
-        "+r"(dst),                      // %1
-        "+r"(width)                     // %2
-      : "w"(scale * 1.9259299444e-34f)  // %3
+      : "+r"(src),              // %0
+        "+r"(dst),              // %1
+        "+r"(width)             // %2
+      : "w"(scale),             // %3
+        "w"(1.9259299444e-34f)  // %4  2^-112, see HalfFloatRow_C
       : "cc", "memory", "q0", "q1", "q8", "q9", "q10", "q11");
 }
 

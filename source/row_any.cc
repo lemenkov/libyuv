@@ -1575,7 +1575,7 @@ ANY11T(ARGBToAB64Row_Any_SSSE3, ARGBToAB64Row_SSSE3, 4, 8, uint8_t, uint16_t, 3)
 ANY11T(AR64ToARGBRow_Any_SSSE3, AR64ToARGBRow_SSSE3, 8, 4, uint16_t, uint8_t, 3)
 #endif
 
-#ifdef HAS_ARGBTOAR64ROW_SSSE3
+#ifdef HAS_AB64TOARGBROW_SSSE3
 ANY11T(AB64ToARGBRow_Any_SSSE3, AB64ToARGBRow_SSSE3, 8, 4, uint16_t, uint8_t, 3)
 #endif
 
@@ -1591,7 +1591,7 @@ ANY11T(ARGBToAB64Row_Any_AVX2, ARGBToAB64Row_AVX2, 4, 8, uint8_t, uint16_t, 7)
 ANY11T(AR64ToARGBRow_Any_AVX2, AR64ToARGBRow_AVX2, 8, 4, uint16_t, uint8_t, 7)
 #endif
 
-#ifdef HAS_ARGBTOAR64ROW_AVX2
+#ifdef HAS_AB64TOARGBROW_AVX2
 ANY11T(AB64ToARGBRow_Any_AVX2, AB64ToARGBRow_AVX2, 8, 4, uint16_t, uint8_t, 7)
 #endif
 
@@ -1607,7 +1607,7 @@ ANY11T(ARGBToAB64Row_Any_NEON, ARGBToAB64Row_NEON, 4, 8, uint8_t, uint16_t, 7)
 ANY11T(AR64ToARGBRow_Any_NEON, AR64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
 #endif
 
-#ifdef HAS_ARGBTOAR64ROW_NEON
+#ifdef HAS_AB64TOARGBROW_NEON
 ANY11T(AB64ToARGBRow_Any_NEON, AB64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
 #endif
 
@@ -1836,7 +1836,7 @@ ANY11P16(HalfFloat1Row_Any_F16C,
 ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, uint16_t, uint16_t, 2, 2, 15)
 #endif
 #ifdef HAS_BYTETOFLOATROW_NEON
-ANY11P16(ByteToFloatRow_Any_NEON, ByteToFloatRow_NEON, uint8_t, float, 1, 3, 7)
+ANY11P16(ByteToFloatRow_Any_NEON, ByteToFloatRow_NEON, uint8_t, float, 1, 4, 7)
 #endif
 #ifdef HAS_HALFFLOATROW_LSX
 ANY11P16(HalfFloatRow_Any_LSX, HalfFloatRow_LSX, uint16_t, uint16_t, 2, 2, 7)
@@ -2139,6 +2139,9 @@ ANY11M(ARGBMirrorRow_Any_LASX, ARGBMirrorRow_LASX, 4, 7)
 #endif
 #ifdef HAS_RGB24MIRRORROW_AVX2
 ANY11M(RGB24MirrorRow_Any_AVX2, RGB24MirrorRow_AVX2, 3, 31)
+#endif
+#ifdef HAS_RGB24MIRRORROW_SSSE3
+ANY11M(RGB24MirrorRow_Any_SSSE3, RGB24MirrorRow_SSSE3, 3, 15)
 #endif
 #ifdef HAS_RGB24MIRRORROW_NEON
 ANY11M(RGB24MirrorRow_Any_NEON, RGB24MirrorRow_NEON, 3, 15)

@@ -408,11 +408,21 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info24[4] = {0, 0, 0, 0};
   int cpu_info21[4] = {0, 0, 0, 0};
   int cpu_amdinfo21[4] = {0, 0, 0, 0};
+  int cpu_extinfo0[4] = {0, 0, 0, 0};
   CpuId(0, 0, cpu_info0);
   CpuId(1, 0, cpu_info1);
   if (cpu_info0[0] >= 7) {
     CpuId(7, 0, cpu_info7);
-    CpuId(7, 1, cpu_einfo7);
+    // Leaf 7 EAX reports the maximum supported sub-leaf.
+    if (cpu_info7[0] >= 1) {
+      CpuId(7, 1, cpu_einfo7);
+    }
+  }
+  // Extended leaf 0x80000021 is only valid if the CPU reports it. Querying an
+  // unsupported extended leaf returns data from the highest basic leaf on
+  // Intel CPUs, which could spuriously set bits below.
+  CpuId(0x80000000, 0, cpu_extinfo0);
+  if ((unsigned)cpu_extinfo0[0] >= 0x80000021u) {
     CpuId(0x80000021, 0, cpu_amdinfo21);
   }
   if (cpu_info0[0] >= 0x21) {

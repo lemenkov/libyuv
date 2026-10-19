@@ -1275,21 +1275,6 @@ void ScaleRowUp2_Bilinear_16_SSE2(const uint16_t* src_ptr,
 
       LABELALIGN
       "1:          \n"
-      "movq        (%0),%%xmm0                   \n"  // 0011 (16b, 1u1v)
-      "movq        4(%0),%%xmm1                  \n"  // 1122 (16b, 1u1v)
-      "punpcklwd   %%xmm7,%%xmm0                 \n"  // 0011 (near) (32b, 1u1v)
-      "punpcklwd   %%xmm7,%%xmm1                 \n"  // 1122 (near) (32b, 1u1v)
-      "movdqa      %%xmm0,%%xmm2                 \n"
-      "movdqa      %%xmm1,%%xmm3                 \n"
-      "pshufd      $0b01001110,%%xmm2,%%xmm2     \n"  // 1100 (far) (1, lo)
-      "pshufd      $0b01001110,%%xmm3,%%xmm3     \n"  // 2211 (far) (1, hi)
-      "paddd       %%xmm0,%%xmm2                 \n"  // near+far (1, lo)
-      "paddd       %%xmm1,%%xmm3                 \n"  // near+far (1, hi)
-      "paddd       %%xmm0,%%xmm0                 \n"  // 2*near (1, lo)
-      "paddd       %%xmm1,%%xmm1                 \n"  // 2*near (1, hi)
-      "paddd       %%xmm2,%%xmm0                 \n"  // 3*near+far (1, lo)
-      "paddd       %%xmm3,%%xmm1                 \n"  // 3*near+far (1, hi)
-
       "movq        (%0),%%xmm0                   \n"  // 0123 (16b)
       "movq        2(%0),%%xmm1                  \n"  // 1234 (16b)
       "punpcklwd   %%xmm7,%%xmm0                 \n"  // 0123 (32b)

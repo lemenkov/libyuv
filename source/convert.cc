@@ -1270,6 +1270,7 @@ int I422ToNV21(const uint8_t* src_y,
                  dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth,
                  width, height);
   if (r != 0) {
+    free_aligned_buffer_64(plane_u);
     return r;
   }
   MergeUVPlane(plane_v, halfwidth, plane_u, halfwidth, dst_vu, dst_stride_vu,
@@ -2714,7 +2715,8 @@ int AYUVToNV12(const uint8_t* src_ayuv,
   }
 #endif
 #if defined(HAS_AYUVTOYROW_AVX512VBMI)
-  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
+  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
     AYUVToUVRow = AYUVToUVRow_AVX512VBMI;
     AYUVToYRow = AYUVToYRow_AVX512VBMI;
   }
@@ -2800,7 +2802,8 @@ int AYUVToNV21(const uint8_t* src_ayuv,
   }
 #endif
 #if defined(HAS_AYUVTOYROW_AVX512VBMI)
-  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
+  if (TestCpuFlag(kCpuHasAVX512VBMI | kCpuHasAVX512VL) ==
+      (kCpuHasAVX512VBMI | kCpuHasAVX512VL)) {
     AYUVToVURow = AYUVToVURow_AVX512VBMI;
     AYUVToYRow = AYUVToYRow_AVX512VBMI;
   }

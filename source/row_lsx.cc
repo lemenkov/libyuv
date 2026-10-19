@@ -2022,9 +2022,10 @@ void HalfFloatRow_LSX(const uint16_t* src,
                       uint16_t* dst,
                       float scale,
                       int width) {
-  float mult = 1.9259299444e-34f * scale;
+  const float bias = 1.9259299444e-34f;  // 2^-112, see HalfFloatRow_C
   asm volatile(
-      "vldrepl.w $vr3, %[mult], 0\n\t"
+      "vldrepl.w $vr3, %[scale], 0\n\t"
+      "vldrepl.w $vr5, %[bias], 0\n\t"
       "vldi $vr4, 0\n\t"
       "1:\n\t"
       "vld $vr0, %[src], 0\n\t"
@@ -2034,6 +2035,8 @@ void HalfFloatRow_LSX(const uint16_t* src,
       "vffint.s.wu $vr2, $vr2\n\t"
       "vfmul.s $vr1, $vr1, $vr3\n\t"
       "vfmul.s $vr2, $vr2, $vr3\n\t"
+      "vfmul.s $vr1, $vr1, $vr5\n\t"
+      "vfmul.s $vr2, $vr2, $vr5\n\t"
       "vsrlni.h.w $vr2, $vr1, 13\n\t"
       "vst $vr2, %[dst], 0\n\t"
       "addi.d %[src], %[src], 16\n\t"
@@ -2041,8 +2044,8 @@ void HalfFloatRow_LSX(const uint16_t* src,
       "addi.d %[cnt], %[cnt], -8\n\t"
       "bnez %[cnt], 1b\n\t"
       : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
-      : [mult] "r"(&mult)
-      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+      : [scale] "r"(&scale), [bias] "r"(&bias)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5");
 }
 
 void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
