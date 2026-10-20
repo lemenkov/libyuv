@@ -664,16 +664,17 @@ TEST_F(LibYUVCompareTest, BenchmarkSsim_Opt) {
 
   MaskCpuFlags(benchmark_cpu_info_);
 
-  double opt_time = get_time();
+  double ssim = 0.0;
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    CalcFrameSsim(src_a, benchmark_width_, src_b, benchmark_width_,
-                  benchmark_width_, benchmark_height_);
+    ssim = CalcFrameSsim(src_a, benchmark_width_, src_b, benchmark_width_,
+                         benchmark_width_, benchmark_height_);
   }
 
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
-  printf("BenchmarkSsim_Opt - %8.2f us opt\n", opt_time * 1e6);
-
-  ASSERT_EQ(0, 0);  // Pass if we get this far.
+  if (benchmark_width_ > 8 && benchmark_height_ > 8) {
+    EXPECT_EQ(1.0, ssim);
+  } else {
+    EXPECT_EQ(0.0, ssim);
+  }
 
   free_aligned_buffer_page_end(src_a);
   free_aligned_buffer_page_end(src_b);
@@ -689,16 +690,17 @@ TEST_F(LibYUVCompareTest, BenchmarkSsim_Unaligned) {
 
   MaskCpuFlags(benchmark_cpu_info_);
 
-  double opt_time = get_time();
+  double ssim = 0.0;
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    CalcFrameSsim(src_a + 1, benchmark_width_, src_b, benchmark_width_,
-                  benchmark_width_, benchmark_height_);
+    ssim = CalcFrameSsim(src_a + 1, benchmark_width_, src_b, benchmark_width_,
+                         benchmark_width_, benchmark_height_);
   }
 
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
-  printf("BenchmarkSsim_Opt - %8.2f us opt\n", opt_time * 1e6);
-
-  ASSERT_EQ(0, 0);
+  if (benchmark_width_ > 8 && benchmark_height_ > 8) {
+    EXPECT_EQ(1.0, ssim);
+  } else {
+    EXPECT_EQ(0.0, ssim);
+  }
 
   free_aligned_buffer_page_end(src_a);
   free_aligned_buffer_page_end(src_b);
@@ -710,8 +712,10 @@ TEST_F(LibYUVCompareTest, TestSsimAnyWidth) {
   const int kPlaneSize = kMaxWidth * kHeight + 1;
   align_buffer_page_end(src_a, kPlaneSize);
   align_buffer_page_end(src_b, kPlaneSize);
-  MemRandomize(src_a, kPlaneSize);
-  MemRandomize(src_b, kPlaneSize);
+  for (int i = 0; i < kPlaneSize; ++i) {
+    src_a[i] = (i * 73 + 19) & 0xff;
+    src_b[i] = (i * 151 + 43) & 0xff;
+  }
 
   for (int width = 9; width <= kMaxWidth; ++width) {
     for (int offset = 0; offset < 2; ++offset) {
@@ -722,8 +726,8 @@ TEST_F(LibYUVCompareTest, TestSsimAnyWidth) {
       double c_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
       MaskCpuFlags(benchmark_cpu_info_);
       double opt_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
-      double ssim_diff = c_ssim - opt_ssim;
-      EXPECT_LT(ssim_diff, 0.0001) << "width " << width << " offset " << offset;
+      EXPECT_NEAR(c_ssim, opt_ssim, 1e-5)
+          << "width " << width << " offset " << offset;
     }
   }
 
@@ -746,15 +750,17 @@ TEST_F(LibYUVCompareTest, Ssim) {
     printf("warning - Ssim size too small.  Testing function executes.\n");
   }
 
+  // Identical images: SSIM == 1.0.
   double err;
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
                       src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
                       kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
-    ASSERT_EQ(err, 1.0);
+    EXPECT_EQ(err, 1.0);
   }
 
+  // Completely different constant images (255 vs 0): SSIM near 0.
   memset(src_a, 255, kSrcPlaneSize);
 
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
@@ -762,9 +768,10 @@ TEST_F(LibYUVCompareTest, Ssim) {
                       kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
-    ASSERT_LT(err, 0.0001);
+    EXPECT_LT(err, 0.0001);
   }
 
+  // Slightly different constant images (1 vs 0): SSIM ~ 0.84.
   memset(src_a, 1, kSrcPlaneSize);
 
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
@@ -772,10 +779,11 @@ TEST_F(LibYUVCompareTest, Ssim) {
                       kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
-    ASSERT_GT(err, 0.0001);
-    ASSERT_LT(err, 0.9);
+    EXPECT_GT(err, 0.8);
+    EXPECT_LT(err, 0.9);
   }
 
+  // Gradient vs constant 0: SSIM near 0.
   for (int i = 0; i < kSrcPlaneSize; ++i) {
     src_a[i] = i;
   }
@@ -785,32 +793,34 @@ TEST_F(LibYUVCompareTest, Ssim) {
                       kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
-    ASSERT_GT(err, 0.0);
-    ASSERT_LT(err, 0.01);
+    EXPECT_GT(err, 0.0);
+    EXPECT_LT(err, 0.01);
   }
 
+  // Similar images (deterministic gradient + small perturbation): SSIM ~ 0.99.
   for (int i = b; i < (kSrcHeight + b); ++i) {
     for (int j = b; j < (kSrcWidth + b); ++j) {
-      src_a[(i * kSrcStride) + j] = (fastrand() & 0xff);
-      src_b[(i * kSrcStride) + j] = (fastrand() & 0xff);
+      uint8_t val = static_cast<uint8_t>((i * 3 + j * 5) & 0xff);
+      src_a[(i * kSrcStride) + j] = val;
+      src_b[(i * kSrcStride) + j] =
+          static_cast<uint8_t>((val + ((i ^ j) & 3)) & 0xff);
     }
   }
 
   MaskCpuFlags(disable_cpu_flags_);
-  double c_err, opt_err;
-
-  c_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                        src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
-                        kSrcHeight);
+  double c_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
+                               src_b + kSrcStride * b + b, kSrcStride,
+                               kSrcWidth, kSrcHeight);
 
   MaskCpuFlags(benchmark_cpu_info_);
-
-  opt_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                          src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
-                          kSrcHeight);
+  double opt_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
+                                 src_b + kSrcStride * b + b, kSrcStride,
+                                 kSrcWidth, kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
-    ASSERT_EQ(opt_err, c_err);
+    EXPECT_GT(opt_err, 0.9);
+    EXPECT_LT(opt_err, 1.0);
+    EXPECT_NEAR(c_err, opt_err, 1e-5);
   }
 
   free_aligned_buffer_page_end(src_a);

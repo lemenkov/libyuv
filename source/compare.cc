@@ -380,18 +380,14 @@ double I420Psnr(const uint8_t* src_y_a,
   return SumSquareErrorToPsnr(sse, samples);
 }
 
-static const int64_t cc1 = 26634;   // (64^2*(.01*255)^2
-static const int64_t cc2 = 239708;  // (64^2*(.03*255)^2
-
-static double Ssim8x8_C(const uint8_t* src_a,
-                        int stride_a,
-                        const uint8_t* src_b,
-                        int stride_b) {
-  int64_t sum_a = 0;
-  int64_t sum_b = 0;
-  int64_t sum_sq_a = 0;
-  int64_t sum_sq_b = 0;
-  int64_t sum_axb = 0;
+static float Ssim8x8_C(const uint8_t* src_a,
+                       int stride_a,
+                       const uint8_t* src_b,
+                       int stride_b) {
+  int32_t sum_a = 0;
+  int32_t sum_b = 0;
+  int32_t sum_sq_ab = 0;
+  int32_t sum_axb = 0;
 
   int i;
   for (i = 0; i < 8; ++i) {
@@ -399,8 +395,7 @@ static double Ssim8x8_C(const uint8_t* src_a,
     for (j = 0; j < 8; ++j) {
       sum_a += src_a[j];
       sum_b += src_b[j];
-      sum_sq_a += src_a[j] * src_a[j];
-      sum_sq_b += src_b[j] * src_b[j];
+      sum_sq_ab += src_a[j] * src_a[j] + src_b[j] * src_b[j];
       sum_axb += src_a[j] * src_b[j];
     }
 
@@ -409,27 +404,15 @@ static double Ssim8x8_C(const uint8_t* src_a,
   }
 
   {
-    const int64_t count = 64;
-    // scale the constants by number of pixels
-    const int64_t c1 = (cc1 * count * count) >> 12;
-    const int64_t c2 = (cc2 * count * count) >> 12;
-
-    const int64_t sum_a_x_sum_b = sum_a * sum_b;
-
-    const int64_t ssim_n = (2 * sum_a_x_sum_b + c1) *
-                           (2 * count * sum_axb - 2 * sum_a_x_sum_b + c2);
-
-    const int64_t sum_a_sq = sum_a * sum_a;
-    const int64_t sum_b_sq = sum_b * sum_b;
-
-    const int64_t ssim_d =
-        (sum_a_sq + sum_b_sq + c1) *
-        (count * sum_sq_a - sum_a_sq + count * sum_sq_b - sum_b_sq + c2);
-
-    if (ssim_d == 0) {
-      return DBL_MAX;
-    }
-    return (double)ssim_n / (double)ssim_d;
+    const int32_t c1 = 26634;   // (64^2*(.01*255)^2)
+    const int32_t c2 = 239708;  // (64^2*(.03*255)^2)
+    const int32_t sum_a_x_sum_b_2 = 2 * sum_a * sum_b;
+    const int32_t sum_a_sq_b_sq = sum_a * sum_a + sum_b * sum_b;
+    const int32_t n1 = sum_a_x_sum_b_2 + c1;
+    const int32_t n2 = (sum_axb << 7) - sum_a_x_sum_b_2 + c2;
+    const int32_t d1 = sum_a_sq_b_sq + c1;
+    const int32_t d2 = (sum_sq_ab << 6) - sum_a_sq_b_sq + c2;
+    return ((float)n1 * (float)n2) / ((float)d1 * (float)d2);
   }
 }
 
@@ -454,6 +437,9 @@ double CalcFrameSsim(const uint8_t* src_a,
   int simd_size = 4;
   void (*Ssim4x4Row)(const uint8_t* src_a, int stride_a, const uint8_t* src_b,
                      int stride_b, uint32_t* dst, int width) = Ssim4x4Row_C;
+  int win_simd_size = 1;
+  float (*SsimWindowRow)(const uint32_t* row0, const uint32_t* row1,
+                         int num_windows) = SsimWindowRow_C;
 #if defined(HAS_SSIM4X4ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     Ssim4x4Row = Ssim4x4Row_SSE2;
@@ -470,6 +456,24 @@ double CalcFrameSsim(const uint8_t* src_a,
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     Ssim4x4Row = Ssim4x4Row_AVX512BW;
     simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIMWINDOWROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SsimWindowRow = SsimWindowRow_SSE2;
+    win_simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIMWINDOWROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SsimWindowRow = SsimWindowRow_AVX2;
+    win_simd_size = 8;
+  }
+#endif
+#if defined(HAS_SSIMWINDOWROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    SsimWindowRow = SsimWindowRow_AVX512BW;
+    win_simd_size = 16;
   }
 #endif
 #if defined(HAS_SSIM4X4ROW_NEON)
@@ -532,6 +536,8 @@ double CalcFrameSsim(const uint8_t* src_a,
   const int tile_width = num_tiles * 4;
   const int main_width = tile_width & ~(simd_size - 1);
   const int rem_width = tile_width & (simd_size - 1);
+  const int main_windows = num_windows & ~(win_simd_size - 1);
+  const int rem_windows = num_windows & (win_simd_size - 1);
 
 #ifdef _OPENMP
 #pragma omp parallel reduction(+ : ssim_total, samples)
@@ -567,7 +573,13 @@ double CalcFrameSsim(const uint8_t* src_a,
           Ssim4x4Row_C(a + main_width, stride_a, b + main_width, stride_b,
                        row1 + main_width, rem_width);
         }
-        ssim_total += SsimWindowRow_C(row0, row1, num_windows);
+        if (main_windows > 0) {
+          ssim_total += SsimWindowRow(row0, row1, main_windows);
+        }
+        if (rem_windows > 0) {
+          ssim_total += SsimWindowRow_C(row0 + main_windows * 4,
+                                        row1 + main_windows * 4, rem_windows);
+        }
         samples += num_windows;
         uint32_t* tmp = row0;
         row0 = row1;

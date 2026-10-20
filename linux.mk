@@ -71,10 +71,14 @@ LOCAL_OBJ_FILES := \
 .c.o:
 	$(CC) -c $(CFLAGS) $*.c -o $*.o
 
-all: libyuv.a i444tonv12_eg yuvconvert yuvconstants cpuid psnr
+all: libyuv.a i444tonv12_eg yuvconvert yuvconstants cpuid psnr compare
 
 libyuv.a: $(LOCAL_OBJ_FILES)
 	$(AR) $(ARFLAGS) $@ $(LOCAL_OBJ_FILES)
+
+# A C++ test utility that compares two YUV files.
+compare: util/compare.cc libyuv.a
+	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/compare.cc libyuv.a
 
 # A C++ test utility that uses libyuv conversion.
 yuvconvert: util/yuvconvert.cc libyuv.a
@@ -99,4 +103,4 @@ cpuid: util/cpuid.c libyuv.a
 	$(CC) $(CFLAGS) -o $@ util/cpuid.c libyuv.a
 
 clean:
-	/bin/rm -f source/*.o *.ii *.s libyuv.a i444tonv12_eg yuvconvert yuvconstants cpuid psnr
+	/bin/rm -f source/*.o *.ii *.s libyuv.a i444tonv12_eg yuvconvert yuvconstants cpuid psnr compare

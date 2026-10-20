@@ -130,46 +130,41 @@ void Ssim4x4Row_C(const uint8_t* src_a,
 
 // Combine two consecutive 4x4 tile rows (row0 and row1) into 8x8 windows
 // stepped on a 4-pixel horizontal grid and return the sum of SSIM values.
-double SsimWindowRow_C(const uint32_t* row0,
-                       const uint32_t* row1,
-                       int num_windows) {
-  const int64_t count = 64;
-  // scale the constants by number of pixels
-  const int64_t cc1 = 26634;   // (64^2*(.01*255)^2)
-  const int64_t cc2 = 239708;  // (64^2*(.03*255)^2)
-  const int64_t c1 = (cc1 * count * count) >> 12;
-  const int64_t c2 = (cc2 * count * count) >> 12;
+float SsimWindowRow_C(const uint32_t* row0,
+                      const uint32_t* row1,
+                      int num_windows) {
+  const int32_t c1 = 26634;   // (64^2*(.01*255)^2)
+  const int32_t c2 = 239708;  // (64^2*(.03*255)^2)
 
-  double ssim_total = 0.0;
-  uint32_t prev_a = row0[0] + row1[0];
-  uint32_t prev_b = row0[1] + row1[1];
-  uint32_t prev_sq = row0[2] + row1[2];
-  uint32_t prev_axb = row0[3] + row1[3];
+  float ssim_total = 0.0f;
+  int32_t prev_a = (int32_t)(row0[0] + row1[0]);
+  int32_t prev_b = (int32_t)(row0[1] + row1[1]);
+  int32_t prev_sq = (int32_t)(row0[2] + row1[2]);
+  int32_t prev_axb = (int32_t)(row0[3] + row1[3]);
   int w;
   for (w = 0; w < num_windows; ++w) {
     row0 += 4;
     row1 += 4;
-    const uint32_t next_a = row0[0] + row1[0];
-    const uint32_t next_b = row0[1] + row1[1];
-    const uint32_t next_sq = row0[2] + row1[2];
-    const uint32_t next_axb = row0[3] + row1[3];
-    const int64_t sum_a = prev_a + next_a;
-    const int64_t sum_b = prev_b + next_b;
-    const int64_t sum_sq_ab = prev_sq + next_sq;
-    const int64_t sum_axb = prev_axb + next_axb;
+    const int32_t next_a = (int32_t)(row0[0] + row1[0]);
+    const int32_t next_b = (int32_t)(row0[1] + row1[1]);
+    const int32_t next_sq = (int32_t)(row0[2] + row1[2]);
+    const int32_t next_axb = (int32_t)(row0[3] + row1[3]);
+    const int32_t sum_a = prev_a + next_a;
+    const int32_t sum_b = prev_b + next_b;
+    const int32_t sum_sq_ab = prev_sq + next_sq;
+    const int32_t sum_axb = prev_axb + next_axb;
     prev_a = next_a;
     prev_b = next_b;
     prev_sq = next_sq;
     prev_axb = next_axb;
 
-    const int64_t sum_a_x_sum_b = sum_a * sum_b;
-    const int64_t ssim_n = (2 * sum_a_x_sum_b + c1) *
-                           (2 * count * sum_axb - 2 * sum_a_x_sum_b + c2);
-    const int64_t sum_a_sq = sum_a * sum_a;
-    const int64_t sum_b_sq = sum_b * sum_b;
-    const int64_t ssim_d = (sum_a_sq + sum_b_sq + c1) *
-                           (count * sum_sq_ab - sum_a_sq - sum_b_sq + c2);
-    ssim_total += ssim_n * 1.0 / ssim_d;
+    const int32_t sum_a_x_sum_b_2 = 2 * sum_a * sum_b;
+    const int32_t sum_a_sq_b_sq = sum_a * sum_a + sum_b * sum_b;
+    const int32_t n1 = sum_a_x_sum_b_2 + c1;
+    const int32_t n2 = (sum_axb << 7) - sum_a_x_sum_b_2 + c2;
+    const int32_t d1 = sum_a_sq_b_sq + c1;
+    const int32_t d2 = (sum_sq_ab << 6) - sum_a_sq_b_sq + c2;
+    ssim_total += ((float)n1 * (float)n2) / ((float)d1 * (float)d2);
   }
   return ssim_total;
 }
