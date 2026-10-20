@@ -1134,6 +1134,14 @@ __arm_locally_streaming void Ssim4x4Row_SME(const uint8_t* src_a,
 }
 #endif  // HAS_SSIM4X4ROW_SME
 
+#ifdef HAS_SSIMWINDOWROW_SME
+__arm_locally_streaming float SsimWindowRow_SME(const uint32_t* row0,
+                                                const uint32_t* row1,
+                                                int num_windows) {
+  return SsimWindowRow_SVE_SC(row0, row1, num_windows);
+}
+#endif  // HAS_SSIMWINDOWROW_SME
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 

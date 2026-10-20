@@ -812,7 +812,6 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
 #endif  // HAS_SSIMWINDOWROW_AVX2
 
 #if defined(HAS_SSIMWINDOWROW_AVX512BW)
-// num_windows is a multiple of 16.
 LIBYUV_TARGET_AVX512BW
 float SsimWindowRow_AVX512BW(const uint32_t* row0,
                              const uint32_t* row1,
@@ -820,8 +819,29 @@ float SsimWindowRow_AVX512BW(const uint32_t* row0,
   const __m512i vc1 = _mm512_set1_epi32(26634);
   const __m512i vc2 = _mm512_set1_epi32(239708);
   __m512 total = _mm512_setzero_ps();
-  int w;
-  for (w = 0; w < num_windows; w += 16) {
+#define SSIM_WINDOW_AVX512_WIN(w0, w1, w2, w3)                                \
+  __m512i u0 = _mm512_unpacklo_epi32(w0, w1);                                 \
+  __m512i u1 = _mm512_unpackhi_epi32(w0, w1);                                 \
+  __m512i u2 = _mm512_unpacklo_epi32(w2, w3);                                 \
+  __m512i u3 = _mm512_unpackhi_epi32(w2, w3);                                 \
+  __m512i sum_a = _mm512_unpacklo_epi64(u0, u2);                              \
+  __m512i sum_b = _mm512_unpackhi_epi64(u0, u2);                              \
+  __m512i sum_sq = _mm512_unpacklo_epi64(u1, u3);                             \
+  __m512i sum_axb = _mm512_unpackhi_epi64(u1, u3);                            \
+  __m512i ab2 = _mm512_slli_epi32(_mm512_madd_epi16(sum_a, sum_b), 1);        \
+  __m512i a2b2 = _mm512_add_epi32(_mm512_madd_epi16(sum_a, sum_a),            \
+                                  _mm512_madd_epi16(sum_b, sum_b));           \
+  __m512i n1 = _mm512_add_epi32(ab2, vc1);                                    \
+  __m512i n2 = _mm512_add_epi32(                                              \
+      _mm512_sub_epi32(_mm512_slli_epi32(sum_axb, 7), ab2), vc2);             \
+  __m512i d1 = _mm512_add_epi32(a2b2, vc1);                                   \
+  __m512i d2 = _mm512_add_epi32(                                              \
+      _mm512_sub_epi32(_mm512_slli_epi32(sum_sq, 6), a2b2), vc2);             \
+  __m512 num = _mm512_mul_ps(_mm512_cvtepi32_ps(n1), _mm512_cvtepi32_ps(n2)); \
+  __m512 den = _mm512_mul_ps(_mm512_cvtepi32_ps(d1), _mm512_cvtepi32_ps(d2)); \
+  __m512 ssim = _mm512_div_ps(num, den)
+
+  while (num_windows >= 16) {
     __m512i t0 = _mm512_add_epi32(_mm512_loadu_si512(row0 + 0),
                                   _mm512_loadu_si512(row1 + 0));
     __m512i t1 = _mm512_add_epi32(_mm512_loadu_si512(row0 + 16),
@@ -834,34 +854,40 @@ float SsimWindowRow_AVX512BW(const uint32_t* row0,
                                   _mm512_loadu_si512(row1 + 52));
     row0 += 64;
     row1 += 64;
+    num_windows -= 16;
     __m512i w0 = _mm512_add_epi32(t0, _mm512_alignr_epi32(t1, t0, 4));
     __m512i w1 = _mm512_add_epi32(t1, _mm512_alignr_epi32(t2, t1, 4));
     __m512i w2 = _mm512_add_epi32(t2, _mm512_alignr_epi32(t3, t2, 4));
     __m512i w3 = _mm512_add_epi32(t3, t4);
-
-    __m512i u0 = _mm512_unpacklo_epi32(w0, w1);
-    __m512i u1 = _mm512_unpackhi_epi32(w0, w1);
-    __m512i u2 = _mm512_unpacklo_epi32(w2, w3);
-    __m512i u3 = _mm512_unpackhi_epi32(w2, w3);
-    __m512i sum_a = _mm512_unpacklo_epi64(u0, u2);
-    __m512i sum_b = _mm512_unpackhi_epi64(u0, u2);
-    __m512i sum_sq = _mm512_unpacklo_epi64(u1, u3);
-    __m512i sum_axb = _mm512_unpackhi_epi64(u1, u3);
-
-    __m512i ab2 = _mm512_slli_epi32(_mm512_madd_epi16(sum_a, sum_b), 1);
-    __m512i a2b2 = _mm512_add_epi32(_mm512_madd_epi16(sum_a, sum_a),
-                                    _mm512_madd_epi16(sum_b, sum_b));
-    __m512i n1 = _mm512_add_epi32(ab2, vc1);
-    __m512i n2 = _mm512_add_epi32(
-        _mm512_sub_epi32(_mm512_slli_epi32(sum_axb, 7), ab2), vc2);
-    __m512i d1 = _mm512_add_epi32(a2b2, vc1);
-    __m512i d2 = _mm512_add_epi32(
-        _mm512_sub_epi32(_mm512_slli_epi32(sum_sq, 6), a2b2), vc2);
-
-    __m512 num = _mm512_mul_ps(_mm512_cvtepi32_ps(n1), _mm512_cvtepi32_ps(n2));
-    __m512 den = _mm512_mul_ps(_mm512_cvtepi32_ps(d1), _mm512_cvtepi32_ps(d2));
-    total = _mm512_add_ps(total, _mm512_div_ps(num, den));
+    SSIM_WINDOW_AVX512_WIN(w0, w1, w2, w3);
+    total = _mm512_add_ps(total, ssim);
   }
+  if (num_windows > 0) {
+    const uint64_t load_mask = ~0ULL >> (60 - num_windows * 4);
+    const __mmask16 win_mask =
+        (__mmask16)(((0x01110U >> (16 - (num_windows & 3) * 4))
+                     << (num_windows >> 2)) +
+                    (0x1111U << (num_windows >> 2)) - 0x1111U);
+    const __mmask16 m0 = (__mmask16)load_mask;
+    const __mmask16 m1 = (__mmask16)(load_mask >> 16);
+    const __mmask16 m2 = (__mmask16)(load_mask >> 32);
+    const __mmask16 m3 = (__mmask16)(load_mask >> 48);
+    __m512i t0 = _mm512_add_epi32(_mm512_maskz_loadu_epi32(m0, row0 + 0),
+                                  _mm512_maskz_loadu_epi32(m0, row1 + 0));
+    __m512i t1 = _mm512_add_epi32(_mm512_maskz_loadu_epi32(m1, row0 + 16),
+                                  _mm512_maskz_loadu_epi32(m1, row1 + 16));
+    __m512i t2 = _mm512_add_epi32(_mm512_maskz_loadu_epi32(m2, row0 + 32),
+                                  _mm512_maskz_loadu_epi32(m2, row1 + 32));
+    __m512i t3 = _mm512_add_epi32(_mm512_maskz_loadu_epi32(m3, row0 + 48),
+                                  _mm512_maskz_loadu_epi32(m3, row1 + 48));
+    __m512i w0 = _mm512_add_epi32(t0, _mm512_alignr_epi32(t1, t0, 4));
+    __m512i w1 = _mm512_add_epi32(t1, _mm512_alignr_epi32(t2, t1, 4));
+    __m512i w2 = _mm512_add_epi32(t2, _mm512_alignr_epi32(t3, t2, 4));
+    __m512i w3 = _mm512_add_epi32(t3, _mm512_alignr_epi32(t3, t3, 4));
+    SSIM_WINDOW_AVX512_WIN(w0, w1, w2, w3);
+    total = _mm512_mask_add_ps(total, win_mask, total, ssim);
+  }
+#undef SSIM_WINDOW_AVX512_WIN
   return _mm512_reduce_add_ps(total);
 }
 #endif  // HAS_SSIMWINDOWROW_AVX512BW

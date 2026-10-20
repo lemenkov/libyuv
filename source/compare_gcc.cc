@@ -28,13 +28,6 @@ extern "C" {
     !defined(LIBYUV_ENABLE_ROWWIN) &&                      \
     (!defined(_MSC_VER) || defined(__clang__))
 
-#if defined(__clang__) || defined(__GNUC__)
-#define LIBYUV_TARGET_AVX512BW \
-  __attribute__((target("avx512bw,avx512vl,avx512f")))
-#else
-#define LIBYUV_TARGET_AVX512BW
-#endif
-
 // "memory" clobber prevents the reads from being removed
 
 uint32_t HammingDistance_SSE42(const uint8_t* src_a,
@@ -385,7 +378,6 @@ static uint64_t LowBytesMask64(int n) {
 #ifdef HAS_HAMMINGDISTANCE_AVX512BW
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, so any count is supported.
-LIBYUV_TARGET_AVX512BW
 uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count) {
@@ -454,7 +446,6 @@ uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
 #ifdef HAS_SUMSQUAREERROR_AVX512BW
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, so any count is supported.
-LIBYUV_TARGET_AVX512BW
 uint32_t SumSquareError_AVX512BW(const uint8_t* src_a,
                                  const uint8_t* src_b,
                                  int count) {
@@ -672,7 +663,6 @@ static uint32_t Pow33(int n) {
 // Process 64 bytes per loop. The remainder of n = 1 to 63 bytes is loaded
 // into the high n bytes with a masked load ending at src + count, so the
 // same multipliers apply, and hash is multiplied by 33 ^ n.
-LIBYUV_TARGET_AVX512BW
 uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed) {
   const int n = count & 63;
   const uint64_t mask = n ? ~0ULL << (64 - n) : 0ULL;
@@ -1012,7 +1002,6 @@ void Ssim4x4Row_AVX2(const uint8_t* src_a,
 
 // Process 64 pixels (16 4x4 tiles) per loop and the remainder of 4 to 60
 // pixels (1 to 15 tiles) with masked loads and stores.
-LIBYUV_TARGET_AVX512BW
 void Ssim4x4Row_AVX512BW(const uint8_t* src_a,
                          int stride_a,
                          const uint8_t* src_b,
@@ -1262,15 +1251,52 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
 #endif  // HAS_SSIMWINDOWROW_AVX2
 
 #ifdef HAS_SSIMWINDOWROW_AVX512BW
-// num_windows is a multiple of 16.
-LIBYUV_TARGET_AVX512BW
+#define SSIM_WINDOW_AVX512BW                     \
+  "vpunpckldq  %%zmm2,%%zmm1,%%zmm5          \n" \
+  "vpunpckhdq  %%zmm2,%%zmm1,%%zmm1          \n" \
+  "vpunpckldq  %%zmm4,%%zmm3,%%zmm2          \n" \
+  "vpunpckhdq  %%zmm4,%%zmm3,%%zmm3          \n" \
+  "vpunpcklqdq %%zmm2,%%zmm5,%%zmm4          \n" \
+  "vpunpckhqdq %%zmm2,%%zmm5,%%zmm2          \n" \
+  "vpunpcklqdq %%zmm3,%%zmm1,%%zmm5          \n" \
+  "vpunpckhqdq %%zmm3,%%zmm1,%%zmm3          \n" \
+  "vpmaddwd    %%zmm2,%%zmm4,%%zmm1          \n" \
+  "vpmaddwd    %%zmm4,%%zmm4,%%zmm4          \n" \
+  "vpmaddwd    %%zmm2,%%zmm2,%%zmm2          \n" \
+  "vpaddd      %%zmm2,%%zmm4,%%zmm4          \n" \
+  "vpslld      $0x1,%%zmm1,%%zmm1            \n" \
+  "vpslld      $0x7,%%zmm3,%%zmm3            \n" \
+  "vpsubd      %%zmm1,%%zmm3,%%zmm3          \n" \
+  "vpslld      $0x6,%%zmm5,%%zmm5            \n" \
+  "vpsubd      %%zmm4,%%zmm5,%%zmm5          \n" \
+  "vpaddd      %[c1]%{1to16%},%%zmm1,%%zmm1  \n" \
+  "vpaddd      %[c2]%{1to16%},%%zmm3,%%zmm3  \n" \
+  "vpaddd      %[c1]%{1to16%},%%zmm4,%%zmm4  \n" \
+  "vpaddd      %[c2]%{1to16%},%%zmm5,%%zmm5  \n" \
+  "vcvtdq2ps   %%zmm1,%%zmm1                 \n" \
+  "vcvtdq2ps   %%zmm3,%%zmm3                 \n" \
+  "vcvtdq2ps   %%zmm4,%%zmm4                 \n" \
+  "vcvtdq2ps   %%zmm5,%%zmm5                 \n" \
+  "vmulps      %%zmm3,%%zmm1,%%zmm1          \n" \
+  "vmulps      %%zmm5,%%zmm4,%%zmm4          \n" \
+  "vdivps      %%zmm4,%%zmm1,%%zmm1          \n"
+
+// Process 16 8x8 windows per loop and the remainder of 1 to 15 windows with
+// masked loads and masked accumulation.
 float SsimWindowRow_AVX512BW(const uint32_t* row0,
                              const uint32_t* row1,
                              int num_windows) {
+  const int rem = num_windows & 15;
+  const uint64_t load_mask = rem ? (~0ULL >> (60 - rem * 4)) : 0ULL;
+  const uint16_t win_mask =
+      (uint16_t)(((0x01110U >> (16 - (rem & 3) * 4)) << (rem >> 2)) +
+                 (0x1111U << (rem >> 2)) - 0x1111U);
   float total;
   asm volatile(
       "sub         %[row0],%[row1]               \n"
-      "vxorps      %g[total],%g[total],%g[total] \n"
+      "vxorps      %%xmm0,%%xmm0,%%xmm0          \n"
+      "sub         $0x10,%[num_windows]          \n"
+      "jl          2f                            \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -1291,54 +1317,57 @@ float SsimWindowRow_AVX512BW(const uint32_t* row0,
       "vmovdqu32   0xd0(%[row0]),%%zmm5          \n"
       "vpaddd      0xd0(%[row0],%[row1]),%%zmm5,%%zmm5 \n"
       "add         $0x100,%[row0]                \n"
-      "vpaddd      %%zmm5,%%zmm4,%%zmm4          \n"
-      "vpunpckldq  %%zmm2,%%zmm1,%%zmm5          \n"
-      "vpunpckhdq  %%zmm2,%%zmm1,%%zmm1          \n"
-      "vpunpckldq  %%zmm4,%%zmm3,%%zmm2          \n"
-      "vpunpckhdq  %%zmm4,%%zmm3,%%zmm3          \n"
-      "vpunpcklqdq %%zmm2,%%zmm5,%%zmm4          \n"
-      "vpunpckhqdq %%zmm2,%%zmm5,%%zmm2          \n"
-      "vpunpcklqdq %%zmm3,%%zmm1,%%zmm5          \n"
-      "vpunpckhqdq %%zmm3,%%zmm1,%%zmm3          \n"
-      "vpmaddwd    %%zmm2,%%zmm4,%%zmm1          \n"
-      "vpmaddwd    %%zmm4,%%zmm4,%%zmm4          \n"
-      "vpmaddwd    %%zmm2,%%zmm2,%%zmm2          \n"
-      "vpaddd      %%zmm2,%%zmm4,%%zmm4          \n"
-      "vpslld      $0x1,%%zmm1,%%zmm1            \n"
-      "vpslld      $0x7,%%zmm3,%%zmm3            \n"
-      "vpsubd      %%zmm1,%%zmm3,%%zmm3          \n"
-      "vpslld      $0x6,%%zmm5,%%zmm5            \n"
-      "vpsubd      %%zmm4,%%zmm5,%%zmm5          \n"
-      "vpaddd      %[c1]%{1to16%},%%zmm1,%%zmm1  \n"
-      "vpaddd      %[c2]%{1to16%},%%zmm3,%%zmm3  \n"
-      "vpaddd      %[c1]%{1to16%},%%zmm4,%%zmm4  \n"
-      "vpaddd      %[c2]%{1to16%},%%zmm5,%%zmm5  \n"
-      "vcvtdq2ps   %%zmm1,%%zmm1                 \n"
-      "vcvtdq2ps   %%zmm3,%%zmm3                 \n"
-      "vcvtdq2ps   %%zmm4,%%zmm4                 \n"
-      "vcvtdq2ps   %%zmm5,%%zmm5                 \n"
-      "vmulps      %%zmm3,%%zmm1,%%zmm1          \n"
-      "vmulps      %%zmm5,%%zmm4,%%zmm4          \n"
-      "vdivps      %%zmm4,%%zmm1,%%zmm1          \n"
-      "vaddps      %%zmm1,%g[total],%g[total]    \n"
+      "vpaddd      %%zmm5,%%zmm4,%%zmm4          \n"  //
+      SSIM_WINDOW_AVX512BW
+      "vaddps      %%zmm1,%%zmm0,%%zmm0          \n"
       "sub         $0x10,%[num_windows]          \n"
-      "jg          1b                            \n"
+      "jge         1b                            \n"
 
-      "vextractf32x8 $0x1,%g[total],%%ymm1       \n"
-      "vaddps      %%ymm1,%t[total],%t[total]    \n"
-      "vextractf128 $0x1,%t[total],%%xmm1        \n"
-      "vaddps      %%xmm1,%x[total],%x[total]    \n"
-      "vmovhlps    %x[total],%%xmm1,%%xmm1       \n"
-      "vaddps      %%xmm1,%x[total],%x[total]    \n"
-      "vshufps     $0x1,%x[total],%x[total],%%xmm1 \n"
-      "vaddss      %%xmm1,%x[total],%x[total]    \n"
+      "2:                                        \n"
+      "add         $0x10,%[num_windows]          \n"
+      "je          3f                            \n"
+      "kmovq       %[load_mask],%%k1             \n"
+      "vmovdqu32   0x00(%[row0]),%%zmm1%{%%k1%}%{z%} \n"
+      "vpaddd      0x00(%[row0],%[row1]),%%zmm1,%%zmm1%{%%k1%}%{z%} \n"
+      "kshiftrq    $0x10,%%k1,%%k1               \n"
+      "vmovdqu32   0x40(%[row0]),%%zmm2%{%%k1%}%{z%} \n"
+      "vpaddd      0x40(%[row0],%[row1]),%%zmm2,%%zmm2%{%%k1%}%{z%} \n"
+      "kshiftrq    $0x10,%%k1,%%k1               \n"
+      "vmovdqu32   0x80(%[row0]),%%zmm3%{%%k1%}%{z%} \n"
+      "vpaddd      0x80(%[row0],%[row1]),%%zmm3,%%zmm3%{%%k1%}%{z%} \n"
+      "kshiftrq    $0x10,%%k1,%%k1               \n"
+      "vmovdqu32   0xc0(%[row0]),%%zmm4%{%%k1%}%{z%} \n"
+      "vpaddd      0xc0(%[row0],%[row1]),%%zmm4,%%zmm4%{%%k1%}%{z%} \n"
+      "valignd     $0x4,%%zmm1,%%zmm2,%%zmm5     \n"
+      "vpaddd      %%zmm5,%%zmm1,%%zmm1          \n"
+      "valignd     $0x4,%%zmm2,%%zmm3,%%zmm5     \n"
+      "vpaddd      %%zmm5,%%zmm2,%%zmm2          \n"
+      "valignd     $0x4,%%zmm3,%%zmm4,%%zmm5     \n"
+      "vpaddd      %%zmm5,%%zmm3,%%zmm3          \n"
+      "valignd     $0x4,%%zmm4,%%zmm4,%%zmm5     \n"
+      "vpaddd      %%zmm5,%%zmm4,%%zmm4          \n"  //
+      SSIM_WINDOW_AVX512BW
+      "kmovw       %[win_mask],%%k1              \n"
+      "vaddps      %%zmm1,%%zmm0,%%zmm0%{%%k1%}  \n"
+
+      "3:                                        \n"
+      "vextractf32x8 $0x1,%%zmm0,%%ymm1          \n"
+      "vaddps      %%ymm1,%%ymm0,%%ymm0          \n"
+      "vextractf128 $0x1,%%ymm0,%%xmm1           \n"
+      "vaddps      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vmovhlps    %%xmm0,%%xmm1,%%xmm1          \n"
+      "vaddps      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vshufps     $0x1,%%xmm0,%%xmm0,%%xmm1     \n"
+      "vaddss      %%xmm1,%%xmm0,%[total]        \n"
       "vzeroupper                                \n"
       : [row0] "+r"(row0), [row1] "+r"(row1), [num_windows] "+r"(num_windows),
-        [total] "=&x"(total)
-      : [c1] "m"(kSsimC1), [c2] "m"(kSsimC2)
-      : "memory", "cc", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        [total] "=x"(total)
+      : [c1] "m"(kSsimC1), [c2] "m"(kSsimC2), [load_mask] "m"(load_mask),
+        [win_mask] "m"(win_mask)
+      : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
   return total;
 }
+#undef SSIM_WINDOW_AVX512BW
 #endif  // HAS_SSIMWINDOWROW_AVX512BW
 
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) &&

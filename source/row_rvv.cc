@@ -2851,6 +2851,85 @@ void Ssim4x4Row_RVV(const uint8_t* src_a,
 #undef SSIM4X4_ACCUM_RVV
 #endif  // HAS_SSIM4X4ROW_RVV
 
+#ifdef HAS_SSIMWINDOWROW_RVV
+float SsimWindowRow_RVV(const uint32_t* row0,
+                        const uint32_t* row1,
+                        int num_windows) {
+  size_t vl;
+  size_t byte_vl;
+  const uint32_t* row0_next = row0 + 4;
+  const uint32_t* row1_next = row1 + 4;
+  float total;
+  asm volatile(
+      "vsetvli     %[vl], zero, e32, m2, ta, ma  \n"
+      "vmv.v.i     v0, 0                         \n"
+      "vmv.s.x     v4, zero                      \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e32, m2, tu, ma  \n"
+      "vlseg4e32.v v8, (%[row0])                 \n"
+      "vlseg4e32.v v16, (%[row0_next])           \n"
+      "vadd.vv     v8, v8, v16                   \n"
+      "vadd.vv     v10, v10, v18                 \n"
+      "vadd.vv     v12, v12, v20                 \n"
+      "vadd.vv     v14, v14, v22                 \n"
+      "vlseg4e32.v v16, (%[row1])                \n"
+      "vlseg4e32.v v24, (%[row1_next])           \n"
+      "vadd.vv     v16, v16, v24                 \n"
+      "vadd.vv     v18, v18, v26                 \n"
+      "vadd.vv     v20, v20, v28                 \n"
+      "vadd.vv     v22, v22, v30                 \n"
+      "vadd.vv     v8, v8, v16                   \n"
+      "vadd.vv     v10, v10, v18                 \n"
+      "vadd.vv     v12, v12, v20                 \n"
+      "vadd.vv     v14, v14, v22                 \n"
+      "vmul.vv     v16, v8, v10                  \n"
+      "vsll.vi     v16, v16, 1                   \n"
+      "vmul.vv     v18, v8, v8                   \n"
+      "vmacc.vv    v18, v10, v10                 \n"
+      "vsll.vi     v14, v14, 7                   \n"
+      "vsub.vv     v14, v14, v16                 \n"
+      "vadd.vx     v16, v16, %[c1]               \n"
+      "vadd.vx     v14, v14, %[c2]               \n"
+      "vsll.vi     v12, v12, 6                   \n"
+      "vsub.vv     v12, v12, v18                 \n"
+      "vadd.vx     v18, v18, %[c1]               \n"
+      "vadd.vx     v12, v12, %[c2]               \n"
+      "vfcvt.f.x.v v16, v16                      \n"
+      "vfcvt.f.x.v v14, v14                      \n"
+      "vfcvt.f.x.v v18, v18                      \n"
+      "vfcvt.f.x.v v12, v12                      \n"
+      "vfmul.vv    v16, v16, v14                 \n"
+      "vfmul.vv    v18, v18, v12                 \n"
+      "vfdiv.vv    v8, v16, v18                  \n"
+      "vfadd.vv    v0, v0, v8                    \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[byte_vl], %[vl], 4          \n"
+      "add         %[row0], %[row0], %[byte_vl]  \n"
+      "add         %[row0_next], %[row0_next], %[byte_vl]\n"
+      "add         %[row1], %[row1], %[byte_vl]  \n"
+      "add         %[row1_next], %[row1_next], %[byte_vl]\n"
+      "bgtz        %[w], 1b                      \n"
+      "vsetvli     %[vl], zero, e32, m2, ta, ma  \n"
+      "vfredusum.vs v4, v0, v4                   \n"
+      "vfmv.f.s    %[total], v4                  \n"
+      : [row0] "+r"(row0),            // %[row0]
+        [row0_next] "+r"(row0_next),  // %[row0_next]
+        [row1] "+r"(row1),            // %[row1]
+        [row1_next] "+r"(row1_next),  // %[row1_next]
+        [w] "+r"(num_windows),        // %[w]
+        [vl] "=&r"(vl),               // %[vl]
+        [byte_vl] "=&r"(byte_vl),     // %[byte_vl]
+        [total] "=f"(total)           // %[total]
+      : [c1] "r"(26634),              // %[c1]
+        [c2] "r"(239708)              // %[c2]
+      : RVV_VL_CLOBBER "vtype", "memory", "v0", "v1", "v4", "v8", "v9", "v10",
+        "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20",
+        "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30",
+        "v31");
+  return total;
+}
+#endif  // HAS_SSIMWINDOWROW_RVV
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -64,7 +64,7 @@ extern "C" {
 #define HAS_SSIM4X4ROW_AVX2
 #define HAS_SSIMWINDOWROW_AVX2
 #endif
-#if defined(CLANG_HAS_AVX512) || defined(GCC_HAS_AVX512)
+#if defined(CLANG_HAS_AVX512)
 #define HAS_HAMMINGDISTANCE_AVX512BW
 #define HAS_SUMSQUAREERROR_AVX512BW
 #define HAS_HASHDJB2_AVX512BW
@@ -93,18 +93,23 @@ extern "C" {
 // The following are available for AArch64 SVE:
 #if !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 #define HAS_SSIM4X4ROW_SVE2
+#define HAS_SSIMWINDOWROW_SVE2
 #endif
 
 // The following are available for AArch64 SME:
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 #define HAS_SSIM4X4ROW_SME
+#define HAS_SSIMWINDOWROW_SME
 #endif
 
 // The following are available for RISC-V Vector (RVV):
 #if !defined(LIBYUV_DISABLE_RVV) && \
     (defined(__riscv_vector) || defined(LIBYUV_RVV))
 #define HAS_SSIM4X4ROW_RVV
+#if defined(__riscv_f) || defined(__riscv_zve32f)
+#define HAS_SSIMWINDOWROW_RVV
+#endif
 #endif
 
 // The following are available for LoongArch LSX:
@@ -283,6 +288,15 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
 float SsimWindowRow_AVX512BW(const uint32_t* row0,
                              const uint32_t* row1,
                              int num_windows);
+float SsimWindowRow_SVE2(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows);
+float SsimWindowRow_SME(const uint32_t* row0,
+                        const uint32_t* row1,
+                        int num_windows);
+float SsimWindowRow_RVV(const uint32_t* row0,
+                        const uint32_t* row1,
+                        int num_windows);
 
 #ifdef __cplusplus
 }  // extern "C"

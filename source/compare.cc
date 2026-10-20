@@ -473,7 +473,7 @@ double CalcFrameSsim(const uint8_t* src_a,
 #if defined(HAS_SSIMWINDOWROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     SsimWindowRow = SsimWindowRow_AVX512BW;
-    win_simd_size = 16;
+    win_simd_size = 1;
   }
 #endif
 #if defined(HAS_SSIM4X4ROW_NEON)
@@ -494,16 +494,34 @@ double CalcFrameSsim(const uint8_t* src_a,
     simd_size = 4;
   }
 #endif
+#if defined(HAS_SSIMWINDOWROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    SsimWindowRow = SsimWindowRow_SVE2;
+    win_simd_size = 1;
+  }
+#endif
 #if defined(HAS_SSIM4X4ROW_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     Ssim4x4Row = Ssim4x4Row_SME;
     simd_size = 4;
   }
 #endif
+#if defined(HAS_SSIMWINDOWROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    SsimWindowRow = SsimWindowRow_SME;
+    win_simd_size = 1;
+  }
+#endif
 #if defined(HAS_SSIM4X4ROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     Ssim4x4Row = Ssim4x4Row_RVV;
     simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIMWINDOWROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SsimWindowRow = SsimWindowRow_RVV;
+    win_simd_size = 1;
   }
 #endif
 #if defined(HAS_SSIM4X4ROW_LSX)

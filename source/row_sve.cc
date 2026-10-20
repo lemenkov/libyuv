@@ -1743,6 +1743,14 @@ void Ssim4x4Row_SVE2(const uint8_t* src_a,
 }
 #endif  // HAS_SSIM4X4ROW_SVE2
 
+#ifdef HAS_SSIMWINDOWROW_SVE2
+float SsimWindowRow_SVE2(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows) {
+  return SsimWindowRow_SVE_SC(row0, row1, num_windows);
+}
+#endif  // HAS_SSIMWINDOWROW_SVE2
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

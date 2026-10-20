@@ -2285,6 +2285,81 @@ static inline void Ssim4x4Row_SVE_SC(const uint8_t* src_a,
         "z17", "z18", "z19", "z20", "p0");
 }
 
+static inline float SsimWindowRow_SVE_SC(const uint32_t* row0,
+                                         const uint32_t* row1,
+                                         int num_windows) STREAMING_COMPATIBLE {
+  uint64_t vl;
+  const uint32_t* row0_next = row0 + 4;
+  const uint32_t* row1_next = row1 + 4;
+  float total;
+  asm volatile(
+      "cntw     %x[vl]                                     \n"
+      "ptrue    p1.s                                       \n"
+      "mov      z24.s, #0                                  \n"
+      "dup      z25.s, %w[c1]                              \n"
+      "dup      z26.s, %w[c2]                              \n"
+
+      "1:                                                  \n"
+      "whilelt  p0.s, wzr, %w[num_windows]                 \n"
+      "ld4w     {z0.s, z1.s, z2.s, z3.s}, p0/z, [%[row0]]  \n"
+      "ld4w     {z4.s, z5.s, z6.s, z7.s}, p0/z, [%[row0_next]] \n"
+      "ld4w     {z16.s, z17.s, z18.s, z19.s}, p0/z, [%[row1]] \n"
+      "ld4w     {z20.s, z21.s, z22.s, z23.s}, p0/z, [%[row1_next]] \n"
+      "incb     %[row0], all, mul #4                       \n"
+      "incb     %[row0_next], all, mul #4                  \n"
+      "incb     %[row1], all, mul #4                       \n"
+      "incb     %[row1_next], all, mul #4                  \n"
+      "add      z0.s, z0.s, z4.s                           \n"
+      "add      z1.s, z1.s, z5.s                           \n"
+      "add      z2.s, z2.s, z6.s                           \n"
+      "add      z3.s, z3.s, z7.s                           \n"
+      "add      z16.s, z16.s, z20.s                        \n"
+      "add      z17.s, z17.s, z21.s                        \n"
+      "add      z18.s, z18.s, z22.s                        \n"
+      "add      z19.s, z19.s, z23.s                        \n"
+      "add      z0.s, z0.s, z16.s                          \n"
+      "add      z1.s, z1.s, z17.s                          \n"
+      "add      z2.s, z2.s, z18.s                          \n"
+      "add      z3.s, z3.s, z19.s                          \n"
+      "mul      z4.s, z0.s, z1.s                           \n"
+      "lsl      z4.s, z4.s, #1                             \n"
+      "mul      z5.s, z0.s, z0.s                           \n"
+      "mla      z5.s, p1/m, z1.s, z1.s                     \n"
+      "lsl      z3.s, z3.s, #7                             \n"
+      "sub      z3.s, z3.s, z4.s                           \n"
+      "add      z4.s, z4.s, z25.s                          \n"
+      "add      z3.s, z3.s, z26.s                          \n"
+      "lsl      z2.s, z2.s, #6                             \n"
+      "sub      z2.s, z2.s, z5.s                           \n"
+      "add      z5.s, z5.s, z25.s                          \n"
+      "add      z2.s, z2.s, z26.s                          \n"
+      "scvtf    z4.s, p1/m, z4.s                           \n"
+      "scvtf    z3.s, p1/m, z3.s                           \n"
+      "scvtf    z5.s, p1/m, z5.s                           \n"
+      "scvtf    z2.s, p1/m, z2.s                           \n"
+      "fmul     z4.s, z4.s, z3.s                           \n"
+      "fmul     z5.s, z5.s, z2.s                           \n"
+      "fdiv     z4.s, p1/m, z4.s, z5.s                     \n"
+      "fadd     z24.s, p0/m, z24.s, z4.s                   \n"
+      "subs     %w[num_windows], %w[num_windows], %w[vl]   \n"
+      "b.gt     1b                                         \n"
+
+      "faddv    %s[total], p1, z24.s                       \n"
+      : [row0] "+r"(row0),                // %[row0]
+        [row0_next] "+r"(row0_next),      // %[row0_next]
+        [row1] "+r"(row1),                // %[row1]
+        [row1_next] "+r"(row1_next),      // %[row1_next]
+        [num_windows] "+r"(num_windows),  // %[num_windows]
+        [vl] "=&r"(vl),                   // %[vl]
+        [total] "=w"(total)               // %[total]
+      : [c1] "r"(26634),                  // %[c1]
+        [c2] "r"(239708)                  // %[c2]
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16",
+        "z17", "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26",
+        "p0", "p1");
+  return total;
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

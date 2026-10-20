@@ -70,15 +70,6 @@ extern "C" {
 #endif  // clang >= 3.4
 #endif  // __clang__
 
-// GCC >= 6.0.0 required for AVX512.
-#if defined(__GNUC__) && !defined(__clang__) && \
-    !defined(LIBYUV_ENABLE_ROWWIN) &&           \
-    (defined(__x86_64__) || defined(__i386__))
-#if (__GNUC__ >= 6)
-#define GCC_HAS_AVX512 1
-#endif  // GNUC >= 6
-#endif  // __GNUC__
-
 // clang >= 6.0.0 required for AVX512.
 #if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
     (defined(__x86_64__) || defined(__i386__))
