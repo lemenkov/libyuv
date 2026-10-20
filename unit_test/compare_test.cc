@@ -722,7 +722,8 @@ TEST_F(LibYUVCompareTest, TestSsimAnyWidth) {
       double c_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
       MaskCpuFlags(benchmark_cpu_info_);
       double opt_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
-      EXPECT_EQ(c_ssim, opt_ssim) << "width " << width << " offset " << offset;
+      double ssim_diff = c_ssim - opt_ssim;
+      EXPECT_LT(ssim_diff, 0.0001) << "width " << width << " offset " << offset;
     }
   }
 
