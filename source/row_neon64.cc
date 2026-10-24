@@ -3866,6 +3866,91 @@ void ARGBBlendRow_NEON(const uint8_t* src_argb,
         "v17", "v18");
 }
 
+void ARGBOrRow_NEON(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  asm volatile(
+      "dup         v2.4s, %w3                    \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "subs        %w2, %w2, #8                  \n"
+      "orr         v0.16b, v0.16b, v2.16b        \n"
+      "orr         v1.16b, v1.16b, v2.16b        \n"
+      "stp         q0, q1, [%1], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_argb),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(width)      // %2
+      : "r"(value)       // %3
+      : "memory", "cc", "v0", "v1", "v2");
+}
+
+void ARGBAlphaBlendRow_NEON(const uint8_t* src_argb,
+                            const uint8_t* src_argb1,
+                            uint8_t* dst_argb,
+                            int width) {
+  asm volatile(
+      "movi        v28.8b, #255                  \n"
+      "movi        v29.8h, #1                    \n"
+      "1:                                        \n"
+      "ld4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"
+      "ld4         {v4.8b,v5.8b,v6.8b,v7.8b}, [%1], #32 \n"
+      "subs        %w3, %w3, #8                  \n"
+      "mov         v16.16b, v29.16b              \n"
+      "umlal       v16.8h, v7.8b, v3.8b          \n"
+      "usra        v16.8h, v16.8h, #8            \n"
+      "shrn        v16.8b, v16.8h, #8            \n"
+      "cmeq        v17.8b, v7.8b, #0             \n"
+      "sub         v16.8b, v3.8b, v16.8b         \n"
+      "add         v7.8b, v7.8b, v16.8b          \n"
+      "orr         v18.8b, v3.8b, v17.8b         \n"
+      "orr         v19.8b, v7.8b, v17.8b         \n"
+      "umull       v16.8h, v18.8b, v28.8b        \n"
+      "uxtl        v17.8h, v19.8b                \n"
+      "uxtl        v20.4s, v16.4h                \n"
+      "uxtl2       v21.4s, v16.8h                \n"
+      "uxtl        v22.4s, v17.4h                \n"
+      "uxtl2       v23.4s, v17.8h                \n"
+      "ucvtf       v20.4s, v20.4s                \n"
+      "ucvtf       v21.4s, v21.4s                \n"
+      "ucvtf       v22.4s, v22.4s                \n"
+      "ucvtf       v23.4s, v23.4s                \n"
+      "fdiv        v20.4s, v20.4s, v22.4s        \n"
+      "fdiv        v21.4s, v21.4s, v23.4s        \n"
+      "fcvtzu      v20.4s, v20.4s                \n"
+      "fcvtzu      v21.4s, v21.4s                \n"
+      "xtn         v16.4h, v20.4s                \n"
+      "xtn2        v16.8h, v21.4s                \n"
+      "xtn         v16.8b, v16.8h                \n"
+      "sub         v17.8b, v28.8b, v16.8b        \n"
+      "mov         v20.16b, v29.16b              \n"
+      "mov         v21.16b, v29.16b              \n"
+      "mov         v22.16b, v29.16b              \n"
+      "umlal       v20.8h, v4.8b, v17.8b         \n"
+      "umlal       v21.8h, v5.8b, v17.8b         \n"
+      "umlal       v22.8h, v6.8b, v17.8b         \n"
+      "umlal       v20.8h, v0.8b, v16.8b         \n"
+      "umlal       v21.8h, v1.8b, v16.8b         \n"
+      "umlal       v22.8h, v2.8b, v16.8b         \n"
+      "usra        v20.8h, v20.8h, #8            \n"
+      "usra        v21.8h, v21.8h, #8            \n"
+      "usra        v22.8h, v22.8h, #8            \n"
+      "shrn        v0.8b, v20.8h, #8             \n"
+      "shrn        v1.8b, v21.8h, #8             \n"
+      "shrn        v2.8b, v22.8h, #8             \n"
+      "mov         v3.8b, v7.8b                  \n"
+      "st4         {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_argb),   // %0
+        "+r"(src_argb1),  // %1
+        "+r"(dst_argb),   // %2
+        "+r"(width)       // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v28", "v29");
+}
+
 // Attenuate 8 pixels at a time.
 void ARGBAttenuateRow_NEON(const uint8_t* src_argb,
                            uint8_t* dst_argb,

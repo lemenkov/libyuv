@@ -855,6 +855,18 @@ int ARGBBlend(const uint8_t* src_argb0,
               int width,
               int height);
 
+// Alpha Blend unattenuated ARGB images and store to destination.
+// Source and destination are not pre-multiplied by alpha.
+LIBYUV_API
+int ARGBAlphaBlend(const uint8_t* src_argb0,
+                   int src_stride_argb0,
+                   const uint8_t* src_argb1,
+                   int src_stride_argb1,
+                   uint8_t* dst_argb,
+                   int dst_stride_argb,
+                   int width,
+                   int height);
+
 // Alpha Blend plane and store to destination.
 // Source is not pre-multiplied by alpha.
 LIBYUV_API
@@ -928,6 +940,17 @@ int ARGBSubtract(const uint8_t* src_argb0,
                  int dst_stride_argb,
                  int width,
                  int height);
+
+// Bitwise OR ARGB image with a specified ARGB value (e.g. 0xff000000 to force
+// opaque alpha).
+LIBYUV_API
+int ARGBOr(const uint8_t* src_argb,
+           int src_stride_argb,
+           uint8_t* dst_argb,
+           int dst_stride_argb,
+           int width,
+           int height,
+           uint32_t value);
 
 // Convert I422 to YUY2.
 LIBYUV_API

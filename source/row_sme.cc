@@ -1142,6 +1142,24 @@ __arm_locally_streaming float SsimWindowRow_SME(const uint32_t* row0,
 }
 #endif  // HAS_SSIMWINDOWROW_SME
 
+#ifdef HAS_ARGBORROW_SME
+__arm_locally_streaming void ARGBOrRow_SME(const uint8_t* src_argb,
+                                           uint8_t* dst_argb,
+                                           uint32_t value,
+                                           int width) {
+  ARGBOrRow_SVE_SC(src_argb, dst_argb, value, width);
+}
+#endif  // HAS_ARGBORROW_SME
+
+#ifdef HAS_ARGBALPHABLENDROW_SME
+__arm_locally_streaming void ARGBAlphaBlendRow_SME(const uint8_t* src_argb0,
+                                                   const uint8_t* src_argb1,
+                                                   uint8_t* dst_argb,
+                                                   int width) {
+  ARGBAlphaBlendRow_SVE_SC(src_argb0, src_argb1, dst_argb, width);
+}
+#endif  // HAS_ARGBALPHABLENDROW_SME
+
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
 

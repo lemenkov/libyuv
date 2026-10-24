@@ -4371,6 +4371,267 @@ void ARGBBlendRow_AVX512BW(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBBLENDROW_AVX512BW
 
+#ifdef HAS_ARGBORROW_SSE2
+void ARGBOrRow_SSE2(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  const __m128i val = _mm_set1_epi32((int)value);
+  while (width >= 4) {
+    __m128i s = _mm_loadu_si128((const __m128i*)src_argb);
+    src_argb += 16;
+    _mm_storeu_si128((__m128i*)dst_argb, _mm_or_si128(s, val));
+    dst_argb += 16;
+    width -= 4;
+  }
+}
+#endif  // HAS_ARGBORROW_SSE2
+
+#ifdef HAS_ARGBORROW_AVX2
+LIBYUV_TARGET_AVX2
+void ARGBOrRow_AVX2(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  const __m256i val = _mm256_set1_epi32((int)value);
+  while (width >= 8) {
+    __m256i s = _mm256_loadu_si256((const __m256i*)src_argb);
+    src_argb += 32;
+    _mm256_storeu_si256((__m256i*)dst_argb, _mm256_or_si256(s, val));
+    dst_argb += 32;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBORROW_AVX2
+
+#ifdef HAS_ARGBORROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void ARGBOrRow_AVX512BW(const uint8_t* src_argb,
+                        uint8_t* dst_argb,
+                        uint32_t value,
+                        int width) {
+  const __m512i val = _mm512_set1_epi32((int)value);
+  while (width >= 16) {
+    __m512i s = _mm512_loadu_si512((const __m512i*)src_argb);
+    src_argb += 64;
+    _mm512_storeu_si512((__m512i*)dst_argb, _mm512_or_si512(s, val));
+    dst_argb += 64;
+    width -= 16;
+  }
+  if (width > 0) {
+    __mmask16 k = (__mmask16)((1u << width) - 1u);
+    __m512i s = _mm512_maskz_loadu_epi32(k, src_argb);
+    _mm512_mask_storeu_epi32(dst_argb, k, _mm512_or_si512(s, val));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBORROW_AVX512BW
+
+#ifdef HAS_ARGBALPHABLENDROW_SSSE3
+LIBYUV_TARGET_SSSE3
+void ARGBAlphaBlendRow_SSSE3(const uint8_t* src_argb0,
+                             const uint8_t* src_argb1,
+                             uint8_t* dst_argb,
+                             int width) {
+  const __m128i zero = _mm_setzero_si128();
+  const __m128i k0001 = _mm_set1_epi16(0x0001);
+  const __m128i k0101 = _mm_set1_epi16(0x0101);
+  const __m128i k00ff = _mm_set1_epi16(0x00ff);
+  const __m128i k8080 = _mm_set1_epi8((char)0x80);
+  const __m128i k7f81 = _mm_set1_epi16(0x7f81);
+  const __m128i k00ffffff = _mm_set1_epi32(0x00ffffff);
+  while (width >= 4) {
+    __m128i s = _mm_loadu_si128((const __m128i*)src_argb0);
+    __m128i d = _mm_loadu_si128((const __m128i*)src_argb1);
+    src_argb0 += 16;
+    src_argb1 += 16;
+    __m128i sa = _mm_srli_epi32(s, 24);
+    __m128i da = _mm_srli_epi32(d, 24);
+    __m128i da_sa = _mm_mulhi_epu16(
+        _mm_add_epi16(_mm_mullo_epi16(da, sa), k0001), k0101);
+    __m128i da2 = _mm_add_epi32(da, _mm_sub_epi32(sa, da_sa));
+    __m128i t = _mm_srli_epi32(_mm_cmpeq_epi32(da, zero), 24);
+    __m128i sa_eff = _mm_or_si128(sa, t);
+    __m128i den_eff = _mm_or_si128(da2, t);
+    __m128i num = _mm_sub_epi32(_mm_slli_epi32(sa_eff, 8), sa_eff);
+    __m128i ratio = _mm_cvttps_epi32(
+        _mm_div_ps(_mm_cvtepi32_ps(num), _mm_cvtepi32_ps(den_eff)));
+    __m128i r_rep = _mm_shufflelo_epi16(_mm_shufflehi_epi16(ratio, 0xa0), 0xa0);
+    __m128i w =
+        _mm_or_si128(r_rep, _mm_slli_epi16(_mm_sub_epi16(k00ff, r_rep), 8));
+    __m128i w_lo = _mm_unpacklo_epi16(w, w);
+    __m128i w_hi = _mm_unpackhi_epi16(w, w);
+    __m128i sb = _mm_sub_epi8(s, k8080);
+    __m128i db = _mm_sub_epi8(d, k8080);
+    __m128i lo = _mm_mulhi_epu16(
+        _mm_add_epi16(_mm_maddubs_epi16(w_lo, _mm_unpacklo_epi8(sb, db)),
+                      k7f81),
+        k0101);
+    __m128i hi = _mm_mulhi_epu16(
+        _mm_add_epi16(_mm_maddubs_epi16(w_hi, _mm_unpackhi_epi8(sb, db)),
+                      k7f81),
+        k0101);
+    __m128i rgb = _mm_packus_epi16(lo, hi);
+    __m128i out =
+        _mm_or_si128(_mm_and_si128(rgb, k00ffffff), _mm_slli_epi32(da2, 24));
+    _mm_storeu_si128((__m128i*)dst_argb, out);
+    dst_argb += 16;
+    width -= 4;
+  }
+}
+#endif  // HAS_ARGBALPHABLENDROW_SSSE3
+
+#ifdef HAS_ARGBALPHABLENDROW_AVX2
+LIBYUV_TARGET_AVX2
+void ARGBAlphaBlendRow_AVX2(const uint8_t* src_argb0,
+                            const uint8_t* src_argb1,
+                            uint8_t* dst_argb,
+                            int width) {
+  const __m256i zero = _mm256_setzero_si256();
+  const __m256i k0001 = _mm256_set1_epi16(0x0001);
+  const __m256i k0101 = _mm256_set1_epi16(0x0101);
+  const __m256i k00ff = _mm256_set1_epi16(0x00ff);
+  const __m256i k8080 = _mm256_set1_epi8((char)0x80);
+  const __m256i k7f81 = _mm256_set1_epi16(0x7f81);
+  const __m256i k00ffffff = _mm256_set1_epi32(0x00ffffff);
+  while (width >= 8) {
+    __m256i s = _mm256_loadu_si256((const __m256i*)src_argb0);
+    __m256i d = _mm256_loadu_si256((const __m256i*)src_argb1);
+    src_argb0 += 32;
+    src_argb1 += 32;
+    __m256i sa = _mm256_srli_epi32(s, 24);
+    __m256i da = _mm256_srli_epi32(d, 24);
+    __m256i da_sa = _mm256_mulhi_epu16(
+        _mm256_add_epi16(_mm256_mullo_epi16(da, sa), k0001), k0101);
+    __m256i da2 = _mm256_add_epi32(da, _mm256_sub_epi32(sa, da_sa));
+    __m256i t = _mm256_srli_epi32(_mm256_cmpeq_epi32(da, zero), 24);
+    __m256i sa_eff = _mm256_or_si256(sa, t);
+    __m256i den_eff = _mm256_or_si256(da2, t);
+    __m256i num = _mm256_sub_epi32(_mm256_slli_epi32(sa_eff, 8), sa_eff);
+    __m256i ratio = _mm256_cvttps_epi32(
+        _mm256_div_ps(_mm256_cvtepi32_ps(num), _mm256_cvtepi32_ps(den_eff)));
+    __m256i r_rep =
+        _mm256_shufflelo_epi16(_mm256_shufflehi_epi16(ratio, 0xa0), 0xa0);
+    __m256i w = _mm256_or_si256(
+        r_rep, _mm256_slli_epi16(_mm256_sub_epi16(k00ff, r_rep), 8));
+    __m256i w_lo = _mm256_unpacklo_epi16(w, w);
+    __m256i w_hi = _mm256_unpackhi_epi16(w, w);
+    __m256i sb = _mm256_sub_epi8(s, k8080);
+    __m256i db = _mm256_sub_epi8(d, k8080);
+    __m256i lo = _mm256_mulhi_epu16(
+        _mm256_add_epi16(
+            _mm256_maddubs_epi16(w_lo, _mm256_unpacklo_epi8(sb, db)), k7f81),
+        k0101);
+    __m256i hi = _mm256_mulhi_epu16(
+        _mm256_add_epi16(
+            _mm256_maddubs_epi16(w_hi, _mm256_unpackhi_epi8(sb, db)), k7f81),
+        k0101);
+    __m256i rgb = _mm256_packus_epi16(lo, hi);
+    __m256i out = _mm256_or_si256(_mm256_and_si256(rgb, k00ffffff),
+                                  _mm256_slli_epi32(da2, 24));
+    _mm256_storeu_si256((__m256i*)dst_argb, out);
+    dst_argb += 32;
+    width -= 8;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBALPHABLENDROW_AVX2
+
+#ifdef HAS_ARGBALPHABLENDROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void ARGBAlphaBlendRow_AVX512BW(const uint8_t* src_argb0,
+                                const uint8_t* src_argb1,
+                                uint8_t* dst_argb,
+                                int width) {
+  const __m512i zero = _mm512_setzero_si512();
+  const __m512i k0001 = _mm512_set1_epi16(0x0001);
+  const __m512i k0101 = _mm512_set1_epi16(0x0101);
+  const __m512i k00ff = _mm512_set1_epi16(0x00ff);
+  const __m512i k8080 = _mm512_set1_epi8((char)0x80);
+  const __m512i k7f81 = _mm512_set1_epi16(0x7f81);
+  const __m512i k00ffffff = _mm512_set1_epi32(0x00ffffff);
+  while (width >= 16) {
+    __m512i s = _mm512_loadu_si512((const __m512i*)src_argb0);
+    __m512i d = _mm512_loadu_si512((const __m512i*)src_argb1);
+    src_argb0 += 64;
+    src_argb1 += 64;
+    __m512i sa = _mm512_srli_epi32(s, 24);
+    __m512i da = _mm512_srli_epi32(d, 24);
+    __m512i da_sa = _mm512_mulhi_epu16(
+        _mm512_add_epi16(_mm512_mullo_epi16(da, sa), k0001), k0101);
+    __m512i da2 = _mm512_add_epi32(da, _mm512_sub_epi32(sa, da_sa));
+    __mmask16 k_da0 = _mm512_cmpeq_epi32_mask(da, zero);
+    __m512i t = _mm512_maskz_set1_epi32(k_da0, 255);
+    __m512i sa_eff = _mm512_or_si512(sa, t);
+    __m512i den_eff = _mm512_or_si512(da2, t);
+    __m512i num = _mm512_sub_epi32(_mm512_slli_epi32(sa_eff, 8), sa_eff);
+    __m512i ratio = _mm512_cvttps_epi32(
+        _mm512_div_ps(_mm512_cvtepi32_ps(num), _mm512_cvtepi32_ps(den_eff)));
+    __m512i r_rep =
+        _mm512_shufflelo_epi16(_mm512_shufflehi_epi16(ratio, 0xa0), 0xa0);
+    __m512i w = _mm512_or_si512(
+        r_rep, _mm512_slli_epi16(_mm512_sub_epi16(k00ff, r_rep), 8));
+    __m512i w_lo = _mm512_unpacklo_epi16(w, w);
+    __m512i w_hi = _mm512_unpackhi_epi16(w, w);
+    __m512i sb = _mm512_sub_epi8(s, k8080);
+    __m512i db = _mm512_sub_epi8(d, k8080);
+    __m512i lo = _mm512_mulhi_epu16(
+        _mm512_add_epi16(
+            _mm512_maddubs_epi16(w_lo, _mm512_unpacklo_epi8(sb, db)), k7f81),
+        k0101);
+    __m512i hi = _mm512_mulhi_epu16(
+        _mm512_add_epi16(
+            _mm512_maddubs_epi16(w_hi, _mm512_unpackhi_epi8(sb, db)), k7f81),
+        k0101);
+    __m512i rgb = _mm512_packus_epi16(lo, hi);
+    __m512i out = _mm512_or_si512(_mm512_and_si512(rgb, k00ffffff),
+                                  _mm512_slli_epi32(da2, 24));
+    _mm512_storeu_si512((__m512i*)dst_argb, out);
+    dst_argb += 64;
+    width -= 16;
+  }
+  if (width > 0) {
+    __mmask16 k = (__mmask16)((1u << width) - 1u);
+    __m512i s = _mm512_maskz_loadu_epi32(k, src_argb0);
+    __m512i d = _mm512_maskz_loadu_epi32(k, src_argb1);
+    __m512i sa = _mm512_srli_epi32(s, 24);
+    __m512i da = _mm512_srli_epi32(d, 24);
+    __m512i da_sa = _mm512_mulhi_epu16(
+        _mm512_add_epi16(_mm512_mullo_epi16(da, sa), k0001), k0101);
+    __m512i da2 = _mm512_add_epi32(da, _mm512_sub_epi32(sa, da_sa));
+    __mmask16 k_da0 = _mm512_cmpeq_epi32_mask(da, zero);
+    __m512i t = _mm512_maskz_set1_epi32(k_da0, 255);
+    __m512i sa_eff = _mm512_or_si512(sa, t);
+    __m512i den_eff = _mm512_or_si512(da2, t);
+    __m512i num = _mm512_sub_epi32(_mm512_slli_epi32(sa_eff, 8), sa_eff);
+    __m512i ratio = _mm512_cvttps_epi32(
+        _mm512_div_ps(_mm512_cvtepi32_ps(num), _mm512_cvtepi32_ps(den_eff)));
+    __m512i r_rep =
+        _mm512_shufflelo_epi16(_mm512_shufflehi_epi16(ratio, 0xa0), 0xa0);
+    __m512i w = _mm512_or_si512(
+        r_rep, _mm512_slli_epi16(_mm512_sub_epi16(k00ff, r_rep), 8));
+    __m512i w_lo = _mm512_unpacklo_epi16(w, w);
+    __m512i w_hi = _mm512_unpackhi_epi16(w, w);
+    __m512i sb = _mm512_sub_epi8(s, k8080);
+    __m512i db = _mm512_sub_epi8(d, k8080);
+    __m512i lo = _mm512_mulhi_epu16(
+        _mm512_add_epi16(
+            _mm512_maddubs_epi16(w_lo, _mm512_unpacklo_epi8(sb, db)), k7f81),
+        k0101);
+    __m512i hi = _mm512_mulhi_epu16(
+        _mm512_add_epi16(
+            _mm512_maddubs_epi16(w_hi, _mm512_unpackhi_epi8(sb, db)), k7f81),
+        k0101);
+    __m512i rgb = _mm512_packus_epi16(lo, hi);
+    __m512i out = _mm512_or_si512(_mm512_and_si512(rgb, k00ffffff),
+                                  _mm512_slli_epi32(da2, 24));
+    _mm512_mask_storeu_epi32(dst_argb, k, out);
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_ARGBALPHABLENDROW_AVX512BW
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

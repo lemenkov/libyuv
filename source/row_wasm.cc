@@ -1970,6 +1970,73 @@ void ARGBCopyYToAlphaRow_WASMSIMD(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif  // HAS_ARGBCOPYYTOALPHAROW_WASMSIMD
 
+#ifdef HAS_ARGBORROW_WASMSIMD
+void ARGBOrRow_WASMSIMD(const uint8_t* src_argb,
+                        uint8_t* dst_argb,
+                        uint32_t value,
+                        int width) {
+  v128_t val = wasm_i32x4_splat((int32_t)value);
+  do {
+    asm("" : "+r"(src_argb), "+r"(dst_argb));
+    v128_t s = wasm_v128_load(src_argb);
+    wasm_v128_store(dst_argb, wasm_v128_or(s, val));
+    src_argb += 16;
+    dst_argb += 16;
+    width -= 4;
+  } while (width > 0);
+}
+#endif  // HAS_ARGBORROW_WASMSIMD
+
+#ifdef HAS_ARGBALPHABLENDROW_WASMSIMD
+void ARGBAlphaBlendRow_WASMSIMD(const uint8_t* src_argb0,
+                                const uint8_t* src_argb1,
+                                uint8_t* dst_argb,
+                                int width) {
+  v128_t c1 = SplatConst16(1);
+  v128_t c00ffffff = SplatConst32(0x00ffffff);
+  do {
+    asm("" : "+r"(src_argb0), "+r"(src_argb1), "+r"(dst_argb));
+    v128_t s = wasm_v128_load(src_argb0);
+    v128_t d = wasm_v128_load(src_argb1);
+    src_argb0 += 16;
+    src_argb1 += 16;
+    v128_t sa = wasm_u32x4_shr(s, 24);
+    v128_t da = wasm_u32x4_shr(d, 24);
+    v128_t prod16 = wasm_i16x8_add(wasm_i16x8_mul(da, sa), c1);
+    v128_t da_sa =
+        wasm_u16x8_shr(wasm_i16x8_add(prod16, wasm_u16x8_shr(prod16, 8)), 8);
+    v128_t da2 = wasm_i32x4_add(da, wasm_i32x4_sub(sa, da_sa));
+    v128_t t = wasm_u32x4_shr(wasm_i32x4_eq(da, wasm_i32x4_const_splat(0)), 24);
+    v128_t sa_eff = wasm_v128_or(sa, t);
+    v128_t den_eff = wasm_v128_or(da2, t);
+    v128_t num = wasm_i32x4_sub(wasm_i32x4_shl(sa_eff, 8), sa_eff);
+    v128_t ratio = wasm_u32x4_trunc_sat_f32x4(wasm_f32x4_div(
+        wasm_f32x4_convert_u32x4(num), wasm_f32x4_convert_u32x4(den_eff)));
+    v128_t r8 = wasm_i8x16_shuffle(ratio, ratio, 0, 0, 0, 0, 4, 4, 4, 4, 8, 8,
+                                   8, 8, 12, 12, 12, 12);
+    v128_t inv_r8 = wasm_v128_not(r8);
+    v128_t acc_lo =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_u16x8_extmul_low_u8x16(d, inv_r8),
+                                      wasm_u16x8_extmul_low_u8x16(s, r8)),
+                       c1);
+    v128_t acc_hi =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_u16x8_extmul_high_u8x16(d, inv_r8),
+                                      wasm_u16x8_extmul_high_u8x16(s, r8)),
+                       c1);
+    acc_lo =
+        wasm_u16x8_shr(wasm_i16x8_add(acc_lo, wasm_u16x8_shr(acc_lo, 8)), 8);
+    acc_hi =
+        wasm_u16x8_shr(wasm_i16x8_add(acc_hi, wasm_u16x8_shr(acc_hi, 8)), 8);
+    v128_t rgb = wasm_u8x16_narrow_i16x8(acc_lo, acc_hi);
+    v128_t out = wasm_v128_or(wasm_v128_and(rgb, c00ffffff),
+                              wasm_i32x4_shl(da2, 24));
+    wasm_v128_store(dst_argb, out);
+    dst_argb += 16;
+    width -= 4;
+  } while (width > 0);
+}
+#endif  // HAS_ARGBALPHABLENDROW_WASMSIMD
+
 #undef LIBYUV_WASM_SWIZZLE
 
 #ifdef __cplusplus

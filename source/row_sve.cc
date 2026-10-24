@@ -1751,6 +1751,24 @@ float SsimWindowRow_SVE2(const uint32_t* row0,
 }
 #endif  // HAS_SSIMWINDOWROW_SVE2
 
+#ifdef HAS_ARGBORROW_SVE2
+void ARGBOrRow_SVE2(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  ARGBOrRow_SVE_SC(src_argb, dst_argb, value, width);
+}
+#endif  // HAS_ARGBORROW_SVE2
+
+#ifdef HAS_ARGBALPHABLENDROW_SVE2
+void ARGBAlphaBlendRow_SVE2(const uint8_t* src_argb0,
+                            const uint8_t* src_argb1,
+                            uint8_t* dst_argb,
+                            int width) {
+  ARGBAlphaBlendRow_SVE_SC(src_argb0, src_argb1, dst_argb, width);
+}
+#endif  // HAS_ARGBALPHABLENDROW_SVE2
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

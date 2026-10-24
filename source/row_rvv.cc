@@ -2245,6 +2245,99 @@ void ARGBBlendRow_RVV(const uint8_t* src_argb,
 }
 #endif
 
+#ifdef HAS_ARGBORROW_RVV
+void ARGBOrRow_RVV(const uint8_t* src_argb,
+                   uint8_t* dst_argb,
+                   uint32_t value,
+                   int width) {
+  size_t vl;
+  int w = width * 4;
+  asm volatile(
+      "vsetvli     %[vl], zero, e32, m8, ta, ma     \n"
+      "vmv.v.x     v16, %[val]                      \n"
+      "1:                                           \n"
+      "vsetvli     %[vl], %[w], e8, m8, ta, ma      \n"
+      "vle8.v      v8, (%[src])                     \n"
+      "vor.vv      v8, v8, v16                      \n"
+      "vse8.v      v8, (%[dst])                     \n"
+      "sub         %[w], %[w], %[vl]                \n"
+      "add         %[src], %[src], %[vl]            \n"
+      "add         %[dst], %[dst], %[vl]            \n"
+      "bgtz        %[w], 1b                         \n"
+      : [src] "+r"(src_argb),  // %[src]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [w] "+r"(w),           // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      : [val] "r"(value)       // %[val]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#endif
+
+#ifdef HAS_ARGBALPHABLENDROW_RVV
+void ARGBAlphaBlendRow_RVV(const uint8_t* src_argb,
+                           const uint8_t* src_argb1,
+                           uint8_t* dst_argb,
+                           int width) {
+  size_t vl;
+  asm volatile(
+      "1:                                           \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma      \n"
+      "vlseg4e8.v  v16, (%[src_argb])               \n"
+      "vlseg4e8.v  v24, (%[src_argb1])              \n"
+      "vwmulu.vv   v4, v30, v22                     \n"
+      "vwmulu.vx   v8, v22, %[k255]                 \n"
+      "vsetvli     zero, zero, e16, m4, ta, ma      \n"
+      "vadd.vi     v4, v4, 1                        \n"
+      "vmulhu.vx   v4, v4, %[k0101]                 \n"
+      "vsetvli     zero, zero, e8, m2, ta, ma       \n"
+      "vnsrl.wi    v0, v4, 0                        \n"
+      "vsub.vv     v0, v22, v0                      \n"
+      "vadd.vv     v30, v30, v0                     \n"
+      "vsetvli     zero, zero, e16, m4, ta, ma      \n"
+      "vzext.vf2   v12, v30                         \n"
+      "vdivu.vv    v8, v8, v12                      \n"
+      "vsetvli     zero, zero, e8, m2, ta, ma       \n"
+      "vnsrl.wi    v0, v8, 0                        \n"
+      "vrsub.vx    v2, v0, %[k255]                  \n"
+      "vwmulu.vv   v4, v24, v2                      \n"
+      "vwmulu.vv   v8, v26, v2                      \n"
+      "vwmulu.vv   v12, v28, v2                     \n"
+      "vwmaccu.vv  v4, v0, v16                      \n"
+      "vwmaccu.vv  v8, v0, v18                      \n"
+      "vwmaccu.vv  v12, v0, v20                     \n"
+      "vsetvli     zero, zero, e16, m4, ta, ma      \n"
+      "vadd.vi     v4, v4, 1                        \n"
+      "vadd.vi     v8, v8, 1                        \n"
+      "vadd.vi     v12, v12, 1                      \n"
+      "vmulhu.vx   v4, v4, %[k0101]                 \n"
+      "vmulhu.vx   v8, v8, %[k0101]                 \n"
+      "vmulhu.vx   v12, v12, %[k0101]               \n"
+      "vsetvli     zero, zero, e8, m2, ta, ma       \n"
+      "vnsrl.wi    v24, v4, 0                       \n"
+      "vnsrl.wi    v26, v8, 0                       \n"
+      "vnsrl.wi    v28, v12, 0                      \n"
+      "vsseg4e8.v  v24, (%[dst_argb])               \n"
+      "sub         %[w], %[w], %[vl]                \n"
+      "slli        %[vl], %[vl], 2                  \n"
+      "add         %[src_argb], %[src_argb], %[vl]  \n"
+      "add         %[src_argb1], %[src_argb1], %[vl]\n"
+      "add         %[dst_argb], %[dst_argb], %[vl]  \n"
+      "bgtz        %[w], 1b                         \n"
+      : [src_argb] "+r"(src_argb),    // %[src_argb]
+        [src_argb1] "+r"(src_argb1),  // %[src_argb1]
+        [dst_argb] "+r"(dst_argb),    // %[dst_argb]
+        [w] "+r"(width),              // %[w]
+        [vl] "=&r"(vl)                // %[vl]
+      : [k0101] "r"(0x0101),          // %[k0101]
+        [k255] "r"(255)               // %[k255]
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+        "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
+        "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
+        "v28", "v29", "v30", "v31");
+}
+#endif
+
 #ifdef HAS_BLENDPLANEROW_RVV
 void BlendPlaneRow_RVV(const uint8_t* src0,
                        const uint8_t* src1,

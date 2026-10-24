@@ -1965,6 +1965,89 @@ void ARGBBlendRow_LASX(const uint8_t* src_argb0,
         "$xr7", "$xr8");
 }
 
+void ARGBOrRow_LASX(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  asm volatile(
+      "xvreplgr2vr.w $xr1, %[val]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      : [val] "r"(value)
+      : "memory", "$xr0", "$xr1");
+}
+
+void ARGBAlphaBlendRow_LASX(const uint8_t* src_argb0,
+                            const uint8_t* src_argb1,
+                            uint8_t* dst_argb,
+                            int width) {
+  static const uint8_t kShufRatio[16] = {0, 0, 0, 0, 4,  4,  4,  4,
+                                         8, 8, 8, 8, 12, 12, 12, 12};
+  asm volatile(
+      "vld $vr8, %[shuf], 0\n\t"
+      "xvpermi.q $xr8, $xr8, 0x00\n\t"
+      "xvldi $xr9, 1\n\t"
+      "xvsrli.h $xr10, $xr9, 8\n\t"
+      "xvldi $xr11, 0xff\n\t"
+      "xvsrli.w $xr11, $xr11, 8\n\t"
+      "xvldi $xr12, 0\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[s0], 0\n\t"
+      "xvld $xr1, %[s1], 0\n\t"
+      "xvsrli.w $xr2, $xr0, 24\n\t"
+      "xvsrli.w $xr3, $xr1, 24\n\t"
+      "xvmul.h $xr4, $xr3, $xr2\n\t"
+      "xvadd.h $xr4, $xr4, $xr10\n\t"
+      "xvmuh.hu $xr4, $xr4, $xr9\n\t"
+      "xvsub.w $xr4, $xr2, $xr4\n\t"
+      "xvadd.w $xr4, $xr3, $xr4\n\t"
+      "xvseq.w $xr5, $xr3, $xr12\n\t"
+      "xvsrli.w $xr5, $xr5, 24\n\t"
+      "xvor.v $xr6, $xr2, $xr5\n\t"
+      "xvor.v $xr7, $xr4, $xr5\n\t"
+      "xvslli.w $xr5, $xr6, 8\n\t"
+      "xvsub.w $xr5, $xr5, $xr6\n\t"
+      "xvffint.s.wu $xr5, $xr5\n\t"
+      "xvffint.s.wu $xr7, $xr7\n\t"
+      "xvfdiv.s $xr5, $xr5, $xr7\n\t"
+      "xvftintrz.wu.s $xr5, $xr5\n\t"
+      "xvshuf.b $xr5, $xr5, $xr5, $xr8\n\t"
+      "xvnor.v $xr6, $xr5, $xr5\n\t"
+      "xvmulwev.h.bu $xr2, $xr1, $xr6\n\t"
+      "xvmulwod.h.bu $xr3, $xr1, $xr6\n\t"
+      "xvmulwev.h.bu $xr7, $xr0, $xr5\n\t"
+      "xvmulwod.h.bu $xr0, $xr0, $xr5\n\t"
+      "xvadd.h $xr2, $xr2, $xr7\n\t"
+      "xvadd.h $xr3, $xr3, $xr0\n\t"
+      "xvadd.h $xr2, $xr2, $xr10\n\t"
+      "xvadd.h $xr3, $xr3, $xr10\n\t"
+      "xvmuh.hu $xr2, $xr2, $xr9\n\t"
+      "xvmuh.hu $xr3, $xr3, $xr9\n\t"
+      "xvslli.h $xr3, $xr3, 8\n\t"
+      "xvor.v $xr2, $xr2, $xr3\n\t"
+      "xvand.v $xr2, $xr2, $xr11\n\t"
+      "xvslli.w $xr4, $xr4, 24\n\t"
+      "xvor.v $xr2, $xr2, $xr4\n\t"
+      "xvst $xr2, %[dst], 0\n\t"
+      "addi.d %[s0], %[s0], 32\n\t"
+      "addi.d %[s1], %[s1], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src_argb0), [s1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [cnt] "+r"(width)
+      : [shuf] "r"(kShufRatio)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12");
+}
+
 void ARGBShadeRow_LASX(const uint8_t* src_argb,
                        uint8_t* dst_argb,
                        int width,

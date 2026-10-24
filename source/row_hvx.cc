@@ -112,6 +112,25 @@ void ARGBSetRow_HVX(uint8_t* dst_argb, uint32_t v32, int width) {
   }
 }
 
+void ARGBOrRow_HVX(const uint8_t* src_argb,
+                   uint8_t* dst_argb,
+                   uint32_t value,
+                   int width) {
+  HVX_Vector v = Q6_V_vsplat_R(value);
+  int bytes = width * 4;
+  while (bytes >= 128) {
+    HVX_Vector s = vloadu(src_argb);
+    vstoreu(dst_argb, Q6_V_vor_VV(s, v));
+    src_argb += 128;
+    dst_argb += 128;
+    bytes -= 128;
+  }
+  if (bytes > 0) {
+    HVX_Vector s = vloadu_partial_zero(src_argb, bytes);
+    vstoreu_partial(dst_argb, Q6_V_vor_VV(s, v), bytes);
+  }
+}
+
 void MirrorRow_HVX(const uint8_t* src, uint8_t* dst, int width) {
   HVX_Vector ctrl = Q6_Vb_vsplat_R(0x7F);
   src += width;
@@ -633,6 +652,73 @@ void ARGBBlendRow_HVX(const uint8_t* src_argb,
     out = Q6_V_vor_VV(out, v_alpha_mask);
     vstoreu_partial(dst_argb, out, b_cnt);
     src_argb += 128;
+    src_argb1 += 128;
+    dst_argb += 128;
+    bytes -= 128;
+  }
+}
+
+void ARGBAlphaBlendRow_HVX(const uint8_t* src_argb0,
+                           const uint8_t* src_argb1,
+                           uint8_t* dst_argb,
+                           int width) {
+  HVX_Vector vzero = Q6_V_vzero();
+  HVX_Vector v0001 = Q6_Vh_vsplat_R(1);
+  HVX_Vector v00ff = Q6_Vh_vsplat_R(255);
+  HVX_Vector vffff = Q6_Vh_vsplat_R(-1);
+  HVX_Vector v_rgb_mask = Q6_V_vsplat_R(0x00FFFFFFu);
+  int bytes = width * 4;
+  while (bytes > 0) {
+    int b_cnt = bytes >= 128 ? 128 : bytes;
+    HVX_Vector fg = vloadu_partial_zero(src_argb0, b_cnt);
+    HVX_Vector bg = vloadu_partial_zero(src_argb1, b_cnt);
+
+    // Broadcast sa and da to all 4 byte lanes of each 32-bit pixel.
+    HVX_Vector t_fg = Q6_Vb_vshuffo_VbVb(fg, fg);
+    HVX_Vector sa_vec = Q6_Vh_vshuffo_VhVh(t_fg, t_fg);
+    HVX_Vector t_bg = Q6_Vb_vshuffo_VbVb(bg, bg);
+    HVX_Vector da_vec = Q6_Vh_vshuffo_VhVh(t_bg, t_bg);
+
+    // Both uint16_t halfwords of each pixel hold sa and da (0..255).
+    HVX_Vector sa16 = Q6_V_vand_VV(sa_vec, v00ff);
+    HVX_Vector da16 = Q6_V_vand_VV(da_vec, v00ff);
+
+    // x = da * sa in both uint16_t halfwords of each pixel.
+    HVX_Vector x = Q6_V_lo_W(Q6_Wuh_vmpy_VubVub(da_vec, sa_vec));
+    // prod_div255 = (x + 1 + (x >> 8)) >> 8.
+    HVX_Vector prod_div255 = Q6_Vuh_vlsr_VuhR(
+        Q6_Vh_vadd_VhVh(Q6_Vh_vadd_VhVh(x, v0001), Q6_Vuh_vlsr_VuhR(x, 8)), 8);
+    // out_a = da + sa - (da * sa) / 255.
+    HVX_Vector out_a16 =
+        Q6_Vh_vadd_VhVh(da16, Q6_Vh_vsub_VhVh(sa16, prod_div255));
+
+    // 8-step restoring division: ratio = (da == 0) ? 255 : (sa * 255) / out_a.
+    HVX_Vector rem = Q6_Vh_vsub_VhVh(Q6_Vh_vasl_VhR(sa16, 8), sa16);
+    HVX_VectorPred q_da_zero = Q6_Q_vcmp_eq_VhVh(da16, vzero);
+    rem = Q6_V_vmux_QVV(q_da_zero, vffff, rem);
+    HVX_Vector ratio = vzero;
+
+    for (int bit = 7; bit >= 0; --bit) {
+      HVX_Vector d_sh = Q6_Vh_vasl_VhR(out_a16, bit);
+      HVX_VectorPred q_gt = Q6_Q_vcmp_gt_VuhVuh(d_sh, rem);
+      rem = Q6_V_vmux_QVV(q_gt, rem, Q6_Vh_vsub_VhVh(rem, d_sh));
+      ratio = Q6_V_vmux_QVV(q_gt, ratio,
+                            Q6_V_vor_VV(ratio, Q6_Vb_vsplat_R(1 << bit)));
+    }
+
+    // Exact RGB lerp: (bg * (255 - ratio) + fg * ratio) / 255.
+    HVX_Vector inv_ratio = Q6_V_vnot_V(ratio);
+    HVX_VectorPair p_rgb = Q6_Wuh_vmpy_VubVub(fg, ratio);
+    p_rgb = Q6_Wuh_vmpyacc_WuhVubVub(p_rgb, bg, inv_ratio);
+    HVX_Vector lo = Q6_V_lo_W(p_rgb);
+    HVX_Vector hi = Q6_V_hi_W(p_rgb);
+    lo = Q6_Vh_vadd_VhVh(Q6_Vh_vadd_VhVh(lo, v0001), Q6_Vuh_vlsr_VuhR(lo, 8));
+    hi = Q6_Vh_vadd_VhVh(Q6_Vh_vadd_VhVh(hi, v0001), Q6_Vuh_vlsr_VuhR(hi, 8));
+    HVX_Vector out = Q6_Vb_vshuffo_VbVb(hi, lo);
+    out =
+        Q6_V_vor_VV(Q6_V_vand_VV(out, v_rgb_mask), Q6_Vw_vasl_VwR(out_a16, 24));
+    vstoreu_partial(dst_argb, out, b_cnt);
+    src_argb0 += 128;
     src_argb1 += 128;
     dst_argb += 128;
     bytes -= 128;

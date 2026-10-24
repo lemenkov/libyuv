@@ -3473,6 +3473,67 @@ void ARGBBlendRow_C(const uint8_t* src_argb,
 }
 #undef BLEND
 
+// Blend unattenuated src_argb0 over src_argb1 and store to dst_argb.
+void ARGBAlphaBlendRow_C(const uint8_t* src_argb0,
+                         const uint8_t* src_argb1,
+                         uint8_t* dst_argb,
+                         int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    int sa = src_argb0[3];
+    int da = src_argb1[3];
+    if (da == 0) {
+      dst_argb[0] = src_argb0[0];
+      dst_argb[1] = src_argb0[1];
+      dst_argb[2] = src_argb0[2];
+      dst_argb[3] = STATIC_CAST(uint8_t, sa);
+    } else if (sa == 0) {
+      dst_argb[0] = src_argb1[0];
+      dst_argb[1] = src_argb1[1];
+      dst_argb[2] = src_argb1[2];
+      dst_argb[3] = STATIC_CAST(uint8_t, da);
+    } else {
+      int dst_alpha = da + sa - da * sa / 255;
+      int alpha_ratio = sa * 255 / dst_alpha;
+      dst_argb[0] = STATIC_CAST(
+          uint8_t,
+          (src_argb1[0] * (255 - alpha_ratio) + src_argb0[0] * alpha_ratio) /
+              255);
+      dst_argb[1] = STATIC_CAST(
+          uint8_t,
+          (src_argb1[1] * (255 - alpha_ratio) + src_argb0[1] * alpha_ratio) /
+              255);
+      dst_argb[2] = STATIC_CAST(
+          uint8_t,
+          (src_argb1[2] * (255 - alpha_ratio) + src_argb0[2] * alpha_ratio) /
+              255);
+      dst_argb[3] = STATIC_CAST(uint8_t, dst_alpha);
+    }
+    src_argb0 += 4;
+    src_argb1 += 4;
+    dst_argb += 4;
+  }
+}
+
+void ARGBOrRow_C(const uint8_t* src_argb,
+                 uint8_t* dst_argb,
+                 uint32_t value,
+                 int width) {
+  const uint8_t v0 = value & 0xff;
+  const uint8_t v1 = (value >> 8) & 0xff;
+  const uint8_t v2 = (value >> 16) & 0xff;
+  const uint8_t v3 = (value >> 24) & 0xff;
+  int i;
+  for (i = 0; i < width; ++i) {
+    dst_argb[0] = src_argb[0] | v0;
+    dst_argb[1] = src_argb[1] | v1;
+    dst_argb[2] = src_argb[2] | v2;
+    dst_argb[3] = src_argb[3] | v3;
+    src_argb += 4;
+    dst_argb += 4;
+  }
+}
+
 #define UBLEND(f, b, a) (((a) * f) + ((255 - a) * b) + 255) >> 8
 void BlendPlaneRow_C(const uint8_t* src0,
                      const uint8_t* src1,

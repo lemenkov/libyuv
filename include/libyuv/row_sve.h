@@ -2360,6 +2360,160 @@ static inline float SsimWindowRow_SVE_SC(const uint32_t* row0,
   return total;
 }
 
+static inline void ARGBOrRow_SVE_SC(const uint8_t* src_argb,
+                                    uint8_t* dst_argb,
+                                    uint32_t value,
+                                    int width) STREAMING_COMPATIBLE {
+  uint32_t vl;
+  asm volatile(
+      "cntw     %x[vl]                                  \n"
+      "dup      z2.s, %w[value]                         \n"
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.lt     2f                                      \n"
+
+      "ptrue    p0.s                                    \n"
+      "1:                                               \n"
+      "ld1w     {z0.s}, p0/z, [%[src]]                  \n"
+      "ld1w     {z1.s}, p0/z, [%[src], #1, mul vl]      \n"
+      "incb     %[src], all, mul #2                     \n"
+      "orr      z0.d, z0.d, z2.d                        \n"
+      "orr      z1.d, z1.d, z2.d                        \n"
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
+      "st1w     {z0.s}, p0, [%[dst]]                    \n"
+      "st1w     {z1.s}, p0, [%[dst], #1, mul vl]        \n"
+      "incb     %[dst], all, mul #2                     \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.eq     99f                                     \n"
+
+      "whilelt  p0.s, wzr, %w[width]                    \n"
+      "whilelt  p1.s, %w[vl], %w[width]                 \n"
+      "ld1w     {z0.s}, p0/z, [%[src]]                  \n"
+      "ld1w     {z1.s}, p1/z, [%[src], #1, mul vl]      \n"
+      "orr      z0.d, z0.d, z2.d                        \n"
+      "orr      z1.d, z1.d, z2.d                        \n"
+      "st1w     {z0.s}, p0, [%[dst]]                    \n"
+      "st1w     {z1.s}, p1, [%[dst], #1, mul vl]        \n"
+
+      "99:                                              \n"
+      : [src] "+r"(src_argb),  // %[src]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [width] "+r"(width),   // %[width]
+        [vl] "=&r"(vl)         // %[vl]
+      : [value] "r"(value)     // %[value]
+      : "memory", "cc", "z0", "z1", "z2", "p0", "p1");
+}
+
+#define ARGBALPHABLEND_SVE_2X(pred0, pred1)                       \
+  "ld1w     {z0.s}, " #pred0 "/z, [%[src0]]                   \n" \
+  "ld1w     {z1.s}, " #pred1 "/z, [%[src0], #1, mul vl]       \n" \
+  "ld1w     {z2.s}, " #pred0 "/z, [%[src1]]                   \n" \
+  "ld1w     {z3.s}, " #pred1 "/z, [%[src1], #1, mul vl]       \n" \
+  "incb     %[src0], all, mul #2                              \n" \
+  "incb     %[src1], all, mul #2                              \n" \
+  "lsr      z4.s, z0.s, #24                                   \n" \
+  "lsr      z5.s, z1.s, #24                                   \n" \
+  "lsr      z6.s, z2.s, #24                                   \n" \
+  "lsr      z7.s, z3.s, #24                                   \n" \
+  "mov      z16.d, z24.d                                      \n" \
+  "mov      z17.d, z24.d                                      \n" \
+  "umlalb   z16.h, z6.b, z4.b                                 \n" \
+  "umlalb   z17.h, z7.b, z5.b                                 \n" \
+  "usra     z16.h, z16.h, #8                                  \n" \
+  "usra     z17.h, z17.h, #8                                  \n" \
+  "lsr      z16.h, z16.h, #8                                  \n" \
+  "lsr      z17.h, z17.h, #8                                  \n" \
+  "sub      z16.s, z4.s, z16.s                                \n" \
+  "sub      z17.s, z5.s, z17.s                                \n" \
+  "add      z16.s, z6.s, z16.s                                \n" \
+  "add      z17.s, z7.s, z17.s                                \n" \
+  "lsl      z18.s, z4.s, #8                                   \n" \
+  "lsl      z19.s, z5.s, #8                                   \n" \
+  "sub      z18.s, z18.s, z4.s                                \n" \
+  "sub      z19.s, z19.s, z5.s                                \n" \
+  "sub      z6.s, z6.s, #1                                    \n" \
+  "sub      z7.s, z7.s, #1                                    \n" \
+  "asr      z6.s, z6.s, #31                                   \n" \
+  "asr      z7.s, z7.s, #31                                   \n" \
+  "udiv     z18.s, p0/m, z18.s, z16.s                         \n" \
+  "udiv     z19.s, p0/m, z19.s, z17.s                         \n" \
+  "mul      z18.s, z18.s, z25.s                               \n" \
+  "mul      z19.s, z19.s, z25.s                               \n" \
+  "orr      z18.d, z18.d, z6.d                                \n" \
+  "orr      z19.d, z19.d, z7.d                                \n" \
+  "not      z20.b, p0/m, z18.b                                \n" \
+  "not      z21.b, p0/m, z19.b                                \n" \
+  "mov      z4.d, z24.d                                       \n" \
+  "mov      z5.d, z24.d                                       \n" \
+  "mov      z6.d, z24.d                                       \n" \
+  "mov      z7.d, z24.d                                       \n" \
+  "umlalb   z4.h, z2.b, z20.b                                 \n" \
+  "umlalt   z5.h, z2.b, z20.b                                 \n" \
+  "umlalb   z6.h, z3.b, z21.b                                 \n" \
+  "umlalt   z7.h, z3.b, z21.b                                 \n" \
+  "umlalb   z4.h, z0.b, z18.b                                 \n" \
+  "umlalt   z5.h, z0.b, z18.b                                 \n" \
+  "umlalb   z6.h, z1.b, z19.b                                 \n" \
+  "umlalt   z7.h, z1.b, z19.b                                 \n" \
+  "usra     z4.h, z4.h, #8                                    \n" \
+  "usra     z5.h, z5.h, #8                                    \n" \
+  "usra     z6.h, z6.h, #8                                    \n" \
+  "usra     z7.h, z7.h, #8                                    \n" \
+  "shrnb    z0.b, z4.h, #8                                    \n" \
+  "shrnt    z0.b, z5.h, #8                                    \n" \
+  "shrnb    z1.b, z6.h, #8                                    \n" \
+  "shrnt    z1.b, z7.h, #8                                    \n" \
+  "and      z0.d, z0.d, z26.d                                 \n" \
+  "and      z1.d, z1.d, z26.d                                 \n" \
+  "lsl      z16.s, z16.s, #24                                 \n" \
+  "lsl      z17.s, z17.s, #24                                 \n" \
+  "orr      z0.d, z0.d, z16.d                                 \n" \
+  "orr      z1.d, z1.d, z17.d                                 \n" \
+  "st1w     {z0.s}, " #pred0 ", [%[dst]]                      \n" \
+  "st1w     {z1.s}, " #pred1 ", [%[dst], #1, mul vl]          \n" \
+  "incb     %[dst], all, mul #2                               \n"
+
+static inline void ARGBAlphaBlendRow_SVE_SC(const uint8_t* src_argb0,
+                                            const uint8_t* src_argb1,
+                                            uint8_t* dst_argb,
+                                            int width) STREAMING_COMPATIBLE {
+  uint32_t vl;
+  asm volatile(
+      "cntw     %x[vl]                                  \n"
+      "ptrue    p0.b                                    \n"
+      "mov      z24.h, #1                               \n"
+      "mov      z25.s, #0x01010101                      \n"
+      "mov      z26.s, #0x00ffffff                      \n"
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.lt     2f                                      \n"
+
+      "1:                                               \n"
+      ARGBALPHABLEND_SVE_2X(p0, p0)
+      "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl], lsl #1    \n"
+      "b.eq     99f                                     \n"
+
+      "whilelt  p1.s, wzr, %w[width]                    \n"
+      "whilelt  p2.s, %w[vl], %w[width]                 \n"
+      ARGBALPHABLEND_SVE_2X(p1, p2)
+
+      "99:                                              \n"
+      : [src0] "+r"(src_argb0),  // %[src0]
+        [src1] "+r"(src_argb1),  // %[src1]
+        [dst] "+r"(dst_argb),    // %[dst]
+        [width] "+r"(width),     // %[width]
+        [vl] "=&r"(vl)           // %[vl]
+      :
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16",
+        "z17", "z18", "z19", "z20", "z21", "z24", "z25", "z26", "p0", "p1",
+        "p2");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus

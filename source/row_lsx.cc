@@ -1683,6 +1683,88 @@ void ARGBBlendRow_LSX(const uint8_t* src_argb0,
         "$vr7", "$vr8");
 }
 
+void ARGBOrRow_LSX(const uint8_t* src_argb,
+                   uint8_t* dst_argb,
+                   uint32_t value,
+                   int width) {
+  asm volatile(
+      "vreplgr2vr.w $vr1, %[val]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      : [val] "r"(value)
+      : "memory", "$vr0", "$vr1");
+}
+
+void ARGBAlphaBlendRow_LSX(const uint8_t* src_argb0,
+                           const uint8_t* src_argb1,
+                           uint8_t* dst_argb,
+                           int width) {
+  static const uint8_t kShufRatio[16] = {0, 0, 0, 0, 4,  4,  4,  4,
+                                         8, 8, 8, 8, 12, 12, 12, 12};
+  asm volatile(
+      "vld $vr8, %[shuf], 0\n\t"
+      "vldi $vr9, 1\n\t"
+      "vsrli.h $vr10, $vr9, 8\n\t"
+      "vldi $vr11, 0xff\n\t"
+      "vsrli.w $vr11, $vr11, 8\n\t"
+      "vldi $vr12, 0\n\t"
+      "1:\n\t"
+      "vld $vr0, %[s0], 0\n\t"
+      "vld $vr1, %[s1], 0\n\t"
+      "vsrli.w $vr2, $vr0, 24\n\t"
+      "vsrli.w $vr3, $vr1, 24\n\t"
+      "vmul.h $vr4, $vr3, $vr2\n\t"
+      "vadd.h $vr4, $vr4, $vr10\n\t"
+      "vmuh.hu $vr4, $vr4, $vr9\n\t"
+      "vsub.w $vr4, $vr2, $vr4\n\t"
+      "vadd.w $vr4, $vr3, $vr4\n\t"
+      "vseq.w $vr5, $vr3, $vr12\n\t"
+      "vsrli.w $vr5, $vr5, 24\n\t"
+      "vor.v $vr6, $vr2, $vr5\n\t"
+      "vor.v $vr7, $vr4, $vr5\n\t"
+      "vslli.w $vr5, $vr6, 8\n\t"
+      "vsub.w $vr5, $vr5, $vr6\n\t"
+      "vffint.s.wu $vr5, $vr5\n\t"
+      "vffint.s.wu $vr7, $vr7\n\t"
+      "vfdiv.s $vr5, $vr5, $vr7\n\t"
+      "vftintrz.wu.s $vr5, $vr5\n\t"
+      "vshuf.b $vr5, $vr5, $vr5, $vr8\n\t"
+      "vnor.v $vr6, $vr5, $vr5\n\t"
+      "vmulwev.h.bu $vr2, $vr1, $vr6\n\t"
+      "vmulwod.h.bu $vr3, $vr1, $vr6\n\t"
+      "vmulwev.h.bu $vr7, $vr0, $vr5\n\t"
+      "vmulwod.h.bu $vr0, $vr0, $vr5\n\t"
+      "vadd.h $vr2, $vr2, $vr7\n\t"
+      "vadd.h $vr3, $vr3, $vr0\n\t"
+      "vadd.h $vr2, $vr2, $vr10\n\t"
+      "vadd.h $vr3, $vr3, $vr10\n\t"
+      "vmuh.hu $vr2, $vr2, $vr9\n\t"
+      "vmuh.hu $vr3, $vr3, $vr9\n\t"
+      "vslli.h $vr3, $vr3, 8\n\t"
+      "vor.v $vr2, $vr2, $vr3\n\t"
+      "vand.v $vr2, $vr2, $vr11\n\t"
+      "vslli.w $vr4, $vr4, 24\n\t"
+      "vor.v $vr2, $vr2, $vr4\n\t"
+      "vst $vr2, %[dst], 0\n\t"
+      "addi.d %[s0], %[s0], 16\n\t"
+      "addi.d %[s1], %[s1], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src_argb0), [s1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [cnt] "+r"(width)
+      : [shuf] "r"(kShufRatio)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12");
+}
+
 void ARGBShadeRow_LSX(const uint8_t* src_argb,
                       uint8_t* dst_argb,
                       int width,

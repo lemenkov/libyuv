@@ -2822,6 +2822,103 @@ void ARGBBlendRow_NEON(const uint8_t* src_argb,
       : "cc", "memory", "q0", "q1", "q2", "q3", "q10", "q11", "q12");
 }
 
+void ARGBOrRow_NEON(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  asm volatile(
+      "vdup.32     q2, %3                        \n"
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"
+      "subs        %2, %2, #8                    \n"
+      "vorr        q0, q0, q2                    \n"
+      "vorr        q1, q1, q2                    \n"
+      "vst1.8      {q0, q1}, [%1]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_argb),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(width)      // %2
+      : "r"(value)       // %3
+      : "memory", "cc", "q0", "q1", "q2");
+}
+
+void ARGBAlphaBlendRow_NEON(const uint8_t* src_argb,
+                            const uint8_t* src_argb1,
+                            uint8_t* dst_argb,
+                            int width) {
+  asm volatile(
+      "vmov.u8     d28, #255                     \n"
+      "vmov.i16    q15, #1                       \n"
+      "1:                                        \n"
+      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"
+      "vld4.8      {d4, d5, d6, d7}, [%1]!       \n"
+      "subs        %3, %3, #8                    \n"
+      "vmov        q8, q15                       \n"
+      "vmlal.u8    q8, d7, d3                    \n"
+      "vsra.u16    q8, q8, #8                    \n"
+      "vshrn.i16   d16, q8, #8                   \n"
+      "vsub.i8     d16, d3, d16                  \n"
+      "vadd.i8     d7, d7, d16                   \n"
+      "vceq.i8     d17, d7, #0                   \n"
+      "vorr        d18, d3, d17                  \n"
+      "vorr        d19, d7, d17                  \n"
+      "vmull.u8    q8, d18, d28                  \n"
+      "vmovl.u8    q9, d19                       \n"
+      "vmovl.u16   q10, d16                      \n"
+      "vmovl.u16   q11, d17                      \n"
+      "vmovl.u16   q12, d18                      \n"
+      "vmovl.u16   q13, d19                      \n"
+      "vcvt.f32.u32 q10, q10                     \n"
+      "vcvt.f32.u32 q11, q11                     \n"
+      "vcvt.f32.u32 q12, q12                     \n"
+      "vcvt.f32.u32 q13, q13                     \n"
+      "vrecpe.f32  q8, q12                       \n"
+      "vrecpe.f32  q9, q13                       \n"
+      "vrecps.f32  q4, q12, q8                   \n"
+      "vrecps.f32  q5, q13, q9                   \n"
+      "vmul.f32    q8, q8, q4                    \n"
+      "vmul.f32    q9, q9, q5                    \n"
+      "vrecps.f32  q4, q12, q8                   \n"
+      "vrecps.f32  q5, q13, q9                   \n"
+      "vmul.f32    q8, q8, q4                    \n"
+      "vmul.f32    q9, q9, q5                    \n"
+      "vsra.u32    q8, q8, #29                   \n"
+      "vsra.u32    q9, q9, #29                   \n"
+      "vmul.f32    q10, q10, q8                  \n"
+      "vmul.f32    q11, q11, q9                  \n"
+      "vcvt.u32.f32 q10, q10                     \n"
+      "vcvt.u32.f32 q11, q11                     \n"
+      "vmovn.i32   d16, q10                      \n"
+      "vmovn.i32   d17, q11                      \n"
+      "vmovn.i16   d16, q8                       \n"
+      "vsub.i8     d17, d28, d16                 \n"
+      "vmov        q9, q15                       \n"
+      "vmov        q10, q15                      \n"
+      "vmov        q11, q15                      \n"
+      "vmlal.u8    q9, d4, d17                   \n"
+      "vmlal.u8    q10, d5, d17                  \n"
+      "vmlal.u8    q11, d6, d17                  \n"
+      "vmlal.u8    q9, d0, d16                   \n"
+      "vmlal.u8    q10, d1, d16                  \n"
+      "vmlal.u8    q11, d2, d16                  \n"
+      "vsra.u16    q9, q9, #8                    \n"
+      "vsra.u16    q10, q10, #8                  \n"
+      "vsra.u16    q11, q11, #8                  \n"
+      "vshrn.i16   d0, q9, #8                    \n"
+      "vshrn.i16   d1, q10, #8                   \n"
+      "vshrn.i16   d2, q11, #8                   \n"
+      "vmov        d3, d7                        \n"
+      "vst4.8      {d0, d1, d2, d3}, [%2]!       \n"
+      "bgt         1b                            \n"
+      : "+r"(src_argb),   // %0
+        "+r"(src_argb1),  // %1
+        "+r"(dst_argb),   // %2
+        "+r"(width)       // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q8", "q9", "q10",
+        "q11", "q12", "q13", "q14", "q15");
+}
+
 // Attenuate 8 pixels at a time.
 void ARGBAttenuateRow_NEON(const uint8_t* src_argb,
                            uint8_t* dst_argb,

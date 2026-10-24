@@ -751,6 +751,24 @@ ANY21(ARGBSubtractRow_Any_LSX, ARGBSubtractRow_LSX, 0, 4, 4, 4, 3)
 #ifdef HAS_ARGBSUBTRACTROW_LASX
 ANY21(ARGBSubtractRow_Any_LASX, ARGBSubtractRow_LASX, 0, 4, 4, 4, 7)
 #endif
+#ifdef HAS_ARGBALPHABLENDROW_SSSE3
+ANY21(ARGBAlphaBlendRow_Any_SSSE3, ARGBAlphaBlendRow_SSSE3, 0, 4, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBALPHABLENDROW_AVX2
+ANY21(ARGBAlphaBlendRow_Any_AVX2, ARGBAlphaBlendRow_AVX2, 0, 4, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBALPHABLENDROW_NEON
+ANY21(ARGBAlphaBlendRow_Any_NEON, ARGBAlphaBlendRow_NEON, 0, 4, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBALPHABLENDROW_LSX
+ANY21(ARGBAlphaBlendRow_Any_LSX, ARGBAlphaBlendRow_LSX, 0, 4, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBALPHABLENDROW_LASX
+ANY21(ARGBAlphaBlendRow_Any_LASX, ARGBAlphaBlendRow_LASX, 0, 4, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBALPHABLENDROW_WASMSIMD
+ANY21(ARGBAlphaBlendRow_Any_WASMSIMD, ARGBAlphaBlendRow_WASMSIMD, 0, 4, 4, 4, 3)
+#endif
 #ifdef HAS_SOBELROW_SSE2
 ANY21(SobelRow_Any_SSE2, SobelRow_SSE2, 0, 1, 1, 4, 15)
 #endif
@@ -1541,6 +1559,24 @@ ANY11P(ARGBShuffleRow_Any_WASMSIMD,
        4,
        4,
        3)
+#endif
+#ifdef HAS_ARGBORROW_SSE2
+ANY11P(ARGBOrRow_Any_SSE2, ARGBOrRow_SSE2, const uint32_t, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBORROW_AVX2
+ANY11P(ARGBOrRow_Any_AVX2, ARGBOrRow_AVX2, const uint32_t, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBORROW_NEON
+ANY11P(ARGBOrRow_Any_NEON, ARGBOrRow_NEON, const uint32_t, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBORROW_LSX
+ANY11P(ARGBOrRow_Any_LSX, ARGBOrRow_LSX, const uint32_t, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBORROW_LASX
+ANY11P(ARGBOrRow_Any_LASX, ARGBOrRow_LASX, const uint32_t, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBORROW_WASMSIMD
+ANY11P(ARGBOrRow_Any_WASMSIMD, ARGBOrRow_WASMSIMD, const uint32_t, 4, 4, 3)
 #endif
 #undef ANY11P
 #undef ANY11P

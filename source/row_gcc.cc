@@ -13470,6 +13470,424 @@ void OMITFP ARGBBlendRow_AVX512BW(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBBLENDROW_AVX512BW
 
+#ifdef HAS_ARGBORROW_SSE2
+void ARGBOrRow_SSE2(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  asm volatile(
+      "movd        %[value],%%xmm1               \n"
+      "pshufd      $0x00,%%xmm1,%%xmm1           \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movdqu      (%[src]),%%xmm0               \n"
+      "lea         0x10(%[src]),%[src]           \n"
+      "por         %%xmm1,%%xmm0                 \n"
+      "movdqu      %%xmm0,(%[dst])               \n"
+      "lea         0x10(%[dst]),%[dst]           \n"
+      "sub         $0x4,%[width]                 \n"
+      "jg          1b                            \n"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [width] "+r"(width)
+      : [value] "r"(value)
+      : "memory", "cc", "xmm0", "xmm1");
+}
+#endif  // HAS_ARGBORROW_SSE2
+
+#ifdef HAS_ARGBORROW_AVX2
+void ARGBOrRow_AVX2(const uint8_t* src_argb,
+                    uint8_t* dst_argb,
+                    uint32_t value,
+                    int width) {
+  asm volatile(
+      "vmovd        %[value],%%xmm1              \n"
+      "vpbroadcastd %%xmm1,%%ymm1                \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu     (%[src]),%%ymm0               \n"
+      "lea         0x20(%[src]),%[src]           \n"
+      "vpor        %%ymm1,%%ymm0,%%ymm0          \n"
+      "vmovdqu     %%ymm0,(%[dst])               \n"
+      "lea         0x20(%[dst]),%[dst]           \n"
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [width] "+r"(width)
+      : [value] "r"(value)
+      : "memory", "cc", "xmm0", "xmm1");
+}
+#endif  // HAS_ARGBORROW_AVX2
+
+#ifdef HAS_ARGBORROW_AVX512BW
+void OMITFP ARGBOrRow_AVX512BW(const uint8_t* src_argb,
+                               uint8_t* dst_argb,
+                               uint32_t value,
+                               int width) {
+  uintptr_t temp;
+  asm volatile(
+      "vpbroadcastd %[value],%%zmm1              \n"
+      "sub          $0x10,%[width]               \n"
+      "jl           2f                           \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu32   (%[src]),%%zmm0               \n"
+      "lea         0x40(%[src]),%[src]           \n"
+      "vpord       %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu32   %%zmm0,(%[dst])               \n"
+      "lea         0x40(%[dst]),%[dst]           \n"
+      "sub         $0x10,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:                                        \n"
+      "add         $0x10,%[width]                \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q[width],%[temp],%[temp]     \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%[src]),%%zmm0%{%%k1%}%{z%}  \n"
+      "vpord       %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu32   %%zmm0,(%[dst])%{%%k1%}       \n"
+
+      "99:                                       \n"
+      "vzeroupper                                \n"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [width] "+r"(width),
+        [temp] "=&r"(temp)
+      : [value] "r"(value)
+      : "memory", "cc", "xmm0", "xmm1", "k1");
+}
+#endif  // HAS_ARGBORROW_AVX512BW
+
+#ifdef HAS_ARGBALPHABLENDROW_SSSE3
+void ARGBAlphaBlendRow_SSSE3(const uint8_t* src_argb,
+                             const uint8_t* src_argb1,
+                             uint8_t* dst_argb,
+                             int width) {
+  asm volatile(
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "pabsb       %%xmm5,%%xmm4                 \n"  // 0x01010101...
+      "psllw       $7,%%xmm4                     \n"
+      "movdqa      %%xmm4,%%xmm6                 \n"  // xmm6 = 0x8080...
+      "psrlw       $7,%%xmm4                     \n"  // xmm4 = 0x0101...
+      "psubw       %%xmm4,%%xmm6                 \n"  // 0x7f7f...
+      "psubw       %%xmm5,%%xmm6                 \n"  // 0x7f80...
+      "psubw       %%xmm5,%%xmm6                 \n"  // xmm6 = 0x7f81...
+
+      LABELALIGN
+      "1:                                        \n"
+      "movdqu      (%[src0]),%%xmm0              \n"
+      "movdqu      (%[src1]),%%xmm1              \n"
+      "lea         0x10(%[src0]),%[src0]         \n"
+      "lea         0x10(%[src1]),%[src1]         \n"
+
+      "movdqa      %%xmm0,%%xmm2                 \n"
+      "movdqa      %%xmm1,%%xmm3                 \n"
+      "psrld       $24,%%xmm2                    \n"  // sa
+      "psrld       $24,%%xmm3                    \n"  // da
+
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"  // -1
+      "movdqa      %%xmm2,%%xmm7                 \n"
+      "pmullw      %%xmm3,%%xmm7                 \n"  // da * sa
+      "psubw       %%xmm5,%%xmm7                 \n"  // da * sa + 1
+      "pmulhuw     %%xmm4,%%xmm7                 \n"  // (da * sa) / 255
+
+      "paddd       %%xmm3,%%xmm5                 \n"  // da - 1
+      "psrld       $24,%%xmm5                    \n"  // t = (da==0) ? 255 : 0
+
+      "paddw       %%xmm2,%%xmm3                 \n"  // da + sa
+      "psubw       %%xmm7,%%xmm3                 \n"  // da2
+
+      "por         %%xmm5,%%xmm2                 \n"  // sa_eff
+      "movdqa      %%xmm3,%%xmm7                 \n"
+      "por         %%xmm5,%%xmm7                 \n"  // den_eff
+
+      "movdqa      %%xmm2,%%xmm5                 \n"
+      "pslld       $8,%%xmm2                     \n"
+      "psubd       %%xmm5,%%xmm2                 \n"  // sa_eff * 255
+
+      "cvtdq2ps    %%xmm2,%%xmm2                 \n"
+      "cvtdq2ps    %%xmm7,%%xmm7                 \n"
+      "divps       %%xmm7,%%xmm2                 \n"
+      "cvttps2dq   %%xmm2,%%xmm2                 \n"  // ratio
+
+      "pcmpeqb     %%xmm5,%%xmm5                 \n"
+      "psllw       $8,%%xmm5                     \n"  // 0xff00
+
+      "pmullw      %%xmm4,%%xmm2                 \n"
+      "pshufhw     $0xa0,%%xmm2,%%xmm2           \n"
+      "pshuflw     $0xa0,%%xmm2,%%xmm2           \n"
+      "pxor        %%xmm5,%%xmm2                 \n"
+      "movdqa      %%xmm2,%%xmm7                 \n"
+      "punpcklwd   %%xmm2,%%xmm2                 \n"
+      "punpckhwd   %%xmm7,%%xmm7                 \n"
+
+      "movdqa      %%xmm4,%%xmm5                 \n"
+      "psllw       $7,%%xmm5                     \n"  // 0x8080
+      "psubb       %%xmm5,%%xmm0                 \n"
+      "psubb       %%xmm5,%%xmm1                 \n"
+      "movdqa      %%xmm0,%%xmm5                 \n"
+      "punpcklbw   %%xmm1,%%xmm0                 \n"
+      "punpckhbw   %%xmm1,%%xmm5                 \n"
+
+      "pmaddubsw   %%xmm0,%%xmm2                 \n"
+      "pmaddubsw   %%xmm5,%%xmm7                 \n"
+      "paddw       %%xmm6,%%xmm2                 \n"
+      "paddw       %%xmm6,%%xmm7                 \n"
+      "pmulhuw     %%xmm4,%%xmm2                 \n"
+      "pmulhuw     %%xmm4,%%xmm7                 \n"
+      "packuswb    %%xmm7,%%xmm2                 \n"
+
+      "pslld       $8,%%xmm2                     \n"
+      "psrld       $8,%%xmm2                     \n"
+      "pslld       $24,%%xmm3                    \n"
+      "por         %%xmm3,%%xmm2                 \n"
+
+      "movdqu      %%xmm2,(%[dst])               \n"
+      "lea         0x10(%[dst]),%[dst]           \n"
+      "sub         $0x4,%[width]                 \n"
+      "jg          1b                            \n"
+      : [src0] "+r"(src_argb), [src1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [width] "+rm"(width)
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif  // HAS_ARGBALPHABLENDROW_SSSE3
+
+#ifdef HAS_ARGBALPHABLENDROW_AVX2
+void ARGBAlphaBlendRow_AVX2(const uint8_t* src_argb,
+                            const uint8_t* src_argb1,
+                            uint8_t* dst_argb,
+                            int width) {
+  asm volatile(
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
+      "vpabsb      %%ymm5,%%ymm4                 \n"  // 0x0101...
+      "vpsllw      $7,%%ymm4,%%ymm6              \n"  // 0x8080...
+      "vpsubw      %%ymm4,%%ymm6,%%ymm6          \n"  // 0x7f7f...
+      "vpsubw      %%ymm5,%%ymm6,%%ymm6          \n"  // 0x7f80...
+      "vpsubw      %%ymm5,%%ymm6,%%ymm6          \n"  // 0x7f81...
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu     (%[src0]),%%ymm0              \n"
+      "vmovdqu     (%[src1]),%%ymm1              \n"
+      "lea         0x20(%[src0]),%[src0]         \n"
+      "lea         0x20(%[src1]),%[src1]         \n"
+
+      "vpsrld      $24,%%ymm0,%%ymm2             \n"  // sa
+      "vpsrld      $24,%%ymm1,%%ymm3             \n"  // da
+
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  // -1
+      "vpmullw     %%ymm3,%%ymm2,%%ymm7          \n"  // da * sa
+      "vpsubw      %%ymm5,%%ymm7,%%ymm7          \n"  // da * sa + 1
+      "vpmulhuw    %%ymm4,%%ymm7,%%ymm7          \n"  // (da * sa) / 255
+
+      "vpaddd      %%ymm3,%%ymm5,%%ymm5          \n"  // da - 1
+      "vpsrld      $24,%%ymm5,%%ymm5             \n"  // t = (da==0) ? 255 : 0
+
+      "vpaddw      %%ymm2,%%ymm3,%%ymm3          \n"  // da + sa
+      "vpsubw      %%ymm7,%%ymm3,%%ymm3          \n"  // da2
+
+      "vpor        %%ymm5,%%ymm2,%%ymm2          \n"  // sa_eff
+      "vpor        %%ymm5,%%ymm3,%%ymm7          \n"  // den_eff
+
+      "vpslld      $8,%%ymm2,%%ymm5              \n"
+      "vpsubd      %%ymm2,%%ymm5,%%ymm2          \n"  // sa_eff * 255
+
+      "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
+      "vcvtdq2ps   %%ymm7,%%ymm7                 \n"
+      "vdivps      %%ymm7,%%ymm2,%%ymm2          \n"
+      "vcvttps2dq  %%ymm2,%%ymm2                 \n"  // ratio
+
+      "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
+      "vpsllw      $8,%%ymm5,%%ymm5              \n"  // 0xff00
+
+      "vpmullw     %%ymm4,%%ymm2,%%ymm2          \n"
+      "vpshufhw    $0xa0,%%ymm2,%%ymm2           \n"
+      "vpshuflw    $0xa0,%%ymm2,%%ymm2           \n"
+      "vpxor       %%ymm5,%%ymm2,%%ymm2          \n"
+      "vpunpckhwd  %%ymm2,%%ymm2,%%ymm7          \n"
+      "vpunpcklwd  %%ymm2,%%ymm2,%%ymm2          \n"
+
+      "vpsllw      $7,%%ymm4,%%ymm5              \n"  // 0x8080
+      "vpsubb      %%ymm5,%%ymm0,%%ymm0          \n"
+      "vpsubb      %%ymm5,%%ymm1,%%ymm1          \n"
+      "vpunpckhbw  %%ymm1,%%ymm0,%%ymm5          \n"
+      "vpunpcklbw  %%ymm1,%%ymm0,%%ymm0          \n"
+
+      "vpmaddubsw  %%ymm0,%%ymm2,%%ymm2          \n"
+      "vpmaddubsw  %%ymm5,%%ymm7,%%ymm7          \n"
+      "vpaddw      %%ymm6,%%ymm2,%%ymm2          \n"
+      "vpaddw      %%ymm6,%%ymm7,%%ymm7          \n"
+      "vpmulhuw    %%ymm4,%%ymm2,%%ymm2          \n"
+      "vpmulhuw    %%ymm4,%%ymm7,%%ymm7          \n"
+      "vpackuswb   %%ymm7,%%ymm2,%%ymm2          \n"
+
+      "vpslld      $8,%%ymm2,%%ymm2              \n"
+      "vpsrld      $8,%%ymm2,%%ymm2              \n"
+      "vpslld      $24,%%ymm3,%%ymm3             \n"
+      "vpor        %%ymm3,%%ymm2,%%ymm2          \n"
+
+      "vmovdqu     %%ymm2,(%[dst])               \n"
+      "lea         0x20(%[dst]),%[dst]           \n"
+      "sub         $0x8,%[width]                 \n"
+      "jg          1b                            \n"
+      "vzeroupper                                \n"
+      : [src0] "+r"(src_argb), [src1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [width] "+rm"(width)
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif  // HAS_ARGBALPHABLENDROW_AVX2
+
+#ifdef HAS_ARGBALPHABLENDROW_AVX512BW
+void OMITFP ARGBAlphaBlendRow_AVX512BW(const uint8_t* src_argb,
+                                       const uint8_t* src_argb1,
+                                       uint8_t* dst_argb,
+                                       int width) {
+  uintptr_t temp;
+  asm volatile(
+      "vpternlogd  $0xff,%%zmm20,%%zmm20,%%zmm20 \n"  // -1
+      "vpabsb      %%zmm20,%%zmm16               \n"  // zmm16 = 0x0101...
+      "vpsllw      $7,%%zmm16,%%zmm21            \n"  // zmm21 = 0x8080...
+      "vpsubw      %%zmm16,%%zmm21,%%zmm18       \n"  // 0x7f7f...
+      "vpsubw      %%zmm20,%%zmm18,%%zmm18       \n"  // 0x7f80...
+      "vpsubw      %%zmm20,%%zmm18,%%zmm18       \n"  // zmm18 = 0x7f81...
+      "vpsllw      $8,%%zmm20,%%zmm17            \n"  // zmm17 = 0xff00...
+      "vpsrld      $24,%%zmm20,%%zmm19           \n"  // zmm19 = 255 in dwords
+
+      "sub         $0x10,%[width]                \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu32   (%[src0]),%%zmm0              \n"
+      "vmovdqu32   (%[src1]),%%zmm1              \n"
+      "lea         0x40(%[src0]),%[src0]         \n"
+      "lea         0x40(%[src1]),%[src1]         \n"
+
+      "vpsrld      $24,%%zmm0,%%zmm2             \n"  // sa
+      "vpsrld      $24,%%zmm1,%%zmm3             \n"  // da
+
+      "vpmullw     %%zmm3,%%zmm2,%%zmm7          \n"
+      "vpsubw      %%zmm20,%%zmm7,%%zmm7         \n"  // da * sa + 1
+      "vpmulhuw    %%zmm16,%%zmm7,%%zmm7         \n"
+
+      "vpaddd      %%zmm3,%%zmm20,%%zmm5         \n"  // da - 1
+      "vpsrld      $24,%%zmm5,%%zmm5             \n"  // t
+
+      "vpaddw      %%zmm2,%%zmm3,%%zmm3          \n"
+      "vpsubw      %%zmm7,%%zmm3,%%zmm3          \n"  // da2
+
+      "vpord       %%zmm5,%%zmm2,%%zmm2          \n"  // sa_eff
+      "vpord       %%zmm5,%%zmm3,%%zmm7          \n"  // den_eff
+      "vpmulld     %%zmm19,%%zmm2,%%zmm2         \n"  // sa_eff * 255
+
+      "vcvtdq2ps   %%zmm2,%%zmm2                 \n"
+      "vcvtdq2ps   %%zmm7,%%zmm7                 \n"
+      "vdivps      %%zmm7,%%zmm2,%%zmm2          \n"
+      "vcvttps2dq  %%zmm2,%%zmm2                 \n"
+
+      "vpmullw     %%zmm16,%%zmm2,%%zmm2         \n"
+      "vpshufhw    $0xa0,%%zmm2,%%zmm2           \n"
+      "vpshuflw    $0xa0,%%zmm2,%%zmm2           \n"
+      "vpxord      %%zmm17,%%zmm2,%%zmm2         \n"
+      "vpunpckhwd  %%zmm2,%%zmm2,%%zmm7          \n"
+      "vpunpcklwd  %%zmm2,%%zmm2,%%zmm2          \n"
+
+      "vpsubb      %%zmm21,%%zmm0,%%zmm0         \n"
+      "vpsubb      %%zmm21,%%zmm1,%%zmm1         \n"
+      "vpunpckhbw  %%zmm1,%%zmm0,%%zmm5          \n"
+      "vpunpcklbw  %%zmm1,%%zmm0,%%zmm0          \n"
+
+      "vpmaddubsw  %%zmm0,%%zmm2,%%zmm2          \n"
+      "vpmaddubsw  %%zmm5,%%zmm7,%%zmm7          \n"
+      "vpaddw      %%zmm18,%%zmm2,%%zmm2         \n"
+      "vpaddw      %%zmm18,%%zmm7,%%zmm7         \n"
+      "vpmulhuw    %%zmm16,%%zmm2,%%zmm2         \n"
+      "vpmulhuw    %%zmm16,%%zmm7,%%zmm7         \n"
+      "vpackuswb   %%zmm7,%%zmm2,%%zmm2          \n"
+
+      "vpslld      $8,%%zmm2,%%zmm2              \n"
+      "vpsrld      $8,%%zmm2,%%zmm2              \n"
+      "vpslld      $24,%%zmm3,%%zmm3             \n"
+      "vpord       %%zmm3,%%zmm2,%%zmm2          \n"
+
+      "vmovdqu32   %%zmm2,(%[dst])               \n"
+      "lea         0x40(%[dst]),%[dst]           \n"
+      "sub         $0x10,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:                                        \n"
+      "add         $0x10,%[width]                \n"
+      "je          99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q[width],%[temp],%[temp]     \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%[src0]),%%zmm0%{%%k1%}%{z%} \n"
+      "vmovdqu32   (%[src1]),%%zmm1%{%%k1%}%{z%} \n"
+
+      "vpsrld      $24,%%zmm0,%%zmm2             \n"
+      "vpsrld      $24,%%zmm1,%%zmm3             \n"
+
+      "vpmullw     %%zmm3,%%zmm2,%%zmm7          \n"
+      "vpsubw      %%zmm20,%%zmm7,%%zmm7         \n"
+      "vpmulhuw    %%zmm16,%%zmm7,%%zmm7         \n"
+
+      "vpaddd      %%zmm3,%%zmm20,%%zmm5         \n"
+      "vpsrld      $24,%%zmm5,%%zmm5             \n"
+
+      "vpaddw      %%zmm2,%%zmm3,%%zmm3          \n"
+      "vpsubw      %%zmm7,%%zmm3,%%zmm3          \n"
+
+      "vpord       %%zmm5,%%zmm2,%%zmm2          \n"
+      "vpord       %%zmm5,%%zmm3,%%zmm7          \n"
+      "vpmulld     %%zmm19,%%zmm2,%%zmm2         \n"
+
+      "vcvtdq2ps   %%zmm2,%%zmm2                 \n"
+      "vcvtdq2ps   %%zmm7,%%zmm7                 \n"
+      "vdivps      %%zmm7,%%zmm2,%%zmm2          \n"
+      "vcvttps2dq  %%zmm2,%%zmm2                 \n"
+
+      "vpmullw     %%zmm16,%%zmm2,%%zmm2         \n"
+      "vpshufhw    $0xa0,%%zmm2,%%zmm2           \n"
+      "vpshuflw    $0xa0,%%zmm2,%%zmm2           \n"
+      "vpxord      %%zmm17,%%zmm2,%%zmm2         \n"
+      "vpunpckhwd  %%zmm2,%%zmm2,%%zmm7          \n"
+      "vpunpcklwd  %%zmm2,%%zmm2,%%zmm2          \n"
+
+      "vpsubb      %%zmm21,%%zmm0,%%zmm0         \n"
+      "vpsubb      %%zmm21,%%zmm1,%%zmm1         \n"
+      "vpunpckhbw  %%zmm1,%%zmm0,%%zmm5          \n"
+      "vpunpcklbw  %%zmm1,%%zmm0,%%zmm0          \n"
+
+      "vpmaddubsw  %%zmm0,%%zmm2,%%zmm2          \n"
+      "vpmaddubsw  %%zmm5,%%zmm7,%%zmm7          \n"
+      "vpaddw      %%zmm18,%%zmm2,%%zmm2         \n"
+      "vpaddw      %%zmm18,%%zmm7,%%zmm7         \n"
+      "vpmulhuw    %%zmm16,%%zmm2,%%zmm2         \n"
+      "vpmulhuw    %%zmm16,%%zmm7,%%zmm7         \n"
+      "vpackuswb   %%zmm7,%%zmm2,%%zmm2          \n"
+
+      "vpslld      $8,%%zmm2,%%zmm2              \n"
+      "vpsrld      $8,%%zmm2,%%zmm2              \n"
+      "vpslld      $24,%%zmm3,%%zmm3             \n"
+      "vpord       %%zmm3,%%zmm2,%%zmm2          \n"
+
+      "vmovdqu32   %%zmm2,(%[dst])%{%%k1%}       \n"
+
+      "99:                                       \n"
+      "vzeroupper                                \n"
+      : [src0] "+r"(src_argb), [src1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [width] "+r"(width), [temp] "=&r"(temp)
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7", "xmm16", "xmm17", "xmm18", "xmm19", "xmm20", "xmm21", "k1");
+}
+#endif  // HAS_ARGBALPHABLENDROW_AVX512BW
+
 #endif  // !defined(LIBYUV_DISABLE_X86) &&
         // (defined(__x86_64__) || defined(__i386__)) &&
         // !defined(LIBYUV_ENABLE_ROWWIN)

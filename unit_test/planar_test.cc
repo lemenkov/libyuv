@@ -5095,4 +5095,182 @@ TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32Column) {
 
 #endif  // defined(ENABLE_ROW_TESTS) && defined(__aarch64__)
 
+static int TestARGBOr(int width,
+                      int height,
+                      int benchmark_iterations,
+                      int disable_cpu_flags,
+                      int benchmark_cpu_info,
+                      int invert,
+                      int off,
+                      uint32_t value) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kBpp = 4;
+  const int kStride = width * kBpp;
+  align_buffer_page_end(src_argb, kStride * abs(height) + off);
+  align_buffer_page_end(dst_argb_c, kStride * abs(height));
+  align_buffer_page_end(dst_argb_opt, kStride * abs(height));
+  MemRandomize(src_argb, kStride * abs(height) + off);
+  memset(dst_argb_c, 0, kStride * abs(height));
+  memset(dst_argb_opt, 1, kStride * abs(height));
+
+  MaskCpuFlags(disable_cpu_flags);
+  ARGBOr(src_argb + off, kStride, dst_argb_c, kStride, width, invert * height,
+         value);
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBOr(src_argb + off, kStride, dst_argb_opt, kStride, width,
+           invert * height, value);
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kStride * abs(height); ++i) {
+    int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
+                       static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_argb_c);
+  free_aligned_buffer_page_end(dst_argb_opt);
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, ARGBOr_Any) {
+  int max_diff = TestARGBOr(benchmark_width_ + 1, benchmark_height_,
+                            benchmark_iterations_, disable_cpu_flags_,
+                            benchmark_cpu_info_, +1, 0, 0xff000000u);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBOr_Unaligned) {
+  int max_diff = TestARGBOr(benchmark_width_, benchmark_height_,
+                            benchmark_iterations_, disable_cpu_flags_,
+                            benchmark_cpu_info_, +1, 1, 0xff000000u);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBOr_Invert) {
+  int max_diff = TestARGBOr(benchmark_width_, benchmark_height_,
+                            benchmark_iterations_, disable_cpu_flags_,
+                            benchmark_cpu_info_, -1, 0, 0xff000000u);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBOr_Opt) {
+  int max_diff = TestARGBOr(benchmark_width_, benchmark_height_,
+                            benchmark_iterations_, disable_cpu_flags_,
+                            benchmark_cpu_info_, +1, 0, 0xff000000u);
+  EXPECT_EQ(0, max_diff);
+}
+
+static int TestARGBAlphaBlend(int width,
+                              int height,
+                              int benchmark_iterations,
+                              int disable_cpu_flags,
+                              int benchmark_cpu_info,
+                              int invert,
+                              int off) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kBpp = 4;
+  const int kStride = width * kBpp;
+  align_buffer_page_end(src_argb0, kStride * abs(height) + off);
+  align_buffer_page_end(src_argb1, kStride * abs(height) + off);
+  align_buffer_page_end(dst_argb_c, kStride * abs(height));
+  align_buffer_page_end(dst_argb_opt, kStride * abs(height));
+  MemRandomize(src_argb0, kStride * abs(height) + off);
+  MemRandomize(src_argb1, kStride * abs(height) + off);
+  memset(dst_argb_c, 0, kStride * abs(height));
+  memset(dst_argb_opt, 1, kStride * abs(height));
+
+  MaskCpuFlags(disable_cpu_flags);
+  ARGBAlphaBlend(src_argb0 + off, kStride, src_argb1 + off, kStride, dst_argb_c,
+                 kStride, width, invert * height);
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBAlphaBlend(src_argb0 + off, kStride, src_argb1 + off, kStride,
+                   dst_argb_opt, kStride, width, invert * height);
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kStride * abs(height); ++i) {
+    int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
+                       static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_page_end(src_argb0);
+  free_aligned_buffer_page_end(src_argb1);
+  free_aligned_buffer_page_end(dst_argb_c);
+  free_aligned_buffer_page_end(dst_argb_opt);
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_Any) {
+  int max_diff = TestARGBAlphaBlend(benchmark_width_ + 1, benchmark_height_,
+                                    benchmark_iterations_, disable_cpu_flags_,
+                                    benchmark_cpu_info_, +1, 0);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_Unaligned) {
+  int max_diff = TestARGBAlphaBlend(benchmark_width_, benchmark_height_,
+                                    benchmark_iterations_, disable_cpu_flags_,
+                                    benchmark_cpu_info_, +1, 1);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_Invert) {
+  int max_diff = TestARGBAlphaBlend(benchmark_width_, benchmark_height_,
+                                    benchmark_iterations_, disable_cpu_flags_,
+                                    benchmark_cpu_info_, -1, 0);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_Opt) {
+  int max_diff = TestARGBAlphaBlend(benchmark_width_, benchmark_height_,
+                                    benchmark_iterations_, disable_cpu_flags_,
+                                    benchmark_cpu_info_, +1, 0);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_AllAlphas) {
+  const int kWidth = 256;
+  const int kHeight = 256;
+  const int kStride = kWidth * 4;
+  align_buffer_page_end(src_argb0, kStride * kHeight);
+  align_buffer_page_end(src_argb1, kStride * kHeight);
+  align_buffer_page_end(dst_argb_c, kStride * kHeight);
+  align_buffer_page_end(dst_argb_opt, kStride * kHeight);
+  for (int da = 0; da < 256; ++da) {
+    for (int sa = 0; sa < 256; ++sa) {
+      int idx = (da * 256 + sa) * 4;
+      src_argb0[idx + 0] = (sa * 7 + da * 3 + 13) & 255;
+      src_argb0[idx + 1] = (sa * 13 + da * 5 + 29) & 255;
+      src_argb0[idx + 2] = (sa * 29 + da * 11 + 47) & 255;
+      src_argb0[idx + 3] = sa;
+      src_argb1[idx + 0] = (da * 17 + sa * 19 + 53) & 255;
+      src_argb1[idx + 1] = (da * 23 + sa * 31 + 71) & 255;
+      src_argb1[idx + 2] = (da * 37 + sa * 41 + 89) & 255;
+      src_argb1[idx + 3] = da;
+    }
+  }
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBAlphaBlend(src_argb0, kStride, src_argb1, kStride, dst_argb_c, kStride,
+                 kWidth, kHeight);
+  MaskCpuFlags(benchmark_cpu_info_);
+  ARGBAlphaBlend(src_argb0, kStride, src_argb1, kStride, dst_argb_opt, kStride,
+                 kWidth, kHeight);
+  for (int i = 0; i < kStride * kHeight; ++i) {
+    ASSERT_EQ(dst_argb_c[i], dst_argb_opt[i]) << "Mismatch at byte " << i;
+  }
+  free_aligned_buffer_page_end(src_argb0);
+  free_aligned_buffer_page_end(src_argb1);
+  free_aligned_buffer_page_end(dst_argb_c);
+  free_aligned_buffer_page_end(dst_argb_opt);
+}
+
 }  // namespace libyuv
