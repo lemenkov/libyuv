@@ -2904,6 +2904,22 @@ int ARGBToI420Matrix(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_Any_AVX512VNNI;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYMatrixRow = ARGBToYMatrixRow_AVX512VNNI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_Any_AVX512VNNIVBMI;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYMatrixRow = ARGBToYMatrixRow_AVX512VNNIVBMI;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYMatrixRow = ARGBToYMatrixRow_Any_NEON;
@@ -3014,6 +3030,16 @@ int ARGBToI420Matrix(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512VNNI;
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512VNNIVBMI;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -3146,6 +3172,22 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_Any_AVX512VNNI;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYMatrixRow = ARGBToYMatrixRow_AVX512VNNI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_Any_AVX512VNNIVBMI;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYMatrixRow = ARGBToYMatrixRow_AVX512VNNIVBMI;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYMatrixRow = ARGBToYMatrixRow_Any_NEON;
@@ -3256,6 +3298,16 @@ int ARGBToI420Alpha(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512VNNI;
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512VNNIVBMI;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_RVV)
@@ -3515,6 +3567,22 @@ static int AR30ToI420Matrix(const uint8_t* src_ar30,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_Any_AVX512VNNI;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYMatrixRow = ARGBToYMatrixRow_AVX512VNNI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_Any_AVX512VNNIVBMI;
+    if (IS_ALIGNED(width, 64)) {
+      ARGBToYMatrixRow = ARGBToYMatrixRow_AVX512VNNIVBMI;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYMatrixRow = ARGBToYMatrixRow_Any_NEON;
@@ -3594,6 +3662,16 @@ static int AR30ToI420Matrix(const uint8_t* src_ar30,
 #if defined(HAS_ARGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512VNNI;
+  }
+#endif
+#if defined(HAS_ARGBTOUVMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    ARGBToUVMatrixRow = ARGBToUVMatrixRow_AVX512VNNIVBMI;
   }
 #endif
 #if defined(HAS_ARGBTOUVMATRIXROW_NEON)

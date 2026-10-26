@@ -4740,6 +4740,11 @@ int ARGBGrayTo(const uint8_t* src_argb,
     ARGBGrayRow = ARGBGrayRow_AVX512BW;
   }
 #endif
+#if defined(HAS_ARGBGRAYROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBGrayRow = ARGBGrayRow_AVX512VNNI;
+  }
+#endif
 #if defined(HAS_ARGBGRAYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_NEON;
@@ -4798,6 +4803,11 @@ int ARGBGray(uint8_t* dst_argb,
 #if defined(HAS_ARGBGRAYROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     ARGBGrayRow = ARGBGrayRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_ARGBGRAYROW_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    ARGBGrayRow = ARGBGrayRow_AVX512VNNI;
   }
 #endif
 #if defined(HAS_ARGBGRAYROW_NEON)
