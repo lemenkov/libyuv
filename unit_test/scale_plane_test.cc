@@ -25,6 +25,16 @@
 #include "libyuv/scale_row.h"  // For ScaleRowDown2Box_Odd_C
 #endif
 
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+#include <sanitizer/msan_interface.h>
+#define MSAN_POISON(ptr, size) __msan_allocated_memory(ptr, size)
+#endif
+#endif
+#ifndef MSAN_POISON
+#define MSAN_POISON(ptr, size)
+#endif
+
 #define STRINGIZE(line) #line
 #define FILELINESTR(file, line) file ":" STRINGIZE(line)
 
@@ -515,6 +525,35 @@ TEST_F(LibYUVScaleTest, PlaneTestRotate_Box) {
   free_aligned_buffer_page_end(dest_c_pixels);
   free_aligned_buffer_page_end(dest_opt_pixels);
   free_aligned_buffer_page_end(orig_pixels);
+}
+
+TEST_F(LibYUVScaleTest, ScalePlaneBox_Any) {
+  const int kDstW = 29;
+  const int kDstH = 3;
+  const int kSrcH = 9;
+  for (int src_w : {87, 174, 73, 155}) {
+    const int kSrcSize = src_w * kSrcH;
+    const int kDstSize = kDstW * kDstH;
+    align_buffer_page_end(src_pixels, kSrcSize);
+    align_buffer_page_end(dst_c_pixels, kDstSize);
+    align_buffer_page_end(dst_opt_pixels, kDstSize);
+    MemRandomize(src_pixels, kSrcSize);
+    MSAN_POISON(dst_opt_pixels, kDstSize);
+
+    MaskCpuFlags(disable_cpu_flags_);
+    ScalePlane(src_pixels, src_w, src_w, kSrcH, dst_c_pixels, kDstW, kDstW,
+               kDstH, kFilterBox);
+    MaskCpuFlags(benchmark_cpu_info_);
+    ScalePlane(src_pixels, src_w, src_w, kSrcH, dst_opt_pixels, kDstW, kDstW,
+               kDstH, kFilterBox);
+
+    for (int i = 0; i < kDstSize; ++i) {
+      ASSERT_EQ(dst_c_pixels[i], dst_opt_pixels[i]);
+    }
+    free_aligned_buffer_page_end(dst_opt_pixels);
+    free_aligned_buffer_page_end(dst_c_pixels);
+    free_aligned_buffer_page_end(src_pixels);
+  }
 }
 
 TEST_F(LibYUVScaleTest, PlaneTest1_Box) {

@@ -29,6 +29,16 @@
 #include "libyuv/row.h" /* For ScaleSumSamples_Neon */
 #endif
 
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+#include <sanitizer/msan_interface.h>
+#define MSAN_POISON(ptr, size) __msan_allocated_memory(ptr, size)
+#endif
+#endif
+#ifndef MSAN_POISON
+#define MSAN_POISON(ptr, size)
+#endif
+
 #define EXPECTED_UNATTENUATE_DIFF 0
 
 namespace libyuv {
@@ -2798,111 +2808,244 @@ TEST_F(LibYUVPlanarTest, TestARGBLumaColorTable) {
   free_aligned_buffer_page_end(lumacolortable);
 }
 
-TEST_F(LibYUVPlanarTest, TestARGBCopyAlpha) {
-  const int kSize = benchmark_width_ * benchmark_height_ * 4;
-  align_buffer_page_end(orig_pixels, kSize);
+static int TestARGBCopyAlpha(int width,
+                             int height,
+                             int benchmark_iterations,
+                             int disable_cpu_flags,
+                             int benchmark_cpu_info,
+                             int invert,
+                             int off) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kStride = width * 4;
+  const int kSize = kStride * height;
+  align_buffer_page_end(orig_pixels, kSize + off);
   align_buffer_page_end(dst_pixels_opt, kSize);
   align_buffer_page_end(dst_pixels_c, kSize);
 
-  MemRandomize(orig_pixels, kSize);
-  MemRandomize(dst_pixels_opt, kSize);
-  memcpy(dst_pixels_c, dst_pixels_opt, kSize);
-
-  MaskCpuFlags(disable_cpu_flags_);
-  ARGBCopyAlpha(orig_pixels, benchmark_width_ * 4, dst_pixels_c,
-                benchmark_width_ * 4, benchmark_width_, benchmark_height_);
-  MaskCpuFlags(benchmark_cpu_info_);
-
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    ARGBCopyAlpha(orig_pixels, benchmark_width_ * 4, dst_pixels_opt,
-                  benchmark_width_ * 4, benchmark_width_, benchmark_height_);
+  MemRandomize(orig_pixels + off, kSize);
+  MemRandomize(dst_pixels_c, kSize);
+  // Copy RGB bytes only, leaving alpha bytes in dst_pixels_opt uninitialized.
+  MSAN_POISON(dst_pixels_opt, kSize);
+  for (int i = 0; i < width * height; ++i) {
+    dst_pixels_opt[i * 4 + 0] = dst_pixels_c[i * 4 + 0];
+    dst_pixels_opt[i * 4 + 1] = dst_pixels_c[i * 4 + 1];
+    dst_pixels_opt[i * 4 + 2] = dst_pixels_c[i * 4 + 2];
   }
+
+  MaskCpuFlags(disable_cpu_flags);
+  ARGBCopyAlpha(orig_pixels + off, kStride, dst_pixels_c, kStride, width,
+                invert * height);
+  MaskCpuFlags(benchmark_cpu_info);
+
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBCopyAlpha(orig_pixels + off, kStride, dst_pixels_opt, kStride, width,
+                  invert * height);
+  }
+  int max_diff = 0;
   for (int i = 0; i < kSize; ++i) {
-    ASSERT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+    int abs_diff = abs(static_cast<int>(dst_pixels_c[i]) -
+                       static_cast<int>(dst_pixels_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
   }
 
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(orig_pixels);
+  return max_diff;
 }
 
-TEST_F(LibYUVPlanarTest, TestARGBExtractAlpha) {
-  const int kPixels = benchmark_width_ * benchmark_height_;
-  align_buffer_page_end(src_pixels, kPixels * 4);
+TEST_F(LibYUVPlanarTest, ARGBCopyAlpha_Any) {
+  int max_diff = TestARGBCopyAlpha(benchmark_width_ - 1, benchmark_height_,
+                                   benchmark_iterations_, disable_cpu_flags_,
+                                   benchmark_cpu_info_, +1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyAlpha_Unaligned) {
+  int max_diff = TestARGBCopyAlpha(benchmark_width_, benchmark_height_,
+                                   benchmark_iterations_, disable_cpu_flags_,
+                                   benchmark_cpu_info_, +1, 1);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyAlpha_Invert) {
+  int max_diff = TestARGBCopyAlpha(benchmark_width_, benchmark_height_,
+                                   benchmark_iterations_, disable_cpu_flags_,
+                                   benchmark_cpu_info_, -1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyAlpha_Opt) {
+  int max_diff = TestARGBCopyAlpha(benchmark_width_, benchmark_height_,
+                                   benchmark_iterations_, disable_cpu_flags_,
+                                   benchmark_cpu_info_, +1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+static int TestARGBExtractAlpha(int width,
+                                int height,
+                                int benchmark_iterations,
+                                int disable_cpu_flags,
+                                int benchmark_cpu_info,
+                                int invert,
+                                int off) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kPixels = width * height;
+  align_buffer_page_end(src_pixels, kPixels * 4 + off);
   align_buffer_page_end(dst_pixels_opt, kPixels);
   align_buffer_page_end(dst_pixels_c, kPixels);
 
-  MemRandomize(src_pixels, kPixels * 4);
-  MemRandomize(dst_pixels_opt, kPixels);
-  memcpy(dst_pixels_c, dst_pixels_opt, kPixels);
+  MemRandomize(src_pixels + off, kPixels * 4);
+  // Leave dst_pixels_opt uninitialized to verify MSan unpoisons all written
+  // alpha bytes (including masked tail stores).
+  MSAN_POISON(dst_pixels_opt, kPixels);
 
-  MaskCpuFlags(disable_cpu_flags_);
-  ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_c,
-                   benchmark_width_, benchmark_width_, benchmark_height_);
-  double c_time = get_time();
-  ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_c,
-                   benchmark_width_, benchmark_width_, benchmark_height_);
-  c_time = (get_time() - c_time);
+  MaskCpuFlags(disable_cpu_flags);
+  ARGBExtractAlpha(src_pixels + off, width * 4, dst_pixels_c, width, width,
+                   invert * height);
 
-  MaskCpuFlags(benchmark_cpu_info_);
-  ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_opt,
-                   benchmark_width_, benchmark_width_, benchmark_height_);
-  double opt_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    ARGBExtractAlpha(src_pixels, benchmark_width_ * 4, dst_pixels_opt,
-                     benchmark_width_, benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBExtractAlpha(src_pixels + off, width * 4, dst_pixels_opt, width, width,
+                     invert * height);
   }
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
-  // Report performance of C vs OPT
-  printf("%8d us C - %8d us OPT\n", static_cast<int>(c_time * 1e6),
-         static_cast<int>(opt_time * 1e6));
+  int max_diff = 0;
   for (int i = 0; i < kPixels; ++i) {
-    ASSERT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+    int abs_diff = abs(static_cast<int>(dst_pixels_c[i]) -
+                       static_cast<int>(dst_pixels_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
   }
 
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(src_pixels);
+  return max_diff;
 }
 
-TEST_F(LibYUVPlanarTest, TestARGBCopyYToAlpha) {
-  const int kPixels = benchmark_width_ * benchmark_height_;
-  align_buffer_page_end(orig_pixels, kPixels);
+TEST_F(LibYUVPlanarTest, ARGBExtractAlpha_Any) {
+  int max_diff = TestARGBExtractAlpha(benchmark_width_ - 1, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, +1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBExtractAlpha_Unaligned) {
+  int max_diff = TestARGBExtractAlpha(benchmark_width_, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, +1, 1);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBExtractAlpha_Invert) {
+  int max_diff = TestARGBExtractAlpha(benchmark_width_, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, -1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBExtractAlpha_Opt) {
+  int max_diff = TestARGBExtractAlpha(benchmark_width_, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, +1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+static int TestARGBCopyYToAlpha(int width,
+                                int height,
+                                int benchmark_iterations,
+                                int disable_cpu_flags,
+                                int benchmark_cpu_info,
+                                int invert,
+                                int off) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kPixels = width * height;
+  align_buffer_page_end(orig_pixels, kPixels + off);
   align_buffer_page_end(dst_pixels_opt, kPixels * 4);
   align_buffer_page_end(dst_pixels_c, kPixels * 4);
+  align_buffer_page_end(dst_uninit_opt, kPixels * 4);
 
-  MemRandomize(orig_pixels, kPixels);
-  MemRandomize(dst_pixels_opt, kPixels * 4);
-  memcpy(dst_pixels_c, dst_pixels_opt, kPixels * 4);
-
-  MaskCpuFlags(disable_cpu_flags_);
-  ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_c,
-                   benchmark_width_ * 4, benchmark_width_, benchmark_height_);
-  double c_time = get_time();
-  ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_c,
-                   benchmark_width_ * 4, benchmark_width_, benchmark_height_);
-  c_time = (get_time() - c_time);
-
-  MaskCpuFlags(benchmark_cpu_info_);
-  ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_opt,
-                   benchmark_width_ * 4, benchmark_width_, benchmark_height_);
-  double opt_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    ARGBCopyYToAlpha(orig_pixels, benchmark_width_, dst_pixels_opt,
-                     benchmark_width_ * 4, benchmark_width_, benchmark_height_);
+  MemRandomize(orig_pixels + off, kPixels);
+  MemRandomize(dst_pixels_c, kPixels * 4);
+  // Copy RGB bytes only, leaving alpha bytes in dst_pixels_opt uninitialized.
+  MSAN_POISON(dst_pixels_opt, kPixels * 4);
+  for (int i = 0; i < kPixels; ++i) {
+    dst_pixels_opt[i * 4 + 0] = dst_pixels_c[i * 4 + 0];
+    dst_pixels_opt[i * 4 + 1] = dst_pixels_c[i * 4 + 1];
+    dst_pixels_opt[i * 4 + 2] = dst_pixels_c[i * 4 + 2];
   }
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  // Also test with completely uninitialized destination buffer for MSan.
+  MSAN_POISON(dst_uninit_opt, kPixels * 4);
 
-  // Report performance of C vs OPT
-  printf("%8d us C - %8d us OPT\n", static_cast<int>(c_time * 1e6),
-         static_cast<int>(opt_time * 1e6));
+  MaskCpuFlags(disable_cpu_flags);
+  ARGBCopyYToAlpha(orig_pixels + off, width, dst_pixels_c, width * 4, width,
+                   invert * height);
+
+  MaskCpuFlags(benchmark_cpu_info);
+  ARGBCopyYToAlpha(orig_pixels + off, width, dst_uninit_opt, width * 4, width,
+                   invert * height);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBCopyYToAlpha(orig_pixels + off, width, dst_pixels_opt, width * 4, width,
+                     invert * height);
+  }
+  int max_diff = 0;
   for (int i = 0; i < kPixels * 4; ++i) {
-    ASSERT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+    int abs_diff = abs(static_cast<int>(dst_pixels_c[i]) -
+                       static_cast<int>(dst_pixels_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  for (int i = 0; i < kPixels; ++i) {
+    int abs_diff = abs(static_cast<int>(dst_pixels_c[i * 4 + 3]) -
+                       static_cast<int>(dst_uninit_opt[i * 4 + 3]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
   }
 
+  free_aligned_buffer_page_end(dst_uninit_opt);
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(orig_pixels);
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyYToAlpha_Any) {
+  int max_diff = TestARGBCopyYToAlpha(benchmark_width_ - 1, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, +1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyYToAlpha_Unaligned) {
+  int max_diff = TestARGBCopyYToAlpha(benchmark_width_, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, +1, 1);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyYToAlpha_Invert) {
+  int max_diff = TestARGBCopyYToAlpha(benchmark_width_, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, -1, 0);
+  ASSERT_EQ(0, max_diff);
+}
+
+TEST_F(LibYUVPlanarTest, ARGBCopyYToAlpha_Opt) {
+  int max_diff = TestARGBCopyYToAlpha(benchmark_width_, benchmark_height_,
+                                      benchmark_iterations_, disable_cpu_flags_,
+                                      benchmark_cpu_info_, +1, 0);
+  ASSERT_EQ(0, max_diff);
 }
 
 static int TestARGBRect(int width,

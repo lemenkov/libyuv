@@ -3266,7 +3266,11 @@ void ARGBExtractAlphaRow_AVX512BW(const uint8_t* src_argb,
   if (width > 0) {
     __mmask16 mask = (__mmask16)((1u << width) - 1u);
     __m512i z0 = _mm512_maskz_loadu_epi32(mask, src_argb);
-    _mm512_mask_cvtepi32_storeu_epi8(dst_a, mask, _mm512_srli_epi32(z0, 24));
+    __m128i a0 = _mm512_cvtepi32_epi8(_mm512_srli_epi32(z0, 24));
+    // Use _mm_mask_storeu_epi8 instead of _mm512_mask_cvtepi32_storeu_epi8
+    // because LLVM MSan does not instrument @llvm.x86.avx512.mask.pmov.db.mem
+    // to unpoison destination shadow memory.
+    _mm_mask_storeu_epi8(dst_a, mask, a0);
   }
   _mm256_zeroupper();
 }
@@ -3275,18 +3279,18 @@ void ARGBExtractAlphaRow_AVX512BW(const uint8_t* src_argb,
 #ifdef HAS_ARGBCOPYYTOALPHAROW_AVX512BW
 LIBYUV_TARGET_AVX512BW
 void ARGBCopyYToAlphaRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
-  __m512i rgb_mask = _mm512_set1_epi32(0x00ffffff);
+  // Store only the alpha byte (every 4th byte) using a byte mask instead of
+  // loading dst and blending with _mm512_ternarylogic_epi32. This avoids
+  // reading uninitialized destination bytes and avoids
+  // @llvm.x86.avx512.pternlog which LLVM MSan does not model bitwise.
+  const __mmask64 alpha_mask = 0x8888888888888888ull;
   while (width >= 32) {
     __m512i a0 = _mm512_slli_epi32(
         _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)src)), 24);
     __m512i a1 = _mm512_slli_epi32(
         _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)(src + 16))), 24);
-    a0 = _mm512_ternarylogic_epi32(
-        a0, rgb_mask, _mm512_loadu_si512((const __m512i*)dst), 0xf8);
-    a1 = _mm512_ternarylogic_epi32(
-        a1, rgb_mask, _mm512_loadu_si512((const __m512i*)(dst + 64)), 0xf8);
-    _mm512_storeu_si512((__m512i*)dst, a0);
-    _mm512_storeu_si512((__m512i*)(dst + 64), a1);
+    _mm512_mask_storeu_epi8(dst, alpha_mask, a0);
+    _mm512_mask_storeu_epi8(dst + 64, alpha_mask, a1);
     src += 32;
     dst += 128;
     width -= 32;
@@ -3294,20 +3298,17 @@ void ARGBCopyYToAlphaRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
   if (width >= 16) {
     __m512i a0 = _mm512_slli_epi32(
         _mm512_cvtepu8_epi32(_mm_loadu_si128((const __m128i*)src)), 24);
-    a0 = _mm512_ternarylogic_epi32(
-        a0, rgb_mask, _mm512_loadu_si512((const __m512i*)dst), 0xf8);
-    _mm512_storeu_si512((__m512i*)dst, a0);
+    _mm512_mask_storeu_epi8(dst, alpha_mask, a0);
     src += 16;
     dst += 64;
     width -= 16;
   }
   if (width > 0) {
     __mmask16 mask = (__mmask16)((1u << width) - 1u);
+    __mmask64 tail_alpha_mask = alpha_mask >> (64 - width * 4);
     __m512i a0 = _mm512_slli_epi32(
         _mm512_maskz_cvtepu8_epi32(mask, _mm_maskz_loadu_epi8(mask, src)), 24);
-    a0 = _mm512_ternarylogic_epi32(a0, rgb_mask,
-                                   _mm512_maskz_loadu_epi32(mask, dst), 0xf8);
-    _mm512_mask_storeu_epi32(dst, mask, a0);
+    _mm512_mask_storeu_epi8(dst, tail_alpha_mask, a0);
   }
   _mm256_zeroupper();
 }

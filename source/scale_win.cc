@@ -1456,7 +1456,10 @@ void ScaleAddCols1_AVX512BW(int dst_width,
       __m512i sum = _mm512_add_epi32(sum01, sum23);
       sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vscale), 16);
       __mmask16 km = (__mmask16)((1U << dst_width) - 1);
-      _mm512_mask_cvtepi32_storeu_epi8(dst_ptr, km, sum);
+      // Use _mm_mask_storeu_epi8 instead of _mm512_mask_cvtepi32_storeu_epi8
+      // because LLVM MSan does not instrument @llvm.x86.avx512.mask.pmov.db.mem
+      // to unpoison destination shadow memory.
+      _mm_mask_storeu_epi8(dst_ptr, km, _mm512_cvtepi32_epi8(sum));
     }
   } else if (boxwidth <= 8) {
     __m512i seq =
@@ -1507,7 +1510,10 @@ void ScaleAddCols1_AVX512BW(int dst_width,
       sum = _mm512_add_epi32(sum, _mm512_srli_epi64(sum, 32));
       sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vscale), 16);
       __mmask8 km = (__mmask8)((1U << dst_width) - 1);
-      _mm512_mask_cvtepi64_storeu_epi8(dst_ptr, km, sum);
+      // Use _mm_mask_storeu_epi8 instead of _mm512_mask_cvtepi64_storeu_epi8
+      // because LLVM MSan does not instrument @llvm.x86.avx512.mask.pmov.qb.mem
+      // to unpoison destination shadow memory.
+      _mm_mask_storeu_epi8(dst_ptr, km, _mm512_cvtepi64_epi8(sum));
     }
   } else {
     int rem = boxwidth & 31;
@@ -1622,7 +1628,10 @@ void ScaleAddCols2_AVX512BW(int dst_width,
       __m512i vsc = _mm512_mask_blend_epi32(k4, vscale0, vscale1);
       sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vsc), 16);
       __mmask16 km = (__mmask16)((1U << dst_width) - 1);
-      _mm512_mask_cvtepi32_storeu_epi8(dst_ptr, km, sum);
+      // Use _mm_mask_storeu_epi8 instead of _mm512_mask_cvtepi32_storeu_epi8
+      // because LLVM MSan does not instrument @llvm.x86.avx512.mask.pmov.db.mem
+      // to unpoison destination shadow memory.
+      _mm_mask_storeu_epi8(dst_ptr, km, _mm512_cvtepi32_epi8(sum));
     }
   } else if (minboxwidth >= 4 && minboxwidth <= 7) {
     __m512i seq =
@@ -1698,7 +1707,10 @@ void ScaleAddCols2_AVX512BW(int dst_width,
       __m512i vsc = _mm512_mask_blend_epi64(k4, vscale0, vscale1);
       sum = _mm512_srli_epi32(_mm512_mullo_epi32(sum, vsc), 16);
       __mmask8 km = (__mmask8)((1U << dst_width) - 1);
-      _mm512_mask_cvtepi64_storeu_epi8(dst_ptr, km, sum);
+      // Use _mm_mask_storeu_epi8 instead of _mm512_mask_cvtepi64_storeu_epi8
+      // because LLVM MSan does not instrument @llvm.x86.avx512.mask.pmov.qb.mem
+      // to unpoison destination shadow memory.
+      _mm_mask_storeu_epi8(dst_ptr, km, _mm512_cvtepi64_epi8(sum));
     }
   } else {
     while (dst_width > 0) {

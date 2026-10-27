@@ -8825,57 +8825,55 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 void ARGBCopyYToAlphaRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
   uintptr_t temp;
   asm volatile(
-      "vpternlogd  $0xff,%%zmm0,%%zmm0,%%zmm0    \n"
-      "vpsrld      $0x8,%%zmm0,%%zmm0            \n"
-      "sub         $0x20,%2                      \n"
-      "jl          2f                            \n"
+      "kmovq       %4,%%k1                        \n"
+      "sub         $0x20,%2                       \n"
+      "jl          2f                             \n"
 
       LABELALIGN
       "1:          \n"
-      "vpmovzxbd   (%0),%%zmm1                   \n"
-      "vpmovzxbd   0x10(%0),%%zmm2               \n"
-      "lea         0x20(%0),%0                   \n"
-      "vpslld      $0x18,%%zmm1,%%zmm1           \n"
-      "vpslld      $0x18,%%zmm2,%%zmm2           \n"
-      "vpternlogd  $0xf8,(%1),%%zmm0,%%zmm1      \n"
-      "vpternlogd  $0xf8,0x40(%1),%%zmm0,%%zmm2 \n"
-      "vmovdqu32   %%zmm1,(%1)                   \n"
-      "vmovdqu32   %%zmm2,0x40(%1)               \n"
-      "lea         0x80(%1),%1                   \n"
-      "sub         $0x20,%2                      \n"
-      "jge         1b                            \n"
+      "vpmovzxbd   (%0),%%zmm1                    \n"
+      "vpmovzxbd   0x10(%0),%%zmm2                \n"
+      "lea         0x20(%0),%0                    \n"
+      "vpslld      $0x18,%%zmm1,%%zmm1            \n"
+      "vpslld      $0x18,%%zmm2,%%zmm2            \n"
+      "vmovdqu8    %%zmm1,(%1)%{%%k1%}            \n"
+      "vmovdqu8    %%zmm2,0x40(%1)%{%%k1%}        \n"
+      "lea         0x80(%1),%1                    \n"
+      "sub         $0x20,%2                       \n"
+      "jge         1b                             \n"
 
       "2:          \n"
-      "add         $0x20,%2                      \n"
-      "jle         99f                           \n"
-      "cmp         $0x10,%2                      \n"
-      "jl          3f                            \n"
-      "vpmovzxbd   (%0),%%zmm1                   \n"
-      "lea         0x10(%0),%0                   \n"
-      "vpslld      $0x18,%%zmm1,%%zmm1           \n"
-      "vpternlogd  $0xf8,(%1),%%zmm0,%%zmm1      \n"
-      "vmovdqu32   %%zmm1,(%1)                   \n"
-      "lea         0x40(%1),%1                   \n"
-      "sub         $0x10,%2                      \n"
-      "jz          99f                           \n"
+      "add         $0x20,%2                       \n"
+      "jle         99f                            \n"
+      "cmp         $0x10,%2                       \n"
+      "jl          3f                             \n"
+      "vpmovzxbd   (%0),%%zmm1                    \n"
+      "lea         0x10(%0),%0                    \n"
+      "vpslld      $0x18,%%zmm1,%%zmm1            \n"
+      "vmovdqu8    %%zmm1,(%1)%{%%k1%}            \n"
+      "lea         0x40(%1),%1                    \n"
+      "sub         $0x10,%2                       \n"
+      "jz          99f                            \n"
 
       "3:          \n"
-      "mov         $-1,%k3                       \n"
-      "bzhi        %k2,%k3,%k3                   \n"
-      "kmovw       %k3,%%k1                      \n"
-      "vpmovzxbd   (%0),%%zmm1%{%%k1%}%{z%}      \n"
-      "vpslld      $0x18,%%zmm1,%%zmm1           \n"
-      "vpternlogd  $0xf8,(%1),%%zmm0,%%zmm1%{%%k1%}%{z%} \n"
-      "vmovdqu32   %%zmm1,(%1)%{%%k1%}           \n"
+      "mov         $-1,%k3                        \n"
+      "bzhi        %k2,%k3,%k3                    \n"
+      "kmovw       %k3,%%k1                       \n"
+      "vpmovzxbd   (%0),%%zmm1%{%%k1%}%{z%}       \n"
+      "vpslld      $0x18,%%zmm1,%%zmm1            \n"
+      "shl         $0x2,%k2                       \n"
+      "bzhi        %q2,%4,%3                      \n"
+      "kmovq       %3,%%k1                        \n"
+      "vmovdqu8    %%zmm1,(%1)%{%%k1%}            \n"
 
       "99:         \n"
       "vzeroupper  \n"
-      : "+r"(src),    // %0
-        "+r"(dst),    // %1
-        "+r"(width),  // %2
-        "=&r"(temp)   // %3
-      :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "k1");
+      : "+r"(src),                  // %0
+        "+r"(dst),                  // %1
+        "+r"(width),                // %2
+        "=&r"(temp)                 // %3
+      : "r"(0x8888888888888888ull)  // %4
+      : "memory", "cc", "xmm1", "xmm2", "k1");
 }
 #endif  // HAS_ARGBCOPYYTOALPHAROW_AVX512BW
 
