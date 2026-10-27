@@ -540,6 +540,9 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_AB64TOARGBROW_NEON
+#define HAS_AR30TOAB30ROW_NEON
+#define HAS_AR30TOABGRROW_NEON
+#define HAS_AR30TOARGBROW_NEON
 #define HAS_AR64TOARGBROW_NEON
 #define HAS_ARGB1555TOARGBROW_NEON
 #define HAS_ARGB1555TOUVROW_NEON
@@ -547,6 +550,7 @@ extern "C" {
 #define HAS_ARGB4444TOARGBROW_NEON
 #define HAS_ARGB4444TOUVROW_NEON
 #define HAS_ARGB4444TOYROW_NEON
+#define HAS_ARGBCOPYALPHAROW_NEON
 #define HAS_ARGBCOPYYTOALPHAROW_NEON
 #define HAS_ARGBEXTRACTALPHAROW_NEON
 #define HAS_ARGBSETROW_NEON
@@ -578,6 +582,7 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_NEON
 #define HAS_CONVERT8TO16ROW_NEON
 #define HAS_CONVERT8TO8ROW_NEON
+#define HAS_COPYROW_16_NEON
 #define HAS_COPYROW_NEON
 #define HAS_DETILEROW_16_NEON
 #define HAS_DETILEROW_NEON
@@ -614,6 +619,7 @@ extern "C" {
 #define HAS_MERGEXR64ROW_NEON
 #define HAS_MERGEXRGB16TO8ROW_NEON
 #define HAS_MERGEXRGBROW_NEON
+#define HAS_MIRRORROW_16_NEON
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORSPLITUVROW_NEON
 #define HAS_MIRRORUVROW_NEON
@@ -652,21 +658,27 @@ extern "C" {
 
 // Effects:
 #define HAS_ARGBADDROW_NEON
+#define HAS_ARGBAFFINEROW_NEON
 #define HAS_ARGBALPHABLENDROW_NEON
 #define HAS_ARGBATTENUATEROW_NEON
 #define HAS_ARGBBLENDROW_NEON
 #define HAS_BLENDPLANEROW_NEON
 #define HAS_ARGBCOLORMATRIXROW_NEON
+#define HAS_ARGBCOLORTABLEROW_NEON
 #define HAS_ARGBGRAYROW_NEON
+#define HAS_ARGBLUMACOLORTABLEROW_NEON
 #define HAS_ARGBMIRRORROW_NEON
 #define HAS_ARGBMULTIPLYROW_NEON
 #define HAS_ARGBORROW_NEON
+#define HAS_ARGBPOLYNOMIALROW_NEON
 #define HAS_ARGBQUANTIZEROW_NEON
 #define HAS_ARGBSEPIAROW_NEON
 #define HAS_ARGBSHADEROW_NEON
 #define HAS_ARGBSHUFFLEROW_NEON
 #define HAS_ARGBSUBTRACTROW_NEON
+#define HAS_ARGBUNATTENUATEROW_NEON
 #define HAS_RGB24MIRRORROW_NEON
+#define HAS_RGBCOLORTABLEROW_NEON
 #define HAS_SOBELROW_NEON
 #define HAS_SOBELTOPLANEROW_NEON
 #define HAS_SOBELXROW_NEON
@@ -2838,6 +2850,10 @@ void MirrorSplitUVRow_C(const uint8_t* src_uv,
 
 void MirrorRow_16_C(const uint16_t* src, uint16_t* dst, int width);
 void MirrorRow_16_AVX512BW(const uint16_t* src, uint16_t* dst, int width);
+void MirrorRow_16_NEON(const uint16_t* src, uint16_t* dst, int width);
+void MirrorRow_16_Any_NEON(const uint16_t* src_ptr,
+                           uint16_t* dst_ptr,
+                           int width);
 
 void ARGBMirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width);
@@ -4014,14 +4030,20 @@ void CopyRow_Any_LSX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void CopyRow_Any_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 
 void CopyRow_16_C(const uint16_t* src, uint16_t* dst, int count);
+void CopyRow_16_NEON(const uint16_t* src, uint16_t* dst, int count);
+void CopyRow_16_Any_NEON(const uint16_t* src_ptr, uint16_t* dst_ptr, int width);
 
 void ARGBCopyAlphaRow_C(const uint8_t* src, uint8_t* dst, int width);
 void ARGBCopyAlphaRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBCopyAlphaRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
+void ARGBCopyAlphaRow_NEON(const uint8_t* src, uint8_t* dst, int width);
 void ARGBCopyAlphaRow_Any_SSE2(const uint8_t* src_ptr,
                                uint8_t* dst_ptr,
                                int width);
 void ARGBCopyAlphaRow_Any_AVX2(const uint8_t* src_ptr,
+                               uint8_t* dst_ptr,
+                               int width);
+void ARGBCopyAlphaRow_Any_NEON(const uint8_t* src_ptr,
                                uint8_t* dst_ptr,
                                int width);
 
@@ -4278,6 +4300,18 @@ void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 void AR30ToAB30Row_C(const uint8_t* src_ar30, uint8_t* dst_ab30, int width);
 void AR30ToAB30Row_AVX512BW(const uint8_t* src_ar30,
                             uint8_t* dst_ab30,
+                            int width);
+void AR30ToARGBRow_NEON(const uint8_t* src_ar30, uint8_t* dst_argb, int width);
+void AR30ToABGRRow_NEON(const uint8_t* src_ar30, uint8_t* dst_abgr, int width);
+void AR30ToAB30Row_NEON(const uint8_t* src_ar30, uint8_t* dst_ab30, int width);
+void AR30ToARGBRow_Any_NEON(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void AR30ToABGRRow_Any_NEON(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
+void AR30ToAB30Row_Any_NEON(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
                             int width);
 
 void RGB24ToARGBRow_Any_SSSE3(const uint8_t* src_ptr,
@@ -6928,10 +6962,16 @@ void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
 void ARGBUnattenuateRow_AVX2(const uint8_t* src_argb,
                              uint8_t* dst_argb,
                              int width);
+void ARGBUnattenuateRow_NEON(const uint8_t* src_argb,
+                             uint8_t* dst_argb,
+                             int width);
 void ARGBUnattenuateRow_Any_SSE2(const uint8_t* src_ptr,
                                  uint8_t* dst_ptr,
                                  int width);
 void ARGBUnattenuateRow_Any_AVX2(const uint8_t* src_ptr,
+                                 uint8_t* dst_ptr,
+                                 int width);
+void ARGBUnattenuateRow_Any_NEON(const uint8_t* src_ptr,
                                  uint8_t* dst_ptr,
                                  int width);
 
@@ -6988,6 +7028,9 @@ void ARGBColorTableRow_C(uint8_t* dst_argb,
 void ARGBColorTableRow_X86(uint8_t* dst_argb,
                            const uint8_t* table_argb,
                            int width);
+void ARGBColorTableRow_NEON(uint8_t* dst_argb,
+                            const uint8_t* table_argb,
+                            int width);
 
 void RGBColorTableRow_C(uint8_t* dst_argb,
                         const uint8_t* table_argb,
@@ -6995,6 +7038,9 @@ void RGBColorTableRow_C(uint8_t* dst_argb,
 void RGBColorTableRow_X86(uint8_t* dst_argb,
                           const uint8_t* table_argb,
                           int width);
+void RGBColorTableRow_NEON(uint8_t* dst_argb,
+                           const uint8_t* table_argb,
+                           int width);
 
 void ARGBQuantizeRow_C(uint8_t* dst_argb,
                        int scale,
@@ -7094,6 +7140,12 @@ void ARGBAffineRow_C(const uint8_t* src_argb,
                      int width);
 LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8_t* src_argb,
+                        int src_argb_stride,
+                        uint8_t* dst_argb,
+                        const float* src_dudv,
+                        int width);
+LIBYUV_API
+void ARGBAffineRow_NEON(const uint8_t* src_argb,
                         int src_argb_stride,
                         uint8_t* dst_argb,
                         const float* src_dudv,
@@ -7351,6 +7403,14 @@ void ARGBPolynomialRow_AVX2(const uint8_t* src_argb,
                             uint8_t* dst_argb,
                             const float* poly,
                             int width);
+void ARGBPolynomialRow_NEON(const uint8_t* src_argb,
+                            uint8_t* dst_argb,
+                            const float* poly,
+                            int width);
+void ARGBPolynomialRow_Any_NEON(const uint8_t* src_ptr,
+                                uint8_t* dst_ptr,
+                                const float* param,
+                                int width);
 
 // Scale and convert to half float.
 void HalfFloatRow_C(const uint16_t* src, uint16_t* dst, float scale, int width);
@@ -7442,6 +7502,11 @@ void ARGBLumaColorTableRow_SSSE3(const uint8_t* src_argb,
                                  int width,
                                  const uint8_t* luma,
                                  uint32_t lumacoeff);
+void ARGBLumaColorTableRow_NEON(const uint8_t* src_argb,
+                                uint8_t* dst_argb,
+                                int width,
+                                const uint8_t* luma,
+                                uint32_t lumacoeff);
 
 float ScaleMaxSamples_C(const float* src, float* dst, float scale, int width);
 float ScaleMaxSamples_NEON(const float* src,

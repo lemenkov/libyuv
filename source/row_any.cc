@@ -1105,6 +1105,15 @@ ANY11(ABGRToAR30Row_Any_NEON, ABGRToAR30Row_NEON, 0, 4, 4, 7)
 #if defined(HAS_ARGBTOAR30ROW_NEON)
 ANY11(ARGBToAR30Row_Any_NEON, ARGBToAR30Row_NEON, 0, 4, 4, 7)
 #endif
+#if defined(HAS_AR30TOARGBROW_NEON)
+ANY11(AR30ToARGBRow_Any_NEON, AR30ToARGBRow_NEON, 0, 4, 4, 7)
+#endif
+#if defined(HAS_AR30TOABGRROW_NEON)
+ANY11(AR30ToABGRRow_Any_NEON, AR30ToABGRRow_NEON, 0, 4, 4, 7)
+#endif
+#if defined(HAS_AR30TOAB30ROW_NEON)
+ANY11(AR30ToAB30Row_Any_NEON, AR30ToAB30Row_NEON, 0, 4, 4, 7)
+#endif
 #if defined(HAS_ARGBTOAR30ROW_SSSE3)
 ANY11(ARGBToAR30Row_Any_SSSE3, ARGBToAR30Row_SSSE3, 0, 4, 4, 3)
 #endif
@@ -1330,6 +1339,9 @@ ANY11(ARGBUnattenuateRow_Any_AVX2, ARGBUnattenuateRow_AVX2, 0, 4, 4, 7)
 #ifdef HAS_ARGBATTENUATEROW_NEON
 ANY11(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, 0, 4, 4, 7)
 #endif
+#ifdef HAS_ARGBUNATTENUATEROW_NEON
+ANY11(ARGBUnattenuateRow_Any_NEON, ARGBUnattenuateRow_NEON, 0, 4, 4, 3)
+#endif
 #ifdef HAS_ARGBATTENUATEROW_LSX
 ANY11(ARGBAttenuateRow_Any_LSX, ARGBAttenuateRow_LSX, 0, 4, 4, 3)
 #endif
@@ -1418,6 +1430,9 @@ ANY11B(ARGBCopyAlphaRow_Any_AVX2, ARGBCopyAlphaRow_AVX2, 0, 4, 4, 15)
 #endif
 #ifdef HAS_ARGBCOPYALPHAROW_SSE2
 ANY11B(ARGBCopyAlphaRow_Any_SSE2, ARGBCopyAlphaRow_SSE2, 0, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBCOPYALPHAROW_NEON
+ANY11B(ARGBCopyAlphaRow_Any_NEON, ARGBCopyAlphaRow_NEON, 0, 4, 4, 7)
 #endif
 #ifdef HAS_ARGBCOPYYTOALPHAROW_AVX2
 ANY11B(ARGBCopyYToAlphaRow_Any_AVX2, ARGBCopyYToAlphaRow_AVX2, 0, 1, 4, 15)
@@ -1578,6 +1593,14 @@ ANY11P(ARGBOrRow_Any_LASX, ARGBOrRow_LASX, const uint32_t, 4, 4, 7)
 #ifdef HAS_ARGBORROW_WASMSIMD
 ANY11P(ARGBOrRow_Any_WASMSIMD, ARGBOrRow_WASMSIMD, const uint32_t, 4, 4, 3)
 #endif
+#ifdef HAS_ARGBPOLYNOMIALROW_NEON
+ANY11P(ARGBPolynomialRow_Any_NEON,
+       ARGBPolynomialRow_NEON,
+       const float*,
+       4,
+       4,
+       1)
+#endif
 #undef ANY11P
 #undef ANY11P
 
@@ -1645,6 +1668,10 @@ ANY11T(AR64ToARGBRow_Any_NEON, AR64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
 
 #ifdef HAS_AB64TOARGBROW_NEON
 ANY11T(AB64ToARGBRow_Any_NEON, AB64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
+#endif
+
+#ifdef HAS_COPYROW_16_NEON
+ANY11T(CopyRow_16_Any_NEON, CopyRow_16_NEON, 2, 2, uint16_t, uint16_t, 15)
 #endif
 
 #undef ANY11T
@@ -2195,6 +2222,31 @@ ANY11M(ARGBMirrorRow_Any_WASMSIMD, ARGBMirrorRow_WASMSIMD, 4, 3)
 ANY11M(RGB24MirrorRow_Any_WASMSIMD, RGB24MirrorRow_WASMSIMD, 3, 15)
 #endif
 #undef ANY11M
+
+// Any 1 to 1 mirror with type.
+#define ANY11MT(NAMEANY, ANY_SIMD, T, BPP, MASK)                              \
+  void NAMEANY(const T* src_ptr, T* dst_ptr, int width) {                     \
+    SIMD_ALIGNED(T vin[64]);                                                  \
+    static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small");   \
+    SIMD_ALIGNED(T vout[64]);                                                 \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    MSAN_MEMSET(vin, 0, sizeof(vin));   /* for msan */                        \
+    MSAN_MEMSET(vout, 0, sizeof(vout)); /* for msan */                        \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr + r, dst_ptr, n);                                      \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr, r * BPP);                                            \
+    ANY_SIMD(vin, vout, MASK + 1);                                            \
+    memcpy(dst_ptr + np, vout + (MASK + 1 - r), r * BPP);                     \
+  }
+
+#ifdef HAS_MIRRORROW_16_NEON
+ANY11MT(MirrorRow_16_Any_NEON, MirrorRow_16_NEON, uint16_t, 2, 15)
+#endif
+#undef ANY11MT
 
 // Any 1 plane. (memset)
 #define ANY1(NAMEANY, ANY_SIMD, T, BPP, MASK)                                 \

@@ -1553,34 +1553,61 @@ TEST_F(LibYUVPlanarTest, I420Blend_Invert) {
 
 #ifdef ENABLE_ROW_TESTS
 TEST_F(LibYUVPlanarTest, TestAffine) {
-  SIMD_ALIGNED(uint8_t orig_pixels_0[1280][4]);
+  SIMD_ALIGNED(uint8_t orig_pixels_0[2][1280][4]);
   SIMD_ALIGNED(uint8_t interpolate_pixels_C[1280][4]);
 
-  for (int i = 0; i < 1280; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      orig_pixels_0[i][j] = i;
+  for (int r = 0; r < 2; ++r) {
+    for (int i = 0; i < 1280; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        orig_pixels_0[r][i][j] = i + r * 17;
+      }
     }
   }
 
-  float uv_step[4] = {0.f, 0.f, 0.75f, 0.f};
+  float uv_step[4] = {0.f, 0.f, 0.75f, 1.f / 1280.f};
+  const int stride = 1280 * 4;
 
-  ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0], uv_step,
-                  1280);
+  ARGBAffineRow_C(&orig_pixels_0[0][0][0], stride, &interpolate_pixels_C[0][0],
+                  uv_step, 1280);
   ASSERT_EQ(0u, interpolate_pixels_C[0][0]);
   ASSERT_EQ(96u, interpolate_pixels_C[128][0]);
   ASSERT_EQ(191u, interpolate_pixels_C[255][3]);
 
 #if defined(HAS_ARGBAFFINEROW_SSE2)
-  SIMD_ALIGNED(uint8_t interpolate_pixels_Opt[1280][4]);
-  ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
-                     uv_step, 1280);
-  ASSERT_EQ(0, memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1280 * 4));
-
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   if (has_sse2) {
+    SIMD_ALIGNED(uint8_t interpolate_pixels_Opt[1280][4]);
+    ARGBAffineRow_SSE2(&orig_pixels_0[0][0][0], stride,
+                       &interpolate_pixels_Opt[0][0], uv_step, 1280);
+    ASSERT_EQ(0,
+              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1280 * 4));
+    ARGBAffineRow_SSE2(&orig_pixels_0[0][0][0], stride,
+                       &interpolate_pixels_Opt[0][0], uv_step, 1279);
+    ASSERT_EQ(0,
+              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1279 * 4));
+
     for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-      ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
-                         uv_step, 1280);
+      ARGBAffineRow_SSE2(&orig_pixels_0[0][0][0], stride,
+                         &interpolate_pixels_Opt[0][0], uv_step, 1280);
+    }
+  }
+#endif
+#if defined(HAS_ARGBAFFINEROW_NEON)
+  int has_neon = TestCpuFlag(kCpuHasNEON);
+  if (has_neon) {
+    SIMD_ALIGNED(uint8_t interpolate_pixels_Opt[1280][4]);
+    ARGBAffineRow_NEON(&orig_pixels_0[0][0][0], stride,
+                       &interpolate_pixels_Opt[0][0], uv_step, 1280);
+    ASSERT_EQ(0,
+              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1280 * 4));
+    ARGBAffineRow_NEON(&orig_pixels_0[0][0][0], stride,
+                       &interpolate_pixels_Opt[0][0], uv_step, 1279);
+    ASSERT_EQ(0,
+              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1279 * 4));
+
+    for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+      ARGBAffineRow_NEON(&orig_pixels_0[0][0][0], stride,
+                         &interpolate_pixels_Opt[0][0], uv_step, 1280);
     }
   }
 #endif
@@ -1694,6 +1721,83 @@ TEST_F(LibYUVPlanarTest, TestCopyPlaneZero) {
   CopyPlane(&src, 1, &dst, 1, 0, 1);
   ASSERT_EQ(src, 42);
   ASSERT_EQ(dst, 0);
+}
+
+static int TestCopyPlane_16(int benchmark_width,
+                            int benchmark_height,
+                            int benchmark_iterations,
+                            int disable_cpu_flags,
+                            int benchmark_cpu_info,
+                            int invert,
+                            int off) {
+  const int y_plane_size = benchmark_width * benchmark_height;
+  align_buffer_page_end(orig_y, (y_plane_size + off) * 2);
+  align_buffer_page_end(dst_c, y_plane_size * 2);
+  align_buffer_page_end(dst_opt, y_plane_size * 2);
+  uint16_t* orig_y_16 = reinterpret_cast<uint16_t*>(orig_y) + off;
+  uint16_t* dst_c_16 = reinterpret_cast<uint16_t*>(dst_c);
+  uint16_t* dst_opt_16 = reinterpret_cast<uint16_t*>(dst_opt);
+
+  MemRandomize(orig_y, (y_plane_size + off) * 2);
+  memset(dst_c, 1, y_plane_size * 2);
+  memset(dst_opt, 2, y_plane_size * 2);
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags);
+  for (int i = 0; i < benchmark_iterations; i++) {
+    CopyPlane_16(orig_y_16, benchmark_width, dst_c_16, benchmark_width,
+                 benchmark_width, benchmark_height * invert);
+  }
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; i++) {
+    CopyPlane_16(orig_y_16, benchmark_width, dst_opt_16, benchmark_width,
+                 benchmark_width, benchmark_height * invert);
+  }
+
+  int max_diff = 0;
+  for (int i = 0; i < y_plane_size; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_c_16[i]) - static_cast<int>(dst_opt_16[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+
+  free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_16_Any) {
+  int max_diff = TestCopyPlane_16(benchmark_width_ + 1, benchmark_height_,
+                                  benchmark_iterations_, disable_cpu_flags_,
+                                  benchmark_cpu_info_, +1, 0);
+  ASSERT_LE(max_diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_16_Unaligned) {
+  int max_diff = TestCopyPlane_16(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, disable_cpu_flags_,
+                                  benchmark_cpu_info_, +1, 1);
+  ASSERT_LE(max_diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_16_Invert) {
+  int max_diff = TestCopyPlane_16(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, disable_cpu_flags_,
+                                  benchmark_cpu_info_, -1, 0);
+  ASSERT_LE(max_diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, CopyPlane_16_Opt) {
+  int max_diff = TestCopyPlane_16(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, disable_cpu_flags_,
+                                  benchmark_cpu_info_, +1, 0);
+  ASSERT_LE(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, TestDetilePlane) {
@@ -2427,7 +2531,7 @@ TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlurSmall_Opt)) {
   ASSERT_LE(max_diff, 1);
 }
 
-TEST_F(LibYUVPlanarTest, DISABLED_ARM(TestARGBPolynomial)) {
+TEST_F(LibYUVPlanarTest, TestARGBPolynomial) {
   SIMD_ALIGNED(uint8_t orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8_t dst_pixels_opt[1280][4]);
   SIMD_ALIGNED(uint8_t dst_pixels_c[1280][4]);

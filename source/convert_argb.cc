@@ -4522,6 +4522,14 @@ int AR30ToARGB(const uint8_t* src_ar30,
   }
   void (*AR30ToARGBRow)(const uint8_t* src_ar30, uint8_t* dst_argb, int width) =
       AR30ToARGBRow_C;
+#if defined(HAS_AR30TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AR30ToARGBRow = AR30ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      AR30ToARGBRow = AR30ToARGBRow_NEON;
+    }
+  }
+#endif
 #if defined(HAS_AR30TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     AR30ToARGBRow = AR30ToARGBRow_AVX512BW;
@@ -4563,6 +4571,14 @@ int AR30ToABGR(const uint8_t* src_ar30,
     height = 1;
     src_stride_ar30 = dst_stride_abgr = 0;
   }
+#if defined(HAS_AR30TOABGRROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AR30ToABGRRow = AR30ToABGRRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      AR30ToABGRRow = AR30ToABGRRow_NEON;
+    }
+  }
+#endif
 #if defined(HAS_AR30TOABGRROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     AR30ToABGRRow = AR30ToABGRRow_AVX512BW;
@@ -4604,6 +4620,14 @@ int AR30ToAB30(const uint8_t* src_ar30,
     height = 1;
     src_stride_ar30 = dst_stride_ab30 = 0;
   }
+#if defined(HAS_AR30TOAB30ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AR30ToAB30Row = AR30ToAB30Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      AR30ToAB30Row = AR30ToAB30Row_NEON;
+    }
+  }
+#endif
 #if defined(HAS_AR30TOAB30ROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     AR30ToAB30Row = AR30ToAB30Row_AVX512BW;

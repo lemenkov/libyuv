@@ -3538,6 +3538,14 @@ static int AR30ToI420Matrix(const uint8_t* src_ar30,
     src_ar30 = src_ar30 + (ptrdiff_t)(height - 1) * src_stride_ar30;
     src_stride_ar30 = -src_stride_ar30;
   }
+#if defined(HAS_AR30TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AR30ToARGBRow = AR30ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      AR30ToARGBRow = AR30ToARGBRow_NEON;
+    }
+  }
+#endif
 #if defined(HAS_AR30TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     AR30ToARGBRow = AR30ToARGBRow_AVX512BW;

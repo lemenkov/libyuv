@@ -5642,6 +5642,471 @@ void Convert8To16Row_NEON(const uint8_t* src_y,
       : "cc", "memory", "v0", "v1", "v2");
 }
 
+void CopyRow_16_NEON(const uint16_t* src, uint16_t* dst, int count) {
+  asm volatile(
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "subs        %w2, %w2, #16                 \n"  // 16 processed per loop
+      "stp         q0, q1, [%1], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(count)  // %2
+      :
+      : "memory", "cc", "v0", "v1");
+}
+
+void MirrorRow_16_NEON(const uint16_t* src, uint16_t* dst, int width) {
+  asm volatile(
+      // Start at end of source row.
+      "ld1         {v4.16b}, [%3]                \n"  // shuffler
+      "add         %0, %0, %w2, sxtw #1          \n"
+      "sub         %0, %0, #32                   \n"
+      "1:                                        \n"
+      "ldr         q1, [%0, 16]                  \n"
+      "ldr         q0, [%0], -32                 \n"  // src -= 32
+      "subs        %w2, %w2, #16                 \n"  // 16 pixels per loop.
+      "tbl         v2.16b, {v1.16b}, v4.16b      \n"
+      "tbl         v3.16b, {v0.16b}, v4.16b      \n"
+      "stp         q2, q3, [%1], #32             \n"  // dst += 32
+      "b.gt        1b                            \n"
+      : "+r"(src),              // %0
+        "+r"(dst),              // %1
+        "+r"(width)             // %2
+      : "r"(&kShuffleMirrorUV)  // %3
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4");
+}
+
+void AR30ToARGBRow_NEON(const uint8_t* src_ar30, uint8_t* dst_argb, int width) {
+  asm volatile(
+      "movi        v16.4s, #0xff, lsl #8         \n"  // 0x0000ff00
+      "movi        v17.4s, #0x0f, msl #16        \n"  // 0x000fffff
+      "shl         v17.4s, v17.4s, #8            \n"  // 0x0fffff00
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 AR30 pixels
+      "subs        %w2, %w2, #8                  \n"  // 8 pixels per loop
+      "sri         v0.4s, v0.4s, #2              \n"
+      "sri         v1.4s, v1.4s, #2              \n"
+      "ushr        v2.4s, v0.4s, #2              \n"
+      "ushr        v3.4s, v1.4s, #2              \n"
+      "ushr        v4.4s, v0.4s, #4              \n"
+      "ushr        v5.4s, v1.4s, #4              \n"
+      "bit         v0.16b, v4.16b, v17.16b       \n"
+      "bit         v1.16b, v5.16b, v17.16b       \n"
+      "bit         v0.16b, v2.16b, v16.16b       \n"
+      "bit         v1.16b, v3.16b, v16.16b       \n"
+      "stp         q0, q1, [%1], #32             \n"  // store 8 ARGB pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_ar30),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(width)      // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v16", "v17");
+}
+
+void AR30ToABGRRow_NEON(const uint8_t* src_ar30, uint8_t* dst_abgr, int width) {
+  asm volatile(
+      "movi        v16.2d, #0x00ffff0000ffff00   \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 AR30 pixels
+      "subs        %w2, %w2, #8                  \n"  // 8 pixels per loop
+      "sri         v0.4s, v0.4s, #2              \n"
+      "sri         v1.4s, v1.4s, #2              \n"
+      "ushr        v2.4s, v0.4s, #2              \n"
+      "ushr        v3.4s, v1.4s, #2              \n"
+      "sli         v2.4s, v0.4s, #16             \n"
+      "sli         v3.4s, v1.4s, #16             \n"
+      "sri         v0.4s, v0.4s, #4              \n"
+      "sri         v1.4s, v1.4s, #4              \n"
+      "sri         v0.4s, v0.4s, #16             \n"
+      "sri         v1.4s, v1.4s, #16             \n"
+      "bit         v0.16b, v2.16b, v16.16b       \n"
+      "bit         v1.16b, v3.16b, v16.16b       \n"
+      "stp         q0, q1, [%1], #32             \n"  // store 8 ABGR pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_ar30),  // %0
+        "+r"(dst_abgr),  // %1
+        "+r"(width)      // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v16");
+}
+
+void AR30ToAB30Row_NEON(const uint8_t* src_ar30, uint8_t* dst_ab30, int width) {
+  asm volatile(
+      "movi        v17.16b, #0xff                \n"
+      "ushr        v17.4s, v17.4s, #22           \n"  // 0x000003ff
+      "shl         v16.4s, v17.4s, #20           \n"  // 0x3ff00000
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 AR30 pixels
+      "subs        %w2, %w2, #8                  \n"  // 8 pixels per loop
+      "shl         v2.4s, v0.4s, #20             \n"
+      "shl         v3.4s, v1.4s, #20             \n"
+      "ushr        v4.4s, v0.4s, #20             \n"
+      "ushr        v5.4s, v1.4s, #20             \n"
+      "bit         v0.16b, v2.16b, v16.16b       \n"
+      "bit         v1.16b, v3.16b, v16.16b       \n"
+      "bit         v0.16b, v4.16b, v17.16b       \n"
+      "bit         v1.16b, v5.16b, v17.16b       \n"
+      "stp         q0, q1, [%1], #32             \n"  // store 8 AB30 pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_ar30),  // %0
+        "+r"(dst_ab30),  // %1
+        "+r"(width)      // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v16", "v17");
+}
+
+void ARGBCopyAlphaRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "movi        v4.4s, #0xff, lsl #24         \n"  // 0xff000000
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"  // load 8 src pixels
+      "ldp         q2, q3, [%1]                  \n"  // load 8 dst pixels
+      "subs        %w2, %w2, #8                  \n"  // 8 pixels per loop
+      "bit         v2.16b, v0.16b, v4.16b        \n"
+      "bit         v3.16b, v1.16b, v4.16b        \n"
+      "stp         q2, q3, [%1], #32             \n"  // store 8 dst pixels
+      "b.gt        1b                            \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4");
+}
+
+void ARGBUnattenuateRow_NEON(const uint8_t* src_argb,
+                             uint8_t* dst_argb,
+                             int width) {
+  uint64_t tmp;
+  asm volatile(
+      "movi        v16.4s, #0xff, lsl #24         \n"  // 0xff000000
+      "1:                                        \n"
+      "ldrb        %w3, [%0, #3]                 \n"
+      "ldr         s4, [%4, %w3, uxtw #2]        \n"
+      "ldrb        %w3, [%0, #7]                 \n"
+      "ldr         s5, [%4, %w3, uxtw #2]        \n"
+      "ldrb        %w3, [%0, #11]                \n"
+      "ldr         s6, [%4, %w3, uxtw #2]        \n"
+      "ldrb        %w3, [%0, #15]                \n"
+      "ldr         s7, [%4, %w3, uxtw #2]        \n"
+      "ldr         q0, [%0], #16                 \n"
+      "subs        %w2, %w2, #4                  \n"
+      "zip1        v1.16b, v0.16b, v0.16b        \n"
+      "zip2        v2.16b, v0.16b, v0.16b        \n"
+      "umull       v3.4s, v1.4h, v4.h[0]         \n"
+      "umull2      v5.4s, v1.8h, v5.h[0]         \n"
+      "umull       v6.4s, v2.4h, v6.h[0]         \n"
+      "umull2      v7.4s, v2.8h, v7.h[0]         \n"
+      "uzp2        v3.8h, v3.8h, v5.8h           \n"
+      "uzp2        v6.8h, v6.8h, v7.8h           \n"
+      "uqxtn       v1.8b, v3.8h                  \n"
+      "uqxtn2      v1.16b, v6.8h                 \n"
+      "bit         v1.16b, v0.16b, v16.16b       \n"
+      "str         q1, [%1], #16                 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_argb),     // %0
+        "+r"(dst_argb),     // %1
+        "+r"(width),        // %2
+        "=&r"(tmp)          // %3
+      : "r"(fixed_invtbl8)  // %4
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16");
+}
+
+void ARGBPolynomialRow_NEON(const uint8_t* src_argb,
+                            uint8_t* dst_argb,
+                            const float* poly,
+                            int width) {
+  asm volatile(
+      "ldp         q16, q17, [%3]                \n"  // c0, c1
+      "ldp         q18, q19, [%3, #32]           \n"  // c2, c3
+      "subs        %w2, %w2, #4                  \n"
+      "b.lt        2f                            \n"
+      "1:                                        \n"
+      "ldr         q0, [%0], #16                 \n"  // load 4 pixels
+      "subs        %w2, %w2, #4                  \n"
+      "uxtl        v1.8h, v0.8b                  \n"
+      "uxtl2       v3.8h, v0.16b                 \n"
+      "uxtl        v0.4s, v1.4h                  \n"
+      "uxtl2       v1.4s, v1.8h                  \n"
+      "uxtl        v2.4s, v3.4h                  \n"
+      "uxtl2       v3.4s, v3.8h                  \n"
+      "ucvtf       v0.4s, v0.4s                  \n"  // x0
+      "ucvtf       v1.4s, v1.4s                  \n"  // x1
+      "ucvtf       v2.4s, v2.4s                  \n"  // x2
+      "ucvtf       v3.4s, v3.4s                  \n"  // x3
+      "fmul        v20.4s, v0.4s, v0.4s          \n"  // x0^2
+      "fmul        v21.4s, v1.4s, v1.4s          \n"  // x1^2
+      "fmul        v22.4s, v2.4s, v2.4s          \n"  // x2^2
+      "fmul        v23.4s, v3.4s, v3.4s          \n"  // x3^2
+      "fmul        v4.4s, v17.4s, v0.4s          \n"  // c1 * x0
+      "fmul        v5.4s, v17.4s, v1.4s          \n"  // c1 * x1
+      "fmul        v6.4s, v17.4s, v2.4s          \n"  // c1 * x2
+      "fmul        v7.4s, v17.4s, v3.4s          \n"  // c1 * x3
+      "fmul        v0.4s, v20.4s, v0.4s          \n"  // x0^3
+      "fmul        v1.4s, v21.4s, v1.4s          \n"  // x1^3
+      "fmul        v2.4s, v22.4s, v2.4s          \n"  // x2^3
+      "fmul        v3.4s, v23.4s, v3.4s          \n"  // x3^3
+      "fadd        v4.4s, v16.4s, v4.4s          \n"  // c0 + c1 * x0
+      "fadd        v5.4s, v16.4s, v5.4s          \n"  // c0 + c1 * x1
+      "fadd        v6.4s, v16.4s, v6.4s          \n"  // c0 + c1 * x2
+      "fadd        v7.4s, v16.4s, v7.4s          \n"  // c0 + c1 * x3
+      "fmla        v4.4s, v18.4s, v20.4s         \n"  // + c2 * x0^2
+      "fmla        v5.4s, v18.4s, v21.4s         \n"  // + c2 * x1^2
+      "fmla        v6.4s, v18.4s, v22.4s         \n"  // + c2 * x2^2
+      "fmla        v7.4s, v18.4s, v23.4s         \n"  // + c2 * x3^2
+      "fmla        v4.4s, v19.4s, v0.4s          \n"  // + c3 * x0^3
+      "fmla        v5.4s, v19.4s, v1.4s          \n"  // + c3 * x1^3
+      "fmla        v6.4s, v19.4s, v2.4s          \n"  // + c3 * x2^3
+      "fmla        v7.4s, v19.4s, v3.4s          \n"  // + c3 * x3^3
+      "fcvtzs      v4.4s, v4.4s                  \n"
+      "fcvtzs      v5.4s, v5.4s                  \n"
+      "fcvtzs      v6.4s, v6.4s                  \n"
+      "fcvtzs      v7.4s, v7.4s                  \n"
+      "sqxtn       v4.4h, v4.4s                  \n"
+      "sqxtn2      v4.8h, v5.4s                  \n"
+      "sqxtn       v6.4h, v6.4s                  \n"
+      "sqxtn2      v6.8h, v7.4s                  \n"
+      "sqxtun      v4.8b, v4.8h                  \n"
+      "sqxtun2     v4.16b, v6.8h                 \n"
+      "str         q4, [%1], #16                 \n"
+      "b.ge        1b                            \n"
+      "2:                                        \n"
+      "adds        %w2, %w2, #4                  \n"
+      "b.eq        3f                            \n"
+      "ldr         d0, [%0], #8                  \n"  // load 2 pixels
+      "uxtl        v0.8h, v0.8b                  \n"
+      "uxtl        v1.4s, v0.4h                  \n"
+      "uxtl2       v2.4s, v0.8h                  \n"
+      "ucvtf       v1.4s, v1.4s                  \n"  // x0
+      "ucvtf       v2.4s, v2.4s                  \n"  // x1
+      "fmul        v5.4s, v1.4s, v1.4s           \n"  // x0^2
+      "fmul        v6.4s, v2.4s, v2.4s           \n"  // x1^2
+      "fmul        v3.4s, v17.4s, v1.4s          \n"  // c1 * x0
+      "fmul        v4.4s, v17.4s, v2.4s          \n"  // c1 * x1
+      "fmul        v1.4s, v5.4s, v1.4s           \n"  // x0^3
+      "fmul        v2.4s, v6.4s, v2.4s           \n"  // x1^3
+      "fadd        v3.4s, v16.4s, v3.4s          \n"  // c0 + c1 * x0
+      "fadd        v4.4s, v16.4s, v4.4s          \n"  // c0 + c1 * x1
+      "fmla        v3.4s, v18.4s, v5.4s          \n"  // + c2 * x0^2
+      "fmla        v4.4s, v18.4s, v6.4s          \n"  // + c2 * x1^2
+      "fmla        v3.4s, v19.4s, v1.4s          \n"  // + c3 * x0^3
+      "fmla        v4.4s, v19.4s, v2.4s          \n"  // + c3 * x1^3
+      "fcvtzs      v3.4s, v3.4s                  \n"
+      "fcvtzs      v4.4s, v4.4s                  \n"
+      "sqxtn       v3.4h, v3.4s                  \n"
+      "sqxtn2      v3.8h, v4.4s                  \n"
+      "sqxtun      v3.8b, v3.8h                  \n"
+      "str         d3, [%1], #8                  \n"
+      "3:                                        \n"
+      : "+r"(src_argb),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(width)      // %2
+      : "r"(poly)        // %3
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+
+void ARGBColorTableRow_NEON(uint8_t* dst_argb,
+                            const uint8_t* table_argb,
+                            int width) {
+  uint64_t b, g, r, a;
+  asm volatile(
+      "1:                                        \n"
+      "ldrb        %w2, [%0]                     \n"
+      "ldrb        %w3, [%0, #1]                 \n"
+      "ldrb        %w4, [%0, #2]                 \n"
+      "ldrb        %w5, [%0, #3]                 \n"
+      "subs        %w1, %w1, #1                  \n"
+      "ldr         %w2, [%6, %w2, uxtw #2]       \n"
+      "ldr         %w3, [%6, %w3, uxtw #2]       \n"
+      "ldr         %w4, [%6, %w4, uxtw #2]       \n"
+      "ldr         %w5, [%6, %w5, uxtw #2]       \n"
+      "bfi         %w3, %w2, #0, #8              \n"
+      "lsr         %w4, %w4, #16                 \n"
+      "lsr         %w5, %w5, #24                 \n"
+      "strh        %w3, [%0]                     \n"
+      "strb        %w4, [%0, #2]                 \n"
+      "strb        %w5, [%0, #3]                 \n"
+      "add         %0, %0, #4                    \n"
+      "b.gt        1b                            \n"
+      : "+r"(dst_argb),  // %0
+        "+r"(width),     // %1
+        "=&r"(b),        // %2
+        "=&r"(g),        // %3
+        "=&r"(r),        // %4
+        "=&r"(a)         // %5
+      : "r"(table_argb)  // %6
+      : "memory", "cc");
+}
+
+void RGBColorTableRow_NEON(uint8_t* dst_argb,
+                           const uint8_t* table_argb,
+                           int width) {
+  uint64_t b, g, r;
+  asm volatile(
+      "1:                                        \n"
+      "ldrb        %w2, [%0]                     \n"
+      "ldrb        %w3, [%0, #1]                 \n"
+      "ldrb        %w4, [%0, #2]                 \n"
+      "subs        %w1, %w1, #1                  \n"
+      "ldr         %w2, [%5, %w2, uxtw #2]       \n"
+      "ldr         %w3, [%5, %w3, uxtw #2]       \n"
+      "ldr         %w4, [%5, %w4, uxtw #2]       \n"
+      "bfi         %w3, %w2, #0, #8              \n"
+      "lsr         %w4, %w4, #16                 \n"
+      "strh        %w3, [%0]                     \n"
+      "strb        %w4, [%0, #2]                 \n"
+      "add         %0, %0, #4                    \n"
+      "b.gt        1b                            \n"
+      : "+r"(dst_argb),  // %0
+        "+r"(width),     // %1
+        "=&r"(b),        // %2
+        "=&r"(g),        // %3
+        "=&r"(r)         // %4
+      : "r"(table_argb)  // %5
+      : "memory", "cc");
+}
+
+static const uvec8 kLumaTblIdx = {1, 1, 1, 1, 3, 3, 3, 3,
+                                  5, 5, 5, 5, 7, 7, 7, 7};
+
+void ARGBLumaColorTableRow_NEON(const uint8_t* src_argb,
+                                uint8_t* dst_argb,
+                                int width,
+                                const uint8_t* luma,
+                                uint32_t lumacoeff) {
+  uint64_t p0, p1, t0, t1;
+  asm volatile(
+      "dup         v4.4s, %w8                    \n"  // broadcast 4 byte coeffs
+      "ldr         q5, [%9]                      \n"
+      "movi        v6.4s, #0xff, lsl #24         \n"
+      "1:                                        \n"
+      "ldr         q0, [%0], #16                 \n"  // load 4 ARGB pixels
+      "subs        %w2, %w2, #4                  \n"  // 4 pixels per loop
+      "umull       v1.8h, v0.8b, v4.8b           \n"
+      "umull2      v2.8h, v0.16b, v4.16b         \n"
+      "addp        v1.8h, v1.8h, v2.8h           \n"
+      "addp        v1.8h, v1.8h, v1.8h           \n"
+      "bic         v1.8h, #0x80, lsl #8          \n"  // clear bit 15
+      "tbl         v1.16b, {v1.16b}, v5.16b      \n"
+      "zip2        v2.16b, v0.16b, v1.16b        \n"  // offsets pixels 2, 3
+      "zip1        v1.16b, v0.16b, v1.16b        \n"  // offsets pixels 0, 1
+      "umov        %3, v1.d[0]                   \n"
+      "umov        %4, v1.d[1]                   \n"
+      "add         %5, %7, %w3, uxth             \n"
+      "ubfx        %6, %3, #16, #16              \n"
+      "ldr         b3, [%5]                      \n"
+      "add         %6, %7, %6                    \n"
+      "ubfx        %5, %3, #32, #16              \n"
+      "ld1         {v3.b}[1], [%6]               \n"
+      "add         %5, %7, %5                    \n"
+      "add         %6, %7, %w4, uxth             \n"
+      "ld1         {v3.b}[2], [%5]               \n"
+      "ld1         {v3.b}[4], [%6]               \n"
+      "ubfx        %5, %4, #16, #16              \n"
+      "ubfx        %6, %4, #32, #16              \n"
+      "add         %5, %7, %5                    \n"
+      "add         %6, %7, %6                    \n"
+      "ld1         {v3.b}[5], [%5]               \n"
+      "ld1         {v3.b}[6], [%6]               \n"
+      "umov        %3, v2.d[0]                   \n"
+      "umov        %4, v2.d[1]                   \n"
+      "add         %5, %7, %w3, uxth             \n"
+      "ubfx        %6, %3, #16, #16              \n"
+      "ld1         {v3.b}[8], [%5]               \n"
+      "add         %6, %7, %6                    \n"
+      "ubfx        %5, %3, #32, #16              \n"
+      "ld1         {v3.b}[9], [%6]               \n"
+      "add         %5, %7, %5                    \n"
+      "add         %6, %7, %w4, uxth             \n"
+      "ld1         {v3.b}[10], [%5]              \n"
+      "ld1         {v3.b}[12], [%6]              \n"
+      "ubfx        %5, %4, #16, #16              \n"
+      "ubfx        %6, %4, #32, #16              \n"
+      "add         %5, %7, %5                    \n"
+      "add         %6, %7, %6                    \n"
+      "ld1         {v3.b}[13], [%5]              \n"
+      "ld1         {v3.b}[14], [%6]              \n"
+      "bit         v3.16b, v0.16b, v6.16b        \n"
+      "str         q3, [%1], #16                 \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_argb),    // %0
+        "+r"(dst_argb),    // %1
+        "+r"(width),       // %2
+        "=&r"(p0),         // %3
+        "=&r"(p1),         // %4
+        "=&r"(t0),         // %5
+        "=&r"(t1)          // %6
+      : "r"(luma),         // %7
+        "r"(lumacoeff),    // %8
+        "r"(&kLumaTblIdx)  // %9
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6");
+}
+
+void ARGBAffineRow_NEON(const uint8_t* src_argb,
+                        int src_argb_stride,
+                        uint8_t* dst_argb,
+                        const float* uv_dudv,
+                        int width) {
+  int64_t off0, off1;
+  asm volatile(
+      "ld1r        {v2.2d}, [%2], #8             \n"  // [u, v, u, v]
+      "ld1r        {v6.2d}, [%2]                 \n"  // [du, dv, du, dv]
+      "dup         v5.2s, %w5                    \n"  // [stride, stride]
+      "movi        v4.2s, #4                     \n"  // [4, 4]
+      "zip1        v5.4s, v4.4s, v5.4s           \n"  // [4, stride, 4, stride]
+      "subs        %w1, %w1, #4                  \n"
+      "b.lt        2f                            \n"
+      "fadd        v4.4s, v6.4s, v6.4s           \n"  // 2 * [du, dv, du, dv]
+      "fadd        v3.2s, v2.2s, v6.2s           \n"  // [u+du, v+dv]
+      "ins         v2.d[1], v3.d[0]              \n"  // [u, v, u+du, v+dv]
+      "fadd        v3.4s, v2.4s, v4.4s           \n"  // [u+2du, v+2dv, u+3du,
+                                                      // v+3dv]
+      "fadd        v4.4s, v4.4s, v4.4s           \n"  // 4 * [du, dv, du, dv]
+      "1:                                        \n"
+      "fcvtzs      v0.4s, v2.4s                  \n"
+      "fcvtzs      v1.4s, v3.4s                  \n"
+      "fadd        v2.4s, v2.4s, v4.4s           \n"
+      "fadd        v3.4s, v3.4s, v4.4s           \n"
+      "mul         v0.4s, v0.4s, v5.4s           \n"
+      "mul         v1.4s, v1.4s, v5.4s           \n"
+      "addp        v7.4s, v0.4s, v1.4s           \n"
+      "smov        %3, v7.s[0]                   \n"
+      "smov        %4, v7.s[1]                   \n"
+      "ldr         %w3, [%6, %3]                 \n"
+      "ldr         %w4, [%6, %4]                 \n"
+      "stp         %w3, %w4, [%0], #8            \n"
+      "smov        %3, v7.s[2]                   \n"
+      "smov        %4, v7.s[3]                   \n"
+      "ldr         %w3, [%6, %3]                 \n"
+      "ldr         %w4, [%6, %4]                 \n"
+      "stp         %w3, %w4, [%0], #8            \n"
+      "subs        %w1, %w1, #4                  \n"
+      "b.ge        1b                            \n"
+      "2:                                        \n"
+      "adds        %w1, %w1, #4                  \n"
+      "b.eq        4f                            \n"
+      "3:                                        \n"
+      "fcvtzs      v0.2s, v2.2s                  \n"
+      "fadd        v2.2s, v2.2s, v6.2s           \n"
+      "mul         v0.2s, v0.2s, v5.2s           \n"
+      "addp        v0.2s, v0.2s, v0.2s           \n"
+      "smov        %3, v0.s[0]                   \n"
+      "ldr         %w3, [%6, %3]                 \n"
+      "str         %w3, [%0], #4                 \n"
+      "subs        %w1, %w1, #1                  \n"
+      "b.gt        3b                            \n"
+      "4:                                        \n"
+      : "+r"(dst_argb),        // %0
+        "+r"(width),           // %1
+        "+r"(uv_dudv),         // %2
+        "=&r"(off0),           // %3
+        "=&r"(off1)            // %4
+      : "r"(src_argb_stride),  // %5
+        "r"(src_argb)          // %6
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus
