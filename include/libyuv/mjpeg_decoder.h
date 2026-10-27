@@ -168,8 +168,6 @@ class LIBYUV_API MJpegDecoder {
   void SetScanlinePointers(uint8_t** data);
   bool DecodeImcuRow();
 
-  int GetComponentScanlinePadding(int component);
-
   // A buffer holding the input data for a frame.
   Buffer buf_;
   BufferVector buf_vec_;

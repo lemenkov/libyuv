@@ -390,10 +390,6 @@ int Scale(const uint8_t* src_y,
           int dst_width,
           int dst_height,
           int interpolate);
-
-// For testing, allow disabling of specialized scalers.
-LIBYUV_API
-void SetUseReferenceImpl(int use);
 #endif  // __cplusplus
 
 #ifdef __cplusplus
