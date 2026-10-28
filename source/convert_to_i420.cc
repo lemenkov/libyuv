@@ -26,16 +26,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-static void HalfRow_C(const uint8_t* src_uv,
-                      ptrdiff_t src_uv_stride,
-                      uint8_t* dst_uv,
-                      int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
-  }
-}
-
 static int NV16ToI420(const uint8_t* src_y,
                       int src_stride_y,
                       const uint8_t* src_uv,
@@ -227,6 +217,8 @@ static int NV24ToI420(const uint8_t* src_y,
   int x, y;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
+  void (*HalfRow)(const uint8_t* src_uv, ptrdiff_t src_uv_stride,
+                  uint8_t* dst_uv, int width) = HalfRow_C;
   if ((!src_y && dst_y) || !src_uv || !dst_u || !dst_v || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
@@ -242,6 +234,14 @@ static int NV24ToI420(const uint8_t* src_y,
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
+#if defined(HAS_HALFROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    HalfRow = HalfRow_Any_AVX2;
+    if (IS_ALIGNED(width * 2, 32)) {
+      HalfRow = HalfRow_AVX2;
+    }
+  }
+#endif
 
   align_buffer_64(row_uv, width * 2);
   if (!row_uv) {
@@ -249,7 +249,7 @@ static int NV24ToI420(const uint8_t* src_y,
   }
   for (y = 0; y < halfheight; ++y) {
     if (y * 2 + 1 < height) {
-      HalfRow_C(src_uv, src_stride_uv, row_uv, width * 2);
+      HalfRow(src_uv, src_stride_uv, row_uv, width * 2);
     } else {
       memcpy(row_uv, src_uv, (size_t)width * 2);
     }

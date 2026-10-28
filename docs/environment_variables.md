@@ -33,6 +33,8 @@ By default the cpu is detected and the most advanced form of SIMD is used.  But 
     LIBYUV_DISABLE_AVXVNNI
     LIBYUV_DISABLE_AVXVNNIINT8
     LIBYUV_DISABLE_AMXINT8
+    LIBYUV_DISABLE_AVX512BMM
+    LIBYUV_DISABLE_AMXTF32
 
 ## Arm CPUs
 

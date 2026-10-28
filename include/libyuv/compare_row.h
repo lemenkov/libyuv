@@ -21,14 +21,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// The following are available for 32 bit x86, Visual C 64 bit, and for clang
-// with LIBYUV_ENABLE_ROWWIN, which is also enabled for MemorySanitizer. These
-// are intrinsics in compare_win.cc.
-#if !defined(LIBYUV_DISABLE_X86) &&                  \
-    (defined(__i386__) || defined(_M_IX86) ||        \
-     ((defined(__x86_64__) || defined(_M_X64)) &&    \
-      ((defined(_MSC_VER) && !defined(__clang__)) || \
-       defined(LIBYUV_ENABLE_ROWWIN))))
+// The following are available for Visual C 32/64 bit, and for clang with
+// LIBYUV_ENABLE_ROWWIN, which is also enabled for MemorySanitizer. These are
+// intrinsics in compare_win.cc.
+#if !defined(LIBYUV_DISABLE_X86) &&                                 \
+    (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
+     defined(_M_IX86)) &&                                           \
+    ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
+     defined(LIBYUV_ENABLE_ROWWIN))
 #define HAS_HAMMINGDISTANCE_SSE42
 #define HAS_SUMSQUAREERROR_SSE2
 #define HAS_HASHDJB2_SSE41
@@ -39,19 +39,26 @@ extern "C" {
 #define HAS_HASHDJB2_AVX2
 #define HAS_SSIM4X4ROW_AVX2
 #define HAS_SSIMWINDOWROW_AVX2
+#define HAS_ARGBDETECTROW_AVX2
+#if defined(__x86_64__) || defined(_M_X64)
 #define HAS_HAMMINGDISTANCE_AVX512BW
 #define HAS_SUMSQUAREERROR_AVX512BW
+#define HAS_SUMSQUAREERROR_AVX512VNNI
 #define HAS_HASHDJB2_AVX512BW
 #define HAS_SSIM4X4ROW_AVX512BW
 #define HAS_SSIMWINDOWROW_AVX512BW
 #endif
+#endif
 
-// The following are available for 64 bit GCC and clang, as inline assembly in
-// compare_gcc.cc:
-#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) && \
-    !defined(LIBYUV_ENABLE_ROWWIN) &&                      \
+// The following are available for 32/64 bit GCC and clang, as inline assembly
+// in compare_gcc.cc:
+#if !defined(LIBYUV_DISABLE_X86) &&               \
+    (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) &&             \
     (!defined(_MSC_VER) || defined(__clang__))
+#if defined(__x86_64__)
 #define HAS_HAMMINGDISTANCE_SSE42
+#endif
 #define HAS_HAMMINGDISTANCE_SSSE3
 #define HAS_SUMSQUAREERROR_SSE2
 #define HAS_HASHDJB2_SSE41
@@ -63,10 +70,12 @@ extern "C" {
 #define HAS_HASHDJB2_AVX2
 #define HAS_SSIM4X4ROW_AVX2
 #define HAS_SSIMWINDOWROW_AVX2
+#define HAS_ARGBDETECTROW_AVX2
 #endif
-#if defined(CLANG_HAS_AVX512)
+#if defined(__x86_64__) && defined(CLANG_HAS_AVX512)
 #define HAS_HAMMINGDISTANCE_AVX512BW
 #define HAS_SUMSQUAREERROR_AVX512BW
+#define HAS_SUMSQUAREERROR_AVX512VNNI
 #define HAS_HASHDJB2_AVX512BW
 #define HAS_SSIM4X4ROW_AVX512BW
 #define HAS_SSIMWINDOWROW_AVX512BW
@@ -177,6 +186,9 @@ uint32_t SumSquareError_AVX2(const uint8_t* src_a,
 uint32_t SumSquareError_AVX512BW(const uint8_t* src_a,
                                  const uint8_t* src_b,
                                  int count);
+uint32_t SumSquareError_AVX512VNNI(const uint8_t* src_a,
+                                   const uint8_t* src_b,
+                                   int count);
 uint32_t SumSquareError_NEON(const uint8_t* src_a,
                              const uint8_t* src_b,
                              int count);
@@ -297,6 +309,9 @@ float SsimWindowRow_SME(const uint32_t* row0,
 float SsimWindowRow_RVV(const uint32_t* row0,
                         const uint32_t* row1,
                         int num_windows);
+
+uint32_t ARGBDetectRow_C(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_AVX2(const uint8_t* argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

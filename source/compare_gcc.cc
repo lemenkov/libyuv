@@ -10,6 +10,7 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -23,13 +24,15 @@ extern "C" {
 // asm statement, and other OS ABIs (e.g. Windows) differ in which registers
 // are callee-saved. List "memory" first, then "cc", then registers.
 
-// This module is for GCC and clang x64. 32 bit x86 uses compare_win.cc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) && \
-    !defined(LIBYUV_ENABLE_ROWWIN) &&                      \
+// This module is for GCC and clang x86 and x64.
+#if !defined(LIBYUV_DISABLE_X86) &&               \
+    (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) &&             \
     (!defined(_MSC_VER) || defined(__clang__))
 
 // "memory" clobber prevents the reads from being removed
 
+#ifdef HAS_HAMMINGDISTANCE_SSE42
 uint32_t HammingDistance_SSE42(const uint8_t* src_a,
                                const uint8_t* src_b,
                                int count) {
@@ -77,11 +80,16 @@ uint32_t HammingDistance_SSE42(const uint8_t* src_a,
 
   return (uint32_t)(diff);
 }
+#endif  // HAS_HAMMINGDISTANCE_SSE42
 
+#if defined(HAS_HAMMINGDISTANCE_SSSE3) || defined(HAS_HAMMINGDISTANCE_AVX2) || \
+    defined(HAS_HAMMINGDISTANCE_AVX512BW)
 static const vec8 kNibbleMask = {15, 15, 15, 15, 15, 15, 15, 15,
                                  15, 15, 15, 15, 15, 15, 15, 15};
 static const vec8 kBitCount = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+#endif
 
+#ifdef HAS_HAMMINGDISTANCE_SSSE3
 uint32_t HammingDistance_SSSE3(const uint8_t* src_a,
                                const uint8_t* src_b,
                                int count) {
@@ -141,6 +149,7 @@ uint32_t HammingDistance_SSSE3(const uint8_t* src_a,
 
   return diff;
 }
+#endif  // HAS_HAMMINGDISTANCE_SSSE3
 
 #ifdef HAS_HAMMINGDISTANCE_AVX2
 uint32_t HammingDistance_AVX2(const uint8_t* src_a,
@@ -507,10 +516,77 @@ uint32_t SumSquareError_AVX512BW(const uint8_t* src_a,
       : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [count] "+r"(count),
         [sse] "=r"(sse)
       : [mask] "m"(mask)
-      : "cc", "memory", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
+      : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
   return sse;
 }
 #endif  // HAS_SUMSQUAREERROR_AVX512BW
+
+#ifdef HAS_SUMSQUAREERROR_AVX512VNNI
+// Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
+// loads that read zeros, so any count is supported.
+uint32_t SumSquareError_AVX512VNNI(const uint8_t* src_a,
+                                   const uint8_t* src_b,
+                                   int count) {
+  uint32_t sse;
+  const uint64_t mask = LowBytesMask64(count & 63);
+  asm volatile(
+      "vpxord      %%zmm0,%%zmm0,%%zmm0          \n"
+      "vpxord      %%zmm4,%%zmm4,%%zmm4          \n"
+      "vpxord      %%zmm5,%%zmm5,%%zmm5          \n"
+      "kmovq       %[mask],%%k1                  \n"
+      "sub         %[src_a],%[src_b]             \n"
+      "sub         $0x40,%[count]                \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu8    (%[src_a]),%%zmm1             \n"
+      "vmovdqu8    (%[src_a],%[src_b]),%%zmm2    \n"
+      "add         $0x40,%[src_a]                \n"
+      "vpsubusb    %%zmm2,%%zmm1,%%zmm3          \n"  // abs difference trick
+      "vpsubusb    %%zmm1,%%zmm2,%%zmm2          \n"
+      "vporq       %%zmm3,%%zmm2,%%zmm1          \n"
+      "vpunpcklbw  %%zmm5,%%zmm1,%%zmm2          \n"  // u16
+      "vpunpckhbw  %%zmm5,%%zmm1,%%zmm1          \n"
+      "vpdpwssd    %%zmm2,%%zmm2,%%zmm0          \n"  // square + hadd + acc
+      "vpdpwssd    %%zmm1,%%zmm1,%%zmm4          \n"
+      "sub         $0x40,%[count]                \n"
+      "jge         1b                            \n"
+
+      // Remainder: 1 to 63 bytes, masked loads.
+      "2:          \n"
+      "add         $0x40,%[count]                \n"
+      "je          3f                            \n"
+      "vmovdqu8    (%[src_a]),%%zmm1%{%%k1%}%{z%} \n"
+      "vmovdqu8    (%[src_a],%[src_b]),%%zmm2%{%%k1%}%{z%} \n"
+      "vpsubusb    %%zmm2,%%zmm1,%%zmm3          \n"
+      "vpsubusb    %%zmm1,%%zmm2,%%zmm2          \n"
+      "vporq       %%zmm3,%%zmm2,%%zmm1          \n"
+      "vpunpcklbw  %%zmm5,%%zmm1,%%zmm2          \n"
+      "vpunpckhbw  %%zmm5,%%zmm1,%%zmm1          \n"
+      "vpdpwssd    %%zmm2,%%zmm2,%%zmm0          \n"
+      "vpdpwssd    %%zmm1,%%zmm1,%%zmm4          \n"
+
+      // Add 16 dwords.
+      "3:          \n"
+      "vpaddd      %%zmm4,%%zmm0,%%zmm0          \n"
+      "vextracti64x4 $1,%%zmm0,%%ymm1            \n"
+      "vpaddd      %%ymm1,%%ymm0,%%ymm0          \n"
+      "vextracti128 $1,%%ymm0,%%xmm1             \n"
+      "vpaddd      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vpshufd     $0xee,%%xmm0,%%xmm1           \n"
+      "vpaddd      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vpshufd     $0x1,%%xmm0,%%xmm1            \n"
+      "vpaddd      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vmovd       %%xmm0,%[sse]                 \n"
+      "vzeroupper  \n"
+      : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [count] "+r"(count),
+        [sse] "=r"(sse)
+      : [mask] "m"(mask)
+      : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+  return sse;
+}
+#endif  // HAS_SUMSQUAREERROR_AVX512VNNI
 
 #if defined(HAS_HASHDJB2_AVX2) || defined(HAS_HASHDJB2_AVX512BW)
 // HashDjb2 is hash = hash * 33 ^ n + sum(src[i] * 33 ^ (n - 1 - i)).
@@ -812,10 +888,10 @@ void Ssim4x4Row_SSE2(const uint8_t* src_a,
       "movdqu      %%xmm3,0x20(%[dst])           \n"
       "movdqu      %%xmm4,0x30(%[dst])           \n"
       "add         $0x40,%[dst]                  \n"
-      "sub         $0x10,%[width]                \n"
+      "subl        $0x10,%[width]                \n"
       "jg          1b                            \n"
       : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [dst] "+r"(dst),
-        [width] "+r"(width)
+        [width] "+rm"(width)
       : [stride_a] "r"((ptrdiff_t)stride_a), [stride_b] "r"((ptrdiff_t)stride_b)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
@@ -916,11 +992,11 @@ void Ssim4x4Row_AVX2(const uint8_t* src_a,
       "vmovdqu     %%ymm2,0x40(%[dst])           \n"
       "vmovdqu     %%ymm3,0x60(%[dst])           \n"
       "add         $0x80,%[dst]                  \n"
-      "sub         $0x20,%[width]                \n"
+      "subl        $0x20,%[width]                \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
       : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [dst] "+r"(dst),
-        [width] "+r"(width)
+        [width] "+rm"(width)
       : [stride_a] "r"((ptrdiff_t)stride_a), [stride_b] "r"((ptrdiff_t)stride_b)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
@@ -1094,7 +1170,7 @@ float SsimWindowRow_SSE2(const uint32_t* row0,
   float total;
   asm volatile(
       "sub         %[row0],%[row1]               \n"
-      "xorps       %[total],%[total]             \n"
+      "xorps       %%xmm0,%%xmm0                 \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -1151,19 +1227,20 @@ float SsimWindowRow_SSE2(const uint32_t* row0,
       "mulps       %%xmm5,%%xmm2                 \n"
       "mulps       %%xmm3,%%xmm1                 \n"
       "divps       %%xmm1,%%xmm2                 \n"
-      "addps       %%xmm2,%[total]               \n"
+      "addps       %%xmm2,%%xmm0                 \n"
       "sub         $0x4,%[num_windows]           \n"
       "jg          1b                            \n"
 
-      "movhlps     %[total],%%xmm1               \n"
-      "addps       %%xmm1,%[total]               \n"
-      "movaps      %[total],%%xmm1               \n"
-      "shufps      $0x1,%[total],%%xmm1          \n"
-      "addss       %%xmm1,%[total]               \n"
+      "movhlps     %%xmm0,%%xmm1                 \n"
+      "addps       %%xmm1,%%xmm0                 \n"
+      "movaps      %%xmm0,%%xmm1                 \n"
+      "shufps      $0x1,%%xmm0,%%xmm1            \n"
+      "addss       %%xmm1,%%xmm0                 \n"
+      "movss       %%xmm0,%[total]               \n"
       : [row0] "+r"(row0), [row1] "+r"(row1), [num_windows] "+r"(num_windows),
-        [total] "=&x"(total)
+        [total] "=m"(total)
       : [c1] "m"(kSsimC1), [c2] "m"(kSsimC2)
-      : "memory", "cc", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
   return total;
 }
 #endif  // HAS_SSIMWINDOWROW_SSE2
@@ -1176,7 +1253,7 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
   float total;
   asm volatile(
       "sub         %[row0],%[row1]               \n"
-      "vxorps      %t[total],%t[total],%t[total] \n"
+      "vxorps      %%ymm0,%%ymm0,%%ymm0          \n"
 
       LABELALIGN
       "1:                                        \n"
@@ -1231,21 +1308,22 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
       "vmulps      %%ymm3,%%ymm1,%%ymm1          \n"
       "vmulps      %%ymm5,%%ymm4,%%ymm4          \n"
       "vdivps      %%ymm4,%%ymm1,%%ymm1          \n"
-      "vaddps      %%ymm1,%t[total],%t[total]    \n"
+      "vaddps      %%ymm1,%%ymm0,%%ymm0          \n"
       "sub         $0x8,%[num_windows]           \n"
       "jg          1b                            \n"
 
-      "vextractf128 $0x1,%t[total],%%xmm1        \n"
-      "vaddps      %%xmm1,%x[total],%x[total]    \n"
-      "vmovhlps    %x[total],%%xmm1,%%xmm1       \n"
-      "vaddps      %%xmm1,%x[total],%x[total]    \n"
-      "vshufps     $0x1,%x[total],%x[total],%%xmm1 \n"
-      "vaddss      %%xmm1,%x[total],%x[total]    \n"
+      "vextractf128 $0x1,%%ymm0,%%xmm1           \n"
+      "vaddps      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vmovhlps    %%xmm0,%%xmm1,%%xmm1          \n"
+      "vaddps      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vshufps     $0x1,%%xmm0,%%xmm0,%%xmm1     \n"
+      "vaddss      %%xmm1,%%xmm0,%%xmm0          \n"
+      "vmovss      %%xmm0,%[total]               \n"
       "vzeroupper                                \n"
       : [row0] "+r"(row0), [row1] "+r"(row1), [num_windows] "+r"(num_windows),
-        [total] "=&x"(total)
+        [total] "=m"(total)
       : [c1] "m"(kSsimC1), [c2] "m"(kSsimC2)
-      : "memory", "cc", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
   return total;
 }
 #endif  // HAS_SSIMWINDOWROW_AVX2
@@ -1370,8 +1448,51 @@ float SsimWindowRow_AVX512BW(const uint32_t* row0,
 #undef SSIM_WINDOW_AVX512BW
 #endif  // HAS_SSIMWINDOWROW_AVX512BW
 
-#endif  // !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) &&
-        // !defined(LIBYUV_ENABLE_ROWWIN)
+#ifdef HAS_ARGBDETECTROW_AVX2
+uint32_t ARGBDetectRow_AVX2(const uint8_t* argb, int width) {
+  uint32_t diff = 0;
+  asm volatile(
+      "vpcmpeqd    %%ymm1,%%ymm1,%%ymm1          \n"
+      "sub         $0x8,%[width]                 \n"
+      "jl          2f                            \n"
+      LABELALIGN
+      "1:                                        \n"
+      "vpcmpeqb    (%[argb]),%%ymm1,%%ymm0       \n"
+      "vpmovmskb   %%ymm0,%[diff]                \n"
+      "not         %[diff]                       \n"
+      "and         $0x99999999,%[diff]           \n"
+      "jnz         99f                           \n"
+      "add         $0x20,%[argb]                 \n"
+      "sub         $0x8,%[width]                 \n"
+      "jge         1b                            \n"
+      "2:                                        \n"
+      "add         $0x8,%[width]                 \n"
+      "jle         99f                           \n"
+      LABELALIGN
+      "3:                                        \n"
+      "vmovd       (%[argb]),%%xmm0              \n"
+      "add         $0x4,%[argb]                  \n"
+      "vpcmpeqb    %%xmm1,%%xmm0,%%xmm0          \n"
+      "vpmovmskb   %%xmm0,%[diff]                \n"
+      "not         %[diff]                       \n"
+      "and         $0x9,%[diff]                  \n"
+      "jnz         99f                           \n"
+      "sub         $0x1,%[width]                 \n"
+      "jg          3b                            \n"
+      "99:                                       \n"
+      "vzeroupper                                \n"
+      : [argb] "+r"(argb), [width] "+r"(width), [diff] "+r"(diff)
+      :
+      : "memory", "cc", "xmm0", "xmm1");
+  if (diff) {
+    return (__builtin_ctz(diff) & 3) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+  }
+  return 0;
+}
+#endif  // HAS_ARGBDETECTROW_AVX2
+
+#endif  // !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) ||
+        // defined(__i386__)) && !defined(LIBYUV_ENABLE_ROWWIN)
 
 #ifdef __cplusplus
 }  // extern "C"

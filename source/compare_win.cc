@@ -10,14 +10,15 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
-// This module is for 32 bit x86 with any compiler, Visual C 64 bit, and for
-// clang with LIBYUV_ENABLE_ROWWIN, which is also enabled for MemorySanitizer.
-#if !defined(LIBYUV_DISABLE_X86) &&                  \
-    (defined(__i386__) || defined(_M_IX86) ||        \
-     ((defined(__x86_64__) || defined(_M_X64)) &&    \
-      ((defined(_MSC_VER) && !defined(__clang__)) || \
-       defined(LIBYUV_ENABLE_ROWWIN))))
+// This module is for Visual C 32/64 bit, and for clang with
+// LIBYUV_ENABLE_ROWWIN, which is also enabled for MemorySanitizer.
+#if !defined(LIBYUV_DISABLE_X86) &&                                 \
+    (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
+     defined(_M_IX86)) &&                                           \
+    ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
+     defined(LIBYUV_ENABLE_ROWWIN))
 
 #include <immintrin.h>  // For SSE2 to AVX512 intrinsics
 #include <string.h>     // For memcpy
@@ -39,12 +40,15 @@ extern "C" {
 #define LIBYUV_TARGET_AVX2 __attribute__((target("avx2")))
 #define LIBYUV_TARGET_AVX512BW \
   __attribute__((target("avx512bw,avx512vl,avx512f")))
+#define LIBYUV_TARGET_AVX512VNNI \
+  __attribute__((target("avx512vnni,avx512bw,avx512vl,avx512f")))
 #else
 #define LIBYUV_TARGET_SSE2
 #define LIBYUV_TARGET_SSE41
 #define LIBYUV_TARGET_SSE42
 #define LIBYUV_TARGET_AVX2
 #define LIBYUV_TARGET_AVX512BW
+#define LIBYUV_TARGET_AVX512VNNI
 #endif  // defined(__clang__) || defined(__GNUC__)
 
 #if defined(HAS_HAMMINGDISTANCE_SSE42)
@@ -244,6 +248,44 @@ uint32_t SumSquareError_AVX512BW(const uint8_t* src_a,
   return (uint32_t)_mm512_reduce_add_epi32(sum);
 }
 #endif  // HAS_SUMSQUAREERROR_AVX512BW
+
+#if defined(HAS_SUMSQUAREERROR_AVX512VNNI)
+// Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
+// loads that read zeros, so any count is supported.
+LIBYUV_TARGET_AVX512VNNI
+uint32_t SumSquareError_AVX512VNNI(const uint8_t* src_a,
+                                   const uint8_t* src_b,
+                                   int count) {
+  const __m512i zero = _mm512_setzero_si512();
+  __m512i sum0 = _mm512_setzero_si512();
+  __m512i sum1 = _mm512_setzero_si512();
+  while (count >= 64) {
+    __m512i a = _mm512_loadu_si512(src_a);
+    __m512i b = _mm512_loadu_si512(src_b);
+    __m512i d =
+        _mm512_or_si512(_mm512_subs_epu8(a, b), _mm512_subs_epu8(b, a));
+    __m512i lo = _mm512_unpacklo_epi8(d, zero);
+    __m512i hi = _mm512_unpackhi_epi8(d, zero);
+    sum0 = _mm512_dpwssd_epi32(sum0, lo, lo);
+    sum1 = _mm512_dpwssd_epi32(sum1, hi, hi);
+    src_a += 64;
+    src_b += 64;
+    count -= 64;
+  }
+  if (count > 0) {
+    const __mmask64 k = LowBytesMask64(count);
+    __m512i a = _mm512_maskz_loadu_epi8(k, src_a);
+    __m512i b = _mm512_maskz_loadu_epi8(k, src_b);
+    __m512i d =
+        _mm512_or_si512(_mm512_subs_epu8(a, b), _mm512_subs_epu8(b, a));
+    __m512i lo = _mm512_unpacklo_epi8(d, zero);
+    __m512i hi = _mm512_unpackhi_epi8(d, zero);
+    sum0 = _mm512_dpwssd_epi32(sum0, lo, lo);
+    sum1 = _mm512_dpwssd_epi32(sum1, hi, hi);
+  }
+  return (uint32_t)_mm512_reduce_add_epi32(_mm512_add_epi32(sum0, sum1));
+}
+#endif  // HAS_SUMSQUAREERROR_AVX512VNNI
 
 #if defined(HAS_HASHDJB2_SSE41)
 // 33 ^ (15 - i) for byte i of 16.
@@ -891,6 +933,39 @@ float SsimWindowRow_AVX512BW(const uint32_t* row0,
   return _mm512_reduce_add_ps(total);
 }
 #endif  // HAS_SSIMWINDOWROW_AVX512BW
+
+#if defined(HAS_ARGBDETECTROW_AVX2)
+LIBYUV_TARGET_AVX2
+uint32_t ARGBDetectRow_AVX2(const uint8_t* argb, int width) {
+  if (width >= 8) {
+    const __m256i mask_rgb = _mm256_set1_epi32(0x00ffff00);
+    const __m256i ones = _mm256_set1_epi8(-1);
+    do {
+      __m256i v =
+          _mm256_or_si256(_mm256_loadu_si256((const __m256i*)argb), mask_rgb);
+      uint32_t diff =
+          ~(uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, ones));
+      if (diff) {
+#if defined(_MSC_VER) && !defined(__clang__)
+        unsigned long bit;  // NOLINT(runtime/int)
+        _BitScanForward(&bit, diff);
+#else
+        int bit = __builtin_ctz(diff);
+#endif
+        _mm256_zeroupper();
+        return (bit & 3) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+      }
+      argb += 32;
+      width -= 8;
+    } while (width >= 8);
+    _mm256_zeroupper();
+  }
+  if (width > 0) {
+    return ARGBDetectRow_C(argb, width);
+  }
+  return 0;
+}
+#endif  // HAS_ARGBDETECTROW_AVX2
 
 #ifdef __cplusplus
 }  // extern "C"

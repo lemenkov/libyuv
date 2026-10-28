@@ -34,8 +34,8 @@ TANY(TransposeWx8_Any_NEON, TransposeWx8_NEON, TransposeWx8_C, 7)
 #ifdef HAS_TRANSPOSEWX16_NEON
 TANY(TransposeWx16_Any_NEON, TransposeWx16_NEON, TransposeWx16_C, 15)
 #endif
-#ifdef HAS_TRANSPOSEWX8_SSSE3
-TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 15)
+#ifdef HAS_TRANSPOSEWX8_AVX2
+TANY(TransposeWx8_Any_AVX2, TransposeWx8_AVX2, TransposeWx8_C, 15)
 #endif
 #ifdef HAS_TRANSPOSEWX16_AVX2
 TANY(TransposeWx16_Any_AVX2, TransposeWx16_AVX2, TransposeWx16_C, 15)
@@ -71,8 +71,8 @@ TANY(TransposeWx16_Any_WASMSIMD, TransposeWx16_WASMSIMD, TransposeWx16_C, 15)
 #ifdef HAS_TRANSPOSEUVWX8_NEON
 TUVANY(TransposeUVWx8_Any_NEON, TransposeUVWx8_NEON, TransposeUVWx8_C, 7)
 #endif
-#ifdef HAS_TRANSPOSEUVWX8_SSE2
-TUVANY(TransposeUVWx8_Any_SSE2, TransposeUVWx8_SSE2, TransposeUVWx8_C, 7)
+#ifdef HAS_TRANSPOSEUVWX8_AVX2
+TUVANY(TransposeUVWx8_Any_AVX2, TransposeUVWx8_AVX2, TransposeUVWx8_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEUVWX16_AVX2
 TUVANY(TransposeUVWx16_Any_AVX2, TransposeUVWx16_AVX2, TransposeUVWx16_C, 7)
@@ -111,8 +111,8 @@ TUVANY(TransposeUVWx16_Any_WASMSIMD,
     }                                                            \
   }
 
-#ifdef HAS_TRANSPOSEWX4_32_SSE2
-TANY32(TransposeWx4_32_Any_SSE2, TransposeWx4_32_SSE2, TransposeWxH_32_C, 3)
+#ifdef HAS_TRANSPOSEWX4_32_AVX2
+TANY32(TransposeWx4_32_Any_AVX2, TransposeWx4_32_AVX2, TransposeWxH_32_C, 3)
 #endif
 #ifdef HAS_TRANSPOSEWX4_32_LSX
 TANY32(TransposeWx4_32_Any_LSX, TransposeWx4_32_LSX, TransposeWxH_32_C, 3)
@@ -155,12 +155,19 @@ TANY32_SRC(TransposeWx8_32_Any_AVX2, TransposeWx8_32_AVX2, 3, 8)
       TPOS_SIMD(src, src_stride, dst, dst_stride, n);                          \
     }                                                                          \
     ptrdiff_t np = n;                                                          \
-    TransposeWxH_16_C(src + np, src_stride, dst + np * dst_stride, dst_stride, \
-                      r, HEIGHT);                                              \
+    TransposeWx8_16_C(src + np, src_stride, dst + np * dst_stride, dst_stride, \
+                      r);                                                      \
+    if ((HEIGHT) == 16) {                                                      \
+      TransposeWx8_16_C(src + np + 8 * src_stride, src_stride,                 \
+                        dst + np * dst_stride + 8, dst_stride, r);             \
+    }                                                                          \
   }
 
 #ifdef HAS_TRANSPOSEWX8_16_NEON
 TANY16(TransposeWx8_16_Any_NEON, TransposeWx8_16_NEON, 7, 8)
+#endif
+#ifdef HAS_TRANSPOSEWX8_16_AVX2
+TANY16(TransposeWx8_16_Any_AVX2, TransposeWx8_16_AVX2, 7, 8)
 #endif
 #ifdef HAS_TRANSPOSEWX16_16_AVX2
 TANY16(TransposeWx16_16_Any_AVX2, TransposeWx16_16_AVX2, 7, 16)

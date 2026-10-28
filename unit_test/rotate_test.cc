@@ -14,6 +14,11 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/rotate.h"
 
+#if !defined(LIBYUV_USING_SHARED_LIBRARY) && !defined(COMPONENT_BUILD) && \
+    !defined(ENABLE_ROW_TESTS)
+#define ENABLE_ROW_TESTS
+#endif
+
 #ifdef ENABLE_ROW_TESTS
 #include "libyuv/rotate_row.h"
 #endif
@@ -892,9 +897,9 @@ TEST_F(LibYUVRotateTest, TransposeWx4_32_Test) {
       TransposeWx4_32_NEON((const uint8_t*)src_pixels, height * 4,
                            (uint8_t*)dst_pixels_opt, width * 4, width);
     } else
-#elif defined(HAS_TRANSPOSEWX4_32_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2)) {
-      TransposeWx4_32_SSE2((const uint8_t*)src_pixels, height * 4,
+#elif defined(HAS_TRANSPOSEWX4_32_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      TransposeWx4_32_AVX2((const uint8_t*)src_pixels, height * 4,
                            (uint8_t*)dst_pixels_opt, width * 4, width);
     } else
 #endif
@@ -933,9 +938,9 @@ TEST_F(LibYUVRotateTest, TransposeWx4_32_Opt) {
       TransposeWx4_32_NEON((const uint8_t*)src_pixels, height * 4,
                            (uint8_t*)dst_pixels_opt, width * 4, width);
     } else
-#elif defined(HAS_TRANSPOSEWX4_32_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2)) {
-      TransposeWx4_32_SSE2((const uint8_t*)src_pixels, height * 4,
+#elif defined(HAS_TRANSPOSEWX4_32_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      TransposeWx4_32_AVX2((const uint8_t*)src_pixels, height * 4,
                            (uint8_t*)dst_pixels_opt, width * 4, width);
     } else
 #endif
@@ -953,6 +958,97 @@ TEST_F(LibYUVRotateTest, TransposeWx4_32_Opt) {
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
 }
+
+TEST_F(LibYUVRotateTest, TransposeWx4_32_Any) {
+  for (int width : {4, 8, 12, 16, 20, 28, 36}) {
+    const int height = 4;
+    align_buffer_page_end(src_pixels, height * width * 4);
+    align_buffer_page_end(dst_pixels_c, width * height * 4);
+    align_buffer_page_end(dst_pixels_opt, width * height * 4);
+
+    MemRandomize(src_pixels, height * width * 4);
+    memset(dst_pixels_c, 1, width * height * 4);
+    memset(dst_pixels_opt, 2, width * height * 4);
+
+    TransposeWx4_32_C(src_pixels, height * 4, dst_pixels_c, width * 4, width);
+#if defined(HAS_TRANSPOSEWX4_32_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      if ((width & 7) == 0) {
+        TransposeWx4_32_AVX2(src_pixels, height * 4, dst_pixels_opt, width * 4,
+                             width);
+      } else {
+        TransposeWx4_32_Any_AVX2(src_pixels, height * 4, dst_pixels_opt,
+                                 width * 4, width);
+      }
+    } else
+#endif
+#if defined(HAS_TRANSPOSEWX4_32_NEON)
+        if (TestCpuFlag(kCpuHasNEON)) {
+      TransposeWx4_32_NEON(src_pixels, height * 4, dst_pixels_opt, width * 4,
+                           width);
+    } else
+#endif
+    {
+      TransposeWx4_32_C(src_pixels, height * 4, dst_pixels_opt, width * 4,
+                        width);
+    }
+
+    ASSERT_EQ(0, memcmp(dst_pixels_c, dst_pixels_opt, width * height * 4))
+        << "width=" << width;
+
+    free_aligned_buffer_page_end(src_pixels);
+    free_aligned_buffer_page_end(dst_pixels_c);
+    free_aligned_buffer_page_end(dst_pixels_opt);
+  }
+}
+
+#if defined(HAS_TRANSPOSEWXH_32_AVX2)
+TEST_F(LibYUVRotateTest, TransposeWxH_32_Test) {
+  if (!TestCpuFlag(kCpuHasAVX2)) {
+    return;
+  }
+  const int kMaxW = 35;
+  const int kMaxH = 25;
+  align_buffer_page_end(src_pixels, kMaxW * kMaxH * 4);
+  align_buffer_page_end(dst_pixels_c, kMaxW * kMaxH * 4);
+  align_buffer_page_end(dst_pixels_opt, kMaxW * kMaxH * 4);
+  MemRandomize(src_pixels, kMaxW * kMaxH * 4);
+
+  for (int h = 1; h <= kMaxH; ++h) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      const int src_stride = w * 4;
+      const int dst_stride = h * 4;
+      const int src_bytes = src_stride * h;
+      const int dst_bytes = dst_stride * w;
+      const uint8_t* src = src_pixels + kMaxW * kMaxH * 4 - src_bytes;
+      uint8_t* dst_c = dst_pixels_c + kMaxW * kMaxH * 4 - dst_bytes;
+      uint8_t* dst_opt = dst_pixels_opt + kMaxW * kMaxH * 4 - dst_bytes;
+
+      memset(dst_c, 1, dst_bytes);
+      memset(dst_opt, 2, dst_bytes);
+      TransposeWxH_32_C(src, src_stride, dst_c, dst_stride, w, h);
+      TransposeWxH_32_AVX2(src, src_stride, dst_opt, dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_bytes)) << w << "x" << h;
+
+      // Also test negative src_stride (90-degree) and negative dst_stride
+      // (270-degree).
+      memset(dst_c, 3, dst_bytes);
+      memset(dst_opt, 4, dst_bytes);
+      TransposeWxH_32_C(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                        dst_c + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride, w,
+                        h);
+      TransposeWxH_32_AVX2(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                           dst_opt + (ptrdiff_t)(w - 1) * dst_stride,
+                           -dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_bytes)) << "neg " << w << "x" << h;
+    }
+  }
+
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(dst_pixels_c);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+}
+#endif  // defined(HAS_TRANSPOSEWXH_32_AVX2)
 
 #endif  // ENABLE_ROW_TESTS
 

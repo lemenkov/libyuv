@@ -18,6 +18,7 @@
      defined(LIBYUV_ENABLE_ROWWIN))
 #include <emmintrin.h>
 #include <immintrin.h>
+#include <string.h>
 #include <tmmintrin.h>
 #if defined(_MSC_VER) && !defined(__clang__)
 #include <intrin.h>
@@ -31,43 +32,9 @@ extern "C" {
 
 // This module is for 32 bit Visual C x86
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && defined(_M_IX86) && \
-    (!defined(__clang__) || defined(LIBYUV_ENABLE_ROWWIN))
+    !defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN)
 
-// Offsets for source bytes 0 to 9
-static const uvec8 kShuf0 = {0,   1,   3,   4,   5,   7,   8,   9,
-                             128, 128, 128, 128, 128, 128, 128, 128};
-
-// Offsets for source bytes 11 to 20 with 8 subtracted = 3 to 12.
-static const uvec8 kShuf1 = {3,   4,   5,   7,   8,   9,   11,  12,
-                             128, 128, 128, 128, 128, 128, 128, 128};
-
-// Offsets for source bytes 21 to 31 with 16 subtracted = 5 to 31.
-static const uvec8 kShuf2 = {5,   7,   8,   9,   11,  12,  13,  15,
-                             128, 128, 128, 128, 128, 128, 128, 128};
-
-// Offsets for source bytes 0 to 10
-static const uvec8 kShuf01 = {0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10};
-
-// Offsets for source bytes 10 to 21 with 8 subtracted = 3 to 13.
-static const uvec8 kShuf11 = {2, 3, 4, 5,  5,  6,  6,  7,
-                              8, 9, 9, 10, 10, 11, 12, 13};
-
-// Offsets for source bytes 21 to 31 with 16 subtracted = 5 to 31.
-static const uvec8 kShuf21 = {5,  6,  6,  7,  8,  9,  9,  10,
-                              10, 11, 12, 13, 13, 14, 14, 15};
-
-// Coefficients for source bytes 0 to 10
-static const uvec8 kMadd01 = {3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2};
-
-// Coefficients for source bytes 10 to 21
-static const uvec8 kMadd11 = {1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1};
-
-// Coefficients for source bytes 21 to 31
-static const uvec8 kMadd21 = {2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3};
-
-// Coefficients for source bytes 21 to 31
-static const vec16 kRound34 = {2, 2, 2, 2, 2, 2, 2, 2};
-
+#ifdef HAS_SCALEROWDOWN2_SSSE3
 // Reads 32 pixels, throws half away and writes 16 pixels.
 __declspec(naked) void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
                                            ptrdiff_t src_stride,
@@ -172,122 +139,9 @@ __declspec(naked) void ScaleRowDown2Box_SSSE3(const uint8_t* src_ptr,
     ret
   }
 }
+#endif  // HAS_SCALEROWDOWN2_SSSE3
 
-#ifdef HAS_SCALEROWDOWN2_AVX2
-// Reads 64 pixels, throws half away and writes 32 pixels.
-__declspec(naked) void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
-                                          ptrdiff_t src_stride,
-                                          uint8_t* dst_ptr,
-                                          int dst_width) {
-  __asm {
-    mov        eax, [esp + 4]  // src_ptr
-    // src_stride ignored
-    mov        edx, [esp + 12]  // dst_ptr
-    mov        ecx, [esp + 16]  // dst_width
-
-  wloop:
-    vmovdqu     ymm0, [eax]
-    vmovdqu     ymm1, [eax + 32]
-    lea         eax,  [eax + 64]
-    vpsrlw      ymm0, ymm0, 8  // isolate odd pixels.
-    vpsrlw      ymm1, ymm1, 8
-    vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8    // unmutate vpackuswb
-    vmovdqu     [edx], ymm0
-    lea         edx, [edx + 32]
-    sub         ecx, 32
-    jg          wloop
-
-    vzeroupper
-    ret
-  }
-}
-
-// Blends 64x1 rectangle to 32x1.
-__declspec(naked) void ScaleRowDown2Linear_AVX2(const uint8_t* src_ptr,
-                                                ptrdiff_t src_stride,
-                                                uint8_t* dst_ptr,
-                                                int dst_width) {
-  __asm {
-    mov         eax, [esp + 4]  // src_ptr
-    // src_stride
-    mov         edx, [esp + 12]  // dst_ptr
-    mov         ecx, [esp + 16]  // dst_width
-
-    vpcmpeqb    ymm4, ymm4, ymm4  // '1' constant, 8b
-    vpsrlw      ymm4, ymm4, 15
-    vpackuswb   ymm4, ymm4, ymm4
-    vpxor       ymm5, ymm5, ymm5  // constant 0
-
-  wloop:
-    vmovdqu     ymm0, [eax]
-    vmovdqu     ymm1, [eax + 32]
-    lea         eax,  [eax + 64]
-    vpmaddubsw  ymm0, ymm0, ymm4  // horizontal add
-    vpmaddubsw  ymm1, ymm1, ymm4
-    vpavgw      ymm0, ymm0, ymm5  // (x + 1) / 2
-    vpavgw      ymm1, ymm1, ymm5
-    vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8    // unmutate vpackuswb
-    vmovdqu     [edx], ymm0
-    lea         edx, [edx + 32]
-    sub         ecx, 32
-    jg          wloop
-
-    vzeroupper
-    ret
-  }
-}
-
-// For rounding, average = (sum + 2) / 4
-// becomes average((sum >> 1), 0)
-// Blends 64x2 rectangle to 32x1.
-__declspec(naked) void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
-                                             ptrdiff_t src_stride,
-                                             uint8_t* dst_ptr,
-                                             int dst_width) {
-  __asm {
-    push        esi
-    mov         eax, [esp + 4 + 4]  // src_ptr
-    mov         esi, [esp + 4 + 8]  // src_stride
-    mov         edx, [esp + 4 + 12]  // dst_ptr
-    mov         ecx, [esp + 4 + 16]  // dst_width
-
-    vpcmpeqb    ymm4, ymm4, ymm4  // '1' constant, 8b
-    vpsrlw      ymm4, ymm4, 15
-    vpackuswb   ymm4, ymm4, ymm4
-    vpxor       ymm5, ymm5, ymm5  // constant 0
-
-  wloop:
-    vmovdqu     ymm0, [eax]
-    vmovdqu     ymm1, [eax + 32]
-    vmovdqu     ymm2, [eax + esi]
-    vmovdqu     ymm3, [eax + esi + 32]
-    lea         eax,  [eax + 64]
-    vpmaddubsw  ymm0, ymm0, ymm4  // horizontal add
-    vpmaddubsw  ymm1, ymm1, ymm4
-    vpmaddubsw  ymm2, ymm2, ymm4
-    vpmaddubsw  ymm3, ymm3, ymm4
-    vpaddw      ymm0, ymm0, ymm2  // vertical add
-    vpaddw      ymm1, ymm1, ymm3
-    vpsrlw      ymm0, ymm0, 1  // (x + 2) / 4 = (x / 2 + 1) / 2
-    vpsrlw      ymm1, ymm1, 1
-    vpavgw      ymm0, ymm0, ymm5  // (x + 1) / 2
-    vpavgw      ymm1, ymm1, ymm5
-    vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8  // unmutate vpackuswb
-    vmovdqu     [edx], ymm0
-    lea         edx, [edx + 32]
-    sub         ecx, 32
-    jg          wloop
-
-    pop         esi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_SCALEROWDOWN2_AVX2
-
+#ifdef HAS_SCALEROWDOWN4_SSSE3
 // Point samples 32 pixels to 8 pixels.
 __declspec(naked) void ScaleRowDown4_SSSE3(const uint8_t* src_ptr,
                                            ptrdiff_t src_stride,
@@ -377,755 +231,9 @@ __declspec(naked) void ScaleRowDown4Box_SSSE3(const uint8_t* src_ptr,
     ret
   }
 }
+#endif  // HAS_SCALEROWDOWN4_SSSE3
 
-#ifdef HAS_SCALEROWDOWN4_AVX2
-// Point samples 64 pixels to 16 pixels.
-__declspec(naked) void ScaleRowDown4_AVX2(const uint8_t* src_ptr,
-                                          ptrdiff_t src_stride,
-                                          uint8_t* dst_ptr,
-                                          int dst_width) {
-  __asm {
-    mov         eax, [esp + 4]  // src_ptr
-    // src_stride ignored
-    mov         edx, [esp + 12]  // dst_ptr
-    mov         ecx, [esp + 16]  // dst_width
-    vpcmpeqb    ymm5, ymm5, ymm5  // generate mask 0x00ff0000
-    vpsrld      ymm5, ymm5, 24
-    vpslld      ymm5, ymm5, 16
-
-  wloop:
-    vmovdqu     ymm0, [eax]
-    vmovdqu     ymm1, [eax + 32]
-    lea         eax,  [eax + 64]
-    vpand       ymm0, ymm0, ymm5
-    vpand       ymm1, ymm1, ymm5
-    vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8  // unmutate vpackuswb
-    vpsrlw      ymm0, ymm0, 8
-    vpackuswb   ymm0, ymm0, ymm0
-    vpermq      ymm0, ymm0, 0xd8    // unmutate vpackuswb
-    vmovdqu     [edx], xmm0
-    lea         edx, [edx + 16]
-    sub         ecx, 16
-    jg          wloop
-
-    vzeroupper
-    ret
-  }
-}
-
-// Blends 64x4 rectangle to 16x1.
-__declspec(naked) void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
-                                             ptrdiff_t src_stride,
-                                             uint8_t* dst_ptr,
-                                             int dst_width) {
-  __asm {
-    push        esi
-    push        edi
-    mov         eax, [esp + 8 + 4]  // src_ptr
-    mov         esi, [esp + 8 + 8]  // src_stride
-    mov         edx, [esp + 8 + 12]  // dst_ptr
-    mov         ecx, [esp + 8 + 16]  // dst_width
-    lea         edi, [esi + esi * 2]  // src_stride * 3
-    vpcmpeqb    ymm4, ymm4, ymm4  // constant 0x0101
-    vpsrlw      ymm4, ymm4, 15
-    vpsllw      ymm5, ymm4, 3  // constant 0x0008
-    vpackuswb   ymm4, ymm4, ymm4
-
-  wloop:
-    vmovdqu     ymm0, [eax]  // average rows
-    vmovdqu     ymm1, [eax + 32]
-    vmovdqu     ymm2, [eax + esi]
-    vmovdqu     ymm3, [eax + esi + 32]
-    vpmaddubsw  ymm0, ymm0, ymm4  // horizontal add
-    vpmaddubsw  ymm1, ymm1, ymm4
-    vpmaddubsw  ymm2, ymm2, ymm4
-    vpmaddubsw  ymm3, ymm3, ymm4
-    vpaddw      ymm0, ymm0, ymm2  // vertical add rows 0, 1
-    vpaddw      ymm1, ymm1, ymm3
-    vmovdqu     ymm2, [eax + esi * 2]
-    vmovdqu     ymm3, [eax + esi * 2 + 32]
-    vpmaddubsw  ymm2, ymm2, ymm4
-    vpmaddubsw  ymm3, ymm3, ymm4
-    vpaddw      ymm0, ymm0, ymm2  // add row 2
-    vpaddw      ymm1, ymm1, ymm3
-    vmovdqu     ymm2, [eax + edi]
-    vmovdqu     ymm3, [eax + edi + 32]
-    lea         eax,  [eax + 64]
-    vpmaddubsw  ymm2, ymm2, ymm4
-    vpmaddubsw  ymm3, ymm3, ymm4
-    vpaddw      ymm0, ymm0, ymm2  // add row 3
-    vpaddw      ymm1, ymm1, ymm3
-    vphaddw     ymm0, ymm0, ymm1  // mutates
-    vpermq      ymm0, ymm0, 0xd8  // unmutate vphaddw
-    vpaddw      ymm0, ymm0, ymm5  // + 8 for round
-    vpsrlw      ymm0, ymm0, 4  // /32 for average of 4 * 4
-    vpackuswb   ymm0, ymm0, ymm0
-    vpermq      ymm0, ymm0, 0xd8  // unmutate vpackuswb
-    vmovdqu     [edx], xmm0
-    lea         edx, [edx + 16]
-    sub         ecx, 16
-    jg          wloop
-
-    pop        edi
-    pop        esi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_SCALEROWDOWN4_AVX2
-
-// Point samples 32 pixels to 24 pixels.
-// Produces three 8 byte values. For each 8 bytes, 16 bytes are read.
-// Then shuffled to do the scaling.
-
-__declspec(naked) void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
-                                            ptrdiff_t src_stride,
-                                            uint8_t* dst_ptr,
-                                            int dst_width) {
-  __asm {
-    mov        eax, [esp + 4]   // src_ptr
-    // src_stride ignored
-    mov        edx, [esp + 12]  // dst_ptr
-    mov        ecx, [esp + 16]  // dst_width
-    movdqa     xmm3, xmmword ptr kShuf0
-    movdqa     xmm4, xmmword ptr kShuf1
-    movdqa     xmm5, xmmword ptr kShuf2
-
-  wloop:
-    movdqu     xmm0, [eax]
-    movdqu     xmm1, [eax + 16]
-    lea        eax,  [eax + 32]
-    movdqa     xmm2, xmm1
-    palignr    xmm1, xmm0, 8
-    pshufb     xmm0, xmm3
-    pshufb     xmm1, xmm4
-    pshufb     xmm2, xmm5
-    movq       qword ptr [edx], xmm0
-    movq       qword ptr [edx + 8], xmm1
-    movq       qword ptr [edx + 16], xmm2
-    lea        edx, [edx + 24]
-    sub        ecx, 24
-    jg         wloop
-
-    ret
-  }
-}
-
-// Blends 32x2 rectangle to 24x1
-// Produces three 8 byte values. For each 8 bytes, 16 bytes are read.
-// Then shuffled to do the scaling.
-
-// Register usage:
-// xmm0 src_row 0
-// xmm1 src_row 1
-// xmm2 shuf 0
-// xmm3 shuf 1
-// xmm4 shuf 2
-// xmm5 madd 0
-// xmm6 madd 1
-// xmm7 kRound34
-
-// Note that movdqa+palign may be better than movdqu.
-__declspec(naked) void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
-                                                  ptrdiff_t src_stride,
-                                                  uint8_t* dst_ptr,
-                                                  int dst_width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]  // src_ptr
-    mov        esi, [esp + 4 + 8]  // src_stride
-    mov        edx, [esp + 4 + 12]  // dst_ptr
-    mov        ecx, [esp + 4 + 16]  // dst_width
-    movdqa     xmm2, xmmword ptr kShuf01
-    movdqa     xmm3, xmmword ptr kShuf11
-    movdqa     xmm4, xmmword ptr kShuf21
-    movdqa     xmm5, xmmword ptr kMadd01
-    movdqa     xmm6, xmmword ptr kMadd11
-    movdqa     xmm7, xmmword ptr kRound34
-
-  wloop:
-    movdqu     xmm0, [eax]  // pixels 0..7
-    movdqu     xmm1, [eax + esi]
-    pavgb      xmm0, xmm1
-    pshufb     xmm0, xmm2
-    pmaddubsw  xmm0, xmm5
-    paddsw     xmm0, xmm7
-    psrlw      xmm0, 2
-    packuswb   xmm0, xmm0
-    movq       qword ptr [edx], xmm0
-    movdqu     xmm0, [eax + 8]  // pixels 8..15
-    movdqu     xmm1, [eax + esi + 8]
-    pavgb      xmm0, xmm1
-    pshufb     xmm0, xmm3
-    pmaddubsw  xmm0, xmm6
-    paddsw     xmm0, xmm7
-    psrlw      xmm0, 2
-    packuswb   xmm0, xmm0
-    movq       qword ptr [edx + 8], xmm0
-    movdqu     xmm0, [eax + 16]  // pixels 16..23
-    movdqu     xmm1, [eax + esi + 16]
-    lea        eax, [eax + 32]
-    pavgb      xmm0, xmm1
-    pshufb     xmm0, xmm4
-    movdqa     xmm1, xmmword ptr kMadd21
-    pmaddubsw  xmm0, xmm1
-    paddsw     xmm0, xmm7
-    psrlw      xmm0, 2
-    packuswb   xmm0, xmm0
-    movq       qword ptr [edx + 16], xmm0
-    lea        edx, [edx + 24]
-    sub        ecx, 24
-    jg         wloop
-
-    pop        esi
-    ret
-  }
-}
-
-// Note that movdqa+palign may be better than movdqu.
-__declspec(naked) void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
-                                                  ptrdiff_t src_stride,
-                                                  uint8_t* dst_ptr,
-                                                  int dst_width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]  // src_ptr
-    mov        esi, [esp + 4 + 8]  // src_stride
-    mov        edx, [esp + 4 + 12]  // dst_ptr
-    mov        ecx, [esp + 4 + 16]  // dst_width
-    movdqa     xmm2, xmmword ptr kShuf01
-    movdqa     xmm3, xmmword ptr kShuf11
-    movdqa     xmm4, xmmword ptr kShuf21
-    movdqa     xmm5, xmmword ptr kMadd01
-    movdqa     xmm6, xmmword ptr kMadd11
-    movdqa     xmm7, xmmword ptr kRound34
-
-  wloop:
-    movdqu     xmm0, [eax]  // pixels 0..7
-    movdqu     xmm1, [eax + esi]
-    pavgb      xmm1, xmm0
-    pavgb      xmm0, xmm1
-    pshufb     xmm0, xmm2
-    pmaddubsw  xmm0, xmm5
-    paddsw     xmm0, xmm7
-    psrlw      xmm0, 2
-    packuswb   xmm0, xmm0
-    movq       qword ptr [edx], xmm0
-    movdqu     xmm0, [eax + 8]  // pixels 8..15
-    movdqu     xmm1, [eax + esi + 8]
-    pavgb      xmm1, xmm0
-    pavgb      xmm0, xmm1
-    pshufb     xmm0, xmm3
-    pmaddubsw  xmm0, xmm6
-    paddsw     xmm0, xmm7
-    psrlw      xmm0, 2
-    packuswb   xmm0, xmm0
-    movq       qword ptr [edx + 8], xmm0
-    movdqu     xmm0, [eax + 16]  // pixels 16..23
-    movdqu     xmm1, [eax + esi + 16]
-    lea        eax, [eax + 32]
-    pavgb      xmm1, xmm0
-    pavgb      xmm0, xmm1
-    pshufb     xmm0, xmm4
-    movdqa     xmm1, xmmword ptr kMadd21
-    pmaddubsw  xmm0, xmm1
-    paddsw     xmm0, xmm7
-    psrlw      xmm0, 2
-    packuswb   xmm0, xmm0
-    movq       qword ptr [edx + 16], xmm0
-    lea        edx, [edx+24]
-    sub        ecx, 24
-    jg         wloop
-
-    pop        esi
-    ret
-  }
-}
-
-static const uvec16 kFadd40 = {0x0040, 0x0040, 0x0040, 0x0040,
-                               0x0040, 0x0040, 0x0040, 0x0040};
-
-// Bilinear column filtering. SSSE3 version.
-__declspec(naked) void ScaleFilterCols_SSSE3(uint8_t* dst_ptr,
-                                             const uint8_t* src_ptr,
-                                             int dst_width,
-                                             int x,
-                                             int dx) {
-  __asm {
-    push       ebx
-    push       esi
-    push       edi
-    mov        edi, [esp + 12 + 4]  // dst_ptr
-    mov        esi, [esp + 12 + 8]  // src_ptr
-    mov        ecx, [esp + 12 + 12]  // dst_width
-    movd       xmm2, [esp + 12 + 16]  // x
-    movd       xmm3, [esp + 12 + 20]  // dx
-    mov        eax, 0x04040000  // shuffle to line up fractions with pixel.
-    movd       xmm5, eax
-    pcmpeqb    xmm6, xmm6  // generate 0x007f for inverting fraction.
-    psrlw      xmm6, 9
-    pcmpeqb    xmm7, xmm7  // generate 0x00ff mask for extracting 'a'
-    psrlw      xmm7, 8
-    pextrw     eax, xmm2, 1  // get x0 integer. preroll
-    sub        ecx, 2
-    jl         xloop29
-
-    movdqa     xmm0, xmm2  // x1 = x0 + dx
-    paddd      xmm0, xmm3
-    punpckldq  xmm2, xmm0  // x0 x1
-    punpckldq  xmm3, xmm3  // dx dx
-    paddd      xmm3, xmm3  // dx * 2, dx * 2
-    pextrw     edx, xmm2, 3  // get x1 integer. preroll
-
-    // 2 Pixel loop.
-  xloop2:
-    movdqa     xmm1, xmm2  // x0, x1 fractions.
-    paddd      xmm2, xmm3  // x += dx
-    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
-    movd       xmm0, ebx
-    psrlw      xmm1, 9  // 7 bit fractions.
-    movzx      ebx, word ptr [esi + edx]  // 2 source x1 pixels
-    movd       xmm4, ebx
-    pshufb     xmm1, xmm5  // 0011
-    punpcklwd  xmm0, xmm4
-    pxor       xmm1, xmm6  // 0..7f and 7f..0
-    movdqa     xmm4, xmm0  // Copy pixels.
-    pmaddubsw  xmm0, xmm1  // a * (127 - f) + b * f
-    pand       xmm4, xmm7  // Extract left pixels 'a'.
-    paddw      xmm0, xmm4  // a * 128 + f * (b - a)
-    pextrw     eax, xmm2, 1  // get x0 integer. next iteration.
-    paddw      xmm0, xmmword ptr kFadd40  // add rounding bias 64.
-    pextrw     edx, xmm2, 3  // get x1 integer. next iteration.
-    psrlw      xmm0, 7  // 8.7 fixed point to low 8 bits.
-    packuswb   xmm0, xmm0  // 8 bits, 2 pixels.
-    movd       ebx, xmm0
-    mov        [edi], bx
-    lea        edi, [edi + 2]
-    sub        ecx, 2  // 2 pixels
-    jge        xloop2
-
- xloop29:
-    add        ecx, 2 - 1
-    jl         xloop99
-
-             // 1 pixel remainder
-    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
-    movd       xmm0, ebx
-    psrlw      xmm2, 9  // 7 bit fractions.
-    pshufb     xmm2, xmm5  // 0011
-    pxor       xmm2, xmm6  // 0..7f and 7f..0
-    movdqa     xmm4, xmm0  // Copy pixels.
-    pmaddubsw  xmm0, xmm2  // a * (127 - f) + b * f
-    pand       xmm4, xmm7  // Extract left pixel 'a'.
-    paddw      xmm0, xmm4  // a * 128 + f * (b - a)
-    paddw      xmm0, xmmword ptr kFadd40  // add rounding bias 64.
-    psrlw      xmm0, 7  // 8.7 fixed point to low 8 bits.
-    packuswb   xmm0, xmm0  // 8 bits
-    movd       ebx, xmm0
-    mov        [edi], bl
-
- xloop99:
-
-    pop        edi
-    pop        esi
-    pop        ebx
-    ret
-  }
-}
-
-// Reads 16 pixels, duplicates them and writes 32 pixels.
-__declspec(naked) void ScaleColsUp2_SSE2(uint8_t* dst_ptr,
-                                         const uint8_t* src_ptr,
-                                         int dst_width,
-                                         int x,
-                                         int dx) {
-  __asm {
-    mov        edx, [esp + 4]  // dst_ptr
-    mov        eax, [esp + 8]  // src_ptr
-    mov        ecx, [esp + 12]  // dst_width
-
-  wloop:
-    movdqu     xmm0, [eax]
-    lea        eax,  [eax + 16]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm0
-    punpckhbw  xmm1, xmm1
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx, [edx + 32]
-    sub        ecx, 32
-    jg         wloop
-
-    ret
-  }
-}
-
-// Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
-__declspec(naked) void ScaleARGBRowDown2_SSE2(const uint8_t* src_argb,
-                                              ptrdiff_t src_stride,
-                                              uint8_t* dst_argb,
-                                              int dst_width) {
-  __asm {
-    mov        eax, [esp + 4]   // src_argb
-    // src_stride ignored
-    mov        edx, [esp + 12]  // dst_argb
-    mov        ecx, [esp + 16]  // dst_width
-
-  wloop:
-    movdqu     xmm0, [eax]
-    movdqu     xmm1, [eax + 16]
-    lea        eax,  [eax + 32]
-    shufps     xmm0, xmm1, 0xdd
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         wloop
-
-    ret
-  }
-}
-
-// Blends 8x1 rectangle to 4x1.
-__declspec(naked) void ScaleARGBRowDown2Linear_SSE2(const uint8_t* src_argb,
-                                                    ptrdiff_t src_stride,
-                                                    uint8_t* dst_argb,
-                                                    int dst_width) {
-  __asm {
-    mov        eax, [esp + 4]  // src_argb
-    // src_stride ignored
-    mov        edx, [esp + 12]  // dst_argb
-    mov        ecx, [esp + 16]  // dst_width
-
-  wloop:
-    movdqu     xmm0, [eax]
-    movdqu     xmm1, [eax + 16]
-    lea        eax,  [eax + 32]
-    movdqa     xmm2, xmm0
-    shufps     xmm0, xmm1, 0x88  // even pixels
-    shufps     xmm2, xmm1, 0xdd    // odd pixels
-    pavgb      xmm0, xmm2
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         wloop
-
-    ret
-  }
-}
-
-// Blends 8x2 rectangle to 4x1.
-__declspec(naked) void ScaleARGBRowDown2Box_SSE2(const uint8_t* src_argb,
-                                                 ptrdiff_t src_stride,
-                                                 uint8_t* dst_argb,
-                                                 int dst_width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]  // src_argb
-    mov        esi, [esp + 4 + 8]  // src_stride
-    mov        edx, [esp + 4 + 12]  // dst_argb
-    mov        ecx, [esp + 4 + 16]  // dst_width
-
-  wloop:
-    movdqu     xmm0, [eax]
-    movdqu     xmm1, [eax + 16]
-    movdqu     xmm2, [eax + esi]
-    movdqu     xmm3, [eax + esi + 16]
-    lea        eax,  [eax + 32]
-    pavgb      xmm0, xmm2  // average rows
-    pavgb      xmm1, xmm3
-    movdqa     xmm2, xmm0  // average columns (8 to 4 pixels)
-    shufps     xmm0, xmm1, 0x88  // even pixels
-    shufps     xmm2, xmm1, 0xdd  // odd pixels
-    pavgb      xmm0, xmm2
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         wloop
-
-    pop        esi
-    ret
-  }
-}
-
-// Reads 4 pixels at a time.
-__declspec(naked) void ScaleARGBRowDownEven_SSE2(const uint8_t* src_argb,
-                                                 ptrdiff_t src_stride,
-                                                 int src_stepx,
-                                                 uint8_t* dst_argb,
-                                                 int dst_width) {
-  __asm {
-    push       ebx
-    push       edi
-    mov        eax, [esp + 8 + 4]   // src_argb
-    // src_stride ignored
-    mov        ebx, [esp + 8 + 12]  // src_stepx
-    mov        edx, [esp + 8 + 16]  // dst_argb
-    mov        ecx, [esp + 8 + 20]  // dst_width
-    lea        ebx, [ebx * 4]
-    lea        edi, [ebx + ebx * 2]
-
-  wloop:
-    movd       xmm0, [eax]
-    movd       xmm1, [eax + ebx]
-    punpckldq  xmm0, xmm1
-    movd       xmm2, [eax + ebx * 2]
-    movd       xmm3, [eax + edi]
-    lea        eax,  [eax + ebx * 4]
-    punpckldq  xmm2, xmm3
-    punpcklqdq xmm0, xmm2
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         wloop
-
-    pop        edi
-    pop        ebx
-    ret
-  }
-}
-
-// Blends four 2x2 to 4x1.
-__declspec(naked) void ScaleARGBRowDownEvenBox_SSE2(const uint8_t* src_argb,
-                                                    ptrdiff_t src_stride,
-                                                    int src_stepx,
-                                                    uint8_t* dst_argb,
-                                                    int dst_width) {
-  __asm {
-    push       ebx
-    push       esi
-    push       edi
-    mov        eax, [esp + 12 + 4]  // src_argb
-    mov        esi, [esp + 12 + 8]  // src_stride
-    mov        ebx, [esp + 12 + 12]  // src_stepx
-    mov        edx, [esp + 12 + 16]  // dst_argb
-    mov        ecx, [esp + 12 + 20]  // dst_width
-    lea        esi, [eax + esi]  // row1 pointer
-    lea        ebx, [ebx * 4]
-    lea        edi, [ebx + ebx * 2]
-
-  wloop:
-    movq       xmm0, qword ptr [eax]  // row0 4 pairs
-    movhps     xmm0, qword ptr [eax + ebx]
-    movq       xmm1, qword ptr [eax + ebx * 2]
-    movhps     xmm1, qword ptr [eax + edi]
-    lea        eax,  [eax + ebx * 4]
-    movq       xmm2, qword ptr [esi]  // row1 4 pairs
-    movhps     xmm2, qword ptr [esi + ebx]
-    movq       xmm3, qword ptr [esi + ebx * 2]
-    movhps     xmm3, qword ptr [esi + edi]
-    lea        esi,  [esi + ebx * 4]
-    pavgb      xmm0, xmm2  // average rows
-    pavgb      xmm1, xmm3
-    movdqa     xmm2, xmm0  // average columns (8 to 4 pixels)
-    shufps     xmm0, xmm1, 0x88  // even pixels
-    shufps     xmm2, xmm1, 0xdd  // odd pixels
-    pavgb      xmm0, xmm2
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         wloop
-
-    pop        edi
-    pop        esi
-    pop        ebx
-    ret
-  }
-}
-
-// Column scaling unfiltered. SSE2 version.
-__declspec(naked) void ScaleARGBCols_SSE2(uint8_t* dst_argb,
-                                          const uint8_t* src_argb,
-                                          int dst_width,
-                                          int x,
-                                          int dx) {
-  __asm {
-    push       edi
-    push       esi
-    mov        edi, [esp + 8 + 4]  // dst_argb
-    mov        esi, [esp + 8 + 8]  // src_argb
-    mov        ecx, [esp + 8 + 12]  // dst_width
-    movd       xmm2, [esp + 8 + 16]  // x
-    movd       xmm3, [esp + 8 + 20]  // dx
-
-    pshufd     xmm2, xmm2, 0  // x0 x0 x0 x0
-    pshufd     xmm0, xmm3, 0x11  // dx  0 dx  0
-    paddd      xmm2, xmm0
-    paddd      xmm3, xmm3  // 0, 0, 0,  dx * 2
-    pshufd     xmm0, xmm3, 0x05  // dx * 2, dx * 2, 0, 0
-    paddd      xmm2, xmm0  // x3 x2 x1 x0
-    paddd      xmm3, xmm3  // 0, 0, 0,  dx * 4
-    pshufd     xmm3, xmm3, 0  // dx * 4, dx * 4, dx * 4, dx * 4
-
-    pextrw     eax, xmm2, 1  // get x0 integer.
-    pextrw     edx, xmm2, 3  // get x1 integer.
-
-    cmp        ecx, 0
-    jle        xloop99
-    sub        ecx, 4
-    jl         xloop49
-
-        // 4 Pixel loop.
- xloop4:
-    movd       xmm0, [esi + eax * 4]  // 1 source x0 pixels
-    movd       xmm1, [esi + edx * 4]  // 1 source x1 pixels
-    pextrw     eax, xmm2, 5  // get x2 integer.
-    pextrw     edx, xmm2, 7  // get x3 integer.
-    paddd      xmm2, xmm3  // x += dx
-    punpckldq  xmm0, xmm1  // x0 x1
-
-    movd       xmm1, [esi + eax * 4]  // 1 source x2 pixels
-    movd       xmm4, [esi + edx * 4]  // 1 source x3 pixels
-    pextrw     eax, xmm2, 1  // get x0 integer. next iteration.
-    pextrw     edx, xmm2, 3  // get x1 integer. next iteration.
-    punpckldq  xmm1, xmm4  // x2 x3
-    punpcklqdq xmm0, xmm1  // x0 x1 x2 x3
-    movdqu     [edi], xmm0
-    lea        edi, [edi + 16]
-    sub        ecx, 4  // 4 pixels
-    jge        xloop4
-
- xloop49:
-    test       ecx, 2
-    je         xloop29
-
-         // 2 Pixels.
-    movd       xmm0, [esi + eax * 4]  // 1 source x0 pixels
-    movd       xmm1, [esi + edx * 4]  // 1 source x1 pixels
-    pextrw     eax, xmm2, 5  // get x2 integer.
-    punpckldq  xmm0, xmm1  // x0 x1
-
-    movq       qword ptr [edi], xmm0
-    lea        edi, [edi + 8]
-
- xloop29:
-    test       ecx, 1
-    je         xloop99
-
-         // 1 Pixels.
-    movd       xmm0, [esi + eax * 4]  // 1 source x2 pixels
-    movd       dword ptr [edi], xmm0
- xloop99:
-
-    pop        esi
-    pop        edi
-    ret
-  }
-}
-
-// Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
-// TODO(fbarchard): Port to Neon
-
-// Shuffle table for arranging 2 pixels into pairs for pmaddubsw
-static const uvec8 kShuffleColARGB = {
-    0u, 4u,  1u, 5u,  2u,  6u,  3u,  7u,  // bbggrraa 1st pixel
-    8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  // bbggrraa 2nd pixel
-};
-
-// Shuffle table for duplicating 2 fractions into 8 bytes each
-static const uvec8 kShuffleFractions = {
-    0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
-};
-
-__declspec(naked) void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
-                                                 const uint8_t* src_argb,
-                                                 int dst_width,
-                                                 int x,
-                                                 int dx) {
-  __asm {
-    push       esi
-    push       edi
-    mov        edi, [esp + 8 + 4]  // dst_argb
-    mov        esi, [esp + 8 + 8]  // src_argb
-    mov        ecx, [esp + 8 + 12]  // dst_width
-    movd       xmm2, [esp + 8 + 16]  // x
-    movd       xmm3, [esp + 8 + 20]  // dx
-    movdqa     xmm4, xmmword ptr kShuffleColARGB
-    movdqa     xmm5, xmmword ptr kShuffleFractions
-    pcmpeqb    xmm6, xmm6  // generate 0x007f for inverting fraction.
-    psrlw      xmm6, 9
-    pextrw     eax, xmm2, 1  // get x0 integer. preroll
-    sub        ecx, 2
-    jl         xloop29
-
-    movdqa     xmm0, xmm2  // x1 = x0 + dx
-    paddd      xmm0, xmm3
-    punpckldq  xmm2, xmm0  // x0 x1
-    punpckldq  xmm3, xmm3  // dx dx
-    paddd      xmm3, xmm3  // dx * 2, dx * 2
-    pextrw     edx, xmm2, 3  // get x1 integer. preroll
-
-    // 2 Pixel loop.
-  xloop2:
-    movdqa     xmm1, xmm2  // x0, x1 fractions.
-    paddd      xmm2, xmm3  // x += dx
-    movq       xmm0, qword ptr [esi + eax * 4]  // 2 source x0 pixels
-    psrlw      xmm1, 9  // 7 bit fractions.
-    movhps     xmm0, qword ptr [esi + edx * 4]  // 2 source x1 pixels
-    pshufb     xmm1, xmm5  // 0000000011111111
-    pshufb     xmm0, xmm4  // arrange pixels into pairs
-    pxor       xmm1, xmm6  // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm1  // argb_argb 16 bit, 2 pixels.
-    pextrw     eax, xmm2, 1  // get x0 integer. next iteration.
-    pextrw     edx, xmm2, 3  // get x1 integer. next iteration.
-    psrlw      xmm0, 7  // argb 8.7 fixed point to low 8 bits.
-    packuswb   xmm0, xmm0  // argb_argb 8 bits, 2 pixels.
-    movq       qword ptr [edi], xmm0
-    lea        edi, [edi + 8]
-    sub        ecx, 2  // 2 pixels
-    jge        xloop2
-
- xloop29:
-
-    add        ecx, 2 - 1
-    jl         xloop99
-
-            // 1 pixel remainder
-    psrlw      xmm2, 9  // 7 bit fractions.
-    movq       xmm0, qword ptr [esi + eax * 4]  // 2 source x0 pixels
-    pshufb     xmm2, xmm5  // 00000000
-    pshufb     xmm0, xmm4  // arrange pixels into pairs
-    pxor       xmm2, xmm6  // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm2  // argb 16 bit, 1 pixel.
-    psrlw      xmm0, 7
-    packuswb   xmm0, xmm0  // argb 8 bits, 1 pixel.
-    movd       [edi], xmm0
-
- xloop99:
-
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-// Reads 4 pixels, duplicates them and writes 8 pixels.
-__declspec(naked) void ScaleARGBColsUp2_SSE2(uint8_t* dst_argb,
-                                             const uint8_t* src_argb,
-                                             int dst_width,
-                                             int x,
-                                             int dx) {
-  __asm {
-    mov        edx, [esp + 4]  // dst_argb
-    mov        eax, [esp + 8]  // src_argb
-    mov        ecx, [esp + 12]  // dst_width
-
-  wloop:
-    movdqu     xmm0, [eax]
-    lea        eax,  [eax + 16]
-    movdqa     xmm1, xmm0
-    punpckldq  xmm0, xmm0
-    punpckhdq  xmm1, xmm1
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx, [edx + 32]
-    sub        ecx, 8
-    jg         wloop
-
-    ret
-  }
-}
-
+#ifdef HAS_FIXEDDIV_X86
 // Divide num by div and return as 16.16 fixed point result.
 __declspec(naked) int FixedDiv_X86(int num, int div) {
   __asm {
@@ -1153,7 +261,8 @@ __declspec(naked) int FixedDiv1_X86(int num, int div) {
     ret
   }
 }
-#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#endif  // HAS_FIXEDDIV_X86
+#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && defined(_M_IX86)
 
 // The following are available for Visual C 32/64 bit, and for clang with
 // LIBYUV_ENABLE_ROWWIN:
@@ -1164,145 +273,739 @@ __declspec(naked) int FixedDiv1_X86(int num, int div) {
      defined(LIBYUV_ENABLE_ROWWIN))
 
 #if defined(__clang__) || defined(__GNUC__)
-#define LIBYUV_TARGET_SSSE3 __attribute__((target("ssse3")))
 #define LIBYUV_TARGET_AVX2 __attribute__((target("avx2")))
 #define LIBYUV_TARGET_AVX512BW \
   __attribute__((target("avx512bw,avx512vl,avx512f")))
 #define LIBYUV_TARGET_AVX512VBMI \
   __attribute__((target("avx512vbmi,avx512bw,avx512vl,avx512f")))
 #else
-#define LIBYUV_TARGET_SSSE3
 #define LIBYUV_TARGET_AVX2
 #define LIBYUV_TARGET_AVX512BW
 #define LIBYUV_TARGET_AVX512VBMI
 #endif  // defined(__clang__) || defined(__GNUC__)
 
-#ifdef HAS_SCALEROWDOWN38_SSSE3
+static inline uint16_t LoadU16(const void* p) {
+  uint16_t v;
+  memcpy(&v, p, sizeof(v));
+  return v;
+}
+
+static inline uint32_t LoadU32(const void* p) {
+  uint32_t v;
+  memcpy(&v, p, sizeof(v));
+  return v;
+}
+
+static inline uint64_t LoadU64(const void* p) {
+  uint64_t v;
+  memcpy(&v, p, sizeof(v));
+  return v;
+}
+
+static inline void StoreU32(void* p, uint32_t v) {
+  memcpy(p, &v, sizeof(v));
+}
+
+#if defined(HAS_FIXEDDIV_X86) &&                                      \
+    !(defined(_MSC_VER) && defined(_M_IX86) && !defined(__clang__) && \
+      !defined(LIBYUV_ENABLE_ROWWIN))
+int FixedDiv_X86(int num, int div) {
+  return (int)(((int64_t)num * 65536) / div);
+}
+#endif
+
+#if defined(HAS_FIXEDDIV1_X86) &&                                     \
+    !(defined(_MSC_VER) && defined(_M_IX86) && !defined(__clang__) && \
+      !defined(LIBYUV_ENABLE_ROWWIN))
+int FixedDiv1_X86(int num, int div) {
+  return (int)((((int64_t)num * 65536) - 0x00010001) / (div - 1));
+}
+#endif
+
+#ifdef HAS_SCALEROWDOWN2_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst_ptr,
+                        int dst_width) {
+  (void)src_stride;
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_srli_epi16(
+        _mm256_loadu_si256((const __m256i*)src_ptr), 8);
+    __m256i s1 = _mm256_srli_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)), 8);
+    src_ptr += 64;
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi16(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown2Linear_AVX2(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_ptr,
+                              int dst_width) {
+  (void)src_stride;
+  const __m256i ones = _mm256_set1_epi8(1);
+  const __m256i zero = _mm256_setzero_si256();
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)src_ptr), ones);
+    __m256i s1 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)), ones);
+    src_ptr += 64;
+    s0 = _mm256_avg_epu16(s0, zero);
+    s1 = _mm256_avg_epu16(s1, zero);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi16(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst_ptr,
+                           int dst_width) {
+  const __m256i ones = _mm256_set1_epi8(1);
+  const __m256i zero = _mm256_setzero_si256();
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)src_ptr), ones);
+    __m256i s1 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)), ones);
+    __m256i s2 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride)), ones);
+    __m256i s3 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride + 32)), ones);
+    src_ptr += 64;
+    s0 = _mm256_avg_epu16(_mm256_srli_epi16(_mm256_add_epi16(s0, s2), 1), zero);
+    s1 = _mm256_avg_epu16(_mm256_srli_epi16(_mm256_add_epi16(s1, s3), 1), zero);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi16(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+#endif  // HAS_SCALEROWDOWN2_AVX2
+
+#ifdef HAS_SCALEROWDOWN2_16_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowDown2_16_AVX2(const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint16_t* dst_ptr,
+                           int dst_width) {
+  (void)src_stride;
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_srli_epi32(
+        _mm256_loadu_si256((const __m256i*)src_ptr), 16);
+    __m256i s1 = _mm256_srli_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 16)), 16);
+    src_ptr += 32;
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi32(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown2Linear_16_AVX2(const uint16_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint16_t* dst_ptr,
+                                 int dst_width) {
+  (void)src_stride;
+  const __m256i mask = _mm256_set1_epi32(0x0000ffff);
+  while (dst_width > 0) {
+    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_ptr + 16));
+    src_ptr += 32;
+    __m256i e = _mm256_packus_epi32(_mm256_and_si256(r0, mask),
+                                    _mm256_and_si256(r1, mask));
+    __m256i o = _mm256_packus_epi32(_mm256_srli_epi32(r0, 16),
+                                    _mm256_srli_epi32(r1, 16));
+    __m256i d = _mm256_permute4x64_epi64(_mm256_avg_epu16(e, o), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown2Box_16_AVX2(const uint16_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint16_t* dst_ptr,
+                              int dst_width) {
+  const __m256i mask = _mm256_set1_epi32(0x0000ffff);
+  const __m256i round2 = _mm256_set1_epi32(2);
+  while (dst_width > 0) {
+    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_ptr + 16));
+    __m256i r2 = _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride));
+    __m256i r3 =
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride + 16));
+    src_ptr += 32;
+    __m256i s0 = _mm256_add_epi32(
+        _mm256_add_epi32(_mm256_and_si256(r0, mask), _mm256_srli_epi32(r0, 16)),
+        _mm256_add_epi32(_mm256_and_si256(r2, mask),
+                         _mm256_srli_epi32(r2, 16)));
+    __m256i s1 = _mm256_add_epi32(
+        _mm256_add_epi32(_mm256_and_si256(r1, mask), _mm256_srli_epi32(r1, 16)),
+        _mm256_add_epi32(_mm256_and_si256(r3, mask),
+                         _mm256_srli_epi32(r3, 16)));
+    s0 = _mm256_srli_epi32(_mm256_add_epi32(s0, round2), 2);
+    s1 = _mm256_srli_epi32(_mm256_add_epi32(s1, round2), 2);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi32(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEROWDOWN2_16_AVX2
+
+#ifdef HAS_SCALEROWDOWN2_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void ScaleRowDown2_AVX512BW(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int dst_width) {
+  (void)src_stride;
+  while (dst_width >= 32) {
+    __m512i s =
+        _mm512_srli_epi16(_mm512_loadu_si512((const __m512i*)src_ptr), 8);
+    src_ptr += 64;
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm512_cvtepi16_epi8(s));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+  if (dst_width > 0) {
+    __mmask32 k = (__mmask32)((1ULL << dst_width) - 1);
+    __m512i s = _mm512_srli_epi16(_mm512_maskz_loadu_epi16(k, src_ptr), 8);
+    _mm256_mask_storeu_epi8(dst_ptr, k, _mm512_cvtepi16_epi8(s));
+  }
+}
+
+LIBYUV_TARGET_AVX512BW
+void ScaleRowDown2Linear_AVX512BW(const uint8_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_ptr,
+                                  int dst_width) {
+  (void)src_stride;
+  const __m512i ones = _mm512_set1_epi8(1);
+  const __m512i zero = _mm512_setzero_si512();
+  while (dst_width >= 32) {
+    __m512i s = _mm512_avg_epu16(
+        _mm512_maddubs_epi16(_mm512_loadu_si512((const __m512i*)src_ptr), ones),
+        zero);
+    src_ptr += 64;
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm512_cvtepi16_epi8(s));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+  if (dst_width > 0) {
+    __mmask32 k = (__mmask32)((1ULL << dst_width) - 1);
+    __m512i s = _mm512_avg_epu16(
+        _mm512_maddubs_epi16(_mm512_maskz_loadu_epi16(k, src_ptr), ones),
+        zero);
+    _mm256_mask_storeu_epi8(dst_ptr, k, _mm512_cvtepi16_epi8(s));
+  }
+}
+
+LIBYUV_TARGET_AVX512BW
+void ScaleRowDown2Box_AVX512BW(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  const __m512i ones = _mm512_set1_epi8(1);
+  const __m512i zero = _mm512_setzero_si512();
+  while (dst_width >= 32) {
+    __m512i s0 = _mm512_maddubs_epi16(
+        _mm512_loadu_si512((const __m512i*)src_ptr), ones);
+    __m512i s1 = _mm512_maddubs_epi16(
+        _mm512_loadu_si512((const __m512i*)(src_ptr + src_stride)), ones);
+    src_ptr += 64;
+    __m512i s =
+        _mm512_avg_epu16(_mm512_srli_epi16(_mm512_add_epi16(s0, s1), 1), zero);
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm512_cvtepi16_epi8(s));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+  if (dst_width > 0) {
+    __mmask32 k = (__mmask32)((1ULL << dst_width) - 1);
+    __m512i s0 =
+        _mm512_maddubs_epi16(_mm512_maskz_loadu_epi16(k, src_ptr), ones);
+    __m512i s1 = _mm512_maddubs_epi16(
+        _mm512_maskz_loadu_epi16(k, src_ptr + src_stride), ones);
+    __m512i s =
+        _mm512_avg_epu16(_mm512_srli_epi16(_mm512_add_epi16(s0, s1), 1), zero);
+    _mm256_mask_storeu_epi8(dst_ptr, k, _mm512_cvtepi16_epi8(s));
+  }
+}
+
+LIBYUV_TARGET_AVX512BW
+void ScaleRowDown2Box_Odd_AVX512BW(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width) {
+  dst_width -= 1;
+  if (dst_width > 0) {
+    ScaleRowDown2Box_AVX512BW(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += dst_width * 2;
+    dst_ptr += dst_width;
+  }
+  dst_ptr[0] = (uint8_t)((src_ptr[0] + src_ptr[src_stride] + 1) >> 1);
+}
+#endif  // HAS_SCALEROWDOWN2_AVX512BW
+
+#ifdef HAS_SCALEROWDOWN4_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowDown4_AVX2(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst_ptr,
+                        int dst_width) {
+  (void)src_stride;
+  const __m256i mask = _mm256_set1_epi32(0x00ff0000);
+  while (dst_width > 0) {
+    __m256i s0 =
+        _mm256_and_si256(_mm256_loadu_si256((const __m256i*)src_ptr), mask);
+    __m256i s1 = _mm256_and_si256(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)), mask);
+    src_ptr += 64;
+    __m256i t = _mm256_srli_epi16(
+        _mm256_permute4x64_epi64(_mm256_packus_epi16(s0, s1), 0xd8), 8);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi16(t, t), 0xd8);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(d));
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst_ptr,
+                           int dst_width) {
+  const __m256i ones = _mm256_set1_epi8(1);
+  const __m256i round8 = _mm256_set1_epi16(8);
+  const ptrdiff_t stridex3 = src_stride * 3;
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)src_ptr), ones);
+    __m256i s1 = _mm256_maddubs_epi16(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)), ones);
+    s0 = _mm256_add_epi16(
+        s0, _mm256_maddubs_epi16(
+                _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride)),
+                ones));
+    s1 = _mm256_add_epi16(
+        s1, _mm256_maddubs_epi16(
+                _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride + 32)),
+                ones));
+    s0 = _mm256_add_epi16(
+        s0, _mm256_maddubs_epi16(
+                _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride * 2)),
+                ones));
+    s1 = _mm256_add_epi16(
+        s1,
+        _mm256_maddubs_epi16(
+            _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride * 2 + 32)),
+            ones));
+    s0 = _mm256_add_epi16(
+        s0,
+        _mm256_maddubs_epi16(
+            _mm256_loadu_si256((const __m256i*)(src_ptr + stridex3)), ones));
+    s1 = _mm256_add_epi16(
+        s1, _mm256_maddubs_epi16(
+                _mm256_loadu_si256((const __m256i*)(src_ptr + stridex3 + 32)),
+                ones));
+    src_ptr += 64;
+    __m256i t = _mm256_permute4x64_epi64(_mm256_hadd_epi16(s0, s1), 0xd8);
+    t = _mm256_srli_epi16(_mm256_add_epi16(t, round8), 4);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi16(t, t), 0xd8);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(d));
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEROWDOWN4_AVX2
+
+#ifdef HAS_SCALEROWDOWN34_AVX2
+static const uvec8 kShuf0 = {0,   1,   3,   4,   5,   7,   8,   9,
+                             128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf1 = {3,   4,   5,   7,   8,   9,   11,  12,
+                             128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf2 = {5,   7,   8,   9,   11,  12,  13,  15,
+                             128, 128, 128, 128, 128, 128, 128, 128};
+static const uvec8 kShuf01 = {0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10};
+static const uvec8 kShuf11 = {2, 3, 4, 5,  5,  6,  6,  7,
+                              8, 9, 9, 10, 10, 11, 12, 13};
+static const uvec8 kShuf21 = {5,  6,  6,  7,  8,  9,  9,  10,
+                              10, 11, 12, 13, 13, 14, 14, 15};
+static const uvec8 kMadd01 = {3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2};
+static const uvec8 kMadd11 = {1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1};
+static const uvec8 kMadd21 = {2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3};
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown34_AVX2(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst_ptr,
+                         int dst_width) {
+  (void)src_stride;
+  const __m256i shuf0 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf0));
+  const __m256i shuf1 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf1));
+  const __m256i shuf2 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf2));
+  while (dst_width >= 48) {
+    __m256i s0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m256i s1 = _mm256_loadu_si256((const __m256i*)(src_ptr + 32));
+    src_ptr += 64;
+    __m256i lo = _mm256_permute2x128_si256(s0, s1, 0x20);
+    __m256i hi = _mm256_permute2x128_si256(s0, s1, 0x31);
+    __m256i mid = _mm256_alignr_epi8(hi, lo, 8);
+    __m256i d0 = _mm256_shuffle_epi8(lo, shuf0);
+    __m256i d1 = _mm256_shuffle_epi8(mid, shuf1);
+    __m256i d2 = _mm256_shuffle_epi8(hi, shuf2);
+    __m256i d01 = _mm256_unpacklo_epi64(d0, d1);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(d01));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 16), _mm256_castsi256_si128(d2));
+    _mm_storeu_si128((__m128i*)(dst_ptr + 24), _mm256_extracti128_si256(d01, 1));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 40), _mm256_extracti128_si256(d2, 1));
+    dst_ptr += 48;
+    dst_width -= 48;
+  }
+  if (dst_width > 0) {
+    __m256i s0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m128i lo = _mm256_castsi256_si128(s0);
+    __m128i hi = _mm256_extracti128_si256(s0, 1);
+    __m128i mid = _mm_alignr_epi8(hi, lo, 8);
+    __m128i d0 = _mm_shuffle_epi8(lo, _mm256_castsi256_si128(shuf0));
+    __m128i d1 = _mm_shuffle_epi8(mid, _mm256_castsi256_si128(shuf1));
+    __m128i d2 = _mm_shuffle_epi8(hi, _mm256_castsi256_si128(shuf2));
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm_unpacklo_epi64(d0, d1));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 16), d2);
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown34_1_Box_AVX2(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  const __m256i shuf01 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf01));
+  const __m256i shuf11 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf11));
+  const __m256i shuf21 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf21));
+  const __m256i madd01 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kMadd01));
+  const __m256i madd11 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kMadd11));
+  const __m256i madd21 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kMadd21));
+  const __m256i round2 = _mm256_set1_epi16(2);
+  while (dst_width >= 48) {
+    __m256i s0 = _mm256_avg_epu8(
+        _mm256_loadu_si256((const __m256i*)src_ptr),
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride)));
+    __m256i s1 = _mm256_avg_epu8(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)),
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride + 32)));
+    src_ptr += 64;
+    __m256i lo = _mm256_permute2x128_si256(s0, s1, 0x20);
+    __m256i hi = _mm256_permute2x128_si256(s0, s1, 0x31);
+    __m256i mid = _mm256_alignr_epi8(hi, lo, 8);
+    __m256i p0 = _mm256_srli_epi16(
+        _mm256_adds_epi16(
+            _mm256_maddubs_epi16(_mm256_shuffle_epi8(lo, shuf01), madd01),
+            round2),
+        2);
+    __m256i p1 = _mm256_srli_epi16(
+        _mm256_adds_epi16(
+            _mm256_maddubs_epi16(_mm256_shuffle_epi8(mid, shuf11), madd11),
+            round2),
+        2);
+    __m256i p2 = _mm256_srli_epi16(
+        _mm256_adds_epi16(
+            _mm256_maddubs_epi16(_mm256_shuffle_epi8(hi, shuf21), madd21),
+            round2),
+        2);
+    p0 = _mm256_packus_epi16(p0, p0);
+    p1 = _mm256_packus_epi16(p1, p1);
+    p2 = _mm256_packus_epi16(p2, p2);
+    __m256i d01 = _mm256_unpacklo_epi64(p0, p1);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(d01));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 16), _mm256_castsi256_si128(p2));
+    _mm_storeu_si128((__m128i*)(dst_ptr + 24), _mm256_extracti128_si256(d01, 1));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 40), _mm256_extracti128_si256(p2, 1));
+    dst_ptr += 48;
+    dst_width -= 48;
+  }
+  if (dst_width > 0) {
+    __m256i s0 = _mm256_avg_epu8(
+        _mm256_loadu_si256((const __m256i*)src_ptr),
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride)));
+    __m128i lo = _mm256_castsi256_si128(s0);
+    __m128i hi = _mm256_extracti128_si256(s0, 1);
+    __m128i mid = _mm_alignr_epi8(hi, lo, 8);
+    __m128i r2 = _mm256_castsi256_si128(round2);
+    __m128i p0 = _mm_srli_epi16(
+        _mm_adds_epi16(
+            _mm_maddubs_epi16(_mm_shuffle_epi8(lo, _mm256_castsi256_si128(shuf01)),
+                              _mm256_castsi256_si128(madd01)),
+            r2),
+        2);
+    __m128i p1 = _mm_srli_epi16(
+        _mm_adds_epi16(
+            _mm_maddubs_epi16(
+                _mm_shuffle_epi8(mid, _mm256_castsi256_si128(shuf11)),
+                _mm256_castsi256_si128(madd11)),
+            r2),
+        2);
+    __m128i p2 = _mm_srli_epi16(
+        _mm_adds_epi16(
+            _mm_maddubs_epi16(_mm_shuffle_epi8(hi, _mm256_castsi256_si128(shuf21)),
+                              _mm256_castsi256_si128(madd21)),
+            r2),
+        2);
+    p0 = _mm_packus_epi16(p0, p0);
+    p1 = _mm_packus_epi16(p1, p1);
+    p2 = _mm_packus_epi16(p2, p2);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm_unpacklo_epi64(p0, p1));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 16), p2);
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown34_0_Box_AVX2(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  const __m256i shuf01 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf01));
+  const __m256i shuf11 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf11));
+  const __m256i shuf21 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf21));
+  const __m256i madd01 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kMadd01));
+  const __m256i madd11 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kMadd11));
+  const __m256i madd21 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kMadd21));
+  const __m256i round2 = _mm256_set1_epi16(2);
+  while (dst_width >= 48) {
+    __m256i a0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m256i b0 = _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride));
+    __m256i s0 = _mm256_avg_epu8(a0, _mm256_avg_epu8(a0, b0));
+    __m256i a1 = _mm256_loadu_si256((const __m256i*)(src_ptr + 32));
+    __m256i b1 = _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride + 32));
+    __m256i s1 = _mm256_avg_epu8(a1, _mm256_avg_epu8(a1, b1));
+    src_ptr += 64;
+    __m256i lo = _mm256_permute2x128_si256(s0, s1, 0x20);
+    __m256i hi = _mm256_permute2x128_si256(s0, s1, 0x31);
+    __m256i mid = _mm256_alignr_epi8(hi, lo, 8);
+    __m256i p0 = _mm256_srli_epi16(
+        _mm256_adds_epi16(
+            _mm256_maddubs_epi16(_mm256_shuffle_epi8(lo, shuf01), madd01),
+            round2),
+        2);
+    __m256i p1 = _mm256_srli_epi16(
+        _mm256_adds_epi16(
+            _mm256_maddubs_epi16(_mm256_shuffle_epi8(mid, shuf11), madd11),
+            round2),
+        2);
+    __m256i p2 = _mm256_srli_epi16(
+        _mm256_adds_epi16(
+            _mm256_maddubs_epi16(_mm256_shuffle_epi8(hi, shuf21), madd21),
+            round2),
+        2);
+    p0 = _mm256_packus_epi16(p0, p0);
+    p1 = _mm256_packus_epi16(p1, p1);
+    p2 = _mm256_packus_epi16(p2, p2);
+    __m256i d01 = _mm256_unpacklo_epi64(p0, p1);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(d01));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 16), _mm256_castsi256_si128(p2));
+    _mm_storeu_si128((__m128i*)(dst_ptr + 24), _mm256_extracti128_si256(d01, 1));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 40), _mm256_extracti128_si256(p2, 1));
+    dst_ptr += 48;
+    dst_width -= 48;
+  }
+  if (dst_width > 0) {
+    __m256i a0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m256i b0 = _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride));
+    __m256i s0 = _mm256_avg_epu8(a0, _mm256_avg_epu8(a0, b0));
+    __m128i lo = _mm256_castsi256_si128(s0);
+    __m128i hi = _mm256_extracti128_si256(s0, 1);
+    __m128i mid = _mm_alignr_epi8(hi, lo, 8);
+    __m128i r2 = _mm256_castsi256_si128(round2);
+    __m128i p0 = _mm_srli_epi16(
+        _mm_adds_epi16(
+            _mm_maddubs_epi16(_mm_shuffle_epi8(lo, _mm256_castsi256_si128(shuf01)),
+                              _mm256_castsi256_si128(madd01)),
+            r2),
+        2);
+    __m128i p1 = _mm_srli_epi16(
+        _mm_adds_epi16(
+            _mm_maddubs_epi16(
+                _mm_shuffle_epi8(mid, _mm256_castsi256_si128(shuf11)),
+                _mm256_castsi256_si128(madd11)),
+            r2),
+        2);
+    __m128i p2 = _mm_srli_epi16(
+        _mm_adds_epi16(
+            _mm_maddubs_epi16(_mm_shuffle_epi8(hi, _mm256_castsi256_si128(shuf21)),
+                              _mm256_castsi256_si128(madd21)),
+            r2),
+        2);
+    p0 = _mm_packus_epi16(p0, p0);
+    p1 = _mm_packus_epi16(p1, p1);
+    p2 = _mm_packus_epi16(p2, p2);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm_unpacklo_epi64(p0, p1));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 16), p2);
+  }
+}
+#endif  // HAS_SCALEROWDOWN34_AVX2
+
+#ifdef HAS_SCALEROWDOWN38_AVX2
 static const uvec8 kShuf38a = {0,   3,   6,   8,   11,  14,  128, 128,
                                128, 128, 128, 128, 128, 128, 128, 128};
-
 static const uvec8 kShuf38b = {128, 128, 128, 128, 128, 128, 0,   3,
                                6,   8,   11,  14,  128, 128, 128, 128};
-
-// Arrange words 0,3,6 into 0,1,2
 static const uvec8 kShufAc = {0,   1,   6,   7,   12,  13,  128, 128,
                               128, 128, 128, 128, 128, 128, 128, 128};
-
-// Arrange words 0,3,6 into 3,4,5
 static const uvec8 kShufAc3 = {128, 128, 128, 128, 128, 128, 0,   1,
                                6,   7,   12,  13,  128, 128, 128, 128};
-
-// Scaling values for boxes of 3x3 and 2x3
 static const uvec16 kScaleAc33 = {65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9,
                                   65536 / 9, 65536 / 6, 0,         0};
-
-// Arrange first value for pixels 0,1,2,3,4,5
 static const uvec8 kShufAb0 = {0,  128, 3,  128, 6,   128, 8,   128,
                                11, 128, 14, 128, 128, 128, 128, 128};
-
-// Arrange second value for pixels 0,1,2,3,4,5
 static const uvec8 kShufAb1 = {1,  128, 4,  128, 7,   128, 9,   128,
                                12, 128, 15, 128, 128, 128, 128, 128};
-
-// Arrange third value for pixels 0,1,2,3,4,5
 static const uvec8 kShufAb2 = {2,  128, 5,   128, 128, 128, 10,  128,
                                13, 128, 128, 128, 128, 128, 128, 128};
-
-// Scaling values for boxes of 3x2 and 2x2
 static const uvec16 kScaleAb2 = {65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3,
                                  65536 / 3, 65536 / 2, 0,         0};
 
-// Scale 32 pixels to 12
-LIBYUV_TARGET_SSSE3
-void ScaleRowDown38_SSSE3(const uint8_t* src_ptr,
-                          ptrdiff_t src_stride,
-                          uint8_t* dst_ptr,
-                          int dst_width) {
+LIBYUV_TARGET_AVX2
+void ScaleRowDown38_AVX2(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst_ptr,
+                         int dst_width) {
   (void)src_stride;
-  const __m128i shuf38a = _mm_loadu_si128((const __m128i*)&kShuf38a);
-  const __m128i shuf38b = _mm_loadu_si128((const __m128i*)&kShuf38b);
+  const __m256i shuf38 = _mm256_inserti128_si256(
+      _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)&kShuf38a)),
+      _mm_loadu_si128((const __m128i*)&kShuf38b), 1);
+  while (dst_width >= 24) {
+    __m256i s0 =
+        _mm256_shuffle_epi8(_mm256_loadu_si256((const __m256i*)src_ptr), shuf38);
+    __m256i s1 = _mm256_shuffle_epi8(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 32)), shuf38);
+    src_ptr += 64;
+    __m128i d0 =
+        _mm_or_si128(_mm256_castsi256_si128(s0), _mm256_extracti128_si256(s0, 1));
+    __m128i d1 =
+        _mm_or_si128(_mm256_castsi256_si128(s1), _mm256_extracti128_si256(s1, 1));
+    _mm_storel_epi64((__m128i*)dst_ptr, d0);
+    StoreU32(dst_ptr + 8, (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(d0, 8)));
+    _mm_storel_epi64((__m128i*)(dst_ptr + 12), d1);
+    StoreU32(dst_ptr + 20, (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(d1, 8)));
+    dst_ptr += 24;
+    dst_width -= 24;
+  }
+  if (dst_width > 0) {
+    __m256i s0 =
+        _mm256_shuffle_epi8(_mm256_loadu_si256((const __m256i*)src_ptr), shuf38);
+    __m128i d0 =
+        _mm_or_si128(_mm256_castsi256_si128(s0), _mm256_extracti128_si256(s0, 1));
+    _mm_storel_epi64((__m128i*)dst_ptr, d0);
+    StoreU32(dst_ptr + 8, (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(d0, 8)));
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleRowDown38_2_Box_AVX2(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  const __m256i shuf_ab0 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShufAb0));
+  const __m256i shuf_ab1 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShufAb1));
+  const __m256i shuf_ab2 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShufAb2));
+  const __m256i scale_ab2 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kScaleAb2));
+  const __m256i zero = _mm256_setzero_si256();
   while (dst_width > 0) {
-    __m128i s0 = _mm_loadu_si128((const __m128i*)src_ptr);
-    __m128i s1 = _mm_loadu_si128((const __m128i*)(src_ptr + 16));
+    __m256i r = _mm256_avg_epu8(
+        _mm256_loadu_si256((const __m256i*)src_ptr),
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride)));
     src_ptr += 32;
-    s0 = _mm_shuffle_epi8(s0, shuf38a);
-    s1 = _mm_shuffle_epi8(s1, shuf38b);
-    s0 = _mm_adds_epu8(s0, s1);
-    _mm_storel_epi64((__m128i*)dst_ptr, s0);
-    *(uint32_t*)(dst_ptr + 8) =
-        (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(s0, 8));
+    __m256i t = _mm256_adds_epu16(
+        _mm256_adds_epu16(_mm256_shuffle_epi8(r, shuf_ab0),
+                          _mm256_shuffle_epi8(r, shuf_ab1)),
+        _mm256_shuffle_epi8(r, shuf_ab2));
+    t = _mm256_packus_epi16(_mm256_mulhi_epu16(t, scale_ab2), zero);
+    __m128i d = _mm_or_si128(_mm256_castsi256_si128(t),
+                             _mm_slli_si128(_mm256_extracti128_si256(t, 1), 6));
+    _mm_storel_epi64((__m128i*)dst_ptr, d);
+    StoreU32(dst_ptr + 8, (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(d, 8)));
     dst_ptr += 12;
     dst_width -= 12;
   }
 }
 
-// Scale 16x3 pixels to 6x1 with interpolation
-LIBYUV_TARGET_SSSE3
-void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8_t* dst_ptr,
-                                int dst_width) {
-  const __m128i shuf_ac = _mm_loadu_si128((const __m128i*)&kShufAc);
-  const __m128i shuf_ac3 = _mm_loadu_si128((const __m128i*)&kShufAc3);
-  const __m128i scale_ac33 = _mm_loadu_si128((const __m128i*)&kScaleAc33);
-  const __m128i zero = _mm_setzero_si128();
+LIBYUV_TARGET_AVX2
+void ScaleRowDown38_3_Box_AVX2(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  const __m256i shuf_ac =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShufAc));
+  const __m256i shuf_ac3 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kShufAc3));
+  const __m256i scale_ac33 =
+      _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)&kScaleAc33));
+  const __m256i zero = _mm256_setzero_si256();
   while (dst_width > 0) {
-    __m128i r0 = _mm_loadu_si128((const __m128i*)src_ptr);
-    __m128i r1 = _mm_loadu_si128((const __m128i*)(src_ptr + src_stride));
-    __m128i r2 = _mm_loadu_si128((const __m128i*)(src_ptr + src_stride * 2));
-    src_ptr += 16;
-    __m128i s0 = _mm_adds_epu16(_mm_adds_epu16(_mm_unpacklo_epi8(r0, zero),
-                                               _mm_unpacklo_epi8(r1, zero)),
-                                _mm_unpacklo_epi8(r2, zero));
-    __m128i s1 = _mm_adds_epu16(_mm_adds_epu16(_mm_unpackhi_epi8(r0, zero),
-                                               _mm_unpackhi_epi8(r1, zero)),
-                                _mm_unpackhi_epi8(r2, zero));
-    __m128i t0 = _mm_adds_epu16(_mm_adds_epu16(s0, _mm_srli_si128(s0, 2)),
-                                _mm_srli_si128(s0, 4));
-    __m128i t1 = _mm_adds_epu16(_mm_adds_epu16(s1, _mm_srli_si128(s1, 2)),
-                                _mm_srli_si128(s1, 4));
-    t0 = _mm_shuffle_epi8(t0, shuf_ac);
-    t1 = _mm_shuffle_epi8(t1, shuf_ac3);
-    t0 = _mm_adds_epu16(t0, t1);
-    t0 = _mm_mulhi_epu16(t0, scale_ac33);
-    t0 = _mm_packus_epi16(t0, t0);
-    *(uint32_t*)dst_ptr = (uint32_t)_mm_cvtsi128_si32(t0);
-    *(uint16_t*)(dst_ptr + 4) =
-        (uint16_t)_mm_cvtsi128_si32(_mm_srli_si128(t0, 4));
-    dst_ptr += 6;
-    dst_width -= 6;
+    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_ptr);
+    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride));
+    __m256i r2 =
+        _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride * 2));
+    src_ptr += 32;
+    __m256i s0 =
+        _mm256_adds_epu16(_mm256_adds_epu16(_mm256_unpacklo_epi8(r0, zero),
+                                            _mm256_unpacklo_epi8(r1, zero)),
+                          _mm256_unpacklo_epi8(r2, zero));
+    __m256i s1 =
+        _mm256_adds_epu16(_mm256_adds_epu16(_mm256_unpackhi_epi8(r0, zero),
+                                            _mm256_unpackhi_epi8(r1, zero)),
+                          _mm256_unpackhi_epi8(r2, zero));
+    __m256i t0 = _mm256_shuffle_epi8(
+        _mm256_adds_epu16(_mm256_adds_epu16(s0, _mm256_srli_si256(s0, 2)),
+                          _mm256_srli_si256(s0, 4)),
+        shuf_ac);
+    __m256i t1 = _mm256_shuffle_epi8(
+        _mm256_adds_epu16(_mm256_adds_epu16(s1, _mm256_srli_si256(s1, 2)),
+                          _mm256_srli_si256(s1, 4)),
+        shuf_ac3);
+    __m256i t = _mm256_packus_epi16(
+        _mm256_mulhi_epu16(_mm256_adds_epu16(t0, t1), scale_ac33), zero);
+    __m128i d = _mm_or_si128(_mm256_castsi256_si128(t),
+                             _mm_slli_si128(_mm256_extracti128_si256(t, 1), 6));
+    _mm_storel_epi64((__m128i*)dst_ptr, d);
+    StoreU32(dst_ptr + 8, (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128(d, 8)));
+    dst_ptr += 12;
+    dst_width -= 12;
   }
 }
-
-// Scale 16x2 pixels to 6x1 with interpolation
-LIBYUV_TARGET_SSSE3
-void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8_t* dst_ptr,
-                                int dst_width) {
-  const __m128i shuf_ab0 = _mm_loadu_si128((const __m128i*)&kShufAb0);
-  const __m128i shuf_ab1 = _mm_loadu_si128((const __m128i*)&kShufAb1);
-  const __m128i shuf_ab2 = _mm_loadu_si128((const __m128i*)&kShufAb2);
-  const __m128i scale_ab2 = _mm_loadu_si128((const __m128i*)&kScaleAb2);
-  while (dst_width > 0) {
-    __m128i r0 = _mm_loadu_si128((const __m128i*)src_ptr);
-    __m128i r1 = _mm_loadu_si128((const __m128i*)(src_ptr + src_stride));
-    src_ptr += 16;
-    r0 = _mm_avg_epu8(r0, r1);
-    __m128i t0 = _mm_shuffle_epi8(r0, shuf_ab0);
-    __m128i t1 = _mm_shuffle_epi8(r0, shuf_ab1);
-    __m128i t2 = _mm_shuffle_epi8(r0, shuf_ab2);
-    t0 = _mm_adds_epu16(_mm_adds_epu16(t0, t1), t2);
-    t0 = _mm_mulhi_epu16(t0, scale_ab2);
-    t0 = _mm_packus_epi16(t0, t0);
-    *(uint32_t*)dst_ptr = (uint32_t)_mm_cvtsi128_si32(t0);
-    *(uint16_t*)(dst_ptr + 4) =
-        (uint16_t)_mm_cvtsi128_si32(_mm_srli_si128(t0, 4));
-    dst_ptr += 6;
-    dst_width -= 6;
-  }
-}
-#endif  // HAS_SCALEROWDOWN38_SSSE3
+#endif  // HAS_SCALEROWDOWN38_AVX2
 
 #ifdef HAS_SCALEADDROW_SSE2
 // Reads 16 bytes and accumulates to 16 shorts at a time.
@@ -1390,10 +1093,12 @@ void ScaleAddRow_AVX512BW(const uint8_t* src_ptr,
 }
 #endif  // HAS_SCALEADDROW_AVX512BW
 
-#ifdef HAS_SCALEADDCOLS_AVX512BW
+#if defined(HAS_SCALEADDCOLS1_AVX512BW) || defined(HAS_SCALEADDCOLS2_AVX512BW)
 static const uint8_t kSequence0_15[16] = {0, 1, 2,  3,  4,  5,  6,  7,
                                           8, 9, 10, 11, 12, 13, 14, 15};
+#endif
 
+#ifdef HAS_SCALEADDCOLS1_AVX512BW
 LIBYUV_TARGET_AVX512BW
 void ScaleAddCols1_AVX512BW(int dst_width,
                             int boxheight,
@@ -1543,7 +1248,9 @@ void ScaleAddCols1_AVX512BW(int dst_width,
     }
   }
 }
+#endif  // HAS_SCALEADDCOLS1_AVX512BW
 
+#ifdef HAS_SCALEADDCOLS2_AVX512BW
 LIBYUV_TARGET_AVX512BW
 void ScaleAddCols2_AVX512BW(int dst_width,
                             int boxheight,
@@ -1745,7 +1452,7 @@ void ScaleAddCols2_AVX512BW(int dst_width,
     }
   }
 }
-#endif  // HAS_SCALEADDCOLS_AVX512BW
+#endif  // HAS_SCALEADDCOLS2_AVX512BW
 
 #ifdef HAS_SCALEUVADDCOLS3_AVX2
 static const ulvec32 kPermUV3_0 = {0, 3, 6, 1, 4, 7, 2, 5};
@@ -1926,7 +1633,956 @@ void ScaleUVAddCols3_AVX512VBMI(int dst_width,
 }
 #endif  // HAS_SCALEUVADDCOLS3_AVX512VBMI
 
-#undef LIBYUV_TARGET_SSSE3
+#if defined(HAS_SCALEROWUP2_LINEAR_AVX2) || \
+    defined(HAS_SCALEROWUP2_BILINEAR_AVX2)
+static const uvec8 kLinearMadd31 = {3, 1, 1, 3, 3, 1, 1, 3,
+                                    3, 1, 1, 3, 3, 1, 1, 3};
+#endif
+
+#if defined(HAS_SCALEROWUP2_LINEAR_12_AVX2) || \
+    defined(HAS_SCALEROWUP2_BILINEAR_12_AVX2)
+static const uvec8 kLinearShuffleFar = {2,  3,  0, 1, 6,  7,  4,  5,
+                                        10, 11, 8, 9, 14, 15, 12, 13};
+#endif
+
+#ifdef HAS_SCALEROWUP2_LINEAR_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowUp2_Linear_AVX2(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int dst_width) {
+  const __m256i madd31 = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kLinearMadd31));
+  const __m256i round2 = _mm256_set1_epi16(2);
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_ptr)), 0xd8);
+    __m256i s1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)(src_ptr + 1))),
+        0xd8);
+    src_ptr += 16;
+    s0 = _mm256_unpacklo_epi16(s0, s0);
+    s1 = _mm256_unpacklo_epi16(s1, s1);
+    __m256i lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi32(s0, s1), madd31);
+    __m256i hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi32(s0, s1), madd31);
+    lo = _mm256_srli_epi16(_mm256_add_epi16(lo, round2), 2);
+    hi = _mm256_srli_epi16(_mm256_add_epi16(hi, round2), 2);
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_packus_epi16(lo, hi));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_AVX2
+
+#ifdef HAS_SCALEROWUP2_BILINEAR_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               ptrdiff_t dst_stride,
+                               int dst_width) {
+  const __m256i madd31 = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kLinearMadd31));
+  const __m256i round8 = _mm256_set1_epi16(8);
+  while (dst_width > 0) {
+    __m256i a0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_ptr)), 0xd8);
+    __m256i a1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)(src_ptr + 1))),
+        0xd8);
+    a0 = _mm256_unpacklo_epi16(a0, a0);
+    a1 = _mm256_unpacklo_epi16(a1, a1);
+    __m256i r0_lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi32(a0, a1), madd31);
+    __m256i r0_hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi32(a0, a1), madd31);
+
+    __m256i b0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(
+            _mm_loadu_si128((const __m128i*)(src_ptr + src_stride))),
+        0xd8);
+    __m256i b1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(
+            _mm_loadu_si128((const __m128i*)(src_ptr + src_stride + 1))),
+        0xd8);
+    src_ptr += 16;
+    b0 = _mm256_unpacklo_epi16(b0, b0);
+    b1 = _mm256_unpacklo_epi16(b1, b1);
+    __m256i r1_lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi32(b0, b1), madd31);
+    __m256i r1_hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi32(b0, b1), madd31);
+
+    __m256i d0_lo = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r0_lo, r0_lo), r0_lo),
+                         _mm256_add_epi16(r1_lo, round8)),
+        4);
+    __m256i d1_lo = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r1_lo, r1_lo), r1_lo),
+                         _mm256_add_epi16(r0_lo, round8)),
+        4);
+    __m256i d0_hi = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r0_hi, r0_hi), r0_hi),
+                         _mm256_add_epi16(r1_hi, round8)),
+        4);
+    __m256i d1_hi = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r1_hi, r1_hi), r1_hi),
+                         _mm256_add_epi16(r0_hi, round8)),
+        4);
+
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_packus_epi16(d0_lo, d0_hi));
+    _mm256_storeu_si256((__m256i*)(dst_ptr + dst_stride),
+                        _mm256_packus_epi16(d1_lo, d1_hi));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+#endif  // HAS_SCALEROWUP2_BILINEAR_AVX2
+
+#ifdef HAS_SCALEROWUP2_LINEAR_12_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowUp2_Linear_12_AVX2(const uint16_t* src_ptr,
+                                uint16_t* dst_ptr,
+                                int dst_width) {
+  const __m256i shuf_far = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kLinearShuffleFar));
+  const __m256i round2 = _mm256_set1_epi16(2);
+  while (dst_width > 0) {
+    __m256i s0 =
+        _mm256_permute4x64_epi64(_mm256_loadu_si256((const __m256i*)src_ptr),
+                                 0xd8);
+    __m256i s1 = _mm256_permute4x64_epi64(
+        _mm256_loadu_si256((const __m256i*)(src_ptr + 1)), 0xd8);
+    src_ptr += 16;
+    __m256i near_lo = _mm256_unpacklo_epi16(s0, s1);
+    __m256i near_hi = _mm256_unpackhi_epi16(s0, s1);
+    __m256i far_lo = _mm256_shuffle_epi8(near_lo, shuf_far);
+    __m256i far_hi = _mm256_shuffle_epi8(near_hi, shuf_far);
+    __m256i d_lo = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(near_lo, near_lo),
+                         _mm256_add_epi16(near_lo, _mm256_add_epi16(far_lo, round2))),
+        2);
+    __m256i d_hi = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(near_hi, near_hi),
+                         _mm256_add_epi16(near_hi, _mm256_add_epi16(far_hi, round2))),
+        2);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d_lo);
+    _mm256_storeu_si256((__m256i*)(dst_ptr + 16), d_hi);
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_12_AVX2
+
+#ifdef HAS_SCALEROWUP2_BILINEAR_12_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowUp2_Bilinear_12_AVX2(const uint16_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint16_t* dst_ptr,
+                                  ptrdiff_t dst_stride,
+                                  int dst_width) {
+  const __m256i shuf_far = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kLinearShuffleFar));
+  const __m256i round8 = _mm256_set1_epi16(8);
+  while (dst_width > 0) {
+    __m256i a0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_ptr)), 0xd8);
+    __m256i a1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)(src_ptr + 1))),
+        0xd8);
+    __m256i near0 = _mm256_unpacklo_epi16(a0, a1);
+    __m256i far0 = _mm256_shuffle_epi8(near0, shuf_far);
+    __m256i r0 = _mm256_add_epi16(_mm256_add_epi16(near0, near0),
+                                  _mm256_add_epi16(near0, far0));
+
+    __m256i b0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(
+            _mm_loadu_si128((const __m128i*)(src_ptr + src_stride))),
+        0xd8);
+    __m256i b1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(
+            _mm_loadu_si128((const __m128i*)(src_ptr + src_stride + 1))),
+        0xd8);
+    src_ptr += 8;
+    __m256i near1 = _mm256_unpacklo_epi16(b0, b1);
+    __m256i far1 = _mm256_shuffle_epi8(near1, shuf_far);
+    __m256i r1 = _mm256_add_epi16(_mm256_add_epi16(near1, near1),
+                                  _mm256_add_epi16(near1, far1));
+
+    __m256i d0 = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r0, r0), r0),
+                         _mm256_add_epi16(r1, round8)),
+        4);
+    __m256i d1 = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r1, r1), r1),
+                         _mm256_add_epi16(r0, round8)),
+        4);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d0);
+    _mm256_storeu_si256((__m256i*)(dst_ptr + dst_stride), d1);
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_BILINEAR_12_AVX2
+
+#ifdef HAS_SCALEROWUP2_LINEAR_16_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
+                                uint16_t* dst_ptr,
+                                int dst_width) {
+  const __m256i round2 = _mm256_set1_epi32(2);
+  while (dst_width > 0) {
+    __m256i near_lo =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)src_ptr));
+    __m256i near_hi =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)(src_ptr + 1)));
+    src_ptr += 8;
+    __m256i far_lo = _mm256_shuffle_epi32(near_lo, 0xb1);
+    __m256i far_hi = _mm256_shuffle_epi32(near_hi, 0xb1);
+    __m256i d_lo = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(near_lo, near_lo),
+                         _mm256_add_epi32(near_lo, _mm256_add_epi32(far_lo, round2))),
+        2);
+    __m256i d_hi = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(near_hi, near_hi),
+                         _mm256_add_epi32(near_hi, _mm256_add_epi32(far_hi, round2))),
+        2);
+    __m256i d = _mm256_shuffle_epi32(_mm256_packus_epi32(d_lo, d_hi), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_ptr, d);
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_16_AVX2
+
+#ifdef HAS_SCALEROWUP2_BILINEAR_16_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint16_t* dst_ptr,
+                                  ptrdiff_t dst_stride,
+                                  int dst_width) {
+  const __m256i round8 = _mm256_set1_epi32(8);
+  while (dst_width > 0) {
+    __m256i a0 =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)src_ptr));
+    __m256i a1 =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)(src_ptr + 1)));
+    __m256i r0_lo = _mm256_add_epi32(
+        _mm256_add_epi32(a0, a0),
+        _mm256_add_epi32(a0, _mm256_shuffle_epi32(a0, 0xb1)));
+    __m256i r0_hi = _mm256_add_epi32(
+        _mm256_add_epi32(a1, a1),
+        _mm256_add_epi32(a1, _mm256_shuffle_epi32(a1, 0xb1)));
+
+    __m256i b0 = _mm256_cvtepu16_epi32(
+        _mm_loadu_si128((const __m128i*)(src_ptr + src_stride)));
+    __m256i b1 = _mm256_cvtepu16_epi32(
+        _mm_loadu_si128((const __m128i*)(src_ptr + src_stride + 1)));
+    src_ptr += 8;
+    __m256i r1_lo = _mm256_add_epi32(
+        _mm256_add_epi32(b0, b0),
+        _mm256_add_epi32(b0, _mm256_shuffle_epi32(b0, 0xb1)));
+    __m256i r1_hi = _mm256_add_epi32(
+        _mm256_add_epi32(b1, b1),
+        _mm256_add_epi32(b1, _mm256_shuffle_epi32(b1, 0xb1)));
+
+    __m256i d0_lo = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r0_lo, r0_lo), r0_lo),
+                         _mm256_add_epi32(r1_lo, round8)),
+        4);
+    __m256i d1_lo = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r1_lo, r1_lo), r1_lo),
+                         _mm256_add_epi32(r0_lo, round8)),
+        4);
+    __m256i d0_hi = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r0_hi, r0_hi), r0_hi),
+                         _mm256_add_epi32(r1_hi, round8)),
+        4);
+    __m256i d1_hi = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r1_hi, r1_hi), r1_hi),
+                         _mm256_add_epi32(r0_hi, round8)),
+        4);
+
+    _mm256_storeu_si256(
+        (__m256i*)dst_ptr,
+        _mm256_shuffle_epi32(_mm256_packus_epi32(d0_lo, d0_hi), 0xd8));
+    _mm256_storeu_si256(
+        (__m256i*)(dst_ptr + dst_stride),
+        _mm256_shuffle_epi32(_mm256_packus_epi32(d1_lo, d1_hi), 0xd8));
+    dst_ptr += 16;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_BILINEAR_16_AVX2
+
+#ifdef HAS_SCALEFILTERCOLS_AVX2
+static const int32_t kStep0_7_Filter[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+static const uvec8 kShufFracCols = {0,   0,   4,   4,   8,   8,   12,  12,
+                                    128, 128, 128, 128, 128, 128, 128, 128};
+
+LIBYUV_TARGET_AVX2
+void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
+                          const uint8_t* src_ptr,
+                          int dst_width,
+                          int x,
+                          int dx) {
+  int n = dst_width & ~7;
+  int r = dst_width & 7;
+  if (n > 0) {
+    SIMD_ALIGNED(int32_t xi_buf[8]);
+    SIMD_ALIGNED(uint16_t pix_buf[8]);
+    __m256i vx = _mm256_add_epi32(
+        _mm256_set1_epi32(x),
+        _mm256_mullo_epi32(
+            _mm256_set1_epi32(dx),
+            _mm256_loadu_si256((const __m256i*)kStep0_7_Filter)));
+    const __m256i vdx8 = _mm256_slli_epi32(_mm256_set1_epi32(dx), 3);
+    const __m256i shuf_frac = _mm256_broadcastsi128_si256(
+        _mm_loadu_si128((const __m128i*)&kShufFracCols));
+    const __m128i mask_7f = _mm_set1_epi16(0x007f);
+    const __m128i mask_ff = _mm_set1_epi16(0x00ff);
+    const __m128i round_40 = _mm_set1_epi16(0x0040);
+    for (int i = 0; i < n; i += 8) {
+      _mm256_store_si256((__m256i*)xi_buf, _mm256_srai_epi32(vx, 16));
+      __m256i f256 = _mm256_permute4x64_epi64(
+          _mm256_shuffle_epi8(_mm256_srli_epi16(vx, 9), shuf_frac), 0xd8);
+      vx = _mm256_add_epi32(vx, vdx8);
+      __m128i weights = _mm_xor_si128(_mm256_castsi256_si128(f256), mask_7f);
+      pix_buf[0] = LoadU16(src_ptr + xi_buf[0]);
+      pix_buf[1] = LoadU16(src_ptr + xi_buf[1]);
+      pix_buf[2] = LoadU16(src_ptr + xi_buf[2]);
+      pix_buf[3] = LoadU16(src_ptr + xi_buf[3]);
+      pix_buf[4] = LoadU16(src_ptr + xi_buf[4]);
+      pix_buf[5] = LoadU16(src_ptr + xi_buf[5]);
+      pix_buf[6] = LoadU16(src_ptr + xi_buf[6]);
+      pix_buf[7] = LoadU16(src_ptr + xi_buf[7]);
+      __m128i pix = _mm_load_si128((const __m128i*)pix_buf);
+      __m128i a = _mm_and_si128(pix, mask_ff);
+      __m128i res = _mm_srli_epi16(
+          _mm_add_epi16(_mm_add_epi16(_mm_maddubs_epi16(pix, weights), a),
+                        round_40),
+          7);
+      _mm_storel_epi64((__m128i*)dst_ptr, _mm_packus_epi16(res, res));
+      dst_ptr += 8;
+    }
+    x = (int)((uint32_t)x + (uint32_t)n * (uint32_t)dx);
+  }
+  for (int j = 0; j < r; ++j) {
+    int xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[j] = (uint8_t)(a + ((((x & 0xffff) >> 9) * (b - a) + 0x40) >> 7));
+    x = (int)((uint32_t)x + (uint32_t)dx);
+  }
+}
+#endif  // HAS_SCALEFILTERCOLS_AVX2
+
+#ifdef HAS_SCALECOLSUP2_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleColsUp2_AVX2(uint8_t* dst_ptr,
+                       const uint8_t* src_ptr,
+                       int dst_width,
+                       int x,
+                       int dx) {
+  (void)x;
+  (void)dx;
+  while (dst_width >= 32) {
+    __m256i s = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_ptr)), 0xd8);
+    src_ptr += 16;
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_unpacklo_epi8(s, s));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+  if (dst_width & 16) {
+    __m128i s = _mm_loadl_epi64((const __m128i*)src_ptr);
+    src_ptr += 8;
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm_unpacklo_epi8(s, s));
+    dst_ptr += 16;
+  }
+  if (dst_width & 8) {
+    __m128i s = _mm_cvtsi32_si128((int)LoadU32(src_ptr));
+    _mm_storel_epi64((__m128i*)dst_ptr, _mm_unpacklo_epi8(s, s));
+  }
+}
+#endif  // HAS_SCALECOLSUP2_AVX2
+
+#ifdef HAS_SCALEARGBROWDOWN2_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleARGBRowDown2_AVX2(const uint8_t* src_argb,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_argb,
+                            int dst_width) {
+  (void)src_stride;
+  while (dst_width > 0) {
+    __m256 s0 = _mm256_loadu_ps((const float*)src_argb);
+    __m256 s1 = _mm256_loadu_ps((const float*)(src_argb + 32));
+    src_argb += 64;
+    __m256i d = _mm256_permute4x64_epi64(
+        _mm256_castps_si256(_mm256_shuffle_ps(s0, s1, 0xdd)), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_argb, d);
+    dst_argb += 32;
+    dst_width -= 8;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleARGBRowDown2Linear_AVX2(const uint8_t* src_argb,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_argb,
+                                  int dst_width) {
+  (void)src_stride;
+  while (dst_width > 0) {
+    __m256 s0 = _mm256_loadu_ps((const float*)src_argb);
+    __m256 s1 = _mm256_loadu_ps((const float*)(src_argb + 32));
+    src_argb += 64;
+    __m256i e = _mm256_castps_si256(_mm256_shuffle_ps(s0, s1, 0x88));
+    __m256i o = _mm256_castps_si256(_mm256_shuffle_ps(s0, s1, 0xdd));
+    __m256i d = _mm256_permute4x64_epi64(_mm256_avg_epu8(e, o), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_argb, d);
+    dst_argb += 32;
+    dst_width -= 8;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleARGBRowDown2Box_AVX2(const uint8_t* src_argb,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_argb,
+                               int dst_width) {
+  while (dst_width > 0) {
+    __m256i r0 = _mm256_avg_epu8(
+        _mm256_loadu_si256((const __m256i*)src_argb),
+        _mm256_loadu_si256((const __m256i*)(src_argb + src_stride)));
+    __m256i r1 = _mm256_avg_epu8(
+        _mm256_loadu_si256((const __m256i*)(src_argb + 32)),
+        _mm256_loadu_si256((const __m256i*)(src_argb + src_stride + 32)));
+    src_argb += 64;
+    __m256i e = _mm256_castps_si256(
+        _mm256_shuffle_ps(_mm256_castsi256_ps(r0), _mm256_castsi256_ps(r1),
+                          0x88));
+    __m256i o = _mm256_castps_si256(
+        _mm256_shuffle_ps(_mm256_castsi256_ps(r0), _mm256_castsi256_ps(r1),
+                          0xdd));
+    __m256i d = _mm256_permute4x64_epi64(_mm256_avg_epu8(e, o), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_argb, d);
+    dst_argb += 32;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEARGBROWDOWN2_AVX2
+
+#ifdef HAS_SCALEARGBROWDOWNEVEN_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleARGBRowDownEven_AVX2(const uint8_t* src_argb,
+                               ptrdiff_t src_stride,
+                               int src_stepx,
+                               uint8_t* dst_argb,
+                               int dst_width) {
+  (void)src_stride;
+  const ptrdiff_t step = (ptrdiff_t)src_stepx * 4;
+  SIMD_ALIGNED(uint32_t pix_buf[8]);
+  while (dst_width > 0) {
+    pix_buf[0] = LoadU32(src_argb);
+    pix_buf[1] = LoadU32(src_argb + step);
+    pix_buf[2] = LoadU32(src_argb + step * 2);
+    pix_buf[3] = LoadU32(src_argb + step * 3);
+    pix_buf[4] = LoadU32(src_argb + step * 4);
+    pix_buf[5] = LoadU32(src_argb + step * 5);
+    pix_buf[6] = LoadU32(src_argb + step * 6);
+    pix_buf[7] = LoadU32(src_argb + step * 7);
+    src_argb += step * 8;
+    _mm256_storeu_si256((__m256i*)dst_argb,
+                        _mm256_load_si256((const __m256i*)pix_buf));
+    dst_argb += 32;
+    dst_width -= 8;
+  }
+}
+
+LIBYUV_TARGET_AVX2
+void ScaleARGBRowDownEvenBox_AVX2(const uint8_t* src_argb,
+                                  ptrdiff_t src_stride,
+                                  int src_stepx,
+                                  uint8_t* dst_argb,
+                                  int dst_width) {
+  const uint8_t* row1 = src_argb + src_stride;
+  const ptrdiff_t step = (ptrdiff_t)src_stepx * 4;
+  SIMD_ALIGNED(uint64_t r0_lo[4]);
+  SIMD_ALIGNED(uint64_t r0_hi[4]);
+  SIMD_ALIGNED(uint64_t r1_lo[4]);
+  SIMD_ALIGNED(uint64_t r1_hi[4]);
+  while (dst_width > 0) {
+    r0_lo[0] = LoadU64(src_argb);
+    r0_lo[1] = LoadU64(src_argb + step);
+    r0_lo[2] = LoadU64(src_argb + step * 2);
+    r0_lo[3] = LoadU64(src_argb + step * 3);
+    r0_hi[0] = LoadU64(src_argb + step * 4);
+    r0_hi[1] = LoadU64(src_argb + step * 5);
+    r0_hi[2] = LoadU64(src_argb + step * 6);
+    r0_hi[3] = LoadU64(src_argb + step * 7);
+    r1_lo[0] = LoadU64(row1);
+    r1_lo[1] = LoadU64(row1 + step);
+    r1_lo[2] = LoadU64(row1 + step * 2);
+    r1_lo[3] = LoadU64(row1 + step * 3);
+    r1_hi[0] = LoadU64(row1 + step * 4);
+    r1_hi[1] = LoadU64(row1 + step * 5);
+    r1_hi[2] = LoadU64(row1 + step * 6);
+    r1_hi[3] = LoadU64(row1 + step * 7);
+    src_argb += step * 8;
+    row1 += step * 8;
+    __m256i a0 = _mm256_avg_epu8(_mm256_load_si256((const __m256i*)r0_lo),
+                                 _mm256_load_si256((const __m256i*)r1_lo));
+    __m256i a1 = _mm256_avg_epu8(_mm256_load_si256((const __m256i*)r0_hi),
+                                 _mm256_load_si256((const __m256i*)r1_hi));
+    __m256i e = _mm256_castps_si256(
+        _mm256_shuffle_ps(_mm256_castsi256_ps(a0), _mm256_castsi256_ps(a1),
+                          0x88));
+    __m256i o = _mm256_castps_si256(
+        _mm256_shuffle_ps(_mm256_castsi256_ps(a0), _mm256_castsi256_ps(a1),
+                          0xdd));
+    __m256i d = _mm256_permute4x64_epi64(_mm256_avg_epu8(e, o), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_argb, d);
+    dst_argb += 32;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEARGBROWDOWNEVEN_AVX2
+
+#ifdef HAS_SCALEARGBCOLS_AVX2
+static const int32_t kStep0_7_Cols[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+
+LIBYUV_TARGET_AVX2
+void ScaleARGBCols_AVX2(uint8_t* dst_argb,
+                        const uint8_t* src_argb,
+                        int dst_width,
+                        int x,
+                        int dx) {
+  int n = dst_width & ~7;
+  int r = dst_width & 7;
+  if (n > 0) {
+    SIMD_ALIGNED(int32_t xi_buf[8]);
+    SIMD_ALIGNED(uint32_t pix_buf[8]);
+    __m256i vx = _mm256_add_epi32(
+        _mm256_set1_epi32(x),
+        _mm256_mullo_epi32(
+            _mm256_set1_epi32(dx),
+            _mm256_loadu_si256((const __m256i*)kStep0_7_Cols)));
+    const __m256i vdx8 = _mm256_slli_epi32(_mm256_set1_epi32(dx), 3);
+    for (int i = 0; i < n; i += 8) {
+      _mm256_store_si256((__m256i*)xi_buf, _mm256_srai_epi32(vx, 16));
+      vx = _mm256_add_epi32(vx, vdx8);
+      pix_buf[0] = LoadU32(src_argb + (ptrdiff_t)xi_buf[0] * 4);
+      pix_buf[1] = LoadU32(src_argb + (ptrdiff_t)xi_buf[1] * 4);
+      pix_buf[2] = LoadU32(src_argb + (ptrdiff_t)xi_buf[2] * 4);
+      pix_buf[3] = LoadU32(src_argb + (ptrdiff_t)xi_buf[3] * 4);
+      pix_buf[4] = LoadU32(src_argb + (ptrdiff_t)xi_buf[4] * 4);
+      pix_buf[5] = LoadU32(src_argb + (ptrdiff_t)xi_buf[5] * 4);
+      pix_buf[6] = LoadU32(src_argb + (ptrdiff_t)xi_buf[6] * 4);
+      pix_buf[7] = LoadU32(src_argb + (ptrdiff_t)xi_buf[7] * 4);
+      _mm256_storeu_si256((__m256i*)dst_argb,
+                          _mm256_load_si256((const __m256i*)pix_buf));
+      dst_argb += 32;
+    }
+    x = (int)((uint32_t)x + (uint32_t)n * (uint32_t)dx);
+  }
+  for (int j = 0; j < r; ++j) {
+    const uint8_t* src = src_argb + (ptrdiff_t)(x >> 16) * 4;
+    dst_argb[0] = src[0];
+    dst_argb[1] = src[1];
+    dst_argb[2] = src[2];
+    dst_argb[3] = src[3];
+    dst_argb += 4;
+    x = (int)((uint32_t)x + (uint32_t)dx);
+  }
+}
+#endif  // HAS_SCALEARGBCOLS_AVX2
+
+#ifdef HAS_SCALEARGBCOLSUP2_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleARGBColsUp2_AVX2(uint8_t* dst_argb,
+                           const uint8_t* src_argb,
+                           int dst_width,
+                           int x,
+                           int dx) {
+  (void)x;
+  (void)dx;
+  while (dst_width > 0) {
+    __m256i s = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_argb)),
+        0xd8);
+    src_argb += 16;
+    _mm256_storeu_si256((__m256i*)dst_argb, _mm256_unpacklo_epi32(s, s));
+    dst_argb += 32;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEARGBCOLSUP2_AVX2
+
+#ifdef HAS_SCALEARGBFILTERCOLS_AVX2
+static const int32_t kStep0_3_ARGB[4] = {0, 1, 2, 3};
+static const uvec8 kShuffleColARGB = {
+    0u, 4u,  1u, 5u,  2u,  6u,  3u,  7u,
+    8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u};
+static const uint8_t kShuffleFractionsAVX2[32] = {
+    0u, 0u, 0u, 0u, 0u,  0u,  0u,  0u,  4u,  4u,  4u,  4u,  4u,  4u,  4u,  4u,
+    8u, 8u, 8u, 8u, 8u,  8u,  8u,  8u,  12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u,
+};
+
+LIBYUV_TARGET_AVX2
+void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
+                              const uint8_t* src_argb,
+                              int dst_width,
+                              int x,
+                              int dx) {
+  int n = dst_width & ~3;
+  int r = dst_width & 3;
+  if (n > 0) {
+    SIMD_ALIGNED(int32_t xi_buf[4]);
+    SIMD_ALIGNED(uint64_t pix_buf[4]);
+    const __m256i shuf_argb = _mm256_broadcastsi128_si256(
+        _mm_loadu_si128((const __m128i*)&kShuffleColARGB));
+    const __m256i shuf_frac =
+        _mm256_loadu_si256((const __m256i*)kShuffleFractionsAVX2);
+    const __m256i mask_7f = _mm256_set1_epi16(0x007f);
+    __m128i vx = _mm_add_epi32(
+        _mm_set1_epi32(x),
+        _mm_mullo_epi32(_mm_set1_epi32(dx),
+                        _mm_loadu_si128((const __m128i*)kStep0_3_ARGB)));
+    const __m128i vdx4 = _mm_slli_epi32(_mm_set1_epi32(dx), 2);
+    for (int i = 0; i < n; i += 4) {
+      _mm_store_si128((__m128i*)xi_buf, _mm_srai_epi32(vx, 16));
+      __m128i f128 = _mm_srli_epi16(vx, 9);
+      vx = _mm_add_epi32(vx, vdx4);
+      pix_buf[0] = LoadU64(src_argb + (ptrdiff_t)xi_buf[0] * 4);
+      pix_buf[1] = LoadU64(src_argb + (ptrdiff_t)xi_buf[1] * 4);
+      pix_buf[2] = LoadU64(src_argb + (ptrdiff_t)xi_buf[2] * 4);
+      pix_buf[3] = LoadU64(src_argb + (ptrdiff_t)xi_buf[3] * 4);
+      __m256i pix = _mm256_shuffle_epi8(
+          _mm256_load_si256((const __m256i*)pix_buf), shuf_argb);
+      __m256i weights = _mm256_xor_si256(
+          _mm256_shuffle_epi8(
+              _mm256_inserti128_si256(_mm256_zextsi128_si256(f128), f128, 1),
+              shuf_frac),
+          mask_7f);
+      __m256i res = _mm256_srli_epi16(_mm256_maddubs_epi16(pix, weights), 7);
+      res = _mm256_permute4x64_epi64(_mm256_packus_epi16(res, res), 0xd8);
+      _mm_storeu_si128((__m128i*)dst_argb, _mm256_castsi256_si128(res));
+      dst_argb += 16;
+    }
+    x = (int)((uint32_t)x + (uint32_t)n * (uint32_t)dx);
+  }
+  for (int j = 0; j < r; ++j) {
+    ptrdiff_t xi = (ptrdiff_t)(x >> 16) * 4;
+    int xf = (x >> 9) & 0x7f;
+    const uint8_t* a = src_argb + xi;
+    const uint8_t* b = a + 4;
+    dst_argb[0] = (uint8_t)((a[0] * (0x7f ^ xf) + b[0] * xf) >> 7);
+    dst_argb[1] = (uint8_t)((a[1] * (0x7f ^ xf) + b[1] * xf) >> 7);
+    dst_argb[2] = (uint8_t)((a[2] * (0x7f ^ xf) + b[2] * xf) >> 7);
+    dst_argb[3] = (uint8_t)((a[3] * (0x7f ^ xf) + b[3] * xf) >> 7);
+    dst_argb += 4;
+    x = (int)((uint32_t)x + (uint32_t)dx);
+  }
+}
+#endif  // HAS_SCALEARGBFILTERCOLS_AVX2
+
+#ifdef HAS_SCALEUVROWDOWN2_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowDown2_AVX2(const uint8_t* src_uv,
+                          ptrdiff_t src_stride,
+                          uint8_t* dst_uv,
+                          int dst_width) {
+  (void)src_stride;
+  while (dst_width >= 16) {
+    __m256i s0 =
+        _mm256_srli_epi32(_mm256_loadu_si256((const __m256i*)src_uv), 16);
+    __m256i s1 = _mm256_srli_epi32(
+        _mm256_loadu_si256((const __m256i*)(src_uv + 32)), 16);
+    src_uv += 64;
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi32(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_uv, d);
+    dst_uv += 32;
+    dst_width -= 16;
+  }
+  if (dst_width > 0) {
+    __m256i s0 =
+        _mm256_srli_epi32(_mm256_loadu_si256((const __m256i*)src_uv), 16);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi32(s0, s0), 0xd8);
+    _mm_storeu_si128((__m128i*)dst_uv, _mm256_castsi256_si128(d));
+  }
+}
+#endif  // HAS_SCALEUVROWDOWN2_AVX2
+
+#ifdef HAS_SCALEUVROWDOWN2LINEAR_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowDown2Linear_AVX2(const uint8_t* src_uv,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_uv,
+                                int dst_width) {
+  (void)src_stride;
+  const __m256i mask = _mm256_set1_epi32(0x0000ffff);
+  while (dst_width >= 16) {
+    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_uv);
+    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_uv + 32));
+    src_uv += 64;
+    __m256i s0 =
+        _mm256_and_si256(_mm256_avg_epu8(r0, _mm256_srli_epi32(r0, 16)), mask);
+    __m256i s1 =
+        _mm256_and_si256(_mm256_avg_epu8(r1, _mm256_srli_epi32(r1, 16)), mask);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi32(s0, s1), 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_uv, d);
+    dst_uv += 32;
+    dst_width -= 16;
+  }
+  if (dst_width > 0) {
+    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_uv);
+    __m256i s0 =
+        _mm256_and_si256(_mm256_avg_epu8(r0, _mm256_srli_epi32(r0, 16)), mask);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_packus_epi32(s0, s0), 0xd8);
+    _mm_storeu_si128((__m128i*)dst_uv, _mm256_castsi256_si128(d));
+  }
+}
+#endif  // HAS_SCALEUVROWDOWN2LINEAR_AVX2
+
+#ifdef HAS_SCALEUVROWDOWN2BOX_AVX2
+static const uvec8 kShuffleSplitUV = {0u, 2u, 4u, 6u, 8u, 10u, 12u, 14u,
+                                      1u, 3u, 5u, 7u, 9u, 11u, 13u, 15u};
+static const uvec8 kShuffleMergeUV = {0u,   8u,   2u,   10u,  4u,   12u,
+                                      6u,   14u,  0x80, 0x80, 0x80, 0x80,
+                                      0x80, 0x80, 0x80, 0x80};
+
+LIBYUV_TARGET_AVX2
+void ScaleUVRowDown2Box_AVX2(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width) {
+  const __m256i split = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kShuffleSplitUV));
+  const __m256i merge = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kShuffleMergeUV));
+  const __m256i ones = _mm256_set1_epi8(1);
+  const __m256i zero = _mm256_setzero_si256();
+  while (dst_width > 0) {
+    __m256i r0 = _mm256_maddubs_epi16(
+        _mm256_shuffle_epi8(_mm256_loadu_si256((const __m256i*)src_ptr), split),
+        ones);
+    __m256i r1 = _mm256_maddubs_epi16(
+        _mm256_shuffle_epi8(
+            _mm256_loadu_si256((const __m256i*)(src_ptr + src_stride)), split),
+        ones);
+    src_ptr += 32;
+    __m256i s =
+        _mm256_avg_epu16(_mm256_srli_epi16(_mm256_add_epi16(r0, r1), 1), zero);
+    __m256i d = _mm256_permute4x64_epi64(_mm256_shuffle_epi8(s, merge), 0xd8);
+    _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(d));
+    dst_ptr += 16;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEUVROWDOWN2BOX_AVX2
+
+#ifdef HAS_SCALEUVROWDOWNEVEN_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowDownEven_AVX2(const uint8_t* src_uv,
+                             ptrdiff_t src_stride,
+                             int src_stepx,
+                             uint8_t* dst_uv,
+                             int dst_width) {
+  (void)src_stride;
+  const ptrdiff_t step = (ptrdiff_t)src_stepx * 2;
+  SIMD_ALIGNED(uint16_t uv_buf[8]);
+  while (dst_width > 0) {
+    uv_buf[0] = LoadU16(src_uv);
+    uv_buf[1] = LoadU16(src_uv + step);
+    uv_buf[2] = LoadU16(src_uv + step * 2);
+    uv_buf[3] = LoadU16(src_uv + step * 3);
+    uv_buf[4] = LoadU16(src_uv + step * 4);
+    uv_buf[5] = LoadU16(src_uv + step * 5);
+    uv_buf[6] = LoadU16(src_uv + step * 6);
+    uv_buf[7] = LoadU16(src_uv + step * 7);
+    src_uv += step * 8;
+    _mm_storeu_si128((__m128i*)dst_uv, _mm_load_si128((const __m128i*)uv_buf));
+    dst_uv += 16;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEUVROWDOWNEVEN_AVX2
+
+#if defined(HAS_SCALEUVROWUP2_LINEAR_AVX2) || \
+    defined(HAS_SCALEUVROWUP2_BILINEAR_AVX2)
+static const uvec8 kUVLinearMadd31 = {3, 1, 3, 1, 1, 3, 1, 3,
+                                      3, 1, 3, 1, 1, 3, 1, 3};
+#endif
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowUp2_Linear_AVX2(const uint8_t* src_ptr,
+                               uint8_t* dst_ptr,
+                               int dst_width) {
+  const __m256i madd31 = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kUVLinearMadd31));
+  const __m256i round2 = _mm256_set1_epi16(2);
+  while (dst_width > 0) {
+    __m256i s0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_ptr)), 0xd8);
+    __m256i s1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)(src_ptr + 2))),
+        0xd8);
+    src_ptr += 16;
+    __m256i p = _mm256_unpacklo_epi8(s0, s1);
+    __m256i lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi32(p, p), madd31);
+    __m256i hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi32(p, p), madd31);
+    lo = _mm256_srli_epi16(_mm256_add_epi16(lo, round2), 2);
+    hi = _mm256_srli_epi16(_mm256_add_epi16(hi, round2), 2);
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_packus_epi16(lo, hi));
+    dst_ptr += 32;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_LINEAR_AVX2
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowUp2_Bilinear_AVX2(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_ptr,
+                                 ptrdiff_t dst_stride,
+                                 int dst_width) {
+  const __m256i madd31 = _mm256_broadcastsi128_si256(
+      _mm_loadu_si128((const __m128i*)&kUVLinearMadd31));
+  const __m256i round8 = _mm256_set1_epi16(8);
+  while (dst_width > 0) {
+    __m256i a0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)src_ptr)), 0xd8);
+    __m256i a1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(_mm_loadu_si128((const __m128i*)(src_ptr + 2))),
+        0xd8);
+    __m256i pa = _mm256_unpacklo_epi8(a0, a1);
+    __m256i r0_lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi32(pa, pa), madd31);
+    __m256i r0_hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi32(pa, pa), madd31);
+
+    __m256i b0 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(
+            _mm_loadu_si128((const __m128i*)(src_ptr + src_stride))),
+        0xd8);
+    __m256i b1 = _mm256_permute4x64_epi64(
+        _mm256_zextsi128_si256(
+            _mm_loadu_si128((const __m128i*)(src_ptr + src_stride + 2))),
+        0xd8);
+    src_ptr += 16;
+    __m256i pb = _mm256_unpacklo_epi8(b0, b1);
+    __m256i r1_lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi32(pb, pb), madd31);
+    __m256i r1_hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi32(pb, pb), madd31);
+
+    __m256i d0_lo = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r0_lo, r0_lo), r0_lo),
+                         _mm256_add_epi16(r1_lo, round8)),
+        4);
+    __m256i d1_lo = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r1_lo, r1_lo), r1_lo),
+                         _mm256_add_epi16(r0_lo, round8)),
+        4);
+    __m256i d0_hi = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r0_hi, r0_hi), r0_hi),
+                         _mm256_add_epi16(r1_hi, round8)),
+        4);
+    __m256i d1_hi = _mm256_srli_epi16(
+        _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(r1_hi, r1_hi), r1_hi),
+                         _mm256_add_epi16(r0_hi, round8)),
+        4);
+
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_packus_epi16(d0_lo, d0_hi));
+    _mm256_storeu_si256((__m256i*)(dst_ptr + dst_stride),
+                        _mm256_packus_epi16(d1_lo, d1_hi));
+    dst_ptr += 32;
+    dst_width -= 16;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_BILINEAR_AVX2
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_16_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowUp2_Linear_16_AVX2(const uint16_t* src_ptr,
+                                  uint16_t* dst_ptr,
+                                  int dst_width) {
+  const __m256i round2 = _mm256_set1_epi32(2);
+  while (dst_width > 0) {
+    __m256i near_lo =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)src_ptr));
+    __m256i near_hi =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)(src_ptr + 2)));
+    src_ptr += 8;
+    __m256i far_lo = _mm256_shuffle_epi32(near_lo, 0x4e);
+    __m256i far_hi = _mm256_shuffle_epi32(near_hi, 0x4e);
+    __m256i d_lo = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(near_lo, near_lo),
+                         _mm256_add_epi32(near_lo, _mm256_add_epi32(far_lo, round2))),
+        2);
+    __m256i d_hi = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(near_hi, near_hi),
+                         _mm256_add_epi32(near_hi, _mm256_add_epi32(far_hi, round2))),
+        2);
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_packus_epi32(d_lo, d_hi));
+    dst_ptr += 16;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_LINEAR_16_AVX2
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_16_AVX2
+LIBYUV_TARGET_AVX2
+void ScaleUVRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint16_t* dst_ptr,
+                                    ptrdiff_t dst_stride,
+                                    int dst_width) {
+  const __m256i round8 = _mm256_set1_epi32(8);
+  while (dst_width > 0) {
+    __m256i a0 =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)src_ptr));
+    __m256i a1 =
+        _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i*)(src_ptr + 2)));
+    __m256i r0_lo = _mm256_add_epi32(
+        _mm256_add_epi32(a0, a0),
+        _mm256_add_epi32(a0, _mm256_shuffle_epi32(a0, 0x4e)));
+    __m256i r0_hi = _mm256_add_epi32(
+        _mm256_add_epi32(a1, a1),
+        _mm256_add_epi32(a1, _mm256_shuffle_epi32(a1, 0x4e)));
+
+    __m256i b0 = _mm256_cvtepu16_epi32(
+        _mm_loadu_si128((const __m128i*)(src_ptr + src_stride)));
+    __m256i b1 = _mm256_cvtepu16_epi32(
+        _mm_loadu_si128((const __m128i*)(src_ptr + src_stride + 2)));
+    src_ptr += 8;
+    __m256i r1_lo = _mm256_add_epi32(
+        _mm256_add_epi32(b0, b0),
+        _mm256_add_epi32(b0, _mm256_shuffle_epi32(b0, 0x4e)));
+    __m256i r1_hi = _mm256_add_epi32(
+        _mm256_add_epi32(b1, b1),
+        _mm256_add_epi32(b1, _mm256_shuffle_epi32(b1, 0x4e)));
+
+    __m256i d0_lo = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r0_lo, r0_lo), r0_lo),
+                         _mm256_add_epi32(r1_lo, round8)),
+        4);
+    __m256i d1_lo = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r1_lo, r1_lo), r1_lo),
+                         _mm256_add_epi32(r0_lo, round8)),
+        4);
+    __m256i d0_hi = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r0_hi, r0_hi), r0_hi),
+                         _mm256_add_epi32(r1_hi, round8)),
+        4);
+    __m256i d1_hi = _mm256_srli_epi32(
+        _mm256_add_epi32(_mm256_add_epi32(_mm256_add_epi32(r1_hi, r1_hi), r1_hi),
+                         _mm256_add_epi32(r0_hi, round8)),
+        4);
+
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm256_packus_epi32(d0_lo, d0_hi));
+    _mm256_storeu_si256((__m256i*)(dst_ptr + dst_stride),
+                        _mm256_packus_epi32(d1_lo, d1_hi));
+    dst_ptr += 16;
+    dst_width -= 8;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_BILINEAR_16_AVX2
+
 #undef LIBYUV_TARGET_AVX2
 #undef LIBYUV_TARGET_AVX512BW
 #undef LIBYUV_TARGET_AVX512VBMI

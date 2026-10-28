@@ -84,9 +84,9 @@ enum FourCC {
   FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
   FOURCC_RAW = FOURCC('r', 'a', 'w', ' '),
   FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
-  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // rgb565 LE.
-  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // argb1555 LE.
-  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444 LE.
+  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // rgb565 LE. deprecated.
+  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // argb1555 LE. deprecated.
+  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444 LE. deprecated.
 
   // 1 Primary Compressed YUV format.
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
@@ -135,9 +135,9 @@ enum FourCC {
   FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG.
   FOURCC_CM32 = FOURCC(0, 0, 0, 32),  // Alias for BGRA kCMPixelFormat_32ARGB
   FOURCC_CM24 = FOURCC(0, 0, 0, 24),  // Alias for RAW kCMPixelFormat_24RGB
-  FOURCC_L555 = FOURCC('L', '5', '5', '5'),  // Alias for RGBO.
-  FOURCC_L565 = FOURCC('L', '5', '6', '5'),  // Alias for RGBP.
-  FOURCC_5551 = FOURCC('5', '5', '5', '1'),  // Alias for RGBO.
+  FOURCC_L555 = FOURCC('L', '5', '5', '5'),  // Alias for RGBO. deprecated.
+  FOURCC_L565 = FOURCC('L', '5', '6', '5'),  // Alias for RGBP. deprecated.
+  FOURCC_5551 = FOURCC('5', '5', '5', '1'),  // Alias for RGBO. deprecated.
 
   // deprecated formats.  Not supported, but defined for backward compatibility.
   FOURCC_I411 = FOURCC('I', '4', '1', '1'),
@@ -177,9 +177,9 @@ enum FourCCBpp {
   FOURCC_BPP_AB64 = 64,
   FOURCC_BPP_24BG = 24,
   FOURCC_BPP_RAW = 24,
-  FOURCC_BPP_RGBP = 16,
-  FOURCC_BPP_RGBO = 16,
-  FOURCC_BPP_R444 = 16,
+  FOURCC_BPP_RGBP = 16,  // deprecated
+  FOURCC_BPP_RGBO = 16,  // deprecated
+  FOURCC_BPP_R444 = 16,  // deprecated
   FOURCC_BPP_RGGB = 8,
   FOURCC_BPP_BGGR = 8,
   FOURCC_BPP_GRBG = 8,

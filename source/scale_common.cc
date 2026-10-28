@@ -1155,6 +1155,86 @@ void ScaleUVRowDownEvenBox_C(const uint8_t* src_uv,
   }
 }
 
+void ScaleUVRowDown2_16_C(const uint16_t* src_uv,
+                          ptrdiff_t src_stride,
+                          uint16_t* dst_uv,
+                          int dst_width) {
+  int x;
+  (void)src_stride;
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = src_uv[2];  // Store the 2nd UV
+    dst_uv[1] = src_uv[3];
+    src_uv += 4;
+    dst_uv += 2;
+  }
+}
+
+void ScaleUVRowDown2Linear_16_C(const uint16_t* src_uv,
+                                ptrdiff_t src_stride,
+                                uint16_t* dst_uv,
+                                int dst_width) {
+  int x;
+  (void)src_stride;
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = (uint16_t)(((uint32_t)src_uv[0] + src_uv[2] + 1) >> 1);
+    dst_uv[1] = (uint16_t)(((uint32_t)src_uv[1] + src_uv[3] + 1) >> 1);
+    src_uv += 4;
+    dst_uv += 2;
+  }
+}
+
+void ScaleUVRowDown2Box_16_C(const uint16_t* src_uv,
+                             ptrdiff_t src_stride,
+                             uint16_t* dst_uv,
+                             int dst_width) {
+  int x;
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = (uint16_t)(((uint32_t)src_uv[0] + src_uv[2] +
+                            src_uv[src_stride] + src_uv[src_stride + 2] + 2) >>
+                           2);
+    dst_uv[1] =
+        (uint16_t)(((uint32_t)src_uv[1] + src_uv[3] + src_uv[src_stride + 1] +
+                    src_uv[src_stride + 3] + 2) >>
+                   2);
+    src_uv += 4;
+    dst_uv += 2;
+  }
+}
+
+void ScaleUVRowDownEven_16_C(const uint16_t* src_uv,
+                             ptrdiff_t src_stride,
+                             int src_stepx,
+                             uint16_t* dst_uv,
+                             int dst_width) {
+  int x;
+  (void)src_stride;
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = src_uv[0];
+    dst_uv[1] = src_uv[1];
+    src_uv += src_stepx * 2;
+    dst_uv += 2;
+  }
+}
+
+void ScaleUVRowDownEvenBox_16_C(const uint16_t* src_uv,
+                                ptrdiff_t src_stride,
+                                int src_stepx,
+                                uint16_t* dst_uv,
+                                int dst_width) {
+  int x;
+  for (x = 0; x < dst_width; ++x) {
+    dst_uv[0] = (uint16_t)(((uint32_t)src_uv[0] + src_uv[2] +
+                            src_uv[src_stride] + src_uv[src_stride + 2] + 2) >>
+                           2);
+    dst_uv[1] =
+        (uint16_t)(((uint32_t)src_uv[1] + src_uv[3] + src_uv[src_stride + 1] +
+                    src_uv[src_stride + 3] + 2) >>
+                   2);
+    src_uv += src_stepx * 2;
+    dst_uv += 2;
+  }
+}
+
 void ScaleUVRowUp2_Linear_C(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int dst_width) {
@@ -1382,6 +1462,118 @@ void ScaleUVAddCols3_C(int dst_width,
   }
 }
 
+// Scales a single row of 16-bit UV pixels using point sampling.
+void ScaleUVCols_16_C(uint16_t* dst_uv,
+                      const uint16_t* src_uv,
+                      int dst_width,
+                      int x,
+                      int dx) {
+  int j;
+  for (j = 0; j < dst_width; ++j) {
+    const uint16_t* src = src_uv + (x >> 16) * 2;
+    dst_uv[0] = src[0];
+    dst_uv[1] = src[1];
+    dst_uv += 2;
+    x += dx;
+  }
+}
+
+void ScaleUVCols64_16_C(uint16_t* dst_uv,
+                        const uint16_t* src_uv,
+                        int dst_width,
+                        int x32,
+                        int dx) {
+  int64_t x = (int64_t)(x32);
+  int j;
+  for (j = 0; j < dst_width; ++j) {
+    const uint16_t* src = src_uv + (x >> 16) * 2;
+    dst_uv[0] = src[0];
+    dst_uv[1] = src[1];
+    dst_uv += 2;
+    x += dx;
+  }
+}
+
+// Scales a single row of 16-bit UV pixels up by 2x using point sampling.
+void ScaleUVColsUp2_16_C(uint16_t* dst_uv,
+                         const uint16_t* src_uv,
+                         int dst_width,
+                         int x,
+                         int dx) {
+  int j;
+  (void)x;
+  (void)dx;
+  for (j = 0; j < dst_width - 1; j += 2) {
+    dst_uv[0] = dst_uv[2] = src_uv[0];
+    dst_uv[1] = dst_uv[3] = src_uv[1];
+    src_uv += 2;
+    dst_uv += 4;
+  }
+  if (dst_width & 1) {
+    dst_uv[0] = src_uv[0];
+    dst_uv[1] = src_uv[1];
+  }
+}
+
+#define BLENDER_16(a, b, f)                                                   \
+  (uint16_t)((int)(a) +                                                       \
+             (int)((((int64_t)((f)) * ((int64_t)(b) - (int)(a))) + 0x8000) >> \
+                   16))
+
+void ScaleUVFilterCols_16_C(uint16_t* dst_uv,
+                            const uint16_t* src_uv,
+                            int dst_width,
+                            int x,
+                            int dx) {
+  int j;
+  for (j = 0; j < dst_width; ++j) {
+    int xi = (x >> 16) * 2;
+    int xf = x & 0xffff;
+    const uint16_t* a = src_uv + xi;
+    const uint16_t* b = a + 2;
+    dst_uv[0] = BLENDER_16(a[0], b[0], xf);
+    dst_uv[1] = BLENDER_16(a[1], b[1], xf);
+    dst_uv += 2;
+    x += dx;
+  }
+}
+
+void ScaleUVFilterCols64_16_C(uint16_t* dst_uv,
+                              const uint16_t* src_uv,
+                              int dst_width,
+                              int x32,
+                              int dx) {
+  int64_t x = (int64_t)(x32);
+  int j;
+  for (j = 0; j < dst_width; ++j) {
+    int64_t xi = (x >> 16) * 2;
+    int xf = x & 0xffff;
+    const uint16_t* a = src_uv + xi;
+    const uint16_t* b = a + 2;
+    dst_uv[0] = BLENDER_16(a[0], b[0], xf);
+    dst_uv[1] = BLENDER_16(a[1], b[1], xf);
+    dst_uv += 2;
+    x += dx;
+  }
+}
+#undef BLENDER_16
+
+// Scale 16-bit UV columns by 3 box filter.
+void ScaleUVAddCols3_16_C(int dst_width,
+                          int scaleval,
+                          const uint32_t* src_uv,
+                          uint16_t* dst_uv) {
+  int i;
+  for (i = 0; i < dst_width; ++i) {
+    uint32_t u = src_uv[0] + src_uv[2] + src_uv[4];
+    uint32_t v = src_uv[1] + src_uv[3] + src_uv[5];
+    src_uv += 6;
+    dst_uv[0] = (uint16_t)((u * (uint32_t)scaleval) >> 16);
+    dst_uv[1] = (uint16_t)((v * (uint32_t)scaleval) >> 16);
+    dst_uv += 2;
+  }
+}
+
 // Scale plane vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width,
@@ -1536,14 +1728,6 @@ void ScalePlaneVertical_16(int src_height,
   assert(dst_width > 0);
   assert(dst_height > 0);
   src_argb += (x >> 16) * wpp;
-#if defined(HAS_INTERPOLATEROW_16_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    InterpolateRow = InterpolateRow_16_Any_SSSE3;
-    if (IS_ALIGNED(dst_width_words, 16)) {
-      InterpolateRow = InterpolateRow_16_SSSE3;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_16_Any_AVX2;

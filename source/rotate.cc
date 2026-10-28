@@ -24,6 +24,21 @@ namespace libyuv {
 extern "C" {
 #endif
 
+static void TransposeWxH(const uint8_t* src,
+                         int src_stride,
+                         uint8_t* dst,
+                         int dst_stride,
+                         int width,
+                         int height) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    int j;
+    for (j = 0; j < height; ++j) {
+      dst[i * dst_stride + j] = src[j * src_stride + i];
+    }
+  }
+}
+
 LIBYUV_API
 void TransposePlane(const uint8_t* src,
                     int src_stride,
@@ -33,8 +48,8 @@ void TransposePlane(const uint8_t* src,
                     int height) {
   int i = height;
 #if defined(HAS_TRANSPOSEWXH_SME) || defined(HAS_TRANSPOSEWXH_HVX)
-  void (*TransposeWxH)(const uint8_t* src, int src_stride, uint8_t* dst,
-                       int dst_stride, int width, int height) = NULL;
+  void (*TransposeWxH_fn)(const uint8_t* src, int src_stride, uint8_t* dst,
+                          int dst_stride, int width, int height) = NULL;
 #endif
 #if defined(HAS_TRANSPOSEWX16_AVX2) || defined(HAS_TRANSPOSEWX16_AVX512BW) || \
     defined(HAS_TRANSPOSEWX16_LASX) || defined(HAS_TRANSPOSEWX16_WASMSIMD)
@@ -67,19 +82,19 @@ void TransposePlane(const uint8_t* src,
 #endif
 #if defined(HAS_TRANSPOSEWXH_SME)
   if (TestCpuFlag(kCpuHasSME)) {
-    TransposeWxH = TransposeWxH_SME;
+    TransposeWxH_fn = TransposeWxH_SME;
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
-    TransposeWxH = TransposeWxH_HVX;
+    TransposeWxH_fn = TransposeWxH_HVX;
   }
 #endif
-#if defined(HAS_TRANSPOSEWX8_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    TransposeWx8 = TransposeWx8_Any_SSSE3;
+#if defined(HAS_TRANSPOSEWX8_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeWx8 = TransposeWx8_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      TransposeWx8 = TransposeWx8_SSSE3;
+      TransposeWx8 = TransposeWx8_AVX2;
     }
   }
 #endif
@@ -130,8 +145,8 @@ void TransposePlane(const uint8_t* src,
 #endif
 
 #if defined(HAS_TRANSPOSEWXH_SME) || defined(HAS_TRANSPOSEWXH_HVX)
-  if (TransposeWxH) {
-    TransposeWxH(src, src_stride, dst, dst_stride, width, height);
+  if (TransposeWxH_fn) {
+    TransposeWxH_fn(src, src_stride, dst, dst_stride, width, height);
     return;
   }
 #endif
@@ -159,7 +174,7 @@ void TransposePlane(const uint8_t* src,
 #endif
 
   if (i > 0) {
-    TransposeWxH_C(src, src_stride, dst, dst_stride, width, i);
+    TransposeWxH(src, src_stride, dst, dst_stride, width, i);
   }
 }
 
@@ -237,10 +252,7 @@ void RotatePlane180(const uint8_t* src,
 #endif
 #if defined(HAS_MIRRORROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    MirrorRow = MirrorRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      MirrorRow = MirrorRow_AVX512BW;
-    }
+    MirrorRow = MirrorRow_AVX512BW;
   }
 #endif
 #if defined(HAS_MIRRORROW_LSX)
@@ -341,6 +353,24 @@ void RotatePlane180(const uint8_t* src,
   free_aligned_buffer_64(row);
 }
 
+static void TransposeUVWxH(const uint8_t* src,
+                           int src_stride,
+                           uint8_t* dst_a,
+                           int dst_stride_a,
+                           uint8_t* dst_b,
+                           int dst_stride_b,
+                           int width,
+                           int height) {
+  int i;
+  for (i = 0; i < width * 2; i += 2) {
+    int j;
+    for (j = 0; j < height; ++j) {
+      dst_a[((i >> 1) * dst_stride_a) + j] = src[i + (j * src_stride)];
+      dst_b[((i >> 1) * dst_stride_b) + j] = src[i + (j * src_stride) + 1];
+    }
+  }
+}
+
 LIBYUV_API
 void SplitTransposeUV(const uint8_t* src,
                       int src_stride,
@@ -352,9 +382,9 @@ void SplitTransposeUV(const uint8_t* src,
                       int height) {
   int i = height;
 #if defined(HAS_TRANSPOSEUVWXH_SME) || defined(HAS_TRANSPOSEUVWXH_HVX)
-  void (*TransposeUVWxH)(const uint8_t* src, int src_stride, uint8_t* dst_a,
-                         int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
-                         int width, int height) = NULL;
+  void (*TransposeUVWxH_fn)(const uint8_t* src, int src_stride, uint8_t* dst_a,
+                            int dst_stride_a, uint8_t* dst_b, int dst_stride_b,
+                            int width, int height) = NULL;
 #endif
 #if defined(HAS_TRANSPOSEUVWX16_AVX2) ||     \
     defined(HAS_TRANSPOSEUVWX16_AVX512BW) || \
@@ -393,19 +423,19 @@ void SplitTransposeUV(const uint8_t* src,
 #endif
 #if defined(HAS_TRANSPOSEUVWXH_SME)
   if (TestCpuFlag(kCpuHasSME)) {
-    TransposeUVWxH = TransposeUVWxH_SME;
+    TransposeUVWxH_fn = TransposeUVWxH_SME;
   }
 #endif
 #if defined(HAS_TRANSPOSEUVWXH_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
-    TransposeUVWxH = TransposeUVWxH_HVX;
+    TransposeUVWxH_fn = TransposeUVWxH_HVX;
   }
 #endif
-#if defined(HAS_TRANSPOSEUVWX8_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    TransposeUVWx8 = TransposeUVWx8_Any_SSE2;
+#if defined(HAS_TRANSPOSEUVWX8_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeUVWx8 = TransposeUVWx8_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
-      TransposeUVWx8 = TransposeUVWx8_SSE2;
+      TransposeUVWx8 = TransposeUVWx8_AVX2;
     }
   }
 #endif
@@ -440,9 +470,9 @@ void SplitTransposeUV(const uint8_t* src,
 #endif
 
 #if defined(HAS_TRANSPOSEUVWXH_SME) || defined(HAS_TRANSPOSEUVWXH_HVX)
-  if (TransposeUVWxH) {
-    TransposeUVWxH(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
-                   width, i);
+  if (TransposeUVWxH_fn) {
+    TransposeUVWxH_fn(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                      width, i);
     return;
   }
 #endif
@@ -472,8 +502,8 @@ void SplitTransposeUV(const uint8_t* src,
   }
 
   if (i > 0) {
-    TransposeUVWxH_C(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
-                     width, i);
+    TransposeUVWxH(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                   width, i);
   }
 }
 
@@ -657,6 +687,21 @@ int RotatePlane(const uint8_t* src,
   return -1;
 }
 
+static void TransposeWxH_16(const uint16_t* src,
+                            int src_stride,
+                            uint16_t* dst,
+                            int dst_stride,
+                            int width,
+                            int height) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    int j;
+    for (j = 0; j < height; ++j) {
+      dst[i * dst_stride + j] = src[j * src_stride + i];
+    }
+  }
+}
+
 static void TransposePlane_16(const uint16_t* src,
                               int src_stride,
                               uint16_t* dst,
@@ -666,8 +711,8 @@ static void TransposePlane_16(const uint16_t* src,
   int i = height;
 #if defined(HAS_TRANSPOSEWXH_16_SME) || defined(HAS_TRANSPOSEWXH_16_RVV) || \
     defined(HAS_TRANSPOSEWXH_16_HVX)
-  void (*TransposeWxH_16)(const uint16_t* src, int src_stride, uint16_t* dst,
-                          int dst_stride, int width, int height) = NULL;
+  void (*TransposeWxH_16_fn)(const uint16_t* src, int src_stride, uint16_t* dst,
+                             int dst_stride, int width, int height) = NULL;
 #endif
 #if defined(HAS_TRANSPOSEWX32_16_AVX512BW)
   void (*TransposeWx32_16)(const uint16_t* src, int src_stride, uint16_t* dst,
@@ -695,17 +740,25 @@ static void TransposePlane_16(const uint16_t* src,
 #endif
 #if defined(HAS_TRANSPOSEWXH_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
-    TransposeWxH_16 = TransposeWxH_16_SME;
+    TransposeWxH_16_fn = TransposeWxH_16_SME;
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_16_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-    TransposeWxH_16 = TransposeWxH_16_RVV;
+    TransposeWxH_16_fn = TransposeWxH_16_RVV;
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_16_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
-    TransposeWxH_16 = TransposeWxH_16_HVX;
+    TransposeWxH_16_fn = TransposeWxH_16_HVX;
+  }
+#endif
+#if defined(HAS_TRANSPOSEWX8_16_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeWx8_16 = TransposeWx8_16_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeWx8_16 = TransposeWx8_16_AVX2;
+    }
   }
 #endif
 #if defined(HAS_TRANSPOSEWX16_16_AVX2)
@@ -748,8 +801,8 @@ static void TransposePlane_16(const uint16_t* src,
 
 #if defined(HAS_TRANSPOSEWXH_16_SME) || defined(HAS_TRANSPOSEWXH_16_RVV) || \
     defined(HAS_TRANSPOSEWXH_16_HVX)
-  if (TransposeWxH_16) {
-    TransposeWxH_16(src, src_stride, dst, dst_stride, width, height);
+  if (TransposeWxH_16_fn) {
+    TransposeWxH_16_fn(src, src_stride, dst, dst_stride, width, height);
     return;
   }
 #endif
@@ -782,7 +835,7 @@ static void TransposePlane_16(const uint16_t* src,
   }
 
   if (i > 0) {
-    TransposeWxH_16_C(src, src_stride, dst, dst_stride, width, i);
+    TransposeWxH_16(src, src_stride, dst, dst_stride, width, i);
   }
 }
 

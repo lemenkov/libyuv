@@ -47,11 +47,30 @@ and compiler compatibility.
 
 ### Utility and Fallbacks
 
-*   **row_common.cc**: Portable C/C++ versions. This is the reference
-    implementation.
+*   **row_common.cc**: Portable C/C++ versions and multi-step `ARGB` wrapper
+    row functions. This is the reference implementation.
 *   **row_any.cc**: Handles "remainder" pixels for widths not multiples of SIMD
-    register size. Used for x86, Neon, and MIPS. Not required for SVE2, SME,
-    RVV, or HVX due to hardware-level masking.
+    register size. Used for SSE/AVX2, Neon, and LoongArch (LSX/LASX). Not
+    required for AVX-512, SVE2, SME, RVV, or HVX, which handle tail masking
+    directly inside the Row function.
+
+## Deprecated and Lower-Priority Formats
+
+The following datatypes and functions are deprecated or lower priority and are
+not always fully hand-optimized across every SIMD extension:
+
+*   **16-bit RGB formats** (deprecated): `RGB565` (`FOURCC_RGBP`,
+    `FOURCC_L565`), `ARGB1555` (`FOURCC_RGBO`, `FOURCC_L555`, `FOURCC_5551`),
+    and `ARGB4444` (`FOURCC_R444`).
+*   **Legacy fixed-matrix RGB-to-YUV row functions** (deprecated in favor of
+    `*MatrixRow` variants): `RGB565ToYRow`, `RGB565ToUVRow`, `ARGB1555ToYRow`,
+    `ARGB1555ToUVRow`, `ARGB4444ToYRow`, `ARGB4444ToUVRow`.
+*   **Row-biplanar YUV** (deprecated): `M420` (`FOURCC_M420`).
+
+When adding SIMD coverage for deprecated or less relevant formats, prefer
+two-step wrapper implementations in `source/row_common.cc` that convert to or
+from an intermediate stack-allocated `ARGB` row buffer (or delegate to existing
+`*MatrixRow` functions) rather than writing large bespoke assembly kernels.
 
 ## Coding Guidelines
 
@@ -72,7 +91,9 @@ and compiler compatibility.
 ### x86 Architectures (32-bit and 64-bit)
 
 1.  **AVX512 Logic**: AVX512 row functions are strictly enabled for **64-bit x86
-    only**.
+    only**. Do not create `_Any_` wrappers for AVX512 row functions; handle
+    arbitrary tail widths directly inside the Row function using `k1`-`k7`
+    opmask registers.
 2.  **MSVC Intrinsics (`row_win.cc`)**: When converting `row_gcc.cc` to
     `row_win.cc`, use `_mm512_permutex2var_epi8`, not `_mm512_permi2var_epi8`
     intrinsic.

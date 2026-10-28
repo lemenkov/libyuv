@@ -142,7 +142,7 @@ int ARGBToRAW(const uint8_t* src_argb,
               int width,
               int height);
 
-// Convert ARGB To RGB565.
+// Convert ARGB To RGB565. Deprecated.
 LIBYUV_API
 int ARGBToRGB565(const uint8_t* src_argb,
                  int src_stride_argb,
@@ -151,7 +151,7 @@ int ARGBToRGB565(const uint8_t* src_argb,
                  int width,
                  int height);
 
-// Convert ARGB To RGB565 with 4x4 dither matrix (16 bytes).
+// Convert ARGB To RGB565 with 4x4 dither matrix (16 bytes). Deprecated.
 // Values in dither matrix from 0 to 7 recommended.
 // The order of the dither matrix is first byte is upper left.
 // TODO(fbarchard): Consider pointer to 2d array for dither4x4.
@@ -165,7 +165,7 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
                        int width,
                        int height);
 
-// Convert ARGB To ARGB1555.
+// Convert ARGB To ARGB1555. Deprecated.
 LIBYUV_API
 int ARGBToARGB1555(const uint8_t* src_argb,
                    int src_stride_argb,
@@ -174,7 +174,7 @@ int ARGBToARGB1555(const uint8_t* src_argb,
                    int width,
                    int height);
 
-// Convert ARGB To ARGB4444.
+// Convert ARGB To ARGB4444. Deprecated.
 LIBYUV_API
 int ARGBToARGB4444(const uint8_t* src_argb,
                    int src_stride_argb,

@@ -67,19 +67,19 @@ static void ScaleARGBDown2(int src_width,
     src_argb += (y >> 16) * src_stride + ((x >> 16) - 1) * 4;
   }
 
-#if defined(HAS_SCALEARGBROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
+#if defined(HAS_SCALEARGBROWDOWN2_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
     ScaleARGBRowDown2 =
         filtering == kFilterNone
-            ? ScaleARGBRowDown2_Any_SSE2
-            : (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_Any_SSE2
-                                          : ScaleARGBRowDown2Box_Any_SSE2);
-    if (IS_ALIGNED(dst_width, 4)) {
+            ? ScaleARGBRowDown2_Any_AVX2
+            : (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_Any_AVX2
+                                          : ScaleARGBRowDown2Box_Any_AVX2);
+    if (IS_ALIGNED(dst_width, 8)) {
       ScaleARGBRowDown2 =
           filtering == kFilterNone
-              ? ScaleARGBRowDown2_SSE2
-              : (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_SSE2
-                                            : ScaleARGBRowDown2Box_SSE2);
+              ? ScaleARGBRowDown2_AVX2
+              : (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_AVX2
+                                            : ScaleARGBRowDown2Box_AVX2);
     }
   }
 #endif
@@ -205,11 +205,11 @@ static int ScaleARGBDown4Box(int src_width,
   (void)dx;
   assert(dx == 65536 * 4);      // Test scale factor of 4.
   assert((dy & 0x3ffff) == 0);  // Test vertical scale is multiple of 4.
-#if defined(HAS_SCALEARGBROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_Any_SSE2;
-    if (IS_ALIGNED(dst_width, 4)) {
-      ScaleARGBRowDown2 = ScaleARGBRowDown2Box_SSE2;
+#if defined(HAS_SCALEARGBROWDOWN2_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBRowDown2 = ScaleARGBRowDown2Box_AVX2;
     }
   }
 #endif
@@ -284,13 +284,13 @@ static void ScaleARGBDownEven(int src_width,
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
   src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
-#if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_Any_SSE2
-                                     : ScaleARGBRowDownEven_Any_SSE2;
-    if (IS_ALIGNED(dst_width, 4)) {
+#if defined(HAS_SCALEARGBROWDOWNEVEN_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_Any_AVX2
+                                     : ScaleARGBRowDownEven_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 8)) {
       ScaleARGBRowDownEven =
-          filtering ? ScaleARGBRowDownEvenBox_SSE2 : ScaleARGBRowDownEven_SSE2;
+          filtering ? ScaleARGBRowDownEvenBox_AVX2 : ScaleARGBRowDownEven_AVX2;
     }
   }
 #endif
@@ -444,9 +444,9 @@ static int ScaleARGBBilinearDown(int src_width,
     }
   }
 #endif
-#if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
-    ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
+#if defined(HAS_SCALEARGBFILTERCOLS_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && src_width < 32768) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_AVX2;
   }
 #endif
 #if defined(HAS_SCALEARGBFILTERCOLS_NEON)
@@ -607,9 +607,9 @@ static int ScaleARGBBilinearUp(int src_width,
     ScaleARGBFilterCols =
         filtering ? ScaleARGBFilterCols64_C : ScaleARGBCols64_C;
   }
-#if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
-  if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
-    ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
+#if defined(HAS_SCALEARGBFILTERCOLS_AVX2)
+  if (filtering && TestCpuFlag(kCpuHasAVX2) && src_width < 32768) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_AVX2;
   }
 #endif
 #if defined(HAS_SCALEARGBFILTERCOLS_NEON)
@@ -633,9 +633,9 @@ static int ScaleARGBBilinearUp(int src_width,
     ScaleARGBFilterCols = ScaleARGBFilterCols_RVV;
   }
 #endif
-#if defined(HAS_SCALEARGBCOLS_SSE2)
-  if (!filtering && TestCpuFlag(kCpuHasSSE2) && src_width < 32768) {
-    ScaleARGBFilterCols = ScaleARGBCols_SSE2;
+#if defined(HAS_SCALEARGBCOLS_AVX2)
+  if (!filtering && TestCpuFlag(kCpuHasAVX2) && src_width < 32768) {
+    ScaleARGBFilterCols = ScaleARGBCols_AVX2;
   }
 #endif
 #if defined(HAS_SCALEARGBCOLS_NEON)
@@ -672,9 +672,9 @@ static int ScaleARGBBilinearUp(int src_width,
 #endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
     ScaleARGBFilterCols = ScaleARGBColsUp2_C;
-#if defined(HAS_SCALEARGBCOLSUP2_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
-      ScaleARGBFilterCols = ScaleARGBColsUp2_SSE2;
+#if defined(HAS_SCALEARGBCOLSUP2_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBFilterCols = ScaleARGBColsUp2_AVX2;
     }
 #endif
 #if defined(HAS_SCALEARGBCOLSUP2_WASMSIMD)
@@ -772,9 +772,9 @@ static void ScaleARGBSimple(int src_width,
                         int dst_width, int x, int dx) =
       (src_width >= 32768) ? ScaleARGBCols64_C : ScaleARGBCols_C;
   const int64_t max_y = (int64_t)(src_height - 1) << 16;
-#if defined(HAS_SCALEARGBCOLS_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && src_width < 32768) {
-    ScaleARGBCols = ScaleARGBCols_SSE2;
+#if defined(HAS_SCALEARGBCOLS_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && src_width < 32768) {
+    ScaleARGBCols = ScaleARGBCols_AVX2;
   }
 #endif
 #if defined(HAS_SCALEARGBCOLS_NEON)
@@ -803,9 +803,9 @@ static void ScaleARGBSimple(int src_width,
 #endif
   if (src_width * 2 == dst_width && x < 0x8000) {
     ScaleARGBCols = ScaleARGBColsUp2_C;
-#if defined(HAS_SCALEARGBCOLSUP2_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
-      ScaleARGBCols = ScaleARGBColsUp2_SSE2;
+#if defined(HAS_SCALEARGBCOLSUP2_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBCols = ScaleARGBColsUp2_AVX2;
     }
 #endif
 #if defined(HAS_SCALEARGBCOLSUP2_WASMSIMD)

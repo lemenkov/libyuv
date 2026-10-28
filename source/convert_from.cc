@@ -820,6 +820,11 @@ static int I4xxToPxxx(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_16_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    MergeUVRow_16 = MergeUVRow_16_AVX512BW;
+  }
+#endif
 #if defined(HAS_MERGEUVROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     MergeUVRow_16 = MergeUVRow_16_Any_NEON;

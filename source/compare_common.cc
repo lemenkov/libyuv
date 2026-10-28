@@ -12,6 +12,8 @@
 
 #include <float.h>
 
+#include "libyuv/video_common.h"
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -167,6 +169,34 @@ float SsimWindowRow_C(const uint32_t* row0,
     ssim_total += ((float)n1 * (float)n2) / ((float)d1 * (float)d2);
   }
   return ssim_total;
+}
+
+uint32_t ARGBDetectRow_C(const uint8_t* argb, int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    if (argb[0] != 255) {  // First byte is not Alpha of 255, so not ARGB.
+      return FOURCC_BGRA;
+    }
+    if (argb[3] != 255) {  // Fourth byte is not Alpha of 255, so not BGRA.
+      return FOURCC_ARGB;
+    }
+    if (argb[4] != 255) {  // Second pixel first byte is not Alpha of 255.
+      return FOURCC_BGRA;
+    }
+    if (argb[7] != 255) {  // Second pixel fourth byte is not Alpha of 255.
+      return FOURCC_ARGB;
+    }
+    argb += 8;
+  }
+  if (width & 1) {
+    if (argb[0] != 255) {  // First byte is not Alpha of 255, so not ARGB.
+      return FOURCC_BGRA;
+    }
+    if (argb[3] != 255) {  // 4th byte is not Alpha of 255, so not BGRA.
+      return FOURCC_ARGB;
+    }
+  }
+  return 0;
 }
 
 #ifdef __cplusplus

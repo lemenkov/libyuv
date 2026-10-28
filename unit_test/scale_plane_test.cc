@@ -267,6 +267,13 @@ TEST_F(LibYUVScaleTest, TestScaleRowDown2Box_16) {
     } else {
       ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
     }
+#elif defined(HAS_SCALEROWDOWN2_16_AVX2)
+    int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+    if (has_avx2) {
+      ScaleRowDown2Box_16_AVX2(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
+    } else {
+      ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
+    }
 #else
     ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
 #endif

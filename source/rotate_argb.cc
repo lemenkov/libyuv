@@ -31,7 +31,8 @@ static int ARGBTranspose(const uint8_t* src_argb,
                          int width,
                          int height) {
 #if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
-    defined(HAS_TRANSPOSEWXH_32_RVV) || defined(HAS_TRANSPOSEWXH_32_HVX)
+    defined(HAS_TRANSPOSEWXH_32_RVV) || defined(HAS_TRANSPOSEWXH_32_HVX) ||  \
+    defined(HAS_TRANSPOSEWXH_32_AVX2)
   void (*TransposeWxH_32)(const uint8_t* src, int src_stride, uint8_t* dst,
                           int dst_stride, int width, int height) = NULL;
 #endif
@@ -49,11 +50,11 @@ static int ARGBTranspose(const uint8_t* src_argb,
   if (src_stride_argb & 3) {
     return -1;
   }
-#if defined(HAS_TRANSPOSEWX4_32_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    TransposeWx4_32 = TransposeWx4_32_Any_SSE2;
+#if defined(HAS_TRANSPOSEWX4_32_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeWx4_32 = TransposeWx4_32_Any_AVX2;
     if (IS_ALIGNED(height, 4)) {  // Width of dest.
-      TransposeWx4_32 = TransposeWx4_32_SSE2;
+      TransposeWx4_32 = TransposeWx4_32_AVX2;
     }
   }
 #endif
@@ -63,6 +64,11 @@ static int ARGBTranspose(const uint8_t* src_argb,
     if (IS_ALIGNED(width, 4)) {
       TransposeWx8_32 = TransposeWx8_32_AVX2;
     }
+  }
+#endif
+#if defined(HAS_TRANSPOSEWXH_32_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    TransposeWxH_32 = TransposeWxH_32_AVX2;
   }
 #endif
 #if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
@@ -123,14 +129,6 @@ static int ARGBTranspose(const uint8_t* src_argb,
   }
 #endif
 
-#if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
-    defined(HAS_TRANSPOSEWXH_32_RVV) || defined(HAS_TRANSPOSEWXH_32_HVX)
-  if (TransposeWxH_32) {
-    TransposeWxH_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb, width,
-                    height);
-    return 0;
-  }
-#endif
 #if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
   if (TransposeWx16_32) {
     while (height >= 16) {
@@ -140,6 +138,17 @@ static int ARGBTranspose(const uint8_t* src_argb,
       dst_argb += 16 * 4;
       height -= 16;
     }
+  }
+#endif
+#if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
+    defined(HAS_TRANSPOSEWXH_32_RVV) || defined(HAS_TRANSPOSEWXH_32_HVX) ||  \
+    defined(HAS_TRANSPOSEWXH_32_AVX2)
+  if (TransposeWxH_32) {
+    if (height > 0) {
+      TransposeWxH_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                      width, height);
+    }
+    return 0;
   }
 #endif
 #if defined(HAS_TRANSPOSEWX8_32_AVX2)

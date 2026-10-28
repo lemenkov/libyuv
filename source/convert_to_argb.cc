@@ -174,10 +174,7 @@ static int NV24ToARGB(const uint8_t* src_y,
 #endif
 #if defined(HAS_I444TOARGBROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    I444ToARGBRow = I444ToARGBRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 32)) {
-      I444ToARGBRow = I444ToARGBRow_AVX512BW;
-    }
+    I444ToARGBRow = I444ToARGBRow_AVX512BW;
   }
 #endif
 #if defined(HAS_I444TOARGBROW_NEON)

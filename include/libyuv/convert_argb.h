@@ -1038,7 +1038,7 @@ int RAWToRGBA(const uint8_t* src_raw,
               int width,
               int height);
 
-// RGB16 (RGBP fourcc) little endian to ARGB.
+// RGB16 (RGBP fourcc) little endian to ARGB. Deprecated.
 LIBYUV_API
 int RGB565ToARGB(const uint8_t* src_rgb565,
                  int src_stride_rgb565,
@@ -1047,7 +1047,7 @@ int RGB565ToARGB(const uint8_t* src_rgb565,
                  int width,
                  int height);
 
-// RGB15 (RGBO fourcc) little endian to ARGB.
+// RGB15 (RGBO fourcc) little endian to ARGB. Deprecated.
 LIBYUV_API
 int ARGB1555ToARGB(const uint8_t* src_argb1555,
                    int src_stride_argb1555,
@@ -1056,7 +1056,7 @@ int ARGB1555ToARGB(const uint8_t* src_argb1555,
                    int width,
                    int height);
 
-// RGB12 (R444 fourcc) little endian to ARGB.
+// RGB12 (R444 fourcc) little endian to ARGB. Deprecated.
 LIBYUV_API
 int ARGB4444ToARGB(const uint8_t* src_argb4444,
                    int src_stride_argb4444,
@@ -1173,7 +1173,7 @@ int Android420ToABGR(const uint8_t* src_y,
                      int width,
                      int height);
 
-// Convert NV12 to RGB565.
+// Convert NV12 to RGB565. Deprecated.
 LIBYUV_API
 int NV12ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
@@ -1369,6 +1369,7 @@ int I422ToRAW(const uint8_t* src_y,
               int width,
               int height);
 
+// Convert I420 to RGB565. Deprecated.
 LIBYUV_API
 int I420ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
@@ -1381,6 +1382,7 @@ int I420ToRGB565(const uint8_t* src_y,
                  int width,
                  int height);
 
+// Convert J420 to RGB565. Deprecated.
 LIBYUV_API
 int J420ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
@@ -1393,6 +1395,7 @@ int J420ToRGB565(const uint8_t* src_y,
                  int width,
                  int height);
 
+// Convert H420 to RGB565. Deprecated.
 LIBYUV_API
 int H420ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
@@ -1405,6 +1408,7 @@ int H420ToRGB565(const uint8_t* src_y,
                  int width,
                  int height);
 
+// Convert I422 to RGB565. Deprecated.
 LIBYUV_API
 int I422ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
@@ -1417,7 +1421,7 @@ int I422ToRGB565(const uint8_t* src_y,
                  int width,
                  int height);
 
-// Convert I420 To RGB565 with 4x4 dither matrix (16 bytes).
+// Convert I420 To RGB565 with 4x4 dither matrix (16 bytes). Deprecated.
 // Values in dither matrix from 0 to 7 recommended.
 // The order of the dither matrix is first byte is upper left.
 
@@ -1434,6 +1438,7 @@ int I420ToRGB565Dither(const uint8_t* src_y,
                        int width,
                        int height);
 
+// Convert I420 to ARGB1555. Deprecated.
 LIBYUV_API
 int I420ToARGB1555(const uint8_t* src_y,
                    int src_stride_y,
@@ -1446,6 +1451,7 @@ int I420ToARGB1555(const uint8_t* src_y,
                    int width,
                    int height);
 
+// Convert I420 to ARGB4444. Deprecated.
 LIBYUV_API
 int I420ToARGB4444(const uint8_t* src_y,
                    int src_stride_y,
@@ -1903,7 +1909,7 @@ int NV21ToARGBMatrix(const uint8_t* src_y,
                      int width,
                      int height);
 
-// Convert NV12 to RGB565 with matrix.
+// Convert NV12 to RGB565 with matrix. Deprecated.
 LIBYUV_API
 int NV12ToRGB565Matrix(const uint8_t* src_y,
                        int src_stride_y,
@@ -2030,7 +2036,7 @@ int I422ToRGB24Matrix(const uint8_t* src_y,
                       int width,
                       int height);
 
-// Convert I420 to RGB565 with specified color matrix.
+// Convert I420 to RGB565 with specified color matrix. Deprecated.
 LIBYUV_API
 int I420ToRGB565Matrix(const uint8_t* src_y,
                        int src_stride_y,
@@ -2044,7 +2050,7 @@ int I420ToRGB565Matrix(const uint8_t* src_y,
                        int width,
                        int height);
 
-// Convert I422 to RGB565 with specified color matrix.
+// Convert I422 to RGB565 with specified color matrix. Deprecated.
 LIBYUV_API
 int I422ToRGB565Matrix(const uint8_t* src_y,
                        int src_stride_y,

@@ -208,6 +208,61 @@ TEST_F(LibYUVCompareTest, BenchmarkARGBDetect_Unaligned) {
   free_aligned_buffer_page_end(src_a);
 }
 
+TEST_F(LibYUVCompareTest, TestARGBDetectAnyWidth) {
+  const int kMaxWidth = 65;
+  const int kBufSize = kMaxWidth * 4 + 4;
+  align_buffer_page_end(src_a, kBufSize);
+  memset(src_a, 255, kBufSize);
+
+  for (int width = 1; width <= kMaxWidth; ++width) {
+    for (int offset = 0; offset < 4; ++offset) {
+      uint8_t* row = src_a + kBufSize - width * 4 - offset;
+      // All 255 -> 0 (unknown).
+      MaskCpuFlags(disable_cpu_flags_);
+      uint32_t c_fourcc = ARGBDetect(row, width * 4, width, 1);
+      MaskCpuFlags(benchmark_cpu_info_);
+      uint32_t opt_fourcc = ARGBDetect(row, width * 4, width, 1);
+      EXPECT_EQ(0u, c_fourcc);
+      EXPECT_EQ(c_fourcc, opt_fourcc) << "width " << width << " off " << offset;
+
+      for (int x = 0; x < width; ++x) {
+        // Byte 0 != 255 -> FOURCC_BGRA.
+        row[x * 4 + 0] = 128;
+        MaskCpuFlags(disable_cpu_flags_);
+        c_fourcc = ARGBDetect(row, width * 4, width, 1);
+        MaskCpuFlags(benchmark_cpu_info_);
+        opt_fourcc = ARGBDetect(row, width * 4, width, 1);
+        EXPECT_EQ(static_cast<uint32_t>(FOURCC_BGRA), c_fourcc);
+        EXPECT_EQ(c_fourcc, opt_fourcc)
+            << "width " << width << " x " << x << " byte 0";
+
+        // Both byte 0 and byte 3 != 255 -> FOURCC_BGRA (byte 0 checked first).
+        row[x * 4 + 3] = 64;
+        MaskCpuFlags(disable_cpu_flags_);
+        c_fourcc = ARGBDetect(row, width * 4, width, 1);
+        MaskCpuFlags(benchmark_cpu_info_);
+        opt_fourcc = ARGBDetect(row, width * 4, width, 1);
+        EXPECT_EQ(static_cast<uint32_t>(FOURCC_BGRA), c_fourcc);
+        EXPECT_EQ(c_fourcc, opt_fourcc)
+            << "width " << width << " x " << x << " byte 0+3";
+
+        // Byte 3 != 255 only -> FOURCC_ARGB.
+        row[x * 4 + 0] = 255;
+        MaskCpuFlags(disable_cpu_flags_);
+        c_fourcc = ARGBDetect(row, width * 4, width, 1);
+        MaskCpuFlags(benchmark_cpu_info_);
+        opt_fourcc = ARGBDetect(row, width * 4, width, 1);
+        EXPECT_EQ(static_cast<uint32_t>(FOURCC_ARGB), c_fourcc);
+        EXPECT_EQ(c_fourcc, opt_fourcc)
+            << "width " << width << " x " << x << " byte 3";
+        row[x * 4 + 3] = 255;
+      }
+    }
+  }
+
+  free_aligned_buffer_page_end(src_a);
+}
+
 #ifdef ENABLE_ROW_TESTS
 TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
   const int kMaxWidth = 4096 * 3;

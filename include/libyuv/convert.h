@@ -1152,7 +1152,7 @@ int RAWToJ444(const uint8_t* src_raw,
               int width,
               int height);
 
-// RGB16 (RGBP fourcc) little endian to I420.
+// RGB16 (RGBP fourcc) little endian to I420. Deprecated.
 LIBYUV_API
 int RGB565ToI420(const uint8_t* src_rgb565,
                  int src_stride_rgb565,
@@ -1165,7 +1165,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
                  int width,
                  int height);
 
-// RGB15 (RGBO fourcc) little endian to I420.
+// RGB15 (RGBO fourcc) little endian to I420. Deprecated.
 LIBYUV_API
 int ARGB1555ToI420(const uint8_t* src_argb1555,
                    int src_stride_argb1555,
@@ -1178,7 +1178,7 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
                    int width,
                    int height);
 
-// RGB12 (R444 fourcc) little endian to I420.
+// RGB12 (R444 fourcc) little endian to I420. Deprecated.
 LIBYUV_API
 int ARGB4444ToI420(const uint8_t* src_argb4444,
                    int src_stride_argb4444,

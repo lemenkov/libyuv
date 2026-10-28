@@ -209,6 +209,12 @@ static int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_AMXINT8")) {
     cpu_info &= ~libyuv::kCpuHasAMXINT8;
   }
+  if (TestEnv("LIBYUV_DISABLE_AVX512BMM")) {
+    cpu_info &= ~libyuv::kCpuHasAVX512BMM;
+  }
+  if (TestEnv("LIBYUV_DISABLE_AMXTF32")) {
+    cpu_info &= ~libyuv::kCpuHasAMXTF32;
+  }
 #endif
   if (TestEnv("LIBYUV_DISABLE_ASM")) {
     cpu_info = libyuv::kCpuInitialized;

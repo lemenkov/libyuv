@@ -50,6 +50,19 @@ extern "C" {
                    dst_ptr + np * BPP, r + 1);                                 \
   }
 
+// Fixed scale down for 16-bit planar.
+#define SDANY16(NAMEANY, SCALEROWDOWN_SIMD, SCALEROWDOWN_C, FACTOR, MASK) \
+  void NAMEANY(const uint16_t* src_ptr, ptrdiff_t src_stride,             \
+               uint16_t* dst_ptr, int dst_width) {                        \
+    int r = (int)((unsigned int)dst_width % (MASK + 1)); /* NOLINT */     \
+    int n = dst_width - r;                                                \
+    if (n > 0) {                                                          \
+      SCALEROWDOWN_SIMD(src_ptr, src_stride, dst_ptr, n);                 \
+    }                                                                     \
+    ptrdiff_t np = n;                                                     \
+    SCALEROWDOWN_C(src_ptr + (np * FACTOR), src_stride, dst_ptr + np, r); \
+  }
+
 #ifdef HAS_SCALEROWDOWN2_SSSE3
 SDANY(ScaleRowDown2_Any_SSSE3, ScaleRowDown2_SSSE3, ScaleRowDown2_C, 2, 1, 15)
 SDANY(ScaleRowDown2Linear_Any_SSSE3,
@@ -71,13 +84,21 @@ SDODD(ScaleRowDown2Box_Odd_SSSE3,
       1,
       15)
 #endif
-#ifdef HAS_SCALEUVROWDOWN2BOX_SSSE3
-SDANY(ScaleUVRowDown2Box_Any_SSSE3,
-      ScaleUVRowDown2Box_SSSE3,
-      ScaleUVRowDown2Box_C,
+#ifdef HAS_SCALEUVROWDOWN2_AVX2
+SDANY(ScaleUVRowDown2_Any_AVX2,
+      ScaleUVRowDown2_AVX2,
+      ScaleUVRowDown2_C,
       2,
       2,
-      3)
+      7)
+#endif
+#ifdef HAS_SCALEUVROWDOWN2LINEAR_AVX2
+SDANY(ScaleUVRowDown2Linear_Any_AVX2,
+      ScaleUVRowDown2Linear_AVX2,
+      ScaleUVRowDown2Linear_C,
+      2,
+      2,
+      7)
 #endif
 #ifdef HAS_SCALEUVROWDOWN2BOX_AVX2
 SDANY(ScaleUVRowDown2Box_Any_AVX2,
@@ -107,6 +128,23 @@ SDODD(ScaleRowDown2Box_Odd_AVX2,
       2,
       1,
       31)
+#endif
+#ifdef HAS_SCALEROWDOWN2_16_AVX2
+SDANY16(ScaleRowDown2_16_Any_AVX2,
+        ScaleRowDown2_16_AVX2,
+        ScaleRowDown2_16_C,
+        2,
+        15)
+SDANY16(ScaleRowDown2Linear_16_Any_AVX2,
+        ScaleRowDown2Linear_16_AVX2,
+        ScaleRowDown2Linear_16_C,
+        2,
+        15)
+SDANY16(ScaleRowDown2Box_16_Any_AVX2,
+        ScaleRowDown2Box_16_AVX2,
+        ScaleRowDown2Box_16_C,
+        2,
+        15)
 #endif
 #ifdef HAS_SCALEROWDOWN2_NEON
 SDANY(ScaleRowDown2_Any_NEON, ScaleRowDown2_NEON, ScaleRowDown2_C, 2, 1, 15)
@@ -204,21 +242,21 @@ SDANY(ScaleRowDown4Box_Any_LSX,
       1,
       7)
 #endif
-#ifdef HAS_SCALEROWDOWN34_SSSE3
-SDANY(ScaleRowDown34_Any_SSSE3,
-      ScaleRowDown34_SSSE3,
+#ifdef HAS_SCALEROWDOWN34_AVX2
+SDANY(ScaleRowDown34_Any_AVX2,
+      ScaleRowDown34_AVX2,
       ScaleRowDown34_C,
       4 / 3,
       1,
       23)
-SDANY(ScaleRowDown34_0_Box_Any_SSSE3,
-      ScaleRowDown34_0_Box_SSSE3,
+SDANY(ScaleRowDown34_0_Box_Any_AVX2,
+      ScaleRowDown34_0_Box_AVX2,
       ScaleRowDown34_0_Box_C,
       4 / 3,
       1,
       23)
-SDANY(ScaleRowDown34_1_Box_Any_SSSE3,
-      ScaleRowDown34_1_Box_SSSE3,
+SDANY(ScaleRowDown34_1_Box_Any_AVX2,
+      ScaleRowDown34_1_Box_AVX2,
       ScaleRowDown34_1_Box_C,
       4 / 3,
       1,
@@ -285,25 +323,25 @@ SDANY(ScaleRowDown34_1_Box_Any_LSX,
       1,
       11)
 #endif
-#ifdef HAS_SCALEROWDOWN38_SSSE3
-SDANY(ScaleRowDown38_Any_SSSE3,
-      ScaleRowDown38_SSSE3,
+#ifdef HAS_SCALEROWDOWN38_AVX2
+SDANY(ScaleRowDown38_Any_AVX2,
+      ScaleRowDown38_AVX2,
       ScaleRowDown38_C,
       8 / 3,
       1,
       11)
-SDANY(ScaleRowDown38_3_Box_Any_SSSE3,
-      ScaleRowDown38_3_Box_SSSE3,
+SDANY(ScaleRowDown38_3_Box_Any_AVX2,
+      ScaleRowDown38_3_Box_AVX2,
       ScaleRowDown38_3_Box_C,
       8 / 3,
       1,
-      5)
-SDANY(ScaleRowDown38_2_Box_Any_SSSE3,
-      ScaleRowDown38_2_Box_SSSE3,
+      11)
+SDANY(ScaleRowDown38_2_Box_Any_AVX2,
+      ScaleRowDown38_2_Box_AVX2,
       ScaleRowDown38_2_Box_C,
       8 / 3,
       1,
-      5)
+      11)
 #endif
 #ifdef HAS_SCALEROWDOWN38_NEON
 SDANY(ScaleRowDown38_Any_NEON,
@@ -346,25 +384,25 @@ SDANY(ScaleRowDown38_2_Box_Any_LSX,
       11)
 #endif
 
-#ifdef HAS_SCALEARGBROWDOWN2_SSE2
-SDANY(ScaleARGBRowDown2_Any_SSE2,
-      ScaleARGBRowDown2_SSE2,
+#ifdef HAS_SCALEARGBROWDOWN2_AVX2
+SDANY(ScaleARGBRowDown2_Any_AVX2,
+      ScaleARGBRowDown2_AVX2,
       ScaleARGBRowDown2_C,
       2,
       4,
-      3)
-SDANY(ScaleARGBRowDown2Linear_Any_SSE2,
-      ScaleARGBRowDown2Linear_SSE2,
+      7)
+SDANY(ScaleARGBRowDown2Linear_Any_AVX2,
+      ScaleARGBRowDown2Linear_AVX2,
       ScaleARGBRowDown2Linear_C,
       2,
       4,
-      3)
-SDANY(ScaleARGBRowDown2Box_Any_SSE2,
-      ScaleARGBRowDown2Box_SSE2,
+      7)
+SDANY(ScaleARGBRowDown2Box_Any_AVX2,
+      ScaleARGBRowDown2Box_AVX2,
       ScaleARGBRowDown2Box_C,
       2,
       4,
-      3)
+      7)
 #endif
 #ifdef HAS_SCALEARGBROWDOWN2_NEON
 SDANY(ScaleARGBRowDown2_Any_NEON,
@@ -506,6 +544,8 @@ SDANY(ScaleARGBRowDown2Box_Any_WASMSIMD,
       4,
       3)
 #endif
+#undef SDANY16
+#undef SDODD
 #undef SDANY
 
 // Scale down by even scale factor.
@@ -522,17 +562,17 @@ SDANY(ScaleARGBRowDown2Box_Any_WASMSIMD,
                    dst_ptr + np * BPP, r);                                  \
   }
 
-#ifdef HAS_SCALEARGBROWDOWNEVEN_SSE2
-SDAANY(ScaleARGBRowDownEven_Any_SSE2,
-       ScaleARGBRowDownEven_SSE2,
+#ifdef HAS_SCALEARGBROWDOWNEVEN_AVX2
+SDAANY(ScaleARGBRowDownEven_Any_AVX2,
+       ScaleARGBRowDownEven_AVX2,
        ScaleARGBRowDownEven_C,
        4,
-       3)
-SDAANY(ScaleARGBRowDownEvenBox_Any_SSE2,
-       ScaleARGBRowDownEvenBox_SSE2,
+       7)
+SDAANY(ScaleARGBRowDownEvenBox_Any_AVX2,
+       ScaleARGBRowDownEvenBox_AVX2,
        ScaleARGBRowDownEvenBox_C,
        4,
-       3)
+       7)
 #endif
 #ifdef HAS_SCALEARGBROWDOWNEVEN_NEON
 SDAANY(ScaleARGBRowDownEven_Any_NEON,
@@ -557,6 +597,13 @@ SDAANY(ScaleARGBRowDownEvenBox_Any_LSX,
        ScaleARGBRowDownEvenBox_C,
        4,
        3)
+#endif
+#ifdef HAS_SCALEUVROWDOWNEVEN_AVX2
+SDAANY(ScaleUVRowDownEven_Any_AVX2,
+       ScaleUVRowDownEven_AVX2,
+       ScaleUVRowDownEven_C,
+       2,
+       7)
 #endif
 #ifdef HAS_SCALEUVROWDOWNEVEN_NEON
 SDAANY(ScaleUVRowDownEven_Any_NEON,
@@ -1107,7 +1154,7 @@ SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_AVX2,
 SBU2BLANY(ScaleUVRowUp2_Bilinear_16_Any_SSE41,
           ScaleUVRowUp2_Bilinear_16_SSE41,
           ScaleUVRowUp2_Bilinear_16_C,
-          7,
+          3,
           uint16_t)
 #endif
 

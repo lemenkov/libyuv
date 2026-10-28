@@ -81,7 +81,7 @@ extern "C" {
 #endif  // __clang__
 
 // Visual C 2012 required for AVX2.
-#if defined(_M_IX86) &&                                       \
+#if (defined(_M_IX86) || defined(_M_X64)) &&                  \
     (!defined(__clang__) || defined(LIBYUV_ENABLE_ROWWIN)) && \
     defined(_MSC_VER) && _MSC_VER >= 1700
 #define VISUALC_HAS_AVX2 1

@@ -3643,20 +3643,20 @@ void ARGBAffineRow_C(const uint8_t* src_argb,
 }
 
 // Blend 2 rows into 1.
-static void HalfRow_C(const uint8_t* src_uv,
-                      ptrdiff_t src_uv_stride,
-                      uint8_t* dst_uv,
-                      int width) {
+void HalfRow_C(const uint8_t* src_uv,
+               ptrdiff_t src_uv_stride,
+               uint8_t* dst_uv,
+               int width) {
   int x;
   for (x = 0; x < width; ++x) {
     dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
   }
 }
 
-static void HalfRow_16_C(const uint16_t* src_uv,
-                         ptrdiff_t src_uv_stride,
-                         uint16_t* dst_uv,
-                         int width) {
+void HalfRow_16_C(const uint16_t* src_uv,
+                  ptrdiff_t src_uv_stride,
+                  uint16_t* dst_uv,
+                  int width) {
   int x;
   for (x = 0; x < width; ++x) {
     dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
@@ -4192,6 +4192,77 @@ void NV21ToRGB24Row_AVX2(const uint8_t* src_y,
     src_y += twidth;
     src_vu += twidth;
     dst_rgb24 += twidth * 3;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGBROW_AVX512BW) && defined(HAS_ARGBTORGB565ROW_AVX512BW)
+void I422ToRGB565Row_AVX512BW(const uint8_t* src_y,
+                              const uint8_t* src_u,
+                              const uint8_t* src_v,
+                              uint8_t* dst_rgb565,
+                              const struct YuvConstants* yuvconstants,
+                              int width) {
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX512BW(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToRGB565Row_AVX512BW(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGBROW_AVX512BW) && defined(HAS_ARGBTOARGB1555ROW_AVX2)
+void I422ToARGB1555Row_AVX512BW(const uint8_t* src_y,
+                                const uint8_t* src_u,
+                                const uint8_t* src_v,
+                                uint8_t* dst_argb1555,
+                                const struct YuvConstants* yuvconstants,
+                                int width) {
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX512BW(src_y, src_u, src_v, row, yuvconstants, twidth);
+    if (IS_ALIGNED(twidth, 8)) {
+      ARGBToARGB1555Row_AVX2(row, dst_argb1555, twidth);
+    } else {
+      ARGBToARGB1555Row_Any_AVX2(row, dst_argb1555, twidth);
+    }
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb1555 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGBROW_AVX512BW) && defined(HAS_ARGBTOARGB4444ROW_AVX2)
+void I422ToARGB4444Row_AVX512BW(const uint8_t* src_y,
+                                const uint8_t* src_u,
+                                const uint8_t* src_v,
+                                uint8_t* dst_argb4444,
+                                const struct YuvConstants* yuvconstants,
+                                int width) {
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX512BW(src_y, src_u, src_v, row, yuvconstants, twidth);
+    if (IS_ALIGNED(twidth, 8)) {
+      ARGBToARGB4444Row_AVX2(row, dst_argb4444, twidth);
+    } else {
+      ARGBToARGB4444Row_Any_AVX2(row, dst_argb4444, twidth);
+    }
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb4444 += twidth * 2;
     width -= twidth;
   }
 }
@@ -5053,6 +5124,61 @@ void ARGB4444ToUVMatrixRow_NEON(const uint8_t* src_argb4444,
     dst_v += twidth / 2;
     width -= twidth;
   }
+}
+#endif
+
+#if defined(HAS_RGB565TOYROW_AVX2) && defined(HAS_RGB565TOYMATRIXROW_AVX2)
+void RGB565ToYRow_AVX2(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
+  RGB565ToYMatrixRow_AVX2(src_rgb565, dst_y, width, &kArgbI601Constants);
+}
+#endif
+
+#if defined(HAS_ARGB1555TOYROW_AVX2) && defined(HAS_ARGB1555TOYMATRIXROW_AVX2)
+void ARGB1555ToYRow_AVX2(const uint8_t* src_argb1555,
+                         uint8_t* dst_y,
+                         int width) {
+  ARGB1555ToYMatrixRow_AVX2(src_argb1555, dst_y, width, &kArgbI601Constants);
+}
+#endif
+
+#if defined(HAS_ARGB4444TOYROW_AVX2) && defined(HAS_ARGB4444TOYMATRIXROW_AVX2)
+void ARGB4444ToYRow_AVX2(const uint8_t* src_argb4444,
+                         uint8_t* dst_y,
+                         int width) {
+  ARGB4444ToYMatrixRow_AVX2(src_argb4444, dst_y, width, &kArgbI601Constants);
+}
+#endif
+
+#if defined(HAS_RGB565TOUVROW_AVX2) && defined(HAS_RGB565TOUVMATRIXROW_AVX2)
+void RGB565ToUVRow_AVX2(const uint8_t* src_rgb565,
+                        int src_stride_rgb565,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  RGB565ToUVMatrixRow_AVX2(src_rgb565, src_stride_rgb565, dst_u, dst_v, width,
+                           &kArgbI601Constants);
+}
+#endif
+
+#if defined(HAS_ARGB1555TOUVROW_AVX2) && defined(HAS_ARGB1555TOUVMATRIXROW_AVX2)
+void ARGB1555ToUVRow_AVX2(const uint8_t* src_argb1555,
+                          int src_stride_argb1555,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width) {
+  ARGB1555ToUVMatrixRow_AVX2(src_argb1555, src_stride_argb1555, dst_u, dst_v,
+                             width, &kArgbI601Constants);
+}
+#endif
+
+#if defined(HAS_ARGB4444TOUVROW_AVX2) && defined(HAS_ARGB4444TOUVMATRIXROW_AVX2)
+void ARGB4444ToUVRow_AVX2(const uint8_t* src_argb4444,
+                          int src_stride_argb4444,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width) {
+  ARGB4444ToUVMatrixRow_AVX2(src_argb4444, src_stride_argb4444, dst_u, dst_v,
+                             width, &kArgbI601Constants);
 }
 #endif
 
