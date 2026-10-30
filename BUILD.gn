@@ -7,6 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/features.gni")
+import("//build/config/sanitizers/sanitizers.gni")
 import("//testing/test.gni")
 import("libyuv.gni")
 
@@ -383,6 +384,23 @@ if (libyuv_include_tests) {
     defines = [ "GTEST_RELATIVE_PATH" ]
   }
 
+  if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+      is_msan) {
+    # Override the relative PT_INTERP from //third_party/instrumented_libs so
+    # standalone test binaries can be launched from any working directory
+    # (such as the builder root on LUCI Linux MSan).
+    config("libyuv_msan_ldflags") {
+      if (msan_track_origins == 0) {
+        _msan_archive = "msan-no-origins-noble-lib"
+      } else {
+        _msan_archive = "msan-chained-origins-noble-lib"
+      }
+      _ld_linux = rebase_path(
+              "//third_party/instrumented_libs/binaries/$_msan_archive/lib/ld-linux-x86-64.so.2")
+      ldflags = [ "-Wl,--dynamic-linker=$_ld_linux" ]
+    }
+  }
+
   test("libyuv_unittest") {
     testonly = true
 
@@ -423,6 +441,10 @@ if (libyuv_include_tests) {
     }
 
     configs += [ ":libyuv_unittest_warnings_config" ]
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
 
     public_deps = [ "//testing/gtest" ]
     public_configs = [ ":libyuv_unittest_config" ]
@@ -466,6 +488,10 @@ if (libyuv_include_tests) {
     if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
     }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
   }
 
   executable("yuvconvert") {
@@ -477,6 +503,10 @@ if (libyuv_include_tests) {
     if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
     }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
   }
 
   executable("yuvconstants") {
@@ -487,6 +517,10 @@ if (libyuv_include_tests) {
     deps = [ ":libyuv" ]
     if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
+    }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
     }
   }
 
@@ -502,6 +536,10 @@ if (libyuv_include_tests) {
     if (!is_ios && !libyuv_disable_jpeg) {
       defines = [ "HAVE_JPEG" ]
     }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
   }
 
   executable("i444tonv12_eg") {
@@ -510,6 +548,10 @@ if (libyuv_include_tests) {
       "util/i444tonv12_eg.cc",
     ]
     deps = [ ":libyuv" ]
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
   }
 
   executable("cpuid") {
@@ -518,6 +560,10 @@ if (libyuv_include_tests) {
       "util/cpuid.c",
     ]
     deps = [ ":libyuv" ]
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
   }
 }
 

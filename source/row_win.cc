@@ -53,6 +53,118 @@ extern "C" {
 #define LIBYUV_TARGET_AVX512VNNIVBMI
 #endif  // defined(__clang__) || defined(__GNUC__)
 
+#if defined(__x86_64__) || defined(_M_X64)
+// Under MemorySanitizer, use portable lane-by-lane C loops for single-source
+// variable permutes and 512-bit float-to-int truncation so shadow propagation
+// relies only on standard C memory/array semantics rather than target-specific
+// LLVM intrinsic modeling. In non-MSan builds, call the native AVX-512
+// intrinsics directly.
+LIBYUV_TARGET_AVX512VBMI
+static inline __m512i PermutexvarEpi8(__m512i idx, __m512i v) {
+#if defined(LIBYUV_MSAN)
+  uint8_t idx_arr[64];
+  uint8_t v_arr[64];
+  uint8_t out_arr[64];
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  _mm512_storeu_si512((__m512i*)v_arr, v);
+  for (int i = 0; i < 64; ++i) {
+    out_arr[i] = v_arr[idx_arr[i] & 63];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutexvar_epi8(idx, v);
+#endif
+}
+
+LIBYUV_TARGET_AVX512VBMI
+static inline __m512i MaskPermutexvarEpi8(__m512i src,
+                                          __mmask64 k,
+                                          __m512i idx,
+                                          __m512i v) {
+#if defined(LIBYUV_MSAN)
+  uint8_t src_arr[64];
+  uint8_t idx_arr[64];
+  uint8_t v_arr[64];
+  uint8_t out_arr[64];
+  _mm512_storeu_si512((__m512i*)src_arr, src);
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  _mm512_storeu_si512((__m512i*)v_arr, v);
+  for (int i = 0; i < 64; ++i) {
+    out_arr[i] = ((k >> i) & 1) ? v_arr[idx_arr[i] & 63] : src_arr[i];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_mask_permutexvar_epi8(src, k, idx, v);
+#endif
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline __m512i PermutexvarEpi16(__m512i idx, __m512i v) {
+#if defined(LIBYUV_MSAN)
+  uint16_t idx_arr[32];
+  uint16_t v_arr[32];
+  uint16_t out_arr[32];
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  _mm512_storeu_si512((__m512i*)v_arr, v);
+  for (int i = 0; i < 32; ++i) {
+    out_arr[i] = v_arr[idx_arr[i] & 31];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutexvar_epi16(idx, v);
+#endif
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline __m512i PermutexvarEpi32(__m512i idx, __m512i v) {
+#if defined(LIBYUV_MSAN)
+  uint32_t idx_arr[16];
+  uint32_t v_arr[16];
+  uint32_t out_arr[16];
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  _mm512_storeu_si512((__m512i*)v_arr, v);
+  for (int i = 0; i < 16; ++i) {
+    out_arr[i] = v_arr[idx_arr[i] & 15];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutexvar_epi32(idx, v);
+#endif
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline __m512i PermutexvarEpi64(__m512i idx, __m512i v) {
+#if defined(LIBYUV_MSAN)
+  uint64_t idx_arr[8];
+  uint64_t v_arr[8];
+  uint64_t out_arr[8];
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  _mm512_storeu_si512((__m512i*)v_arr, v);
+  for (int i = 0; i < 8; ++i) {
+    out_arr[i] = v_arr[idx_arr[i] & 7];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutexvar_epi64(idx, v);
+#endif
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline __m512i CvttpsEpi32(__m512 v) {
+#if defined(LIBYUV_MSAN)
+  float v_arr[16];
+  int32_t out_arr[16];
+  _mm512_storeu_ps(v_arr, v);
+  for (int i = 0; i < 16; ++i) {
+    out_arr[i] = (int32_t)v_arr[i];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_cvttps_epi32(v);
+#endif
+}
+#endif  // defined(__x86_64__) || defined(_M_X64)
+
 // Read 8 UV from 444
 #define READYUV444                                    \
   xmm3 = _mm_loadl_epi64((__m128i*)u_buf);            \
@@ -444,10 +556,10 @@ static void RGBToARGBRow_AVX512BW(const uint8_t* src_raw,
     __m512i zmm_raw1 = _mm512_loadu_si512((const __m512i*)(src_raw + 64));
     __m512i zmm_raw2 = _mm512_loadu_si512((const __m512i*)(src_raw + 128));
 
-    __m512i zmm0 = _mm512_permutexvar_epi64(zmm_q0, zmm_raw0);
+    __m512i zmm0 = PermutexvarEpi64(zmm_q0, zmm_raw0);
     __m512i zmm1 = _mm512_permutex2var_epi64(zmm_raw0, zmm_q1, zmm_raw1);
     __m512i zmm2 = _mm512_permutex2var_epi64(zmm_raw1, zmm_q2, zmm_raw2);
-    __m512i zmm3 = _mm512_permutexvar_epi64(zmm_q3, zmm_raw2);
+    __m512i zmm3 = PermutexvarEpi64(zmm_q3, zmm_raw2);
 
     zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
     zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
@@ -484,10 +596,10 @@ static void RGBToARGBRow_AVX512BW(const uint8_t* src_raw,
     __m512i zmm_raw1 = _mm512_maskz_loadu_epi8(src_mask1, src_raw + 64);
     __m512i zmm_raw2 = _mm512_maskz_loadu_epi8(src_mask2, src_raw + 128);
 
-    __m512i zmm0 = _mm512_permutexvar_epi64(zmm_q0, zmm_raw0);
+    __m512i zmm0 = PermutexvarEpi64(zmm_q0, zmm_raw0);
     __m512i zmm1 = _mm512_permutex2var_epi64(zmm_raw0, zmm_q1, zmm_raw1);
     __m512i zmm2 = _mm512_permutex2var_epi64(zmm_raw1, zmm_q2, zmm_raw2);
-    __m512i zmm3 = _mm512_permutexvar_epi64(zmm_q3, zmm_raw2);
+    __m512i zmm3 = PermutexvarEpi64(zmm_q3, zmm_raw2);
 
     zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
     zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
@@ -635,10 +747,10 @@ void RAWToRGB24Row_AVX512BW(const uint8_t* src_raw,
     __m512i zmm_raw1 = _mm512_loadu_si512((const __m512i*)(src_raw + 64));
     __m512i zmm_raw2 = _mm512_loadu_si512((const __m512i*)(src_raw + 128));
 
-    __m512i zmm0 = _mm512_permutexvar_epi64(zmm_q0, zmm_raw0);
+    __m512i zmm0 = PermutexvarEpi64(zmm_q0, zmm_raw0);
     __m512i zmm1 = _mm512_permutex2var_epi64(zmm_raw0, zmm_q1, zmm_raw1);
     __m512i zmm2 = _mm512_permutex2var_epi64(zmm_raw1, zmm_q2, zmm_raw2);
-    __m512i zmm3 = _mm512_permutexvar_epi64(zmm_q3, zmm_raw2);
+    __m512i zmm3 = PermutexvarEpi64(zmm_q3, zmm_raw2);
 
     zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
     zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
@@ -742,10 +854,10 @@ void RGBToYMatrixRow_AVX512BW(const uint8_t* src_rgb,
     __m512i zmm_raw1 = _mm512_loadu_si512((const __m512i*)(src_rgb + 64));
     __m512i zmm_raw2 = _mm512_loadu_si512((const __m512i*)(src_rgb + 128));
 
-    __m512i zmm0 = _mm512_permutexvar_epi64(zmm_q0, zmm_raw0);
+    __m512i zmm0 = PermutexvarEpi64(zmm_q0, zmm_raw0);
     __m512i zmm1 = _mm512_permutex2var_epi64(zmm_raw0, zmm_q1, zmm_raw1);
     __m512i zmm2 = _mm512_permutex2var_epi64(zmm_raw1, zmm_q2, zmm_raw2);
-    __m512i zmm3 = _mm512_permutexvar_epi64(zmm_q3, zmm_raw2);
+    __m512i zmm3 = PermutexvarEpi64(zmm_q3, zmm_raw2);
 
     zmm0 = _mm512_shuffle_epi8(zmm0, zmm_shuf);
     zmm1 = _mm512_shuffle_epi8(zmm1, zmm_shuf);
@@ -777,7 +889,7 @@ void RGBToYMatrixRow_AVX512BW(const uint8_t* src_rgb,
     zmm2 = _mm512_srli_epi16(zmm2, 8);
 
     zmm0 = _mm512_packus_epi16(zmm0, zmm2);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_y, zmm0);
 
     _mm512_storeu_si512((__m512i*)dst_y, zmm0);
 
@@ -830,7 +942,7 @@ void ARGBToYMatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm2 = _mm512_srli_epi16(zmm2, 8);
 
     zmm0 = _mm512_packus_epi16(zmm0, zmm2);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_y, zmm0);
 
     _mm512_storeu_si512((__m512i*)dst_y, zmm0);
 
@@ -947,7 +1059,7 @@ void ARGBToUV444MatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm0 = _mm512_srli_epi16(zmm0, 8);
     zmm2 = _mm512_srli_epi16(zmm2, 8);
     zmm0 = _mm512_packus_epi16(zmm0, zmm2);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_y, zmm0);
     _mm512_storeu_si512((__m512i*)dst_u, zmm0);
 
     zmm0 = _mm512_dpbusd_epi32(_mm512_setzero_si512(), zmm_s0, zmm_v);
@@ -962,7 +1074,7 @@ void ARGBToUV444MatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm0 = _mm512_srli_epi16(zmm0, 8);
     zmm2 = _mm512_srli_epi16(zmm2, 8);
     zmm0 = _mm512_packus_epi16(zmm0, zmm2);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_y, zmm0);
     _mm512_storeu_si512((__m512i*)dst_v, zmm0);
 
     src_argb += 256;
@@ -978,7 +1090,7 @@ void ARGBToUV444MatrixRow_AVX512VNNI(const uint8_t* src_argb,
 // Requires AVX512VNNI and AVX512VBMI.
 // U = (kAddUV - dot(kRGBToU, argb)) >> 8.  The accumulators start at
 // ~kAddUV so they hold ~(kAddUV - dot) and U is the inverse of byte 1 of each
-// int32.  The inverse is folded into the ternary logic that merges the halves.
+// int32.
 LIBYUV_TARGET_AVX512VNNIVBMI
 void ARGBToUV444MatrixRow_AVX512VNNIVBMI(const uint8_t* src_argb,
                                          uint8_t* dst_u,
@@ -992,12 +1104,10 @@ void ARGBToUV444MatrixRow_AVX512VNNIVBMI(const uint8_t* src_argb,
       _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)c->kRGBToU));
   __m512i zmm_v =
       _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)c->kRGBToV));
+  const __m512i zmm_neg1 = _mm512_set1_epi32(-1);
   __m512i zmm_add = _mm512_xor_si512(
       _mm512_cvtepu16_epi32(_mm256_loadu_si256((const __m256i*)c->kAddUV)),
-      _mm512_set1_epi32(-1));  // ~kAddUV
-  // Select low 256 bits from the first operand, high 256 bits from the second.
-  __m512i zmm_sel =
-      _mm512_inserti64x4(_mm512_setzero_si512(), _mm256_set1_epi32(-1), 1);
+      zmm_neg1);  // ~kAddUV
 
   while (width > 0) {
     __m512i zmm_s0 = _mm512_loadu_si512((const __m512i*)src_argb);
@@ -1014,12 +1124,15 @@ void ARGBToUV444MatrixRow_AVX512VNNIVBMI(const uint8_t* src_argb,
     __m512i zmm6 = _mm512_dpbusd_epi32(zmm_add, zmm_s2, zmm_v);
     __m512i zmm7 = _mm512_dpbusd_epi32(zmm_add, zmm_s3, zmm_v);
 
-    zmm0 = _mm512_permutex2var_epi8(zmm0, zmm_perm, zmm1);        // ~U 0..31
-    zmm2 = _mm512_permutex2var_epi8(zmm2, zmm_perm, zmm3);        // ~U 32..63
-    zmm4 = _mm512_permutex2var_epi8(zmm4, zmm_perm, zmm5);        // ~V 0..31
-    zmm6 = _mm512_permutex2var_epi8(zmm6, zmm_perm, zmm7);        // ~V 32..63
-    zmm0 = _mm512_ternarylogic_epi32(zmm0, zmm2, zmm_sel, 0x27);  // U
-    zmm4 = _mm512_ternarylogic_epi32(zmm4, zmm6, zmm_sel, 0x27);  // V
+    zmm0 = _mm512_permutex2var_epi8(zmm0, zmm_perm, zmm1);  // ~U 0..31
+    zmm2 = _mm512_permutex2var_epi8(zmm2, zmm_perm, zmm3);  // ~U 32..63
+    zmm4 = _mm512_permutex2var_epi8(zmm4, zmm_perm, zmm5);  // ~V 0..31
+    zmm6 = _mm512_permutex2var_epi8(zmm6, zmm_perm, zmm7);  // ~V 32..63
+    // Avoid _mm512_ternarylogic_epi32 (unmodeled by LLVM MSan; see GEMINI.md).
+    zmm0 = _mm512_xor_si512(_mm512_shuffle_i64x2(zmm0, zmm2, 0x44),
+                            zmm_neg1);  // U
+    zmm4 = _mm512_xor_si512(_mm512_shuffle_i64x2(zmm4, zmm6, 0x44),
+                            zmm_neg1);  // V
 
     _mm512_storeu_si512((__m512i*)dst_u, zmm0);
     _mm512_storeu_si512((__m512i*)dst_v, zmm4);
@@ -1086,7 +1199,7 @@ void ARGBToUVMatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm1 = _mm512_avg_epu16(zmm1, zmm_zero);
 
     zmm0 = _mm512_packus_epi16(zmm0, zmm1);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_uv, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_uv, zmm0);
 
     zmm1 = _mm512_dpbusd_epi32(zmm_zero, zmm0, zmm_u);
     zmm2 = _mm512_dpbusd_epi32(zmm_zero, zmm0, zmm_v);
@@ -1094,7 +1207,7 @@ void ARGBToUVMatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm0 = _mm512_sub_epi16(zmm_8000, zmm0);
     zmm0 = _mm512_srli_epi16(zmm0, 8);
     zmm0 = _mm512_packus_epi16(zmm0, zmm0);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_y, zmm0);
 
     _mm_storeu_si128((__m128i*)dst_u, _mm512_castsi512_si128(zmm0));
     _mm_storeu_si128((__m128i*)dst_v, _mm512_extracti32x4_epi32(zmm0, 1));
@@ -1140,7 +1253,7 @@ void ARGBToUVMatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm1 = _mm512_avg_epu16(zmm1, zmm_zero);
 
     zmm0 = _mm512_packus_epi16(zmm0, zmm1);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_uv, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_uv, zmm0);
 
     zmm1 = _mm512_dpbusd_epi32(zmm_zero, zmm0, zmm_u);
     zmm2 = _mm512_dpbusd_epi32(zmm_zero, zmm0, zmm_v);
@@ -1148,7 +1261,7 @@ void ARGBToUVMatrixRow_AVX512VNNI(const uint8_t* src_argb,
     zmm0 = _mm512_sub_epi16(zmm_8000, zmm0);
     zmm0 = _mm512_srli_epi16(zmm0, 8);
     zmm0 = _mm512_packus_epi16(zmm0, zmm0);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_y, zmm0);
 
     int halfwidth = (width + 1) >> 1;
     __mmask16 k_out = (__mmask16)((1u << halfwidth) - 1u);
@@ -1216,7 +1329,7 @@ void ARGBToUVMatrixRow_AVX512VNNIVBMI(const uint8_t* src_argb,
     zmm1 = _mm512_avg_epu16(zmm1, zmm_zero);
 
     zmm0 = _mm512_packus_epi16(zmm0, zmm1);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_uv, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_uv, zmm0);
 
     zmm1 = _mm512_dpbusd_epi32(zmm_add, zmm0, zmm_u);  // ~U
     zmm2 = _mm512_dpbusd_epi32(zmm_add, zmm0, zmm_v);  // ~V
@@ -1268,7 +1381,7 @@ void ARGBToUVMatrixRow_AVX512VNNIVBMI(const uint8_t* src_argb,
     zmm1 = _mm512_avg_epu16(zmm1, zmm_zero);
 
     zmm0 = _mm512_packus_epi16(zmm0, zmm1);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_uv, zmm0);
+    zmm0 = PermutexvarEpi32(zmm_perm_uv, zmm0);
 
     zmm1 = _mm512_dpbusd_epi32(zmm_add, zmm0, zmm_u);  // ~U
     zmm2 = _mm512_dpbusd_epi32(zmm_add, zmm0, zmm_v);  // ~V
@@ -1490,7 +1603,7 @@ void MirrorRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
     v = _mm512_or_si512(_mm512_srli_epi16(v, 8), _mm512_slli_epi16(v, 8));
     __m512i idx =
         _mm512_sub_epi16(zmm_rev, _mm512_set1_epi16((short)((64 - width) >> 1)));
-    v = _mm512_permutexvar_epi16(idx, v);
+    v = PermutexvarEpi16(idx, v);
     if (width & 1) {
       __m512i v_hi = _mm512_alignr_epi64(v, v, 2);
       v = _mm512_alignr_epi8(v_hi, v, 1);
@@ -1518,7 +1631,7 @@ void MirrorSplitUVRow_AVX512BW(const uint8_t* src_uv,
     s -= 64;
     __m512i v = _mm512_loadu_si512((const __m512i*)s);
     v = _mm512_shuffle_epi8(v, zmm_shuf);
-    v = _mm512_permutexvar_epi64(zmm_perm, v);
+    v = PermutexvarEpi64(zmm_perm, v);
     _mm256_storeu_si256((__m256i*)dst_u, _mm512_castsi512_si256(v));
     _mm256_storeu_si256((__m256i*)dst_v, _mm512_extracti64x4_epi64(v, 1));
     dst_u += 32;
@@ -1530,7 +1643,7 @@ void MirrorSplitUVRow_AVX512BW(const uint8_t* src_uv,
     __m512i idx =
         _mm512_sub_epi16(zmm_rev, _mm512_set1_epi16((short)(32 - width)));
     __m512i v = _mm512_maskz_loadu_epi16(k, src_uv);
-    v = _mm512_permutexvar_epi16(idx, v);
+    v = PermutexvarEpi16(idx, v);
     _mm256_mask_storeu_epi8(dst_u, k, _mm512_cvtepi16_epi8(v));
     _mm256_mask_storeu_epi8(dst_v, k,
                             _mm512_cvtepi16_epi8(_mm512_srli_epi16(v, 8)));
@@ -1549,7 +1662,7 @@ void MirrorUVRow_AVX512BW(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   while (width >= 32) {
     s -= 64;
     __m512i zmm0 = _mm512_loadu_si512((const __m512i*)s);
-    zmm0 = _mm512_permutexvar_epi16(zmm_idx, zmm0);
+    zmm0 = PermutexvarEpi16(zmm_idx, zmm0);
     _mm512_storeu_si512((__m512i*)dst_uv, zmm0);
     dst_uv += 64;
     width -= 32;
@@ -1559,7 +1672,7 @@ void MirrorUVRow_AVX512BW(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
     __m512i idx =
         _mm512_sub_epi16(zmm_idx, _mm512_set1_epi16((short)(32 - width)));
     __m512i zmm0 = _mm512_maskz_loadu_epi16(k, src_uv);
-    _mm512_mask_storeu_epi16(dst_uv, k, _mm512_permutexvar_epi16(idx, zmm0));
+    _mm512_mask_storeu_epi16(dst_uv, k, PermutexvarEpi16(idx, zmm0));
   }
   _mm256_zeroupper();
 }
@@ -2707,15 +2820,15 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
   src_u += 16;                                                       \
   __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);                 \
   __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);                 \
-  zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);        \
-  zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);        \
+  zmm_u_val = PermutexvarEpi64(zmm_split, zmm_u_val);                \
+  zmm_v_val = PermutexvarEpi64(zmm_split, zmm_v_val);                \
   __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);         \
   zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);                          \
   zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);                          \
   __m256i ymm_y = _mm256_loadu_si256((const __m256i*)src_y);         \
   src_y += 32;                                                       \
   __m512i zmm4 = _mm512_castsi256_si512(ymm_y);                      \
-  zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);                \
+  zmm4 = PermutexvarEpi64(zmm_split_y, zmm4);                        \
   zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);                          \
   zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
 
@@ -2726,14 +2839,14 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
   __m128i xmm_v = _mm_maskz_loadu_epi8(mask_uv, src_u + offset);    \
   __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);                \
   __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);                \
-  zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);       \
-  zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);       \
+  zmm_u_val = PermutexvarEpi64(zmm_split, zmm_u_val);               \
+  zmm_v_val = PermutexvarEpi64(zmm_split, zmm_v_val);               \
   __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);        \
   zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);                         \
   zmm3 = _mm512_unpacklo_epi16(zmm3, zmm3);                         \
   __m256i ymm_y = _mm256_maskz_loadu_epi8(mask_y, src_y);           \
   __m512i zmm4 = _mm512_castsi256_si512(ymm_y);                     \
-  zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);               \
+  zmm4 = PermutexvarEpi64(zmm_split_y, zmm4);                       \
   zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);                         \
   zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
 
@@ -2996,8 +3109,8 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
     __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);
     __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);
 
-    zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);
-    zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);
+    zmm_u_val = PermutexvarEpi64(zmm_split, zmm_u_val);
+    zmm_v_val = PermutexvarEpi64(zmm_split, zmm_v_val);
 
     __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);
     zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);
@@ -3006,7 +3119,7 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
     __m256i ymm_y = _mm256_loadu_si256((const __m256i*)src_y);
     src_y += 32;
     __m512i zmm4 = _mm512_castsi256_si512(ymm_y);
-    zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);
+    zmm4 = PermutexvarEpi64(zmm_split_y, zmm4);
     zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);
     zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
 
@@ -3036,8 +3149,9 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
     zmm0 = _mm512_srli_epi16(zmm0, 4);
     zmm3 = _mm512_srli_epi16(zmm1, 10);
     zmm1 = _mm512_slli_epi16(zmm1, 6);
-    zmm0 = _mm512_ternarylogic_epi32(zmm0, zmm1, zmm_fc00, 0xf8);
-    zmm2 = _mm512_ternarylogic_epi32(zmm2, zmm3, zmm_3ff0, 0xe4);
+    zmm0 = _mm512_or_si512(zmm0, _mm512_and_si512(zmm1, zmm_fc00));
+    zmm2 = _mm512_or_si512(_mm512_and_si512(zmm2, zmm_3ff0),
+                           _mm512_andnot_si512(zmm_3ff0, zmm3));
     zmm2 = _mm512_or_si512(zmm2, zmm_c000);
 
     __m512i zmm_dst0 = _mm512_permutex2var_epi16(zmm0, zmm_perm0, zmm2);
@@ -3058,8 +3172,8 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
     __m512i zmm_u_val = _mm512_castsi128_si512(xmm_u);
     __m512i zmm_v_val = _mm512_castsi128_si512(xmm_v);
 
-    zmm_u_val = _mm512_permutexvar_epi64(zmm_split, zmm_u_val);
-    zmm_v_val = _mm512_permutexvar_epi64(zmm_split, zmm_v_val);
+    zmm_u_val = PermutexvarEpi64(zmm_split, zmm_u_val);
+    zmm_v_val = PermutexvarEpi64(zmm_split, zmm_v_val);
 
     __m512i zmm3 = _mm512_unpacklo_epi8(zmm_u_val, zmm_v_val);
     zmm3 = _mm512_permutex_epi64(zmm3, 0xd8);
@@ -3067,7 +3181,7 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
 
     __m256i ymm_y = _mm256_maskz_loadu_epi8(mask_y, src_y);
     __m512i zmm4 = _mm512_castsi256_si512(ymm_y);
-    zmm4 = _mm512_permutexvar_epi64(zmm_split_y, zmm4);
+    zmm4 = PermutexvarEpi64(zmm_split_y, zmm4);
     zmm4 = _mm512_permutex_epi64(zmm4, 0xd8);
     zmm4 = _mm512_unpacklo_epi8(zmm4, zmm4);
 
@@ -3094,8 +3208,9 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
     zmm0 = _mm512_srli_epi16(zmm0, 4);
     zmm3 = _mm512_srli_epi16(zmm1, 10);
     zmm1 = _mm512_slli_epi16(zmm1, 6);
-    zmm0 = _mm512_ternarylogic_epi32(zmm0, zmm1, zmm_fc00, 0xf8);
-    zmm2 = _mm512_ternarylogic_epi32(zmm2, zmm3, zmm_3ff0, 0xe4);
+    zmm0 = _mm512_or_si512(zmm0, _mm512_and_si512(zmm1, zmm_fc00));
+    zmm2 = _mm512_or_si512(_mm512_and_si512(zmm2, zmm_3ff0),
+                           _mm512_andnot_si512(zmm_3ff0, zmm3));
     zmm2 = _mm512_or_si512(zmm2, zmm_c000);
 
     __m512i zmm_dst0 = _mm512_permutex2var_epi16(zmm0, zmm_perm0, zmm2);
@@ -3420,7 +3535,7 @@ void ARGBMirrorRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
     s -= 64;
     _mm512_storeu_si512(
         (__m512i*)dst,
-        _mm512_permutexvar_epi32(rev, _mm512_loadu_si512((const __m512i*)s)));
+        PermutexvarEpi32(rev, _mm512_loadu_si512((const __m512i*)s)));
     dst += 64;
     width -= 16;
   }
@@ -3429,7 +3544,7 @@ void ARGBMirrorRow_AVX512BW(const uint8_t* src, uint8_t* dst, int width) {
     __mmask16 mask = (__mmask16)((1u << width) - 1u);
     __m512i idx = _mm512_sub_epi32(rev, _mm512_set1_epi32(16 - width));
     __m512i v = _mm512_maskz_loadu_epi32(mask, src);
-    _mm512_mask_storeu_epi32(dst, mask, _mm512_permutexvar_epi32(idx, v));
+    _mm512_mask_storeu_epi32(dst, mask, PermutexvarEpi32(idx, v));
   }
   _mm256_zeroupper();
 }
@@ -3504,12 +3619,12 @@ void RGB24MirrorRow_AVX512VBMI(const uint8_t* src_rgb24,
     __m512i t0 = _mm512_sub_epi8(idx0, _mm512_set1_epi8((char)(off - 64)));
     __m512i t1 = _mm512_sub_epi8(idx1, _mm512_set1_epi8((char)off));
     __m512i t2 = _mm512_sub_epi8(idx2, _mm512_set1_epi8((char)off));
-    __m512i d0 = _mm512_mask_permutexvar_epi8(
-        _mm512_permutex2var_epi8(a, t0, b), _mm512_movepi8_mask(t0), t0, c);
-    __m512i d1 = _mm512_mask_permutexvar_epi8(
-        _mm512_permutex2var_epi8(a, t1, b), _mm512_movepi8_mask(t1), t1, c);
-    __m512i d2 = _mm512_mask_permutexvar_epi8(
-        _mm512_permutex2var_epi8(a, t2, b), _mm512_movepi8_mask(t2), t2, c);
+    __m512i d0 = MaskPermutexvarEpi8(_mm512_permutex2var_epi8(a, t0, b),
+                                     _mm512_movepi8_mask(t0), t0, c);
+    __m512i d1 = MaskPermutexvarEpi8(_mm512_permutex2var_epi8(a, t1, b),
+                                     _mm512_movepi8_mask(t1), t1, c);
+    __m512i d2 = MaskPermutexvarEpi8(_mm512_permutex2var_epi8(a, t2, b),
+                                     _mm512_movepi8_mask(t2), t2, c);
     _mm512_mask_storeu_epi8(dst_rgb24, m0, d0);
     _mm512_mask_storeu_epi8(dst_rgb24 + 64, m1, d1);
     _mm512_mask_storeu_epi8(dst_rgb24 + 128, m2, d2);
@@ -4083,8 +4198,7 @@ void MergeRGBRow_AVX512VBMI(const uint8_t* src_r,
     src_g += 64;
     src_b += 64;
     __m512i d0 = _mm512_permutex2var_epi8(rg0, m_rgb0, br);
-    __m512i d1 =
-        _mm512_mask_permutexvar_epi8(_mm512_permutex2var_epi8(rg0, m_rgb1, br),
+    __m512i d1 = MaskPermutexvarEpi8(_mm512_permutex2var_epi8(rg0, m_rgb1, br),
                                      0xb6db6db600000000ull, m_rgb1, gb1);
     __m512i d2 = _mm512_permutex2var_epi8(br, m_rgb2, gb1);
     _mm512_storeu_si512((__m512i*)dst_rgb, d0);
@@ -4150,7 +4264,7 @@ void RAWToRGBARow_AVX512VBMI(const uint8_t* src_raw,
     __m512i s1 = _mm512_castsi256_si512(
         _mm256_loadu_si256((const __m256i*)(src_raw + 64)));
     src_raw += 96;
-    __m512i d0 = _mm512_or_si512(_mm512_permutexvar_epi8(p0, s0), alpha);
+    __m512i d0 = _mm512_or_si512(PermutexvarEpi8(p0, s0), alpha);
     __m512i d1 = _mm512_or_si512(_mm512_permutex2var_epi8(s0, p1, s1), alpha);
     _mm512_storeu_si512((__m512i*)dst_rgba, d0);
     _mm512_storeu_si512((__m512i*)(dst_rgba + 64), d1);
@@ -4164,7 +4278,7 @@ void RAWToRGBARow_AVX512VBMI(const uint8_t* src_raw,
     __m512i s0 = _mm512_maskz_loadu_epi8(ks0, src_raw);
     __m512i s1 =
         _mm512_castsi256_si512(_mm256_maskz_loadu_epi8(ks1, src_raw + 64));
-    __m512i d0 = _mm512_or_si512(_mm512_permutexvar_epi8(p0, s0), alpha);
+    __m512i d0 = _mm512_or_si512(PermutexvarEpi8(p0, s0), alpha);
     __m512i d1 = _mm512_or_si512(_mm512_permutex2var_epi8(s0, p1, s1), alpha);
     uint32_t m32 = (1u << width) - 1u;
     _mm512_mask_storeu_epi32(dst_rgba, (__mmask16)m32, d0);
@@ -4208,7 +4322,7 @@ void MirrorRow_16_AVX512BW(const uint16_t* src, uint16_t* dst, int width) {
   while (width >= 32) {
     src -= 32;
     __m512i v = _mm512_loadu_si512((const __m512i*)src);
-    _mm512_storeu_si512((__m512i*)dst, _mm512_permutexvar_epi16(rev, v));
+    _mm512_storeu_si512((__m512i*)dst, PermutexvarEpi16(rev, v));
     dst += 32;
     width -= 32;
   }
@@ -4216,7 +4330,7 @@ void MirrorRow_16_AVX512BW(const uint16_t* src, uint16_t* dst, int width) {
     __mmask32 k = (__mmask32)((1u << width) - 1u);
     __m512i idx = _mm512_sub_epi16(rev, _mm512_set1_epi16((short)(32 - width)));
     __m512i v = _mm512_maskz_loadu_epi16(k, src - width);
-    _mm512_mask_storeu_epi16(dst, k, _mm512_permutexvar_epi16(idx, v));
+    _mm512_mask_storeu_epi16(dst, k, PermutexvarEpi16(idx, v));
   }
   _mm256_zeroupper();
 }
@@ -4402,7 +4516,7 @@ void NV12ToARGBRow_AVX512BW(const uint8_t* y_buf,
       _mm512_loadu_si512((const __m512i*)kUnpermuteAVX512_Win);
   const __m512i zmm5 = _mm512_set1_epi32(-1);
   while (width >= 32) {
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)uv_buf)));
     __m512i zmm4 =
@@ -4425,10 +4539,8 @@ void NV12ToARGBRow_AVX512BW(const uint8_t* y_buf,
         _mm512_srai_epi16(
             _mm512_adds_epi16(_mm512_maddubs_epi16(zmm_kUVToR, zmm3), zmm4), 6),
         zmm5);
-    __m512i bg =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
-    __m512i ra =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
+    __m512i bg = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
+    __m512i ra = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
     _mm512_storeu_si512((__m512i*)dst_argb, _mm512_unpacklo_epi16(bg, ra));
     _mm512_storeu_si512((__m512i*)(dst_argb + 64),
                         _mm512_unpackhi_epi16(bg, ra));
@@ -4438,7 +4550,7 @@ void NV12ToARGBRow_AVX512BW(const uint8_t* y_buf,
   if (width > 0) {
     uint32_t m32 = (1u << width) - 1u;
     __mmask16 k_uv = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_maskz_loadu_epi16(k_uv, uv_buf)));
     __m512i zmm4 =
@@ -4459,10 +4571,8 @@ void NV12ToARGBRow_AVX512BW(const uint8_t* y_buf,
         _mm512_srai_epi16(
             _mm512_adds_epi16(_mm512_maddubs_epi16(zmm_kUVToR, zmm3), zmm4), 6),
         zmm5);
-    __m512i bg =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
-    __m512i ra =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
+    __m512i bg = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
+    __m512i ra = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
     _mm512_mask_storeu_epi32(dst_argb, (__mmask16)m32,
                              _mm512_unpacklo_epi16(bg, ra));
     _mm512_mask_storeu_epi32(dst_argb + 64, (__mmask16)(m32 >> 16),
@@ -4496,7 +4606,7 @@ void NV21ToARGBRow_AVX512BW(const uint8_t* y_buf,
       _mm512_loadu_si512((const __m512i*)kUnpermuteAVX512_Win);
   const __m512i zmm5 = _mm512_set1_epi32(-1);
   while (width >= 32) {
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_or_si256(
             _mm256_slli_epi16(_mm256_loadu_si256((const __m256i*)vu_buf), 8),
@@ -4521,10 +4631,8 @@ void NV21ToARGBRow_AVX512BW(const uint8_t* y_buf,
         _mm512_srai_epi16(
             _mm512_adds_epi16(_mm512_maddubs_epi16(zmm_kUVToR, zmm3), zmm4), 6),
         zmm5);
-    __m512i bg =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
-    __m512i ra =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
+    __m512i bg = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
+    __m512i ra = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
     _mm512_storeu_si512((__m512i*)dst_argb, _mm512_unpacklo_epi16(bg, ra));
     _mm512_storeu_si512((__m512i*)(dst_argb + 64),
                         _mm512_unpackhi_epi16(bg, ra));
@@ -4534,7 +4642,7 @@ void NV21ToARGBRow_AVX512BW(const uint8_t* y_buf,
   if (width > 0) {
     uint32_t m32 = (1u << width) - 1u;
     __mmask16 k_uv = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_or_si256(
             _mm256_slli_epi16(_mm256_maskz_loadu_epi16(k_uv, vu_buf), 8),
@@ -4557,10 +4665,8 @@ void NV21ToARGBRow_AVX512BW(const uint8_t* y_buf,
         _mm512_srai_epi16(
             _mm512_adds_epi16(_mm512_maddubs_epi16(zmm_kUVToR, zmm3), zmm4), 6),
         zmm5);
-    __m512i bg =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
-    __m512i ra =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
+    __m512i bg = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
+    __m512i ra = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
     _mm512_mask_storeu_epi32(dst_argb, (__mmask16)m32,
                              _mm512_unpacklo_epi16(bg, ra));
     _mm512_mask_storeu_epi32(dst_argb + 64, (__mmask16)(m32 >> 16),
@@ -4621,7 +4727,7 @@ void NV12ToRGB24Row_AVX512VBMI(const uint8_t* y_buf,
   const __m512i zmm_mask_DST1 =
       _mm512_loadu_si512((const __m512i*)kMaskDST1_NV);
   while (width >= 32) {
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)uv_buf)));
     __m512i zmm4 =
@@ -4653,7 +4759,7 @@ void NV12ToRGB24Row_AVX512VBMI(const uint8_t* y_buf,
   if (width > 0) {
     uint32_t m32 = (1u << width) - 1u;
     __mmask16 k_uv = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_maskz_loadu_epi16(k_uv, uv_buf)));
     __m512i zmm4 =
@@ -4711,7 +4817,7 @@ void NV21ToRGB24Row_AVX512VBMI(const uint8_t* y_buf,
   const __m512i zmm_mask_DST1 =
       _mm512_loadu_si512((const __m512i*)kMaskDST1_NV);
   while (width >= 32) {
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_or_si256(
             _mm256_slli_epi16(_mm256_loadu_si256((const __m256i*)vu_buf), 8),
@@ -4745,7 +4851,7 @@ void NV21ToRGB24Row_AVX512VBMI(const uint8_t* y_buf,
   if (width > 0) {
     uint32_t m32 = (1u << width) - 1u;
     __mmask16 k_uv = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
-    __m512i zmm3 = _mm512_permutexvar_epi16(
+    __m512i zmm3 = PermutexvarEpi16(
         zmm_quad,
         _mm512_castsi256_si512(_mm256_or_si256(
             _mm256_slli_epi16(_mm256_maskz_loadu_epi16(k_uv, vu_buf), 8),
@@ -4811,8 +4917,7 @@ void I422AlphaToARGBRow_AVX512BW(const uint8_t* y_buf,
     __m256i yuv = _mm256_inserti128_si256(
         _mm256_castsi128_si256(_mm_unpacklo_epi8(xu, xv)),
         _mm_unpackhi_epi8(xu, xv), 1);
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_castsi256_si512(yuv));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_castsi256_si512(yuv));
     __m512i zmm4 =
         _mm512_cvtepu8_epi16(_mm256_loadu_si256((const __m256i*)y_buf));
     __m512i zmm5 = _mm512_packus_epi16(
@@ -4836,10 +4941,8 @@ void I422AlphaToARGBRow_AVX512BW(const uint8_t* y_buf,
         _mm512_srai_epi16(
             _mm512_adds_epi16(_mm512_maddubs_epi16(zmm_kUVToR, zmm3), zmm4), 6),
         zmm5);
-    __m512i bg =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
-    __m512i ra =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
+    __m512i bg = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
+    __m512i ra = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
     _mm512_storeu_si512((__m512i*)dst_argb, _mm512_unpacklo_epi16(bg, ra));
     _mm512_storeu_si512((__m512i*)(dst_argb + 64),
                         _mm512_unpackhi_epi16(bg, ra));
@@ -4854,8 +4957,7 @@ void I422AlphaToARGBRow_AVX512BW(const uint8_t* y_buf,
     __m256i yuv = _mm256_inserti128_si256(
         _mm256_castsi128_si256(_mm_unpacklo_epi8(xu, xv)),
         _mm_unpackhi_epi8(xu, xv), 1);
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_castsi256_si512(yuv));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_castsi256_si512(yuv));
     __m512i zmm4 =
         _mm512_cvtepu8_epi16(_mm256_maskz_loadu_epi8((__mmask32)m32, y_buf));
     __m512i zmm5 = _mm512_packus_epi16(
@@ -4877,10 +4979,8 @@ void I422AlphaToARGBRow_AVX512BW(const uint8_t* y_buf,
         _mm512_srai_epi16(
             _mm512_adds_epi16(_mm512_maddubs_epi16(zmm_kUVToR, zmm3), zmm4), 6),
         zmm5);
-    __m512i bg =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
-    __m512i ra =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
+    __m512i bg = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));
+    __m512i ra = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));
     _mm512_mask_storeu_epi32(dst_argb, (__mmask16)m32,
                              _mm512_unpacklo_epi16(bg, ra));
     _mm512_mask_storeu_epi32(dst_argb + 64, (__mmask16)(m32 >> 16),
@@ -4918,8 +5018,7 @@ void I400ToARGBRow_AVX512BW(const uint8_t* y_buf,
     y16 = _mm512_or_si512(y16, _mm512_slli_epi16(y16, 8));
     y16 = _mm512_srai_epi16(
         _mm512_adds_epi16(_mm512_mulhi_epu16(y16, zmm_yg), zmm_ygb), 6);
-    __m512i g =
-        _mm512_permutexvar_epi64(zmm_lin, _mm512_packus_epi16(y16, y16));
+    __m512i g = PermutexvarEpi64(zmm_lin, _mm512_packus_epi16(y16, y16));
     __m256i g256 = _mm512_castsi512_si256(g);
     __m512i d0 = _mm512_or_si512(
         _mm512_shuffle_epi8(_mm512_cvtepu8_epi32(_mm256_castsi256_si128(g256)),
@@ -4941,8 +5040,7 @@ void I400ToARGBRow_AVX512BW(const uint8_t* y_buf,
     y16 = _mm512_or_si512(y16, _mm512_slli_epi16(y16, 8));
     y16 = _mm512_srai_epi16(
         _mm512_adds_epi16(_mm512_mulhi_epu16(y16, zmm_yg), zmm_ygb), 6);
-    __m512i g =
-        _mm512_permutexvar_epi64(zmm_lin, _mm512_packus_epi16(y16, y16));
+    __m512i g = PermutexvarEpi64(zmm_lin, _mm512_packus_epi16(y16, y16));
     __m256i g256 = _mm512_castsi512_si256(g);
     __m512i d0 = _mm512_or_si512(
         _mm512_shuffle_epi8(_mm512_cvtepu8_epi32(_mm256_castsi256_si128(g256)),
@@ -5111,8 +5209,8 @@ void ARGBGrayRow_AVX512VNNI(const uint8_t* src_argb,
     src_argb += 64;
     __m512i y32 = _mm512_srli_epi32(
         _mm512_dpbusd_epi32(c_bias, c_coeff, _mm512_xor_si512(s, c_sub128)), 8);
-    __m512i out = _mm512_ternarylogic_epi32(_mm512_shuffle_epi8(y32, c_shuf), s,
-                                            c_alpha, 0xf8);
+    __m512i out = _mm512_or_si512(_mm512_shuffle_epi8(y32, c_shuf),
+                                  _mm512_and_si512(s, c_alpha));
     _mm512_storeu_si512((__m512i*)dst_argb, out);
     dst_argb += 64;
     width -= 16;
@@ -5122,8 +5220,8 @@ void ARGBGrayRow_AVX512VNNI(const uint8_t* src_argb,
     __m512i s = _mm512_maskz_loadu_epi32(k, src_argb);
     __m512i y32 = _mm512_srli_epi32(
         _mm512_dpbusd_epi32(c_bias, c_coeff, _mm512_xor_si512(s, c_sub128)), 8);
-    __m512i out = _mm512_ternarylogic_epi32(_mm512_shuffle_epi8(y32, c_shuf), s,
-                                            c_alpha, 0xf8);
+    __m512i out = _mm512_or_si512(_mm512_shuffle_epi8(y32, c_shuf),
+                                  _mm512_and_si512(s, c_alpha));
     _mm512_mask_storeu_epi32(dst_argb, k, out);
   }
   _mm256_zeroupper();
@@ -5377,7 +5475,7 @@ void ARGBAlphaBlendRow_AVX512BW(const uint8_t* src_argb0,
     __m512i sa_eff = _mm512_or_si512(sa, t);
     __m512i den_eff = _mm512_or_si512(da2, t);
     __m512i num = _mm512_sub_epi32(_mm512_slli_epi32(sa_eff, 8), sa_eff);
-    __m512i ratio = _mm512_cvttps_epi32(
+    __m512i ratio = CvttpsEpi32(
         _mm512_div_ps(_mm512_cvtepi32_ps(num), _mm512_cvtepi32_ps(den_eff)));
     __m512i r_rep =
         _mm512_shufflelo_epi16(_mm512_shufflehi_epi16(ratio, 0xa0), 0xa0);
@@ -5416,7 +5514,7 @@ void ARGBAlphaBlendRow_AVX512BW(const uint8_t* src_argb0,
     __m512i sa_eff = _mm512_or_si512(sa, t);
     __m512i den_eff = _mm512_or_si512(da2, t);
     __m512i num = _mm512_sub_epi32(_mm512_slli_epi32(sa_eff, 8), sa_eff);
-    __m512i ratio = _mm512_cvttps_epi32(
+    __m512i ratio = CvttpsEpi32(
         _mm512_div_ps(_mm512_cvtepi32_ps(num), _mm512_cvtepi32_ps(den_eff)));
     __m512i r_rep =
         _mm512_shufflelo_epi16(_mm512_shufflehi_epi16(ratio, 0xa0), 0xa0);
@@ -6671,25 +6769,25 @@ static const uint8_t kShuffleUYVYUV_Win[16] = {0, 2,  0, 2,  4,  6,  4,  6,
 
 #define STOREARGB_WIN_AVX512BW(dst_ptr)                                      \
   do {                                                                       \
-    __m512i bg = _mm512_permutexvar_epi64(zmm_unperm,                        \
-                                          _mm512_unpacklo_epi8(zmm0, zmm1)); \
-    __m512i ra = _mm512_permutexvar_epi64(zmm_unperm,                        \
-                                          _mm512_unpacklo_epi8(zmm2, zmm5)); \
+    __m512i bg =                                                             \
+        PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1));      \
+    __m512i ra =                                                             \
+        PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5));      \
     _mm512_storeu_si512((__m512i*)(dst_ptr), _mm512_unpacklo_epi16(bg, ra)); \
     _mm512_storeu_si512((__m512i*)((dst_ptr) + 64),                          \
                         _mm512_unpackhi_epi16(bg, ra));                      \
   } while (0)
 
-#define STOREARGB_MASK_WIN_AVX512BW(dst_ptr, m32)                            \
-  do {                                                                       \
-    __m512i bg = _mm512_permutexvar_epi64(zmm_unperm,                        \
-                                          _mm512_unpacklo_epi8(zmm0, zmm1)); \
-    __m512i ra = _mm512_permutexvar_epi64(zmm_unperm,                        \
-                                          _mm512_unpacklo_epi8(zmm2, zmm5)); \
-    _mm512_mask_storeu_epi32((dst_ptr), (__mmask16)(m32),                    \
-                             _mm512_unpacklo_epi16(bg, ra));                 \
-    _mm512_mask_storeu_epi32((dst_ptr) + 64, (__mmask16)((m32) >> 16),       \
-                             _mm512_unpackhi_epi16(bg, ra));                 \
+#define STOREARGB_MASK_WIN_AVX512BW(dst_ptr, m32)                       \
+  do {                                                                  \
+    __m512i bg =                                                        \
+        PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm0, zmm1)); \
+    __m512i ra =                                                        \
+        PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm2, zmm5)); \
+    _mm512_mask_storeu_epi32((dst_ptr), (__mmask16)(m32),               \
+                             _mm512_unpacklo_epi16(bg, ra));            \
+    _mm512_mask_storeu_epi32((dst_ptr) + 64, (__mmask16)((m32) >> 16),  \
+                             _mm512_unpackhi_epi16(bg, ra));            \
   } while (0)
 
 #define PACKAR30_WIN_AVX512BW(dst0, dst1)                                     \
@@ -6728,8 +6826,7 @@ void I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
     __m256i uv256 = _mm256_inserti128_si256(
         _mm256_zextsi128_si256(_mm_unpacklo_epi8(xu, xv)),
         _mm_unpackhi_epi8(xu, xv), 1);
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_cvtepu8_epi16(_mm256_loadu_si256((const __m256i*)y_buf));
     y_buf += 32;
@@ -6747,8 +6844,7 @@ void I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
     __m256i uv256 = _mm256_inserti128_si256(
         _mm256_zextsi128_si256(_mm_unpacklo_epi8(xu, xv)),
         _mm_unpackhi_epi8(xu, xv), 1);
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_cvtepu8_epi16(_mm256_maskz_loadu_epi8((__mmask32)m32, y_buf));
     zmm4 = _mm512_or_si512(zmm4, _mm512_slli_epi16(zmm4, 8));
@@ -6781,17 +6877,14 @@ void I422ToRGBARow_AVX512BW(const uint8_t* y_buf,
     __m256i uv256 = _mm256_inserti128_si256(
         _mm256_zextsi128_si256(_mm_unpacklo_epi8(xu, xv)),
         _mm_unpackhi_epi8(xu, xv), 1);
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_cvtepu8_epi16(_mm256_loadu_si256((const __m256i*)y_buf));
     y_buf += 32;
     zmm4 = _mm512_or_si512(zmm4, _mm512_slli_epi16(zmm4, 8));
     YUVTORGB8_WIN_AVX512BW;
-    __m512i ab =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm5, zmm0));
-    __m512i gr =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm1, zmm2));
+    __m512i ab = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm5, zmm0));
+    __m512i gr = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm1, zmm2));
     _mm512_storeu_si512((__m512i*)dst_rgba, _mm512_unpacklo_epi16(ab, gr));
     _mm512_storeu_si512((__m512i*)(dst_rgba + 64),
                         _mm512_unpackhi_epi16(ab, gr));
@@ -6806,16 +6899,13 @@ void I422ToRGBARow_AVX512BW(const uint8_t* y_buf,
     __m256i uv256 = _mm256_inserti128_si256(
         _mm256_zextsi128_si256(_mm_unpacklo_epi8(xu, xv)),
         _mm_unpackhi_epi8(xu, xv), 1);
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_cvtepu8_epi16(_mm256_maskz_loadu_epi8((__mmask32)m32, y_buf));
     zmm4 = _mm512_or_si512(zmm4, _mm512_slli_epi16(zmm4, 8));
     YUVTORGB8_WIN_AVX512BW;
-    __m512i ab =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm5, zmm0));
-    __m512i gr =
-        _mm512_permutexvar_epi64(zmm_unperm, _mm512_unpacklo_epi8(zmm1, zmm2));
+    __m512i ab = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm5, zmm0));
+    __m512i gr = PermutexvarEpi64(zmm_unperm, _mm512_unpacklo_epi8(zmm1, zmm2));
     _mm512_mask_storeu_epi32(dst_rgba, (__mmask16)m32,
                              _mm512_unpacklo_epi16(ab, gr));
     _mm512_mask_storeu_epi32(dst_rgba + 64, (__mmask16)(m32 >> 16),
@@ -7110,8 +7200,7 @@ void I210ToARGBRow_AVX512BW(const uint16_t* y_buf,
     y_buf += 32;
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 6), _mm512_srli_epi16(y16, 4));
     YUVTORGB8_WIN_AVX512BW;
@@ -7127,8 +7216,7 @@ void I210ToARGBRow_AVX512BW(const uint16_t* y_buf,
     __m512i y16 = _mm512_maskz_loadu_epi16((__mmask32)m32, y_buf);
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 6), _mm512_srli_epi16(y16, 4));
     YUVTORGB8_WIN_AVX512BW;
@@ -7166,8 +7254,7 @@ void I210ToAR30Row_AVX512BW(const uint16_t* y_buf,
     y_buf += 32;
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 6), _mm512_srli_epi16(y16, 4));
     YUVTORGB16_WIN_AVX512BW;
@@ -7185,8 +7272,7 @@ void I210ToAR30Row_AVX512BW(const uint16_t* y_buf,
     __m512i y16 = _mm512_maskz_loadu_epi16((__mmask32)m32, y_buf);
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 6), _mm512_srli_epi16(y16, 4));
     YUVTORGB16_WIN_AVX512BW;
@@ -7226,8 +7312,7 @@ void I210AlphaToARGBRow_AVX512BW(const uint16_t* y_buf,
     a_buf += 32;
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 6), _mm512_srli_epi16(y16, 4));
     __m512i zmm5 = _mm512_packus_epi16(a16, a16);
@@ -7246,8 +7331,7 @@ void I210AlphaToARGBRow_AVX512BW(const uint16_t* y_buf,
         _mm512_srli_epi16(_mm512_maskz_loadu_epi16((__mmask32)m32, a_buf), 2);
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 6), _mm512_srli_epi16(y16, 4));
     __m512i zmm5 = _mm512_packus_epi16(a16, a16);
@@ -7283,8 +7367,7 @@ void I212ToARGBRow_AVX512BW(const uint16_t* y_buf,
     y_buf += 32;
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 4), _mm512_srli_epi16(y16, 8));
     YUVTORGB8_WIN_AVX512BW;
@@ -7300,8 +7383,7 @@ void I212ToARGBRow_AVX512BW(const uint16_t* y_buf,
     __m512i y16 = _mm512_maskz_loadu_epi16((__mmask32)m32, y_buf);
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 4), _mm512_srli_epi16(y16, 8));
     YUVTORGB8_WIN_AVX512BW;
@@ -7339,8 +7421,7 @@ void I212ToAR30Row_AVX512BW(const uint16_t* y_buf,
     y_buf += 32;
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 4), _mm512_srli_epi16(y16, 8));
     YUVTORGB16_WIN_AVX512BW;
@@ -7358,8 +7439,7 @@ void I212ToAR30Row_AVX512BW(const uint16_t* y_buf,
     __m512i y16 = _mm512_maskz_loadu_epi16((__mmask32)m32, y_buf);
     __m256i uv256 = _mm256_unpacklo_epi8(_mm256_packus_epi16(u_s, u_s),
                                          _mm256_packus_epi16(v_s, v_s));
-    __m512i zmm3 =
-        _mm512_permutexvar_epi16(zmm_quad, _mm512_zextsi256_si512(uv256));
+    __m512i zmm3 = PermutexvarEpi16(zmm_quad, _mm512_zextsi256_si512(uv256));
     __m512i zmm4 =
         _mm512_or_si512(_mm512_slli_epi16(y16, 4), _mm512_srli_epi16(y16, 8));
     YUVTORGB16_WIN_AVX512BW;
@@ -8071,7 +8151,7 @@ void ARGBToYMatrixRow_AVX512BW(const uint8_t* src_argb,
     zmm0 = _mm512_srli_epi16(_mm512_add_epi16(zmm0, zmm_add), 8);
     zmm2 = _mm512_srli_epi16(_mm512_add_epi16(zmm2, zmm_add), 8);
 
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, _mm512_packus_epi16(zmm0, zmm2));
+    zmm0 = PermutexvarEpi32(zmm_perm_y, _mm512_packus_epi16(zmm0, zmm2));
     _mm512_storeu_si512((__m512i*)dst_y, zmm0);
 
     src_argb += 256;
@@ -8116,7 +8196,7 @@ void ARGBToUV444MatrixRow_AVX512BW(const uint8_t* src_argb,
                           8);
     _mm512_storeu_si512(
         (__m512i*)dst_u,
-        _mm512_permutexvar_epi32(zmm_perm_y, _mm512_packus_epi16(u01, u23)));
+        PermutexvarEpi32(zmm_perm_y, _mm512_packus_epi16(u01, u23)));
 
     __m512i v0 = _mm512_madd_epi16(_mm512_maddubs_epi16(s0, zmm_v), zmm_one);
     __m512i v1 = _mm512_madd_epi16(_mm512_maddubs_epi16(s1, zmm_v), zmm_one);
@@ -8130,7 +8210,7 @@ void ARGBToUV444MatrixRow_AVX512BW(const uint8_t* src_argb,
                           8);
     _mm512_storeu_si512(
         (__m512i*)dst_v,
-        _mm512_permutexvar_epi32(zmm_perm_y, _mm512_packus_epi16(v01, v23)));
+        PermutexvarEpi32(zmm_perm_y, _mm512_packus_epi16(v01, v23)));
 
     src_argb += 256;
     dst_u += 64;
@@ -8192,13 +8272,13 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
     zmm0 = _mm512_avg_epu16(_mm512_srli_epi16(zmm0, 1), zmm_zero);
     zmm1 = _mm512_avg_epu16(_mm512_srli_epi16(zmm1, 1), zmm_zero);
 
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_uv, _mm512_packus_epi16(zmm0, zmm1));
+    zmm0 = PermutexvarEpi32(zmm_perm_uv, _mm512_packus_epi16(zmm0, zmm1));
 
     zmm1 = _mm512_madd_epi16(_mm512_maddubs_epi16(zmm0, zmm_u), zmm_one);
     zmm2 = _mm512_madd_epi16(_mm512_maddubs_epi16(zmm0, zmm_v), zmm_one);
     zmm0 = _mm512_packs_epi32(zmm1, zmm2);
     zmm0 = _mm512_srli_epi16(_mm512_sub_epi16(zmm_8000, zmm0), 8);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, _mm512_packus_epi16(zmm0, zmm0));
+    zmm0 = PermutexvarEpi32(zmm_perm_y, _mm512_packus_epi16(zmm0, zmm0));
 
     _mm_storeu_si128((__m128i*)dst_u, _mm512_castsi512_si128(zmm0));
     _mm_storeu_si128((__m128i*)dst_v, _mm512_extracti32x4_epi32(zmm0, 1));
@@ -8241,13 +8321,13 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
     zmm0 = _mm512_avg_epu16(_mm512_srli_epi16(zmm0, 1), zmm_zero);
     zmm1 = _mm512_avg_epu16(_mm512_srli_epi16(zmm1, 1), zmm_zero);
 
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_uv, _mm512_packus_epi16(zmm0, zmm1));
+    zmm0 = PermutexvarEpi32(zmm_perm_uv, _mm512_packus_epi16(zmm0, zmm1));
 
     zmm1 = _mm512_madd_epi16(_mm512_maddubs_epi16(zmm0, zmm_u), zmm_one);
     zmm2 = _mm512_madd_epi16(_mm512_maddubs_epi16(zmm0, zmm_v), zmm_one);
     zmm0 = _mm512_packs_epi32(zmm1, zmm2);
     zmm0 = _mm512_srli_epi16(_mm512_sub_epi16(zmm_8000, zmm0), 8);
-    zmm0 = _mm512_permutexvar_epi32(zmm_perm_y, _mm512_packus_epi16(zmm0, zmm0));
+    zmm0 = PermutexvarEpi32(zmm_perm_y, _mm512_packus_epi16(zmm0, zmm0));
 
     int halfwidth = (width + 1) >> 1;
     __mmask16 k_out = (__mmask16)((1u << halfwidth) - 1u);

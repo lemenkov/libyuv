@@ -101,10 +101,11 @@ from an intermediate stack-allocated `ARGB` row buffer (or delegate to existing
     `"ymmN"` or `"zmmN"`, including for AVX2 and AVX512 code. Clang for
     Windows must preserve xmm6-xmm15 and does not save them when they are
     declared as ymm or zmm.
-4.  **MSan Intrinsics (`row_win.cc` / `scale_win.cc`)**: Clang builds with
-    MemorySanitizer (`-fsanitize=memory`) define `LIBYUV_ENABLE_ROWWIN` and
-    compile `row_win.cc` and `scale_win.cc` instead of inline assembly. Avoid
-    AVX-512 intrinsics that LLVM's MSan pass does not instrument:
+4.  **MSan Intrinsics (`*_win.cc`)**: Clang builds with MemorySanitizer
+    (`-fsanitize=memory`) define `LIBYUV_ENABLE_ROWWIN` and compile `*_win.cc`
+    (`row_win.cc`, `scale_win.cc`, `compare_win.cc`, `rotate_win.cc`) instead of
+    inline assembly (`*_gcc.cc`). When porting `*_gcc.cc` to `*_win.cc`, never
+    use AVX-512 intrinsics that LLVM's MSan pass does not model:
     *   **Down-converting masked stores**: Never use
         `_mm512_mask_cvtepi32_storeu_epi8`, `_mm512_mask_cvtepi64_storeu_epi8`,
         `_mm512_mask_cvtepi16_storeu_epi8`, or
@@ -115,14 +116,42 @@ from an intermediate stack-allocated `ARGB` row buffer (or delegate to existing
         store (e.g. `_mm_mask_storeu_epi8(dst, mask, _mm512_cvtepi32_epi8(v))`),
         which lowers to `@llvm.masked.store` for MSan and still compiles to a
         single `vpmovdb` instruction at `-O2`.
-    *   **Ternary logic (`_mm512_ternarylogic_epi32` / `epi64`) on partially
-        uninitialized vectors**: LLVM MSan does not model `vpternlog` truth
-        tables bitwise and flags `use-of-uninitialized-value` if any bit of any
-        of the three inputs is uninitialized, even if masked off by `imm8`. For
-        partial channel updates (e.g. writing alpha into `dst` in
-        `ARGBCopyYToAlphaRow_AVX512BW`), use byte-masked stores
-        (`_mm512_mask_storeu_epi8`) instead of reading `dst` and blending with
-        `_mm512_ternarylogic_epi32`.
+    *   **Ternary logic (`_mm*_ternarylogic_epi32` / `epi64`)**: Never use
+        `_mm512_ternarylogic_epi32`/`epi64` (or `_mm256_`/`_mm_` variants)
+        anywhere in `*_win.cc` when porting `vpternlogd`/`vpternlogq` from
+        `*_gcc.cc`. They lower to `@llvm.x86.avx512.pternlog.*`, which LLVM MSan
+        does not model bitwise—`handleUnknownIntrinsic` traps immediately with
+        `use-of-uninitialized-value` if *any* bit of any of the three inputs is
+        uninitialized (such as the unused alpha byte of an `RGBX` buffer or tail
+        padding), even if masked off by `imm8` or merely copied to memory.
+        *   For boolean blends and inversions (e.g. `ARGBGrayRow_AVX512VNNI`,
+            `I422ToAR30Row_AVX512BW`, `ARGBToUV444MatrixRow_AVX512VNNIVBMI`),
+            use standard bitwise intrinsics (`_mm512_and_si512`,
+            `_mm512_andnot_si512`, `_mm512_or_si512`, `_mm512_xor_si512`), which
+            LLVM MSan models bit-by-bit and Clang `-O2` folds back into
+            `vpternlog` in non-MSan builds.
+        *   For write-only partial channel updates into `dst` (e.g. writing
+            alpha in `ARGBCopyYToAlphaRow_AVX512BW`), use byte-masked stores
+            (`_mm512_mask_storeu_epi8`) instead of reading `dst` and blending.
+    *   **Single-source variable permutes (`_mm512_permutexvar_epi*` /
+        `_mm512_mask_permutexvar_epi*`)**: Never use
+        `_mm512_permutexvar_epi{8,16,32,64}` or
+        `_mm512_mask_permutexvar_epi{8,16,32,64}` directly. They lower to
+        `@llvm.x86.avx512.permvar.*`, which LLVM MSan does not model
+        lane-by-lane—instead it ORs the input shadows without permuting them,
+        poisoning initialized output lanes whenever *any* lane of the input
+        vector is uninitialized (e.g. `_mm512_castsi128_si512`,
+        `_mm512_castsi256_si512`, unused `RGBX` alpha bytes, or uninitialized
+        tail lanes). Use the `PermutexvarEpi*` and `MaskPermutexvarEpi*`
+        helpers in `row_win.cc` / `scale_win.cc`, which use portable
+        lane-by-lane C loops under `LIBYUV_MSAN` and the native intrinsics
+        otherwise.
+    *   **512-bit float-to-int truncation (`_mm512_cvttps_epi32`)**: Never use
+        `_mm512_cvttps_epi32` directly; it lowers to
+        `@llvm.x86.avx512.mask.cvttps2dq.512`, which LLVM MSan does not model
+        lane-by-lane. Use the `CvttpsEpi32` helper in `row_win.cc`, which uses
+        a portable lane-by-lane C loop under `LIBYUV_MSAN` and
+        `_mm512_cvttps_epi32` otherwise.
 
 ### AArch64
 

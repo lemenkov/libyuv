@@ -22,6 +22,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/scale.h"
+#include "libyuv/scale_uv.h"
 
 #if !defined(LIBYUV_USING_SHARED_LIBRARY) && !defined(COMPONENT_BUILD) && \
     !defined(ENABLE_ROW_TESTS)
@@ -38,10 +39,15 @@
 #if __has_feature(memory_sanitizer)
 #include <sanitizer/msan_interface.h>
 #define MSAN_POISON(ptr, size) __msan_allocated_memory(ptr, size)
+#define MSAN_CHECK_INITIALIZED(ptr, size) \
+  __msan_check_mem_is_initialized(ptr, size)
 #endif
 #endif
 #ifndef MSAN_POISON
 #define MSAN_POISON(ptr, size)
+#endif
+#ifndef MSAN_CHECK_INITIALIZED
+#define MSAN_CHECK_INITIALIZED(ptr, size)
 #endif
 
 #define EXPECTED_UNATTENUATE_DIFF 0
@@ -500,6 +506,36 @@ TEST_F(LibYUVPlanarTest, TestARGBGrayTo) {
     ASSERT_EQ(i, orig_pixels[i][1]);
     ASSERT_EQ(i, orig_pixels[i][2]);
     ASSERT_EQ(i, orig_pixels[i][3]);
+  }
+
+  // Test RGBX input with uninitialized alpha channel under MSan.
+  SIMD_ALIGNED(uint8_t gray_pixels_c[37][4]);
+  for (int i = 0; i < 37; ++i) {
+    orig_pixels[i][0] = static_cast<uint8_t>(i * 7);
+    orig_pixels[i][1] = static_cast<uint8_t>(i * 13);
+    orig_pixels[i][2] = static_cast<uint8_t>(i * 23);
+    orig_pixels[i][3] = 0u;
+  }
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels_c[0][0], 0, 37, 1);
+  MaskCpuFlags(benchmark_cpu_info_);
+  for (int i = 0; i < 37; ++i) {
+    MSAN_POISON(&orig_pixels[i][3], 1);
+  }
+  MSAN_POISON(gray_pixels, sizeof(gray_pixels));
+  ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 37, 1);
+  for (int i = 0; i < 37; ++i) {
+    MSAN_CHECK_INITIALIZED(&gray_pixels[i][0], 3);
+    ASSERT_EQ(gray_pixels_c[i][0], gray_pixels[i][0]);
+    ASSERT_EQ(gray_pixels_c[i][1], gray_pixels[i][1]);
+    ASSERT_EQ(gray_pixels_c[i][2], gray_pixels[i][2]);
+  }
+  ARGBGray(&orig_pixels[0][0], 0, 0, 0, 37, 1);
+  for (int i = 0; i < 37; ++i) {
+    MSAN_CHECK_INITIALIZED(&orig_pixels[i][0], 3);
+    ASSERT_EQ(gray_pixels_c[i][0], orig_pixels[i][0]);
+    ASSERT_EQ(gray_pixels_c[i][1], orig_pixels[i][1]);
+    ASSERT_EQ(gray_pixels_c[i][2], orig_pixels[i][2]);
   }
 }
 
@@ -5872,6 +5908,280 @@ TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_AllAlphas) {
   free_aligned_buffer_page_end(src_argb1);
   free_aligned_buffer_page_end(dst_argb_c);
   free_aligned_buffer_page_end(dst_argb_opt);
+}
+
+TEST_F(LibYUVPlanarTest, MSanUninitializedInputsAndTails) {
+  static const int kWidths[] = {1, 7, 15, 16, 17, 31, 32, 33, 63, 64, 65, 99};
+  const int kMaxW = 128;
+  const int kMaxSrcUV = kMaxW * 3 * 2 + 128;
+  align_buffer_page_end(src0, kMaxW * 4 + 128);
+  align_buffer_page_end(src1, kMaxW * 4 + 128);
+  align_buffer_page_end(src2, kMaxW * 4 + 128);
+  align_buffer_page_end(dst_c0, kMaxW * 4 + 128);
+  align_buffer_page_end(dst_c1, kMaxW * 4 + 128);
+  align_buffer_page_end(dst_c2, kMaxW * 4 + 128);
+  align_buffer_page_end(dst_opt0, kMaxW * 4 + 128);
+  align_buffer_page_end(dst_opt1, kMaxW * 4 + 128);
+  align_buffer_page_end(dst_opt2, kMaxW * 4 + 128);
+  align_buffer_page_end(uv_src, kMaxSrcUV * 3);
+
+  for (size_t wi = 0; wi < sizeof(kWidths) / sizeof(kWidths[0]); ++wi) {
+    const int w = kWidths[wi];
+    const int uv_w = (w + 1) / 2;
+
+    // 1. ARGBToI444 and ARGBToI420 with poisoned RGBX alpha and poisoned tail.
+    for (int i = 0; i < w; ++i) {
+      src0[i * 4 + 0] = static_cast<uint8_t>((i * 11 + 3) & 255);
+      src0[i * 4 + 1] = static_cast<uint8_t>((i * 17 + 7) & 255);
+      src0[i * 4 + 2] = static_cast<uint8_t>((i * 29 + 13) & 255);
+      src0[i * 4 + 3] = 0u;
+    }
+    MaskCpuFlags(disable_cpu_flags_);
+    ARGBToI444(src0, w * 4, dst_c0, w, dst_c1, w, dst_c2, w, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    for (int i = 0; i < w; ++i) {
+      MSAN_POISON(&src0[i * 4 + 3], 1);
+    }
+    MSAN_POISON(src0 + w * 4, 128);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    MSAN_POISON(dst_opt1, kMaxW * 4);
+    MSAN_POISON(dst_opt2, kMaxW * 4);
+    ARGBToI444(src0, w * 4, dst_opt0, w, dst_opt1, w, dst_opt2, w, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w);
+    MSAN_CHECK_INITIALIZED(dst_opt1, w);
+    MSAN_CHECK_INITIALIZED(dst_opt2, w);
+    for (int i = 0; i < w; ++i) {
+      EXPECT_EQ(dst_c0[i], dst_opt0[i]) << "ARGBToI444 Y w=" << w;
+      EXPECT_EQ(dst_c1[i], dst_opt1[i]) << "ARGBToI444 U w=" << w;
+      EXPECT_EQ(dst_c2[i], dst_opt2[i]) << "ARGBToI444 V w=" << w;
+    }
+
+    for (int i = 0; i < w; ++i) {
+      src0[i * 4 + 3] = 0u;
+    }
+    MaskCpuFlags(disable_cpu_flags_);
+    ARGBToI420(src0, w * 4, dst_c0, w, dst_c1, uv_w, dst_c2, uv_w, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    for (int i = 0; i < w; ++i) {
+      MSAN_POISON(&src0[i * 4 + 3], 1);
+    }
+    MSAN_POISON(src0 + w * 4, 128);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    MSAN_POISON(dst_opt1, kMaxW * 4);
+    MSAN_POISON(dst_opt2, kMaxW * 4);
+    ARGBToI420(src0, w * 4, dst_opt0, w, dst_opt1, uv_w, dst_opt2, uv_w, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w);
+    MSAN_CHECK_INITIALIZED(dst_opt1, uv_w);
+    MSAN_CHECK_INITIALIZED(dst_opt2, uv_w);
+    for (int i = 0; i < w; ++i) {
+      EXPECT_EQ(dst_c0[i], dst_opt0[i]) << "ARGBToI420 Y w=" << w;
+    }
+    for (int i = 0; i < uv_w; ++i) {
+      EXPECT_EQ(dst_c1[i], dst_opt1[i]) << "ARGBToI420 U w=" << w;
+      EXPECT_EQ(dst_c2[i], dst_opt2[i]) << "ARGBToI420 V w=" << w;
+    }
+
+    // 2. ARGBMirror with poisoned alpha on even pixels (verifying per-lane
+    // shadow permutation) and poisoned tail.
+    for (int i = 0; i < w; ++i) {
+      src0[i * 4 + 0] = static_cast<uint8_t>((i * 5 + 1) & 255);
+      src0[i * 4 + 1] = static_cast<uint8_t>((i * 9 + 2) & 255);
+      src0[i * 4 + 2] = static_cast<uint8_t>((i * 15 + 3) & 255);
+      src0[i * 4 + 3] = static_cast<uint8_t>((i * 21 + 4) & 255);
+    }
+    MaskCpuFlags(disable_cpu_flags_);
+    ARGBMirror(src0, w * 4, dst_c0, w * 4, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    for (int i = 0; i < w; i += 2) {
+      MSAN_POISON(&src0[i * 4 + 3], 1);
+    }
+    MSAN_POISON(src0 + w * 4, 128);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    ARGBMirror(src0, w * 4, dst_opt0, w * 4, w, 1);
+    for (int i = 0; i < w; ++i) {
+      const int src_i = w - 1 - i;
+      MSAN_CHECK_INITIALIZED(&dst_opt0[i * 4], 3);
+      EXPECT_EQ(dst_c0[i * 4 + 0], dst_opt0[i * 4 + 0]);
+      EXPECT_EQ(dst_c0[i * 4 + 1], dst_opt0[i * 4 + 1]);
+      EXPECT_EQ(dst_c0[i * 4 + 2], dst_opt0[i * 4 + 2]);
+      if (src_i & 1) {
+        MSAN_CHECK_INITIALIZED(&dst_opt0[i * 4 + 3], 1);
+        EXPECT_EQ(dst_c0[i * 4 + 3], dst_opt0[i * 4 + 3]);
+      }
+    }
+
+    // 3. RGB24Mirror, RAWToRGBA, RAWToRGB24, MergeRGBPlane with poisoned tails.
+    for (int i = 0; i < w * 3; ++i) {
+      src0[i] = static_cast<uint8_t>((i * 19 + 5) & 255);
+    }
+    MSAN_POISON(src0 + w * 3, 128);
+
+    MaskCpuFlags(disable_cpu_flags_);
+    RGB24Mirror(src0, w * 3, dst_c0, w * 3, w, 1);
+    RAWToRGBA(src0, w * 3, dst_c1, w * 4, w, 1);
+    RAWToRGB24(src0, w * 3, dst_c2, w * 3, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    MSAN_POISON(dst_opt1, kMaxW * 4);
+    MSAN_POISON(dst_opt2, kMaxW * 4);
+    RGB24Mirror(src0, w * 3, dst_opt0, w * 3, w, 1);
+    RAWToRGBA(src0, w * 3, dst_opt1, w * 4, w, 1);
+    RAWToRGB24(src0, w * 3, dst_opt2, w * 3, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 3);
+    MSAN_CHECK_INITIALIZED(dst_opt1, w * 4);
+    MSAN_CHECK_INITIALIZED(dst_opt2, w * 3);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 3));
+    EXPECT_EQ(0, memcmp(dst_c1, dst_opt1, w * 4));
+    EXPECT_EQ(0, memcmp(dst_c2, dst_opt2, w * 3));
+
+    for (int i = 0; i < w; ++i) {
+      src0[i] = static_cast<uint8_t>((i * 3 + 11) & 255);
+      src1[i] = static_cast<uint8_t>((i * 7 + 23) & 255);
+      src2[i] = static_cast<uint8_t>((i * 13 + 37) & 255);
+    }
+    MSAN_POISON(src0 + w, 128);
+    MSAN_POISON(src1 + w, 128);
+    MSAN_POISON(src2 + w, 128);
+    MaskCpuFlags(disable_cpu_flags_);
+    MergeRGBPlane(src0, w, src1, w, src2, w, dst_c0, w * 3, w, 1);
+    MirrorPlane(src0, w, dst_c1, w, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    MSAN_POISON(dst_opt1, kMaxW * 4);
+    MergeRGBPlane(src0, w, src1, w, src2, w, dst_opt0, w * 3, w, 1);
+    MirrorPlane(src0, w, dst_opt1, w, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 3);
+    MSAN_CHECK_INITIALIZED(dst_opt1, w);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 3));
+    EXPECT_EQ(0, memcmp(dst_c1, dst_opt1, w));
+
+    // 4. MirrorUVPlane and MirrorPlane_16 with poisoned tails.
+    for (int i = 0; i < w * 2; ++i) {
+      src0[i] = static_cast<uint8_t>((i * 23 + 9) & 255);
+    }
+    MSAN_POISON(src0 + w * 2, 128);
+    MaskCpuFlags(disable_cpu_flags_);
+    MirrorUVPlane(src0, w * 2, dst_c0, w * 2, w, 1);
+    MirrorPlane_16(reinterpret_cast<const uint16_t*>(src0), w,
+                   reinterpret_cast<uint16_t*>(dst_c1), w, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    MSAN_POISON(dst_opt1, kMaxW * 4);
+    MirrorUVPlane(src0, w * 2, dst_opt0, w * 2, w, 1);
+    MirrorPlane_16(reinterpret_cast<const uint16_t*>(src0), w,
+                   reinterpret_cast<uint16_t*>(dst_opt1), w, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 2);
+    MSAN_CHECK_INITIALIZED(dst_opt1, w * 2);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 2));
+    EXPECT_EQ(0, memcmp(dst_c1, dst_opt1, w * 2));
+
+    // 5. I420ToAR30, NV12ToARGB, NV12ToRGB24, I444ToARGB, I210ToARGB.
+    for (int i = 0; i < w; ++i) {
+      src0[i] = static_cast<uint8_t>((i * 5 + 16) & 255);
+      src1[i] = static_cast<uint8_t>((i * 9 + 64) & 255);
+      src2[i] = static_cast<uint8_t>((i * 11 + 128) & 255);
+    }
+    MSAN_POISON(src0 + w, 128);
+    MSAN_POISON(src1 + uv_w, 128);
+    MSAN_POISON(src2 + uv_w, 128);
+    MaskCpuFlags(disable_cpu_flags_);
+    I420ToAR30(src0, w, src1, uv_w, src2, uv_w, dst_c0, w * 4, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    I420ToAR30(src0, w, src1, uv_w, src2, uv_w, dst_opt0, w * 4, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 4);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 4));
+
+    for (int i = 0; i < uv_w * 2; ++i) {
+      src1[i] = static_cast<uint8_t>((i * 13 + 80) & 255);
+    }
+    MSAN_POISON(src1 + uv_w * 2, 128);
+    MaskCpuFlags(disable_cpu_flags_);
+    NV12ToARGB(src0, w, src1, uv_w * 2, dst_c0, w * 4, w, 1);
+    NV12ToRGB24(src0, w, src1, uv_w * 2, dst_c1, w * 3, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    MSAN_POISON(dst_opt1, kMaxW * 4);
+    NV12ToARGB(src0, w, src1, uv_w * 2, dst_opt0, w * 4, w, 1);
+    NV12ToRGB24(src0, w, src1, uv_w * 2, dst_opt1, w * 3, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 4);
+    MSAN_CHECK_INITIALIZED(dst_opt1, w * 3);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 4));
+    EXPECT_EQ(0, memcmp(dst_c1, dst_opt1, w * 3));
+
+    for (int i = 0; i < w; ++i) {
+      reinterpret_cast<uint16_t*>(src0)[i] =
+          static_cast<uint16_t>((i * 17 + 64) & 1023);
+    }
+    for (int i = 0; i < uv_w; ++i) {
+      reinterpret_cast<uint16_t*>(src1)[i] =
+          static_cast<uint16_t>((i * 23 + 256) & 1023);
+      reinterpret_cast<uint16_t*>(src2)[i] =
+          static_cast<uint16_t>((i * 31 + 512) & 1023);
+    }
+    MSAN_POISON(src0 + w * 2, 128);
+    MSAN_POISON(src1 + uv_w * 2, 128);
+    MSAN_POISON(src2 + uv_w * 2, 128);
+    MaskCpuFlags(disable_cpu_flags_);
+    I210ToARGB(reinterpret_cast<const uint16_t*>(src0), w,
+               reinterpret_cast<const uint16_t*>(src1), uv_w,
+               reinterpret_cast<const uint16_t*>(src2), uv_w, dst_c0, w * 4, w,
+               1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    I210ToARGB(reinterpret_cast<const uint16_t*>(src0), w,
+               reinterpret_cast<const uint16_t*>(src1), uv_w,
+               reinterpret_cast<const uint16_t*>(src2), uv_w, dst_opt0, w * 4,
+               w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 4);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 4));
+
+    // 6. ARGBAlphaBlend with poisoned tails and poisoned destination.
+    for (int i = 0; i < w * 4; ++i) {
+      src0[i] = static_cast<uint8_t>((i * 29 + 3) & 255);
+      src1[i] = static_cast<uint8_t>((i * 37 + 11) & 255);
+    }
+    MSAN_POISON(src0 + w * 4, 128);
+    MSAN_POISON(src1 + w * 4, 128);
+    MaskCpuFlags(disable_cpu_flags_);
+    ARGBAlphaBlend(src0, w * 4, src1, w * 4, dst_c0, w * 4, w, 1);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    ARGBAlphaBlend(src0, w * 4, src1, w * 4, dst_opt0, w * 4, w, 1);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 4);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 4));
+
+    // 7. UVScale 3x box downscale (hits ScaleUVAddCols3_AVX512VBMI).
+    const int src_uv_w = w * 3;
+    const int src_uv_stride = src_uv_w * 2 + 64;
+    MSAN_POISON(uv_src, kMaxSrcUV * 3);
+    for (int row = 0; row < 3; ++row) {
+      for (int i = 0; i < src_uv_w * 2; ++i) {
+        uv_src[row * src_uv_stride + i] =
+            static_cast<uint8_t>((row * 53 + i * 17 + 7) & 255);
+      }
+    }
+    MaskCpuFlags(disable_cpu_flags_);
+    UVScale(uv_src, src_uv_stride, src_uv_w, 3, dst_c0, w * 2, w, 1,
+            kFilterBox);
+    MaskCpuFlags(benchmark_cpu_info_);
+    MSAN_POISON(dst_opt0, kMaxW * 4);
+    UVScale(uv_src, src_uv_stride, src_uv_w, 3, dst_opt0, w * 2, w, 1,
+            kFilterBox);
+    MSAN_CHECK_INITIALIZED(dst_opt0, w * 2);
+    EXPECT_EQ(0, memcmp(dst_c0, dst_opt0, w * 2));
+  }
+
+  free_aligned_buffer_page_end(src0);
+  free_aligned_buffer_page_end(src1);
+  free_aligned_buffer_page_end(src2);
+  free_aligned_buffer_page_end(dst_c0);
+  free_aligned_buffer_page_end(dst_c1);
+  free_aligned_buffer_page_end(dst_c2);
+  free_aligned_buffer_page_end(dst_opt0);
+  free_aligned_buffer_page_end(dst_opt1);
+  free_aligned_buffer_page_end(dst_opt2);
+  free_aligned_buffer_page_end(uv_src);
 }
 
 }  // namespace libyuv
