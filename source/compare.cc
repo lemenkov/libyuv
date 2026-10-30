@@ -13,6 +13,7 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include <string.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -57,6 +58,22 @@ uint32_t HashDjb2(const uint8_t* src, uint64_t count, uint32_t seed) {
     simd_size = 1;  // Any count.
   }
 #endif
+#if defined(HAS_HASHDJB2_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    HashDjb2_SSE = HashDjb2_RVV;
+    simd_size = 1;  // Any count.
+  }
+#endif
+#if defined(HAS_HASHDJB2_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    HashDjb2_SSE = HashDjb2_LSX;
+  }
+#endif
+#if defined(HAS_HASHDJB2_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    HashDjb2_SSE = HashDjb2_LASX;
+  }
+#endif
 #if defined(HAS_HASHDJB2_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     HashDjb2_SSE = HashDjb2_WASMSIMD;
@@ -82,7 +99,19 @@ uint32_t HashDjb2(const uint8_t* src, uint64_t count, uint32_t seed) {
   }
   remainder = (int)count & (simd_size - 1);
   if (remainder) {
-    seed = HashDjb2_C(src, remainder, seed);
+    if (HashDjb2_SSE == HashDjb2_C) {
+      seed = HashDjb2_C(src, remainder, seed);
+    } else {
+      SIMD_ALIGNED(uint8_t buf[32]);
+      uint32_t pow33 = 1;
+      int i;
+      memset(buf, 0, sizeof(buf));
+      for (i = 0; i < remainder; ++i) {
+        pow33 *= 33;
+      }
+      memcpy(buf + simd_size - remainder, src, remainder);
+      seed = seed * pow33 + HashDjb2_SSE(buf, simd_size, 0);
+    }
   }
   return seed;
 }
@@ -110,6 +139,36 @@ uint32_t ARGBDetect(const uint8_t* argb,
 #if defined(HAS_ARGBDETECTROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBDetectRow = ARGBDetectRow_AVX2;
+  }
+#endif
+#if defined(HAS_ARGBDETECTROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBDetectRow = ARGBDetectRow_NEON;
+  }
+#endif
+#if defined(HAS_ARGBDETECTROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBDetectRow = ARGBDetectRow_RVV;
+  }
+#endif
+#if defined(HAS_ARGBDETECTROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBDetectRow = ARGBDetectRow_LSX;
+  }
+#endif
+#if defined(HAS_ARGBDETECTROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBDetectRow = ARGBDetectRow_LASX;
+  }
+#endif
+#if defined(HAS_ARGBDETECTROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    ARGBDetectRow = ARGBDetectRow_WASMSIMD;
+  }
+#endif
+#if defined(HAS_ARGBDETECTROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    ARGBDetectRow = ARGBDetectRow_HVX;
   }
 #endif
   for (h = 0; h < height && fourcc == 0; ++h) {
@@ -164,6 +223,28 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
     simd_size = 1;  // Any count.
   }
 #endif
+#if defined(HAS_HAMMINGDISTANCE_AVX512VNNI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+    HammingDistance = HammingDistance_AVX512VNNI;
+    simd_size = 1;  // Any count.
+  }
+#endif
+#if defined(HAS_HAMMINGDISTANCE_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    HammingDistance = HammingDistance_RVV;
+    simd_size = 1;  // Any count.
+  }
+#endif
+#if defined(HAS_HAMMINGDISTANCE_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    HammingDistance = HammingDistance_LSX;
+  }
+#endif
+#if defined(HAS_HAMMINGDISTANCE_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    HammingDistance = HammingDistance_LASX;
+  }
+#endif
 #if defined(HAS_HAMMINGDISTANCE_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     HammingDistance = HammingDistance_WASMSIMD;
@@ -192,7 +273,17 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
   }
   remainder = count & (simd_size - 1);
   if (remainder) {
-    diff += HammingDistance_C(src_a, src_b, remainder);
+    if (HammingDistance == HammingDistance_C) {
+      diff += HammingDistance_C(src_a, src_b, remainder);
+    } else {
+      SIMD_ALIGNED(uint8_t buf_a[64]);
+      SIMD_ALIGNED(uint8_t buf_b[64]);
+      memset(buf_a, 0, sizeof(buf_a));
+      memset(buf_b, 0, sizeof(buf_b));
+      memcpy(buf_a, src_a, remainder);
+      memcpy(buf_b, src_b, remainder);
+      diff += HammingDistance(buf_a, buf_b, simd_size);
+    }
   }
   return diff;
 }
@@ -246,6 +337,22 @@ uint64_t ComputeSumSquareError(const uint8_t* src_a,
     simd_size = 1;  // Any count.
   }
 #endif
+#if defined(HAS_SUMSQUAREERROR_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SumSquareError = SumSquareError_RVV;
+    simd_size = 1;  // Any count.
+  }
+#endif
+#if defined(HAS_SUMSQUAREERROR_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    SumSquareError = SumSquareError_LSX;
+  }
+#endif
+#if defined(HAS_SUMSQUAREERROR_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    SumSquareError = SumSquareError_LASX;
+  }
+#endif
 #if defined(HAS_SUMSQUAREERROR_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     SumSquareError = SumSquareError_WASMSIMD;
@@ -273,7 +380,17 @@ uint64_t ComputeSumSquareError(const uint8_t* src_a,
   }
   remainder = count & (simd_size - 1);
   if (remainder) {
-    sse += SumSquareError_C(src_a, src_b, remainder);
+    if (SumSquareError == SumSquareError_C) {
+      sse += SumSquareError_C(src_a, src_b, remainder);
+    } else {
+      SIMD_ALIGNED(uint8_t buf_a[32]);
+      SIMD_ALIGNED(uint8_t buf_b[32]);
+      memset(buf_a, 0, sizeof(buf_a));
+      memset(buf_b, 0, sizeof(buf_b));
+      memcpy(buf_a, src_a, remainder);
+      memcpy(buf_b, src_b, remainder);
+      sse += SumSquareError(buf_a, buf_b, simd_size);
+    }
   }
   return sse;
 }
@@ -400,6 +517,78 @@ static float Ssim8x8(const uint8_t* src_a,
   }
 }
 
+static void Ssim4x4Row_Rem(void (*Ssim4x4Row)(const uint8_t* src_a,
+                                              int stride_a,
+                                              const uint8_t* src_b,
+                                              int stride_b,
+                                              uint32_t* dst,
+                                              int width),
+                           int simd_size,
+                           const uint8_t* src_a,
+                           int stride_a,
+                           const uint8_t* src_b,
+                           int stride_b,
+                           uint32_t* dst,
+                           int rem_width) {
+  if (Ssim4x4Row == Ssim4x4Row_C) {
+    Ssim4x4Row_C(src_a, stride_a, src_b, stride_b, dst, rem_width);
+    return;
+  }
+  SIMD_ALIGNED(uint8_t buf_a[32 * 4]);
+  SIMD_ALIGNED(uint8_t buf_b[32 * 4]);
+  SIMD_ALIGNED(uint32_t buf_dst[32]);
+  memset(buf_a, 0, sizeof(buf_a));
+  memset(buf_b, 0, sizeof(buf_b));
+  int r;
+  for (r = 0; r < 4; ++r) {
+    memcpy(buf_a + r * 32, src_a + (ptrdiff_t)r * stride_a, rem_width);
+    memcpy(buf_b + r * 32, src_b + (ptrdiff_t)r * stride_b, rem_width);
+  }
+  Ssim4x4Row(buf_a, 32, buf_b, 32, buf_dst, simd_size);
+  memcpy(dst, buf_dst, (size_t)rem_width * sizeof(uint32_t));
+}
+
+static float SsimWindowRow_Rem(float (*SsimWindowRow)(const uint32_t* row0,
+                                                      const uint32_t* row1,
+                                                      int num_windows),
+                               int win_simd_size,
+                               const uint32_t* row0,
+                               const uint32_t* row1,
+                               int rem_windows) {
+  if (SsimWindowRow == SsimWindowRow_C) {
+    return SsimWindowRow_C(row0, row1, rem_windows);
+  }
+  SIMD_ALIGNED(uint32_t win0[9 * 4]);
+  SIMD_ALIGNED(uint32_t win1[9 * 4]);
+  memset(win0, 0, sizeof(win0));
+  memset(win1, 0, sizeof(win1));
+  // Set odd tiles (1, 3, 5, 7) in win1 so each unused window k >= 1 has
+  // sum_a = 4439, sum_b = -3, sum_sq = 307887, giving n1 = 2*4439*(-3) + c1 = 0
+  // and SSIM = 0.0f (avoiding float precision loss from adding 1.0f per lane).
+  int k;
+  for (k = 1; k <= win_simd_size; k += 2) {
+    win1[k * 4 + 0] = 4439u;
+    win1[k * 4 + 1] = (uint32_t)-3;
+    win1[k * 4 + 2] = 307887u;
+  }
+  float total = 0.0f;
+  int w;
+  for (w = 0; w < rem_windows; ++w) {
+    const uint32_t* r0 = row0 + w * 4;
+    const uint32_t* r1 = row1 + w * 4;
+    win0[0] = r0[0] + r0[4];
+    win0[1] = r0[1] + r0[5];
+    win0[2] = r0[2] + r0[6];
+    win0[3] = r0[3] + r0[7];
+    win1[0] = r1[0] + r1[4] - 4439u;
+    win1[1] = r1[1] + r1[5] - (uint32_t)-3;
+    win1[2] = r1[2] + r1[6] - 307887u;
+    win1[3] = r1[3] + r1[7];
+    total += SsimWindowRow(win0, win1, win_simd_size);
+  }
+  return total;
+}
+
 // We are using a 8x8 moving window with starting location of each 8x8 window
 // on the 4x4 pixel grid. Such arrangement allows the windows to overlap
 // block boundaries to penalize blocking artifacts.
@@ -472,6 +661,12 @@ double CalcFrameSsim(const uint8_t* src_a,
     simd_size = 16;
   }
 #endif
+#if defined(HAS_SSIMWINDOWROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SsimWindowRow = SsimWindowRow_NEON;
+    win_simd_size = 4;
+  }
+#endif
 #if defined(HAS_SSIM4X4ROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     Ssim4x4Row = Ssim4x4Row_SVE2;
@@ -514,10 +709,22 @@ double CalcFrameSsim(const uint8_t* src_a,
     simd_size = 16;
   }
 #endif
+#if defined(HAS_SSIMWINDOWROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    SsimWindowRow = SsimWindowRow_LSX;
+    win_simd_size = 1;
+  }
+#endif
 #if defined(HAS_SSIM4X4ROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     Ssim4x4Row = Ssim4x4Row_LASX;
     simd_size = 32;
+  }
+#endif
+#if defined(HAS_SSIMWINDOWROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    SsimWindowRow = SsimWindowRow_LASX;
+    win_simd_size = 1;
   }
 #endif
 #if defined(HAS_SSIM4X4ROW_WASMSIMD)
@@ -526,10 +733,22 @@ double CalcFrameSsim(const uint8_t* src_a,
     simd_size = 16;
   }
 #endif
+#if defined(HAS_SSIMWINDOWROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    SsimWindowRow = SsimWindowRow_WASMSIMD;
+    win_simd_size = 4;
+  }
+#endif
 #if defined(HAS_SSIM4X4ROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     Ssim4x4Row = Ssim4x4Row_HVX;
     simd_size = 4;
+  }
+#endif
+#if defined(HAS_SSIMWINDOWROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    SsimWindowRow = SsimWindowRow_HVX;
+    win_simd_size = 1;
   }
 #endif
 
@@ -562,8 +781,9 @@ double CalcFrameSsim(const uint8_t* src_a,
             Ssim4x4Row(a, stride_a, b, stride_b, row0, main_width);
           }
           if (rem_width > 0) {
-            Ssim4x4Row_C(a + main_width, stride_a, b + main_width, stride_b,
-                         row0 + main_width, rem_width);
+            Ssim4x4Row_Rem(Ssim4x4Row, simd_size, a + main_width, stride_a,
+                           b + main_width, stride_b, row0 + main_width,
+                           rem_width);
           }
         }
         a += (ptrdiff_t)stride_a * 4;
@@ -572,15 +792,17 @@ double CalcFrameSsim(const uint8_t* src_a,
           Ssim4x4Row(a, stride_a, b, stride_b, row1, main_width);
         }
         if (rem_width > 0) {
-          Ssim4x4Row_C(a + main_width, stride_a, b + main_width, stride_b,
-                       row1 + main_width, rem_width);
+          Ssim4x4Row_Rem(Ssim4x4Row, simd_size, a + main_width, stride_a,
+                         b + main_width, stride_b, row1 + main_width,
+                         rem_width);
         }
         if (main_windows > 0) {
           ssim_total += SsimWindowRow(row0, row1, main_windows);
         }
         if (rem_windows > 0) {
-          ssim_total += SsimWindowRow_C(row0 + main_windows * 4,
-                                        row1 + main_windows * 4, rem_windows);
+          ssim_total += SsimWindowRow_Rem(SsimWindowRow, win_simd_size,
+                                          row0 + main_windows * 4,
+                                          row1 + main_windows * 4, rem_windows);
         }
         samples += num_windows;
         uint32_t* tmp = row0;

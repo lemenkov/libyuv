@@ -287,32 +287,66 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
       benchmark_iterations_ *
       ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
   for (int i = 0; i < count; ++i) {
-#if defined(HAS_HAMMINGDISTANCE_NEON)
-    h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
-#elif defined(HAS_HAMMINGDISTANCE_AVX2)
-    int has_avx2 = TestCpuFlag(kCpuHasAVX2);
-    if (has_avx2) {
-      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+#if defined(HAS_HAMMINGDISTANCE_NEON_DOTPROD)
+    if (TestCpuFlag(kCpuHasNeonDotProd)) {
+      h1 = HammingDistance_NEON_DotProd(src_a, src_b, kMaxWidth);
     } else {
-      int has_sse42 = TestCpuFlag(kCpuHasSSE42);
-      if (has_sse42) {
-        h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
-      } else {
-        int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
-        if (has_ssse3) {
-          h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
-        } else {
-          h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
-        }
-      }
+      h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
+    }
+#elif defined(HAS_HAMMINGDISTANCE_NEON)
+    h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_AVX512VNNI)
+    if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+      h1 = HammingDistance_AVX512VNNI(src_a, src_b, kMaxWidth);
+    } else if (TestCpuFlag(kCpuHasAVX512BW)) {
+      h1 = HammingDistance_AVX512BW(src_a, src_b, kMaxWidth);
+    } else if (TestCpuFlag(kCpuHasAVX2)) {
+      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+#if defined(HAS_HAMMINGDISTANCE_SSE42)
+    } else if (TestCpuFlag(kCpuHasSSE42)) {
+      h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
+#endif
+#if defined(HAS_HAMMINGDISTANCE_SSSE3)
+    } else if (TestCpuFlag(kCpuHasSSSE3)) {
+      h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+#endif
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+    }
+#elif defined(HAS_HAMMINGDISTANCE_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+#if defined(HAS_HAMMINGDISTANCE_SSE42)
+    } else if (TestCpuFlag(kCpuHasSSE42)) {
+      h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
+#endif
+#if defined(HAS_HAMMINGDISTANCE_SSSE3)
+    } else if (TestCpuFlag(kCpuHasSSSE3)) {
+      h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+#endif
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
 #elif defined(HAS_HAMMINGDISTANCE_SSE42)
-    int has_sse42 = TestCpuFlag(kCpuHasSSE42);
-    if (has_sse42) {
+    if (TestCpuFlag(kCpuHasSSE42)) {
       h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
     } else {
       h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
+#elif defined(HAS_HAMMINGDISTANCE_RVV)
+    h1 = HammingDistance_RVV(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_LASX)
+    if (TestCpuFlag(kCpuHasLASX)) {
+      h1 = HammingDistance_LASX(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+    }
+#elif defined(HAS_HAMMINGDISTANCE_LSX)
+    h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_WASMSIMD)
+    h1 = HammingDistance_WASMSIMD(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_HVX)
+    h1 = HammingDistance_HVX(src_a, src_b, kMaxWidth);
 #else
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
@@ -408,32 +442,66 @@ TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
   ASSERT_EQ(kMaxWidth * 8ULL, h0);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
-#if defined(HAS_HAMMINGDISTANCE_NEON)
-    h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
-#elif defined(HAS_HAMMINGDISTANCE_AVX2)
-    int has_avx2 = TestCpuFlag(kCpuHasAVX2);
-    if (has_avx2) {
-      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+#if defined(HAS_HAMMINGDISTANCE_NEON_DOTPROD)
+    if (TestCpuFlag(kCpuHasNeonDotProd)) {
+      h1 = HammingDistance_NEON_DotProd(src_a, src_b, kMaxWidth);
     } else {
-      int has_sse42 = TestCpuFlag(kCpuHasSSE42);
-      if (has_sse42) {
-        h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
-      } else {
-        int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
-        if (has_ssse3) {
-          h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
-        } else {
-          h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
-        }
-      }
+      h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
+    }
+#elif defined(HAS_HAMMINGDISTANCE_NEON)
+    h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_AVX512VNNI)
+    if (TestCpuFlag(kCpuHasAVX512VNNI)) {
+      h1 = HammingDistance_AVX512VNNI(src_a, src_b, kMaxWidth);
+    } else if (TestCpuFlag(kCpuHasAVX512BW)) {
+      h1 = HammingDistance_AVX512BW(src_a, src_b, kMaxWidth);
+    } else if (TestCpuFlag(kCpuHasAVX2)) {
+      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+#if defined(HAS_HAMMINGDISTANCE_SSE42)
+    } else if (TestCpuFlag(kCpuHasSSE42)) {
+      h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
+#endif
+#if defined(HAS_HAMMINGDISTANCE_SSSE3)
+    } else if (TestCpuFlag(kCpuHasSSSE3)) {
+      h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+#endif
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+    }
+#elif defined(HAS_HAMMINGDISTANCE_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+#if defined(HAS_HAMMINGDISTANCE_SSE42)
+    } else if (TestCpuFlag(kCpuHasSSE42)) {
+      h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
+#endif
+#if defined(HAS_HAMMINGDISTANCE_SSSE3)
+    } else if (TestCpuFlag(kCpuHasSSSE3)) {
+      h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+#endif
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
 #elif defined(HAS_HAMMINGDISTANCE_SSE42)
-    int has_sse42 = TestCpuFlag(kCpuHasSSE42);
-    if (has_sse42) {
+    if (TestCpuFlag(kCpuHasSSE42)) {
       h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
     } else {
       h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
+#elif defined(HAS_HAMMINGDISTANCE_RVV)
+    h1 = HammingDistance_RVV(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_LASX)
+    if (TestCpuFlag(kCpuHasLASX)) {
+      h1 = HammingDistance_LASX(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+    }
+#elif defined(HAS_HAMMINGDISTANCE_LSX)
+    h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_WASMSIMD)
+    h1 = HammingDistance_WASMSIMD(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_HVX)
+    h1 = HammingDistance_HVX(src_a, src_b, kMaxWidth);
 #else
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
@@ -560,6 +628,14 @@ TEST_F(LibYUVCompareTest, TestCompareAnyCount) {
   MemRandomize(src_a, kMaxCount + 1);
   MemRandomize(src_b, kMaxCount + 1);
 
+  const int kCpuMasks[] = {
+      benchmark_cpu_info_,
+      benchmark_cpu_info_ & ~kCpuHasAVX512VNNI,
+      benchmark_cpu_info_ & ~(kCpuHasAVX512BW | kCpuHasAVX512VNNI),
+      benchmark_cpu_info_ &
+          ~(kCpuHasAVX2 | kCpuHasAVX512BW | kCpuHasAVX512VNNI),
+  };
+
   for (int count = 0; count <= kMaxCount; ++count) {
     for (int offset = 0; offset < 2; ++offset) {
       const uint8_t* a = src_a + kMaxCount + 1 - count - offset;
@@ -568,13 +644,19 @@ TEST_F(LibYUVCompareTest, TestCompareAnyCount) {
       uint32_t c_hash = HashDjb2(a, count, 5381);
       uint64_t c_diff = ComputeHammingDistance(a, b, count);
       uint64_t c_err = ComputeSumSquareError(a, b, count);
+      for (size_t m = 0; m < sizeof(kCpuMasks) / sizeof(kCpuMasks[0]); ++m) {
+        MaskCpuFlags(kCpuMasks[m]);
+        uint32_t opt_hash = HashDjb2(a, count, 5381);
+        uint64_t opt_diff = ComputeHammingDistance(a, b, count);
+        uint64_t opt_err = ComputeSumSquareError(a, b, count);
+        EXPECT_EQ(c_hash, opt_hash)
+            << "count " << count << " offset " << offset << " mask " << m;
+        EXPECT_EQ(c_diff, opt_diff)
+            << "count " << count << " offset " << offset << " mask " << m;
+        EXPECT_EQ(c_err, opt_err)
+            << "count " << count << " offset " << offset << " mask " << m;
+      }
       MaskCpuFlags(benchmark_cpu_info_);
-      uint32_t opt_hash = HashDjb2(a, count, 5381);
-      uint64_t opt_diff = ComputeHammingDistance(a, b, count);
-      uint64_t opt_err = ComputeSumSquareError(a, b, count);
-      EXPECT_EQ(c_hash, opt_hash) << "count " << count << " offset " << offset;
-      EXPECT_EQ(c_diff, opt_diff) << "count " << count << " offset " << offset;
-      EXPECT_EQ(c_err, opt_err) << "count " << count << " offset " << offset;
     }
   }
 
@@ -772,6 +854,13 @@ TEST_F(LibYUVCompareTest, TestSsimAnyWidth) {
     src_b[i] = (i * 151 + 43) & 0xff;
   }
 
+  const int kCpuMasks[] = {
+      benchmark_cpu_info_,
+      benchmark_cpu_info_ & ~(kCpuHasAVX512BW | kCpuHasAVX512VNNI),
+      benchmark_cpu_info_ &
+          ~(kCpuHasAVX2 | kCpuHasAVX512BW | kCpuHasAVX512VNNI),
+  };
+
   for (int width = 9; width <= kMaxWidth; ++width) {
     for (int offset = 0; offset < 2; ++offset) {
       const int size = width * kHeight;
@@ -779,10 +868,13 @@ TEST_F(LibYUVCompareTest, TestSsimAnyWidth) {
       const uint8_t* b = src_b + kPlaneSize - size - offset;
       MaskCpuFlags(disable_cpu_flags_);
       double c_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
+      for (size_t m = 0; m < sizeof(kCpuMasks) / sizeof(kCpuMasks[0]); ++m) {
+        MaskCpuFlags(kCpuMasks[m]);
+        double opt_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
+        EXPECT_NEAR(c_ssim, opt_ssim, 1e-5)
+            << "width " << width << " offset " << offset << " mask " << m;
+      }
       MaskCpuFlags(benchmark_cpu_info_);
-      double opt_ssim = CalcFrameSsim(a, width, b, width, width, kHeight);
-      EXPECT_NEAR(c_ssim, opt_ssim, 1e-5)
-          << "width " << width << " offset " << offset;
     }
   }
 

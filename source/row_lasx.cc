@@ -10,6 +10,7 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 // Note: every register written by an inline asm block (vector, general
 // purpose, mask/predicate, "cc" for flags and "memory" for stores) must be
@@ -3289,13 +3290,265 @@ void Ssim4x4Row_LASX(const uint8_t* src_a,
       "addi.d %[dst], %[dst], 128\n\t"
       "addi.d %[cnt], %[cnt], -32\n\t"
       "bnez %[cnt], 1b\n\t"
-      : [sa] "+r"(src_a), [sb] "+r"(src_b), [dst] "+r"(dst),
-        [cnt] "+r"(width), [pa] "=&r"(pa), [pb] "=&r"(pb), [r] "=&r"(r)
+      : [sa] "+r"(src_a), [sb] "+r"(src_b), [dst] "+r"(dst), [cnt] "+r"(width),
+        [pa] "=&r"(pa), [pb] "=&r"(pb), [r] "=&r"(r)
       : [sta] "r"((ptrdiff_t)stride_a), [stb] "r"((ptrdiff_t)stride_b)
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
         "$xr7", "$xr8", "$xr9", "$xr10", "$xr11");
 }
 #endif  // HAS_SSIM4X4ROW_LASX
+
+#ifdef HAS_SSIMWINDOWROW_LASX
+float SsimWindowRow_LASX(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows) {
+  const uint32_t* row0_next = row0 + 4;
+  const uint32_t* row1_next = row1 + 4;
+  float total;
+  uint32_t c1 = 26634;
+  uint32_t c2 = 239708;
+  uint32_t c0 = 0;
+  asm volatile(
+      "xvreplgr2vr.w $xr6, %[c0]\n\t"
+      "xvreplgr2vr.w $xr4, %[c1]\n\t"
+      "xvreplgr2vr.w $xr5, %[c2]\n\t"
+      "addi.d %[cnt], %[cnt], -2\n\t"
+      "bltz %[cnt], 2f\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[r0], 0\n\t"
+      "xvld $xr1, %[r0n], 0\n\t"
+      "xvld $xr2, %[r1], 0\n\t"
+      "xvld $xr3, %[r1n], 0\n\t"
+      "xvadd.w $xr0, $xr0, $xr1\n\t"
+      "xvadd.w $xr2, $xr2, $xr3\n\t"
+      "xvadd.w $xr0, $xr0, $xr2\n\t"
+      "xvshuf4i.w $xr1, $xr0, 0x00\n\t"
+      "xvshuf4i.w $xr2, $xr0, 0x55\n\t"
+      "xvshuf4i.w $xr3, $xr0, 0xaa\n\t"
+      "xvshuf4i.w $xr0, $xr0, 0xff\n\t"
+      "xvmul.w $xr7, $xr1, $xr2\n\t"
+      "xvslli.w $xr7, $xr7, 1\n\t"
+      "xvmul.w $xr1, $xr1, $xr1\n\t"
+      "xvmadd.w $xr1, $xr2, $xr2\n\t"
+      "xvslli.w $xr0, $xr0, 7\n\t"
+      "xvsub.w $xr0, $xr0, $xr7\n\t"
+      "xvadd.w $xr7, $xr7, $xr4\n\t"
+      "xvadd.w $xr0, $xr0, $xr5\n\t"
+      "xvslli.w $xr3, $xr3, 6\n\t"
+      "xvsub.w $xr3, $xr3, $xr1\n\t"
+      "xvadd.w $xr1, $xr1, $xr4\n\t"
+      "xvadd.w $xr3, $xr3, $xr5\n\t"
+      "xvffint.s.w $xr7, $xr7\n\t"
+      "xvffint.s.w $xr0, $xr0\n\t"
+      "xvffint.s.w $xr1, $xr1\n\t"
+      "xvffint.s.w $xr3, $xr3\n\t"
+      "xvfmul.s $xr7, $xr7, $xr0\n\t"
+      "xvfmul.s $xr1, $xr1, $xr3\n\t"
+      "xvfdiv.s $xr7, $xr7, $xr1\n\t"
+      "xvfadd.s $xr6, $xr6, $xr7\n\t"
+      "addi.d %[r0], %[r0], 32\n\t"
+      "addi.d %[r0n], %[r0n], 32\n\t"
+      "addi.d %[r1], %[r1], 32\n\t"
+      "addi.d %[r1n], %[r1n], 32\n\t"
+      "addi.d %[cnt], %[cnt], -2\n\t"
+      "bgez %[cnt], 1b\n\t"
+      "xvpermi.q $xr0, $xr6, 0x01\n\t"
+      "vfadd.s $vr6, $vr6, $vr0\n\t"
+      "2:\n\t"
+      "addi.d %[cnt], %[cnt], 2\n\t"
+      "beqz %[cnt], 3f\n\t"
+      "vld $vr0, %[r0], 0\n\t"
+      "vld $vr1, %[r0n], 0\n\t"
+      "vld $vr2, %[r1], 0\n\t"
+      "vld $vr3, %[r1n], 0\n\t"
+      "vadd.w $vr0, $vr0, $vr1\n\t"
+      "vadd.w $vr2, $vr2, $vr3\n\t"
+      "vadd.w $vr0, $vr0, $vr2\n\t"
+      "vshuf4i.w $vr1, $vr0, 0x00\n\t"
+      "vshuf4i.w $vr2, $vr0, 0x55\n\t"
+      "vshuf4i.w $vr3, $vr0, 0xaa\n\t"
+      "vshuf4i.w $vr0, $vr0, 0xff\n\t"
+      "vmul.w $vr7, $vr1, $vr2\n\t"
+      "vslli.w $vr7, $vr7, 1\n\t"
+      "vmul.w $vr1, $vr1, $vr1\n\t"
+      "vmadd.w $vr1, $vr2, $vr2\n\t"
+      "vslli.w $vr0, $vr0, 7\n\t"
+      "vsub.w $vr0, $vr0, $vr7\n\t"
+      "vadd.w $vr7, $vr7, $vr4\n\t"
+      "vadd.w $vr0, $vr0, $vr5\n\t"
+      "vslli.w $vr3, $vr3, 6\n\t"
+      "vsub.w $vr3, $vr3, $vr1\n\t"
+      "vadd.w $vr1, $vr1, $vr4\n\t"
+      "vadd.w $vr3, $vr3, $vr5\n\t"
+      "vffint.s.w $vr7, $vr7\n\t"
+      "vffint.s.w $vr0, $vr0\n\t"
+      "vffint.s.w $vr1, $vr1\n\t"
+      "vffint.s.w $vr3, $vr3\n\t"
+      "vfmul.s $vr7, $vr7, $vr0\n\t"
+      "vfmul.s $vr1, $vr1, $vr3\n\t"
+      "vfdiv.s $vr7, $vr7, $vr1\n\t"
+      "vfadd.s $vr6, $vr6, $vr7\n\t"
+      "3:\n\t"
+      "vstelm.w $vr6, %[tot], 0, 0\n\t"
+      : [r0] "+r"(row0), [r0n] "+r"(row0_next), [r1] "+r"(row1),
+        [r1n] "+r"(row1_next), [cnt] "+r"(num_windows)
+      : [c0] "r"(c0), [c1] "r"(c1), [c2] "r"(c2), [tot] "r"(&total)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+  return total;
+}
+#endif  // HAS_SSIMWINDOWROW_LASX
+
+#ifdef HAS_ARGBDETECTROW_LASX
+uint32_t ARGBDetectRow_LASX(const uint8_t* argb, int width) {
+  uint32_t diff = 0;
+  uint32_t tmp;
+  uint32_t rgb_mask = 0x00ffff00u;
+  asm volatile(
+      "xvreplgr2vr.w $xr2, %[rgb_mask]\n\t"
+      "xvldi $xr3, -1\n\t"
+      "addi.d %[w], %[w], -8\n\t"
+      "bltz %[w], 2f\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[argb], 0\n\t"
+      "addi.d %[argb], %[argb], 32\n\t"
+      "xvor.v $xr0, $xr0, $xr2\n\t"
+      "xvseq.b $xr0, $xr0, $xr3\n\t"
+      "xvmskltz.b $xr0, $xr0\n\t"
+      "xvpickve2gr.wu %[diff], $xr0, 0\n\t"
+      "xvpickve2gr.wu %[tmp], $xr0, 4\n\t"
+      "bstrins.w %[diff], %[tmp], 31, 16\n\t"
+      "nor %[diff], %[diff], $zero\n\t"
+      "bnez %[diff], 4f\n\t"
+      "addi.d %[w], %[w], -8\n\t"
+      "bgez %[w], 1b\n\t"
+      "2:\n\t"
+      "addi.d %[w], %[w], 8\n\t"
+      "beqz %[w], 4f\n\t"
+      "3:\n\t"
+      "vldrepl.w $vr0, %[argb], 0\n\t"
+      "addi.d %[argb], %[argb], 4\n\t"
+      "vor.v $vr0, $vr0, $vr2\n\t"
+      "vseq.b $vr0, $vr0, $vr3\n\t"
+      "vmskltz.b $vr0, $vr0\n\t"
+      "vpickve2gr.hu %[diff], $vr0, 0\n\t"
+      "nor %[diff], %[diff], $zero\n\t"
+      "bstrpick.w %[diff], %[diff], 15, 0\n\t"
+      "bnez %[diff], 4f\n\t"
+      "addi.d %[w], %[w], -1\n\t"
+      "bnez %[w], 3b\n\t"
+      "4:\n\t"
+      : [argb] "+r"(argb), [w] "+r"(width), [diff] "+r"(diff), [tmp] "=&r"(tmp)
+      : [rgb_mask] "r"(rgb_mask)
+      : "memory", "$xr0", "$xr2", "$xr3");
+  if (diff) {
+    return (__builtin_ctz(diff) & 3) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+  }
+  return 0;
+}
+#endif  // HAS_ARGBDETECTROW_LASX
+
+#ifdef HAS_HAMMINGDISTANCE_LASX
+uint32_t HammingDistance_LASX(const uint8_t* src_a,
+                              const uint8_t* src_b,
+                              int count) {
+  uint32_t diff;
+  asm volatile(
+      "xvxor.v $xr4, $xr4, $xr4\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[sa], 0\n\t"
+      "xvld $xr1, %[sb], 0\n\t"
+      "xvxor.v $xr0, $xr0, $xr1\n\t"
+      "xvpcnt.b $xr0, $xr0\n\t"
+      "xvhaddw.hu.bu $xr0, $xr0, $xr0\n\t"
+      "xvhaddw.wu.hu $xr0, $xr0, $xr0\n\t"
+      "xvadd.w $xr4, $xr4, $xr0\n\t"
+      "addi.d %[sa], %[sa], 32\n\t"
+      "addi.d %[sb], %[sb], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      "xvhaddw.du.wu $xr4, $xr4, $xr4\n\t"
+      "xvhaddw.qu.du $xr4, $xr4, $xr4\n\t"
+      "xvpermi.q $xr0, $xr4, 0x01\n\t"
+      "vadd.w $vr4, $vr4, $vr0\n\t"
+      "vpickve2gr.wu %[diff], $vr4, 0\n\t"
+      : [sa] "+r"(src_a), [sb] "+r"(src_b), [cnt] "+r"(count), [diff] "=r"(diff)
+      :
+      : "memory", "$xr0", "$xr1", "$xr4");
+  return diff;
+}
+#endif  // HAS_HAMMINGDISTANCE_LASX
+
+#ifdef HAS_SUMSQUAREERROR_LASX
+uint32_t SumSquareError_LASX(const uint8_t* src_a,
+                             const uint8_t* src_b,
+                             int count) {
+  uint32_t sse;
+  asm volatile(
+      "xvxor.v $xr4, $xr4, $xr4\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[sa], 0\n\t"
+      "xvld $xr1, %[sb], 0\n\t"
+      "xvabsd.bu $xr0, $xr0, $xr1\n\t"
+      "xvmulwev.h.bu $xr2, $xr0, $xr0\n\t"
+      "xvmulwod.h.bu $xr3, $xr0, $xr0\n\t"
+      "xvhaddw.wu.hu $xr2, $xr2, $xr2\n\t"
+      "xvhaddw.wu.hu $xr3, $xr3, $xr3\n\t"
+      "xvadd.w $xr4, $xr4, $xr2\n\t"
+      "xvadd.w $xr4, $xr4, $xr3\n\t"
+      "addi.d %[sa], %[sa], 32\n\t"
+      "addi.d %[sb], %[sb], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      "xvhaddw.du.wu $xr4, $xr4, $xr4\n\t"
+      "xvhaddw.qu.du $xr4, $xr4, $xr4\n\t"
+      "xvpermi.q $xr0, $xr4, 0x01\n\t"
+      "vadd.w $vr4, $vr4, $vr0\n\t"
+      "vpickve2gr.wu %[sse], $vr4, 0\n\t"
+      : [sa] "+r"(src_a), [sb] "+r"(src_b), [cnt] "+r"(count), [sse] "=r"(sse)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+  return sse;
+}
+#endif  // HAS_SUMSQUAREERROR_LASX
+
+#ifdef HAS_HASHDJB2_LASX
+static const uint32_t kDjb2Muls_LASX[16] = {
+    0x0c3525e1, 0xa3476dc1, 0x3b4039a1, 0x4f5f0981, 0x30f35d61, 0x855cb541,
+    0x040a9121, 0x747c7101, 0xec41d4e1, 0x4cfa3cc1, 0x025528a1, 0x00121881,
+    0x00008c61, 0x00000441, 0x00000021, 0x00000001,
+};
+
+uint32_t HashDjb2_LASX(const uint8_t* src, int count, uint32_t seed) {
+  uint32_t hash = seed;
+  uint32_t tmp;
+  uint32_t c16 = 0x92d9e201u;
+  asm volatile(
+      "xvld $xr4, %[muls], 0\n\t"
+      "xvld $xr5, %[muls], 32\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vbsrl.v $vr1, $vr0, 8\n\t"
+      "vext2xv.wu.bu $xr0, $xr0\n\t"
+      "vext2xv.wu.bu $xr1, $xr1\n\t"
+      "xvmul.w $xr0, $xr0, $xr4\n\t"
+      "xvmadd.w $xr0, $xr1, $xr5\n\t"
+      "xvhaddw.du.wu $xr0, $xr0, $xr0\n\t"
+      "xvhaddw.qu.du $xr0, $xr0, $xr0\n\t"
+      "xvpermi.q $xr1, $xr0, 0x01\n\t"
+      "vadd.w $vr0, $vr0, $vr1\n\t"
+      "vpickve2gr.wu %[tmp], $vr0, 0\n\t"
+      "mul.w %[hash], %[hash], %[c16]\n\t"
+      "add.w %[hash], %[hash], %[tmp]\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [cnt] "+r"(count), [hash] "+r"(hash), [tmp] "=&r"(tmp)
+      : [muls] "r"(kDjb2Muls_LASX), [c16] "r"(c16)
+      : "memory", "$xr0", "$xr1", "$xr4", "$xr5");
+  return hash;
+}
+#endif  // HAS_HASHDJB2_LASX
 
 #ifdef __cplusplus
 }  // extern "C"

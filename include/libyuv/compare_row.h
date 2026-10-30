@@ -42,6 +42,7 @@ extern "C" {
 #define HAS_ARGBDETECTROW_AVX2
 #if defined(__x86_64__) || defined(_M_X64)
 #define HAS_HAMMINGDISTANCE_AVX512BW
+#define HAS_HAMMINGDISTANCE_AVX512VNNI
 #define HAS_SUMSQUAREERROR_AVX512BW
 #define HAS_SUMSQUAREERROR_AVX512VNNI
 #define HAS_HASHDJB2_AVX512BW
@@ -74,6 +75,7 @@ extern "C" {
 #endif
 #if defined(__x86_64__) && defined(CLANG_HAS_AVX512)
 #define HAS_HAMMINGDISTANCE_AVX512BW
+#define HAS_HAMMINGDISTANCE_AVX512VNNI
 #define HAS_SUMSQUAREERROR_AVX512BW
 #define HAS_SUMSQUAREERROR_AVX512VNNI
 #define HAS_HASHDJB2_AVX512BW
@@ -87,13 +89,14 @@ extern "C" {
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #define HAS_HAMMINGDISTANCE_NEON
 #define HAS_SUMSQUAREERROR_NEON
+#define HAS_HASHDJB2_NEON
 #define HAS_SSIM4X4ROW_NEON
+#define HAS_SSIMWINDOWROW_NEON
+#define HAS_ARGBDETECTROW_NEON
 #endif
 
 // The following are available for AArch64 Neon:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
-#define HAS_HASHDJB2_NEON
-
 #define HAS_HAMMINGDISTANCE_NEON_DOTPROD
 #define HAS_SUMSQUAREERROR_NEON_DOTPROD
 #define HAS_SSIM4X4ROW_NEON_DOTPROD
@@ -115,20 +118,34 @@ extern "C" {
 // The following are available for RISC-V Vector (RVV):
 #if !defined(LIBYUV_DISABLE_RVV) && \
     (defined(__riscv_vector) || defined(LIBYUV_RVV))
+#define HAS_HAMMINGDISTANCE_RVV
+#define HAS_SUMSQUAREERROR_RVV
+#define HAS_HASHDJB2_RVV
 #define HAS_SSIM4X4ROW_RVV
 #if defined(__riscv_f) || defined(__riscv_zve32f)
 #define HAS_SSIMWINDOWROW_RVV
 #endif
+#define HAS_ARGBDETECTROW_RVV
 #endif
 
 // The following are available for LoongArch LSX:
 #if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#define HAS_HAMMINGDISTANCE_LSX
+#define HAS_SUMSQUAREERROR_LSX
+#define HAS_HASHDJB2_LSX
 #define HAS_SSIM4X4ROW_LSX
+#define HAS_SSIMWINDOWROW_LSX
+#define HAS_ARGBDETECTROW_LSX
 #endif
 
 // The following are available for LoongArch LASX:
 #if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_asx)
+#define HAS_HAMMINGDISTANCE_LASX
+#define HAS_SUMSQUAREERROR_LASX
+#define HAS_HASHDJB2_LASX
 #define HAS_SSIM4X4ROW_LASX
+#define HAS_SSIMWINDOWROW_LASX
+#define HAS_ARGBDETECTROW_LASX
 #endif
 
 // The following are available for WebAssembly SIMD128:
@@ -137,6 +154,8 @@ extern "C" {
 #define HAS_SUMSQUAREERROR_WASMSIMD
 #define HAS_HASHDJB2_WASMSIMD
 #define HAS_SSIM4X4ROW_WASMSIMD
+#define HAS_SSIMWINDOWROW_WASMSIMD
+#define HAS_ARGBDETECTROW_WASMSIMD
 #endif
 
 // The following are available for Hexagon HVX:
@@ -145,6 +164,8 @@ extern "C" {
 #define HAS_SUMSQUAREERROR_HVX
 #define HAS_HASHDJB2_HVX
 #define HAS_SSIM4X4ROW_HVX
+#define HAS_SSIMWINDOWROW_HVX
+#define HAS_ARGBDETECTROW_HVX
 #endif
 
 uint32_t HammingDistance_C(const uint8_t* src_a,
@@ -162,12 +183,24 @@ uint32_t HammingDistance_AVX2(const uint8_t* src_a,
 uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count);
+uint32_t HammingDistance_AVX512VNNI(const uint8_t* src_a,
+                                    const uint8_t* src_b,
+                                    int count);
 uint32_t HammingDistance_NEON(const uint8_t* src_a,
                               const uint8_t* src_b,
                               int count);
 uint32_t HammingDistance_NEON_DotProd(const uint8_t* src_a,
                                       const uint8_t* src_b,
                                       int count);
+uint32_t HammingDistance_RVV(const uint8_t* src_a,
+                             const uint8_t* src_b,
+                             int count);
+uint32_t HammingDistance_LSX(const uint8_t* src_a,
+                             const uint8_t* src_b,
+                             int count);
+uint32_t HammingDistance_LASX(const uint8_t* src_a,
+                              const uint8_t* src_b,
+                              int count);
 uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count);
@@ -195,6 +228,15 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
 uint32_t SumSquareError_NEON_DotProd(const uint8_t* src_a,
                                      const uint8_t* src_b,
                                      int count);
+uint32_t SumSquareError_RVV(const uint8_t* src_a,
+                            const uint8_t* src_b,
+                            int count);
+uint32_t SumSquareError_LSX(const uint8_t* src_a,
+                            const uint8_t* src_b,
+                            int count);
+uint32_t SumSquareError_LASX(const uint8_t* src_a,
+                             const uint8_t* src_b,
+                             int count);
 uint32_t SumSquareError_WASMSIMD(const uint8_t* src_a,
                                  const uint8_t* src_b,
                                  int count);
@@ -207,6 +249,9 @@ uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_NEON(const uint8_t* src, int count, uint32_t seed);
+uint32_t HashDjb2_RVV(const uint8_t* src, int count, uint32_t seed);
+uint32_t HashDjb2_LSX(const uint8_t* src, int count, uint32_t seed);
+uint32_t HashDjb2_LASX(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_WASMSIMD(const uint8_t* src, int count, uint32_t seed);
 uint32_t HashDjb2_HVX(const uint8_t* src, int count, uint32_t seed);
 
@@ -300,6 +345,9 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
 float SsimWindowRow_AVX512BW(const uint32_t* row0,
                              const uint32_t* row1,
                              int num_windows);
+float SsimWindowRow_NEON(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows);
 float SsimWindowRow_SVE2(const uint32_t* row0,
                          const uint32_t* row1,
                          int num_windows);
@@ -309,9 +357,27 @@ float SsimWindowRow_SME(const uint32_t* row0,
 float SsimWindowRow_RVV(const uint32_t* row0,
                         const uint32_t* row1,
                         int num_windows);
+float SsimWindowRow_LSX(const uint32_t* row0,
+                        const uint32_t* row1,
+                        int num_windows);
+float SsimWindowRow_LASX(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows);
+float SsimWindowRow_WASMSIMD(const uint32_t* row0,
+                             const uint32_t* row1,
+                             int num_windows);
+float SsimWindowRow_HVX(const uint32_t* row0,
+                        const uint32_t* row1,
+                        int num_windows);
 
 uint32_t ARGBDetectRow_C(const uint8_t* argb, int width);
 uint32_t ARGBDetectRow_AVX2(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_NEON(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_RVV(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_LSX(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_LASX(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_WASMSIMD(const uint8_t* argb, int width);
+uint32_t ARGBDetectRow_HVX(const uint8_t* argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

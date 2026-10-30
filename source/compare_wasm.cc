@@ -10,6 +10,7 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 #if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
 #include <wasm_simd128.h>
@@ -27,27 +28,37 @@ static inline uint32_t SumLanes_WASMSIMD(v128_t sum) {
 }
 
 #if defined(HAS_HAMMINGDISTANCE_WASMSIMD)
-// Bit counts of 64 bytes are added as bytes, then pairs of bytes are added
-// to 16 bit sums, which hold up to 64 per 64 bytes, so count can be up to
-// 65535. Count is a multiple of 64.
+// Bit counts of 64 bytes are added as bytes, then accumulated into 32 bit
+// lanes using relaxed i8x16 dot product when available or pairwise widening
+// adds. Count is a multiple of 64.
 uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count) {
-  v128_t sum = wasm_i16x8_splat(0);
+  v128_t sum = wasm_i32x4_splat(0);
+#ifdef __wasm_relaxed_simd__
+  const v128_t ones = wasm_i8x16_splat(1);
+#endif
   while (count > 0) {
-    v128_t c = wasm_i8x16_splat(0);
-    int i;
-    for (i = 0; i < 64; i += 16) {
-      c = wasm_i8x16_add(
-          c, wasm_i8x16_popcnt(wasm_v128_xor(wasm_v128_load(src_a + i),
-                                             wasm_v128_load(src_b + i))));
-    }
-    sum = wasm_i16x8_add(sum, wasm_u16x8_extadd_pairwise_u8x16(c));
+    v128_t c0 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a), wasm_v128_load(src_b)));
+    v128_t c1 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a + 16), wasm_v128_load(src_b + 16)));
+    v128_t c2 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a + 32), wasm_v128_load(src_b + 32)));
+    v128_t c3 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a + 48), wasm_v128_load(src_b + 48)));
+    v128_t c = wasm_i8x16_add(wasm_i8x16_add(c0, c1), wasm_i8x16_add(c2, c3));
+#ifdef __wasm_relaxed_simd__
+    sum = wasm_i32x4_relaxed_dot_i8x16_i7x16_add(c, ones, sum);
+#else
+    sum = wasm_i32x4_add(sum, wasm_u32x4_extadd_pairwise_u16x8(
+                                  wasm_u16x8_extadd_pairwise_u8x16(c)));
+#endif
     src_a += 64;
     src_b += 64;
     count -= 64;
   }
-  return SumLanes_WASMSIMD(wasm_u32x4_extadd_pairwise_u16x8(sum));
+  return SumLanes_WASMSIMD(sum);
 }
 #endif  // HAS_HAMMINGDISTANCE_WASMSIMD
 
@@ -240,6 +251,91 @@ void Ssim4x4Row_WASMSIMD(const uint8_t* src_a,
   }
 }
 #endif  // HAS_SSIM4X4ROW_WASMSIMD
+
+#if defined(HAS_SSIMWINDOWROW_WASMSIMD)
+float SsimWindowRow_WASMSIMD(const uint32_t* row0,
+                             const uint32_t* row1,
+                             int num_windows) {
+  const v128_t vc1 = wasm_i32x4_splat(26634);
+  const v128_t vc2 = wasm_i32x4_splat(239708);
+  v128_t total = wasm_f32x4_splat(0.0f);
+  v128_t t0 = wasm_i32x4_add(wasm_v128_load(row0), wasm_v128_load(row1));
+  int w;
+  for (w = 0; w < num_windows; w += 4) {
+    v128_t t1 =
+        wasm_i32x4_add(wasm_v128_load(row0 + 4), wasm_v128_load(row1 + 4));
+    v128_t t2 =
+        wasm_i32x4_add(wasm_v128_load(row0 + 8), wasm_v128_load(row1 + 8));
+    v128_t t3 =
+        wasm_i32x4_add(wasm_v128_load(row0 + 12), wasm_v128_load(row1 + 12));
+    v128_t t4 =
+        wasm_i32x4_add(wasm_v128_load(row0 + 16), wasm_v128_load(row1 + 16));
+    row0 += 16;
+    row1 += 16;
+    v128_t w0 = wasm_i32x4_add(t0, t1);
+    v128_t w1 = wasm_i32x4_add(t1, t2);
+    v128_t w2 = wasm_i32x4_add(t2, t3);
+    v128_t w3 = wasm_i32x4_add(t3, t4);
+    t0 = t4;
+
+    v128_t u0 = wasm_i32x4_shuffle(w0, w1, 0, 4, 1, 5);
+    v128_t u1 = wasm_i32x4_shuffle(w0, w1, 2, 6, 3, 7);
+    v128_t u2 = wasm_i32x4_shuffle(w2, w3, 0, 4, 1, 5);
+    v128_t u3 = wasm_i32x4_shuffle(w2, w3, 2, 6, 3, 7);
+    v128_t sum_a = wasm_i64x2_shuffle(u0, u2, 0, 2);
+    v128_t sum_b = wasm_i64x2_shuffle(u0, u2, 1, 3);
+    v128_t sum_sq = wasm_i64x2_shuffle(u1, u3, 0, 2);
+    v128_t sum_axb = wasm_i64x2_shuffle(u1, u3, 1, 3);
+
+    v128_t ab2 = wasm_i32x4_shl(wasm_i32x4_dot_i16x8(sum_a, sum_b), 1);
+    v128_t a2b2 = wasm_i32x4_add(wasm_i32x4_dot_i16x8(sum_a, sum_a),
+                                 wasm_i32x4_dot_i16x8(sum_b, sum_b));
+    v128_t n1 = wasm_i32x4_add(ab2, vc1);
+    v128_t n2 =
+        wasm_i32x4_add(wasm_i32x4_sub(wasm_i32x4_shl(sum_axb, 7), ab2), vc2);
+    v128_t d1 = wasm_i32x4_add(a2b2, vc1);
+    v128_t d2 =
+        wasm_i32x4_add(wasm_i32x4_sub(wasm_i32x4_shl(sum_sq, 6), a2b2), vc2);
+
+    v128_t num = wasm_f32x4_mul(wasm_f32x4_convert_i32x4(n1),
+                                wasm_f32x4_convert_i32x4(n2));
+    v128_t den = wasm_f32x4_mul(wasm_f32x4_convert_i32x4(d1),
+                                wasm_f32x4_convert_i32x4(d2));
+    total = wasm_f32x4_add(total, wasm_f32x4_div(num, den));
+  }
+  total = wasm_f32x4_add(total, wasm_i64x2_shuffle(total, total, 1, 0));
+  total = wasm_f32x4_add(total, wasm_i32x4_shuffle(total, total, 1, 0, 3, 2));
+  return wasm_f32x4_extract_lane(total, 0);
+}
+#endif  // HAS_SSIMWINDOWROW_WASMSIMD
+
+#if defined(HAS_ARGBDETECTROW_WASMSIMD)
+uint32_t ARGBDetectRow_WASMSIMD(const uint8_t* argb, int width) {
+  const v128_t mask_rgb = wasm_i32x4_splat(0x00ffff00);
+  const v128_t ones = wasm_i8x16_splat(-1);
+  while (width >= 4) {
+    v128_t v = wasm_v128_or(wasm_v128_load(argb), mask_rgb);
+    uint32_t diff =
+        (~(uint32_t)wasm_i8x16_bitmask(wasm_i8x16_eq(v, ones))) & 0xffffu;
+    if (diff) {
+      return (__builtin_ctz(diff) & 3) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+    }
+    argb += 16;
+    width -= 4;
+  }
+  while (width > 0) {
+    v128_t v = wasm_v128_or(wasm_v128_load32_zero(argb), mask_rgb);
+    uint32_t diff =
+        (~(uint32_t)wasm_i8x16_bitmask(wasm_i8x16_eq(v, ones))) & 0x9u;
+    if (diff) {
+      return (diff & 1u) ? FOURCC_BGRA : FOURCC_ARGB;
+    }
+    argb += 4;
+    width -= 1;
+  }
+  return 0;
+}
+#endif  // HAS_ARGBDETECTROW_WASMSIMD
 
 #ifdef __cplusplus
 }  // extern "C"

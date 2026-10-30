@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/compare_row.h"
+#include "libyuv/video_common.h"
 
 #if !defined(LIBYUV_DISABLE_HVX) && defined(__HVX__)
 
@@ -281,6 +282,96 @@ void Ssim4x4Row_HVX(const uint8_t* src_a,
 }
 #undef SSIM_4X4_HVX
 #endif  // defined(HAS_SSIM4X4ROW_HVX)
+
+#if defined(HAS_SSIMWINDOWROW_HVX)
+float SsimWindowRow_HVX(const uint32_t* row0,
+                        const uint32_t* row1,
+                        int num_windows) {
+  const HVX_Vector vc1 = Q6_V_vsplat_R(26634);
+  const HVX_Vector vc2 = Q6_V_vsplat_R(239708);
+  float total = 0.0f;
+  while (num_windows > 0) {
+    int count = num_windows < 8 ? num_windows : 8;
+    HVX_Vector t0, t1;
+    if (num_windows >= 8) {
+      t0 = Q6_Vw_vadd_VwVw(vloadu(row0), vloadu(row1));
+      t1 = Q6_Vw_vadd_VwVw(vloadu(row0 + 4), vloadu(row1 + 4));
+    } else {
+      int bytes0 = count * 16;
+      int bytes1 = (count + 1) * 16;
+      t0 = Q6_Vw_vadd_VwVw(vloadu_partial_zero(row0, bytes0),
+                           vloadu_partial_zero(row1, bytes0));
+      t1 = Q6_Vw_vadd_VwVw(vloadu_partial_zero(row0 + 4, bytes1 - 16),
+                           vloadu_partial_zero(row1 + 4, bytes1 - 16));
+    }
+    HVX_Vector w = Q6_Vw_vadd_VwVw(t0, t1);
+    HVX_Vector w_b = Q6_V_vror_VR(w, 4);
+    HVX_Vector w_sq = Q6_V_vror_VR(w, 8);
+    HVX_Vector w_axb = Q6_V_vror_VR(w, 12);
+    HVX_Vector ab2 = Q6_Vw_vasl_VwR(Q6_Vw_vmpyie_VwVuh(w, w_b), 1);
+    HVX_Vector a2b2 =
+        Q6_Vw_vmpyieacc_VwVwVuh(Q6_Vw_vmpyie_VwVuh(w, w), w_b, w_b);
+    HVX_Vector vn1 = Q6_Vw_vadd_VwVw(ab2, vc1);
+    HVX_Vector vn2 =
+        Q6_Vw_vadd_VwVw(Q6_Vw_vsub_VwVw(Q6_Vw_vasl_VwR(w_axb, 7), ab2), vc2);
+    HVX_Vector vd1 = Q6_Vw_vadd_VwVw(a2b2, vc1);
+    HVX_Vector vd2 =
+        Q6_Vw_vadd_VwVw(Q6_Vw_vsub_VwVw(Q6_Vw_vasl_VwR(w_sq, 6), a2b2), vc2);
+    int32_t n1[32] __attribute__((aligned(128)));
+    int32_t n2[32] __attribute__((aligned(128)));
+    int32_t d1[32] __attribute__((aligned(128)));
+    int32_t d2[32] __attribute__((aligned(128)));
+    vstoreu(n1, vn1);
+    vstoreu(n2, vn2);
+    vstoreu(d1, vd1);
+    vstoreu(d2, vd2);
+    int i;
+    for (i = 0; i < count; ++i) {
+      float num = (float)n1[i * 4] * (float)n2[i * 4];
+      float den = (float)d1[i * 4] * (float)d2[i * 4];
+      total += num / den;
+    }
+    row0 += 32;
+    row1 += 32;
+    num_windows -= 8;
+  }
+  return total;
+}
+#endif  // defined(HAS_SSIMWINDOWROW_HVX)
+
+#if defined(HAS_ARGBDETECTROW_HVX)
+uint32_t ARGBDetectRow_HVX(const uint8_t* argb, int width) {
+  const HVX_Vector mask_rgb = Q6_V_vsplat_R(0x00ffff00);
+  const HVX_Vector ones = Q6_Vb_vsplat_R(-1);
+  const HVX_Vector zero = Q6_V_vzero();
+  while (width > 0) {
+    HVX_Vector v;
+    if (width >= 32) {
+      v = vloadu(argb);
+    } else {
+      int bytes = width * 4;
+      v = Q6_V_vmux_QVV(Q6_Q_vsetq_R(bytes), vloadu_partial_zero(argb, bytes),
+                        ones);
+    }
+    v = Q6_V_vor_VV(v, mask_rgb);
+    HVX_VectorPred eq = Q6_Q_vcmp_eq_VbVb(v, ones);
+    HVX_Vector diff_v = Q6_V_vmux_QVV(eq, zero, ones);
+    if (horizontal_sum_u32(Q6_Vuw_vrmpy_VubRub(diff_v, 0x01010101)) != 0) {
+      uint32_t diff[32] __attribute__((aligned(128)));
+      vstoreu(diff, diff_v);
+      int i;
+      for (i = 0; i < 32; ++i) {
+        if (diff[i] != 0) {
+          return (diff[i] & 0xffu) ? FOURCC_BGRA : FOURCC_ARGB;
+        }
+      }
+    }
+    argb += 128;
+    width -= 32;
+  }
+  return 0;
+}
+#endif  // defined(HAS_ARGBDETECTROW_HVX)
 
 #ifdef __cplusplus
 }  // extern "C"

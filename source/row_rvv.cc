@@ -17,6 +17,7 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 // Note: every register written by an inline asm block (vector, general
 // purpose, mask/predicate, "cc" for flags and "memory" for stores) must be
@@ -3015,13 +3016,180 @@ float SsimWindowRow_RVV(const uint32_t* row0,
         [total] "=f"(total)           // %[total]
       : [c1] "r"(26634),              // %[c1]
         [c2] "r"(239708)              // %[c2]
-      : RVV_VL_CLOBBER "vtype", "memory", "v0", "v1", "v4", "v8", "v9", "v10",
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v4", "v8", "v9", "v10",
         "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20",
         "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30",
         "v31");
   return total;
 }
 #endif  // HAS_SSIMWINDOWROW_RVV
+
+#ifdef HAS_ARGBDETECTROW_RVV
+uint32_t ARGBDetectRow_RVV(const uint8_t* argb, int width) {
+  size_t vl;
+  size_t byte_vl;
+  long idx = -1;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
+      "slli        %[byte_vl], %[vl], 2          \n"
+      "vsetvli     zero, %[byte_vl], e8, m8, ta, ma \n"
+      "vle8.v      v8, (%[argb])                 \n"
+      "vsetvli     zero, %[vl], e32, m8, ta, ma  \n"
+      "vor.vx      v8, v8, %[mask_rgb]           \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[argb], %[argb], %[byte_vl]  \n"
+      "vsetvli     zero, %[byte_vl], e8, m8, ta, ma \n"
+      "vmsne.vi    v0, v8, -1                    \n"
+      "vfirst.m    %[idx], v0                    \n"
+      "bgez        %[idx], 2f                    \n"
+      "bgtz        %[w], 1b                      \n"
+      "2:                                        \n"
+      : [argb] "+r"(argb), [w] "+r"(width), [vl] "=&r"(vl),
+        [byte_vl] "=&r"(byte_vl), [idx] "+r"(idx)
+      : [mask_rgb] "r"(0x00ffff00u)
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+  if (idx >= 0) {
+    return (idx & 3) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+  }
+  return 0;
+}
+#endif  // HAS_ARGBDETECTROW_RVV
+
+#ifdef HAS_SUMSQUAREERROR_RVV
+uint32_t SumSquareError_RVV(const uint8_t* src_a,
+                            const uint8_t* src_b,
+                            int count) {
+  size_t vl;
+  uint32_t sse;
+  asm volatile(
+      "vsetvli     %[vl], zero, e32, m8, ta, ma  \n"
+      "vmv.v.i     v24, 0                        \n"
+      "vmv.s.x     v0, zero                      \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[count], e8, m2, tu, ma \n"
+      "vle8.v      v8, (%[src_a])                \n"
+      "vle8.v      v10, (%[src_b])               \n"
+      "vwsubu.vv   v12, v8, v10                  \n"
+      "sub         %[count], %[count], %[vl]     \n"
+      "add         %[src_a], %[src_a], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "vsetvli     zero, %[vl], e16, m4, tu, ma  \n"
+      "vwmacc.vv   v24, v12, v12                 \n"
+      "bgtz        %[count], 1b                  \n"
+      "vsetvli     %[vl], zero, e32, m8, ta, ma  \n"
+      "vredsum.vs  v0, v24, v0                   \n"
+      "vmv.x.s     %[sse], v0                    \n"
+      : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [count] "+r"(count),
+        [vl] "=&r"(vl), [sse] "=r"(sse)
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15", "v24", "v25", "v26", "v27", "v28", "v29", "v30",
+        "v31");
+  return sse;
+}
+#endif  // HAS_SUMSQUAREERROR_RVV
+
+#ifdef HAS_HAMMINGDISTANCE_RVV
+static const uint8_t kNibblePopcnt_RVV[16] = {0, 1, 1, 2, 1, 2, 2, 3,
+                                              1, 2, 2, 3, 2, 3, 3, 4};
+
+uint32_t HammingDistance_RVV(const uint8_t* src_a,
+                             const uint8_t* src_b,
+                             int count) {
+  size_t vl;
+  uint32_t diff;
+  asm volatile(
+      "vsetivli    zero, 16, e8, m1, ta, ma      \n"
+      "vle8.v      v4, (%[lut])                  \n"
+      "vsetvli     %[vl], zero, e32, m4, ta, ma  \n"
+      "vmv.v.i     v24, 0                        \n"
+      "vsetvli     %[vl], zero, e32, m1, ta, ma  \n"
+      "vmv.s.x     v0, zero                      \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[count], e8, m1, tu, ma \n"
+      "vle8.v      v8, (%[src_a])                \n"
+      "vle8.v      v9, (%[src_b])                \n"
+      "vxor.vv     v8, v8, v9                    \n"
+      "vand.vi     v10, v8, 15                   \n"
+      "vsrl.vi     v8, v8, 4                     \n"
+      "vrgather.vv v11, v4, v10                  \n"
+      "vrgather.vv v12, v4, v8                   \n"
+      "vwaddu.vv   v16, v11, v12                 \n"
+      "sub         %[count], %[count], %[vl]     \n"
+      "add         %[src_a], %[src_a], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "vsetvli     zero, %[vl], e16, m2, tu, ma  \n"
+      "vwaddu.wv   v24, v24, v16                 \n"
+      "bgtz        %[count], 1b                  \n"
+      "vsetvli     %[vl], zero, e32, m4, ta, ma  \n"
+      "vredsum.vs  v0, v24, v0                   \n"
+      "vsetvli     %[vl], zero, e32, m1, ta, ma  \n"
+      "vmv.x.s     %[diff], v0                   \n"
+      : [src_a] "+r"(src_a), [src_b] "+r"(src_b), [count] "+r"(count),
+        [vl] "=&r"(vl), [diff] "=r"(diff)
+      : [lut] "r"(kNibblePopcnt_RVV)
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v4", "v8", "v9", "v10", "v11",
+        "v12", "v16", "v17", "v24", "v25", "v26", "v27");
+  return diff;
+}
+#endif  // HAS_HAMMINGDISTANCE_RVV
+
+#ifdef HAS_HASHDJB2_RVV
+static const uint32_t kDjb2Muls_RVV[17] = {
+    0x92d9e201,  // 33 ^ 16
+    0x0c3525e1, 0xa3476dc1, 0x3b4039a1, 0x4f5f0981, 0x30f35d61, 0x855cb541,
+    0x040a9121, 0x747c7101, 0xec41d4e1, 0x4cfa3cc1, 0x025528a1, 0x00121881,
+    0x00008c61, 0x00000441, 0x00000021, 0x00000001,
+};
+
+uint32_t HashDjb2_RVV(const uint8_t* src, int count, uint32_t seed) {
+  uint32_t hash = seed;
+  uint32_t tmp;
+  const uint32_t c16 = 0x92d9e201u;
+  const int rem = count & 15;
+  const uint32_t* tail_muls = &kDjb2Muls_RVV[17 - rem];
+  const uint32_t pow_n = kDjb2Muls_RVV[16 - rem];
+  asm volatile(
+      "vsetivli    zero, 16, e32, m4, ta, ma     \n"
+      "vmv.s.x     v4, zero                      \n"
+      "addi        %[count], %[count], -16       \n"
+      "bltz        %[count], 2f                  \n"
+      "vle32.v     v16, (%[muls16])              \n"
+      "1:                                        \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vzext.vf4   v12, v8                       \n"
+      "vmul.vv     v12, v12, v16                 \n"
+      "vredsum.vs  v0, v12, v4                   \n"
+      "vmv.x.s     %[tmp], v0                    \n"
+      "mul         %[hash], %[hash], %[c16]      \n"
+      "add         %[hash], %[hash], %[tmp]      \n"
+      "addi        %[src], %[src], 16            \n"
+      "addi        %[count], %[count], -16       \n"
+      "bgez        %[count], 1b                  \n"
+      "2:                                        \n"
+      "addi        %[count], %[count], 16        \n"
+      "beqz        %[count], 3f                  \n"
+      "vsetvli     zero, %[count], e32, m4, ta, ma \n"
+      "vle32.v     v16, (%[tail_muls])           \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vzext.vf4   v12, v8                       \n"
+      "vmul.vv     v12, v12, v16                 \n"
+      "vredsum.vs  v0, v12, v4                   \n"
+      "vmv.x.s     %[tmp], v0                    \n"
+      "mul         %[hash], %[hash], %[pow_n]    \n"
+      "add         %[hash], %[hash], %[tmp]      \n"
+      "3:                                        \n"
+      :
+      [src] "+r"(src), [count] "+r"(count), [hash] "+r"(hash), [tmp] "=&r"(tmp)
+      : [muls16] "r"(kDjb2Muls_RVV + 1), [c16] "r"(c16),
+        [tail_muls] "r"(tail_muls), [pow_n] "r"(pow_n)
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v4", "v8", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19");
+  return hash;
+}
+#endif  // HAS_HASHDJB2_RVV
 
 #ifdef __cplusplus
 }  // extern "C"

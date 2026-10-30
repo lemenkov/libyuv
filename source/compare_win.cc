@@ -75,8 +75,11 @@ uint32_t HammingDistance_SSE42(const uint8_t* src_a,
 }
 #endif  // HAS_HAMMINGDISTANCE_SSE42
 
-#if defined(HAS_HAMMINGDISTANCE_AVX512BW) || \
-    defined(HAS_SUMSQUAREERROR_AVX512BW) || defined(HAS_HASHDJB2_AVX512BW)
+#if defined(HAS_HAMMINGDISTANCE_AVX512BW) ||   \
+    defined(HAS_HAMMINGDISTANCE_AVX512VNNI) || \
+    defined(HAS_SUMSQUAREERROR_AVX512BW) ||    \
+    defined(HAS_SUMSQUAREERROR_AVX512VNNI) ||  \
+    defined(HAS_HASHDJB2_AVX512BW) || defined(HAS_SSIM4X4ROW_AVX512BW)
 // Mask of the low n bytes, for n = 0 to 64.
 static __mmask64 LowBytesMask64(int n) {
   return (__mmask64)(n >= 64 ? ~0ULL : (1ULL << n) - 1);
@@ -160,6 +163,46 @@ uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
   return (uint32_t)_mm512_reduce_add_epi64(sum);
 }
 #endif  // HAS_HAMMINGDISTANCE_AVX512BW
+
+#if defined(HAS_HAMMINGDISTANCE_AVX512VNNI)
+// Bit count of 64 bytes accumulated into 16 dwords with vpdpbusd.
+LIBYUV_TARGET_AVX512VNNI
+static __m512i BitCount64_AVX512VNNI(__m512i x, __m512i sum) {
+  const __m512i kNibbleMask = _mm512_set1_epi8(15);
+  const __m512i kOnes = _mm512_set1_epi8(1);
+  const __m512i kBitCount = _mm512_broadcast_i32x4(
+      _mm_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4));
+  __m512i lo = _mm512_shuffle_epi8(kBitCount, _mm512_and_si512(x, kNibbleMask));
+  __m512i hi = _mm512_shuffle_epi8(
+      kBitCount, _mm512_and_si512(_mm512_srli_epi16(x, 4), kNibbleMask));
+  return _mm512_dpbusd_epi32(sum, kOnes, _mm512_add_epi8(lo, hi));
+}
+
+// Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
+// loads that read zeros, so any count is supported.
+LIBYUV_TARGET_AVX512VNNI
+uint32_t HammingDistance_AVX512VNNI(const uint8_t* src_a,
+                                    const uint8_t* src_b,
+                                    int count) {
+  __m512i sum = _mm512_setzero_si512();
+  while (count >= 64) {
+    sum = BitCount64_AVX512VNNI(
+        _mm512_xor_si512(_mm512_loadu_si512(src_a), _mm512_loadu_si512(src_b)),
+        sum);
+    src_a += 64;
+    src_b += 64;
+    count -= 64;
+  }
+  if (count > 0) {
+    const __mmask64 k = LowBytesMask64(count);
+    sum = BitCount64_AVX512VNNI(
+        _mm512_xor_si512(_mm512_maskz_loadu_epi8(k, src_a),
+                         _mm512_maskz_loadu_epi8(k, src_b)),
+        sum);
+  }
+  return (uint32_t)_mm512_reduce_add_epi32(sum);
+}
+#endif  // HAS_HAMMINGDISTANCE_AVX512VNNI
 
 #if defined(HAS_SUMSQUAREERROR_SSE2)
 // Count is a multiple of 16.
@@ -262,8 +305,7 @@ uint32_t SumSquareError_AVX512VNNI(const uint8_t* src_a,
   while (count >= 64) {
     __m512i a = _mm512_loadu_si512(src_a);
     __m512i b = _mm512_loadu_si512(src_b);
-    __m512i d =
-        _mm512_or_si512(_mm512_subs_epu8(a, b), _mm512_subs_epu8(b, a));
+    __m512i d = _mm512_or_si512(_mm512_subs_epu8(a, b), _mm512_subs_epu8(b, a));
     __m512i lo = _mm512_unpacklo_epi8(d, zero);
     __m512i hi = _mm512_unpackhi_epi8(d, zero);
     sum0 = _mm512_dpwssd_epi32(sum0, lo, lo);
@@ -276,8 +318,7 @@ uint32_t SumSquareError_AVX512VNNI(const uint8_t* src_a,
     const __mmask64 k = LowBytesMask64(count);
     __m512i a = _mm512_maskz_loadu_epi8(k, src_a);
     __m512i b = _mm512_maskz_loadu_epi8(k, src_b);
-    __m512i d =
-        _mm512_or_si512(_mm512_subs_epu8(a, b), _mm512_subs_epu8(b, a));
+    __m512i d = _mm512_or_si512(_mm512_subs_epu8(a, b), _mm512_subs_epu8(b, a));
     __m512i lo = _mm512_unpacklo_epi8(d, zero);
     __m512i hi = _mm512_unpackhi_epi8(d, zero);
     sum0 = _mm512_dpwssd_epi32(sum0, lo, lo);
@@ -961,7 +1002,18 @@ uint32_t ARGBDetectRow_AVX2(const uint8_t* argb, int width) {
     _mm256_zeroupper();
   }
   if (width > 0) {
-    return ARGBDetectRow_C(argb, width);
+    const __m128i mask_rgb = _mm_set1_epi32(0x00ffff00);
+    const __m128i ones = _mm_set1_epi8(-1);
+    do {
+      __m128i v = _mm_or_si128(_mm_loadu_si32(argb), mask_rgb);
+      uint32_t diff =
+          (~(uint32_t)_mm_movemask_epi8(_mm_cmpeq_epi8(v, ones))) & 0x9u;
+      if (diff) {
+        return (diff & 1u) ? FOURCC_BGRA : FOURCC_ARGB;
+      }
+      argb += 4;
+      width -= 1;
+    } while (width > 0);
   }
   return 0;
 }

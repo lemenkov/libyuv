@@ -10,6 +10,7 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -154,6 +155,176 @@ void Ssim4x4Row_NEON(const uint8_t* src_a,
         "q13");
 }
 #undef SSIM_ROW_NEON32
+
+static const uvec32 kDjb2Multiplicands[] = {
+    {0x0c3525e1,   // 33^15
+     0xa3476dc1,   // 33^14
+     0x3b4039a1,   // 33^13
+     0x4f5f0981},  // 33^12
+    {0x30f35d61,   // 33^11
+     0x855cb541,   // 33^10
+     0x040a9121,   // 33^9
+     0x747c7101},  // 33^8
+    {0xec41d4e1,   // 33^7
+     0x4cfa3cc1,   // 33^6
+     0x025528a1,   // 33^5
+     0x00121881},  // 33^4
+    {0x00008c61,   // 33^3
+     0x00000441,   // 33^2
+     0x00000021,   // 33^1
+     0x00000001},  // 33^0
+};
+
+uint32_t HashDjb2_NEON(const uint8_t* src, int count, uint32_t seed) {
+  uint32_t hash = seed;
+  const uint32_t c16 = 0x92d9e201;  // 33^16
+  const void* muls0 = &kDjb2Multiplicands[0];
+  const void* muls1 = &kDjb2Multiplicands[2];
+  uint32_t tmp;
+  asm volatile(
+      "vld1.32     {d16, d17, d18, d19}, [%[muls0]] \n"
+      "vld1.32     {d20, d21, d22, d23}, [%[muls1]] \n"
+      "1:                                        \n"
+      "vld1.8      {d0, d1}, [%[src]]!           \n"
+      "subs        %[count], %[count], #16       \n"
+      "vmovl.u8    q1, d0                        \n"
+      "vmovl.u8    q2, d1                        \n"
+      "vmovl.u16   q0, d2                        \n"
+      "vmovl.u16   q1, d3                        \n"
+      "vmovl.u16   q3, d5                        \n"
+      "vmovl.u16   q2, d4                        \n"
+      "vmul.i32    q0, q0, q8                    \n"
+      "vmla.i32    q0, q1, q9                    \n"
+      "vmla.i32    q0, q2, q10                   \n"
+      "vmla.i32    q0, q3, q11                   \n"
+      "vpadd.i32   d0, d0, d1                    \n"
+      "vpadd.i32   d0, d0, d0                    \n"
+      "vmov.32     %[tmp], d0[0]                 \n"
+      "mla         %[hash], %[hash], %[c16], %[tmp] \n"
+      "bgt         1b                            \n"
+      :
+      [src] "+r"(src), [hash] "+r"(hash), [count] "+r"(count), [tmp] "=&r"(tmp)
+      : [muls0] "r"(muls0), [muls1] "r"(muls1), [c16] "r"(c16)
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11");
+  return hash;
+}
+
+float SsimWindowRow_NEON(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows) {
+  const uint32_t* row0_next = row0 + 4;
+  const uint32_t* row1_next = row1 + 4;
+  float total;
+  asm volatile(
+      "vmov.i32    q12, #0                       \n"
+      "vdup.32     q13, %[c1]                    \n"
+      "vdup.32     q14, %[c2]                    \n"
+      "1:                                        \n"
+      "vld4.32     {d0, d2, d4, d6}, [%[row0]]!  \n"
+      "vld4.32     {d1, d3, d5, d7}, [%[row0]]!  \n"
+      "vld4.32     {d16, d18, d20, d22}, [%[row0_next]]! \n"
+      "vld4.32     {d17, d19, d21, d23}, [%[row0_next]]! \n"
+      "vadd.i32    q0, q0, q8                    \n"
+      "vadd.i32    q1, q1, q9                    \n"
+      "vadd.i32    q2, q2, q10                   \n"
+      "vadd.i32    q3, q3, q11                   \n"
+      "vld4.32     {d16, d18, d20, d22}, [%[row1]]! \n"
+      "vld4.32     {d17, d19, d21, d23}, [%[row1]]! \n"
+      "vadd.i32    q0, q0, q8                    \n"
+      "vadd.i32    q1, q1, q9                    \n"
+      "vadd.i32    q2, q2, q10                   \n"
+      "vadd.i32    q3, q3, q11                   \n"
+      "vld4.32     {d16, d18, d20, d22}, [%[row1_next]]! \n"
+      "vld4.32     {d17, d19, d21, d23}, [%[row1_next]]! \n"
+      "vadd.i32    q0, q0, q8                    \n"
+      "vadd.i32    q1, q1, q9                    \n"
+      "vadd.i32    q2, q2, q10                   \n"
+      "vadd.i32    q3, q3, q11                   \n"
+      "vmul.i32    q8, q0, q1                    \n"
+      "vshl.i32    q8, q8, #1                    \n"
+      "vmul.i32    q9, q0, q0                    \n"
+      "vmla.i32    q9, q1, q1                    \n"
+      "vshl.i32    q3, q3, #7                    \n"
+      "vsub.i32    q3, q3, q8                    \n"
+      "vadd.i32    q8, q8, q13                   \n"
+      "vadd.i32    q3, q3, q14                   \n"
+      "vshl.i32    q2, q2, #6                    \n"
+      "vsub.i32    q2, q2, q9                    \n"
+      "vadd.i32    q9, q9, q13                   \n"
+      "vadd.i32    q2, q2, q14                   \n"
+      "vcvt.f32.s32 q8, q8                       \n"
+      "vcvt.f32.s32 q3, q3                       \n"
+      "vcvt.f32.s32 q9, q9                       \n"
+      "vcvt.f32.s32 q2, q2                       \n"
+      "vmul.f32    q3, q8, q3                    \n"
+      "vmul.f32    q2, q9, q2                    \n"
+      "vdiv.f32    s12, s12, s8                  \n"
+      "vdiv.f32    s13, s13, s9                  \n"
+      "vdiv.f32    s14, s14, s10                 \n"
+      "vdiv.f32    s15, s15, s11                 \n"
+      "subs        %[num_windows], %[num_windows], #4 \n"
+      "vadd.f32    q12, q12, q3                  \n"
+      "bgt         1b                            \n"
+      "vpadd.f32   d0, d24, d25                  \n"
+      "vpadd.f32   d0, d0, d0                    \n"
+      "vmov.f32    %[total], s0                  \n"
+      : [row0] "+r"(row0), [row0_next] "+r"(row0_next), [row1] "+r"(row1),
+        [row1_next] "+r"(row1_next), [num_windows] "+r"(num_windows),
+        [total] "=r"(total)
+      : [c1] "r"(26634), [c2] "r"(239708)
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12",
+        "q13", "q14");
+  return total;
+}
+
+uint32_t ARGBDetectRow_NEON(const uint8_t* argb, int width) {
+  uint32_t diff_lo = 0;
+  uint32_t diff_hi = 0;
+  uint32_t tmp;
+  asm volatile(
+      "vmov.i32    q2, #0x00ff0000               \n"
+      "vorr.i32    q2, #0x0000ff00               \n"
+      "vmov.i8     q3, #0xff                     \n"
+      "subs        %[width], %[width], #4        \n"
+      "blt         2f                            \n"
+      "1:                                        \n"
+      "vld1.8      {q0}, [%[argb]]!              \n"
+      "vorr        q0, q0, q2                    \n"
+      "vceq.i8     q0, q0, q3                    \n"
+      "vmvn        q0, q0                        \n"
+      "vshrn.i16   d0, q0, #4                    \n"
+      "vmov        %[diff_lo], %[diff_hi], d0    \n"
+      "orrs        %[tmp], %[diff_lo], %[diff_hi] \n"
+      "bne         99f                           \n"
+      "subs        %[width], %[width], #4        \n"
+      "bge         1b                            \n"
+      "2:                                        \n"
+      "adds        %[width], %[width], #4        \n"
+      "ble         99f                           \n"
+      "3:                                        \n"
+      "vld1.32     {d0[0]}, [%[argb]]!           \n"
+      "vorr        d0, d0, d4                    \n"
+      "vceq.i8     d0, d0, d6                    \n"
+      "vmvn        d0, d0                        \n"
+      "vshrn.i16   d0, q0, #4                    \n"
+      "vmov.u16    %[diff_lo], d0[0]             \n"
+      "cmp         %[diff_lo], #0                \n"
+      "bne         99f                           \n"
+      "subs        %[width], %[width], #1        \n"
+      "bgt         3b                            \n"
+      "99:                                       \n"
+      : [argb] "+r"(argb), [width] "+r"(width), [diff_lo] "+r"(diff_lo),
+        [diff_hi] "+r"(diff_hi), [tmp] "=&r"(tmp)
+      :
+      : "memory", "cc", "q0", "q2", "q3");
+  if (diff_lo) {
+    return (__builtin_ctz(diff_lo) & 12) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+  }
+  if (diff_hi) {
+    return (__builtin_ctz(diff_hi) & 12) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+  }
+  return 0;
+}
 
 #endif  // defined(__ARM_NEON__) && !defined(__aarch64__)
 

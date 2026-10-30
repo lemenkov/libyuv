@@ -10,6 +10,7 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -347,6 +348,107 @@ void Ssim4x4Row_NEON_DotProd(const uint8_t* src_a,
       :
       : "memory", "cc", "v0", "v1", "v2", "v3", "v6", "v16", "v17", "v18",
         "v19");
+}
+
+float SsimWindowRow_NEON(const uint32_t* row0,
+                         const uint32_t* row1,
+                         int num_windows) {
+  const uint32_t* row0_next = row0 + 4;
+  const uint32_t* row1_next = row1 + 4;
+  float total;
+  asm volatile(
+      "movi        v24.4s, #0                    \n"
+      "dup         v25.4s, %w[c1]                \n"
+      "dup         v26.4s, %w[c2]                \n"
+      "1:                                        \n"
+      "ld4         {v0.4s, v1.4s, v2.4s, v3.4s}, [%[row0]], #64 \n"
+      "ld4         {v4.4s, v5.4s, v6.4s, v7.4s}, [%[row0_next]], #64 \n"
+      "ld4         {v16.4s, v17.4s, v18.4s, v19.4s}, [%[row1]], #64 \n"
+      "ld4         {v20.4s, v21.4s, v22.4s, v23.4s}, [%[row1_next]], #64 \n"
+      "add         v0.4s, v0.4s, v4.4s           \n"
+      "add         v1.4s, v1.4s, v5.4s           \n"
+      "add         v2.4s, v2.4s, v6.4s           \n"
+      "add         v3.4s, v3.4s, v7.4s           \n"
+      "add         v16.4s, v16.4s, v20.4s        \n"
+      "add         v17.4s, v17.4s, v21.4s        \n"
+      "add         v18.4s, v18.4s, v22.4s        \n"
+      "add         v19.4s, v19.4s, v23.4s        \n"
+      "add         v0.4s, v0.4s, v16.4s          \n"
+      "add         v1.4s, v1.4s, v17.4s          \n"
+      "add         v2.4s, v2.4s, v18.4s          \n"
+      "add         v3.4s, v3.4s, v19.4s          \n"
+      "mul         v4.4s, v0.4s, v1.4s           \n"
+      "shl         v4.4s, v4.4s, #1              \n"
+      "mul         v5.4s, v0.4s, v0.4s           \n"
+      "mla         v5.4s, v1.4s, v1.4s           \n"
+      "shl         v3.4s, v3.4s, #7              \n"
+      "sub         v3.4s, v3.4s, v4.4s           \n"
+      "add         v4.4s, v4.4s, v25.4s          \n"
+      "add         v3.4s, v3.4s, v26.4s          \n"
+      "shl         v2.4s, v2.4s, #6              \n"
+      "sub         v2.4s, v2.4s, v5.4s           \n"
+      "add         v5.4s, v5.4s, v25.4s          \n"
+      "add         v2.4s, v2.4s, v26.4s          \n"
+      "scvtf       v4.4s, v4.4s                  \n"
+      "scvtf       v3.4s, v3.4s                  \n"
+      "scvtf       v5.4s, v5.4s                  \n"
+      "scvtf       v2.4s, v2.4s                  \n"
+      "fmul        v4.4s, v4.4s, v3.4s           \n"
+      "fmul        v5.4s, v5.4s, v2.4s           \n"
+      "fdiv        v4.4s, v4.4s, v5.4s           \n"
+      "subs        %w[num_windows], %w[num_windows], #4 \n"
+      "fadd        v24.4s, v24.4s, v4.4s         \n"
+      "b.gt        1b                            \n"
+      "faddp       v24.4s, v24.4s, v24.4s        \n"
+      "faddp       %s[total], v24.2s             \n"
+      : [row0] "+r"(row0), [row0_next] "+r"(row0_next), [row1] "+r"(row1),
+        [row1_next] "+r"(row1_next), [num_windows] "+r"(num_windows),
+        [total] "=w"(total)
+      : [c1] "r"(26634), [c2] "r"(239708)
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26");
+  return total;
+}
+
+uint32_t ARGBDetectRow_NEON(const uint8_t* argb, int width) {
+  uint64_t diff = 0;
+  asm volatile(
+      "movi        v2.2d, #0x00ffff0000ffff00    \n"
+      "movi        v3.16b, #0xff                 \n"
+      "subs        %w[width], %w[width], #4      \n"
+      "b.lt        2f                            \n"
+      "1:                                        \n"
+      "ldr         q0, [%[argb]], #16            \n"
+      "orr         v0.16b, v0.16b, v2.16b        \n"
+      "cmeq        v0.16b, v0.16b, v3.16b        \n"
+      "mvn         v0.16b, v0.16b                \n"
+      "shrn        v0.8b, v0.8h, #4              \n"
+      "fmov        %x[diff], d0                  \n"
+      "cbnz        %x[diff], 99f                 \n"
+      "subs        %w[width], %w[width], #4      \n"
+      "b.ge        1b                            \n"
+      "2:                                        \n"
+      "adds        %w[width], %w[width], #4      \n"
+      "b.le        99f                           \n"
+      "3:                                        \n"
+      "ldr         s0, [%[argb]], #4             \n"
+      "orr         v0.8b, v0.8b, v2.8b           \n"
+      "cmeq        v0.8b, v0.8b, v3.8b           \n"
+      "mvn         v0.8b, v0.8b                  \n"
+      "shrn        v0.8b, v0.8h, #4              \n"
+      "fmov        %x[diff], d0                  \n"
+      "and         %x[diff], %x[diff], #0xffff   \n"
+      "cbnz        %x[diff], 99f                 \n"
+      "subs        %w[width], %w[width], #1      \n"
+      "b.gt        3b                            \n"
+      "99:                                       \n"
+      : [argb] "+r"(argb), [width] "+r"(width), [diff] "+r"(diff)
+      :
+      : "memory", "cc", "v0", "v2", "v3");
+  if (diff) {
+    return (__builtin_ctzll(diff) & 12) == 0 ? FOURCC_BGRA : FOURCC_ARGB;
+  }
+  return 0;
 }
 
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
