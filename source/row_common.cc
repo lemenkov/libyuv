@@ -2878,7 +2878,7 @@ void DetileToYUY2_C(const uint8_t* src_y,
 // packed into 1x4 blocks, whereas the upper bits are packed in normal raster
 // order.
 void UnpackMT2T_C(const uint8_t* src, uint16_t* dst, size_t size) {
-  for (size_t i = 0; i < size; i += 80) {
+  while (size >= 80) {
     const uint8_t* src_lower_bits = src;
     const uint8_t* src_upper_bits = src + 16;
 
@@ -2892,6 +2892,7 @@ void UnpackMT2T_C(const uint8_t* src, uint16_t* dst, size_t size) {
     }
 
     src += 80;
+    size -= 80;
   }
 }
 
@@ -3942,7 +3943,7 @@ void ByteToFloatRow_C(const uint8_t* src, float* dst, float scale, int width) {
   int i;
   for (i = 0; i < width; ++i) {
     float value = src[i] * scale;
-    dst[i] = value;
+    memcpy(&dst[i], &value, sizeof(value));
   }
 }
 

@@ -59,12 +59,9 @@ extern "C" {
 
 // The following are available on all x86 platforms, but
 // require VS2012, clang 3.4 or gcc 4.7.
-#if !defined(LIBYUV_DISABLE_X86) &&                              \
-    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2) ||     \
-     defined(GCC_HAS_AVX2) ||                                    \
-     (defined(LIBYUV_ENABLE_ROWWIN) &&                           \
-      (defined(__x86_64__) || defined(__i386__) ||               \
-       defined(_M_X64) || defined(_M_IX86))))
+#if !defined(LIBYUV_DISABLE_X86) &&                          \
+    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2) || \
+     defined(GCC_HAS_AVX2))
 #define HAS_SCALEADDROW_AVX2
 #define HAS_SCALEARGBCOLS_AVX2
 #define HAS_SCALEARGBCOLSUP2_AVX2
@@ -96,11 +93,10 @@ extern "C" {
 #endif
 
 // The following are available for AVX512 x64 platforms:
-#if !defined(LIBYUV_DISABLE_X86) &&                  \
-    (defined(__x86_64__) || defined(_M_X64)) &&      \
-    (defined(CLANG_HAS_AVX512) ||                    \
-     (defined(_MSC_VER) && !defined(__clang__)) ||   \
-     defined(LIBYUV_ENABLE_ROWWIN))
+#if !defined(LIBYUV_DISABLE_X86) &&                          \
+    (defined(__x86_64__) || defined(_M_X64)) &&              \
+    (defined(CLANG_HAS_AVX512) || defined(GCC_HAS_AVX512) || \
+     defined(VISUALC_HAS_AVX512))
 #define HAS_SCALEADDROW_AVX512BW
 #define HAS_SCALEADDCOLS1_AVX512BW
 #define HAS_SCALEADDCOLS2_AVX512BW

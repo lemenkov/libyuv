@@ -55,9 +55,11 @@ static int NV16ToI420(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    if (src_y) {
+      src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+      src_stride_y = -src_stride_y;
+    }
     src_uv = src_uv + (ptrdiff_t)(height - 1) * src_stride_uv;
-    src_stride_y = -src_stride_y;
     src_stride_uv = -src_stride_uv;
   }
   if (dst_y) {
@@ -81,10 +83,7 @@ static int NV16ToI420(const uint8_t* src_y,
 #endif
 #if defined(HAS_SPLITUVROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    SplitUVRow = SplitUVRow_Any_AVX512BW;
-    if (IS_ALIGNED(halfwidth, 64)) {
-      SplitUVRow = SplitUVRow_AVX512BW;
-    }
+    SplitUVRow = SplitUVRow_AVX512BW;
   }
 #endif
 #if defined(HAS_SPLITUVROW_NEON)
@@ -226,9 +225,11 @@ static int NV24ToI420(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    if (src_y) {
+      src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+      src_stride_y = -src_stride_y;
+    }
     src_uv = src_uv + (ptrdiff_t)(height - 1) * src_stride_uv;
-    src_stride_y = -src_stride_y;
     src_stride_uv = -src_stride_uv;
   }
   if (dst_y) {

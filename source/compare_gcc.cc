@@ -389,6 +389,7 @@ static uint64_t LowBytesMask64(int n) {
 #ifdef HAS_HAMMINGDISTANCE_AVX512BW
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, so any count is supported.
+LIBYUV_TARGET_AVX512BW
 uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count) {
@@ -527,6 +528,7 @@ uint32_t HammingDistance_AVX512VNNI(const uint8_t* src_a,
 #ifdef HAS_SUMSQUAREERROR_AVX512BW
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, so any count is supported.
+LIBYUV_TARGET_AVX512BW
 uint32_t SumSquareError_AVX512BW(const uint8_t* src_a,
                                  const uint8_t* src_b,
                                  int count) {
@@ -596,6 +598,7 @@ uint32_t SumSquareError_AVX512BW(const uint8_t* src_a,
 #ifdef HAS_SUMSQUAREERROR_AVX512VNNI
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, so any count is supported.
+LIBYUV_TARGET_AVX512VNNI
 uint32_t SumSquareError_AVX512VNNI(const uint8_t* src_a,
                                    const uint8_t* src_b,
                                    int count) {
@@ -811,6 +814,7 @@ static uint32_t Pow33(int n) {
 // Process 64 bytes per loop. The remainder of n = 1 to 63 bytes is loaded
 // into the high n bytes with a masked load ending at src + count, so the
 // same multipliers apply, and hash is multiplied by 33 ^ n.
+LIBYUV_TARGET_AVX512BW
 uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed) {
   const int n = count & 63;
   const uint64_t mask = n ? ~0ULL << (64 - n) : 0ULL;
@@ -1150,6 +1154,7 @@ void Ssim4x4Row_AVX2(const uint8_t* src_a,
 
 // Process 64 pixels (16 4x4 tiles) per loop and the remainder of 4 to 60
 // pixels (1 to 15 tiles) with masked loads and stores.
+LIBYUV_TARGET_AVX512BW
 void Ssim4x4Row_AVX512BW(const uint8_t* src_a,
                          int stride_a,
                          const uint8_t* src_b,
@@ -1433,6 +1438,7 @@ float SsimWindowRow_AVX2(const uint32_t* row0,
 
 // Process 16 8x8 windows per loop and the remainder of 1 to 15 windows with
 // masked loads and masked accumulation.
+LIBYUV_TARGET_AVX512BW
 float SsimWindowRow_AVX512BW(const uint32_t* row0,
                              const uint32_t* row1,
                              int num_windows) {

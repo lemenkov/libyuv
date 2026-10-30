@@ -240,10 +240,7 @@ static int NV24ToARGB(const uint8_t* src_y,
 #endif
 #if defined(HAS_SPLITUVROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    SplitUVRow = SplitUVRow_Any_AVX512BW;
-    if (IS_ALIGNED(width, 64)) {
-      SplitUVRow = SplitUVRow_AVX512BW;
-    }
+    SplitUVRow = SplitUVRow_AVX512BW;
   }
 #endif
 #if defined(HAS_SPLITUVROW_NEON)

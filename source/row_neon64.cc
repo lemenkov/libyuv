@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/row.h"
 
@@ -5464,6 +5466,12 @@ void DivideRow_16_NEON(const uint16_t* src_y,
                        uint16_t* dst_y,
                        int scale,
                        int width) {
+  if (scale == 65536) {  // Divide by 1, so do memcpy.
+    if (src_y != dst_y) {
+      memcpy(dst_y, src_y, (size_t)width * 2);
+    }
+    return;
+  }
   asm volatile(
       "dup         v4.8h, %w3                    \n"
       "1:          \n"

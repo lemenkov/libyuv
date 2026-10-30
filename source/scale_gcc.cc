@@ -415,6 +415,7 @@ void ScaleRowDown2Box_16_AVX2(const uint16_t* src_ptr,
 #endif  // HAS_SCALEROWDOWN2_16_AVX2
 
 #ifdef HAS_SCALEROWDOWN2_AVX512BW
+LIBYUV_TARGET_AVX512BW
 void ScaleRowDown2_AVX512BW(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
                             uint8_t* dst_ptr,
@@ -455,6 +456,7 @@ void ScaleRowDown2_AVX512BW(const uint8_t* src_ptr,
       : "memory", "cc", "xmm0", "k1");
 }
 
+LIBYUV_TARGET_AVX512BW
 void ScaleRowDown2Linear_AVX512BW(const uint8_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint8_t* dst_ptr,
@@ -500,6 +502,7 @@ void ScaleRowDown2Linear_AVX512BW(const uint8_t* src_ptr,
       : "memory", "cc", "xmm0", "xmm4", "xmm5", "k1");
 }
 
+LIBYUV_TARGET_AVX512BW
 void ScaleRowDown2Box_AVX512BW(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
@@ -2200,6 +2203,7 @@ void ScaleAddRow_AVX2(const uint8_t* src_ptr,
 
 #ifdef HAS_SCALEADDROW_AVX512BW
 // Reads 32xN bytes and accumulates to 32xN shorts at a time, with masked tail.
+LIBYUV_TARGET_AVX512BW
 void ScaleAddRow_AVX512BW(const uint8_t* src_ptr,
                           uint16_t* dst_ptr,
                           int src_width) {
@@ -2259,6 +2263,7 @@ static const uint8_t kSequence0_15[16] = {0, 1, 2,  3,  4,  5,  6,  7,
 #endif
 
 #ifdef HAS_SCALEADDCOLS1_AVX512BW
+LIBYUV_TARGET_AVX512BW
 void ScaleAddCols1_AVX512BW(int dst_width,
                             int boxheight,
                             int x,
@@ -2511,6 +2516,7 @@ void ScaleAddCols1_AVX512BW(int dst_width,
 #endif  // HAS_SCALEADDCOLS1_AVX512BW
 
 #ifdef HAS_SCALEADDCOLS2_AVX512BW
+LIBYUV_TARGET_AVX512BW
 void ScaleAddCols2_AVX512BW(int dst_width,
                             int boxheight,
                             int x,
@@ -4246,6 +4252,7 @@ static const uint8_t kPackEvenBytes[64] = {
 // Scale UV columns by 3 box filter using AVX512VBMI.
 // Processes 32 UV pixels (384 input bytes -> 64 output bytes) per main loop
 // iteration, followed by a 16-pixel block and a k-masked tail (1..15 pixels).
+LIBYUV_TARGET_AVX512VBMI
 void ScaleUVAddCols3_AVX512VBMI(int dst_width,
                                 int scaleval,
                                 const uint16_t* src_uv,

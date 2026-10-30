@@ -775,10 +775,7 @@ static int I4xxToPxxx(const uint8_t* src_y,
 #endif
 #if defined(HAS_CONVERT8TO16ROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    Convert8To16Row = Convert8To16Row_Any_AVX512BW;
-    if (IS_ALIGNED(uv_width, 64)) {
-      Convert8To16Row = Convert8To16Row_AVX512BW;
-    }
+    Convert8To16Row = Convert8To16Row_AVX512BW;
   }
 #endif
 #if defined(HAS_CONVERT8TO16ROW_NEON)

@@ -2668,8 +2668,11 @@ static int TestHalfFloatPlane(int benchmark_width,
                               int mask,
                               int invert,
                               int off) {
-  int i, j;
-  const int y_plane_size = benchmark_width * benchmark_height * 2;
+  if (benchmark_width <= 0 || benchmark_height <= 0) {
+    return 0;
+  }
+  const size_t y_plane_size = static_cast<size_t>(benchmark_width) *
+                              static_cast<size_t>(benchmark_height) * 2;
   align_buffer_page_end(orig_y, y_plane_size + off);
   align_buffer_page_end(dst_c, y_plane_size);
   align_buffer_page_end(dst_opt, y_plane_size);
@@ -2678,13 +2681,13 @@ static int TestHalfFloatPlane(int benchmark_width,
   memset(dst_c, 1, y_plane_size);
   memset(dst_opt, 2, y_plane_size);
 
-  for (i = 0; i < y_plane_size / 2; ++i) {
+  for (size_t i = 0; i < y_plane_size / 2; ++i) {
     reinterpret_cast<uint16_t*>(orig_y + off)[i] &= mask;
   }
 
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags);
-  for (j = 0; j < benchmark_iterations; j++) {
+  for (int j = 0; j < benchmark_iterations; j++) {
     HalfFloatPlane(reinterpret_cast<uint16_t*>(orig_y + off),
                    benchmark_width * 2, reinterpret_cast<uint16_t*>(dst_c),
                    benchmark_width * 2, scale, benchmark_width,
@@ -2693,7 +2696,7 @@ static int TestHalfFloatPlane(int benchmark_width,
 
   // Enable optimizations.
   MaskCpuFlags(benchmark_cpu_info);
-  for (j = 0; j < benchmark_iterations; j++) {
+  for (int j = 0; j < benchmark_iterations; j++) {
     HalfFloatPlane(reinterpret_cast<uint16_t*>(orig_y + off),
                    benchmark_width * 2, reinterpret_cast<uint16_t*>(dst_opt),
                    benchmark_width * 2, scale, benchmark_width,
@@ -2701,7 +2704,7 @@ static int TestHalfFloatPlane(int benchmark_width,
   }
 
   int max_diff = 0;
-  for (i = 0; i < y_plane_size / 2; ++i) {
+  for (size_t i = 0; i < y_plane_size / 2; ++i) {
     int abs_diff =
         abs(static_cast<int>(reinterpret_cast<uint16_t*>(dst_c)[i]) -
             static_cast<int>(reinterpret_cast<uint16_t*>(dst_opt)[i]));
@@ -2838,9 +2841,11 @@ static float TestByteToFloat(int benchmark_width,
   int i, j;
   const int y_plane_size = benchmark_width * benchmark_height;
 
-  align_buffer_page_end(orig_y, y_plane_size * (1 + 4 + 4));
-  float* dst_opt = reinterpret_cast<float*>(orig_y + y_plane_size);
-  float* dst_c = reinterpret_cast<float*>(orig_y + y_plane_size * 5);
+  align_buffer_page_end(orig_y, y_plane_size);
+  align_buffer_page_end(dst_opt_mem, y_plane_size * 4);
+  align_buffer_page_end(dst_c_mem, y_plane_size * 4);
+  float* dst_opt = reinterpret_cast<float*>(dst_opt_mem);
+  float* dst_c = reinterpret_cast<float*>(dst_c_mem);
 
   MemRandomize(orig_y, y_plane_size);
   memset(dst_c, 0, y_plane_size * 4);
@@ -2865,6 +2870,8 @@ static float TestByteToFloat(int benchmark_width,
   }
 
   free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_opt_mem);
+  free_aligned_buffer_page_end(dst_c_mem);
   return max_diff;
 }
 
@@ -4228,9 +4235,9 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Any) {
 
 #if defined(HAS_MULTIPLYROW_16_AVX512BW)
     if (has_avx512) {
-      MultiplyRow_16_Any_AVX512BW(
-          reinterpret_cast<const uint16_t*>(src_pixels_y),
-          reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64, width);
+      MultiplyRow_16_AVX512BW(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                              width);
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_AVX2)
@@ -6182,6 +6189,444 @@ TEST_F(LibYUVPlanarTest, MSanUninitializedInputsAndTails) {
   free_aligned_buffer_page_end(dst_opt1);
   free_aligned_buffer_page_end(dst_opt2);
   free_aligned_buffer_page_end(uv_src);
+}
+
+// Regression test for RGBToUVMatrixRow_Any_SSSE3 MASK=15 (previously MASK=7
+// overread 24 bytes past src_rgb24 at width=24).
+TEST_F(LibYUVPlanarTest, RGB24ToI420_Width24_OOB) {
+  const int kWidth = 24;
+  const int kHeight = 2;
+  align_buffer_page_end(src_rgb24, kWidth * 3 * kHeight);
+  align_buffer_page_end(dst_y_c, kWidth * kHeight);
+  align_buffer_page_end(dst_u_c, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_v_c, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_y_opt, kWidth * kHeight);
+  align_buffer_page_end(dst_u_opt, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_v_opt, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src_rgb24, kWidth * 3 * kHeight);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  RGB24ToI420(src_rgb24, kWidth * 3, dst_y_c, kWidth, dst_u_c, kWidth / 2,
+              dst_v_c, kWidth / 2, kWidth, kHeight);
+
+  const int kNoAvx512 =
+      benchmark_cpu_info_ & ~(kCpuHasAVX512BW | kCpuHasAVX512VL |
+                              kCpuHasAVX512VBMI | kCpuHasAVX512VNNI);
+  const int kSsse3Only = kNoAvx512 & ~kCpuHasAVX2;
+  const int kModes[3] = {benchmark_cpu_info_, kNoAvx512, kSsse3Only};
+  for (int m = 0; m < 3; ++m) {
+    MaskCpuFlags(kModes[m]);
+    memset(dst_y_opt, 0, kWidth * kHeight);
+    memset(dst_u_opt, 0, (kWidth / 2) * (kHeight / 2));
+    memset(dst_v_opt, 0, (kWidth / 2) * (kHeight / 2));
+    RGB24ToI420(src_rgb24, kWidth * 3, dst_y_opt, kWidth, dst_u_opt, kWidth / 2,
+                dst_v_opt, kWidth / 2, kWidth, kHeight);
+    for (int i = 0; i < kWidth * kHeight; ++i) {
+      ASSERT_EQ(dst_y_c[i], dst_y_opt[i]);
+    }
+    for (int i = 0; i < (kWidth / 2) * (kHeight / 2); ++i) {
+      ASSERT_EQ(dst_u_c[i], dst_u_opt[i]);
+      ASSERT_EQ(dst_v_c[i], dst_v_opt[i]);
+    }
+  }
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  free_aligned_buffer_page_end(src_rgb24);
+  free_aligned_buffer_page_end(dst_y_c);
+  free_aligned_buffer_page_end(dst_u_c);
+  free_aligned_buffer_page_end(dst_v_c);
+  free_aligned_buffer_page_end(dst_y_opt);
+  free_aligned_buffer_page_end(dst_u_opt);
+  free_aligned_buffer_page_end(dst_v_opt);
+}
+
+#ifdef ENABLE_ROW_TESTS
+#if defined(HAS_HALFWIDTHROW_16TO8_SSSE3) ||    \
+    defined(HAS_HALFWIDTHROW_16TO8_AVX2) ||     \
+    defined(HAS_HALFWIDTHROW_16TO8_AVX512BW) || \
+    defined(HAS_HALFROW_16TO8_AVX512BW)
+// Regression test for HalfWidthRow_16To8 (>= 0x8000 unsigned MSB samples and
+// exact page-end tail bounds) and HalfRow_16To8 (non-power-of-two scale).
+TEST_F(LibYUVPlanarTest, Half16To8_HighBitAndNonPow2Scale) {
+  const int kWidths[] = {1, 7, 15, 24, 31, 33, 63, 65};
+  for (size_t w_idx = 0; w_idx < sizeof(kWidths) / sizeof(kWidths[0]);
+       ++w_idx) {
+    const int w = kWidths[w_idx];
+    align_buffer_page_end_16(src_uv_hw, w * 4);
+    align_buffer_page_end(dst_c, w);
+    align_buffer_page_end(dst_opt, w);
+    for (int i = 0; i < w * 4; ++i) {
+      src_uv_hw[i] = static_cast<uint16_t>(0x8000u + ((i * 257u) & 0x7fffu));
+    }
+    HalfWidthRow_16To8_C(src_uv_hw, w * 2, dst_c, 256, w);
+#if defined(HAS_HALFWIDTHROW_16TO8_AVX512BW)
+    if (TestCpuFlag(kCpuHasAVX512BW)) {
+      memset(dst_opt, 0x5a, w);
+      HalfWidthRow_16To8_AVX512BW(src_uv_hw, w * 2, dst_opt, 256, w);
+      for (int i = 0; i < w; ++i) {
+        ASSERT_EQ(dst_c[i], dst_opt[i]) << "AVX512BW w=" << w << " i=" << i;
+      }
+    }
+#endif
+#if defined(HAS_HALFWIDTHROW_16TO8_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      memset(dst_opt, 0x5a, w);
+      HalfWidthRow_16To8_Any_AVX2(src_uv_hw, w * 2, dst_opt, 256, w);
+      for (int i = 0; i < w; ++i) {
+        ASSERT_EQ(dst_c[i], dst_opt[i]) << "AVX2 w=" << w << " i=" << i;
+      }
+    }
+#endif
+#if defined(HAS_HALFWIDTHROW_16TO8_SSSE3)
+    if (TestCpuFlag(kCpuHasSSSE3)) {
+      memset(dst_opt, 0x5a, w);
+      HalfWidthRow_16To8_Any_SSSE3(src_uv_hw, w * 2, dst_opt, 256, w);
+      for (int i = 0; i < w; ++i) {
+        ASSERT_EQ(dst_c[i], dst_opt[i]) << "SSSE3 w=" << w << " i=" << i;
+      }
+    }
+#endif
+
+    // HalfRow_16To8 with non-power-of-two scale (e.g. 16320).
+    align_buffer_page_end_16(src_uv_hr, w * 2);
+    for (int i = 0; i < w * 2; ++i) {
+      src_uv_hr[i] = static_cast<uint16_t>((i * 73u) & 1023u);
+    }
+    HalfRow_16To8_C(src_uv_hr, w, dst_c, 16320, w);
+#if defined(HAS_HALFROW_16TO8_AVX512BW)
+    if (TestCpuFlag(kCpuHasAVX512BW)) {
+      memset(dst_opt, 0x5a, w);
+      HalfRow_16To8_AVX512BW(src_uv_hr, w, dst_opt, 16320, w);
+      for (int i = 0; i < w; ++i) {
+        ASSERT_EQ(dst_c[i], dst_opt[i])
+            << "HalfRow_16To8_AVX512BW w=" << w << " i=" << i;
+      }
+    }
+#endif
+    free_aligned_buffer_page_end_16(src_uv_hr);
+    free_aligned_buffer_page_end_16(src_uv_hw);
+    free_aligned_buffer_page_end(dst_c);
+    free_aligned_buffer_page_end(dst_opt);
+  }
+}
+#endif  // HAS_HALFWIDTHROW_16TO8_* || HAS_HALFROW_16TO8_AVX512BW
+
+#if defined(HAS_UNPACKMT2T_AVX2)
+// Regression test for UnpackMT2T_C and UnpackMT2T_AVX2 when size is not a
+// multiple of the 80-byte (64-pixel) MT2T block size.
+TEST_F(LibYUVPlanarTest, UnpackMT2T_PartialTail) {
+  if (!TestCpuFlag(kCpuHasAVX2)) {
+    return;
+  }
+  const size_t kSrcSize = 120;  // 1 full 80-byte block + 40 trailing bytes
+  const size_t kDstCount = (kSrcSize / 80) * 64;
+  align_buffer_page_end(src, kSrcSize);
+  align_buffer_page_end_16(dst_c, kDstCount);
+  align_buffer_page_end_16(dst_opt, kDstCount);
+  MemRandomize(src, kSrcSize);
+  UnpackMT2T_C(src, dst_c, kSrcSize);
+  UnpackMT2T_AVX2(src, dst_opt, kSrcSize);
+  for (size_t i = 0; i < kDstCount; ++i) {
+    ASSERT_EQ(dst_c[i], dst_opt[i]) << "i=" << i;
+  }
+  // Verify size < 80 performs zero out-of-bounds reads or writes.
+  UnpackMT2T_C(src + 80, dst_c, 40);
+  UnpackMT2T_AVX2(src + 80, dst_opt, 40);
+  for (size_t i = 0; i < kDstCount; ++i) {
+    ASSERT_EQ(dst_c[i], dst_opt[i]) << "i=" << i;
+  }
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end_16(dst_c);
+  free_aligned_buffer_page_end_16(dst_opt);
+}
+#endif  // HAS_UNPACKMT2T_AVX2
+#endif  // ENABLE_ROW_TESTS
+
+// Regression test for ConvertToLSBPlane_16 with depth=16 (scale=65536).
+TEST_F(LibYUVPlanarTest, ConvertToLSBPlane_16_Depth16) {
+  const int kWidth = 37;
+  const int kHeight = 4;
+  align_buffer_page_end_16(src_y, kWidth * kHeight);
+  align_buffer_page_end_16(dst_c, kWidth * kHeight);
+  align_buffer_page_end_16(dst_opt, kWidth * kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    src_y[i] = static_cast<uint16_t>(0x1234u + i * 251u);
+  }
+  MaskCpuFlags(disable_cpu_flags_);
+  ConvertToLSBPlane_16(src_y, kWidth, dst_c, kWidth, kWidth, kHeight, 16);
+
+  const int kNoAvx512 =
+      benchmark_cpu_info_ & ~(kCpuHasAVX512BW | kCpuHasAVX512VL);
+  MaskCpuFlags(benchmark_cpu_info_);
+  memset(dst_opt, 0, kWidth * kHeight * 2);
+  ConvertToLSBPlane_16(src_y, kWidth, dst_opt, kWidth, kWidth, kHeight, 16);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_c[i], dst_opt[i]);
+  }
+
+  MaskCpuFlags(kNoAvx512);
+  memset(dst_opt, 0, kWidth * kHeight * 2);
+  ConvertToLSBPlane_16(src_y, kWidth, dst_opt, kWidth, kWidth, kHeight, 16);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_c[i], dst_opt[i]);
+  }
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(dst_c);
+  free_aligned_buffer_page_end_16(dst_opt);
+}
+
+// Regression test for ARGBPolynomial saturation on outputs >= 32768 / 65536,
+// odd widths, and 4-byte-aligned (non-16-byte-aligned) polynomial arrays.
+TEST_F(LibYUVPlanarTest, ARGBPolynomial_LargeOutputAndUnalignedPoly) {
+  const int kWidth = 37;
+  const int kHeight = 3;
+  align_buffer_page_end(src_argb, kWidth * 4 * kHeight);
+  align_buffer_page_end(dst_c, kWidth * 4 * kHeight);
+  align_buffer_page_end(dst_opt, kWidth * 4 * kHeight);
+  align_buffer_page_end(poly_buf, 17 * sizeof(float));
+  // Offset by +1 float so poly is 4-byte aligned, not 16-byte aligned.
+  float* poly = reinterpret_cast<float*>(poly_buf) + 1;
+  for (int c = 0; c < 4; ++c) {
+    poly[0 + c] = 0.0f;
+    poly[4 + c] = 300.0f;  // 255 * 300 = 76500 >= 65536 -> must clamp to 255
+    poly[8 + c] = 1.0f;    // 200^2 = 40000 in [32768, 65535] -> clamp to 255
+    poly[12 + c] = 0.0f;
+  }
+  for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+    src_argb[i] = static_cast<uint8_t>(i & 255);
+  }
+
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBPolynomial(src_argb, kWidth * 4, dst_c, kWidth * 4, poly, kWidth,
+                 kHeight);
+
+  const int kSse2Only =
+      benchmark_cpu_info_ & ~(kCpuHasAVX2 | kCpuHasFMA3 | kCpuHasAVX512BW);
+  const int kModes[2] = {benchmark_cpu_info_, kSse2Only};
+  for (int m = 0; m < 2; ++m) {
+    MaskCpuFlags(kModes[m]);
+    memset(dst_opt, 0, kWidth * 4 * kHeight);
+    ARGBPolynomial(src_argb, kWidth * 4, dst_opt, kWidth * 4, poly, kWidth,
+                   kHeight);
+    for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+      ASSERT_EQ(dst_c[i], dst_opt[i]) << "mode=" << m << " i=" << i;
+    }
+  }
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(poly_buf);
+}
+
+// Regression test for ARGBBlur / CumulativeSumToAverageRow_AVX2 when radius=0
+// or radius=1 produces small window areas (area == 1 or area == 2) on 0xff.
+TEST_F(LibYUVPlanarTest, ARGBBlur_SmallRadiusWhite) {
+  const int kWidth = 37;
+  const int kHeight = 4;
+  const int kCumSumStride32 = (kWidth + 16) * 4;
+  align_buffer_page_end(src_argb, kWidth * 4 * kHeight);
+  align_buffer_page_end(dst_c, kWidth * 4 * kHeight);
+  align_buffer_page_end(dst_opt, kWidth * 4 * kHeight);
+  align_buffer_page_end(cumsum, kCumSumStride32 * (kHeight + 2) * 4);
+  memset(src_argb, 0xff, kWidth * 4 * kHeight);
+
+  for (int radius = 1; radius <= 2; ++radius) {
+    MaskCpuFlags(disable_cpu_flags_);
+    ARGBBlur(src_argb, kWidth * 4, dst_c, kWidth * 4,
+             reinterpret_cast<int32_t*>(cumsum), kCumSumStride32, kWidth,
+             kHeight, radius);
+    MaskCpuFlags(benchmark_cpu_info_);
+    memset(dst_opt, 0, kWidth * 4 * kHeight);
+    ARGBBlur(src_argb, kWidth * 4, dst_opt, kWidth * 4,
+             reinterpret_cast<int32_t*>(cumsum), kCumSumStride32, kWidth,
+             kHeight, radius);
+    for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+      ASSERT_EQ(dst_c[i], dst_opt[i]) << "radius=" << radius << " i=" << i;
+    }
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(cumsum);
+}
+
+// Regression test for ARGBLumaColorTable with standard BT.601 green weight
+// 150 (> 127) and bright pixels where R*77 + G*150 + B*29 > 32767.
+TEST_F(LibYUVPlanarTest, ARGBLumaColorTable_BrightPixels) {
+  const int kWidth = 37;
+  const int kHeight = 3;
+  align_buffer_page_end(src_argb, kWidth * 4 * kHeight);
+  align_buffer_page_end(dst_c, kWidth * 4 * kHeight);
+  align_buffer_page_end(dst_opt, kWidth * 4 * kHeight);
+  align_buffer_page_end(luma, 32768);
+  for (int i = 0; i < 32768; ++i) {
+    luma[i] = static_cast<uint8_t>(((i >> 8) * 3 + (i & 255)) & 255);
+  }
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    src_argb[i * 4 + 0] = static_cast<uint8_t>(200 + (i % 56));
+    src_argb[i * 4 + 1] = static_cast<uint8_t>(200 + ((i * 3) % 56));
+    src_argb[i * 4 + 2] = static_cast<uint8_t>(200 + ((i * 7) % 56));
+    src_argb[i * 4 + 3] = static_cast<uint8_t>(i & 255);
+  }
+
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBLumaColorTable(src_argb, kWidth * 4, dst_c, kWidth * 4, luma, kWidth,
+                     kHeight);
+  MaskCpuFlags(benchmark_cpu_info_);
+  ARGBLumaColorTable(src_argb, kWidth * 4, dst_opt, kWidth * 4, luma, kWidth,
+                     kHeight);
+  for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+    ASSERT_EQ(dst_c[i], dst_opt[i]) << "i=" << i;
+  }
+
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(luma);
+}
+
+#if defined(ENABLE_ROW_TESTS) && !defined(LIBYUV_DISABLE_X86) &&   \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || \
+     defined(__i386__))
+// Regression test for 2-byte-aligned (non-16/32-byte-aligned) Intel
+// YuvConstants and ArgbConstants structs and custom non-0x8000 kAddUV offsets.
+TEST_F(LibYUVPlanarTest, UnalignedMatrixConstantsAndCustomKAddUV) {
+  const int kWidth = 38;
+  const int kHeight = 4;
+  align_buffer_page_end(yuvc_buf, sizeof(YuvConstants) + 16);
+  align_buffer_page_end(argbc_buf, sizeof(ArgbConstants) + 16);
+  // Offset by +2 bytes (matches alignof == 2, misaligned for movdqa/vmovdqa).
+  YuvConstants* yuvc = reinterpret_cast<YuvConstants*>(yuvc_buf + 2);
+  ArgbConstants* argbc = reinterpret_cast<ArgbConstants*>(argbc_buf + 2);
+  memcpy(yuvc, &kYuvI601Constants, sizeof(YuvConstants));
+  memcpy(argbc, &kArgbI601Constants, sizeof(ArgbConstants));
+  for (int i = 0; i < 16; ++i) {
+    argbc->kAddUV[i] = 0x7200u;  // Non-default UV bias (!= 0x8000)
+  }
+
+  align_buffer_page_end(src_argb, kWidth * 4 * kHeight);
+  align_buffer_page_end(y_c, kWidth * kHeight);
+  align_buffer_page_end(u_c, kWidth * kHeight);
+  align_buffer_page_end(v_c, kWidth * kHeight);
+  align_buffer_page_end(y_opt, kWidth * kHeight);
+  align_buffer_page_end(u_opt, kWidth * kHeight);
+  align_buffer_page_end(v_opt, kWidth * kHeight);
+  align_buffer_page_end(rgb_c, kWidth * 4 * kHeight);
+  align_buffer_page_end(rgb_opt, kWidth * 4 * kHeight);
+  MemRandomize(src_argb, kWidth * 4 * kHeight);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBToI444Matrix(src_argb, kWidth * 4, y_c, kWidth, u_c, kWidth, v_c, kWidth,
+                   argbc, kWidth, kHeight);
+  I420ToARGBMatrix(y_c, kWidth, u_c, kWidth / 2, v_c, kWidth / 2, rgb_c,
+                   kWidth * 4, yuvc, kWidth, kHeight);
+
+  const int kNoAvx512 =
+      benchmark_cpu_info_ & ~(kCpuHasAVX512BW | kCpuHasAVX512VL |
+                              kCpuHasAVX512VBMI | kCpuHasAVX512VNNI);
+  const int kSsse3Only = kNoAvx512 & ~kCpuHasAVX2;
+  const int kModes[3] = {benchmark_cpu_info_, kNoAvx512, kSsse3Only};
+  for (int m = 0; m < 3; ++m) {
+    MaskCpuFlags(kModes[m]);
+    ARGBToI444Matrix(src_argb, kWidth * 4, y_opt, kWidth, u_opt, kWidth, v_opt,
+                     kWidth, argbc, kWidth, kHeight);
+    I420ToARGBMatrix(y_c, kWidth, u_c, kWidth / 2, v_c, kWidth / 2, rgb_opt,
+                     kWidth * 4, yuvc, kWidth, kHeight);
+    for (int i = 0; i < kWidth * kHeight; ++i) {
+      ASSERT_EQ(y_c[i], y_opt[i]);
+      ASSERT_EQ(u_c[i], u_opt[i]) << "mode=" << m << " i=" << i;
+      ASSERT_EQ(v_c[i], v_opt[i]) << "mode=" << m << " i=" << i;
+    }
+    for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+      ASSERT_EQ(rgb_c[i], rgb_opt[i]) << "mode=" << m << " i=" << i;
+    }
+  }
+
+  // Also test ARGBToI420Matrix with custom kAddUV and I400ToARGBMatrix with
+  // unaligned YuvConstants.
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBToI420Matrix(src_argb, kWidth * 4, y_c, kWidth, u_c, kWidth / 2, v_c,
+                   kWidth / 2, argbc, kWidth, kHeight);
+  I400ToARGBMatrix(y_c, kWidth, rgb_c, kWidth * 4, yuvc, kWidth, kHeight);
+  for (int m = 0; m < 3; ++m) {
+    MaskCpuFlags(kModes[m]);
+    ARGBToI420Matrix(src_argb, kWidth * 4, y_opt, kWidth, u_opt, kWidth / 2,
+                     v_opt, kWidth / 2, argbc, kWidth, kHeight);
+    I400ToARGBMatrix(y_c, kWidth, rgb_opt, kWidth * 4, yuvc, kWidth, kHeight);
+    for (int i = 0; i < (kWidth / 2) * (kHeight / 2); ++i) {
+      ASSERT_NEAR(u_c[i], u_opt[i], 1) << "mode=" << m << " i=" << i;
+      ASSERT_NEAR(v_c[i], v_opt[i], 1) << "mode=" << m << " i=" << i;
+    }
+    for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+      ASSERT_EQ(rgb_c[i], rgb_opt[i]) << "mode=" << m << " i=" << i;
+    }
+  }
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  free_aligned_buffer_page_end(yuvc_buf);
+  free_aligned_buffer_page_end(argbc_buf);
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(y_c);
+  free_aligned_buffer_page_end(u_c);
+  free_aligned_buffer_page_end(v_c);
+  free_aligned_buffer_page_end(y_opt);
+  free_aligned_buffer_page_end(u_opt);
+  free_aligned_buffer_page_end(v_opt);
+  free_aligned_buffer_page_end(rgb_c);
+  free_aligned_buffer_page_end(rgb_opt);
+}
+#endif  // ENABLE_ROW_TESTS
+
+// Regression test for MergeAR64Plane depth=16 (UBSan shift) and
+// MergeARGB16To8Plane depth=8 saturation on out-of-range >255 samples.
+TEST_F(LibYUVPlanarTest, MergeAR64Depth16AndMergeARGB16To8Depth8Clamp) {
+  const int kWidth = 37;
+  const int kHeight = 2;
+  align_buffer_page_end_16(src_r, kWidth * kHeight);
+  align_buffer_page_end_16(src_g, kWidth * kHeight);
+  align_buffer_page_end_16(src_b, kWidth * kHeight);
+  align_buffer_page_end_16(src_a, kWidth * kHeight);
+  align_buffer_page_end_16(ar64_c, kWidth * 4 * kHeight);
+  align_buffer_page_end_16(ar64_opt, kWidth * 4 * kHeight);
+  align_buffer_page_end(argb_c, kWidth * 4 * kHeight);
+  align_buffer_page_end(argb_opt, kWidth * 4 * kHeight);
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    src_r[i] = static_cast<uint16_t>(200u + (i * 19u));
+    src_g[i] = static_cast<uint16_t>(100u + (i * 37u));
+    src_b[i] = static_cast<uint16_t>(50u + (i * 53u));
+    src_a[i] = static_cast<uint16_t>(0x8000u + (i * 101u));
+  }
+
+  MaskCpuFlags(disable_cpu_flags_);
+  MergeAR64Plane(src_r, kWidth, src_g, kWidth, src_b, kWidth, src_a, kWidth,
+                 ar64_c, kWidth * 4, kWidth, kHeight, 16);
+  MergeARGB16To8Plane(src_r, kWidth, src_g, kWidth, src_b, kWidth, src_a,
+                      kWidth, argb_c, kWidth * 4, kWidth, kHeight, 8);
+
+  MaskCpuFlags(benchmark_cpu_info_);
+  MergeAR64Plane(src_r, kWidth, src_g, kWidth, src_b, kWidth, src_a, kWidth,
+                 ar64_opt, kWidth * 4, kWidth, kHeight, 16);
+  MergeARGB16To8Plane(src_r, kWidth, src_g, kWidth, src_b, kWidth, src_a,
+                      kWidth, argb_opt, kWidth * 4, kWidth, kHeight, 8);
+
+  for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
+    ASSERT_EQ(ar64_c[i], ar64_opt[i]);
+    ASSERT_EQ(argb_c[i], argb_opt[i]);
+  }
+
+  free_aligned_buffer_page_end_16(src_r);
+  free_aligned_buffer_page_end_16(src_g);
+  free_aligned_buffer_page_end_16(src_b);
+  free_aligned_buffer_page_end_16(src_a);
+  free_aligned_buffer_page_end_16(ar64_c);
+  free_aligned_buffer_page_end_16(ar64_opt);
+  free_aligned_buffer_page_end(argb_c);
+  free_aligned_buffer_page_end(argb_opt);
 }
 
 }  // namespace libyuv

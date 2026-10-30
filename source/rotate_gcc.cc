@@ -189,6 +189,7 @@ static const uint32_t kPermdTranspose_AVX512BW[32] = {
 // TODO(fbarchard): Use for ARGB (32 bit) and 16 bit channel transposes.
 // TODO(fbarchard): Consider removing in favor of TransposeWx16_Byte_AVX2,
 // which is within 10% of AVX512BW on most CPUs.
+LIBYUV_TARGET_AVX512BW
 static void TransposeWx16_Byte_AVX512BW(const uint8_t* src,
                                         int src_stride,
                                         uint8_t* dst_a,
@@ -748,6 +749,7 @@ void TransposeWx16_16_AVX2(const uint16_t* src,
 #if defined(HAS_TRANSPOSEWX32_16_AVX512BW)
 // Transpose 32 rows of 16 bit plane (arbitrary width) using 8x32 tiles in
 // zmm0..zmm15 with k1-masked right tail.
+LIBYUV_TARGET_AVX512BW
 void TransposeWx32_16_AVX512BW(const uint16_t* src,
                                int src_stride,
                                uint16_t* dst,
@@ -1553,6 +1555,7 @@ void TransposeWxH_32_AVX2(const uint8_t* src,
 #if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
 // Transpose 16 rows of 32 bit plane (arbitrary width) using 4x16 ZMM vertical
 // tiles in zmm0..zmm7 with k1-masked right tail.
+LIBYUV_TARGET_AVX512BW
 void TransposeWx16_32_AVX512BW(const uint8_t* src,
                                int src_stride,
                                uint8_t* dst,

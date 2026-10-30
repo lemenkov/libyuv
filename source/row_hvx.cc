@@ -988,6 +988,12 @@ void DivideRow_16_HVX(const uint16_t* src_y,
                       uint16_t* dst_y,
                       int scale,
                       int width) {
+  if (scale == 65536) {  // Divide by 1, so do memcpy.
+    if (src_y != dst_y) {
+      memcpy(dst_y, src_y, (size_t)width * 2);
+    }
+    return;
+  }
   uint32_t scale32 = ((uint32_t)(uint16_t)scale << 16) | (uint16_t)scale;
   while (width > 0) {
     int w = width >= 64 ? 64 : width;

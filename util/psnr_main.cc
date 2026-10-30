@@ -329,9 +329,12 @@ int main(int argc, const char* argv[]) {
     exit(1);
   }
 
+  if (num_rec <= 0) {
+    fclose(file_org);
+    exit(1);
+  }
   // Open all files to compare to
-  FILE** file_rec = new FILE*[num_rec];
-  memset(file_rec, 0, num_rec * sizeof(FILE*));  // NOLINT
+  FILE** file_rec = new FILE*[num_rec]();
   for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
     file_rec[cur_rec] = fopen(argv[fileindex_rec + cur_rec], "rb");
     if (file_rec[cur_rec] == NULL) {

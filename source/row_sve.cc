@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include "libyuv/row_sve.h"
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
@@ -772,6 +774,12 @@ void DivideRow_16_SVE2(const uint16_t* src_y,
                        uint16_t* dst_y,
                        int scale,
                        int width) {
+  if (scale == 65536) {  // Divide by 1, so do memcpy.
+    if (src_y != dst_y) {
+      memcpy(dst_y, src_y, (size_t)width * 2);
+    }
+    return;
+  }
   uint64_t vl;
   asm volatile(
       "cnth   %x[vl]                                     \n"

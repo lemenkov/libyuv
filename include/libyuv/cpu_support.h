@@ -55,12 +55,41 @@ extern "C" {
 #endif  // __clang__
 
 // GCC >= 4.7.0 required for AVX2.
-#if defined(__GNUC__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
+#if defined(__GNUC__) && !defined(__clang__) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) &&           \
     (defined(__x86_64__) || defined(__i386__))
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
 #define GCC_HAS_AVX2 1
 #endif  // GNUC >= 4.7
 #endif  // __GNUC__
+
+// GCC >= 9.0.0 required for AVX512 (including VNNI and VBMI).
+#if defined(__GNUC__) && !defined(__clang__) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) && defined(__x86_64__)
+#if (__GNUC__ >= 9)
+#define GCC_HAS_AVX512 1
+#endif  // GNUC >= 9
+#endif  // __GNUC__
+
+// Function target attributes so GCC enables zmm16..zmm31 and k1..k7 clobbers
+// inside AVX512 functions without emitting AVX512 in non-AVX512 functions.
+#if defined(GCC_HAS_AVX512)
+#define LIBYUV_TARGET_AVX512BW \
+  __attribute__((target("avx512bw,avx512vl,avx512f,bmi2")))
+#define LIBYUV_TARGET_AVX512VBMI \
+  __attribute__((target("avx512vbmi,avx512bw,avx512vl,avx512f,bmi2")))
+#define LIBYUV_TARGET_AVX512VNNI \
+  __attribute__((target("avx512vnni,avx512bw,avx512vl,avx512f,bmi2")))
+#define LIBYUV_TARGET_AVX512VNNIVBMI \
+  __attribute__((                    \
+      target("avx512vnni,avx512vbmi,avx512bw,avx512vl,avx512f,bmi2")))
+#elif !defined(LIBYUV_ENABLE_ROWWIN) && \
+    !(defined(_MSC_VER) && !defined(__clang__))
+#define LIBYUV_TARGET_AVX512BW
+#define LIBYUV_TARGET_AVX512VBMI
+#define LIBYUV_TARGET_AVX512VNNI
+#define LIBYUV_TARGET_AVX512VNNIVBMI
+#endif
 
 // clang >= 3.4.0 required for AVX2.
 #if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
@@ -70,7 +99,7 @@ extern "C" {
 #endif  // clang >= 3.4
 #endif  // __clang__
 
-// clang >= 6.0.0 required for AVX512.
+// clang >= 7.0.0 required for AVX512.
 #if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
     (defined(__x86_64__) || defined(__i386__))
 // clang in xcode follows a different versioning scheme.
@@ -80,12 +109,24 @@ extern "C" {
 #endif  // clang >= 7
 #endif  // __clang__
 
-// Visual C 2012 required for AVX2.
-#if (defined(_M_IX86) || defined(_M_X64)) &&                  \
-    (!defined(__clang__) || defined(LIBYUV_ENABLE_ROWWIN)) && \
-    defined(_MSC_VER) && _MSC_VER >= 1700
+// Visual C 2012 (or clang >= 3.4 with LIBYUV_ENABLE_ROWWIN) required for AVX2.
+#if ((defined(_M_IX86) || defined(_M_X64)) && !defined(__clang__) && \
+     defined(_MSC_VER) && _MSC_VER >= 1700) ||                       \
+    (defined(LIBYUV_ENABLE_ROWWIN) && defined(__clang__) &&          \
+     (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || \
+      defined(_M_IX86)) &&                                           \
+     ((__clang_major__ > 3) ||                                       \
+      (__clang_major__ == 3 && (__clang_minor__ >= 4))))
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
+
+// Visual C 2019 (or clang >= 7 with LIBYUV_ENABLE_ROWWIN) required for AVX512.
+#if (defined(_M_X64) || defined(__x86_64__)) &&                        \
+    ((!defined(__clang__) && defined(_MSC_VER) && _MSC_VER >= 1920) || \
+     (defined(LIBYUV_ENABLE_ROWWIN) && defined(__clang__) &&           \
+      (__clang_major__ >= 7) && !defined(__APPLE__)))
+#define VISUALC_HAS_AVX512 1
+#endif  // VisualStudio >= 2019
 
 #if defined(LIBYUV_ENABLE_SME)
 #undef LIBYUV_DISABLE_SME

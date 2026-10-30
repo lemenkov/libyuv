@@ -29,6 +29,7 @@ extern "C" {
      defined(_M_IX86)) &&                                           \
     ((defined(_MSC_VER) && !defined(__clang__)) ||                  \
      defined(LIBYUV_ENABLE_ROWWIN))
+#if defined(VISUALC_HAS_AVX2)
 #define HAS_TRANSPOSEWX8_AVX2
 #define HAS_TRANSPOSEUVWX8_AVX2
 #define HAS_TRANSPOSEWX8_16_AVX2
@@ -38,7 +39,8 @@ extern "C" {
 #define HAS_TRANSPOSEWXH_32_AVX2
 #define HAS_TRANSPOSEWX16_AVX2
 #define HAS_TRANSPOSEUVWX16_AVX2
-#if defined(__x86_64__) || defined(_M_X64)
+#endif
+#if defined(VISUALC_HAS_AVX512)
 #define HAS_TRANSPOSEWX16_AVX512BW
 #define HAS_TRANSPOSEUVWX16_AVX512BW
 #define HAS_TRANSPOSEWX32_16_AVX512BW
@@ -48,9 +50,10 @@ extern "C" {
 
 // The following are available for 32/64 bit GCC and clang, as inline assembly
 // in rotate_gcc.cc:
-#if !defined(LIBYUV_DISABLE_X86) &&               \
-    (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(LIBYUV_ENABLE_ROWWIN) &&             \
+#if !defined(LIBYUV_DISABLE_X86) &&                       \
+    (defined(__x86_64__) || defined(__i386__)) &&         \
+    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) &&                     \
     (!defined(_MSC_VER) || defined(__clang__))
 #define HAS_TRANSPOSEWX8_AVX2
 #define HAS_TRANSPOSEUVWX8_AVX2
@@ -63,9 +66,10 @@ extern "C" {
 #define HAS_TRANSPOSEUVWX16_AVX2
 #endif
 
-// The following are available for AVX512 clang x64 platforms:
-#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) && \
-    defined(CLANG_HAS_AVX512) && !defined(LIBYUV_ENABLE_ROWWIN) && \
+// The following are available for AVX512 GCC/clang x64 platforms:
+#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) &&    \
+    (defined(CLANG_HAS_AVX512) || defined(GCC_HAS_AVX512)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) &&                         \
     (!defined(_MSC_VER) || defined(__clang__))
 #define HAS_TRANSPOSEWX16_AVX512BW
 #define HAS_TRANSPOSEUVWX16_AVX512BW
