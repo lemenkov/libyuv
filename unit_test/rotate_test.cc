@@ -118,28 +118,28 @@ TEST_F(LibYUVRotateTest, I420Rotate270_Opt) {
 // TODO(fbarchard): Remove odd width tests.
 // Odd width tests work but disabled because they use C code and can be
 // tested by passing an odd width command line or environment variable.
-TEST_F(LibYUVRotateTest, DISABLED_I420Rotate0_Odd) {
+TEST_F(LibYUVRotateTest, I420Rotate0_Odd) {
   I420TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_width_ + 1, benchmark_height_ + 1, kRotate0,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_I420Rotate90_Odd) {
+TEST_F(LibYUVRotateTest, I420Rotate90_Odd) {
   I420TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_height_ + 1, benchmark_width_ + 1, kRotate90,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_I420Rotate180_Odd) {
+TEST_F(LibYUVRotateTest, I420Rotate180_Odd) {
   I420TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_width_ + 1, benchmark_height_ + 1, kRotate180,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_I420Rotate270_Odd) {
+TEST_F(LibYUVRotateTest, I420Rotate270_Odd) {
   I420TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_height_ + 1, benchmark_width_ + 1, kRotate270,
                  benchmark_iterations_, disable_cpu_flags_,
@@ -323,28 +323,28 @@ TEST_F(LibYUVRotateTest, I444Rotate270_Opt) {
 // TODO(fbarchard): Remove odd width tests.
 // Odd width tests work but disabled because they use C code and can be
 // tested by passing an odd width command line or environment variable.
-TEST_F(LibYUVRotateTest, DISABLED_I444Rotate0_Odd) {
+TEST_F(LibYUVRotateTest, I444Rotate0_Odd) {
   I444TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_width_ + 1, benchmark_height_ + 1, kRotate0,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_I444Rotate90_Odd) {
+TEST_F(LibYUVRotateTest, I444Rotate90_Odd) {
   I444TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_height_ + 1, benchmark_width_ + 1, kRotate90,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_I444Rotate180_Odd) {
+TEST_F(LibYUVRotateTest, I444Rotate180_Odd) {
   I444TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_width_ + 1, benchmark_height_ + 1, kRotate180,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_I444Rotate270_Odd) {
+TEST_F(LibYUVRotateTest, I444Rotate270_Odd) {
   I444TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_height_ + 1, benchmark_width_ + 1, kRotate270,
                  benchmark_iterations_, disable_cpu_flags_,
@@ -438,28 +438,28 @@ TEST_F(LibYUVRotateTest, NV12Rotate270_Opt) {
                  disable_cpu_flags_, benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_NV12Rotate0_Odd) {
+TEST_F(LibYUVRotateTest, NV12Rotate0_Odd) {
   NV12TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_width_ + 1, benchmark_height_ + 1, kRotate0,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_NV12Rotate90_Odd) {
+TEST_F(LibYUVRotateTest, NV12Rotate90_Odd) {
   NV12TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_height_ + 1, benchmark_width_ + 1, kRotate90,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_NV12Rotate180_Odd) {
+TEST_F(LibYUVRotateTest, NV12Rotate180_Odd) {
   NV12TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_width_ + 1, benchmark_height_ + 1, kRotate180,
                  benchmark_iterations_, disable_cpu_flags_,
                  benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_NV12Rotate270_Odd) {
+TEST_F(LibYUVRotateTest, NV12Rotate270_Odd) {
   NV12TestRotate(benchmark_width_ + 1, benchmark_height_ + 1,
                  benchmark_height_ + 1, benchmark_width_ + 1, kRotate270,
                  benchmark_iterations_, disable_cpu_flags_,

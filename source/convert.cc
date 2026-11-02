@@ -357,6 +357,11 @@ static int I41xToI420(const uint16_t* src_y,
     }
 #endif
   } else {
+#if defined(HAS_HALFWIDTHROW_16TO8_NEON)
+    if (TestCpuFlag(kCpuHasNEON)) {
+      HalfWidthRow_16To8 = HalfWidthRow_16To8_Odd_NEON;
+    }
+#endif
 #if defined(HAS_HALFWIDTHROW_16TO8_ODD_AVX2) || \
     defined(HAS_HALFWIDTHROW_16TO8_AVX2)
     if (TestCpuFlag(kCpuHasAVX2)) {
@@ -2159,6 +2164,11 @@ static int Px10ToI420(const uint16_t* src_y,
       SplitUVRow = SplitUVRow_SVE2;
     }
 #endif
+#if defined(HAS_SPLITUVROW_SME)
+    if (TestCpuFlag(kCpuHasSME)) {
+      SplitUVRow = SplitUVRow_SME;
+    }
+#endif
 #if defined(HAS_SPLITUVROW_LSX)
     if (TestCpuFlag(kCpuHasLSX)) {
       SplitUVRow = SplitUVRow_Any_LSX;
@@ -2331,6 +2341,11 @@ static int Px10ToI420(const uint16_t* src_y,
       }
 #endif
     } else {
+#if defined(HAS_HALFWIDTHROW_16TO8_NEON)
+      if (TestCpuFlag(kCpuHasNEON)) {
+        Half16To8 = HalfWidthRow_16To8_Odd_NEON;
+      }
+#endif
 #if defined(HAS_HALFWIDTHROW_16TO8_ODD_AVX2) || \
     defined(HAS_HALFWIDTHROW_16TO8_AVX2)
       if (TestCpuFlag(kCpuHasAVX2)) {
@@ -2562,6 +2577,12 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     YUY2ToUVRow = YUY2ToUVRow_SVE2;
   }
 #endif
+#if defined(HAS_YUY2TOYROW_SME) && defined(HAS_YUY2TOUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    YUY2ToYRow = YUY2ToYRow_SME;
+    YUY2ToUVRow = YUY2ToUVRow_SME;
+  }
+#endif
 #if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LSX;
@@ -2675,6 +2696,12 @@ int UYVYToI420(const uint8_t* src_uyvy,
     UYVYToUVRow = UYVYToUVRow_SVE2;
   }
 #endif
+#if defined(HAS_UYVYTOYROW_SME) && defined(HAS_UYVYTOUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    UYVYToYRow = UYVYToYRow_SME;
+    UYVYToUVRow = UYVYToUVRow_SME;
+  }
+#endif
 #if defined(HAS_UYVYTOYROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     UYVYToYRow = UYVYToYRow_Any_LSX;
@@ -2773,10 +2800,12 @@ int AYUVToNV12(const uint8_t* src_ayuv,
 #endif
 #if defined(HAS_AYUVTOUVROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
-    AYUVToUVRow = AYUVToUVRow_Any_SVE2;
-    if (IS_ALIGNED(width, 2)) {
-      AYUVToUVRow = AYUVToUVRow_SVE2;
-    }
+    AYUVToUVRow = AYUVToUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_AYUVTOUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    AYUVToUVRow = AYUVToUVRow_SME;
   }
 #endif
 
@@ -2850,10 +2879,12 @@ int AYUVToNV21(const uint8_t* src_ayuv,
 #endif
 #if defined(HAS_AYUVTOVUROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
-    AYUVToVURow = AYUVToVURow_Any_SVE2;
-    if (IS_ALIGNED(width, 2)) {
-      AYUVToVURow = AYUVToVURow_SVE2;
-    }
+    AYUVToVURow = AYUVToVURow_SVE2;
+  }
+#endif
+#if defined(HAS_AYUVTOVUROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    AYUVToVURow = AYUVToVURow_SME;
   }
 #endif
 

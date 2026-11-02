@@ -60,10 +60,8 @@ void TransposePlane(const uint8_t* src,
   void (*TransposeWx16)(const uint8_t* src, int src_stride, uint8_t* dst,
                         int dst_stride, int width) = TransposeWx16_C;
 #endif
-#if !defined(HAS_TRANSPOSEWX16_NEON)
   void (*TransposeWx8)(const uint8_t* src, int src_stride, uint8_t* dst,
                        int dst_stride, int width) = TransposeWx8_C;
-#endif
 
 #if defined(HAS_TRANSPOSEWX8_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
@@ -170,7 +168,6 @@ void TransposePlane(const uint8_t* src,
     }
   }
 #endif
-#if !defined(HAS_TRANSPOSEWX16_NEON)
   // Work across the source in 8x8 tiles
   while (i >= 8) {
     TransposeWx8(src, src_stride, dst, dst_stride, width);
@@ -178,7 +175,6 @@ void TransposePlane(const uint8_t* src,
     dst += 8;               // Move over 8 columns.
     i -= 8;
   }
-#endif
 
   if (i > 0) {
     TransposeWxH(src, src_stride, dst, dst_stride, width, i);

@@ -357,14 +357,14 @@ static int TestPlaneFilter_16(int src_width,
 #define DX(x, nom, denom) static_cast<int>(((Abs(x) / nom + 1) / 2) * nom * 2)
 #define SX(x, nom, denom) static_cast<int>(((x / nom + 1) / 2) * denom * 2)
 
-#define TEST_FACTOR1(name, filter, nom, denom, max_diff)                       \
-  TEST_F(LibYUVScaleTest, DISABLED_##ScalePlaneDownBy##name##_##filter##_16) { \
-    int diff = TestPlaneFilter_16(                                             \
-        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom),   \
-        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom),   \
-        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,            \
-        benchmark_cpu_info_);                                                  \
-    ASSERT_LE(diff, max_diff);                                                 \
+#define TEST_FACTOR1(name, filter, nom, denom, max_diff)                     \
+  TEST_F(LibYUVScaleTest, ScalePlaneDownBy##name##_##filter##_16) {          \
+    int diff = TestPlaneFilter_16(                                           \
+        SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
+        DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
+        kFilter##filter, benchmark_iterations_, disable_cpu_flags_,          \
+        benchmark_cpu_info_);                                                \
+    ASSERT_LE(diff, max_diff);                                               \
   }
 
 // Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but

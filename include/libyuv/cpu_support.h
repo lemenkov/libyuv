@@ -150,11 +150,24 @@ extern "C" {
 #undef LIBYUV_DISABLE_SME
 #endif
 
-// Clang 18+ required for SME due to needing __arm_tpidr2_save from compiler-rt,
-// only enabled on Linux and Android (both define __linux__) for now.
-#if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__) && \
-    defined(__linux__) && defined(__clang__) && (__clang_major__ >= 18)
+// clang >= 11.0.0 or gcc >= 10.0.0 required for SVE2.
+#if defined(__aarch64__) && !defined(LIBYUV_DISABLE_SVE)
+#if (defined(__clang__) && (__clang_major__ < 11)) || \
+    (!defined(__clang__) && defined(__GNUC__) && (__GNUC__ < 10))
+#define LIBYUV_DISABLE_SVE
+#endif
+#endif
+
+// Clang 18+ on Linux/Android, Apple Clang 17+ on macOS, or GCC 15+ on Linux
+// required for SME (__arm_tpidr2_save from compiler-rt or libgcc).
+#if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__)
+#if defined(__clang__) && ((defined(__linux__) && (__clang_major__ >= 18)) || \
+                           (defined(__APPLE__) && (__clang_major__ >= 17)))
 #define CLANG_HAS_SME 1
+#elif defined(__linux__) && !defined(__clang__) && defined(__GNUC__) && \
+    (__GNUC__ >= 15)
+#define GCC_HAS_SME 1
+#endif
 #endif
 
 #ifdef __cplusplus

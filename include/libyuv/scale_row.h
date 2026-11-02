@@ -140,8 +140,8 @@ extern "C" {
 #endif
 
 // The following are available on AArch64 SME platforms:
-#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
-    defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
 #define HAS_SCALEARGBROWDOWN2_SME
 #define HAS_SCALEROWDOWN2_16_SME
 #define HAS_SCALEROWDOWN2_SME

@@ -11431,6 +11431,56 @@ void YUY2ToUVRow_AVX512BW(const uint8_t* src_yuy2,
 }
 #endif  // HAS_YUY2TOUVROW_AVX512BW
 
+#ifdef HAS_YUY2TOUV422ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void YUY2ToUV422Row_AVX512BW(const uint8_t* src_yuy2,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width) {
+  uintptr_t temp;
+  asm volatile(
+      "sub         %1,%2                         \n"
+      "sub         $0x20,%3                      \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu8    (%0),%%zmm0                   \n"
+      "lea         0x40(%0),%0                   \n"
+      "vpsrld      $0x8,%%zmm0,%%zmm1            \n"
+      "vpsrld      $0x18,%%zmm0,%%zmm0           \n"
+      "vpmovdb     %%zmm1,(%1)                   \n"
+      "vpmovdb     %%zmm0,0x00(%1,%2,1)          \n"
+      "lea         0x10(%1),%1                   \n"
+      "sub         $0x20,%3                      \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x20,%3                      \n"
+      "jle         99f                           \n"
+      "add         $0x1,%k3                      \n"
+      "shr         $0x1,%k3                      \n"
+      "mov         $-1,%k[temp]                  \n"
+      "bzhi        %k3,%k[temp],%k[temp]         \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "vpsrld      $0x8,%%zmm0,%%zmm1            \n"
+      "vpsrld      $0x18,%%zmm0,%%zmm0           \n"
+      "vpmovdb     %%zmm1,(%1)%{%%k1%}           \n"
+      "vpmovdb     %%zmm0,0x00(%1,%2,1)%{%%k1%}  \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : "+r"(src_yuy2),     // %0
+        "+r"(dst_u),        // %1
+        "+r"(dst_v),        // %2
+        "+r"(width),        // %3
+        [temp] "=&r"(temp)  // %[temp]
+      :
+      : "memory", "cc", "xmm0", "xmm1", "k1");
+}
+#endif  // HAS_YUY2TOUV422ROW_AVX512BW
+
 #ifdef HAS_UYVYTOYROW_AVX512BW
 LIBYUV_TARGET_AVX512BW
 void UYVYToYRow_AVX512BW(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
@@ -11535,6 +11585,54 @@ void UYVYToUVRow_AVX512BW(const uint8_t* src_uyvy,
       : "memory", "cc", "xmm0", "xmm1", "k1");
 }
 #endif  // HAS_UYVYTOUVROW_AVX512BW
+
+#ifdef HAS_UYVYTOUV422ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void UYVYToUV422Row_AVX512BW(const uint8_t* src_uyvy,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width) {
+  uintptr_t temp;
+  asm volatile(
+      "sub         %1,%2                         \n"
+      "sub         $0x20,%3                      \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu8    (%0),%%zmm0                   \n"
+      "lea         0x40(%0),%0                   \n"
+      "vpmovdb     %%zmm0,(%1)                   \n"
+      "vpsrld      $0x10,%%zmm0,%%zmm0           \n"
+      "vpmovdb     %%zmm0,0x00(%1,%2,1)          \n"
+      "lea         0x10(%1),%1                   \n"
+      "sub         $0x20,%3                      \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x20,%3                      \n"
+      "jle         99f                           \n"
+      "add         $0x1,%k3                      \n"
+      "shr         $0x1,%k3                      \n"
+      "mov         $-1,%k[temp]                  \n"
+      "bzhi        %k3,%k[temp],%k[temp]         \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "vpmovdb     %%zmm0,(%1)%{%%k1%}           \n"
+      "vpsrld      $0x10,%%zmm0,%%zmm0           \n"
+      "vpmovdb     %%zmm0,0x00(%1,%2,1)%{%%k1%}  \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : "+r"(src_uyvy),     // %0
+        "+r"(dst_u),        // %1
+        "+r"(dst_v),        // %2
+        "+r"(width),        // %3
+        [temp] "=&r"(temp)  // %[temp]
+      :
+      : "memory", "cc", "xmm0", "k1");
+}
+#endif  // HAS_UYVYTOUV422ROW_AVX512BW
 
 #if defined(HAS_ARGBBLENDROW_AVX2) || defined(HAS_ARGBBLENDROW_AVX512BW)
 // Shuffle table for isolating alpha.

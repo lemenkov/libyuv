@@ -288,8 +288,12 @@ if (libyuv_use_sme) {
     use_libcxx_modules = false
 
     # SME is an Armv9-A feature, but use Armv8.5-A for compatibility with
-    # processors like Apple M4/M5 that support SME without SVE.
-    cflags = [ "-march=armv8.5-a+i8mm+sme" ]
+    # processors like Apple M4/M5/M6 that support SME without SVE.
+    if (is_clang) {
+      cflags = [ "-march=armv8.5-a+i8mm+sme" ]
+    } else {
+      cflags = [ "-march=armv8.5-a+i8mm+sve2+sme" ]
+    }
   }
 }
 

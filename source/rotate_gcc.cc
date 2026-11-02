@@ -1078,6 +1078,7 @@ void TransposeWx32_16_AVX512BW(const uint16_t* src,
         "lea          (%[dst],%[d],2),%[dst]         \n"
         "sub          $0x8,%[cnt]                    \n"
         "jg           1b                             \n"
+        "vzeroupper                                  \n"
         : [src] "+r"(src_b),  // %[src]
           [dst] "+r"(dst_b),  // %[dst]
           [cnt] "+r"(cnt),    // %[cnt]
@@ -1222,6 +1223,7 @@ void TransposeWx32_16_AVX512BW(const uint16_t* src,
         "lea          (%[dst],%[d],2),%[dst]             \n"
         "vmovdqu16    %%zmm14,(%[dst])                   \n"
         "2:                                              \n"
+        "vzeroupper                                      \n"
         : [dst] "+r"(dst_b),         // %[dst]
           [temp] "=&r"(temp)         // %[temp]
         : [src] "r"(src_b),          // %[src]
@@ -1233,7 +1235,6 @@ void TransposeWx32_16_AVX512BW(const uint16_t* src,
           "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",
           "xmm14", "xmm15", "xmm16");
   }
-  asm volatile("vzeroupper \n");
 }
 #endif  // defined(HAS_TRANSPOSEWX32_16_AVX512BW)
 
@@ -1915,16 +1916,16 @@ void TransposeWx16_32_AVX512BW(const uint8_t* src,
         "add          $0x10,%[src]                    \n"
 
         // Stage 1: 32-bit unpack across all 4 128-bit lanes
-        "vpunpckldq   %%zmm1,%%zmm0,%%zmm4             \n"
-        "vpunpckldq   %%zmm3,%%zmm2,%%zmm5             \n"
-        "vpunpckhdq   %%zmm1,%%zmm0,%%zmm6             \n"
-        "vpunpckhdq   %%zmm3,%%zmm2,%%zmm7             \n"
+        "vpunpckldq   %%zmm1,%%zmm0,%%zmm16            \n"
+        "vpunpckldq   %%zmm3,%%zmm2,%%zmm17            \n"
+        "vpunpckhdq   %%zmm1,%%zmm0,%%zmm18            \n"
+        "vpunpckhdq   %%zmm3,%%zmm2,%%zmm19            \n"
 
         // Stage 2: 64-bit unpack across all 4 128-bit lanes
-        "vpunpcklqdq  %%zmm5,%%zmm4,%%zmm0             \n"
-        "vpunpckhqdq  %%zmm5,%%zmm4,%%zmm1             \n"
-        "vpunpcklqdq  %%zmm7,%%zmm6,%%zmm2             \n"
-        "vpunpckhqdq  %%zmm7,%%zmm6,%%zmm3             \n"
+        "vpunpcklqdq  %%zmm17,%%zmm16,%%zmm0           \n"
+        "vpunpckhqdq  %%zmm17,%%zmm16,%%zmm1           \n"
+        "vpunpcklqdq  %%zmm19,%%zmm18,%%zmm2           \n"
+        "vpunpckhqdq  %%zmm19,%%zmm18,%%zmm3           \n"
 
         // Store 4 full 512-bit (64 B) rows = 16 32-bit pixels each
         "vmovdqu32    %%zmm0,(%[dst])                 \n"
@@ -1935,14 +1936,15 @@ void TransposeWx16_32_AVX512BW(const uint8_t* src,
         "lea          (%[dst],%[d],2),%[dst]          \n"
         "sub          $0x4,%[cnt]                     \n"
         "jg           1b                              \n"
+        "vzeroupper                                   \n"
         : [src] "+r"(src),    // %[src]
           [dst] "+r"(dst),    // %[dst]
           [cnt] "+r"(cnt),    // %[cnt]
           [temp] "=&r"(temp)  // %[temp]
         : [s] "r"(s),         // %[s]
           [d] "r"(d)          // %[d]
-        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
-          "xmm6", "xmm7");
+        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm16", "xmm17",
+          "xmm18", "xmm19");
     width -= n;
   }
   if (width > 0) {
@@ -1957,47 +1959,47 @@ void TransposeWx16_32_AVX512BW(const uint8_t* src,
         "vmovdqu32    (%[temp],%[s]),%%xmm3%{%%k1%}%{z%} \n"
         "lea          (%[temp],%[s],2),%[temp]           \n"
 
-        "vmovdqu32    (%[temp]),%%xmm8%{%%k1%}%{z%}      \n"
-        "vinserti32x4 $1,%%xmm8,%%zmm0,%%zmm0            \n"
-        "vmovdqu32    (%[temp],%[s]),%%xmm8%{%%k1%}%{z%} \n"
-        "vinserti32x4 $1,%%xmm8,%%zmm1,%%zmm1            \n"
+        "vmovdqu32    (%[temp]),%%xmm20%{%%k1%}%{z%}     \n"
+        "vinserti32x4 $1,%%xmm20,%%zmm0,%%zmm0           \n"
+        "vmovdqu32    (%[temp],%[s]),%%xmm20%{%%k1%}%{z%} \n"
+        "vinserti32x4 $1,%%xmm20,%%zmm1,%%zmm1           \n"
         "lea          (%[temp],%[s],2),%[temp]           \n"
-        "vmovdqu32    (%[temp]),%%xmm8%{%%k1%}%{z%}      \n"
-        "vinserti32x4 $1,%%xmm8,%%zmm2,%%zmm2            \n"
-        "vmovdqu32    (%[temp],%[s]),%%xmm8%{%%k1%}%{z%} \n"
-        "vinserti32x4 $1,%%xmm8,%%zmm3,%%zmm3            \n"
-        "lea          (%[temp],%[s],2),%[temp]           \n"
-
-        "vmovdqu32    (%[temp]),%%xmm8%{%%k1%}%{z%}      \n"
-        "vinserti32x4 $2,%%xmm8,%%zmm0,%%zmm0            \n"
-        "vmovdqu32    (%[temp],%[s]),%%xmm8%{%%k1%}%{z%} \n"
-        "vinserti32x4 $2,%%xmm8,%%zmm1,%%zmm1            \n"
-        "lea          (%[temp],%[s],2),%[temp]           \n"
-        "vmovdqu32    (%[temp]),%%xmm8%{%%k1%}%{z%}      \n"
-        "vinserti32x4 $2,%%xmm8,%%zmm2,%%zmm2            \n"
-        "vmovdqu32    (%[temp],%[s]),%%xmm8%{%%k1%}%{z%} \n"
-        "vinserti32x4 $2,%%xmm8,%%zmm3,%%zmm3            \n"
+        "vmovdqu32    (%[temp]),%%xmm20%{%%k1%}%{z%}     \n"
+        "vinserti32x4 $1,%%xmm20,%%zmm2,%%zmm2           \n"
+        "vmovdqu32    (%[temp],%[s]),%%xmm20%{%%k1%}%{z%} \n"
+        "vinserti32x4 $1,%%xmm20,%%zmm3,%%zmm3           \n"
         "lea          (%[temp],%[s],2),%[temp]           \n"
 
-        "vmovdqu32    (%[temp]),%%xmm8%{%%k1%}%{z%}      \n"
-        "vinserti32x4 $3,%%xmm8,%%zmm0,%%zmm0            \n"
-        "vmovdqu32    (%[temp],%[s]),%%xmm8%{%%k1%}%{z%} \n"
-        "vinserti32x4 $3,%%xmm8,%%zmm1,%%zmm1            \n"
+        "vmovdqu32    (%[temp]),%%xmm20%{%%k1%}%{z%}     \n"
+        "vinserti32x4 $2,%%xmm20,%%zmm0,%%zmm0           \n"
+        "vmovdqu32    (%[temp],%[s]),%%xmm20%{%%k1%}%{z%} \n"
+        "vinserti32x4 $2,%%xmm20,%%zmm1,%%zmm1           \n"
         "lea          (%[temp],%[s],2),%[temp]           \n"
-        "vmovdqu32    (%[temp]),%%xmm8%{%%k1%}%{z%}      \n"
-        "vinserti32x4 $3,%%xmm8,%%zmm2,%%zmm2            \n"
-        "vmovdqu32    (%[temp],%[s]),%%xmm8%{%%k1%}%{z%} \n"
-        "vinserti32x4 $3,%%xmm8,%%zmm3,%%zmm3            \n"
+        "vmovdqu32    (%[temp]),%%xmm20%{%%k1%}%{z%}     \n"
+        "vinserti32x4 $2,%%xmm20,%%zmm2,%%zmm2           \n"
+        "vmovdqu32    (%[temp],%[s]),%%xmm20%{%%k1%}%{z%} \n"
+        "vinserti32x4 $2,%%xmm20,%%zmm3,%%zmm3           \n"
+        "lea          (%[temp],%[s],2),%[temp]           \n"
 
-        "vpunpckldq   %%zmm1,%%zmm0,%%zmm4               \n"
-        "vpunpckldq   %%zmm3,%%zmm2,%%zmm5               \n"
-        "vpunpckhdq   %%zmm1,%%zmm0,%%zmm6               \n"
-        "vpunpckhdq   %%zmm3,%%zmm2,%%zmm7               \n"
+        "vmovdqu32    (%[temp]),%%xmm20%{%%k1%}%{z%}     \n"
+        "vinserti32x4 $3,%%xmm20,%%zmm0,%%zmm0           \n"
+        "vmovdqu32    (%[temp],%[s]),%%xmm20%{%%k1%}%{z%} \n"
+        "vinserti32x4 $3,%%xmm20,%%zmm1,%%zmm1           \n"
+        "lea          (%[temp],%[s],2),%[temp]           \n"
+        "vmovdqu32    (%[temp]),%%xmm20%{%%k1%}%{z%}     \n"
+        "vinserti32x4 $3,%%xmm20,%%zmm2,%%zmm2           \n"
+        "vmovdqu32    (%[temp],%[s]),%%xmm20%{%%k1%}%{z%} \n"
+        "vinserti32x4 $3,%%xmm20,%%zmm3,%%zmm3           \n"
 
-        "vpunpcklqdq  %%zmm5,%%zmm4,%%zmm0               \n"
-        "vpunpckhqdq  %%zmm5,%%zmm4,%%zmm1               \n"
-        "vpunpcklqdq  %%zmm7,%%zmm6,%%zmm2               \n"
-        "vpunpckhqdq  %%zmm7,%%zmm6,%%zmm3               \n"
+        "vpunpckldq   %%zmm1,%%zmm0,%%zmm16              \n"
+        "vpunpckldq   %%zmm3,%%zmm2,%%zmm17              \n"
+        "vpunpckhdq   %%zmm1,%%zmm0,%%zmm18              \n"
+        "vpunpckhdq   %%zmm3,%%zmm2,%%zmm19              \n"
+
+        "vpunpcklqdq  %%zmm17,%%zmm16,%%zmm0             \n"
+        "vpunpckhqdq  %%zmm17,%%zmm16,%%zmm1             \n"
+        "vpunpcklqdq  %%zmm19,%%zmm18,%%zmm2             \n"
+        "vpunpckhqdq  %%zmm19,%%zmm18,%%zmm3             \n"
 
         "vmovdqu32    %%zmm0,(%[dst])                    \n"
         "cmp          $1,%[width]                        \n"
@@ -2008,6 +2010,7 @@ void TransposeWx16_32_AVX512BW(const uint8_t* src,
         "lea          (%[dst],%[d],2),%[dst]             \n"
         "vmovdqu32    %%zmm2,(%[dst])                    \n"
         "2:                                              \n"
+        "vzeroupper                                      \n"
         : [dst] "+r"(dst),           // %[dst]
           [temp] "=&r"(temp)         // %[temp]
         : [src] "r"(src),            // %[src]
@@ -2015,10 +2018,9 @@ void TransposeWx16_32_AVX512BW(const uint8_t* src,
           [d] "r"(d),                // %[d]
           [col_mask] "r"(col_mask),  // %[col_mask]
           [width] "r"(width)         // %[width]
-        : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
-          "xmm6", "xmm7", "xmm8");
+        : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm16",
+          "xmm17", "xmm18", "xmm19", "xmm20");
   }
-  asm volatile("vzeroupper \n");
 }
 #endif  // defined(HAS_TRANSPOSEWX16_32_AVX512BW)
 

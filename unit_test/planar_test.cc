@@ -4849,10 +4849,16 @@ float TestScaleMaxSamples(int benchmark_width,
 
   for (j = 0; j < benchmark_iterations; j++) {
     if (opt) {
-#ifdef HAS_SCALESUMSAMPLES_NEON
-      max_opt = ScaleMaxSamples_NEON(reinterpret_cast<float*>(orig_y),
-                                     reinterpret_cast<float*>(dst_opt), scale,
-                                     kPixels);
+#ifdef HAS_SCALEMAXSAMPLES_NEON
+      if (TestCpuFlag(kCpuHasNEON)) {
+        max_opt = ScaleMaxSamples_NEON(reinterpret_cast<float*>(orig_y),
+                                       reinterpret_cast<float*>(dst_opt), scale,
+                                       kPixels);
+      } else {
+        max_opt = ScaleMaxSamples_C(reinterpret_cast<float*>(orig_y),
+                                    reinterpret_cast<float*>(dst_opt), scale,
+                                    kPixels);
+      }
 #elif defined(HAS_SCALEMAXSAMPLES_AVX2)
       if (TestCpuFlag(kCpuHasAVX2)) {
         max_opt = ScaleMaxSamples_AVX2(reinterpret_cast<float*>(orig_y),
@@ -4909,6 +4915,9 @@ float TestScaleSumSamples(int benchmark_width,
   float sum_c, sum_opt = 0.f;
   // NEON does multiple of 8, so round count up
   const int kPixels = (benchmark_width * benchmark_height + 7) & ~7;
+  if (kPixels <= 0) {
+    return 0.f;
+  }
   align_buffer_page_end(orig_y, kPixels * 4 * 3);
   uint8_t* dst_c = orig_y + kPixels * 4;
   uint8_t* dst_opt = orig_y + kPixels * 4 * 2;
@@ -4928,9 +4937,15 @@ float TestScaleSumSamples(int benchmark_width,
   for (j = 0; j < benchmark_iterations; j++) {
     if (opt) {
 #ifdef HAS_SCALESUMSAMPLES_NEON
-      sum_opt = ScaleSumSamples_NEON(reinterpret_cast<float*>(orig_y),
-                                     reinterpret_cast<float*>(dst_opt), scale,
-                                     kPixels);
+      if (TestCpuFlag(kCpuHasNEON)) {
+        sum_opt = ScaleSumSamples_NEON(reinterpret_cast<float*>(orig_y),
+                                       reinterpret_cast<float*>(dst_opt), scale,
+                                       kPixels);
+      } else {
+        sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
+                                    reinterpret_cast<float*>(dst_opt), scale,
+                                    kPixels);
+      }
 #elif defined(HAS_SCALESUMSAMPLES_AVX2)
       if (TestCpuFlag(kCpuHasAVX2)) {
         sum_opt = ScaleSumSamples_AVX2(reinterpret_cast<float*>(orig_y),
@@ -4997,6 +5012,9 @@ float TestScaleSamples(int benchmark_width,
   int i, j;
   // NEON does multiple of 8, so round count up
   const int kPixels = (benchmark_width * benchmark_height + 7) & ~7;
+  if (kPixels <= 0) {
+    return 0.f;
+  }
   align_buffer_page_end(orig_y, kPixels * 4 * 3);
   uint8_t* dst_c = orig_y + kPixels * 4;
   uint8_t* dst_opt = orig_y + kPixels * 4 * 2;
@@ -5007,17 +5025,22 @@ float TestScaleSamples(int benchmark_width,
   for (i = 0; i < kPixels; ++i) {
     (reinterpret_cast<float*>(orig_y))[i] = sinf(static_cast<float>(i) * 0.1f);
   }
-  memset(dst_c, 0, kPixels * 4);
-  memset(dst_opt, 1, kPixels * 4);
+  memset(dst_c, 0, static_cast<size_t>(kPixels) * 4);
+  memset(dst_opt, 1, static_cast<size_t>(kPixels) * 4);
 
   ScaleSamples_C(reinterpret_cast<float*>(orig_y),
                  reinterpret_cast<float*>(dst_c), scale, kPixels);
 
   for (j = 0; j < benchmark_iterations; j++) {
     if (opt) {
-#ifdef HAS_SCALESUMSAMPLES_NEON
-      ScaleSamples_NEON(reinterpret_cast<float*>(orig_y),
-                        reinterpret_cast<float*>(dst_opt), scale, kPixels);
+#ifdef HAS_SCALESAMPLES_NEON
+      if (TestCpuFlag(kCpuHasNEON)) {
+        ScaleSamples_NEON(reinterpret_cast<float*>(orig_y),
+                          reinterpret_cast<float*>(dst_opt), scale, kPixels);
+      } else {
+        ScaleSamples_C(reinterpret_cast<float*>(orig_y),
+                       reinterpret_cast<float*>(dst_opt), scale, kPixels);
+      }
 #elif defined(HAS_SCALESAMPLES_AVX2)
       if (TestCpuFlag(kCpuHasAVX2)) {
         ScaleSamples_AVX2(reinterpret_cast<float*>(orig_y),
@@ -5068,6 +5091,9 @@ float TestCopySamples(int benchmark_width,
   int i, j;
   // NEON does multiple of 16 floats, so round count up
   const int kPixels = (benchmark_width * benchmark_height + 15) & ~15;
+  if (kPixels <= 0) {
+    return 0.f;
+  }
   align_buffer_page_end(orig_y, kPixels * 4 * 3);
   uint8_t* dst_c = orig_y + kPixels * 4;
   uint8_t* dst_opt = orig_y + kPixels * 4 * 2;
@@ -5078,16 +5104,20 @@ float TestCopySamples(int benchmark_width,
   for (i = 0; i < kPixels; ++i) {
     (reinterpret_cast<float*>(orig_y))[i] = sinf(static_cast<float>(i) * 0.1f);
   }
-  memset(dst_c, 0, kPixels * 4);
-  memset(dst_opt, 1, kPixels * 4);
+  memset(dst_c, 0, static_cast<size_t>(kPixels) * 4);
+  memset(dst_opt, 1, static_cast<size_t>(kPixels) * 4);
 
   memcpy(reinterpret_cast<void*>(dst_c), reinterpret_cast<void*>(orig_y),
-         kPixels * 4);
+         static_cast<size_t>(kPixels) * 4);
 
   for (j = 0; j < benchmark_iterations; j++) {
     if (opt) {
 #ifdef HAS_COPYROW_NEON
-      CopyRow_NEON(orig_y, dst_opt, kPixels * 4);
+      if (TestCpuFlag(kCpuHasNEON)) {
+        CopyRow_NEON(orig_y, dst_opt, kPixels * 4);
+      } else {
+        CopyRow_C(orig_y, dst_opt, kPixels * 4);
+      }
 #else
       CopyRow_C(orig_y, dst_opt, kPixels * 4);
 #endif
@@ -5402,6 +5432,25 @@ TEST_F(LibYUVPlanarTest, HalfRow_Opt) {
         }
       } else
 #endif
+#if defined(HAS_HALFROW_SME)
+          if (TestCpuFlag(kCpuHasSME)) {
+        HalfRow_SME(src_pixels, stride, dst_pixels_opt, width);
+      } else
+#endif
+#if defined(HAS_HALFROW_SVE2)
+          if (TestCpuFlag(kCpuHasSVE2)) {
+        HalfRow_SVE2(src_pixels, stride, dst_pixels_opt, width);
+      } else
+#endif
+#if defined(HAS_HALFROW_NEON)
+          if (TestCpuFlag(kCpuHasNEON)) {
+        if (IS_ALIGNED(width, 16)) {
+          HalfRow_NEON(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_Any_NEON(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
       {
         HalfRow_C(src_pixels, stride, dst_pixels_opt, width);
       }
@@ -5438,6 +5487,25 @@ TEST_F(LibYUVPlanarTest, HalfRow_16_Opt) {
         }
       } else
 #endif
+#if defined(HAS_HALFROW_16_SME)
+          if (TestCpuFlag(kCpuHasSME)) {
+        HalfRow_16_SME(src_pixels, stride, dst_pixels_opt, width);
+      } else
+#endif
+#if defined(HAS_HALFROW_16_SVE2)
+          if (TestCpuFlag(kCpuHasSVE2)) {
+        HalfRow_16_SVE2(src_pixels, stride, dst_pixels_opt, width);
+      } else
+#endif
+#if defined(HAS_HALFROW_16_NEON)
+          if (TestCpuFlag(kCpuHasNEON)) {
+        if (IS_ALIGNED(width, 8)) {
+          HalfRow_16_NEON(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_16_Any_NEON(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
       {
         HalfRow_16_C(src_pixels, stride, dst_pixels_opt, width);
       }
@@ -5468,6 +5536,12 @@ TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Odd_Opt) {
 #if defined(HAS_HALFWIDTHROW_16TO8_ODD_AVX2)
       if (TestCpuFlag(kCpuHasAVX2)) {
         HalfWidthRow_16To8_Odd_AVX2(src_pixels, stride, dst_pixels_opt, 16384,
+                                    width);
+      } else
+#endif
+#if defined(HAS_HALFWIDTHROW_16TO8_NEON)
+          if (TestCpuFlag(kCpuHasNEON)) {
+        HalfWidthRow_16To8_Odd_NEON(src_pixels, stride, dst_pixels_opt, 16384,
                                     width);
       } else
 #endif
@@ -5665,6 +5739,7 @@ TEST_F(LibYUVPlanarTest, NV21Copy) {
 TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32) {
   int i, j;
   const int y_plane_size = benchmark_width_ * benchmark_height_;
+  ASSERT_GT(y_plane_size, 0);
 
   align_buffer_page_end(orig_f, y_plane_size * 4);
   align_buffer_page_end(orig_y, y_plane_size * 2);
@@ -5674,9 +5749,9 @@ TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32) {
   for (i = 0; i < y_plane_size; ++i) {
     ((float*)orig_f)[i] = (float)(i % 10000) * 3.14f;
   }
-  memset(orig_y, 1, y_plane_size * 2);
-  memset(dst_opt, 2, y_plane_size * 4);
-  memset(rec_opt, 3, y_plane_size * 2);
+  memset(orig_y, 1, static_cast<size_t>(y_plane_size) * 2);
+  memset(dst_opt, 2, static_cast<size_t>(y_plane_size) * 4);
+  memset(rec_opt, 3, static_cast<size_t>(y_plane_size) * 2);
 
   ConvertFP32ToFP16Row_NEON((const float*)orig_f, (uint16_t*)orig_y,
                             y_plane_size);
@@ -5702,6 +5777,7 @@ TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32) {
 TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32Column) {
   int i, j;
   const int y_plane_size = benchmark_width_ * benchmark_height_;
+  ASSERT_GT(y_plane_size, 0);
 
   align_buffer_page_end(orig_f, y_plane_size * 4);
   align_buffer_page_end(orig_y, y_plane_size * 2);
@@ -5711,9 +5787,9 @@ TEST_F(LibYUVPlanarTest, TestConvertFP16ToFP32Column) {
   for (i = 0; i < y_plane_size; ++i) {
     ((float*)orig_f)[i] = (float)(i % 10000) * 3.14f;
   }
-  memset(orig_y, 1, y_plane_size * 2);
-  memset(dst_opt, 2, y_plane_size * 4);
-  memset(rec_opt, 3, y_plane_size * 2);
+  memset(orig_y, 1, static_cast<size_t>(y_plane_size) * 2);
+  memset(dst_opt, 2, static_cast<size_t>(y_plane_size) * 4);
+  memset(rec_opt, 3, static_cast<size_t>(y_plane_size) * 2);
 
   ConvertFP32ToFP16Row_NEON((const float*)orig_f, (uint16_t*)orig_y,
                             y_plane_size);

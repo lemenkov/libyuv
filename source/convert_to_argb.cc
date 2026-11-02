@@ -256,6 +256,11 @@ static int NV24ToARGB(const uint8_t* src_y,
     SplitUVRow = SplitUVRow_SVE2;
   }
 #endif
+#if defined(HAS_SPLITUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    SplitUVRow = SplitUVRow_SME;
+  }
+#endif
 #if defined(HAS_SPLITUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     SplitUVRow = SplitUVRow_Any_LSX;

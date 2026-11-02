@@ -170,28 +170,28 @@ TEST_F(LibYUVRotateTest, RotatePlane270_Opt) {
                   disable_cpu_flags_, benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_RotatePlane0_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane0_Odd) {
   TestRotatePlane(benchmark_width_ + 1, benchmark_height_ + 1,
                   benchmark_width_ + 1, benchmark_height_ + 1, kRotate0,
                   benchmark_iterations_, disable_cpu_flags_,
                   benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_RotatePlane90_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane90_Odd) {
   TestRotatePlane(benchmark_width_ + 1, benchmark_height_ + 1,
                   benchmark_height_ + 1, benchmark_width_ + 1, kRotate90,
                   benchmark_iterations_, disable_cpu_flags_,
                   benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_RotatePlane180_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane180_Odd) {
   TestRotatePlane(benchmark_width_ + 1, benchmark_height_ + 1,
                   benchmark_width_ + 1, benchmark_height_ + 1, kRotate180,
                   benchmark_iterations_, disable_cpu_flags_,
                   benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, DISABLED_RotatePlane270_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane270_Odd) {
   TestRotatePlane(benchmark_width_ + 1, benchmark_height_ + 1,
                   benchmark_height_ + 1, benchmark_width_ + 1, kRotate270,
                   benchmark_iterations_, disable_cpu_flags_,

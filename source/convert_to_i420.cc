@@ -100,6 +100,11 @@ static int NV16ToI420(const uint8_t* src_y,
     SplitUVRow = SplitUVRow_SVE2;
   }
 #endif
+#if defined(HAS_SPLITUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    SplitUVRow = SplitUVRow_SME;
+  }
+#endif
 #if defined(HAS_SPLITUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     SplitUVRow = SplitUVRow_Any_LSX;
@@ -370,6 +375,11 @@ static int NV24ToI420(const uint8_t* src_y,
 #if defined(HAS_SPLITUVROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     SplitUVRow = SplitUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    SplitUVRow = SplitUVRow_SME;
   }
 #endif
 #if defined(HAS_SPLITUVROW_LSX)

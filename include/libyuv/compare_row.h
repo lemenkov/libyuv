@@ -112,8 +112,8 @@ extern "C" {
 #endif
 
 // The following are available for AArch64 SME:
-#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
-    defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
 #define HAS_SSIM4X4ROW_SME
 #define HAS_SSIMWINDOWROW_SME
 #endif

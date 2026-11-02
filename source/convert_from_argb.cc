@@ -3817,6 +3817,11 @@ int ARGBToRGB24(const uint8_t* src_argb,
     ARGBToRGB24Row = ARGBToRGB24Row_SVE2;
   }
 #endif
+#if defined(HAS_ARGBTORGB24ROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_SME;
+  }
+#endif
 #if defined(HAS_ARGBTORGB24ROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     ARGBToRGB24Row = ARGBToRGB24Row_Any_LSX;
@@ -3905,6 +3910,11 @@ int ARGBToRAW(const uint8_t* src_argb,
 #if defined(HAS_ARGBTORAWROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     ARGBToRAWRow = ARGBToRAWRow_SVE2;
+  }
+#endif
+#if defined(HAS_ARGBTORAWROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBToRAWRow = ARGBToRAWRow_SME;
   }
 #endif
 #if defined(HAS_ARGBTORAWROW_LSX)
@@ -3996,6 +4006,11 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_SVE2;
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_SME;
+  }
+#endif
 #if defined(HAS_ARGBTORGB565DITHERROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_LSX;
@@ -4082,6 +4097,11 @@ int ARGBToRGB565(const uint8_t* src_argb,
 #if defined(HAS_ARGBTORGB565ROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     ARGBToRGB565Row = ARGBToRGB565Row_SVE2;
+  }
+#endif
+#if defined(HAS_ARGBTORGB565ROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBToRGB565Row = ARGBToRGB565Row_SME;
   }
 #endif
 #if defined(HAS_ARGBTORGB565ROW_LSX)

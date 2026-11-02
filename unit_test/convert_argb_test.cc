@@ -247,21 +247,15 @@ TESTBPTOP(P410, uint16_t, 2, 1, 1, I420, uint8_t, 1, 2, 2, 10, 1, 1)
     memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                          \
     memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                      \
     MaskCpuFlags(disable_cpu_flags_);                                         \
-    double time0 = get_time();                                                \
     FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth, src_u + OFF, kStrideUV,        \
                           src_v + OFF, kStrideUV, dst_argb_c + OFF, kStrideB, \
                           kWidth, NEG kHeight);                               \
-    double time1 = get_time();                                                \
     MaskCpuFlags(benchmark_cpu_info_);                                        \
     for (int i = 0; i < benchmark_iterations_; ++i) {                         \
       FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth, src_u + OFF, kStrideUV,      \
                             src_v + OFF, kStrideUV, dst_argb_opt + OFF,       \
                             kStrideB, kWidth, NEG kHeight);                   \
     }                                                                         \
-    double time2 = get_time();                                                \
-    printf(" %8d us C - %8d us OPT\n",                                        \
-           static_cast<int>((time1 - time0) * 1e6),                           \
-           static_cast<int>((time2 - time1) * 1e6 / benchmark_iterations_));  \
     for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                      \
       ASSERT_EQ(dst_argb_c[i + OFF], dst_argb_opt[i + OFF]);                  \
     }                                                                         \
@@ -2982,6 +2976,7 @@ TEST_F(LibYUVConvertTest, P210ToAR30MatrixFilterOverflow) {
 
 #ifdef ENABLE_ROW_TESTS
 TEST_F(LibYUVConvertTest, TestARGBToUVMatrixRow_Opt) {
+#if defined(HAS_ARGBTOUVMATRIXROW_NEON)
   const int kMaxWidth = 128;
   SIMD_ALIGNED(uint8_t orig_argb_pixels[kMaxWidth * 4 * 2]);
   SIMD_ALIGNED(uint8_t dest_u_c[kMaxWidth]);
@@ -2993,7 +2988,6 @@ TEST_F(LibYUVConvertTest, TestARGBToUVMatrixRow_Opt) {
     orig_argb_pixels[i] = i * 43;
   }
 
-#if defined(HAS_ARGBTOUVMATRIXROW_NEON)
   int has_neon = TestCpuFlag(kCpuHasNEON);
   if (has_neon) {
     for (int width = 1; width <= kMaxWidth; ++width) {
@@ -3090,7 +3084,7 @@ TEST_F(LibYUVConvertTest, TestI400LargeSize) {
   free_aligned_buffer_page_end(orig_i400);
 }
 #endif  // DISABLE_SLOW_TESTS
-#endif  // !defined(DISABLE_SLOW_TESTS) && \
+#endif  // !defined(DISABLE_SLOW_TESTS) &&
         // (defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__))
 
 #endif  // !defined(LEAN_TESTS)

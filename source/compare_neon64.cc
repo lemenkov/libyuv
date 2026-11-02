@@ -26,6 +26,14 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((target("dotprod,i8mm"))), \
+                             apply_to = function)
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC target("+dotprod+i8mm")
+#endif
+
 // 256 bits at a time
 // uses short accumulator which restricts count to 131 KB
 uint32_t HammingDistance_NEON(const uint8_t* src_a,
@@ -450,6 +458,12 @@ uint32_t ARGBDetectRow_NEON(const uint8_t* argb, int width) {
   }
   return 0;
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
 
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 

@@ -92,9 +92,8 @@ extern "C" {
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #if defined(__aarch64__)
 #define HAS_TRANSPOSEWX16_NEON
-#else
-#define HAS_TRANSPOSEWX8_NEON
 #endif
+#define HAS_TRANSPOSEWX8_NEON
 #define HAS_TRANSPOSEUVWX8_NEON
 #define HAS_TRANSPOSEWX8_16_NEON
 #define HAS_TRANSPOSEWX4_32_NEON
@@ -106,8 +105,8 @@ extern "C" {
 #define HAS_TRANSPOSEWX4_32_SVE2
 #endif
 
-#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
-    defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
 #define HAS_TRANSPOSEWXH_SME
 #define HAS_TRANSPOSEUVWXH_SME
 #define HAS_TRANSPOSEWXH_16_SME

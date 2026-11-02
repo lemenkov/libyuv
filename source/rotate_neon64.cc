@@ -26,6 +26,77 @@ extern "C" {
 // This module is for GCC Neon armv8 64 bit.
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
+void TransposeWx8_NEON(const uint8_t* src,
+                       int src_stride,
+                       uint8_t* dst,
+                       int dst_stride,
+                       int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t d = dst_stride;
+  const uint8_t* temp;
+  asm volatile(
+      "1:                                          \n"
+      "mov         %[temp], %[src]                 \n"
+      "ld1         {v0.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v1.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v2.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v3.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v4.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v5.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v6.8b}, [%[temp]], %[s]        \n"
+      "ld1         {v7.8b}, [%[temp]]             \n"
+      "add         %[src], %[src], #8              \n"
+
+      // Stage 1: 8-bit transpose
+      "trn1        v16.8b, v0.8b, v1.8b            \n"
+      "trn2        v17.8b, v0.8b, v1.8b            \n"
+      "trn1        v18.8b, v2.8b, v3.8b            \n"
+      "trn2        v19.8b, v2.8b, v3.8b            \n"
+      "trn1        v20.8b, v4.8b, v5.8b            \n"
+      "trn2        v21.8b, v4.8b, v5.8b            \n"
+      "trn1        v22.8b, v6.8b, v7.8b            \n"
+      "trn2        v23.8b, v6.8b, v7.8b            \n"
+
+      // Stage 2: 16-bit transpose
+      "trn1        v0.4h, v16.4h, v18.4h           \n"
+      "trn1        v1.4h, v17.4h, v19.4h           \n"
+      "trn2        v2.4h, v16.4h, v18.4h           \n"
+      "trn2        v3.4h, v17.4h, v19.4h           \n"
+      "trn1        v4.4h, v20.4h, v22.4h           \n"
+      "trn1        v5.4h, v21.4h, v23.4h           \n"
+      "trn2        v6.4h, v20.4h, v22.4h           \n"
+      "trn2        v7.4h, v21.4h, v23.4h           \n"
+
+      // Stage 3: 32-bit transpose
+      "trn1        v16.2s, v0.2s, v4.2s            \n"
+      "trn1        v17.2s, v1.2s, v5.2s            \n"
+      "trn1        v18.2s, v2.2s, v6.2s            \n"
+      "trn1        v19.2s, v3.2s, v7.2s            \n"
+      "trn2        v20.2s, v0.2s, v4.2s            \n"
+      "trn2        v21.2s, v1.2s, v5.2s            \n"
+      "trn2        v22.2s, v2.2s, v6.2s            \n"
+      "trn2        v23.2s, v3.2s, v7.2s            \n"
+
+      "subs        %w[w], %w[w], #8                \n"
+      "st1         {v16.8b}, [%[dst]], %[d]        \n"
+      "st1         {v17.8b}, [%[dst]], %[d]        \n"
+      "st1         {v18.8b}, [%[dst]], %[d]        \n"
+      "st1         {v19.8b}, [%[dst]], %[d]        \n"
+      "st1         {v20.8b}, [%[dst]], %[d]        \n"
+      "st1         {v21.8b}, [%[dst]], %[d]        \n"
+      "st1         {v22.8b}, [%[dst]], %[d]        \n"
+      "st1         {v23.8b}, [%[dst]], %[d]        \n"
+      "b.gt        1b                              \n"
+      : [src] "+r"(src),    // %[src]
+        [dst] "+r"(dst),    // %[dst]
+        [w] "+r"(width),    // %[w]
+        [temp] "=&r"(temp)  // %[temp]
+      : [s] "r"(s),         // %[s]
+        [d] "r"(d)          // %[d]
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+
 void TransposeWx16_NEON(const uint8_t* src,
                         int src_stride,
                         uint8_t* dst,

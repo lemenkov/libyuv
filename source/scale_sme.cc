@@ -22,8 +22,16 @@ extern "C" {
 // asm statement, and other OS ABIs (e.g. Windows) differ in which registers
 // are callee-saved. List "memory" first, then "cc", then registers.
 
-#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
-    defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
+
+#if defined(__clang__)
+#pragma clang attribute push( \
+    __attribute__((target("arch=armv8.5-a+i8mm+sme"))), apply_to = function)
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC target("arch=armv8.5-a+i8mm+sve2+sme")
+#endif
 
 __arm_locally_streaming void ScaleRowDown2_SME(const uint8_t* src_ptr,
                                                ptrdiff_t src_stride,
@@ -58,7 +66,7 @@ __arm_locally_streaming void ScaleRowDown2_SME(const uint8_t* src_ptr,
       : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
         [dst_ptr] "+r"(dst),          // %[dst_ptr]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0");
 }
@@ -96,7 +104,7 @@ __arm_locally_streaming void ScaleRowDown2_16_SME(const uint16_t* src_ptr,
       : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
         [dst_ptr] "+r"(dst),          // %[dst_ptr]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0");
 }
@@ -136,7 +144,7 @@ __arm_locally_streaming void ScaleRowDown2Linear_SME(const uint8_t* src_ptr,
       : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
         [dst_ptr] "+r"(dst),          // %[dst_ptr]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0");
 }
@@ -176,7 +184,7 @@ __arm_locally_streaming void ScaleRowDown2Linear_16_SME(const uint16_t* src_ptr,
       : [src_ptr] "+r"(src_ptr),      // %[src_ptr]
         [dst_ptr] "+r"(dst),          // %[dst_ptr]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0");
 }
@@ -227,7 +235,7 @@ __arm_locally_streaming void ScaleRowDown2Box_SME(const uint8_t* src_ptr,
         [src2_ptr] "+r"(src2_ptr),    // %[src2_ptr]
         [dst_ptr] "+r"(dst),          // %[dst_ptr]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
 }
@@ -280,7 +288,7 @@ __arm_locally_streaming void ScaleRowDown2Box_16_SME(const uint16_t* src_ptr,
         [src2_ptr] "+r"(src2_ptr),    // %[src2_ptr]
         [dst_ptr] "+r"(dst),          // %[dst_ptr]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
 }
@@ -320,7 +328,7 @@ __arm_locally_streaming void ScaleUVRowDown2_SME(const uint8_t* src_uv,
       : [src_uv] "+r"(src_uv),        // %[src_uv]
         [dst_uv] "+r"(dst_uv),        // %[dst_uv]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0");
 }
@@ -361,7 +369,7 @@ __arm_locally_streaming void ScaleUVRowDown2Linear_SME(const uint8_t* src_uv,
       : [src_uv] "+r"(src_uv),        // %[src_uv]
         [dst_uv] "+r"(dst_uv),        // %[dst_uv]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0", "p1");
 }
@@ -413,7 +421,7 @@ __arm_locally_streaming void ScaleUVRowDown2Box_SME(const uint8_t* src_uv,
         [src2_uv] "+r"(src2_uv),      // %[src2_uv]
         [dst_uv] "+r"(dst_uv),        // %[dst_uv]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
         "p1");
@@ -454,7 +462,7 @@ __arm_locally_streaming void ScaleARGBRowDown2_SME(const uint8_t* src_argb,
       : [src_argb] "+r"(src_argb),    // %[src_argb]
         [dst_argb] "+r"(dst_argb),    // %[dst_argb]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0");
 }
@@ -496,7 +504,7 @@ __arm_locally_streaming void ScaleARGBRowDown2Linear_SME(
       : [src_argb] "+r"(src_argb),    // %[src_argb]
         [dst_argb] "+r"(dst_argb),    // %[dst_argb]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "p0", "p1");
 }
@@ -548,7 +556,7 @@ __arm_locally_streaming void ScaleARGBRowDown2Box_SME(const uint8_t* src_argb,
         [src2_argb] "+r"(src2_argb),  // %[src2_argb]
         [dst_argb] "+r"(dst_argb),    // %[dst_argb]
         [dst_width] "+r"(dst_width),  // %[dst_width]
-        [vl] "=r"(vl)                 // %[vl]
+        [vl] "=&r"(vl)                // %[vl]
       :
       : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
         "p1");
@@ -619,8 +627,14 @@ __arm_locally_streaming void ScaleUVAddCols3_SME(int dst_width,
         "p2", "p3");
 }
 
-#endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
-        // defined(__aarch64__)
+#if defined(__clang__)
+#pragma clang attribute pop
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
+
+#endif  // !defined(LIBYUV_DISABLE_SME) && (defined(CLANG_HAS_SME) ||
+        // defined(GCC_HAS_SME)) && defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"

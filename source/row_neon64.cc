@@ -32,6 +32,14 @@ extern "C" {
 // This module is for GCC Neon armv8 64 bit.
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((target("dotprod,i8mm"))), \
+                             apply_to = function)
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC target("+dotprod+i8mm")
+#endif
+
 // v0.8h: Y
 // v1.16b: 8U, 8V
 
@@ -6114,6 +6122,12 @@ void ARGBAffineRow_NEON(const uint8_t* src_argb,
         "r"(src_argb)          // %6
       : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
 
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 

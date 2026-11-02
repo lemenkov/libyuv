@@ -18,6 +18,14 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
+#if defined(__clang__)
+#pragma clang attribute push( \
+    __attribute__((target("arch=armv8.5-a+i8mm+sve2"))), apply_to = function)
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC target("arch=armv8.5-a+i8mm+sve2")
+#endif
+
 // Transpose 32 bit values (ARGB) in Wx4 tiles using SVE2 with predication
 // for tail widths.
 void TransposeWx4_32_SVE2(const uint8_t* src,
@@ -106,7 +114,7 @@ void TransposeWx4_32_SVE2(const uint8_t* src,
         [dst3] "+r"(dst3),   // %[dst3]
         [width] "+r"(width)  // %[width]
       : [s4] "r"(s4)         // %[s4]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0");
 }
 
 void TransposeWx8_16_SVE2(const uint16_t* src,
@@ -270,6 +278,12 @@ void TransposeWx8_16_SVE2(const uint16_t* src,
       : "memory", "cc", "p0", "p1", "z0", "z1", "z2", "z3", "z4", "z5", "z6",
         "z7", "z16", "z17", "z18", "z19", "z20", "z21", "z22", "z23");
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 

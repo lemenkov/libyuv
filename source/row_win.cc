@@ -6778,6 +6778,35 @@ void YUY2ToUVRow_AVX512BW(const uint8_t* src_yuy2,
 }
 #endif  // HAS_YUY2TOUVROW_AVX512BW
 
+#ifdef HAS_YUY2TOUV422ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void YUY2ToUV422Row_AVX512BW(const uint8_t* src_yuy2,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width) {
+  while (width >= 32) {
+    __m512i r0 = _mm512_loadu_si512((const __m512i*)src_yuy2);
+    src_yuy2 += 64;
+    _mm_storeu_si128((__m128i*)dst_u,
+                     _mm512_cvtepi32_epi8(_mm512_srli_epi32(r0, 8)));
+    _mm_storeu_si128((__m128i*)dst_v,
+                     _mm512_cvtepi32_epi8(_mm512_srli_epi32(r0, 24)));
+    dst_u += 16;
+    dst_v += 16;
+    width -= 32;
+  }
+  if (width > 0) {
+    __mmask16 k = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
+    __m512i r0 = _mm512_maskz_loadu_epi32(k, src_yuy2);
+    _mm_mask_storeu_epi8(dst_u, k,
+                         _mm512_cvtepi32_epi8(_mm512_srli_epi32(r0, 8)));
+    _mm_mask_storeu_epi8(dst_v, k,
+                         _mm512_cvtepi32_epi8(_mm512_srli_epi32(r0, 24)));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_YUY2TOUV422ROW_AVX512BW
+
 #ifdef HAS_UYVYTOYROW_AVX512BW
 LIBYUV_TARGET_AVX512BW
 void UYVYToYRow_AVX512BW(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
@@ -6831,6 +6860,33 @@ void UYVYToUVRow_AVX512BW(const uint8_t* src_uyvy,
   _mm256_zeroupper();
 }
 #endif  // HAS_UYVYTOUVROW_AVX512BW
+
+#ifdef HAS_UYVYTOUV422ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void UYVYToUV422Row_AVX512BW(const uint8_t* src_uyvy,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width) {
+  while (width >= 32) {
+    __m512i r0 = _mm512_loadu_si512((const __m512i*)src_uyvy);
+    src_uyvy += 64;
+    _mm_storeu_si128((__m128i*)dst_u, _mm512_cvtepi32_epi8(r0));
+    _mm_storeu_si128((__m128i*)dst_v,
+                     _mm512_cvtepi32_epi8(_mm512_srli_epi32(r0, 16)));
+    dst_u += 16;
+    dst_v += 16;
+    width -= 32;
+  }
+  if (width > 0) {
+    __mmask16 k = (__mmask16)((1u << ((width + 1) >> 1)) - 1u);
+    __m512i r0 = _mm512_maskz_loadu_epi32(k, src_uyvy);
+    _mm_mask_storeu_epi8(dst_u, k, _mm512_cvtepi32_epi8(r0));
+    _mm_mask_storeu_epi8(dst_v, k,
+                         _mm512_cvtepi32_epi8(_mm512_srli_epi32(r0, 16)));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_UYVYTOUV422ROW_AVX512BW
 
 #ifdef HAS_ARGBSEPIAROW_AVX512VNNI
 LIBYUV_TARGET_AVX512VNNI

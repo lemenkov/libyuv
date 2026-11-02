@@ -10,6 +10,18 @@
 
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
+#if defined(__clang__)
+#pragma clang attribute push( \
+    __attribute__((target("arch=armv8.5-a+i8mm+sme"))), apply_to = function)
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC target("arch=armv8.5-a+i8mm+sve2+sme")
+#endif
+#endif
+
 #include "libyuv/row_sve.h"
 
 #ifdef __cplusplus
@@ -24,17 +36,8 @@ extern "C" {
 // asm statement, and other OS ABIs (e.g. Windows) differ in which registers
 // are callee-saved. List "memory" first, then "cc", then registers.
 
-#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
-    defined(__aarch64__)
-
-#define RGBTOARGB8_SVE_2X                                 \
-  /* Inputs: B: z16.h,  G: z17.h,  R: z18.h,  A: z19.b */ \
-  "uqshrnb     z16.b, z16.h, #6     \n" /* B0 */          \
-  "uqshrnb     z17.b, z17.h, #6     \n" /* G0 */          \
-  "uqshrnb     z18.b, z18.h, #6     \n" /* R0 */          \
-  "uqshrnt     z16.b, z20.h, #6     \n" /* B1 */          \
-  "uqshrnt     z17.b, z21.h, #6     \n" /* G1 */          \
-  "uqshrnt     z18.b, z22.h, #6     \n" /* R1 */
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
 
 __arm_locally_streaming void I444ToARGBRow_SME(
     const uint8_t* src_y,
@@ -44,44 +47,7 @@ __arm_locally_streaming void I444ToARGBRow_SME(
     const struct YuvConstants* yuvconstants,
     int width) {
   // Streaming-SVE only, no use of ZA tile.
-  uint64_t vl;
-  asm volatile(
-      "cntb     %[vl]                                   \n"
-      "ptrue    p0.b                                    \n"  //
-      YUVTORGB_SVE_SETUP
-      "dup      z19.b, #255                             \n"  // A
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.lt     2f                                      \n"
-
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue    p1.b                                    \n"
-      "1:                                               \n"  //
-      READYUV444_SVE_2X I444TORGB_SVE_2X RGBTOARGB8_SVE_2X
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
-      "incb     %[dst_argb], all, mul #4                \n"
-      "b.ge     1b                                      \n"
-
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
-
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p1.b, wzr, %w[width]                    \n"  //
-      READYUV444_SVE_2X I444TORGB_SVE_2X RGBTOARGB8_SVE_2X
-      "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
-
-      "99:                                              \n"
-      : [src_y] "+r"(src_y),                               // %[src_y]
-        [src_u] "+r"(src_u),                               // %[src_u]
-        [src_v] "+r"(src_v),                               // %[src_v]
-        [dst_argb] "+r"(dst_argb),                         // %[dst_argb]
-        [width] "+r"(width),                               // %[width]
-        [vl] "=&r"(vl)                                     // %[vl]
-      : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
-        [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+  I444ToARGBRow_SVE_SC(src_y, src_u, src_v, dst_argb, yuvconstants, width);
 }
 
 __arm_locally_streaming void I444ToRGB24Row_SME(
@@ -465,51 +431,31 @@ __arm_locally_streaming void ARGBMultiplyRow_SME(const uint8_t* src_argb,
         [width] "+r"(width),          // %[width]
         [vl] "=&r"(vl)                // %[vl]
       :
-      : "memory", "cc", "z0", "z1", "z2", "p0", "p1");
+      : "memory", "cc", "z0", "z1", "z2", "p0");
 }
 
 __arm_locally_streaming void MergeUVRow_SME(const uint8_t* src_u,
                                             const uint8_t* src_v,
                                             uint8_t* dst_uv,
                                             int width) {
-  // Streaming-SVE only, no use of ZA tile.
-  int vl;
-  asm volatile(
-      "cntb    %x[vl]                                   \n"
-      "subs    %w[width], %w[width], %w[vl]             \n"
-      "b.lt    2f                                       \n"
+  MergeUVRow_SVE_SC(src_u, src_v, dst_uv, width);
+}
 
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue   p0.b                                     \n"
-      "1:                                               \n"
-      "ld1b    {z1.b}, p0/z, [%[src_u]]                 \n"
-      "ld1b    {z2.b}, p0/z, [%[src_v]]                 \n"
-      "incb    %[src_u]                                 \n"
-      "incb    %[src_v]                                 \n"
-      "subs    %w[width], %w[width], %w[vl]             \n"
-      "st2b    {z1.b, z2.b}, p0, [%[dst_uv]]            \n"
-      "incb    %[dst_uv], all, mul #2                   \n"
-      "b.ge    1b                                       \n"
+__arm_locally_streaming void SplitUVRow_SME(const uint8_t* src_uv,
+                                            uint8_t* dst_u,
+                                            uint8_t* dst_v,
+                                            int width) {
+  SplitUVRow_SVE_SC(src_uv, dst_u, dst_v, width);
+}
 
-      "2:                                               \n"
-      "adds    %w[width], %w[width], %w[vl]             \n"
-      "b.eq    99f                                      \n"
-
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt p0.b, wzr, %w[width]                     \n"
-      "ld1b    {z1.b}, p0/z, [%[src_u]]                 \n"
-      "ld1b    {z2.b}, p0/z, [%[src_v]]                 \n"
-      "st2b    {z1.b, z2.b}, p0, [%[dst_uv]]            \n"
-
-      "99:                                              \n"
-      : [src_u] "+r"(src_u),    // %[src_u]
-        [src_v] "+r"(src_v),    // %[src_v]
-        [dst_uv] "+r"(dst_uv),  // %[dst_uv]
-        [width] "+r"(width),    // %[width]
-        [vl] "=&r"(vl)          // %[vl]
-      :
-      : "memory", "cc", "z1", "z2", "p0");
+__arm_locally_streaming void HalfMergeUVRow_SME(const uint8_t* src_u,
+                                                int src_stride_u,
+                                                const uint8_t* src_v,
+                                                int src_stride_v,
+                                                uint8_t* dst_uv,
+                                                int width) {
+  HalfMergeUVRow_SVE_SC(src_u, src_stride_u, src_v, src_stride_v, dst_uv,
+                        width);
 }
 
 __arm_locally_streaming void MergeUVRow_16_SME(const uint16_t* src_u,
@@ -628,87 +574,14 @@ __arm_locally_streaming void Convert16To8Row_SME(const uint16_t* src_y,
 __arm_locally_streaming void CopyRow_SME(const uint8_t* src,
                                          uint8_t* dst,
                                          int width) {
-  // Streaming-SVE only, no use of ZA tile.
-  int vl;
-  asm volatile(
-      "cntb    %x[vl]                                   \n"
-      "subs    %w[width], %w[width], %w[vl]             \n"
-      "b.lt    2f                                       \n"
-
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue   p0.b                                     \n"
-      "1:                                               \n"
-      "ld1b    {z0.b}, p0/z, [%[src]]                   \n"
-      "incb    %[src]                                   \n"
-      "subs    %w[width], %w[width], %w[vl]             \n"
-      "st1b    {z0.b}, p0, [%[dst]]                     \n"
-      "incb    %[dst]                                   \n"
-      "b.ge    1b                                       \n"
-
-      "2:                                               \n"
-      "adds    %w[width], %w[width], %w[vl]             \n"
-      "b.eq    99f                                      \n"
-
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt p0.b, wzr, %w[width]                     \n"
-      "ld1b    {z0.b}, p0/z, [%[src]]                   \n"
-      "st1b    {z0.b}, p0, [%[dst]]                     \n"
-
-      "99:                                              \n"
-      : [src] "+r"(src),      // %[src]
-        [dst] "+r"(dst),      // %[dst]
-        [width] "+r"(width),  // %[width]
-        [vl] "=&r"(vl)        // %[vl]
-      :
-      : "memory", "cc", "z0", "p0");
+  CopyRow_SVE_SC(src, dst, width);
 }
 
-__arm_locally_streaming static void HalfRow_SME(uint8_t* dst_ptr,
-                                                const uint8_t* src_ptr,
-                                                ptrdiff_t src_stride,
-                                                int width) {
-  const uint8_t* src_ptr1 = src_ptr + src_stride;
-
-  int vl;
-  asm volatile(
-      "cntb     %x[vl]                                  \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.lt     2f                                      \n"
-
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue    p0.b                                    \n"
-      "1:                                               \n"
-      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
-      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
-      "incb     %[src_ptr]                              \n"
-      "incb     %[src_ptr1]                             \n"
-      "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
-      "incb     %[dst_ptr]                              \n"
-      "b.ge     1b                                      \n"
-
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
-
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p0.b, wzr, %w[width]                    \n"
-      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
-      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
-      "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
-      "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
-
-      "99:                                              \n"
-      : [src_ptr] "+r"(src_ptr),    // %[src_ptr]
-        [src_ptr1] "+r"(src_ptr1),  // %[src_ptr1]
-        [dst_ptr] "+r"(dst_ptr),    // %[dst_ptr]
-        [width] "+r"(width),        // %[width]
-        [vl] "=&r"(vl)              // %[vl]
-      :
-      : "memory", "cc", "z2", "z3", "p0");
+__arm_locally_streaming void HalfRow_SME(const uint8_t* src_ptr,
+                                         ptrdiff_t src_stride,
+                                         uint8_t* dst_ptr,
+                                         int width) {
+  HalfRow_SVE_SC(src_ptr, src_stride, dst_ptr, width);
 }
 
 __arm_locally_streaming void InterpolateRow_SME(uint8_t* dst_ptr,
@@ -716,122 +589,14 @@ __arm_locally_streaming void InterpolateRow_SME(uint8_t* dst_ptr,
                                                 ptrdiff_t src_stride,
                                                 int width,
                                                 int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
-  const uint8_t* src_ptr1 = src_ptr + src_stride;
-
-  if (y0_fraction == 0) {
-    CopyRow_SME(src_ptr1, dst_ptr, width);
-    return;
-  }
-  if (y0_fraction == 128) {
-    HalfRow_SME(dst_ptr, src_ptr, src_stride, width);
-    return;
-  }
-  if (y0_fraction == 256) {
-    CopyRow_SME(src_ptr, dst_ptr, width);
-    return;
-  }
-
-  int vl;
-  asm volatile(
-      "cntb     %x[vl]                                  \n"
-      "dup      z0.b, %w[y0_fraction]                   \n"
-      "dup      z1.b, %w[y1_fraction]                   \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.lt     2f                                      \n"
-
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue    p0.b                                    \n"
-      "1:                                               \n"
-      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
-      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
-      "incb     %[src_ptr]                              \n"
-      "incb     %[src_ptr1]                             \n"
-      "umullb   z4.h, z2.b, z0.b                        \n"
-      "umullt   z2.h, z2.b, z0.b                        \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "umlalb   z4.h, z3.b, z1.b                        \n"
-      "umlalt   z2.h, z3.b, z1.b                        \n"
-      "rshrnb   z3.b, z4.h, #8                          \n"
-      "rshrnt   z3.b, z2.h, #8                          \n"
-      "st1b     {z3.b}, p0, [%[dst_ptr]]                \n"
-      "incb     %[dst_ptr]                              \n"
-      "b.ge     1b                                      \n"
-
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
-
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p0.b, wzr, %w[width]                    \n"
-      "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
-      "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
-      "umullb   z4.h, z2.b, z0.b                        \n"
-      "umullt   z2.h, z2.b, z0.b                        \n"
-      "umlalb   z4.h, z3.b, z1.b                        \n"
-      "umlalt   z2.h, z3.b, z1.b                        \n"
-      "rshrnb   z3.b, z4.h, #8                          \n"
-      "rshrnt   z3.b, z2.h, #8                          \n"
-      "st1b     {z3.b}, p0, [%[dst_ptr]]                \n"
-
-      "99:                                              \n"
-      : [src_ptr] "+r"(src_ptr),         // %[src_ptr]
-        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
-        [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
-        [width] "+r"(width),             // %[width]
-        [vl] "=&r"(vl)                   // %[vl]
-      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
-        [y1_fraction] "r"(y1_fraction)   // %[y1_fraction]
-      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "p0");
+  InterpolateRow_SVE_SC(dst_ptr, src_ptr, src_stride, width, source_y_fraction);
 }
 
-__arm_locally_streaming static void HalfRow_16_SME(uint16_t* dst_ptr,
-                                                   const uint16_t* src_ptr,
-                                                   ptrdiff_t src_stride,
-                                                   int width) {
-  const uint16_t* src_ptr1 = src_ptr + src_stride;
-
-  int vl;
-  asm volatile(
-      "cnth     %x[vl]                                  \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "b.lt     2f                                      \n"
-
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue    p0.h                                    \n"
-      "1:                                               \n"
-      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
-      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
-      "incb     %[src_ptr]                              \n"
-      "incb     %[src_ptr1]                             \n"
-      "urhadd   z2.h, p0/m, z2.h, z3.h                  \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "st1h     {z2.h}, p0, [%[dst_ptr]]                \n"
-      "incb     %[dst_ptr]                              \n"
-      "b.ge     1b                                      \n"
-
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
-
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p0.h, wzr, %w[width]                    \n"
-      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
-      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
-      "urhadd   z2.h, p0/m, z2.h, z3.h                  \n"
-      "st1h     {z2.h}, p0, [%[dst_ptr]]                \n"
-
-      "99:                                              \n"
-      : [src_ptr] "+r"(src_ptr),    // %[src_ptr]
-        [src_ptr1] "+r"(src_ptr1),  // %[src_ptr1]
-        [dst_ptr] "+r"(dst_ptr),    // %[dst_ptr]
-        [width] "+r"(width),        // %[width]
-        [vl] "=&r"(vl)              // %[vl]
-      :
-      : "memory", "cc", "z2", "z3", "p0");
+__arm_locally_streaming void HalfRow_16_SME(const uint16_t* src_ptr,
+                                            ptrdiff_t src_stride,
+                                            uint16_t* dst_ptr,
+                                            int width) {
+  HalfRow_16_SVE_SC(src_ptr, src_stride, dst_ptr, width);
 }
 
 __arm_locally_streaming void InterpolateRow_16_SME(uint16_t* dst_ptr,
@@ -839,77 +604,126 @@ __arm_locally_streaming void InterpolateRow_16_SME(uint16_t* dst_ptr,
                                                    ptrdiff_t src_stride,
                                                    int width,
                                                    int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
-  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  InterpolateRow_16_SVE_SC(dst_ptr, src_ptr, src_stride, width,
+                           source_y_fraction);
+}
 
-  if (y0_fraction == 0) {
-    CopyRow_SME((const uint8_t*)src_ptr1, (uint8_t*)dst_ptr,
-                width * sizeof(uint16_t));
-    return;
-  }
-  if (y0_fraction == 128) {
-    HalfRow_16_SME(dst_ptr, src_ptr, src_stride, width);
-    return;
-  }
-  if (y0_fraction == 256) {
-    CopyRow_SME((const uint8_t*)src_ptr, (uint8_t*)dst_ptr,
-                width * sizeof(uint16_t));
-    return;
-  }
+__arm_locally_streaming void DivideRow_16_SME(const uint16_t* src_y,
+                                              uint16_t* dst_y,
+                                              int scale,
+                                              int width) {
+  DivideRow_16_SVE_SC(src_y, dst_y, scale, width);
+}
 
-  int vl;
-  asm volatile(
-      "cnth     %x[vl]                                  \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "dup      z0.h, %w[y0_fraction]                   \n"
-      "dup      z1.h, %w[y1_fraction]                   \n"
-      "b.lt     2f                                      \n"
+__arm_locally_streaming void HalfFloatRow_SME(const uint16_t* src,
+                                              uint16_t* dst,
+                                              float scale,
+                                              int width) {
+  HalfFloatRow_SVE_SC(src, dst, scale, width);
+}
 
-      // Run bulk of computation with an all-true predicate to avoid predicate
-      // generation overhead.
-      "ptrue    p0.h                                    \n"
-      "1:                                               \n"
-      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
-      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
-      "incb     %[src_ptr]                              \n"
-      "incb     %[src_ptr1]                             \n"
-      "umullb   z4.s, z2.h, z0.h                        \n"
-      "umullt   z2.s, z2.h, z0.h                        \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
-      "umlalb   z4.s, z3.h, z1.h                        \n"
-      "umlalt   z2.s, z3.h, z1.h                        \n"
-      "rshrnb   z3.h, z4.s, #8                          \n"
-      "rshrnt   z3.h, z2.s, #8                          \n"
-      "st1h     {z3.h}, p0, [%[dst_ptr]]                \n"
-      "incb     %[dst_ptr]                              \n"
-      "b.ge     1b                                      \n"
+__arm_locally_streaming void HalfFloat1Row_SME(const uint16_t* src,
+                                               uint16_t* dst,
+                                               float scale,
+                                               int width) {
+  HalfFloat1Row_SVE_SC(src, dst, scale, width);
+}
 
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
+__arm_locally_streaming void ARGBToRGB565Row_SME(const uint8_t* src_argb,
+                                                 uint8_t* dst_rgb,
+                                                 int width) {
+  ARGBToRGB565Row_SVE_SC(src_argb, dst_rgb, width);
+}
 
-      // Calculate a predicate for the final iteration to deal with the tail.
-      "whilelt  p0.h, wzr, %w[width]                    \n"
-      "ld1h     {z2.h}, p0/z, [%[src_ptr]]              \n"
-      "ld1h     {z3.h}, p0/z, [%[src_ptr1]]             \n"
-      "umullb   z4.s, z2.h, z0.h                        \n"
-      "umullt   z2.s, z2.h, z0.h                        \n"
-      "umlalb   z4.s, z3.h, z1.h                        \n"
-      "umlalt   z2.s, z3.h, z1.h                        \n"
-      "rshrnb   z3.h, z4.s, #8                          \n"
-      "rshrnt   z3.h, z2.s, #8                          \n"
-      "st1h     {z3.h}, p0, [%[dst_ptr]]                \n"
+__arm_locally_streaming void ARGBToRGB565DitherRow_SME(const uint8_t* src_argb,
+                                                       uint8_t* dst_rgb,
+                                                       uint32_t dither4,
+                                                       int width) {
+  ARGBToRGB565DitherRow_SVE_SC(src_argb, dst_rgb, dither4, width);
+}
 
-      "99:                                              \n"
-      : [src_ptr] "+r"(src_ptr),         // %[src_ptr]
-        [src_ptr1] "+r"(src_ptr1),       // %[src_ptr1]
-        [dst_ptr] "+r"(dst_ptr),         // %[dst_ptr]
-        [width] "+r"(width),             // %[width]
-        [vl] "=&r"(vl)                   // %[vl]
-      : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
-        [y1_fraction] "r"(y1_fraction)   // %[y1_fraction]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0");
+__arm_locally_streaming void ARGB1555ToARGBRow_SME(const uint8_t* src_argb1555,
+                                                   uint8_t* dst_argb,
+                                                   int width) {
+  ARGB1555ToARGBRow_SVE_SC(src_argb1555, dst_argb, width);
+}
+
+__arm_locally_streaming void AYUVToUVRow_SME(const uint8_t* src_ayuv,
+                                             int src_stride_ayuv,
+                                             uint8_t* dst_uv,
+                                             int width) {
+  AYUVToUVRow_SVE_SC(src_ayuv, src_stride_ayuv, dst_uv, width);
+}
+
+__arm_locally_streaming void AYUVToVURow_SME(const uint8_t* src_ayuv,
+                                             int src_stride_ayuv,
+                                             uint8_t* dst_vu,
+                                             int width) {
+  AYUVToVURow_SVE_SC(src_ayuv, src_stride_ayuv, dst_vu, width);
+}
+
+__arm_locally_streaming void RAWToARGBRow_SME(const uint8_t* src_raw,
+                                              uint8_t* dst_argb,
+                                              int width) {
+  RAWToARGBRow_SVE_SC(src_raw, dst_argb, width);
+}
+
+__arm_locally_streaming void RAWToRGBARow_SME(const uint8_t* src_raw,
+                                              uint8_t* dst_rgba,
+                                              int width) {
+  RAWToRGBARow_SVE_SC(src_raw, dst_rgba, width);
+}
+
+__arm_locally_streaming void RGB24ToARGBRow_SME(const uint8_t* src_rgb24,
+                                                uint8_t* dst_argb,
+                                                int width) {
+  RGB24ToARGBRow_SVE_SC(src_rgb24, dst_argb, width);
+}
+
+__arm_locally_streaming void RAWToRGB24Row_SME(const uint8_t* src_raw,
+                                               uint8_t* dst_rgb24,
+                                               int width) {
+  RAWToRGB24Row_SVE_SC(src_raw, dst_rgb24, width);
+}
+
+__arm_locally_streaming void ARGBToRGB24Row_SME(const uint8_t* src_argb,
+                                                uint8_t* dst_rgb,
+                                                int width) {
+  ARGBToRGB24Row_SVE_SC(src_argb, dst_rgb, width);
+}
+
+__arm_locally_streaming void ARGBToRAWRow_SME(const uint8_t* src_argb,
+                                              uint8_t* dst_rgb,
+                                              int width) {
+  ARGBToRAWRow_SVE_SC(src_argb, dst_rgb, width);
+}
+
+__arm_locally_streaming void YUY2ToYRow_SME(const uint8_t* src_yuy2,
+                                            uint8_t* dst_y,
+                                            int width) {
+  YUY2ToYRow_SVE_SC(src_yuy2, dst_y, width);
+}
+
+__arm_locally_streaming void UYVYToYRow_SME(const uint8_t* src_uyvy,
+                                            uint8_t* dst_y,
+                                            int width) {
+  UYVYToYRow_SVE_SC(src_uyvy, dst_y, width);
+}
+
+__arm_locally_streaming void YUY2ToUVRow_SME(const uint8_t* src_yuy2,
+                                             int src_stride_yuy2,
+                                             uint8_t* dst_u,
+                                             uint8_t* dst_v,
+                                             int width) {
+  YUY2ToUVRow_SVE_SC(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
+}
+
+__arm_locally_streaming void UYVYToUVRow_SME(const uint8_t* src_uyvy,
+                                             int src_stride_uyvy,
+                                             uint8_t* dst_u,
+                                             uint8_t* dst_v,
+                                             int width) {
+  UYVYToUVRow_SVE_SC(src_uyvy, src_stride_uyvy, dst_u, dst_v, width);
 }
 
 __arm_locally_streaming void HalfRow_16To8_SME(const uint16_t* src_ptr,
@@ -967,7 +781,7 @@ __arm_locally_streaming void HalfRow_16To8_SME(const uint16_t* src_ptr,
         [width] "+r"(width),        // %[width]
         [vl] "=&r"(vl)              // %[vl]
       : [shift] "r"(shift)          // %[shift]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z31", "p0");
+      : "memory", "cc", "z2", "z3", "z31", "p0");
 }
 
 __arm_locally_streaming void HalfWidthRow_16To8_SME(const uint16_t* src_ptr,
@@ -1157,8 +971,14 @@ __arm_locally_streaming void ARGBAlphaBlendRow_SME(const uint8_t* src_argb0,
 }
 #endif  // HAS_ARGBALPHABLENDROW_SME
 
-#endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
-        // defined(__aarch64__)
+#if defined(__clang__)
+#pragma clang attribute pop
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
+
+#endif  // !defined(LIBYUV_DISABLE_SME) && (defined(CLANG_HAS_SME) ||
+        // defined(GCC_HAS_SME)) && defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"

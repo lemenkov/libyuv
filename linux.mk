@@ -39,6 +39,8 @@ LOCAL_OBJ_FILES := \
 	source/rotate_neon.o       \
 	source/rotate_neon64.o     \
 	source/rotate_rvv.o        \
+	source/rotate_sme.o        \
+	source/rotate_sve.o        \
 	source/rotate_win.o        \
 	source/row_any.o           \
 	source/row_common.o        \
@@ -49,6 +51,8 @@ LOCAL_OBJ_FILES := \
 	source/row_neon.o          \
 	source/row_neon64.o        \
 	source/row_rvv.o           \
+	source/row_sme.o           \
+	source/row_sve.o           \
 	source/row_win.o           \
 	source/scale.o             \
 	source/scale_any.o         \
@@ -61,6 +65,7 @@ LOCAL_OBJ_FILES := \
 	source/scale_neon64.o      \
 	source/scale_rgb.o         \
 	source/scale_rvv.o         \
+	source/scale_sme.o         \
 	source/scale_uv.o          \
 	source/scale_win.o         \
 	source/video_common.o

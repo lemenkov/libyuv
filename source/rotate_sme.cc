@@ -23,8 +23,16 @@ extern "C" {
 // asm statement, and other OS ABIs (e.g. Windows) differ in which registers
 // are callee-saved. List "memory" first, then "cc", then registers.
 
-#if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
-    defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_SME) && \
+    (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)) && defined(__aarch64__)
+
+#if defined(__clang__)
+#pragma clang attribute push( \
+    __attribute__((target("arch=armv8.5-a+i8mm+sme"))), apply_to = function)
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC target("arch=armv8.5-a+i8mm+sve2+sme")
+#endif
 
 __arm_locally_streaming __arm_new("za") void TransposeWxH_SME(
     const uint8_t* src,
@@ -81,7 +89,7 @@ __arm_locally_streaming __arm_new("za") void TransposeWxH_SME(
             [dst_stride] "r"((ptrdiff_t)dst_stride),  // %[dst_stride]
             [block_width] "r"(block_width),           // %[block_width]
             [block_height] "r"(block_height)          // %[block_height]
-          : "cc", "memory", "p0", "w12", "za");
+          : "memory", "cc", "p0", "w12", "za");
 
       src2 += vl;
       width2 -= vl;
@@ -157,7 +165,7 @@ __arm_locally_streaming __arm_new("za") void TransposeUVWxH_SME(
             [dst_stride_b] "r"((ptrdiff_t)dst_stride_b),  // %[dst_stride_b]
             [block_width] "r"(block_width * 2),           // %[block_width]
             [block_height] "r"(block_height)              // %[block_height]
-          : "cc", "memory", "p0", "w12", "za");
+          : "memory", "cc", "p0", "w12", "za");
 
       src2 += 2 * vl;
       width2 -= vl;
@@ -225,7 +233,7 @@ __arm_locally_streaming __arm_new("za") void TransposeWxH_32_SME(
             [dst_stride] "r"((ptrdiff_t)dst_stride),  // %[dst_stride]
             [block_width] "r"(block_width),           // %[block_width]
             [block_height] "r"(block_height)          // %[block_height]
-          : "cc", "memory", "p0", "w12", "za");
+          : "memory", "cc", "p0", "w12", "za");
 
       src2 += vl * 4;
       width2 -= vl;
@@ -304,8 +312,14 @@ __arm_locally_streaming __arm_new("za") void TransposeWxH_16_SME(
   } while (height > 0);
 }
 
-#endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
-        // defined(__aarch64__)
+#if defined(__clang__)
+#pragma clang attribute pop
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
+
+#endif  // !defined(LIBYUV_DISABLE_SME) && (defined(CLANG_HAS_SME) ||
+        // defined(GCC_HAS_SME)) && defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"
