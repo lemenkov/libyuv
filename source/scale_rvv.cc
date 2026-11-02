@@ -393,6 +393,19 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
 }
+
+void ScaleRowDown2Box_Odd_RVV(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst,
+                              int dst_width) {
+  dst_width -= 1;
+  if (dst_width > 0) {
+    ScaleRowDown2Box_RVV(src_ptr, src_stride, dst, dst_width);
+  }
+  const uint8_t* s = src_ptr + dst_width * 2;
+  const uint8_t* t = s + src_stride;
+  dst[dst_width] = (s[0] + t[0] + 1) >> 1;
+}
 #endif
 
 #ifdef HAS_SCALEROWDOWN4_RVV

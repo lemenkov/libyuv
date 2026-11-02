@@ -480,7 +480,6 @@ void AYUVToVURow_SVE2(const uint8_t* src_ayuv,
   int vl;
   asm volatile (
       "cntb    %x[vl]                            \n"
-      "cmp     %w[width], %w[vl]                 \n"
       "subs    %w[width], %w[width], %w[vl]      \n"
       "b.lt    2f                                \n"
 

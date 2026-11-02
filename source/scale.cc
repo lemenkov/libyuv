@@ -990,7 +990,7 @@ static int ScalePlaneBox(int src_width,
     }
 #endif
 #if defined(HAS_SCALEADDROW_WASMSIMD)
-    if (TestCpuFlag(kCpuHasWASM)) {
+    if (TestCpuFlag(kCpuHasWASMSIMD)) {
       ScaleAddRow = ScaleAddRow_Any_WASMSIMD;
       if (IS_ALIGNED(src_width, 16)) {
         ScaleAddRow = ScaleAddRow_WASMSIMD;

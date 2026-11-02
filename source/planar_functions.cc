@@ -1289,7 +1289,8 @@ int NV12ToNV21(const uint8_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
 
-  if (!src_uv || !dst_vu || width <= 0 || height == 0 || height == INT_MIN) {
+  if ((!src_y && dst_y) || !src_uv || !dst_vu || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
 
@@ -1331,7 +1332,7 @@ int DetilePlane(const uint8_t* src_y,
   void (*DetileRow)(const uint8_t* src, ptrdiff_t src_tile_stride, uint8_t* dst,
                     int width) = DetileRow_C;
   if (!src_y || !dst_y || width <= 0 || height == 0 || height == INT_MIN ||
-      !IS_POWEROFTWO(tile_height)) {
+      tile_height <= 0 || !IS_POWEROFTWO(tile_height)) {
     return -1;
   }
 
@@ -1388,7 +1389,7 @@ int DetilePlane_16(const uint16_t* src_y,
   void (*DetileRow_16)(const uint16_t* src, ptrdiff_t src_tile_stride,
                        uint16_t* dst, int width) = DetileRow_16_C;
   if (!src_y || !dst_y || width <= 0 || height == 0 || height == INT_MIN ||
-      !IS_POWEROFTWO(tile_height)) {
+      tile_height <= 0 || !IS_POWEROFTWO(tile_height)) {
     return -1;
   }
 
@@ -1450,8 +1451,8 @@ void DetileSplitUVPlane(const uint8_t* src_uv,
 
   // tile_height must be a power of 2 (16 or 32); the row loop below uses it as
   // a bit mask.
-  if (width <= 0 || height == 0 || height == INT_MIN || tile_height <= 0 ||
-      !IS_POWEROFTWO(tile_height)) {
+  if (!src_uv || !dst_u || !dst_v || width <= 0 || height == 0 ||
+      height == INT_MIN || tile_height <= 0 || !IS_POWEROFTWO(tile_height)) {
     return;
   }
   // Negative height means invert the image.
@@ -1517,8 +1518,8 @@ void DetileToYUY2(const uint8_t* src_y,
 
   // tile_height must be a power of 2 and at least 2 (16 or 32); the row loop
   // uses it as a bit mask and the UV tile is tile_height / 2 rows.
-  if (width <= 0 || height == 0 || height == INT_MIN || tile_height < 2 ||
-      !IS_POWEROFTWO(tile_height)) {
+  if (!src_y || !src_uv || !dst_yuy2 || width <= 0 || height == 0 ||
+      height == INT_MIN || tile_height < 2 || !IS_POWEROFTWO(tile_height)) {
     return;
   }
   // Negative height means invert the image.
@@ -2162,7 +2163,7 @@ void MergeXR30Plane(const uint16_t* src_r,
       }
     } else {
       MergeXR30Row = MergeXR30Row_Any_NEON;
-      if (IS_ALIGNED(width, 8)) {
+      if (IS_ALIGNED(width, 4)) {
         MergeXR30Row = MergeXR30Row_NEON;
       }
     }
@@ -2763,6 +2764,22 @@ int YUY2ToY(const uint8_t* src_yuy2,
 #if defined(HAS_YUY2TOYROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     YUY2ToYRow = YUY2ToYRow_SVE2;
+  }
+#endif
+#if defined(HAS_YUY2TOYROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    YUY2ToYRow = YUY2ToYRow_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TOYROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    YUY2ToYRow = YUY2ToYRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      YUY2ToYRow = YUY2ToYRow_LASX;
+    }
   }
 #endif
 #if defined(HAS_YUY2TOYROW_HVX)
@@ -3693,7 +3710,7 @@ int BlendPlane(const uint8_t* src_y0,
 #if defined(HAS_BLENDPLANEROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     BlendPlaneRow = BlendPlaneRow_Any_WASMSIMD;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       BlendPlaneRow = BlendPlaneRow_WASMSIMD;
     }
   }
@@ -3757,8 +3774,13 @@ int I420Blend(const uint8_t* src_y0,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
+    int halfheight = (height + 1) >> 1;
     dst_y = dst_y + (ptrdiff_t)(height - 1) * dst_stride_y;
     dst_stride_y = -dst_stride_y;
+    dst_u = dst_u + (ptrdiff_t)(halfheight - 1) * dst_stride_u;
+    dst_stride_u = -dst_stride_u;
+    dst_v = dst_v + (ptrdiff_t)(halfheight - 1) * dst_stride_v;
+    dst_stride_v = -dst_stride_v;
   }
 
   // Blend Y plane.
@@ -3802,7 +3824,7 @@ int I420Blend(const uint8_t* src_y0,
 #if defined(HAS_BLENDPLANEROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     BlendPlaneRow = BlendPlaneRow_Any_WASMSIMD;
-    if (IS_ALIGNED(halfwidth, 8)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       BlendPlaneRow = BlendPlaneRow_WASMSIMD;
     }
   }
@@ -3856,9 +3878,10 @@ int I420Blend(const uint8_t* src_y0,
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_RVV)
+#if defined(HAS_SCALEROWDOWN2BOX_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-    ScaleRowDown2 = ScaleRowDown2Box_RVV;
+    ScaleRowDown2 =
+        IS_ALIGNED(width, 2) ? ScaleRowDown2Box_RVV : ScaleRowDown2Box_Odd_RVV;
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_WASMSIMD)
@@ -4486,17 +4509,17 @@ int I420Rect(uint8_t* dst_y,
              int value_y,
              int value_u,
              int value_v) {
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  uint8_t* start_y = dst_y + y * dst_stride_y + x;
-  uint8_t* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
-  uint8_t* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
-
   if (!dst_y || !dst_u || !dst_v || width <= 0 || height == 0 ||
       height == INT_MIN || x < 0 || y < 0 || value_y < 0 || value_y > 255 ||
       value_u < 0 || value_u > 255 || value_v < 0 || value_v > 255) {
     return -1;
   }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height < 0) ? -((-height + 1) >> 1) : ((height + 1) >> 1);
+  uint8_t* start_y = dst_y + (ptrdiff_t)y * dst_stride_y + x;
+  uint8_t* start_u = dst_u + (ptrdiff_t)(y / 2) * dst_stride_u + (x / 2);
+  uint8_t* start_v = dst_v + (ptrdiff_t)(y / 2) * dst_stride_v + (x / 2);
 
   SetPlane(start_y, dst_stride_y, width, height, value_y);
   SetPlane(start_u, dst_stride_u, halfwidth, halfheight, value_u);
@@ -5629,14 +5652,14 @@ int I420Interpolate(const uint8_t* src0_y,
                     int width,
                     int height,
                     int interpolation) {
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-
   if (!src0_y || !src0_u || !src0_v || !src1_y || !src1_u || !src1_v ||
       !dst_y || !dst_u || !dst_v || width <= 0 || height == 0 ||
       height == INT_MIN) {
     return -1;
   }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height < 0) ? -((-height + 1) >> 1) : ((height + 1) >> 1);
 
   InterpolatePlane(src0_y, src0_stride_y, src1_y, src1_stride_y, dst_y,
                    dst_stride_y, width, height, interpolation);
@@ -5799,6 +5822,22 @@ int AR64Shuffle(const uint16_t* src_ar64,
     AR64ShuffleRow = ARGBShuffleRow_Any_NEON;
     if (IS_ALIGNED(width, 4)) {
       AR64ShuffleRow = ARGBShuffleRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_LSX;
+    if (IS_ALIGNED(width, 4)) {
+      AR64ShuffleRow = ARGBShuffleRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    AR64ShuffleRow = ARGBShuffleRow_Any_LASX;
+    if (IS_ALIGNED(width, 8)) {
+      AR64ShuffleRow = ARGBShuffleRow_LASX;
     }
   }
 #endif
@@ -5992,6 +6031,11 @@ static int ARGBSobelize(const uint8_t* src_argb,
 #if defined(HAS_ARGBTOYMATRIXROW_SVE2)
   if (TestCpuFlag(kCpuHasSVE2)) {
     ARGBToYMatrixRow = ARGBToYMatrixRow_SVE2;
+  }
+#endif
+#if defined(HAS_ARGBTOYMATRIXROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBToYMatrixRow = ARGBToYMatrixRow_SME;
   }
 #endif
 #if defined(HAS_ARGBTOYMATRIXROW_LSX)
@@ -6769,7 +6813,7 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
     YUY2ToYRow = YUY2ToYRow_SVE2;
   }
 #endif
-#if defined(HAS_YUY2TOYROW_LSX) && defined(HAS_YUY2TOUV422ROW_LSX)
+#if defined(HAS_YUY2TOYROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LSX;
     if (IS_ALIGNED(width, 16)) {
@@ -6777,7 +6821,7 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_LASX) && defined(HAS_YUY2TOUV422ROW_LASX)
+#if defined(HAS_YUY2TOYROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     YUY2ToYRow = YUY2ToYRow_Any_LASX;
     if (IS_ALIGNED(width, 32)) {
@@ -7043,8 +7087,11 @@ void HalfMergeUVPlane(const uint8_t* src_u,
     src_stride_v = -src_stride_v;
   }
 #if defined(HAS_HALFMERGEUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
-    HalfMergeUVRow = HalfMergeUVRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    HalfMergeUVRow = HalfMergeUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      HalfMergeUVRow = HalfMergeUVRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_HALFMERGEUVROW_SVE2)

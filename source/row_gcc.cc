@@ -11107,7 +11107,9 @@ void YUY2ToYRow_AVX2(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
+#endif  // HAS_YUY2TOYROW_AVX2
 
+#ifdef HAS_YUY2TONVUVROW_AVX2
 void YUY2ToNVUVRow_AVX2(const uint8_t* src_yuy2,
                         int stride_yuy2,
                         uint8_t* dst_uv,
@@ -11134,7 +11136,9 @@ void YUY2ToNVUVRow_AVX2(const uint8_t* src_yuy2,
       : "r"((ptrdiff_t)(stride_yuy2))  // %3
       : "memory", "cc", "xmm0", "xmm1");
 }
+#endif  // HAS_YUY2TONVUVROW_AVX2
 
+#ifdef HAS_YUY2TOUVROW_AVX2
 void YUY2ToUVRow_AVX2(const uint8_t* src_yuy2,
                       int stride_yuy2,
                       uint8_t* dst_u,
@@ -11175,7 +11179,9 @@ void YUY2ToUVRow_AVX2(const uint8_t* src_yuy2,
       : "r"((ptrdiff_t)(stride_yuy2))  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
+#endif  // HAS_YUY2TOUVROW_AVX2
 
+#ifdef HAS_YUY2TOUV422ROW_AVX2
 void YUY2ToUV422Row_AVX2(const uint8_t* src_yuy2,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
@@ -11213,7 +11219,9 @@ void YUY2ToUV422Row_AVX2(const uint8_t* src_yuy2,
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
+#endif  // HAS_YUY2TOUV422ROW_AVX2
 
+#ifdef HAS_UYVYTOYROW_AVX2
 void UYVYToYRow_AVX2(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
   asm volatile(
       "1:          \n"
@@ -11233,8 +11241,11 @@ void UYVYToYRow_AVX2(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       :
-      : "memory", "cc", "xmm0", "xmm1", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1");
 }
+#endif  // HAS_UYVYTOYROW_AVX2
+
+#ifdef HAS_UYVYTOUVROW_AVX2
 void UYVYToUVRow_AVX2(const uint8_t* src_uyvy,
                       int stride_uyvy,
                       uint8_t* dst_u,
@@ -11275,7 +11286,9 @@ void UYVYToUVRow_AVX2(const uint8_t* src_uyvy,
       : "r"((ptrdiff_t)(stride_uyvy))  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
+#endif  // HAS_UYVYTOUVROW_AVX2
 
+#ifdef HAS_UYVYTOUV422ROW_AVX2
 void UYVYToUV422Row_AVX2(const uint8_t* src_uyvy,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
@@ -11313,7 +11326,7 @@ void UYVYToUV422Row_AVX2(const uint8_t* src_uyvy,
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
-#endif  // HAS_YUY2TOYROW_AVX2
+#endif  // HAS_UYVYTOUV422ROW_AVX2
 
 #ifdef HAS_YUY2TOYROW_AVX512BW
 LIBYUV_TARGET_AVX512BW

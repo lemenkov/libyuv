@@ -461,35 +461,31 @@ int ConvertToARGB(const uint8_t* sample,
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample +
-               aligned_src_width * ((ptrdiff_t)abs_src_height + crop_y / 2) +
-               (crop_x & ~1);
+      src_uv = sample + ((ptrdiff_t)src_width * abs_src_height) +
+               ((ptrdiff_t)(crop_y / 2) * aligned_src_width) + (crop_x & ~1);
       r = NV12ToARGB(src, src_width, src_uv, aligned_src_width, dst_argb,
                      dst_stride_argb, crop_width, inv_crop_height);
       break;
     case FOURCC_NV21:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample +
-               aligned_src_width * ((ptrdiff_t)abs_src_height + crop_y / 2) +
-               (crop_x & ~1);
+      src_uv = sample + ((ptrdiff_t)src_width * abs_src_height) +
+               ((ptrdiff_t)(crop_y / 2) * aligned_src_width) + (crop_x & ~1);
       // Call NV12 but with u and v parameters swapped.
       r = NV21ToARGB(src, src_width, src_uv, aligned_src_width, dst_argb,
                      dst_stride_argb, crop_width, inv_crop_height);
       break;
     case FOURCC_NV16:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample +
-               aligned_src_width * ((ptrdiff_t)abs_src_height + crop_y) +
-               (crop_x & ~1);
+      src_uv = sample + ((ptrdiff_t)src_width * abs_src_height) +
+               ((ptrdiff_t)crop_y * aligned_src_width) + (crop_x & ~1);
       r = NV16ToARGB(src, src_width, src_uv, aligned_src_width, dst_argb,
                      dst_stride_argb, crop_width, inv_crop_height);
       break;
     case FOURCC_NV24:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample + (ptrdiff_t)aligned_src_width * abs_src_height +
-               (ptrdiff_t)aligned_src_width * 2 * crop_y +
-               (ptrdiff_t)crop_x * 2;
-      r = NV24ToARGB(src, src_width, src_uv, aligned_src_width * 2, dst_argb,
+      src_uv = sample + ((ptrdiff_t)src_width * abs_src_height) +
+               ((ptrdiff_t)crop_y * src_width * 2) + ((ptrdiff_t)crop_x * 2);
+      r = NV24ToARGB(src, src_width, src_uv, src_width * 2, dst_argb,
                      dst_stride_argb, crop_width, inv_crop_height);
       break;
     case FOURCC_P010: {

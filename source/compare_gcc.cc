@@ -76,14 +76,15 @@ uint32_t HammingDistance_SSE42(const uint8_t* src_a,
         "+r"(count),  // %2
         "=&r"(diff)   // %3
       :
-      : "cc", "memory", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10");
+      : "memory", "cc", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10");
 
   return (uint32_t)(diff);
 }
 #endif  // HAS_HAMMINGDISTANCE_SSE42
 
 #if defined(HAS_HAMMINGDISTANCE_SSSE3) || defined(HAS_HAMMINGDISTANCE_AVX2) || \
-    defined(HAS_HAMMINGDISTANCE_AVX512BW)
+    defined(HAS_HAMMINGDISTANCE_AVX512BW) ||                                   \
+    defined(HAS_HAMMINGDISTANCE_AVX512VNNI)
 static const vec8 kNibbleMask = {15, 15, 15, 15, 15, 15, 15, 15,
                                  15, 15, 15, 15, 15, 15, 15, 15};
 static const vec8 kBitCount = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
@@ -144,7 +145,7 @@ uint32_t HammingDistance_SSSE3(const uint8_t* src_a,
         "=r"(diff)         // %3
       : "m"(kNibbleMask),  // %4
         "m"(kBitCount)     // %5
-      : "cc", "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 
   return diff;
@@ -201,12 +202,13 @@ uint32_t HammingDistance_AVX2(const uint8_t* src_a,
         "=r"(diff)         // %3
       : "m"(kNibbleMask),  // %4
         "m"(kBitCount)     // %5
-      : "cc", "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 
   return diff;
 }
 #endif  // HAS_HAMMINGDISTANCE_AVX2
 
+#ifdef HAS_SUMSQUAREERROR_SSE2
 uint32_t SumSquareError_SSE2(const uint8_t* src_a,
                              const uint8_t* src_b,
                              int count) {
@@ -245,9 +247,10 @@ uint32_t SumSquareError_SSE2(const uint8_t* src_a,
         "+r"(count),  // %2
         "=r"(sse)     // %3
       :
-      : "cc", "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
   return sse;
 }
+#endif  // HAS_SUMSQUAREERROR_SSE2
 
 #ifdef HAS_SUMSQUAREERROR_AVX2
 uint32_t SumSquareError_AVX2(const uint8_t* src_a,
@@ -290,11 +293,12 @@ uint32_t SumSquareError_AVX2(const uint8_t* src_a,
         "+r"(count),  // %2
         "=r"(sse)     // %3
       :
-      : "cc", "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5");
   return sse;
 }
 #endif  // HAS_SUMSQUAREERROR_AVX2
 
+#ifdef HAS_HASHDJB2_SSE41
 static const uvec32 kHash16x33 = {0x92d9e201, 0, 0, 0};  // 33 ^ 16
 static const uvec32 kHashMul0 = {
     0x0c3525e1,  // 33 ^ 15
@@ -371,10 +375,11 @@ uint32_t HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed) {
         "m"(kHashMul1),   // %6
         "m"(kHashMul2),   // %7
         "m"(kHashMul3)    // %8
-      : "cc", "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
   return hash;
 }
+#endif  // HAS_HASHDJB2_SSE41
 #if defined(HAS_HAMMINGDISTANCE_AVX512BW) ||   \
     defined(HAS_HAMMINGDISTANCE_AVX512VNNI) || \
     defined(HAS_SUMSQUAREERROR_AVX512BW) ||    \
@@ -458,6 +463,7 @@ uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
 #ifdef HAS_HAMMINGDISTANCE_AVX512VNNI
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, accumulating byte popcounts with vpdpbusd.
+LIBYUV_TARGET_AVX512VNNI
 uint32_t HammingDistance_AVX512VNNI(const uint8_t* src_a,
                                     const uint8_t* src_b,
                                     int count) {
@@ -766,7 +772,7 @@ uint32_t HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed) {
       :
       [src] "+r"(src), [count] "+r"(count), [seed] "+r"(seed), [sum] "=&r"(sum)
       : [tbl] "r"(kHashMulLoHi)
-      : "cc", "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
   return seed;
 }
 #undef HASH32_AVX2
@@ -854,7 +860,7 @@ uint32_t HashDjb2_AVX512BW(const uint8_t* src, int count, uint32_t seed) {
       :
       [src] "+r"(src), [width] "+r"(width), [seed] "+r"(seed), [sum] "=&r"(sum)
       : [tbl] "r"(kHashMulLoHi), [pow_n] "m"(pow_n), [mask] "m"(mask)
-      : "cc", "memory", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+      : "memory", "cc", "k1", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
         "xmm6", "xmm7");
   return seed;
 }

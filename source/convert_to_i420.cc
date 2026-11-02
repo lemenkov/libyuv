@@ -19,6 +19,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"
 #include "libyuv/video_common.h"
 
 #ifdef __cplusplus
@@ -213,11 +214,17 @@ static int NV24ToI420(const uint8_t* src_y,
                       int dst_stride_v,
                       int width,
                       int height) {
-  int x, y;
+  int y;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  void (*HalfRow)(const uint8_t* src_uv, ptrdiff_t src_uv_stride,
-                  uint8_t* dst_uv, int width) = HalfRow_C;
+  void (*InterpolateRow)(uint8_t* dst_ptr, const uint8_t* src_ptr,
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) = InterpolateRow_C;
+  void (*ScaleUVRowDown2Linear)(const uint8_t* src_uv, ptrdiff_t src_stride,
+                                uint8_t* dst_uv, int dst_width) =
+      ScaleUVRowDown2Linear_C;
+  void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
+                     int width) = SplitUVRow_C;
   if ((!src_y && dst_y) || !src_uv || !dst_u || !dst_v || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
@@ -235,40 +242,180 @@ static int NV24ToI420(const uint8_t* src_y,
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
-#if defined(HAS_HALFROW_AVX2)
+#if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    HalfRow = HalfRow_Any_AVX2;
+    InterpolateRow = InterpolateRow_Any_AVX2;
     if (IS_ALIGNED(width * 2, 32)) {
-      HalfRow = HalfRow_AVX2;
+      InterpolateRow = InterpolateRow_AVX2;
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    InterpolateRow = InterpolateRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    InterpolateRow = InterpolateRow_Any_NEON;
+    if (IS_ALIGNED(width * 2, 16)) {
+      InterpolateRow = InterpolateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    InterpolateRow = InterpolateRow_SVE2;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    InterpolateRow = InterpolateRow_SME;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_Any_LSX;
+    if (IS_ALIGNED(width * 2, 16)) {
+      InterpolateRow = InterpolateRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_Any_LASX;
+    if (IS_ALIGNED(width * 2, 32)) {
+      InterpolateRow = InterpolateRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_RVV;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    InterpolateRow = InterpolateRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width * 2, 16)) {
+      InterpolateRow = InterpolateRow_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    InterpolateRow = InterpolateRow_HVX;
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_Any_AVX2;
+    if (IS_ALIGNED(halfwidth, 8)) {
+      ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 8)) {
+      ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_NEON;
+    }
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_SME;
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_RVV;
+  }
+#endif
+#if defined(HAS_SCALEUVROWDOWN2_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_HVX;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SplitUVRow = SplitUVRow_Any_SSE2;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SplitUVRow = SplitUVRow_Any_AVX2;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      SplitUVRow = SplitUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    SplitUVRow = SplitUVRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SplitUVRow = SplitUVRow_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    SplitUVRow = SplitUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    SplitUVRow = SplitUVRow_Any_LSX;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    SplitUVRow = SplitUVRow_Any_LASX;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      SplitUVRow = SplitUVRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitUVRow = SplitUVRow_RVV;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    SplitUVRow = SplitUVRow_HVX;
+  }
+#endif
 
-  align_buffer_64(row_uv, width * 2);
+  align_buffer_64(row_uv, halfwidth * 6);
   if (!row_uv) {
     return 1;
   }
+  uint8_t* row_uv_down = row_uv + halfwidth * 4;
   for (y = 0; y < halfheight; ++y) {
     if (y * 2 + 1 < height) {
-      HalfRow(src_uv, src_stride_uv, row_uv, width * 2);
+      InterpolateRow(row_uv, src_uv, src_stride_uv, width * 2, 128);
     } else {
       memcpy(row_uv, src_uv, (size_t)width * 2);
     }
-    for (x = 0; x < halfwidth - 1; ++x) {
-      dst_u[x] = (row_uv[x * 4 + 0] + row_uv[x * 4 + 2] + 1) >> 1;
-      dst_v[x] = (row_uv[x * 4 + 1] + row_uv[x * 4 + 3] + 1) >> 1;
-    }
     if (width & 1) {
-      dst_u[halfwidth - 1] = row_uv[(halfwidth - 1) * 4 + 0];
-      dst_v[halfwidth - 1] = row_uv[(halfwidth - 1) * 4 + 1];
-    } else {
-      dst_u[halfwidth - 1] = (row_uv[(halfwidth - 1) * 4 + 0] +
-                              row_uv[(halfwidth - 1) * 4 + 2] + 1) >>
-                             1;
-      dst_v[halfwidth - 1] = (row_uv[(halfwidth - 1) * 4 + 1] +
-                              row_uv[(halfwidth - 1) * 4 + 3] + 1) >>
-                             1;
+      row_uv[width * 2 + 0] = row_uv[width * 2 - 2];
+      row_uv[width * 2 + 1] = row_uv[width * 2 - 1];
     }
+    ScaleUVRowDown2Linear(row_uv, 0, row_uv_down, halfwidth);
+    SplitUVRow(row_uv_down, dst_u, dst_v, halfwidth);
     src_uv += (ptrdiff_t)src_stride_uv * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
@@ -471,7 +618,7 @@ int ConvertToI420(const uint8_t* sample,
       break;
     case FOURCC_NV16:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample + ((ptrdiff_t)aligned_src_width * abs_src_height) +
+      src_uv = sample + ((ptrdiff_t)src_width * abs_src_height) +
                ((ptrdiff_t)crop_y * aligned_src_width) + ((crop_x / 2) * 2);
       r = NV16ToI420(src, src_width, src_uv, aligned_src_width, dst_y,
                      dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
@@ -479,11 +626,11 @@ int ConvertToI420(const uint8_t* sample,
       break;
     case FOURCC_NV24:
       src = sample + ((ptrdiff_t)src_width * crop_y + crop_x);
-      src_uv = sample + ((ptrdiff_t)aligned_src_width * abs_src_height) +
-               ((ptrdiff_t)crop_y * aligned_src_width * 2) + (crop_x * 2);
-      r = NV24ToI420(src, src_width, src_uv, aligned_src_width * 2, dst_y,
-                     dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
-                     crop_width, inv_crop_height);
+      src_uv = sample + ((ptrdiff_t)src_width * abs_src_height) +
+               ((ptrdiff_t)crop_y * src_width * 2) + (crop_x * 2);
+      r = NV24ToI420(src, src_width, src_uv, src_width * 2, dst_y, dst_stride_y,
+                     dst_u, dst_stride_u, dst_v, dst_stride_v, crop_width,
+                     inv_crop_height);
       break;
     case FOURCC_P010: {
       const uint16_t* src16 = (const uint16_t*)sample;

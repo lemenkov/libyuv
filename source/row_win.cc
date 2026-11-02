@@ -3570,6 +3570,7 @@ void ARGBBlendRow_AVX2(const uint8_t* src_argb0,
 #endif  // HAS_ARGBBLENDROW_AVX2
 
 #ifdef HAS_BLENDPLANEROW_SSSE3
+LIBYUV_TARGET_SSSE3
 void BlendPlaneRow_SSSE3(const uint8_t* src0,
                          const uint8_t* src1,
                          const uint8_t* alpha,

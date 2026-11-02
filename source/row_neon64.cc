@@ -1287,8 +1287,8 @@ void UnpackMT2T_NEON(const uint8_t* src, uint16_t* dst, size_t size) {
         "+r"(dst),  // %1
         "+r"(size)  // %2
       :
-      : "cc", "memory", "w0", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-        "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 
 #if defined(LIBYUV_USE_ST2)

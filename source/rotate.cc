@@ -555,8 +555,11 @@ void SplitRotateUV180(const uint8_t* src,
   void (*MirrorSplitUVRow)(const uint8_t* src, uint8_t* dst_u, uint8_t* dst_v,
                            int width) = MirrorSplitUVRow_C;
 #if defined(HAS_MIRRORSPLITUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
-    MirrorSplitUVRow = MirrorSplitUVRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorSplitUVRow = MirrorSplitUVRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_SSSE3)
@@ -581,18 +584,27 @@ void SplitRotateUV180(const uint8_t* src,
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX) && IS_ALIGNED(width, 16)) {
-    MirrorSplitUVRow = MirrorSplitUVRow_LSX;
+  if (TestCpuFlag(kCpuHasLSX)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_Any_LSX;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorSplitUVRow = MirrorSplitUVRow_LSX;
+    }
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_LASX)
-  if (TestCpuFlag(kCpuHasLASX) && IS_ALIGNED(width, 32)) {
-    MirrorSplitUVRow = MirrorSplitUVRow_LASX;
+  if (TestCpuFlag(kCpuHasLASX)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorSplitUVRow = MirrorSplitUVRow_LASX;
+    }
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_WASMSIMD)
-  if (TestCpuFlag(kCpuHasWASMSIMD) && IS_ALIGNED(width, 16)) {
-    MirrorSplitUVRow = MirrorSplitUVRow_WASMSIMD;
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorSplitUVRow = MirrorSplitUVRow_WASMSIMD;
+    }
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_HVX)

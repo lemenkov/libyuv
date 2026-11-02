@@ -454,7 +454,7 @@ static int ScaleUVBox(int src_width,
         }
 #endif
 #if defined(HAS_SCALEUVADDCOLS3_WASMSIMD)
-        if (TestCpuFlag(kCpuHasWASM)) {
+        if (TestCpuFlag(kCpuHasWASMSIMD)) {
           ScaleUVAddCols3 = ScaleUVAddCols3_Any_WASMSIMD;
           if (IS_ALIGNED(dst_width, 8)) {
             ScaleUVAddCols3 = ScaleUVAddCols3_WASMSIMD;
@@ -515,7 +515,7 @@ static int ScaleUVBox(int src_width,
       }
 #endif
 #if defined(HAS_SCALEADDROW_WASMSIMD)
-      if (TestCpuFlag(kCpuHasWASM)) {
+      if (TestCpuFlag(kCpuHasWASMSIMD)) {
         ScaleAddRow = ScaleAddRow_Any_WASMSIMD;
         if (IS_ALIGNED(row_samples, 16)) {
           ScaleAddRow = ScaleAddRow_WASMSIMD;

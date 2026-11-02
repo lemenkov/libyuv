@@ -500,7 +500,6 @@ __arm_locally_streaming void MergeUVRow_SME(const uint8_t* src_u,
       "whilelt p0.b, wzr, %w[width]                     \n"
       "ld1b    {z1.b}, p0/z, [%[src_u]]                 \n"
       "ld1b    {z2.b}, p0/z, [%[src_v]]                 \n"
-      "subs    %w[width], %w[width], %w[vl]             \n"
       "st2b    {z1.b, z2.b}, p0, [%[dst_uv]]            \n"
 
       "99:                                              \n"
@@ -510,7 +509,7 @@ __arm_locally_streaming void MergeUVRow_SME(const uint8_t* src_u,
         [width] "+r"(width),    // %[width]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : "memory", "cc", "z0", "z1", "z2", "p0");
+      : "memory", "cc", "z1", "z2", "p0");
 }
 
 __arm_locally_streaming void MergeUVRow_16_SME(const uint16_t* src_u,
@@ -552,7 +551,6 @@ __arm_locally_streaming void MergeUVRow_16_SME(const uint16_t* src_u,
       "ld1h    {z2.h}, p0/z, [%[src_v]]                 \n"
       "lsl     z1.h, p0/m, z1.h, z0.h                   \n"
       "lsl     z2.h, p0/m, z2.h, z0.h                   \n"
-      "subs    %w[width], %w[width], %w[vl]             \n"
       "st2h    {z1.h, z2.h}, p0, [%[dst_uv]]            \n"
 
       "99:                                              \n"
@@ -624,7 +622,7 @@ __arm_locally_streaming void Convert16To8Row_SME(const uint16_t* src_y,
         [width] "+r"(width),  // %[width]
         [vl] "=&r"(vl)        // %[vl]
       : [shift] "r"(shift)    // %[shift]
-      : "cc", "memory", "z0", "z1", "z2", "p0", "p1", "p2");
+      : "memory", "cc", "z0", "z1", "z2", "p0", "p1", "p2");
 }
 
 __arm_locally_streaming void CopyRow_SME(const uint8_t* src,
@@ -701,7 +699,6 @@ __arm_locally_streaming static void HalfRow_SME(uint8_t* dst_ptr,
       "ld1b     {z2.b}, p0/z, [%[src_ptr]]              \n"
       "ld1b     {z3.b}, p0/z, [%[src_ptr1]]             \n"
       "urhadd   z2.b, p0/m, z2.b, z3.b                  \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
       "st1b     {z2.b}, p0, [%[dst_ptr]]                \n"
 
       "99:                                              \n"
@@ -711,7 +708,7 @@ __arm_locally_streaming static void HalfRow_SME(uint8_t* dst_ptr,
         [width] "+r"(width),        // %[width]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "cc", "memory", "z0", "z1", "z2", "z3", "p0");
+      : "memory", "cc", "z2", "z3", "p0");
 }
 
 __arm_locally_streaming void InterpolateRow_SME(uint8_t* dst_ptr,
@@ -787,7 +784,7 @@ __arm_locally_streaming void InterpolateRow_SME(uint8_t* dst_ptr,
         [vl] "=&r"(vl)                   // %[vl]
       : [y0_fraction] "r"(y0_fraction),  // %[y0_fraction]
         [y1_fraction] "r"(y1_fraction)   // %[y1_fraction]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "p0");
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "p0");
 }
 
 __arm_locally_streaming static void HalfRow_16_SME(uint16_t* dst_ptr,
@@ -834,7 +831,7 @@ __arm_locally_streaming static void HalfRow_16_SME(uint16_t* dst_ptr,
         [width] "+r"(width),        // %[width]
         [vl] "=&r"(vl)              // %[vl]
       :
-      : "cc", "memory", "z0", "z1", "z2", "z3", "p0");
+      : "memory", "cc", "z2", "z3", "p0");
 }
 
 __arm_locally_streaming void InterpolateRow_16_SME(uint16_t* dst_ptr,

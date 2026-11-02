@@ -1141,7 +1141,7 @@ int U010ToAB30(const uint16_t* src_y,
                int height) {
   return I010ToAR30Matrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
                           src_stride_u, dst_ab30, dst_stride_ab30,
-                          &kYuv2020Constants, width, height);
+                          &kYvu2020Constants, width, height);
 }
 
 // Convert 12 bit YUV to ARGB with matrix.
@@ -1405,7 +1405,7 @@ int U210ToAB30(const uint16_t* src_y,
                int height) {
   return I210ToAR30Matrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
                           src_stride_u, dst_ab30, dst_stride_ab30,
-                          &kYuv2020Constants, width, height);
+                          &kYvu2020Constants, width, height);
 }
 
 LIBYUV_API
@@ -7375,7 +7375,7 @@ int H420ToAR30(const uint8_t* src_y,
                int height) {
   return I420ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
                           src_stride_v, dst_ar30, dst_stride_ar30,
-                          &kYvuH709Constants, width, height);
+                          &kYuvH709Constants, width, height);
 }
 
 // Convert I420 to AB30.

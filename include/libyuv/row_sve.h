@@ -439,7 +439,6 @@ static inline void I444ToRGB24Row_SVE_SC(
       "b.eq     99f                                       \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                     \n"
       "whilelt  p1.b, wzr, %w[width]                      \n"  //
       READYUV444_SVE_2X I444TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_rgb24]] \n"
@@ -453,7 +452,7 @@ static inline void I444ToRGB24Row_SVE_SC(
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 static inline void I400ToARGBRow_SVE_SC(const uint8_t* src_y,
@@ -503,7 +502,7 @@ static inline void I400ToARGBRow_SVE_SC(const uint8_t* src_y,
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 static inline void I422ToARGBRow_SVE_SC(const uint8_t* src_y,
@@ -536,7 +535,6 @@ static inline void I422ToARGBRow_SVE_SC(const uint8_t* src_y,
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                   \n"
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "st4b     {z16.b, z17.b, z18.b, z19.b}, p1, [%[dst_argb]] \n"
@@ -550,7 +548,7 @@ static inline void I422ToARGBRow_SVE_SC(const uint8_t* src_y,
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 static inline void I422ToRGB24Row_SVE_SC(
@@ -583,7 +581,6 @@ static inline void I422ToRGB24Row_SVE_SC(
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                   \n"
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X I422TORGB_SVE_2X RGBTOARGB8_SVE_2X
       "st3b     {z16.b, z17.b, z18.b}, p1, [%[dst_argb]] \n"
@@ -597,7 +594,7 @@ static inline void I422ToRGB24Row_SVE_SC(
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 #define RGB8TORGB565_SVE_FROM_TOP_2X                        \
@@ -638,7 +635,6 @@ static inline void I422ToRGB565Row_SVE_SC(
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                   \n"
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X I422TORGB_SVE_2X
           RGBTOARGB8_SVE_TOP_2X RGB8TORGB565_SVE_FROM_TOP_2X
@@ -657,7 +653,7 @@ static inline void I422ToRGB565Row_SVE_SC(
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 #define RGB8TOARGB1555_SVE_FROM_TOP_2X                      \
@@ -701,7 +697,6 @@ static inline void I422ToARGB1555Row_SVE_SC(
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                   \n"
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X I422TORGB_SVE_2X
           RGBTOARGB8_SVE_TOP_2X RGB8TOARGB1555_SVE_FROM_TOP_2X
@@ -720,7 +715,7 @@ static inline void I422ToARGB1555Row_SVE_SC(
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 #define RGB8TOARGB4444_SVE_FROM_TOP_2X                      \
@@ -764,7 +759,6 @@ static inline void I422ToARGB4444Row_SVE_SC(
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                   \n"
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X I422TORGB_SVE_2X
           RGBTOARGB8_SVE_TOP_2X RGB8TOARGB4444_SVE_FROM_TOP_2X
@@ -783,7 +777,7 @@ static inline void I422ToARGB4444Row_SVE_SC(
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 static inline void I422ToRGBARow_SVE_SC(const uint8_t* src_y,
@@ -829,7 +823,7 @@ static inline void I422ToRGBARow_SVE_SC(const uint8_t* src_y,
         [vl] "=&r"(vl)                                     // %[vl]
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),           // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias)  // %[kRGBCoeffBias]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 static inline void I422ToAR30Row_SVE_SC(const uint8_t* src_y,
@@ -879,7 +873,7 @@ static inline void I422ToAR30Row_SVE_SC(const uint8_t* src_y,
       : [kUVCoeff] "r"(&yuvconstants->kUVCoeff),            // %[kUVCoeff]
         [kRGBCoeffBias] "r"(&yuvconstants->kRGBCoeffBias),  // %[kRGBCoeffBias]
         [limit] "r"(limit)                                  // %[limit]
-      : "cc", "memory", YUVTORGB_SVE_REGS);
+      : "memory", "cc", YUVTORGB_SVE_REGS);
 }
 
 static inline void I422AlphaToARGBRow_SVE_SC(
@@ -916,7 +910,6 @@ static inline void I422AlphaToARGBRow_SVE_SC(
       "b.eq     99f                                     \n"
 
       // Calculate a predicate for the final iteration to deal with the tail.
-      "cnth     %[vl]                                   \n"
       "whilelt  p1.b, wzr, %w[width]                    \n"  //
       READYUV422_SVE_2X
       "ld1b     {z19.b}, p1/z, [%[src_a]]               \n"  // Alpha
@@ -1618,7 +1611,6 @@ static inline void I410AlphaToARGBRow_SVE_SC(
   asm volatile(
       "ptrue    p0.b                                             \n"  //
       YUVTORGB_SVE_SETUP
-      "cmp      %w[width], %w[vl]                                \n"
       "subs     %w[width], %w[width], %w[vl]                     \n"
       "b.lt     2f                                               \n"
 

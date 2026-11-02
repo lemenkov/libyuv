@@ -173,6 +173,13 @@ static int ARGBTranspose(const uint8_t* src_argb,
       }
     }
     if (width > 0) {
+#if defined(HAS_TRANSPOSEWXH_32_NEON)
+      if (TestCpuFlag(kCpuHasNEON)) {
+        TransposeWxH_32_NEON(src_argb, src_stride_argb, dst_argb,
+                             dst_stride_argb, width, height);
+        return 0;
+      }
+#endif
       TransposeWxH_32_C(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
                         width, height);
     }

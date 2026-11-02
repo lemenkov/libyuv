@@ -137,6 +137,8 @@ extern "C" {
 #define HAS_NV21TORGB24ROW_AVX2
 #define HAS_SPLITUVROW_AVX2
 #define HAS_UYVYTOARGBROW_AVX2
+#define HAS_UYVYTOUV422ROW_AVX2
+#define HAS_UYVYTOUVROW_AVX2
 #define HAS_UYVYTOYROW_AVX2
 #define HAS_YUY2TOARGBROW_AVX2
 #define HAS_YUY2TOUV422ROW_AVX2
@@ -340,8 +342,10 @@ extern "C" {
 #define HAS_RAWTORGB24ROW_SSSE3
 #define HAS_ARGBALPHABLENDROW_SSSE3
 #define HAS_ARGBORROW_SSE2
+#define HAS_BLENDPLANEROW_SSSE3
 #define HAS_MIRRORSPLITUVROW_SSSE3
 #if defined(VISUALC_HAS_AVX2)
+#define HAS_BLENDPLANEROW_AVX2
 #define HAS_RAWTORGB24ROW_AVX2
 #define HAS_RAWTOARGBROW_AVX2
 #define HAS_I422TORGB24ROW_AVX2
@@ -3004,14 +3008,26 @@ void MirrorSplitUVRow_NEON(const uint8_t* src_uv,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width);
+void MirrorSplitUVRow_Any_NEON(const uint8_t* src_uv,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
 void MirrorSplitUVRow_LSX(const uint8_t* src_uv,
                           uint8_t* dst_u,
                           uint8_t* dst_v,
                           int width);
+void MirrorSplitUVRow_Any_LSX(const uint8_t* src_uv,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width);
 void MirrorSplitUVRow_LASX(const uint8_t* src_uv,
                            uint8_t* dst_u,
                            uint8_t* dst_v,
                            int width);
+void MirrorSplitUVRow_Any_LASX(const uint8_t* src_uv,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width);
 void MirrorSplitUVRow_C(const uint8_t* src_uv,
                         uint8_t* dst_u,
                         uint8_t* dst_v,
@@ -3332,6 +3348,12 @@ void HalfMergeUVRow_Any_SSSE3(const uint8_t* src_u,
                               uint8_t* dst_uv,
                               int width);
 void HalfMergeUVRow_Any_AVX2(const uint8_t* src_u,
+                             int src_stride_u,
+                             const uint8_t* src_v,
+                             int src_stride_v,
+                             uint8_t* dst_uv,
+                             int width);
+void HalfMergeUVRow_Any_NEON(const uint8_t* src_u,
                              int src_stride_u,
                              const uint8_t* src_v,
                              int src_stride_v,
@@ -8234,6 +8256,10 @@ void MirrorRow_Any_WASMSIMD(const uint8_t* src_ptr,
 void MirrorUVRow_Any_WASMSIMD(const uint8_t* src_ptr,
                               uint8_t* dst_ptr,
                               int width);
+void MirrorSplitUVRow_Any_WASMSIMD(const uint8_t* src_uv,
+                                   uint8_t* dst_u,
+                                   uint8_t* dst_v,
+                                   int width);
 void SwapUVRow_Any_WASMSIMD(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
