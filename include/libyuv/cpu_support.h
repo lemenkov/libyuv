@@ -69,6 +69,9 @@ extern "C" {
 #if (__GNUC__ >= 9)
 #define GCC_HAS_AVX512 1
 #endif  // GNUC >= 9
+#if (__GNUC__ >= 11)
+#define GCC_HAS_ACEV1 1
+#endif  // GNUC >= 11
 #endif  // __GNUC__
 
 // Function target attributes so GCC enables zmm16..zmm31 and k1..k7 clobbers
@@ -91,6 +94,14 @@ extern "C" {
 #define LIBYUV_TARGET_AVX512VNNIVBMI
 #endif
 
+#if defined(GCC_HAS_ACEV1)
+#define LIBYUV_TARGET_ACEV1 \
+  __attribute__((target("amx-tile,avx512bw,avx512vl,avx512f,bmi2")))
+#elif !defined(LIBYUV_ENABLE_ROWWIN) && \
+    !(defined(_MSC_VER) && !defined(__clang__))
+#define LIBYUV_TARGET_ACEV1
+#endif
+
 // clang >= 3.4.0 required for AVX2.
 #if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
     (defined(__x86_64__) || defined(__i386__))
@@ -107,6 +118,13 @@ extern "C" {
 #if (__clang_major__ >= 7) && !defined(__APPLE__)
 #define CLANG_HAS_AVX512 1
 #endif  // clang >= 7
+#endif  // __clang__
+
+// clang >= 11.0.0 required for ACEV1.
+#if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && defined(__x86_64__)
+#if (__clang_major__ >= 11) && !defined(__APPLE__)
+#define CLANG_HAS_ACEV1 1
+#endif  // clang >= 11
 #endif  // __clang__
 
 // Visual C 2012 (or clang >= 3.4 with LIBYUV_ENABLE_ROWWIN) required for AVX2.

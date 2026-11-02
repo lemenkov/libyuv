@@ -32,7 +32,7 @@ static int ARGBTranspose(const uint8_t* src_argb,
                          int height) {
 #if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
     defined(HAS_TRANSPOSEWXH_32_RVV) || defined(HAS_TRANSPOSEWXH_32_HVX) ||  \
-    defined(HAS_TRANSPOSEWXH_32_AVX2)
+    defined(HAS_TRANSPOSEWXH_32_AVX2) || defined(HAS_TRANSPOSEWXH_32_ACEV1)
   void (*TransposeWxH_32)(const uint8_t* src, int src_stride, uint8_t* dst,
                           int dst_stride, int width, int height) = NULL;
 #endif
@@ -74,6 +74,14 @@ static int ARGBTranspose(const uint8_t* src_argb,
 #if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     TransposeWx16_32 = TransposeWx16_32_AVX512BW;
+  }
+#endif
+#if defined(HAS_TRANSPOSEWXH_32_ACEV1)
+  if (TestCpuFlag(kCpuHasACEV1)) {
+    TransposeWxH_32 = TransposeWxH_32_ACEV1;
+#if defined(HAS_TRANSPOSEWX16_32_AVX512BW)
+    TransposeWx16_32 = NULL;
+#endif
   }
 #endif
 #if defined(HAS_TRANSPOSEWXH_32_NEON)
@@ -142,7 +150,7 @@ static int ARGBTranspose(const uint8_t* src_argb,
 #endif
 #if defined(HAS_TRANSPOSEWXH_32_NEON) || defined(HAS_TRANSPOSEWXH_32_SME) || \
     defined(HAS_TRANSPOSEWXH_32_RVV) || defined(HAS_TRANSPOSEWXH_32_HVX) ||  \
-    defined(HAS_TRANSPOSEWXH_32_AVX2)
+    defined(HAS_TRANSPOSEWXH_32_AVX2) || defined(HAS_TRANSPOSEWXH_32_ACEV1)
   if (TransposeWxH_32) {
     if (height > 0) {
       TransposeWxH_32(src_argb, src_stride_argb, dst_argb, dst_stride_argb,

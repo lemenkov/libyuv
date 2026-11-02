@@ -405,8 +405,11 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info1[4] = {0, 0, 0, 0};
   int cpu_info7[4] = {0, 0, 0, 0};
   int cpu_einfo7[4] = {0, 0, 0, 0};
+  int cpu_info1d[4] = {0, 0, 0, 0};
+  int cpu_einfo1d_2[4] = {0, 0, 0, 0};
   int cpu_einfo1e[4] = {0, 0, 0, 0};
   int cpu_info24[4] = {0, 0, 0, 0};
+  int cpu_einfo24_1[4] = {0, 0, 0, 0};
   int cpu_info21[4] = {0, 0, 0, 0};
   int cpu_amdinfo21[4] = {0, 0, 0, 0};
   int cpu_extinfo0[4] = {0, 0, 0, 0};
@@ -426,6 +429,12 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   if ((unsigned)cpu_extinfo0[0] >= 0x80000021u) {
     CpuId(0x80000021, 0, cpu_amdinfo21);
   }
+  if (cpu_info0[0] >= 0x1d) {
+    CpuId(0x1d, 0, cpu_info1d);
+    if (cpu_info1d[0] >= 2) {
+      CpuId(0x1d, 2, cpu_einfo1d_2);
+    }
+  }
   if (cpu_info0[0] >= 0x1e) {
     CpuId(0x1e, 1, cpu_einfo1e);
   }
@@ -434,6 +443,9 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   }
   if (cpu_info0[0] >= 0x24) {
     CpuId(0x24, 0, cpu_info24);
+    if (cpu_info24[0] >= 1) {
+      CpuId(0x24, 1, cpu_einfo24_1);
+    }
   }
   cpu_info = kCpuHasX86 | ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
@@ -467,6 +479,14 @@ static SAFEBUFFERS int GetCpuFlags(void) {
                   ((cpu_einfo1e[0] & 0x00000040) ? kCpuHasAMXTF32 : 0);
       if (cpu_info0[0] >= 0x24 && (cpu_einfo7[3] & 0x00080000)) {
         cpu_info |= ((cpu_info24[1] & 0xFF) >= 2) ? kCpuHasAVX10_2 : 0;
+        if ((GetXCR0() & 0x001600e6) == 0x001600e6 &&
+            (cpu_einfo7[2] & 0x00000800) && (cpu_einfo1d_2[0] & 0xff) >= 1 &&
+            ((cpu_info24[1] & 0xff) >= 2 ||
+             ((cpu_info24[1] & 0xff) >= 1 &&
+              (cpu_einfo24_1[2] & 0x00000004))) &&
+            (cpu_einfo24_1[2] & 0x00000008)) {
+          cpu_info |= kCpuHasACEV1;
+        }
       }
     }
   }

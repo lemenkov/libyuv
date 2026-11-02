@@ -1050,6 +1050,210 @@ TEST_F(LibYUVRotateTest, TransposeWxH_32_Test) {
 }
 #endif  // defined(HAS_TRANSPOSEWXH_32_AVX2)
 
+#if defined(HAS_TRANSPOSEWXH_ACEV1)
+TEST_F(LibYUVRotateTest, TransposeWxH_ACEV1_Test) {
+  if (!TestCpuFlag(kCpuHasACEV1)) {
+    return;
+  }
+  const int kMaxW = 35;
+  const int kMaxH = 35;
+  align_buffer_page_end(src_pixels, kMaxW * kMaxH);
+  align_buffer_page_end(dst_pixels_c, kMaxW * kMaxH);
+  align_buffer_page_end(dst_pixels_opt, kMaxW * kMaxH);
+  MemRandomize(src_pixels, kMaxW * kMaxH);
+
+  for (int h = 1; h <= kMaxH; ++h) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      const int src_stride = w;
+      const int dst_stride = h;
+      const int src_bytes = src_stride * h;
+      const int dst_bytes = dst_stride * w;
+      const uint8_t* src = src_pixels + kMaxW * kMaxH - src_bytes;
+      uint8_t* dst_c = dst_pixels_c + kMaxW * kMaxH - dst_bytes;
+      uint8_t* dst_opt = dst_pixels_opt + kMaxW * kMaxH - dst_bytes;
+
+      memset(dst_c, 1, dst_bytes);
+      memset(dst_opt, 2, dst_bytes);
+      MaskCpuFlags(disable_cpu_flags_);
+      TransposePlane(src, src_stride, dst_c, dst_stride, w, h);
+      MaskCpuFlags(benchmark_cpu_info_);
+      TransposeWxH_ACEV1(src, src_stride, dst_opt, dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_bytes)) << w << "x" << h;
+
+      memset(dst_c, 3, dst_bytes);
+      memset(dst_opt, 4, dst_bytes);
+      MaskCpuFlags(disable_cpu_flags_);
+      TransposePlane(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                     dst_c + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride, w,
+                     h);
+      MaskCpuFlags(benchmark_cpu_info_);
+      TransposeWxH_ACEV1(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                         dst_opt + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride,
+                         w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_bytes))
+          << "neg " << w << "x" << h;
+    }
+  }
+
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(dst_pixels_c);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+}
+#endif  // defined(HAS_TRANSPOSEWXH_ACEV1)
+
+#if defined(HAS_TRANSPOSEUVWXH_ACEV1)
+TEST_F(LibYUVRotateTest, TransposeUVWxH_ACEV1_Test) {
+  if (!TestCpuFlag(kCpuHasACEV1)) {
+    return;
+  }
+  const int kMaxW = 35;
+  const int kMaxH = 35;
+  align_buffer_page_end(src_pixels, kMaxW * kMaxH * 2);
+  align_buffer_page_end(dst_u_c, kMaxW * kMaxH);
+  align_buffer_page_end(dst_v_c, kMaxW * kMaxH);
+  align_buffer_page_end(dst_u_opt, kMaxW * kMaxH);
+  align_buffer_page_end(dst_v_opt, kMaxW * kMaxH);
+  MemRandomize(src_pixels, kMaxW * kMaxH * 2);
+
+  for (int h = 1; h <= kMaxH; ++h) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      const int src_stride = w * 2;
+      const int dst_stride = h;
+      const int src_bytes = src_stride * h;
+      const int dst_bytes = dst_stride * w;
+      const uint8_t* src = src_pixels + kMaxW * kMaxH * 2 - src_bytes;
+      uint8_t* u_c = dst_u_c + kMaxW * kMaxH - dst_bytes;
+      uint8_t* v_c = dst_v_c + kMaxW * kMaxH - dst_bytes;
+      uint8_t* u_opt = dst_u_opt + kMaxW * kMaxH - dst_bytes;
+      uint8_t* v_opt = dst_v_opt + kMaxW * kMaxH - dst_bytes;
+
+      memset(u_c, 1, dst_bytes);
+      memset(v_c, 2, dst_bytes);
+      memset(u_opt, 3, dst_bytes);
+      memset(v_opt, 4, dst_bytes);
+      MaskCpuFlags(disable_cpu_flags_);
+      SplitTransposeUV(src, src_stride, u_c, dst_stride, v_c, dst_stride, w, h);
+      MaskCpuFlags(benchmark_cpu_info_);
+      TransposeUVWxH_ACEV1(src, src_stride, u_opt, dst_stride, v_opt,
+                           dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(u_c, u_opt, dst_bytes)) << w << "x" << h;
+      ASSERT_EQ(0, memcmp(v_c, v_opt, dst_bytes)) << w << "x" << h;
+
+      memset(u_c, 5, dst_bytes);
+      memset(v_c, 6, dst_bytes);
+      memset(u_opt, 7, dst_bytes);
+      memset(v_opt, 8, dst_bytes);
+      MaskCpuFlags(disable_cpu_flags_);
+      SplitTransposeUV(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                       u_c + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride,
+                       v_c + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride, w,
+                       h);
+      MaskCpuFlags(benchmark_cpu_info_);
+      TransposeUVWxH_ACEV1(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                           u_opt + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride,
+                           v_opt + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride,
+                           w, h);
+      ASSERT_EQ(0, memcmp(u_c, u_opt, dst_bytes)) << "neg " << w << "x" << h;
+      ASSERT_EQ(0, memcmp(v_c, v_opt, dst_bytes)) << "neg " << w << "x" << h;
+    }
+  }
+
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(dst_u_c);
+  free_aligned_buffer_page_end(dst_v_c);
+  free_aligned_buffer_page_end(dst_u_opt);
+  free_aligned_buffer_page_end(dst_v_opt);
+}
+#endif  // defined(HAS_TRANSPOSEUVWXH_ACEV1)
+
+#if defined(HAS_TRANSPOSEWXH_16_ACEV1)
+TEST_F(LibYUVRotateTest, TransposeWxH_16_ACEV1_Test) {
+  if (!TestCpuFlag(kCpuHasACEV1)) {
+    return;
+  }
+  const int kMaxW = 35;
+  const int kMaxH = 35;
+  align_buffer_page_end_16(src_pixels, kMaxW * kMaxH);
+  align_buffer_page_end_16(dst_pixels_c, kMaxW * kMaxH);
+  align_buffer_page_end_16(dst_pixels_opt, kMaxW * kMaxH);
+  for (int i = 0; i < kMaxW * kMaxH; ++i) {
+    src_pixels[i] = fastrand() & 0xffff;
+  }
+
+  for (int h = 1; h <= kMaxH; ++h) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      const int src_stride = w;
+      const int dst_stride = h;
+      const int src_elems = src_stride * h;
+      const int dst_elems = dst_stride * w;
+      const uint16_t* src = src_pixels + kMaxW * kMaxH - src_elems;
+      uint16_t* dst_c = dst_pixels_c + kMaxW * kMaxH - dst_elems;
+      uint16_t* dst_opt = dst_pixels_opt + kMaxW * kMaxH - dst_elems;
+
+      memset(dst_c, 1, dst_elems * 2);
+      memset(dst_opt, 2, dst_elems * 2);
+      MaskCpuFlags(disable_cpu_flags_);
+      RotatePlane_16(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride, dst_c,
+                     dst_stride, w, h, kRotate90);
+      MaskCpuFlags(benchmark_cpu_info_);
+      TransposeWxH_16_ACEV1(src, src_stride, dst_opt, dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_elems * 2)) << w << "x" << h;
+    }
+  }
+
+  free_aligned_buffer_page_end_16(src_pixels);
+  free_aligned_buffer_page_end_16(dst_pixels_c);
+  free_aligned_buffer_page_end_16(dst_pixels_opt);
+}
+#endif  // defined(HAS_TRANSPOSEWXH_16_ACEV1)
+
+#if defined(HAS_TRANSPOSEWXH_32_ACEV1)
+TEST_F(LibYUVRotateTest, TransposeWxH_32_ACEV1_Test) {
+  if (!TestCpuFlag(kCpuHasACEV1)) {
+    return;
+  }
+  const int kMaxW = 35;
+  const int kMaxH = 35;
+  align_buffer_page_end(src_pixels, kMaxW * kMaxH * 4);
+  align_buffer_page_end(dst_pixels_c, kMaxW * kMaxH * 4);
+  align_buffer_page_end(dst_pixels_opt, kMaxW * kMaxH * 4);
+  MemRandomize(src_pixels, kMaxW * kMaxH * 4);
+
+  for (int h = 1; h <= kMaxH; ++h) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      const int src_stride = w * 4;
+      const int dst_stride = h * 4;
+      const int src_bytes = src_stride * h;
+      const int dst_bytes = dst_stride * w;
+      const uint8_t* src = src_pixels + kMaxW * kMaxH * 4 - src_bytes;
+      uint8_t* dst_c = dst_pixels_c + kMaxW * kMaxH * 4 - dst_bytes;
+      uint8_t* dst_opt = dst_pixels_opt + kMaxW * kMaxH * 4 - dst_bytes;
+
+      memset(dst_c, 1, dst_bytes);
+      memset(dst_opt, 2, dst_bytes);
+      TransposeWxH_32_C(src, src_stride, dst_c, dst_stride, w, h);
+      TransposeWxH_32_ACEV1(src, src_stride, dst_opt, dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_bytes)) << w << "x" << h;
+
+      memset(dst_c, 3, dst_bytes);
+      memset(dst_opt, 4, dst_bytes);
+      TransposeWxH_32_C(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                        dst_c + (ptrdiff_t)(w - 1) * dst_stride, -dst_stride, w,
+                        h);
+      TransposeWxH_32_ACEV1(src + (ptrdiff_t)(h - 1) * src_stride, -src_stride,
+                            dst_opt + (ptrdiff_t)(w - 1) * dst_stride,
+                            -dst_stride, w, h);
+      ASSERT_EQ(0, memcmp(dst_c, dst_opt, dst_bytes))
+          << "neg " << w << "x" << h;
+    }
+  }
+
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(dst_pixels_c);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+}
+#endif  // defined(HAS_TRANSPOSEWXH_32_ACEV1)
+
 #endif  // ENABLE_ROW_TESTS
 
 }  // namespace libyuv

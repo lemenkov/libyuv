@@ -77,6 +77,17 @@ extern "C" {
 #define HAS_TRANSPOSEWX16_32_AVX512BW
 #endif
 
+// The following are available for ACEV1 GCC/clang x64 platforms:
+#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__) &&  \
+    (defined(CLANG_HAS_ACEV1) || defined(GCC_HAS_ACEV1)) && \
+    !defined(LIBYUV_ENABLE_ROWWIN) &&                       \
+    (!defined(_MSC_VER) || defined(__clang__))
+#define HAS_TRANSPOSEWXH_ACEV1
+#define HAS_TRANSPOSEUVWXH_ACEV1
+#define HAS_TRANSPOSEWXH_16_ACEV1
+#define HAS_TRANSPOSEWXH_32_ACEV1
+#endif
+
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #if defined(__aarch64__)
@@ -186,6 +197,12 @@ void TransposeWx16_AVX512BW(const uint8_t* src,
                             uint8_t* dst,
                             int dst_stride,
                             int width);
+void TransposeWxH_ACEV1(const uint8_t* src,
+                        int src_stride,
+                        uint8_t* dst,
+                        int dst_stride,
+                        int width,
+                        int height);
 void TransposeWx8_LSX(const uint8_t* src,
                       int src_stride,
                       uint8_t* dst,
@@ -283,6 +300,14 @@ void TransposeUVWx16_AVX512BW(const uint8_t* src,
                               uint8_t* dst_b,
                               int dst_stride_b,
                               int width);
+void TransposeUVWxH_ACEV1(const uint8_t* src,
+                          int src_stride,
+                          uint8_t* dst_a,
+                          int dst_stride_a,
+                          uint8_t* dst_b,
+                          int dst_stride_b,
+                          int width,
+                          int height);
 void TransposeUVWx8_NEON(const uint8_t* src,
                          int src_stride,
                          uint8_t* dst_a,
@@ -405,6 +430,12 @@ void TransposeWx32_16_AVX512BW(const uint16_t* src,
                                uint16_t* dst,
                                int dst_stride,
                                int width);
+void TransposeWxH_16_ACEV1(const uint16_t* src,
+                           int src_stride,
+                           uint16_t* dst,
+                           int dst_stride,
+                           int width,
+                           int height);
 void TransposeWx8_16_NEON(const uint16_t* src,
                           int src_stride,
                           uint16_t* dst,
@@ -536,6 +567,13 @@ void TransposeWx16_32_AVX512BW(const uint8_t* src,
                                uint8_t* dst,
                                int dst_stride,
                                int width);
+
+void TransposeWxH_32_ACEV1(const uint8_t* src,
+                           int src_stride,
+                           uint8_t* dst,
+                           int dst_stride,
+                           int width,
+                           int height);
 
 void TransposeWx4_32_RVV(const uint8_t* src,
                          int src_stride,

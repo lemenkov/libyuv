@@ -218,6 +218,7 @@ int main(int argc, const char* argv[]) {
     int has_amxint8 = TestCpuFlag(kCpuHasAMXINT8);
     int has_avx512bmm = TestCpuFlag(kCpuHasAVX512BMM);
     int has_amxtf32 = TestCpuFlag(kCpuHasAMXTF32);
+    int has_acev1 = TestCpuFlag(kCpuHasACEV1);
     printf("Has X86 0x%x\n", has_x86);
     printf("Has SSE2 0x%x\n", has_sse2);
     printf("Has SSSE3 0x%x\n", has_ssse3);
@@ -242,6 +243,7 @@ int main(int argc, const char* argv[]) {
     printf("Has AMXINT8 0x%x\n", has_amxint8);
     printf("Has AVX512BMM 0x%x\n", has_avx512bmm);
     printf("Has AMXTF32 0x%x\n", has_amxtf32);
+    printf("Has ACEV1 0x%x\n", has_acev1);
 
 #ifdef __linux__
     // Test VDPPHPS instruction
