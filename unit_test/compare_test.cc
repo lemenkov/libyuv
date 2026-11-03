@@ -338,11 +338,19 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
 #elif defined(HAS_HAMMINGDISTANCE_LASX)
     if (TestCpuFlag(kCpuHasLASX)) {
       h1 = HammingDistance_LASX(src_a, src_b, kMaxWidth);
-    } else {
+#if defined(HAS_HAMMINGDISTANCE_LSX)
+    } else if (TestCpuFlag(kCpuHasLSX)) {
       h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+#endif
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
 #elif defined(HAS_HAMMINGDISTANCE_LSX)
-    h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+    if (TestCpuFlag(kCpuHasLSX)) {
+      h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+    }
 #elif defined(HAS_HAMMINGDISTANCE_WASMSIMD)
     h1 = HammingDistance_WASMSIMD(src_a, src_b, kMaxWidth);
 #elif defined(HAS_HAMMINGDISTANCE_HVX)
@@ -493,11 +501,19 @@ TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
 #elif defined(HAS_HAMMINGDISTANCE_LASX)
     if (TestCpuFlag(kCpuHasLASX)) {
       h1 = HammingDistance_LASX(src_a, src_b, kMaxWidth);
-    } else {
+#if defined(HAS_HAMMINGDISTANCE_LSX)
+    } else if (TestCpuFlag(kCpuHasLSX)) {
       h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+#endif
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
 #elif defined(HAS_HAMMINGDISTANCE_LSX)
-    h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+    if (TestCpuFlag(kCpuHasLSX)) {
+      h1 = HammingDistance_LSX(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+    }
 #elif defined(HAS_HAMMINGDISTANCE_WASMSIMD)
     h1 = HammingDistance_WASMSIMD(src_a, src_b, kMaxWidth);
 #elif defined(HAS_HAMMINGDISTANCE_HVX)

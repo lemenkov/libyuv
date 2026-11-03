@@ -8,34 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
-
+#include "libyuv/row.h"
 #include "libyuv/scale_row.h"
 
-#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#if (!defined(LIBYUV_DISABLE_LSX) || !defined(LIBYUV_DISABLE_LASX)) && \
+    defined(__loongarch_lp64)
 
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
 
-static const uint64_t kScale38Shuf[2] = {0x13100e0b08060300ULL,
-                                         0x000000001e1b1816ULL};
-static const uint64_t kScale38BoxShuf[2] = {0x0a08160604120200ULL,
-                                            0x000000001e0e0c1aULL};
-static const uint64_t kScale34Shuf[2] = {0x0908070504030100ULL,
-                                         0x000000000f0d0c0bULL};
-static const uint64_t kScale34BoxLo[2] = {0x0504030202010100ULL,
-                                          0x0000000007060605ULL};
-static const uint64_t kScale34BoxHi[2] = {0x0d0c0b0a0a090908ULL,
-                                          0x000000000f0e0e0dULL};
-static const uint64_t kScale34BoxWt[2] = {0x0103030102020103ULL,
-                                          0x0000000003010202ULL};
-static const uint64_t kScale34Pack12[2] = {0x0908050403020100ULL,
-                                           0x000000000d0c0b0aULL};
-static const uint64_t kRamp0123[2] = {0x0000000100000000ULL,
-                                      0x0000000300000002ULL};
-
+#ifdef HAS_SCALEARGBROWDOWN2_LSX
 void ScaleARGBRowDown2_LSX(const uint8_t* src_argb,
                            ptrdiff_t src_stride,
                            uint8_t* dst_argb,
@@ -129,7 +113,9 @@ void ScaleARGBRowDown2Box_LSX(const uint8_t* src_argb,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7");
 }
+#endif  // HAS_SCALEARGBROWDOWN2_LSX
 
+#ifdef HAS_SCALEARGBROWDOWNEVEN_LSX
 void ScaleARGBRowDownEven_LSX(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
                               int32_t src_stepx,
@@ -235,7 +221,9 @@ void ScaleARGBRowDownEvenBox_LSX(const uint8_t* src_argb,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7");
 }
+#endif  // HAS_SCALEARGBROWDOWNEVEN_LSX
 
+#ifdef HAS_SCALEROWDOWN2_LSX
 void ScaleRowDown2_LSX(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst,
@@ -323,7 +311,9 @@ void ScaleRowDown2Box_LSX(const uint8_t* src_ptr,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7");
 }
+#endif  // HAS_SCALEROWDOWN2_LSX
 
+#ifdef HAS_SCALEROWDOWN4_LSX
 void ScaleRowDown4_LSX(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
                        uint8_t* dst,
@@ -406,6 +396,13 @@ void ScaleRowDown4Box_LSX(const uint8_t* src_ptr,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7");
 }
+#endif  // HAS_SCALEROWDOWN4_LSX
+
+#ifdef HAS_SCALEROWDOWN38_LSX
+static const uint64_t kScale38Shuf[2] = {0x13100e0b08060300ULL,
+                                         0x000000001e1b1816ULL};
+static const uint64_t kScale38BoxShuf[2] = {0x0a08160604120200ULL,
+                                            0x000000001e0e0c1aULL};
 
 void ScaleRowDown38_LSX(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
@@ -553,7 +550,9 @@ void ScaleRowDown38_3_Box_LSX(const uint8_t* src_ptr,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8", "$vr9", "$vr10", "$vr11");
 }
+#endif  // HAS_SCALEROWDOWN38_LSX
 
+#ifdef HAS_SCALEADDROW_LSX
 void ScaleAddRow_LSX(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
   asm volatile(
       "srli.w     %[w], %[w], 4                        \n"
@@ -580,7 +579,9 @@ void ScaleAddRow_LSX(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
       :
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5");
 }
+#endif  // HAS_SCALEADDROW_LSX
 
+#ifdef HAS_SCALEUVADDCOLS3_LSX
 static const uint8_t kScaleUVAddCols3Shuf[] = {
     0, 1, 2,  3,  12, 13, 14, 15, 24, 25, 26, 27, 4,  5,  6,  7,
     4, 5, 6,  7,  16, 17, 18, 19, 28, 29, 30, 31, 8,  9,  10, 11,
@@ -641,7 +642,15 @@ void ScaleUVAddCols3_LSX(int dst_width,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13");
 }
+#endif  // HAS_SCALEUVADDCOLS3_LSX
 
+#if defined(HAS_SCALEFILTERCOLS_LSX) || defined(HAS_SCALEARGBCOLS_LSX) || \
+    defined(HAS_SCALEARGBFILTERCOLS_LSX)
+static const uint64_t kRamp0123[2] = {0x0000000100000000ULL,
+                                      0x0000000300000002ULL};
+#endif
+
+#ifdef HAS_SCALEFILTERCOLS_LSX
 void ScaleFilterCols_LSX(uint8_t* dst_ptr,
                          const uint8_t* src_ptr,
                          int dst_width,
@@ -706,7 +715,9 @@ void ScaleFilterCols_LSX(uint8_t* dst_ptr,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7");
 }
+#endif  // HAS_SCALEFILTERCOLS_LSX
 
+#ifdef HAS_SCALEARGBCOLS_LSX
 void ScaleARGBCols_LSX(uint8_t* dst_argb,
                        const uint8_t* src_argb,
                        int dst_width,
@@ -757,7 +768,9 @@ void ScaleARGBCols_LSX(uint8_t* dst_argb,
         [ramp] "r"(kRamp0123)  // %[ramp]
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3");
 }
+#endif  // HAS_SCALEARGBCOLS_LSX
 
+#ifdef HAS_SCALEARGBFILTERCOLS_LSX
 void ScaleARGBFilterCols_LSX(uint8_t* dst_argb,
                              const uint8_t* src_argb,
                              int dst_width,
@@ -826,6 +839,19 @@ void ScaleARGBFilterCols_LSX(uint8_t* dst_argb,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8");
 }
+#endif  // HAS_SCALEARGBFILTERCOLS_LSX
+
+#ifdef HAS_SCALEROWDOWN34_LSX
+static const uint64_t kScale34Shuf[2] = {0x0908070504030100ULL,
+                                         0x000000000f0d0c0bULL};
+static const uint64_t kScale34BoxLo[2] = {0x0504030202010100ULL,
+                                          0x0000000007060605ULL};
+static const uint64_t kScale34BoxHi[2] = {0x0d0c0b0a0a090908ULL,
+                                          0x000000000f0e0e0dULL};
+static const uint64_t kScale34BoxWt[2] = {0x0103030102020103ULL,
+                                          0x0000000003010202ULL};
+static const uint64_t kScale34Pack12[2] = {0x0908050403020100ULL,
+                                           0x000000000d0c0b0aULL};
 
 void ScaleRowDown34_LSX(const uint8_t* src_ptr,
                         ptrdiff_t src_stride,
@@ -966,10 +992,12 @@ void ScaleRowDown34_1_Box_LSX(const uint8_t* src_ptr,
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8", "$vr9");
 }
+#endif  // HAS_SCALEROWDOWN34_LSX
 
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
 #endif
 
-#endif  // !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#endif  // (!defined(LIBYUV_DISABLE_LSX) || !defined(LIBYUV_DISABLE_LASX)) &&
+        // defined(__loongarch_lp64)

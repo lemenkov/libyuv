@@ -151,7 +151,7 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2_SME
 #endif
 
-#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_lp64)
 #define HAS_SCALEARGBROWDOWN2_LSX
 #define HAS_SCALEARGBROWDOWNEVEN_LSX
 #define HAS_SCALEROWDOWN2_LSX

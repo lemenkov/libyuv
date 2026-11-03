@@ -132,7 +132,7 @@ extern "C" {
 #endif
 
 // The following are available for LoongArch LSX:
-#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_lp64)
 #define HAS_HAMMINGDISTANCE_LSX
 #define HAS_SUMSQUAREERROR_LSX
 #define HAS_HASHDJB2_LSX
@@ -142,7 +142,7 @@ extern "C" {
 #endif
 
 // The following are available for LoongArch LASX:
-#if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_asx)
+#if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_lp64)
 #define HAS_HAMMINGDISTANCE_LASX
 #define HAS_SUMSQUAREERROR_LASX
 #define HAS_HASHDJB2_LASX

@@ -113,14 +113,14 @@ extern "C" {
 #define HAS_TRANSPOSEWXH_32_SME
 #endif
 
-#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
+#if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_lp64)
 #define HAS_TRANSPOSEWX8_LSX
 #define HAS_TRANSPOSEUVWX8_LSX
 #define HAS_TRANSPOSEWX8_16_LSX
 #define HAS_TRANSPOSEWX4_32_LSX
 #endif
 
-#if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_asx)
+#if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_lp64)
 #define HAS_TRANSPOSEWX16_LASX
 #define HAS_TRANSPOSEUVWX16_LASX
 #define HAS_TRANSPOSEWX16_16_LASX

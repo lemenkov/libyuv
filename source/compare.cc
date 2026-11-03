@@ -238,11 +238,13 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
 #if defined(HAS_HAMMINGDISTANCE_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     HammingDistance = HammingDistance_LSX;
+    simd_size = 16;
   }
 #endif
 #if defined(HAS_HAMMINGDISTANCE_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     HammingDistance = HammingDistance_LASX;
+    simd_size = 32;
   }
 #endif
 #if defined(HAS_HAMMINGDISTANCE_WASMSIMD)
@@ -346,11 +348,13 @@ uint64_t ComputeSumSquareError(const uint8_t* src_a,
 #if defined(HAS_SUMSQUAREERROR_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     SumSquareError = SumSquareError_LSX;
+    simd_size = 16;
   }
 #endif
 #if defined(HAS_SUMSQUAREERROR_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     SumSquareError = SumSquareError_LASX;
+    simd_size = 32;
   }
 #endif
 #if defined(HAS_SUMSQUAREERROR_WASMSIMD)
