@@ -377,24 +377,48 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
   return flag;
 }
 
-#if defined(__loongarch__) && defined(__linux__)
-// Define hwcap values ourselves: building with an old auxv header where these
-// hwcap values are not defined should not prevent features from being enabled.
+// Define cpucfg and hwcap values ourselves: building with an old auxv header
+// where these hwcap values are not defined should not prevent features from
+// being enabled.
+#define YUV_LOONGARCH_CFG2_LSX (1 << 6)
+#define YUV_LOONGARCH_CFG2_LASX (1 << 7)
 #define YUV_LOONGARCH_HWCAP_LSX (1 << 4)
 #define YUV_LOONGARCH_HWCAP_LASX (1 << 5)
 
+// For LoongArch, but public to allow testing on any CPU.
 LIBYUV_API SAFEBUFFERS int LoongArchCpuCaps(void) {
   int flag = 0;
-  unsigned long hwcap = getauxval(AT_HWCAP);
-
-  if (hwcap & YUV_LOONGARCH_HWCAP_LSX)
+#if defined(__loongarch__)
+#if !defined(LIBYUV_DISABLE_ASM)
+  uint32_t cfg2 = 0;
+  __asm__ volatile("cpucfg %0, %1\n" : "=r"(cfg2) : "r"(2));
+  if (cfg2 & YUV_LOONGARCH_CFG2_LSX) {
     flag |= kCpuHasLSX;
-
-  if (hwcap & YUV_LOONGARCH_HWCAP_LASX)
-    flag |= kCpuHasLASX;
+    if (cfg2 & YUV_LOONGARCH_CFG2_LASX) {
+      flag |= kCpuHasLASX;
+    }
+  }
+#if defined(__linux__)
+  // Confirm OS kernel has enabled LSX/LASX context switching via AT_HWCAP.
+  unsigned long hwcap = getauxval(AT_HWCAP);
+  if (!(hwcap & YUV_LOONGARCH_HWCAP_LSX)) {
+    flag &= ~(kCpuHasLSX | kCpuHasLASX);
+  } else if (!(hwcap & YUV_LOONGARCH_HWCAP_LASX)) {
+    flag &= ~kCpuHasLASX;
+  }
+#endif
+#elif defined(__linux__)
+  unsigned long hwcap = getauxval(AT_HWCAP);
+  if (hwcap & YUV_LOONGARCH_HWCAP_LSX) {
+    flag |= kCpuHasLSX;
+    if (hwcap & YUV_LOONGARCH_HWCAP_LASX) {
+      flag |= kCpuHasLASX;
+    }
+  }
+#endif
+#endif  // defined(__loongarch__)
   return flag;
 }
-#endif
 
 static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info = 0;
@@ -491,7 +515,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
     }
   }
 #endif
-#if defined(__loongarch__) && defined(__linux__)
+#if defined(__loongarch__)
   cpu_info = LoongArchCpuCaps();
   cpu_info |= kCpuHasLOONGARCH;
 #endif

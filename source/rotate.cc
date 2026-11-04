@@ -123,6 +123,14 @@ void TransposePlane(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_TRANSPOSEWX8_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    TransposeWx8 = TransposeWx8_Any_LASX;
+    if (IS_ALIGNED(width, 32)) {
+      TransposeWx8 = TransposeWx8_LASX;
+    }
+  }
+#endif
 #if defined(HAS_TRANSPOSEWX16_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     TransposeWx16 = TransposeWx16_Any_LASX;
@@ -406,6 +414,14 @@ void SplitTransposeUV(const uint8_t* src,
     TransposeUVWx8 = TransposeUVWx8_Any_LSX;
     if (IS_ALIGNED(width, 8)) {
       TransposeUVWx8 = TransposeUVWx8_LSX;
+    }
+  }
+#endif
+#if defined(HAS_TRANSPOSEUVWX8_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    TransposeUVWx8 = TransposeUVWx8_Any_LASX;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeUVWx8 = TransposeUVWx8_LASX;
     }
   }
 #endif
@@ -817,6 +833,14 @@ static void TransposePlane_16(const uint16_t* src,
     TransposeWx8_16 = TransposeWx8_16_Any_LSX;
     if (IS_ALIGNED(width, 8)) {
       TransposeWx8_16 = TransposeWx8_16_LSX;
+    }
+  }
+#endif
+#if defined(HAS_TRANSPOSEWX8_16_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    TransposeWx8_16 = TransposeWx8_16_Any_LASX;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx8_16 = TransposeWx8_16_LASX;
     }
   }
 #endif

@@ -453,6 +453,14 @@ static int ScaleUVBox(int src_width,
           }
         }
 #endif
+#if defined(HAS_SCALEUVADDCOLS3_LASX)
+        if (TestCpuFlag(kCpuHasLASX)) {
+          ScaleUVAddCols3 = ScaleUVAddCols3_Any_LASX;
+          if (IS_ALIGNED(dst_width, 8)) {
+            ScaleUVAddCols3 = ScaleUVAddCols3_LASX;
+          }
+        }
+#endif
 #if defined(HAS_SCALEUVADDCOLS3_WASMSIMD)
         if (TestCpuFlag(kCpuHasWASMSIMD)) {
           ScaleUVAddCols3 = ScaleUVAddCols3_Any_WASMSIMD;
@@ -501,6 +509,14 @@ static int ScaleUVBox(int src_width,
         ScaleAddRow = ScaleAddRow_Any_LSX;
         if (IS_ALIGNED(row_samples, 16)) {
           ScaleAddRow = ScaleAddRow_LSX;
+        }
+      }
+#endif
+#if defined(HAS_SCALEADDROW_LASX)
+      if (TestCpuFlag(kCpuHasLASX)) {
+        ScaleAddRow = ScaleAddRow_Any_LASX;
+        if (IS_ALIGNED(row_samples, 32)) {
+          ScaleAddRow = ScaleAddRow_LASX;
         }
       }
 #endif
@@ -976,6 +992,22 @@ static int ScaleUVBilinearDown_16(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_16_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_16_Any_LSX;
+    if (IS_ALIGNED(clip_src_width, 8)) {
+      InterpolateRow = InterpolateRow_16_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_16_Any_LASX;
+    if (IS_ALIGNED(clip_src_width, 16)) {
+      InterpolateRow = InterpolateRow_16_LASX;
+    }
+  }
+#endif
   // Allocate a row of 16-bit UV.
   {
     const uint32_t max_y = (uint32_t)(src_height - 1) << 16;
@@ -1240,6 +1272,22 @@ static int ScaleUVBilinearUp_16(int src_width,
     InterpolateRow = InterpolateRow_16_Any_WASMSIMD;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_16_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_16_Any_LSX;
+    if (IS_ALIGNED(dst_width, 4)) {
+      InterpolateRow = InterpolateRow_16_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_16_Any_LASX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      InterpolateRow = InterpolateRow_16_LASX;
     }
   }
 #endif

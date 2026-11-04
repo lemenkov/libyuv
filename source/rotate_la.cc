@@ -385,6 +385,404 @@ void TransposeWx8_16_LSX(const uint16_t* src,
 }
 #endif  // HAS_TRANSPOSEWX8_16_LSX
 
+#ifdef HAS_TRANSPOSEWX8_LASX
+void TransposeWx8_LASX(const uint8_t* src,
+                       int src_stride,
+                       uint8_t* dst,
+                       int dst_stride,
+                       int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t d = dst_stride;
+  const uint8_t* t;
+  asm volatile(
+      "srli.w     %[w], %[w], 5                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "move       %[t], %[src]                         \n"
+      "xvld       $xr0, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr1, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr2, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr3, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr4, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr5, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr6, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr7, %[t], 0                        \n"
+      "addi.d     %[src], %[src], 32                   \n"
+
+      "xvilvl.b   $xr8, $xr1, $xr0                     \n"
+      "xvilvh.b   $xr9, $xr1, $xr0                     \n"
+      "xvilvl.b   $xr10, $xr3, $xr2                    \n"
+      "xvilvh.b   $xr11, $xr3, $xr2                    \n"
+      "xvilvl.b   $xr12, $xr5, $xr4                    \n"
+      "xvilvh.b   $xr13, $xr5, $xr4                    \n"
+      "xvilvl.b   $xr14, $xr7, $xr6                    \n"
+      "xvilvh.b   $xr15, $xr7, $xr6                    \n"
+
+      "xvilvl.h   $xr0, $xr10, $xr8                    \n"
+      "xvilvh.h   $xr1, $xr10, $xr8                    \n"
+      "xvilvl.h   $xr2, $xr11, $xr9                    \n"
+      "xvilvh.h   $xr3, $xr11, $xr9                    \n"
+      "xvilvl.h   $xr4, $xr14, $xr12                   \n"
+      "xvilvh.h   $xr5, $xr14, $xr12                   \n"
+      "xvilvl.h   $xr6, $xr15, $xr13                   \n"
+      "xvilvh.h   $xr7, $xr15, $xr13                   \n"
+
+      "xvilvl.w   $xr8, $xr4, $xr0                     \n"
+      "xvilvh.w   $xr9, $xr4, $xr0                     \n"
+      "xvilvl.w   $xr10, $xr5, $xr1                    \n"
+      "xvilvh.w   $xr11, $xr5, $xr1                    \n"
+      "xvilvl.w   $xr12, $xr6, $xr2                    \n"
+      "xvilvh.w   $xr13, $xr6, $xr2                    \n"
+      "xvilvl.w   $xr14, $xr7, $xr3                    \n"
+      "xvilvh.w   $xr15, $xr7, $xr3                    \n"
+
+      "xvstelm.d  $xr8, %[dst], 0, 0                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr8, %[dst], 0, 1                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr9, %[dst], 0, 0                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr9, %[dst], 0, 1                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr10, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr10, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr11, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr11, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr12, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr12, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr13, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr13, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr14, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr14, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr15, %[dst], 0, 0                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr15, %[dst], 0, 1                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+
+      "xvstelm.d  $xr8, %[dst], 0, 2                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr8, %[dst], 0, 3                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr9, %[dst], 0, 2                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr9, %[dst], 0, 3                   \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr10, %[dst], 0, 2                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr10, %[dst], 0, 3                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr11, %[dst], 0, 2                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr11, %[dst], 0, 3                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr12, %[dst], 0, 2                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr12, %[dst], 0, 3                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr13, %[dst], 0, 2                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr13, %[dst], 0, 3                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr14, %[dst], 0, 2                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr14, %[dst], 0, 3                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr15, %[dst], 0, 2                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "xvstelm.d  $xr15, %[dst], 0, 3                  \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src),  // %[src]
+        [dst] "+r"(dst),  // %[dst]
+        [w] "+r"(width),  // %[w]
+        [t] "=&r"(t)      // %[t]
+      : [s] "r"(s),       // %[s]
+        [d] "r"(d)        // %[d]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr15");
+}
+#endif  // HAS_TRANSPOSEWX8_LASX
+
+#ifdef HAS_TRANSPOSEUVWX8_LASX
+void TransposeUVWx8_LASX(const uint8_t* src,
+                         int src_stride,
+                         uint8_t* dst_a,
+                         int dst_stride_a,
+                         uint8_t* dst_b,
+                         int dst_stride_b,
+                         int width) {
+  const ptrdiff_t s = src_stride;
+  const ptrdiff_t da = dst_stride_a;
+  const ptrdiff_t db = dst_stride_b;
+  const uint8_t* t;
+  asm volatile(
+      "srli.w     %[w], %[w], 4                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "move       %[t], %[src]                         \n"
+      "xvld       $xr0, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr1, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr2, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr3, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr4, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr5, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr6, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr7, %[t], 0                        \n"
+      "addi.d     %[src], %[src], 32                   \n"
+
+      "xvilvl.b   $xr8, $xr1, $xr0                     \n"
+      "xvilvh.b   $xr9, $xr1, $xr0                     \n"
+      "xvilvl.b   $xr10, $xr3, $xr2                    \n"
+      "xvilvh.b   $xr11, $xr3, $xr2                    \n"
+      "xvilvl.b   $xr12, $xr5, $xr4                    \n"
+      "xvilvh.b   $xr13, $xr5, $xr4                    \n"
+      "xvilvl.b   $xr14, $xr7, $xr6                    \n"
+      "xvilvh.b   $xr15, $xr7, $xr6                    \n"
+
+      "xvilvl.h   $xr0, $xr10, $xr8                    \n"
+      "xvilvh.h   $xr1, $xr10, $xr8                    \n"
+      "xvilvl.h   $xr2, $xr11, $xr9                    \n"
+      "xvilvh.h   $xr3, $xr11, $xr9                    \n"
+      "xvilvl.h   $xr4, $xr14, $xr12                   \n"
+      "xvilvh.h   $xr5, $xr14, $xr12                   \n"
+      "xvilvl.h   $xr6, $xr15, $xr13                   \n"
+      "xvilvh.h   $xr7, $xr15, $xr13                   \n"
+
+      "xvilvl.w   $xr8, $xr4, $xr0                     \n"
+      "xvilvh.w   $xr9, $xr4, $xr0                     \n"
+      "xvilvl.w   $xr10, $xr5, $xr1                    \n"
+      "xvilvh.w   $xr11, $xr5, $xr1                    \n"
+      "xvilvl.w   $xr12, $xr6, $xr2                    \n"
+      "xvilvh.w   $xr13, $xr6, $xr2                    \n"
+      "xvilvl.w   $xr14, $xr7, $xr3                    \n"
+      "xvilvh.w   $xr15, $xr7, $xr3                    \n"
+
+      "xvstelm.d  $xr8, %[dst_a], 0, 0                 \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr8, %[dst_b], 0, 1                 \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr9, %[dst_a], 0, 0                 \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr9, %[dst_b], 0, 1                 \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr10, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr10, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr11, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr11, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr12, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr12, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr13, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr13, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr14, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr14, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr15, %[dst_a], 0, 0                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr15, %[dst_b], 0, 1                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+
+      "xvstelm.d  $xr8, %[dst_a], 0, 2                 \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr8, %[dst_b], 0, 3                 \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr9, %[dst_a], 0, 2                 \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr9, %[dst_b], 0, 3                 \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr10, %[dst_a], 0, 2                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr10, %[dst_b], 0, 3                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr11, %[dst_a], 0, 2                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr11, %[dst_b], 0, 3                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr12, %[dst_a], 0, 2                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr12, %[dst_b], 0, 3                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr13, %[dst_a], 0, 2                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr13, %[dst_b], 0, 3                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr14, %[dst_a], 0, 2                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr14, %[dst_b], 0, 3                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "xvstelm.d  $xr15, %[dst_a], 0, 2                \n"
+      "add.d      %[dst_a], %[dst_a], %[da]            \n"
+      "xvstelm.d  $xr15, %[dst_b], 0, 3                \n"
+      "add.d      %[dst_b], %[dst_b], %[db]            \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src),      // %[src]
+        [dst_a] "+r"(dst_a),  // %[dst_a]
+        [dst_b] "+r"(dst_b),  // %[dst_b]
+        [w] "+r"(width),      // %[w]
+        [t] "=&r"(t)          // %[t]
+      : [s] "r"(s),           // %[s]
+        [da] "r"(da),         // %[da]
+        [db] "r"(db)          // %[db]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr15");
+}
+#endif  // HAS_TRANSPOSEUVWX8_LASX
+
+#ifdef HAS_TRANSPOSEWX8_16_LASX
+void TransposeWx8_16_LASX(const uint16_t* src,
+                          int src_stride,
+                          uint16_t* dst,
+                          int dst_stride,
+                          int width) {
+  const ptrdiff_t s = (ptrdiff_t)src_stride * 2;
+  const ptrdiff_t d = (ptrdiff_t)dst_stride * 2;
+  const uint8_t* src_b = (const uint8_t*)src;
+  uint8_t* dst_b = (uint8_t*)dst;
+  const uint8_t* t;
+  asm volatile(
+      "srli.w     %[w], %[w], 4                        \n"
+      "beqz       %[w], 2f                             \n"
+      "1:                                              \n"
+      "move       %[t], %[src]                         \n"
+      "xvld       $xr0, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr1, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr2, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr3, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr4, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr5, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr6, %[t], 0                        \n"
+      "add.d      %[t], %[t], %[s]                     \n"
+      "xvld       $xr7, %[t], 0                        \n"
+      "addi.d     %[src], %[src], 32                   \n"
+
+      "xvilvl.h   $xr8, $xr1, $xr0                     \n"
+      "xvilvh.h   $xr9, $xr1, $xr0                     \n"
+      "xvilvl.h   $xr10, $xr3, $xr2                    \n"
+      "xvilvh.h   $xr11, $xr3, $xr2                    \n"
+      "xvilvl.h   $xr12, $xr5, $xr4                    \n"
+      "xvilvh.h   $xr13, $xr5, $xr4                    \n"
+      "xvilvl.h   $xr14, $xr7, $xr6                    \n"
+      "xvilvh.h   $xr15, $xr7, $xr6                    \n"
+
+      "xvilvl.w   $xr0, $xr10, $xr8                    \n"
+      "xvilvh.w   $xr1, $xr10, $xr8                    \n"
+      "xvilvl.w   $xr2, $xr11, $xr9                    \n"
+      "xvilvh.w   $xr3, $xr11, $xr9                    \n"
+      "xvilvl.w   $xr4, $xr14, $xr12                   \n"
+      "xvilvh.w   $xr5, $xr14, $xr12                   \n"
+      "xvilvl.w   $xr6, $xr15, $xr13                   \n"
+      "xvilvh.w   $xr7, $xr15, $xr13                   \n"
+
+      "xvilvl.d   $xr8, $xr4, $xr0                     \n"
+      "xvilvh.d   $xr9, $xr4, $xr0                     \n"
+      "xvilvl.d   $xr10, $xr5, $xr1                    \n"
+      "xvilvh.d   $xr11, $xr5, $xr1                    \n"
+      "xvilvl.d   $xr12, $xr6, $xr2                    \n"
+      "xvilvh.d   $xr13, $xr6, $xr2                    \n"
+      "xvilvl.d   $xr14, $xr7, $xr3                    \n"
+      "xvilvh.d   $xr15, $xr7, $xr3                    \n"
+
+      "vst        $vr8, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr9, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr10, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr11, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr12, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr13, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr14, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr15, %[dst], 0                     \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+
+      "xvpermi.d  $xr0, $xr8, 0x4e                     \n"
+      "xvpermi.d  $xr1, $xr9, 0x4e                     \n"
+      "xvpermi.d  $xr2, $xr10, 0x4e                    \n"
+      "xvpermi.d  $xr3, $xr11, 0x4e                    \n"
+      "xvpermi.d  $xr4, $xr12, 0x4e                    \n"
+      "xvpermi.d  $xr5, $xr13, 0x4e                    \n"
+      "xvpermi.d  $xr6, $xr14, 0x4e                    \n"
+      "xvpermi.d  $xr7, $xr15, 0x4e                    \n"
+
+      "vst        $vr0, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr1, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr2, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr3, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr4, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr5, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr6, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "vst        $vr7, %[dst], 0                      \n"
+      "add.d      %[dst], %[dst], %[d]                 \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [src] "+r"(src_b),  // %[src]
+        [dst] "+r"(dst_b),  // %[dst]
+        [w] "+r"(width),    // %[w]
+        [t] "=&r"(t)        // %[t]
+      : [s] "r"(s),         // %[s]
+        [d] "r"(d)          // %[d]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr15");
+}
+#endif  // HAS_TRANSPOSEWX8_16_LASX
+
 #ifdef HAS_TRANSPOSEWX16_LASX
 void TransposeWx16_LASX(const uint8_t* src,
                         int src_stride,

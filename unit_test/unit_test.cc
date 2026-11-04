@@ -120,7 +120,7 @@ static int TestCpuEnv(int cpu_info) {
     cpu_info &= ~libyuv::kCpuHasSME2;
   }
 #endif
-#if defined(__longarch__) && defined(__linux__)
+#if defined(__loongarch__)
   if (TestEnv("LIBYUV_DISABLE_LSX")) {
     cpu_info &= ~libyuv::kCpuHasLSX;
   }

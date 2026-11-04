@@ -6,6 +6,19 @@ cmake_minimum_required( VERSION 3.16 )
 project ( YUV C CXX )	# "C" is required even for C++ projects
 option( UNIT_TEST "Built unit tests" OFF )
 option( LIBYUV_DISABLE_JPEG "Disable JPEG support" OFF )
+option( LIBYUV_DISABLE_ASM "Disable inline assembly" OFF )
+option( LIBYUV_DISABLE_LSX "Disable LoongArch LSX" OFF )
+option( LIBYUV_DISABLE_LASX "Disable LoongArch LASX" OFF )
+
+if(LIBYUV_DISABLE_ASM)
+  add_definitions(-DLIBYUV_DISABLE_ASM)
+endif()
+if(LIBYUV_DISABLE_LSX)
+  add_definitions(-DLIBYUV_DISABLE_LSX)
+endif()
+if(LIBYUV_DISABLE_LASX)
+  add_definitions(-DLIBYUV_DISABLE_LASX)
+endif()
 
 include(CheckCSourceCompiles)
 
@@ -89,7 +102,7 @@ add_library( ${ly_lib_name}_common_objects OBJECT ${ly_common_source_files} )
 set(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_common_objects>)
 
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSPROC)
-set(LOONGARCH64_ALIASES loongarch64)
+set(LOONGARCH64_ALIASES loongarch64 loong64)
 list(FIND LOONGARCH64_ALIASES "${SYSPROC}" LOONGARCH64MATCH)
 
 if(LOONGARCH64MATCH GREATER "-1")

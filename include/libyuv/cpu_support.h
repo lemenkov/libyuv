@@ -41,11 +41,46 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SVE)
 #define LIBYUV_DISABLE_SVE
 #endif
+#if !defined(LIBYUV_DISABLE_RVV)
+#define LIBYUV_DISABLE_RVV
+#endif
+#if !defined(LIBYUV_DISABLE_LSX)
+#define LIBYUV_DISABLE_LSX
+#endif
+#if !defined(LIBYUV_DISABLE_LASX)
+#define LIBYUV_DISABLE_LASX
+#endif
 #if !defined(LIBYUV_ENABLE_ROWWIN)
 #define LIBYUV_ENABLE_ROWWIN
 #endif
 #endif  // __has_feature(memory_sanitizer)
 #endif  // defined(__has_feature)
+
+// Disable all platforms that use inline assembly when LIBYUV_DISABLE_ASM is
+// defined at build time.
+#if defined(LIBYUV_DISABLE_ASM)
+#if !defined(LIBYUV_DISABLE_X86)
+#define LIBYUV_DISABLE_X86
+#endif
+#if !defined(LIBYUV_DISABLE_NEON)
+#define LIBYUV_DISABLE_NEON
+#endif
+#if !defined(LIBYUV_DISABLE_SVE)
+#define LIBYUV_DISABLE_SVE
+#endif
+#if !defined(LIBYUV_DISABLE_SME)
+#define LIBYUV_DISABLE_SME
+#endif
+#if !defined(LIBYUV_DISABLE_RVV)
+#define LIBYUV_DISABLE_RVV
+#endif
+#if !defined(LIBYUV_DISABLE_LSX)
+#define LIBYUV_DISABLE_LSX
+#endif
+#if !defined(LIBYUV_DISABLE_LASX)
+#define LIBYUV_DISABLE_LASX
+#endif
+#endif  // defined(LIBYUV_DISABLE_ASM)
 
 // clang >= 3.5.0 required for Arm64.
 #if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_NEON)
@@ -146,7 +181,7 @@ extern "C" {
 #define VISUALC_HAS_AVX512 1
 #endif  // VisualStudio >= 2019
 
-#if defined(LIBYUV_ENABLE_SME)
+#if defined(LIBYUV_ENABLE_SME) && !defined(LIBYUV_DISABLE_ASM)
 #undef LIBYUV_DISABLE_SME
 #endif
 

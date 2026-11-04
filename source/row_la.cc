@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include "libyuv/basic_types.h"
 #include "libyuv/row.h"
 
@@ -1303,7 +1305,8 @@ void ARGBToRAWRow_LSX(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
 }
 #endif  // HAS_ARGBTORAWROW_LSX
 
-#if defined(HAS_RGB24TOARGBROW_LSX) || defined(HAS_RAWTOARGBROW_LSX)
+#if defined(HAS_RGB24TOARGBROW_LSX) || defined(HAS_RAWTOARGBROW_LSX) || \
+    defined(HAS_RAWTORGBAROW_LSX)
 static LIBYUV_NOINLINE void RGB24ToARGBHelper_LSX(const uint8_t* src_24,
                                                   uint8_t* dst_argb,
                                                   const uint8_t* shuf,
@@ -1333,7 +1336,8 @@ static LIBYUV_NOINLINE void RGB24ToARGBHelper_LSX(const uint8_t* src_24,
       : [shuf] "r"(shuf)
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
 }
-#endif  // defined(HAS_RGB24TOARGBROW_LSX) || defined(HAS_RAWTOARGBROW_LSX)
+#endif  // defined(HAS_RGB24TOARGBROW_LSX) || defined(HAS_RAWTOARGBROW_LSX) ||
+        // defined(HAS_RAWTORGBAROW_LSX)
 
 #ifdef HAS_RGB24TOARGBROW_LSX
 void RGB24ToARGBRow_LSX(const uint8_t* src_rgb24,
@@ -1354,6 +1358,15 @@ void RAWToARGBRow_LSX(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   RGB24ToARGBHelper_LSX(src_raw, dst_argb, kShuf, width);
 }
 #endif  // HAS_RAWTOARGBROW_LSX
+
+#ifdef HAS_RAWTORGBAROW_LSX
+void RAWToRGBARow_LSX(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
+  static const uint8_t kShuf[32] = {16, 2,  1,  0,  16, 5,  4,  3,  16, 8,  7,
+                                    6,  16, 11, 10, 9,  16, 6,  5,  4,  16, 9,
+                                    8,  7,  16, 12, 11, 10, 16, 15, 14, 13};
+  RGB24ToARGBHelper_LSX(src_raw, dst_rgba, kShuf, width);
+}
+#endif  // HAS_RAWTORGBAROW_LSX
 
 #ifdef HAS_RAWTORGB24ROW_LSX
 void RAWToRGB24Row_LSX(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
@@ -2830,6 +2843,1132 @@ void RAWToUVRow_LSX(const uint8_t* src_raw,
   RGB24ToUVHelper_LSX(src_raw, src_stride_raw, dst_u, dst_v, kShuf, width);
 }
 #endif  // HAS_RAWTOUVROW_LSX
+
+#ifdef HAS_SWAPUVROW_LSX
+void SwapUVRow_LSX(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vshuf4i.b $vr0, $vr0, 0xb1\n\t"
+      "vshuf4i.b $vr1, $vr1, 0xb1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [dst] "+r"(dst_vu), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_SWAPUVROW_LSX
+
+#ifdef HAS_ARGBCOPYYTOALPHAROW_LSX
+void ARGBCopyYToAlphaRow_LSX(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vldi $vr4, 0xff\n\t"
+      "vslli.w $vr4, $vr4, 24\n\t"
+      "1:\n\t"
+      "vldrepl.d $vr0, %[src], 0\n\t"
+      "vld $vr1, %[dst], 0\n\t"
+      "vld $vr2, %[dst], 16\n\t"
+      "vilvl.b $vr0, $vr0, $vr0\n\t"
+      "vilvh.h $vr3, $vr0, $vr0\n\t"
+      "vilvl.h $vr0, $vr0, $vr0\n\t"
+      "vslli.w $vr0, $vr0, 24\n\t"
+      "vslli.w $vr3, $vr3, 24\n\t"
+      "vandn.v $vr1, $vr4, $vr1\n\t"
+      "vandn.v $vr2, $vr4, $vr2\n\t"
+      "vor.v $vr1, $vr1, $vr0\n\t"
+      "vor.v $vr2, $vr2, $vr3\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "vst $vr2, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 8\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+}
+#endif  // HAS_ARGBCOPYYTOALPHAROW_LSX
+
+#ifdef HAS_HALFMERGEUVROW_LSX
+void HalfMergeUVRow_LSX(const uint8_t* src_u,
+                        int src_stride_u,
+                        const uint8_t* src_v,
+                        int src_stride_v,
+                        uint8_t* dst_uv,
+                        int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[su], 0\n\t"
+      "vld $vr1, %[sv], 0\n\t"
+      "vldx $vr2, %[su], %[stu]\n\t"
+      "vldx $vr3, %[sv], %[stv]\n\t"
+      "vhaddw.hu.bu $vr0, $vr0, $vr0\n\t"
+      "vhaddw.hu.bu $vr1, $vr1, $vr1\n\t"
+      "vhaddw.hu.bu $vr2, $vr2, $vr2\n\t"
+      "vhaddw.hu.bu $vr3, $vr3, $vr3\n\t"
+      "vadd.h $vr0, $vr0, $vr2\n\t"
+      "vadd.h $vr1, $vr1, $vr3\n\t"
+      "vsrari.h $vr0, $vr0, 2\n\t"
+      "vsrari.h $vr1, $vr1, 2\n\t"
+      "vpackev.b $vr0, $vr1, $vr0\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[su], %[su], 16\n\t"
+      "addi.d %[sv], %[sv], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [stu] "r"((ptrdiff_t)src_stride_u), [stv] "r"((ptrdiff_t)src_stride_v)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3");
+}
+#endif  // HAS_HALFMERGEUVROW_LSX
+
+#ifdef HAS_CONVERT16TO8ROW_LSX
+void Convert16To8Row_LSX(const uint16_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int width) {
+  asm volatile(
+      "vreplgr2vr.h $vr2, %[scl]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vmuh.hu $vr0, $vr0, $vr2\n\t"
+      "vmuh.hu $vr1, $vr1, $vr2\n\t"
+      "vssrani.bu.h $vr1, $vr0, 0\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$vr0", "$vr1", "$vr2");
+}
+#endif  // HAS_CONVERT16TO8ROW_LSX
+
+#ifdef HAS_CONVERT8TO16ROW_LSX
+void Convert8To16Row_LSX(const uint8_t* src_y,
+                         uint16_t* dst_y,
+                         int bits,
+                         int width) {
+  const int shift = 16 - bits;
+  asm volatile(
+      "vreplgr2vr.h $vr3, %[shf]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vilvl.b $vr1, $vr0, $vr0\n\t"
+      "vilvh.b $vr2, $vr0, $vr0\n\t"
+      "vsrl.h $vr1, $vr1, $vr3\n\t"
+      "vsrl.h $vr2, $vr2, $vr3\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "vst $vr2, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [shf] "r"(shift)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3");
+}
+#endif  // HAS_CONVERT8TO16ROW_LSX
+
+#ifdef HAS_MULTIPLYROW_16_LSX
+void MultiplyRow_16_LSX(const uint16_t* src_y,
+                        uint16_t* dst_y,
+                        int scale,
+                        int width) {
+  asm volatile(
+      "vreplgr2vr.h $vr2, %[scl]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vmul.h $vr0, $vr0, $vr2\n\t"
+      "vmul.h $vr1, $vr1, $vr2\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$vr0", "$vr1", "$vr2");
+}
+#endif  // HAS_MULTIPLYROW_16_LSX
+
+#ifdef HAS_DIVIDEROW_16_LSX
+void DivideRow_16_LSX(const uint16_t* src_y,
+                      uint16_t* dst_y,
+                      int scale,
+                      int width) {
+  if (scale == 65536) {  // Divide by 1, so do memcpy.
+    if (src_y != dst_y) {
+      memcpy(dst_y, src_y, (size_t)width * 2);
+    }
+    return;
+  }
+  asm volatile(
+      "vreplgr2vr.h $vr2, %[scl]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vmuh.hu $vr0, $vr0, $vr2\n\t"
+      "vmuh.hu $vr1, $vr1, $vr2\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$vr0", "$vr1", "$vr2");
+}
+#endif  // HAS_DIVIDEROW_16_LSX
+
+#ifdef HAS_MERGEUVROW_16_LSX
+void MergeUVRow_16_LSX(const uint16_t* src_u,
+                       const uint16_t* src_v,
+                       uint16_t* dst_uv,
+                       int depth,
+                       int width) {
+  int shift = 16 - depth;
+  asm volatile(
+      "vreplgr2vr.h $vr4, %[shf]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[su], 0\n\t"
+      "vld $vr1, %[sv], 0\n\t"
+      "vsll.h $vr0, $vr0, $vr4\n\t"
+      "vsll.h $vr1, $vr1, $vr4\n\t"
+      "vilvl.h $vr2, $vr1, $vr0\n\t"
+      "vilvh.h $vr3, $vr1, $vr0\n\t"
+      "vst $vr2, %[dst], 0\n\t"
+      "vst $vr3, %[dst], 16\n\t"
+      "addi.d %[su], %[su], 16\n\t"
+      "addi.d %[sv], %[sv], 16\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [shf] "r"(shift)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+}
+#endif  // HAS_MERGEUVROW_16_LSX
+
+#ifdef HAS_SPLITUVROW_16_LSX
+void SplitUVRow_16_LSX(const uint16_t* src_uv,
+                       uint16_t* dst_u,
+                       uint16_t* dst_v,
+                       int depth,
+                       int width) {
+  int shift = 16 - depth;
+  asm volatile(
+      "vreplgr2vr.h $vr4, %[shf]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vpickev.h $vr2, $vr1, $vr0\n\t"
+      "vpickod.h $vr3, $vr1, $vr0\n\t"
+      "vsrl.h $vr2, $vr2, $vr4\n\t"
+      "vsrl.h $vr3, $vr3, $vr4\n\t"
+      "vst $vr2, %[du], 0\n\t"
+      "vst $vr3, %[dv], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[du], %[du], 16\n\t"
+      "addi.d %[dv], %[dv], 16\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [du] "+r"(dst_u), [dv] "+r"(dst_v),
+        [cnt] "+r"(width)
+      : [shf] "r"(shift)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+}
+#endif  // HAS_SPLITUVROW_16_LSX
+
+#ifdef HAS_COPYROW_16_LSX
+void CopyRow_16_LSX(const uint16_t* src, uint16_t* dst, int count) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(count)
+      :
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_COPYROW_16_LSX
+
+#ifdef HAS_HALFROW_LSX
+void HalfRow_LSX(const uint8_t* src_uv,
+                 ptrdiff_t src_uv_stride,
+                 uint8_t* dst_uv,
+                 int width) {
+  const uint8_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src1], 0\n\t"
+      "vavgr.bu $vr0, $vr0, $vr1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 16\n\t"
+      "addi.d %[src1], %[src1], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_HALFROW_LSX
+
+#ifdef HAS_HALFROW_16_LSX
+void HalfRow_16_LSX(const uint16_t* src_uv,
+                    ptrdiff_t src_uv_stride,
+                    uint16_t* dst_uv,
+                    int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src1], 0\n\t"
+      "vavgr.hu $vr0, $vr0, $vr1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 16\n\t"
+      "addi.d %[src1], %[src1], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_HALFROW_16_LSX
+
+#ifdef HAS_ARGBCOPYALPHAROW_LSX
+void ARGBCopyAlphaRow_LSX(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vldi $vr4, 0xff\n\t"
+      "vslli.w $vr4, $vr4, 24\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vld $vr2, %[dst], 0\n\t"
+      "vld $vr3, %[dst], 16\n\t"
+      "vbitsel.v $vr2, $vr2, $vr0, $vr4\n\t"
+      "vbitsel.v $vr3, $vr3, $vr1, $vr4\n\t"
+      "vst $vr2, %[dst], 0\n\t"
+      "vst $vr3, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+}
+#endif  // HAS_ARGBCOPYALPHAROW_LSX
+
+#ifdef HAS_YUY2TONVUVROW_LSX
+void YUY2ToNVUVRow_LSX(const uint8_t* src_yuy2,
+                       int src_stride_yuy2,
+                       uint8_t* dst_uv,
+                       int width) {
+  const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src0], 16\n\t"
+      "vld $vr2, %[src1], 0\n\t"
+      "vld $vr3, %[src1], 16\n\t"
+      "vpickod.b $vr0, $vr1, $vr0\n\t"
+      "vpickod.b $vr2, $vr3, $vr2\n\t"
+      "vavgr.bu $vr0, $vr0, $vr2\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 32\n\t"
+      "addi.d %[src1], %[src1], 32\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_yuy2), [src1] "+r"(src_yuy2_1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3");
+}
+#endif  // HAS_YUY2TONVUVROW_LSX
+
+#ifdef HAS_AR64TOARGBROW_LSX
+void AR64ToARGBRow_LSX(const uint16_t* src_ar64,
+                       uint8_t* dst_argb,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vpickod.b $vr0, $vr1, $vr0\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar64), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_AR64TOARGBROW_LSX
+
+#ifdef HAS_AB64TOARGBROW_LSX
+void AB64ToARGBRow_LSX(const uint16_t* src_ab64,
+                       uint8_t* dst_argb,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vpickod.b $vr0, $vr1, $vr0\n\t"
+      "vshuf4i.b $vr0, $vr0, 0xc6\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ab64), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_AB64TOARGBROW_LSX
+
+#ifdef HAS_ARGBTOAR64ROW_LSX
+void ARGBToAR64Row_LSX(const uint8_t* src_argb,
+                       uint16_t* dst_ar64,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vilvl.b $vr1, $vr0, $vr0\n\t"
+      "vilvh.b $vr2, $vr0, $vr0\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "vst $vr2, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_ar64), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2");
+}
+#endif  // HAS_ARGBTOAR64ROW_LSX
+
+#ifdef HAS_ARGBTOAB64ROW_LSX
+void ARGBToAB64Row_LSX(const uint8_t* src_argb,
+                       uint16_t* dst_ab64,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vshuf4i.b $vr0, $vr0, 0xc6\n\t"
+      "vilvl.b $vr1, $vr0, $vr0\n\t"
+      "vilvh.b $vr2, $vr0, $vr0\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "vst $vr2, %[dst], 16\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_ab64), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2");
+}
+#endif  // HAS_ARGBTOAB64ROW_LSX
+
+#ifdef HAS_CONVERT8TO8ROW_LSX
+void Convert8To8Row_LSX(const uint8_t* src_y,
+                        uint8_t* dst_y,
+                        int scale,
+                        int bias,
+                        int width) {
+  asm volatile(
+      "vreplgr2vr.b $vr2, %[scl]\n\t"
+      "vreplgr2vr.b $vr3, %[bia]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vmuh.bu $vr0, $vr0, $vr2\n\t"
+      "vadd.b $vr0, $vr0, $vr3\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale), [bia] "r"(bias)
+      : "memory", "$vr0", "$vr2", "$vr3");
+}
+#endif  // HAS_CONVERT8TO8ROW_LSX
+
+#ifdef HAS_HALFROW_16TO8_LSX
+void HalfRow_16To8_LSX(const uint16_t* src_uv,
+                       ptrdiff_t src_uv_stride,
+                       uint8_t* dst_uv,
+                       int scale,
+                       int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "vreplgr2vr.h $vr4, %[scl]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src0], 16\n\t"
+      "vld $vr2, %[src1], 0\n\t"
+      "vld $vr3, %[src1], 16\n\t"
+      "vavgr.hu $vr0, $vr0, $vr2\n\t"
+      "vavgr.hu $vr1, $vr1, $vr3\n\t"
+      "vmuh.hu $vr0, $vr0, $vr4\n\t"
+      "vmuh.hu $vr1, $vr1, $vr4\n\t"
+      "vssrani.bu.h $vr1, $vr0, 0\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 32\n\t"
+      "addi.d %[src1], %[src1], 32\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+}
+#endif  // HAS_HALFROW_16TO8_LSX
+
+#ifdef HAS_AR30TOAB30ROW_LSX
+void AR30ToAB30Row_LSX(const uint8_t* src_ar30,
+                       uint8_t* dst_ab30,
+                       int width) {
+  uint32_t m_ag = 0xc00ffc00u;
+  uint32_t m_r = 0x3ff00000u;
+  uint32_t m_b = 0x000003ffu;
+  asm volatile(
+      "vreplgr2vr.w $vr3, %[m_ag]\n\t"
+      "vreplgr2vr.w $vr4, %[m_r]\n\t"
+      "vreplgr2vr.w $vr5, %[m_b]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vsrli.w $vr1, $vr0, 20\n\t"
+      "vslli.w $vr2, $vr0, 20\n\t"
+      "vand.v $vr0, $vr0, $vr3\n\t"
+      "vand.v $vr1, $vr1, $vr5\n\t"
+      "vand.v $vr2, $vr2, $vr4\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vor.v $vr0, $vr0, $vr2\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar30), [dst] "+r"(dst_ab30), [cnt] "+r"(width)
+      : [m_ag] "r"(m_ag), [m_r] "r"(m_r), [m_b] "r"(m_b)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5");
+}
+#endif  // HAS_AR30TOAB30ROW_LSX
+
+#ifdef HAS_ARGBTOAR30ROW_LSX
+void ARGBToAR30Row_LSX(const uint8_t* src_argb,
+                       uint8_t* dst_ar30,
+                       int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_r = 0x3fc00000u;
+  uint32_t m_g = 0x000ff000u;
+  uint32_t m_b = 0x000003fcu;
+  uint32_t m_l = 0x00300c03u;
+  asm volatile(
+      "vreplgr2vr.w $vr4, %[m_a]\n\t"
+      "vreplgr2vr.w $vr5, %[m_r]\n\t"
+      "vreplgr2vr.w $vr6, %[m_g]\n\t"
+      "vreplgr2vr.w $vr7, %[m_b]\n\t"
+      "vreplgr2vr.w $vr8, %[m_l]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vslli.w $vr1, $vr0, 6\n\t"
+      "vslli.w $vr2, $vr0, 4\n\t"
+      "vslli.w $vr3, $vr0, 2\n\t"
+      "vand.v $vr0, $vr0, $vr4\n\t"
+      "vand.v $vr1, $vr1, $vr5\n\t"
+      "vand.v $vr2, $vr2, $vr6\n\t"
+      "vand.v $vr3, $vr3, $vr7\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vor.v $vr2, $vr2, $vr3\n\t"
+      "vor.v $vr0, $vr0, $vr2\n\t"
+      "vsrli.w $vr1, $vr0, 8\n\t"
+      "vand.v $vr1, $vr1, $vr8\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_ar30), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_r] "r"(m_r), [m_g] "r"(m_g), [m_b] "r"(m_b),
+        [m_l] "r"(m_l)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8");
+}
+#endif  // HAS_ARGBTOAR30ROW_LSX
+
+#ifdef HAS_ABGRTOAR30ROW_LSX
+void ABGRToAR30Row_LSX(const uint8_t* src_abgr,
+                       uint8_t* dst_ar30,
+                       int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_r = 0x3fc00000u;
+  uint32_t m_g = 0x000ff000u;
+  uint32_t m_b = 0x000003fcu;
+  uint32_t m_l = 0x00300c03u;
+  asm volatile(
+      "vreplgr2vr.w $vr4, %[m_a]\n\t"
+      "vreplgr2vr.w $vr5, %[m_r]\n\t"
+      "vreplgr2vr.w $vr6, %[m_g]\n\t"
+      "vreplgr2vr.w $vr7, %[m_b]\n\t"
+      "vreplgr2vr.w $vr8, %[m_l]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vshuf4i.b $vr0, $vr0, 0xc6\n\t"
+      "vslli.w $vr1, $vr0, 6\n\t"
+      "vslli.w $vr2, $vr0, 4\n\t"
+      "vslli.w $vr3, $vr0, 2\n\t"
+      "vand.v $vr0, $vr0, $vr4\n\t"
+      "vand.v $vr1, $vr1, $vr5\n\t"
+      "vand.v $vr2, $vr2, $vr6\n\t"
+      "vand.v $vr3, $vr3, $vr7\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vor.v $vr2, $vr2, $vr3\n\t"
+      "vor.v $vr0, $vr0, $vr2\n\t"
+      "vsrli.w $vr1, $vr0, 8\n\t"
+      "vand.v $vr1, $vr1, $vr8\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_abgr), [dst] "+r"(dst_ar30), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_r] "r"(m_r), [m_g] "r"(m_g), [m_b] "r"(m_b),
+        [m_l] "r"(m_l)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8");
+}
+#endif  // HAS_ABGRTOAR30ROW_LSX
+
+#ifdef HAS_AR30TOARGBROW_LSX
+void AR30ToARGBRow_LSX(const uint8_t* src_ar30,
+                       uint8_t* dst_argb,
+                       int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_2 = 0x300000ffu;
+  uint32_t m_4 = 0x0c00ff00u;
+  uint32_t m_6 = 0x03ff0000u;
+  asm volatile(
+      "vreplgr2vr.w $vr4, %[m_a]\n\t"
+      "vreplgr2vr.w $vr5, %[m_2]\n\t"
+      "vreplgr2vr.w $vr6, %[m_4]\n\t"
+      "vreplgr2vr.w $vr7, %[m_6]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vsrli.w $vr1, $vr0, 2\n\t"
+      "vsrli.w $vr2, $vr0, 4\n\t"
+      "vsrli.w $vr3, $vr0, 6\n\t"
+      "vand.v $vr0, $vr0, $vr4\n\t"
+      "vand.v $vr1, $vr1, $vr5\n\t"
+      "vand.v $vr2, $vr2, $vr6\n\t"
+      "vand.v $vr3, $vr3, $vr7\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vor.v $vr2, $vr2, $vr3\n\t"
+      "vor.v $vr0, $vr0, $vr2\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar30), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_2] "r"(m_2), [m_4] "r"(m_4), [m_6] "r"(m_6)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+}
+#endif  // HAS_AR30TOARGBROW_LSX
+
+#ifdef HAS_AR30TOABGRROW_LSX
+void AR30ToABGRRow_LSX(const uint8_t* src_ar30,
+                       uint8_t* dst_abgr,
+                       int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_2 = 0x300000ffu;
+  uint32_t m_4 = 0x0c00ff00u;
+  uint32_t m_6 = 0x03ff0000u;
+  asm volatile(
+      "vreplgr2vr.w $vr4, %[m_a]\n\t"
+      "vreplgr2vr.w $vr5, %[m_2]\n\t"
+      "vreplgr2vr.w $vr6, %[m_4]\n\t"
+      "vreplgr2vr.w $vr7, %[m_6]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vsrli.w $vr1, $vr0, 2\n\t"
+      "vsrli.w $vr2, $vr0, 4\n\t"
+      "vsrli.w $vr3, $vr0, 6\n\t"
+      "vand.v $vr0, $vr0, $vr4\n\t"
+      "vand.v $vr1, $vr1, $vr5\n\t"
+      "vand.v $vr2, $vr2, $vr6\n\t"
+      "vand.v $vr3, $vr3, $vr7\n\t"
+      "vor.v $vr0, $vr0, $vr1\n\t"
+      "vor.v $vr2, $vr2, $vr3\n\t"
+      "vor.v $vr0, $vr0, $vr2\n\t"
+      "vshuf4i.b $vr0, $vr0, 0xc6\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -4\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar30), [dst] "+r"(dst_abgr), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_2] "r"(m_2), [m_4] "r"(m_4), [m_6] "r"(m_6)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+}
+#endif  // HAS_AR30TOABGRROW_LSX
+
+#ifdef HAS_AYUVTOYROW_LSX
+void AYUVToYRow_LSX(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vld $vr2, %[src], 32\n\t"
+      "vld $vr3, %[src], 48\n\t"
+      "vpickev.h $vr0, $vr1, $vr0\n\t"
+      "vpickev.h $vr2, $vr3, $vr2\n\t"
+      "vpickev.b $vr0, $vr2, $vr0\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ayuv), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3");
+}
+#endif  // HAS_AYUVTOYROW_LSX
+
+#ifdef HAS_AYUVTOUVROW_LSX
+void AYUVToUVRow_LSX(const uint8_t* src_ayuv,
+                     int src_stride_ayuv,
+                     uint8_t* dst_uv,
+                     int width) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  asm volatile(
+      "vldi $vr6, 0x02\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src0], 16\n\t"
+      "vld $vr2, %[src0], 32\n\t"
+      "vld $vr3, %[src0], 48\n\t"
+      "vld $vr4, %[src1], 0\n\t"
+      "vld $vr5, %[src1], 16\n\t"
+      "vaddwev.h.bu $vr0, $vr0, $vr4\n\t"
+      "vaddwod.h.bu $vr4, $vr1, $vr5\n\t"
+      "vld $vr1, %[src1], 32\n\t"
+      "vld $vr5, %[src1], 48\n\t"
+      "vaddwev.h.bu $vr2, $vr2, $vr1\n\t"
+      "vaddwod.h.bu $vr3, $vr3, $vr5\n\t"
+      "vadd.h $vr0, $vr0, $vr4\n\t"
+      "vadd.h $vr2, $vr2, $vr3\n\t"
+      "vadd.h $vr0, $vr0, $vr6\n\t"
+      "vadd.h $vr2, $vr2, $vr6\n\t"
+      "vsrli.h $vr0, $vr0, 2\n\t"
+      "vsrli.h $vr2, $vr2, 2\n\t"
+      "vpickev.b $vr0, $vr2, $vr0\n\t"
+      "vshuf4i.b $vr0, $vr0, 0xb1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_ayuv), [src1] "+r"(src_ayuv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_AYUVTOUVROW_LSX
+
+#ifdef HAS_AYUVTOVUROW_LSX
+void AYUVToVURow_LSX(const uint8_t* src_ayuv,
+                     int src_stride_ayuv,
+                     uint8_t* dst_vu,
+                     int width) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  asm volatile(
+      "vldi $vr6, 0x02\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src0], 16\n\t"
+      "vld $vr2, %[src0], 32\n\t"
+      "vld $vr3, %[src0], 48\n\t"
+      "vld $vr4, %[src1], 0\n\t"
+      "vld $vr5, %[src1], 16\n\t"
+      "vaddwev.h.bu $vr0, $vr0, $vr4\n\t"
+      "vaddwod.h.bu $vr4, $vr1, $vr5\n\t"
+      "vld $vr1, %[src1], 32\n\t"
+      "vld $vr5, %[src1], 48\n\t"
+      "vaddwev.h.bu $vr2, $vr2, $vr1\n\t"
+      "vaddwod.h.bu $vr3, $vr3, $vr5\n\t"
+      "vadd.h $vr0, $vr0, $vr4\n\t"
+      "vadd.h $vr2, $vr2, $vr3\n\t"
+      "vadd.h $vr0, $vr0, $vr6\n\t"
+      "vadd.h $vr2, $vr2, $vr6\n\t"
+      "vsrli.h $vr0, $vr0, 2\n\t"
+      "vsrli.h $vr2, $vr2, 2\n\t"
+      "vpickev.b $vr0, $vr2, $vr0\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_ayuv), [src1] "+r"(src_ayuv1), [dst] "+r"(dst_vu),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_AYUVTOVUROW_LSX
+
+#ifdef HAS_DETILEROW_LSX
+void DetileRow_LSX(const uint8_t* src,
+                   ptrdiff_t src_tile_stride,
+                   uint8_t* dst,
+                   int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "add.d %[src], %[src], %[str]\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      : [str] "r"(src_tile_stride)
+      : "memory", "$vr0");
+}
+#endif  // HAS_DETILEROW_LSX
+
+#ifdef HAS_DETILEROW_16_LSX
+void DetileRow_16_LSX(const uint16_t* src,
+                      ptrdiff_t src_tile_stride,
+                      uint16_t* dst,
+                      int width) {
+  ptrdiff_t byte_stride = src_tile_stride * 2;
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "add.d %[src], %[src], %[str]\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      : [str] "r"(byte_stride)
+      : "memory", "$vr0", "$vr1");
+}
+#endif  // HAS_DETILEROW_16_LSX
+
+#ifdef HAS_MERGEARGBROW_LSX
+void MergeARGBRow_LSX(const uint8_t* src_b,
+                      const uint8_t* src_g,
+                      const uint8_t* src_r,
+                      const uint8_t* src_a,
+                      uint8_t* dst_argb,
+                      int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[sb], 0\n\t"
+      "vld $vr1, %[sg], 0\n\t"
+      "vld $vr2, %[sr], 0\n\t"
+      "vld $vr3, %[sa], 0\n\t"
+      "vilvl.b $vr4, $vr1, $vr0\n\t"
+      "vilvh.b $vr5, $vr1, $vr0\n\t"
+      "vilvl.b $vr6, $vr3, $vr2\n\t"
+      "vilvh.b $vr7, $vr3, $vr2\n\t"
+      "vilvl.h $vr0, $vr6, $vr4\n\t"
+      "vilvh.h $vr1, $vr6, $vr4\n\t"
+      "vilvl.h $vr2, $vr7, $vr5\n\t"
+      "vilvh.h $vr3, $vr7, $vr5\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "vst $vr2, %[dst], 32\n\t"
+      "vst $vr3, %[dst], 48\n\t"
+      "addi.d %[sb], %[sb], 16\n\t"
+      "addi.d %[sg], %[sg], 16\n\t"
+      "addi.d %[sr], %[sr], 16\n\t"
+      "addi.d %[sa], %[sa], 16\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [sb] "+r"(src_b), [sg] "+r"(src_g), [sr] "+r"(src_r),
+        [sa] "+r"(src_a), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+}
+#endif  // HAS_MERGEARGBROW_LSX
+
+#ifdef HAS_MERGEXRGBROW_LSX
+void MergeXRGBRow_LSX(const uint8_t* src_b,
+                      const uint8_t* src_g,
+                      const uint8_t* src_r,
+                      uint8_t* dst_argb,
+                      int width) {
+  asm volatile(
+      "vldi $vr3, 0xff\n\t"
+      "1:\n\t"
+      "vld $vr0, %[sb], 0\n\t"
+      "vld $vr1, %[sg], 0\n\t"
+      "vld $vr2, %[sr], 0\n\t"
+      "vilvl.b $vr4, $vr1, $vr0\n\t"
+      "vilvh.b $vr5, $vr1, $vr0\n\t"
+      "vilvl.b $vr6, $vr3, $vr2\n\t"
+      "vilvh.b $vr7, $vr3, $vr2\n\t"
+      "vilvl.h $vr0, $vr6, $vr4\n\t"
+      "vilvh.h $vr1, $vr6, $vr4\n\t"
+      "vilvl.h $vr2, $vr7, $vr5\n\t"
+      "vilvh.h $vr4, $vr7, $vr5\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "vst $vr2, %[dst], 32\n\t"
+      "vst $vr4, %[dst], 48\n\t"
+      "addi.d %[sb], %[sb], 16\n\t"
+      "addi.d %[sg], %[sg], 16\n\t"
+      "addi.d %[sr], %[sr], 16\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [sb] "+r"(src_b), [sg] "+r"(src_g), [sr] "+r"(src_r),
+        [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+}
+#endif  // HAS_MERGEXRGBROW_LSX
+
+#ifdef HAS_SPLITARGBROW_LSX
+void SplitARGBRow_LSX(const uint8_t* src_argb,
+                      uint8_t* dst_b,
+                      uint8_t* dst_g,
+                      uint8_t* dst_r,
+                      uint8_t* dst_a,
+                      int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vld $vr2, %[src], 32\n\t"
+      "vld $vr3, %[src], 48\n\t"
+      "vpickev.b $vr4, $vr1, $vr0\n\t"
+      "vpickod.b $vr5, $vr1, $vr0\n\t"
+      "vpickev.b $vr6, $vr3, $vr2\n\t"
+      "vpickod.b $vr7, $vr3, $vr2\n\t"
+      "vpickev.b $vr0, $vr6, $vr4\n\t"
+      "vpickod.b $vr1, $vr6, $vr4\n\t"
+      "vpickev.b $vr2, $vr7, $vr5\n\t"
+      "vpickod.b $vr3, $vr7, $vr5\n\t"
+      "vst $vr0, %[db], 0\n\t"
+      "vst $vr2, %[dg], 0\n\t"
+      "vst $vr1, %[dr], 0\n\t"
+      "vst $vr3, %[da], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[db], %[db], 16\n\t"
+      "addi.d %[dg], %[dg], 16\n\t"
+      "addi.d %[dr], %[dr], 16\n\t"
+      "addi.d %[da], %[da], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [db] "+r"(dst_b), [dg] "+r"(dst_g),
+        [dr] "+r"(dst_r), [da] "+r"(dst_a), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+}
+#endif  // HAS_SPLITARGBROW_LSX
+
+#ifdef HAS_SPLITXRGBROW_LSX
+void SplitXRGBRow_LSX(const uint8_t* src_argb,
+                      uint8_t* dst_b,
+                      uint8_t* dst_g,
+                      uint8_t* dst_r,
+                      int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vld $vr2, %[src], 32\n\t"
+      "vld $vr3, %[src], 48\n\t"
+      "vpickev.b $vr4, $vr1, $vr0\n\t"
+      "vpickod.b $vr5, $vr1, $vr0\n\t"
+      "vpickev.b $vr6, $vr3, $vr2\n\t"
+      "vpickod.b $vr7, $vr3, $vr2\n\t"
+      "vpickev.b $vr0, $vr6, $vr4\n\t"
+      "vpickod.b $vr1, $vr6, $vr4\n\t"
+      "vpickev.b $vr2, $vr7, $vr5\n\t"
+      "vst $vr0, %[db], 0\n\t"
+      "vst $vr2, %[dg], 0\n\t"
+      "vst $vr1, %[dr], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[db], %[db], 16\n\t"
+      "addi.d %[dg], %[dg], 16\n\t"
+      "addi.d %[dr], %[dr], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [db] "+r"(dst_b), [dg] "+r"(dst_g),
+        [dr] "+r"(dst_r), [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+}
+#endif  // HAS_SPLITXRGBROW_LSX
+
+#ifdef HAS_RGB24MIRRORROW_LSX
+static const uvec8 kRGB24MirrorShuf0 = {13, 14, 15, 10, 11, 12, 7, 8,
+                                        9,  4,  5,  6,  1,  2,  3, 0};
+static const uvec8 kRGB24MirrorShuf1 = {14, 15, 16, 11, 12, 13, 8, 9,
+                                        10, 5,  6,  7,  2,  3,  4, 1};
+static const uvec8 kRGB24MirrorShuf2 = {15, 0,  1, 12, 13, 14, 9, 10,
+                                        11, 6,  7, 8,  3,  4,  5, 2};
+void RGB24MirrorRow_LSX(const uint8_t* src_rgb24,
+                        uint8_t* dst_rgb24,
+                        int width) {
+  src_rgb24 += width * 3 - 48;
+  asm volatile(
+      "vld $vr4, %[sh0], 0\n\t"
+      "vld $vr5, %[sh1], 0\n\t"
+      "vld $vr6, %[sh2], 0\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "vld $vr1, %[src], 16\n\t"
+      "vld $vr2, %[src], 32\n\t"
+      "vshuf.b $vr3, $vr2, $vr1, $vr4\n\t"
+      "vshuf.b $vr1, $vr1, $vr0, $vr5\n\t"
+      "vshuf.b $vr0, $vr0, $vr0, $vr6\n\t"
+      "vst $vr3, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "vst $vr0, %[dst], 32\n\t"
+      "addi.d %[src], %[src], -48\n\t"
+      "addi.d %[dst], %[dst], 48\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_rgb24), [dst] "+r"(dst_rgb24), [cnt] "+r"(width)
+      : [sh0] "r"(&kRGB24MirrorShuf0), [sh1] "r"(&kRGB24MirrorShuf1),
+        [sh2] "r"(&kRGB24MirrorShuf2)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_RGB24MIRRORROW_LSX
+
+#ifdef HAS_BLENDPLANEROW_LSX
+void BlendPlaneRow_LSX(const uint8_t* src0,
+                       const uint8_t* src1,
+                       const uint8_t* alpha,
+                       uint8_t* dst,
+                       int width) {
+  asm volatile(
+      "vldi $vr6, 0x7f\n\t"
+      "vslli.h $vr6, $vr6, 1\n\t"
+      "1:\n\t"
+      "vld $vr0, %[s0], 0\n\t"
+      "vld $vr1, %[s1], 0\n\t"
+      "vld $vr2, %[alp], 0\n\t"
+      "vxori.b $vr3, $vr2, 0xff\n\t"
+      "vmulwev.h.bu $vr4, $vr0, $vr2\n\t"
+      "vmaddwev.h.bu $vr4, $vr1, $vr3\n\t"
+      "vmulwod.h.bu $vr5, $vr0, $vr2\n\t"
+      "vmaddwod.h.bu $vr5, $vr1, $vr3\n\t"
+      "vadd.h $vr4, $vr4, $vr6\n\t"
+      "vadd.h $vr5, $vr5, $vr6\n\t"
+      "vsrli.h $vr4, $vr4, 8\n\t"
+      "vsrli.h $vr5, $vr5, 8\n\t"
+      "vpackev.b $vr0, $vr5, $vr4\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[s0], %[s0], 16\n\t"
+      "addi.d %[s1], %[s1], 16\n\t"
+      "addi.d %[alp], %[alp], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src0), [s1] "+r"(src1), [alp] "+r"(alpha), [dst] "+r"(dst),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_BLENDPLANEROW_LSX
+
+#ifdef HAS_INTERPOLATEROW_16_LSX
+void InterpolateRow_16_LSX(uint16_t* dst_ptr,
+                           const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           int width,
+                           int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  if (y1_fraction == 0) {
+    asm volatile(
+        "1:\n\t"
+        "vld $vr0, %[src0], 0\n\t"
+        "vst $vr0, %[dst], 0\n\t"
+        "addi.d %[src0], %[src0], 16\n\t"
+        "addi.d %[dst], %[dst], 16\n\t"
+        "addi.d %[cnt], %[cnt], -8\n\t"
+        "bnez %[cnt], 1b\n\t"
+        : [src0] "+r"(src_ptr), [dst] "+r"(dst_ptr), [cnt] "+r"(width)
+        :
+        : "memory", "$vr0");
+    return;
+  }
+  if (y1_fraction == 128) {
+    HalfRow_16_LSX(src_ptr, src_stride, dst_ptr, width);
+    return;
+  }
+  asm volatile(
+      "vreplgr2vr.h $vr4, %[f0]\n\t"
+      "vreplgr2vr.h $vr5, %[f1]\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src1], 0\n\t"
+      "vmulwev.w.hu $vr2, $vr0, $vr4\n\t"
+      "vmaddwev.w.hu $vr2, $vr1, $vr5\n\t"
+      "vmulwod.w.hu $vr3, $vr0, $vr4\n\t"
+      "vmaddwod.w.hu $vr3, $vr1, $vr5\n\t"
+      "vsrari.w $vr2, $vr2, 8\n\t"
+      "vsrari.w $vr3, $vr3, 8\n\t"
+      "vpackev.h $vr3, $vr3, $vr2\n\t"
+      "vst $vr3, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 16\n\t"
+      "addi.d %[src1], %[src1], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_ptr), [src1] "+r"(src_ptr1), [dst] "+r"(dst_ptr),
+        [cnt] "+r"(width)
+      : [f0] "r"(y0_fraction), [f1] "r"(y1_fraction)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5");
+}
+#endif  // HAS_INTERPOLATEROW_16_LSX
 
 #ifdef HAS_COPYROW_LASX
 void CopyRow_LASX(const uint8_t* src, uint8_t* dst, int count) {
@@ -4310,7 +5449,8 @@ void ARGBToRAWRow_LASX(const uint8_t* src_argb, uint8_t* dst_raw, int width) {
 }
 #endif  // HAS_ARGBTORAWROW_LASX
 
-#if defined(HAS_RGB24TOARGBROW_LASX) || defined(HAS_RAWTOARGBROW_LASX)
+#if defined(HAS_RGB24TOARGBROW_LASX) || defined(HAS_RAWTOARGBROW_LASX) || \
+    defined(HAS_RAWTORGBAROW_LASX)
 static LIBYUV_NOINLINE void RGB24ToARGBHelper_LASX(const uint8_t* src_24,
                                                    uint8_t* dst_argb,
                                                    const uint8_t* shuf,
@@ -4359,7 +5499,8 @@ static LIBYUV_NOINLINE void RGB24ToARGBHelper_LASX(const uint8_t* src_24,
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
         "$xr31");
 }
-#endif  // defined(HAS_RGB24TOARGBROW_LASX) || defined(HAS_RAWTOARGBROW_LASX)
+#endif  // defined(HAS_RGB24TOARGBROW_LASX) || defined(HAS_RAWTOARGBROW_LASX) ||
+        // defined(HAS_RAWTORGBAROW_LASX)
 
 #ifdef HAS_RGB24TOARGBROW_LASX
 void RGB24ToARGBRow_LASX(const uint8_t* src_rgb24,
@@ -4380,6 +5521,15 @@ void RAWToARGBRow_LASX(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   RGB24ToARGBHelper_LASX(src_raw, dst_argb, kShuf, width);
 }
 #endif  // HAS_RAWTOARGBROW_LASX
+
+#ifdef HAS_RAWTORGBAROW_LASX
+void RAWToRGBARow_LASX(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
+  static const uint8_t kShuf[32] = {16, 2,  1,  0,  16, 5,  4,  3,  16, 8,  7,
+                                    6,  16, 11, 10, 9,  16, 6,  5,  4,  16, 9,
+                                    8,  7,  16, 12, 11, 10, 16, 15, 14, 13};
+  RGB24ToARGBHelper_LASX(src_raw, dst_rgba, kShuf, width);
+}
+#endif  // HAS_RAWTORGBAROW_LASX
 
 #ifdef HAS_RAWTORGB24ROW_LASX
 void RAWToRGB24Row_LASX(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
@@ -6015,6 +7165,1172 @@ void RAWToUVRow_LASX(const uint8_t* src_raw,
   RGB24ToUVHelper_LASX(src_raw, src_stride_raw, dst_u, dst_v, kShuf, width);
 }
 #endif  // HAS_RAWTOUVROW_LASX
+
+#ifdef HAS_SWAPUVROW_LASX
+void SwapUVRow_LASX(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvshuf4i.b $xr0, $xr0, 0xb1\n\t"
+      "xvshuf4i.b $xr1, $xr1, 0xb1\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "xvst $xr1, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [dst] "+r"(dst_vu), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_SWAPUVROW_LASX
+
+#ifdef HAS_ARGBCOPYYTOALPHAROW_LASX
+void ARGBCopyYToAlphaRow_LASX(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "xvldi $xr4, 0xff\n\t"
+      "xvslli.w $xr4, $xr4, 24\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "xvld $xr1, %[dst], 0\n\t"
+      "xvld $xr2, %[dst], 32\n\t"
+      "vilvl.b $vr3, $vr0, $vr0\n\t"
+      "vilvh.b $vr0, $vr0, $vr0\n\t"
+      "xvpermi.d $xr3, $xr3, 0xd8\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvilvl.h $xr3, $xr3, $xr3\n\t"
+      "xvilvl.h $xr0, $xr0, $xr0\n\t"
+      "xvslli.w $xr3, $xr3, 24\n\t"
+      "xvslli.w $xr0, $xr0, 24\n\t"
+      "xvandn.v $xr1, $xr4, $xr1\n\t"
+      "xvandn.v $xr2, $xr4, $xr2\n\t"
+      "xvor.v $xr1, $xr1, $xr3\n\t"
+      "xvor.v $xr2, $xr2, $xr0\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "xvst $xr2, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_ARGBCOPYYTOALPHAROW_LASX
+
+#ifdef HAS_HALFMERGEUVROW_LASX
+void HalfMergeUVRow_LASX(const uint8_t* src_u,
+                         int src_stride_u,
+                         const uint8_t* src_v,
+                         int src_stride_v,
+                         uint8_t* dst_uv,
+                         int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[su], 0\n\t"
+      "xvld $xr1, %[sv], 0\n\t"
+      "xvldx $xr2, %[su], %[stu]\n\t"
+      "xvldx $xr3, %[sv], %[stv]\n\t"
+      "xvhaddw.hu.bu $xr0, $xr0, $xr0\n\t"
+      "xvhaddw.hu.bu $xr1, $xr1, $xr1\n\t"
+      "xvhaddw.hu.bu $xr2, $xr2, $xr2\n\t"
+      "xvhaddw.hu.bu $xr3, $xr3, $xr3\n\t"
+      "xvadd.h $xr0, $xr0, $xr2\n\t"
+      "xvadd.h $xr1, $xr1, $xr3\n\t"
+      "xvsrari.h $xr0, $xr0, 2\n\t"
+      "xvsrari.h $xr1, $xr1, 2\n\t"
+      "xvpackev.b $xr0, $xr1, $xr0\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[su], %[su], 32\n\t"
+      "addi.d %[sv], %[sv], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [stu] "r"((ptrdiff_t)src_stride_u), [stv] "r"((ptrdiff_t)src_stride_v)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_HALFMERGEUVROW_LASX
+
+#ifdef HAS_CONVERT16TO8ROW_LASX
+void Convert16To8Row_LASX(const uint16_t* src_y,
+                          uint8_t* dst_y,
+                          int scale,
+                          int width) {
+  asm volatile(
+      "xvreplgr2vr.h $xr2, %[scl]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvmuh.hu $xr0, $xr0, $xr2\n\t"
+      "xvmuh.hu $xr1, $xr1, $xr2\n\t"
+      "xvssrani.bu.h $xr1, $xr0, 0\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$xr0", "$xr1", "$xr2");
+}
+#endif  // HAS_CONVERT16TO8ROW_LASX
+
+#ifdef HAS_CONVERT8TO16ROW_LASX
+void Convert8To16Row_LASX(const uint8_t* src_y,
+                          uint16_t* dst_y,
+                          int bits,
+                          int width) {
+  const int shift = 16 - bits;
+  asm volatile(
+      "xvreplgr2vr.h $xr3, %[shf]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvilvl.b $xr1, $xr0, $xr0\n\t"
+      "xvilvh.b $xr2, $xr0, $xr0\n\t"
+      "xvsrl.h $xr1, $xr1, $xr3\n\t"
+      "xvsrl.h $xr2, $xr2, $xr3\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "xvst $xr2, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [shf] "r"(shift)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_CONVERT8TO16ROW_LASX
+
+#ifdef HAS_MULTIPLYROW_16_LASX
+void MultiplyRow_16_LASX(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width) {
+  asm volatile(
+      "xvreplgr2vr.h $xr2, %[scl]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvmul.h $xr0, $xr0, $xr2\n\t"
+      "xvmul.h $xr1, $xr1, $xr2\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "xvst $xr1, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$xr0", "$xr1", "$xr2");
+}
+#endif  // HAS_MULTIPLYROW_16_LASX
+
+#ifdef HAS_DIVIDEROW_16_LASX
+void DivideRow_16_LASX(const uint16_t* src_y,
+                       uint16_t* dst_y,
+                       int scale,
+                       int width) {
+  if (scale == 65536) {  // Divide by 1, so do memcpy.
+    if (src_y != dst_y) {
+      memcpy(dst_y, src_y, (size_t)width * 2);
+    }
+    return;
+  }
+  asm volatile(
+      "xvreplgr2vr.h $xr2, %[scl]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvmuh.hu $xr0, $xr0, $xr2\n\t"
+      "xvmuh.hu $xr1, $xr1, $xr2\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "xvst $xr1, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$xr0", "$xr1", "$xr2");
+}
+#endif  // HAS_DIVIDEROW_16_LASX
+
+#ifdef HAS_MERGEUVROW_16_LASX
+void MergeUVRow_16_LASX(const uint16_t* src_u,
+                        const uint16_t* src_v,
+                        uint16_t* dst_uv,
+                        int depth,
+                        int width) {
+  int shift = 16 - depth;
+  asm volatile(
+      "xvreplgr2vr.h $xr4, %[shf]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[su], 0\n\t"
+      "xvld $xr1, %[sv], 0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvsll.h $xr0, $xr0, $xr4\n\t"
+      "xvsll.h $xr1, $xr1, $xr4\n\t"
+      "xvilvl.h $xr2, $xr1, $xr0\n\t"
+      "xvilvh.h $xr3, $xr1, $xr0\n\t"
+      "xvst $xr2, %[dst], 0\n\t"
+      "xvst $xr3, %[dst], 32\n\t"
+      "addi.d %[su], %[su], 32\n\t"
+      "addi.d %[sv], %[sv], 32\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [shf] "r"(shift)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_MERGEUVROW_16_LASX
+
+#ifdef HAS_SPLITUVROW_16_LASX
+void SplitUVRow_16_LASX(const uint16_t* src_uv,
+                        uint16_t* dst_u,
+                        uint16_t* dst_v,
+                        int depth,
+                        int width) {
+  int shift = 16 - depth;
+  asm volatile(
+      "xvreplgr2vr.h $xr4, %[shf]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.h $xr2, $xr1, $xr0\n\t"
+      "xvpickod.h $xr3, $xr1, $xr0\n\t"
+      "xvpermi.d $xr2, $xr2, 0xd8\n\t"
+      "xvpermi.d $xr3, $xr3, 0xd8\n\t"
+      "xvsrl.h $xr2, $xr2, $xr4\n\t"
+      "xvsrl.h $xr3, $xr3, $xr4\n\t"
+      "xvst $xr2, %[du], 0\n\t"
+      "xvst $xr3, %[dv], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[du], %[du], 32\n\t"
+      "addi.d %[dv], %[dv], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [du] "+r"(dst_u), [dv] "+r"(dst_v),
+        [cnt] "+r"(width)
+      : [shf] "r"(shift)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_SPLITUVROW_16_LASX
+
+#ifdef HAS_COPYROW_16_LASX
+void CopyRow_16_LASX(const uint16_t* src, uint16_t* dst, int count) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "xvst $xr1, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(count)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_COPYROW_16_LASX
+
+#ifdef HAS_HALFROW_LASX
+void HalfRow_LASX(const uint8_t* src_uv,
+                  ptrdiff_t src_uv_stride,
+                  uint8_t* dst_uv,
+                  int width) {
+  const uint8_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src1], 0\n\t"
+      "xvavgr.bu $xr0, $xr0, $xr1\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 32\n\t"
+      "addi.d %[src1], %[src1], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_HALFROW_LASX
+
+#ifdef HAS_HALFROW_16_LASX
+void HalfRow_16_LASX(const uint16_t* src_uv,
+                     ptrdiff_t src_uv_stride,
+                     uint16_t* dst_uv,
+                     int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src1], 0\n\t"
+      "xvavgr.hu $xr0, $xr0, $xr1\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 32\n\t"
+      "addi.d %[src1], %[src1], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_HALFROW_16_LASX
+
+#ifdef HAS_ARGBCOPYALPHAROW_LASX
+void ARGBCopyAlphaRow_LASX(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "xvldi $xr4, 0xff\n\t"
+      "xvslli.w $xr4, $xr4, 24\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvld $xr2, %[dst], 0\n\t"
+      "xvld $xr3, %[dst], 32\n\t"
+      "xvbitsel.v $xr2, $xr2, $xr0, $xr4\n\t"
+      "xvbitsel.v $xr3, $xr3, $xr1, $xr4\n\t"
+      "xvst $xr2, %[dst], 0\n\t"
+      "xvst $xr3, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_ARGBCOPYALPHAROW_LASX
+
+#ifdef HAS_YUY2TONVUVROW_LASX
+void YUY2ToNVUVRow_LASX(const uint8_t* src_yuy2,
+                        int src_stride_yuy2,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src0], 32\n\t"
+      "xvld $xr2, %[src1], 0\n\t"
+      "xvld $xr3, %[src1], 32\n\t"
+      "xvpickod.b $xr0, $xr1, $xr0\n\t"
+      "xvpickod.b $xr2, $xr3, $xr2\n\t"
+      "xvavgr.bu $xr0, $xr0, $xr2\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_yuy2), [src1] "+r"(src_yuy2_1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_YUY2TONVUVROW_LASX
+
+#ifdef HAS_AR64TOARGBROW_LASX
+void AR64ToARGBRow_LASX(const uint16_t* src_ar64,
+                        uint8_t* dst_argb,
+                        int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickod.b $xr0, $xr1, $xr0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar64), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_AR64TOARGBROW_LASX
+
+#ifdef HAS_AB64TOARGBROW_LASX
+void AB64ToARGBRow_LASX(const uint16_t* src_ab64,
+                        uint8_t* dst_argb,
+                        int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickod.b $xr0, $xr1, $xr0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvshuf4i.b $xr0, $xr0, 0xc6\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ab64), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_AB64TOARGBROW_LASX
+
+#ifdef HAS_ARGBTOAR64ROW_LASX
+void ARGBToAR64Row_LASX(const uint8_t* src_argb,
+                        uint16_t* dst_ar64,
+                        int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvilvl.b $xr1, $xr0, $xr0\n\t"
+      "xvilvh.b $xr2, $xr0, $xr0\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "xvst $xr2, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_ar64), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2");
+}
+#endif  // HAS_ARGBTOAR64ROW_LASX
+
+#ifdef HAS_ARGBTOAB64ROW_LASX
+void ARGBToAB64Row_LASX(const uint8_t* src_argb,
+                        uint16_t* dst_ab64,
+                        int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvshuf4i.b $xr0, $xr0, 0xc6\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvilvl.b $xr1, $xr0, $xr0\n\t"
+      "xvilvh.b $xr2, $xr0, $xr0\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "xvst $xr2, %[dst], 32\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_ab64), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2");
+}
+#endif  // HAS_ARGBTOAB64ROW_LASX
+
+#ifdef HAS_CONVERT8TO8ROW_LASX
+void Convert8To8Row_LASX(const uint8_t* src_y,
+                         uint8_t* dst_y,
+                         int scale,
+                         int bias,
+                         int width) {
+  asm volatile(
+      "xvreplgr2vr.b $xr2, %[scl]\n\t"
+      "xvreplgr2vr.b $xr3, %[bia]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvmuh.bu $xr0, $xr0, $xr2\n\t"
+      "xvadd.b $xr0, $xr0, $xr3\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_y), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      : [scl] "r"(scale), [bia] "r"(bias)
+      : "memory", "$xr0", "$xr2", "$xr3");
+}
+#endif  // HAS_CONVERT8TO8ROW_LASX
+
+#ifdef HAS_HALFROW_16TO8_LASX
+void HalfRow_16To8_LASX(const uint16_t* src_uv,
+                        ptrdiff_t src_uv_stride,
+                        uint8_t* dst_uv,
+                        int scale,
+                        int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "xvreplgr2vr.h $xr4, %[scl]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src0], 32\n\t"
+      "xvld $xr2, %[src1], 0\n\t"
+      "xvld $xr3, %[src1], 32\n\t"
+      "xvavgr.hu $xr0, $xr0, $xr2\n\t"
+      "xvavgr.hu $xr1, $xr1, $xr3\n\t"
+      "xvmuh.hu $xr0, $xr0, $xr4\n\t"
+      "xvmuh.hu $xr1, $xr1, $xr4\n\t"
+      "xvssrani.bu.h $xr1, $xr0, 0\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_HALFROW_16TO8_LASX
+
+#ifdef HAS_AR30TOAB30ROW_LASX
+void AR30ToAB30Row_LASX(const uint8_t* src_ar30,
+                        uint8_t* dst_ab30,
+                        int width) {
+  uint32_t m_ag = 0xc00ffc00u;
+  uint32_t m_r = 0x3ff00000u;
+  uint32_t m_b = 0x000003ffu;
+  asm volatile(
+      "xvreplgr2vr.w $xr3, %[m_ag]\n\t"
+      "xvreplgr2vr.w $xr4, %[m_r]\n\t"
+      "xvreplgr2vr.w $xr5, %[m_b]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvsrli.w $xr1, $xr0, 20\n\t"
+      "xvslli.w $xr2, $xr0, 20\n\t"
+      "xvand.v $xr0, $xr0, $xr3\n\t"
+      "xvand.v $xr1, $xr1, $xr5\n\t"
+      "xvand.v $xr2, $xr2, $xr4\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvor.v $xr0, $xr0, $xr2\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar30), [dst] "+r"(dst_ab30), [cnt] "+r"(width)
+      : [m_ag] "r"(m_ag), [m_r] "r"(m_r), [m_b] "r"(m_b)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
+}
+#endif  // HAS_AR30TOAB30ROW_LASX
+
+#ifdef HAS_ARGBTOAR30ROW_LASX
+void ARGBToAR30Row_LASX(const uint8_t* src_argb,
+                        uint8_t* dst_ar30,
+                        int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_r = 0x3fc00000u;
+  uint32_t m_g = 0x000ff000u;
+  uint32_t m_b = 0x000003fcu;
+  uint32_t m_l = 0x00300c03u;
+  asm volatile(
+      "xvreplgr2vr.w $xr4, %[m_a]\n\t"
+      "xvreplgr2vr.w $xr5, %[m_r]\n\t"
+      "xvreplgr2vr.w $xr6, %[m_g]\n\t"
+      "xvreplgr2vr.w $xr7, %[m_b]\n\t"
+      "xvreplgr2vr.w $xr8, %[m_l]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvslli.w $xr1, $xr0, 6\n\t"
+      "xvslli.w $xr2, $xr0, 4\n\t"
+      "xvslli.w $xr3, $xr0, 2\n\t"
+      "xvand.v $xr0, $xr0, $xr4\n\t"
+      "xvand.v $xr1, $xr1, $xr5\n\t"
+      "xvand.v $xr2, $xr2, $xr6\n\t"
+      "xvand.v $xr3, $xr3, $xr7\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvor.v $xr2, $xr2, $xr3\n\t"
+      "xvor.v $xr0, $xr0, $xr2\n\t"
+      "xvsrli.w $xr1, $xr0, 8\n\t"
+      "xvand.v $xr1, $xr1, $xr8\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_ar30), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_r] "r"(m_r), [m_g] "r"(m_g), [m_b] "r"(m_b),
+        [m_l] "r"(m_l)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8");
+}
+#endif  // HAS_ARGBTOAR30ROW_LASX
+
+#ifdef HAS_ABGRTOAR30ROW_LASX
+void ABGRToAR30Row_LASX(const uint8_t* src_abgr,
+                        uint8_t* dst_ar30,
+                        int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_r = 0x3fc00000u;
+  uint32_t m_g = 0x000ff000u;
+  uint32_t m_b = 0x000003fcu;
+  uint32_t m_l = 0x00300c03u;
+  asm volatile(
+      "xvreplgr2vr.w $xr4, %[m_a]\n\t"
+      "xvreplgr2vr.w $xr5, %[m_r]\n\t"
+      "xvreplgr2vr.w $xr6, %[m_g]\n\t"
+      "xvreplgr2vr.w $xr7, %[m_b]\n\t"
+      "xvreplgr2vr.w $xr8, %[m_l]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvshuf4i.b $xr0, $xr0, 0xc6\n\t"
+      "xvslli.w $xr1, $xr0, 6\n\t"
+      "xvslli.w $xr2, $xr0, 4\n\t"
+      "xvslli.w $xr3, $xr0, 2\n\t"
+      "xvand.v $xr0, $xr0, $xr4\n\t"
+      "xvand.v $xr1, $xr1, $xr5\n\t"
+      "xvand.v $xr2, $xr2, $xr6\n\t"
+      "xvand.v $xr3, $xr3, $xr7\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvor.v $xr2, $xr2, $xr3\n\t"
+      "xvor.v $xr0, $xr0, $xr2\n\t"
+      "xvsrli.w $xr1, $xr0, 8\n\t"
+      "xvand.v $xr1, $xr1, $xr8\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_abgr), [dst] "+r"(dst_ar30), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_r] "r"(m_r), [m_g] "r"(m_g), [m_b] "r"(m_b),
+        [m_l] "r"(m_l)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8");
+}
+#endif  // HAS_ABGRTOAR30ROW_LASX
+
+#ifdef HAS_AR30TOARGBROW_LASX
+void AR30ToARGBRow_LASX(const uint8_t* src_ar30,
+                        uint8_t* dst_argb,
+                        int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_2 = 0x300000ffu;
+  uint32_t m_4 = 0x0c00ff00u;
+  uint32_t m_6 = 0x03ff0000u;
+  asm volatile(
+      "xvreplgr2vr.w $xr4, %[m_a]\n\t"
+      "xvreplgr2vr.w $xr5, %[m_2]\n\t"
+      "xvreplgr2vr.w $xr6, %[m_4]\n\t"
+      "xvreplgr2vr.w $xr7, %[m_6]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvsrli.w $xr1, $xr0, 2\n\t"
+      "xvsrli.w $xr2, $xr0, 4\n\t"
+      "xvsrli.w $xr3, $xr0, 6\n\t"
+      "xvand.v $xr0, $xr0, $xr4\n\t"
+      "xvand.v $xr1, $xr1, $xr5\n\t"
+      "xvand.v $xr2, $xr2, $xr6\n\t"
+      "xvand.v $xr3, $xr3, $xr7\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvor.v $xr2, $xr2, $xr3\n\t"
+      "xvor.v $xr0, $xr0, $xr2\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar30), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_2] "r"(m_2), [m_4] "r"(m_4), [m_6] "r"(m_6)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+}
+#endif  // HAS_AR30TOARGBROW_LASX
+
+#ifdef HAS_AR30TOABGRROW_LASX
+void AR30ToABGRRow_LASX(const uint8_t* src_ar30,
+                        uint8_t* dst_abgr,
+                        int width) {
+  uint32_t m_a = 0xc0000000u;
+  uint32_t m_2 = 0x300000ffu;
+  uint32_t m_4 = 0x0c00ff00u;
+  uint32_t m_6 = 0x03ff0000u;
+  asm volatile(
+      "xvreplgr2vr.w $xr4, %[m_a]\n\t"
+      "xvreplgr2vr.w $xr5, %[m_2]\n\t"
+      "xvreplgr2vr.w $xr6, %[m_4]\n\t"
+      "xvreplgr2vr.w $xr7, %[m_6]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvsrli.w $xr1, $xr0, 2\n\t"
+      "xvsrli.w $xr2, $xr0, 4\n\t"
+      "xvsrli.w $xr3, $xr0, 6\n\t"
+      "xvand.v $xr0, $xr0, $xr4\n\t"
+      "xvand.v $xr1, $xr1, $xr5\n\t"
+      "xvand.v $xr2, $xr2, $xr6\n\t"
+      "xvand.v $xr3, $xr3, $xr7\n\t"
+      "xvor.v $xr0, $xr0, $xr1\n\t"
+      "xvor.v $xr2, $xr2, $xr3\n\t"
+      "xvor.v $xr0, $xr0, $xr2\n\t"
+      "xvshuf4i.b $xr0, $xr0, 0xc6\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ar30), [dst] "+r"(dst_abgr), [cnt] "+r"(width)
+      : [m_a] "r"(m_a), [m_2] "r"(m_2), [m_4] "r"(m_4), [m_6] "r"(m_6)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+}
+#endif  // HAS_AR30TOABGRROW_LASX
+
+#ifdef HAS_AYUVTOYROW_LASX
+void AYUVToYRow_LASX(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.h $xr0, $xr1, $xr0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpickev.b $xr0, $xr0, $xr0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ayuv), [dst] "+r"(dst_y), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1");
+}
+#endif  // HAS_AYUVTOYROW_LASX
+
+#ifdef HAS_AYUVTOUVROW_LASX
+void AYUVToUVRow_LASX(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_uv,
+                      int width) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  asm volatile(
+      "xvldi $xr6, 0x02\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src0], 32\n\t"
+      "xvld $xr2, %[src1], 0\n\t"
+      "xvld $xr3, %[src1], 32\n\t"
+      "xvaddwev.h.bu $xr4, $xr0, $xr2\n\t"
+      "xvaddwod.h.bu $xr0, $xr0, $xr2\n\t"
+      "xvaddwev.h.bu $xr5, $xr1, $xr3\n\t"
+      "xvaddwod.h.bu $xr1, $xr1, $xr3\n\t"
+      "xvpickev.d $xr2, $xr5, $xr4\n\t"
+      "xvpickod.d $xr3, $xr5, $xr4\n\t"
+      "xvpickev.d $xr4, $xr1, $xr0\n\t"
+      "xvpickod.d $xr5, $xr1, $xr0\n\t"
+      "xvadd.h $xr2, $xr2, $xr3\n\t"
+      "xvadd.h $xr4, $xr4, $xr5\n\t"
+      "xvadd.h $xr2, $xr2, $xr6\n\t"
+      "xvadd.h $xr4, $xr4, $xr6\n\t"
+      "xvsrli.h $xr2, $xr2, 2\n\t"
+      "xvsrli.h $xr4, $xr4, 2\n\t"
+      "xvpickev.b $xr0, $xr4, $xr2\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvshuf4i.b $xr0, $xr0, 0xb1\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_ayuv), [src1] "+r"(src_ayuv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_AYUVTOUVROW_LASX
+
+#ifdef HAS_AYUVTOVUROW_LASX
+void AYUVToVURow_LASX(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_vu,
+                      int width) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  asm volatile(
+      "xvldi $xr6, 0x02\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src0], 32\n\t"
+      "xvld $xr2, %[src1], 0\n\t"
+      "xvld $xr3, %[src1], 32\n\t"
+      "xvaddwev.h.bu $xr4, $xr0, $xr2\n\t"
+      "xvaddwod.h.bu $xr0, $xr0, $xr2\n\t"
+      "xvaddwev.h.bu $xr5, $xr1, $xr3\n\t"
+      "xvaddwod.h.bu $xr1, $xr1, $xr3\n\t"
+      "xvpickev.d $xr2, $xr5, $xr4\n\t"
+      "xvpickod.d $xr3, $xr5, $xr4\n\t"
+      "xvpickev.d $xr4, $xr1, $xr0\n\t"
+      "xvpickod.d $xr5, $xr1, $xr0\n\t"
+      "xvadd.h $xr2, $xr2, $xr3\n\t"
+      "xvadd.h $xr4, $xr4, $xr5\n\t"
+      "xvadd.h $xr2, $xr2, $xr6\n\t"
+      "xvadd.h $xr4, $xr4, $xr6\n\t"
+      "xvsrli.h $xr2, $xr2, 2\n\t"
+      "xvsrli.h $xr4, $xr4, 2\n\t"
+      "xvpickev.b $xr0, $xr4, $xr2\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_ayuv), [src1] "+r"(src_ayuv1), [dst] "+r"(dst_vu),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_AYUVTOVUROW_LASX
+
+#ifdef HAS_DETILEROW_LASX
+void DetileRow_LASX(const uint8_t* src,
+                    ptrdiff_t src_tile_stride,
+                    uint8_t* dst,
+                    int width) {
+  const uint8_t* src1 = src + src_tile_stride;
+  ptrdiff_t src_tile_stride2 = src_tile_stride * 2;
+  asm volatile(
+      "li.d $t0, 32\n\t"
+      "blt %[cnt], $t0, 2f\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vld $vr1, %[src1], 0\n\t"
+      "xvpermi.q $xr0, $xr1, 0x20\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "add.d %[src0], %[src0], %[str2]\n\t"
+      "add.d %[src1], %[src1], %[str2]\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bge %[cnt], $t0, 1b\n\t"
+      "2:\n\t"
+      "beqz %[cnt], 3f\n\t"
+      "vld $vr0, %[src0], 0\n\t"
+      "vst $vr0, %[dst], 0\n\t"
+      "3:\n\t"
+      : [src0] "+r"(src), [src1] "+r"(src1), [dst] "+r"(dst), [cnt] "+r"(width)
+      : [str2] "r"(src_tile_stride2)
+      : "memory", "$t0", "$xr0", "$xr1");
+}
+#endif  // HAS_DETILEROW_LASX
+
+#ifdef HAS_DETILEROW_16_LASX
+void DetileRow_16_LASX(const uint16_t* src,
+                       ptrdiff_t src_tile_stride,
+                       uint16_t* dst,
+                       int width) {
+  ptrdiff_t byte_stride = src_tile_stride * 2;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "add.d %[src], %[src], %[str]\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src), [dst] "+r"(dst), [cnt] "+r"(width)
+      : [str] "r"(byte_stride)
+      : "memory", "$xr0");
+}
+#endif  // HAS_DETILEROW_16_LASX
+
+#ifdef HAS_MERGEARGBROW_LASX
+void MergeARGBRow_LASX(const uint8_t* src_b,
+                       const uint8_t* src_g,
+                       const uint8_t* src_r,
+                       const uint8_t* src_a,
+                       uint8_t* dst_argb,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[sb], 0\n\t"
+      "vld $vr1, %[sg], 0\n\t"
+      "vld $vr2, %[sr], 0\n\t"
+      "vld $vr3, %[sa], 0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvpermi.d $xr2, $xr2, 0xd8\n\t"
+      "xvpermi.d $xr3, $xr3, 0xd8\n\t"
+      "xvilvl.b $xr4, $xr1, $xr0\n\t"
+      "xvilvl.b $xr5, $xr3, $xr2\n\t"
+      "xvpermi.d $xr4, $xr4, 0xd8\n\t"
+      "xvpermi.d $xr5, $xr5, 0xd8\n\t"
+      "xvilvl.h $xr0, $xr5, $xr4\n\t"
+      "xvilvh.h $xr1, $xr5, $xr4\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "xvst $xr1, %[dst], 32\n\t"
+      "addi.d %[sb], %[sb], 16\n\t"
+      "addi.d %[sg], %[sg], 16\n\t"
+      "addi.d %[sr], %[sr], 16\n\t"
+      "addi.d %[sa], %[sa], 16\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [sb] "+r"(src_b), [sg] "+r"(src_g), [sr] "+r"(src_r),
+        [sa] "+r"(src_a), [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
+}
+#endif  // HAS_MERGEARGBROW_LASX
+
+#ifdef HAS_MERGEXRGBROW_LASX
+void MergeXRGBRow_LASX(const uint8_t* src_b,
+                       const uint8_t* src_g,
+                       const uint8_t* src_r,
+                       uint8_t* dst_argb,
+                       int width) {
+  asm volatile(
+      "xvldi $xr3, 0xff\n\t"
+      "1:\n\t"
+      "vld $vr0, %[sb], 0\n\t"
+      "vld $vr1, %[sg], 0\n\t"
+      "vld $vr2, %[sr], 0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvpermi.d $xr2, $xr2, 0xd8\n\t"
+      "xvilvl.b $xr4, $xr1, $xr0\n\t"
+      "xvilvl.b $xr5, $xr3, $xr2\n\t"
+      "xvpermi.d $xr4, $xr4, 0xd8\n\t"
+      "xvpermi.d $xr5, $xr5, 0xd8\n\t"
+      "xvilvl.h $xr0, $xr5, $xr4\n\t"
+      "xvilvh.h $xr1, $xr5, $xr4\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "xvst $xr1, %[dst], 32\n\t"
+      "addi.d %[sb], %[sb], 16\n\t"
+      "addi.d %[sg], %[sg], 16\n\t"
+      "addi.d %[sr], %[sr], 16\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [sb] "+r"(src_b), [sg] "+r"(src_g), [sr] "+r"(src_r),
+        [dst] "+r"(dst_argb), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
+}
+#endif  // HAS_MERGEXRGBROW_LASX
+
+#ifdef HAS_SPLITARGBROW_LASX
+void SplitARGBRow_LASX(const uint8_t* src_argb,
+                       uint8_t* dst_b,
+                       uint8_t* dst_g,
+                       uint8_t* dst_r,
+                       uint8_t* dst_a,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.b $xr2, $xr1, $xr0\n\t"
+      "xvpickod.b $xr3, $xr1, $xr0\n\t"
+      "xvpermi.d $xr2, $xr2, 0xd8\n\t"
+      "xvpermi.d $xr3, $xr3, 0xd8\n\t"
+      "xvpickev.b $xr0, $xr2, $xr2\n\t"
+      "xvpickod.b $xr1, $xr2, $xr2\n\t"
+      "xvpickev.b $xr4, $xr3, $xr3\n\t"
+      "xvpickod.b $xr5, $xr3, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvpermi.d $xr4, $xr4, 0xd8\n\t"
+      "xvpermi.d $xr5, $xr5, 0xd8\n\t"
+      "vst $vr0, %[db], 0\n\t"
+      "vst $vr4, %[dg], 0\n\t"
+      "vst $vr1, %[dr], 0\n\t"
+      "vst $vr5, %[da], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[db], %[db], 16\n\t"
+      "addi.d %[dg], %[dg], 16\n\t"
+      "addi.d %[dr], %[dr], 16\n\t"
+      "addi.d %[da], %[da], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [db] "+r"(dst_b), [dg] "+r"(dst_g),
+        [dr] "+r"(dst_r), [da] "+r"(dst_a), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
+}
+#endif  // HAS_SPLITARGBROW_LASX
+
+#ifdef HAS_SPLITXRGBROW_LASX
+void SplitXRGBRow_LASX(const uint8_t* src_argb,
+                       uint8_t* dst_b,
+                       uint8_t* dst_g,
+                       uint8_t* dst_r,
+                       int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.b $xr2, $xr1, $xr0\n\t"
+      "xvpickod.b $xr3, $xr1, $xr0\n\t"
+      "xvpermi.d $xr2, $xr2, 0xd8\n\t"
+      "xvpermi.d $xr3, $xr3, 0xd8\n\t"
+      "xvpickev.b $xr0, $xr2, $xr2\n\t"
+      "xvpickod.b $xr1, $xr2, $xr2\n\t"
+      "xvpickev.b $xr4, $xr3, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvpermi.d $xr4, $xr4, 0xd8\n\t"
+      "vst $vr0, %[db], 0\n\t"
+      "vst $vr4, %[dg], 0\n\t"
+      "vst $vr1, %[dr], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[db], %[db], 16\n\t"
+      "addi.d %[dg], %[dg], 16\n\t"
+      "addi.d %[dr], %[dr], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [db] "+r"(dst_b), [dg] "+r"(dst_g),
+        [dr] "+r"(dst_r), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_SPLITXRGBROW_LASX
+
+#ifdef HAS_RGB24MIRRORROW_LASX
+static const uvec8 kRGB24MirrorShuf0_LASX = {13, 14, 15, 10, 11, 12, 7, 8,
+                                             9,  4,  5,  6,  1,  2,  3, 0};
+static const uvec8 kRGB24MirrorShuf1_LASX = {14, 15, 16, 11, 12, 13, 8, 9,
+                                             10, 5,  6,  7,  2,  3,  4, 1};
+static const uvec8 kRGB24MirrorShuf2_LASX = {15, 0,  1, 12, 13, 14, 9, 10,
+                                             11, 6,  7, 8,  3,  4,  5, 2};
+void RGB24MirrorRow_LASX(const uint8_t* src_rgb24,
+                         uint8_t* dst_rgb24,
+                         int width) {
+  src_rgb24 += width * 3 - 96;
+  asm volatile(
+      "vld $vr4, %[sh0], 0\n\t"
+      "vld $vr5, %[sh1], 0\n\t"
+      "vld $vr6, %[sh2], 0\n\t"
+      "xvpermi.q $xr4, $xr4, 0x00\n\t"
+      "xvpermi.q $xr5, $xr5, 0x00\n\t"
+      "xvpermi.q $xr6, $xr6, 0x00\n\t"
+      "1:\n\t"
+      "vld $vr2, %[src], 80\n\t"
+      "vld $vr1, %[src], 64\n\t"
+      "vld $vr0, %[src], 48\n\t"
+      "vld $vr7, %[src], 32\n\t"
+      "vld $vr8, %[src], 16\n\t"
+      "vld $vr9, %[src], 0\n\t"
+      "xvpermi.q $xr2, $xr7, 0x20\n\t"
+      "xvpermi.q $xr1, $xr8, 0x20\n\t"
+      "xvpermi.q $xr0, $xr9, 0x20\n\t"
+      "xvshuf.b $xr3, $xr2, $xr1, $xr4\n\t"
+      "xvshuf.b $xr1, $xr1, $xr0, $xr5\n\t"
+      "xvshuf.b $xr0, $xr0, $xr0, $xr6\n\t"
+      "vst $vr3, %[dst], 0\n\t"
+      "vst $vr1, %[dst], 16\n\t"
+      "vst $vr0, %[dst], 32\n\t"
+      "xvpermi.q $xr3, $xr3, 0x01\n\t"
+      "xvpermi.q $xr1, $xr1, 0x01\n\t"
+      "xvpermi.q $xr0, $xr0, 0x01\n\t"
+      "vst $vr3, %[dst], 48\n\t"
+      "vst $vr1, %[dst], 64\n\t"
+      "vst $vr0, %[dst], 80\n\t"
+      "addi.d %[src], %[src], -96\n\t"
+      "addi.d %[dst], %[dst], 96\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_rgb24), [dst] "+r"(dst_rgb24), [cnt] "+r"(width)
+      : [sh0] "r"(&kRGB24MirrorShuf0_LASX), [sh1] "r"(&kRGB24MirrorShuf1_LASX),
+        [sh2] "r"(&kRGB24MirrorShuf2_LASX)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9");
+}
+#endif  // HAS_RGB24MIRRORROW_LASX
+
+#ifdef HAS_BLENDPLANEROW_LASX
+void BlendPlaneRow_LASX(const uint8_t* src0,
+                        const uint8_t* src1,
+                        const uint8_t* alpha,
+                        uint8_t* dst,
+                        int width) {
+  asm volatile(
+      "xvldi $xr6, 0x7f\n\t"
+      "xvslli.h $xr6, $xr6, 1\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[s0], 0\n\t"
+      "xvld $xr1, %[s1], 0\n\t"
+      "xvld $xr2, %[alp], 0\n\t"
+      "xvxori.b $xr3, $xr2, 0xff\n\t"
+      "xvmulwev.h.bu $xr4, $xr0, $xr2\n\t"
+      "xvmaddwev.h.bu $xr4, $xr1, $xr3\n\t"
+      "xvmulwod.h.bu $xr5, $xr0, $xr2\n\t"
+      "xvmaddwod.h.bu $xr5, $xr1, $xr3\n\t"
+      "xvadd.h $xr4, $xr4, $xr6\n\t"
+      "xvadd.h $xr5, $xr5, $xr6\n\t"
+      "xvsrli.h $xr4, $xr4, 8\n\t"
+      "xvsrli.h $xr5, $xr5, 8\n\t"
+      "xvpackev.b $xr0, $xr5, $xr4\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[s0], %[s0], 32\n\t"
+      "addi.d %[s1], %[s1], 32\n\t"
+      "addi.d %[alp], %[alp], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src0), [s1] "+r"(src1), [alp] "+r"(alpha), [dst] "+r"(dst),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_BLENDPLANEROW_LASX
+
+#ifdef HAS_INTERPOLATEROW_16_LASX
+void InterpolateRow_16_LASX(uint16_t* dst_ptr,
+                            const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            int width,
+                            int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  if (y1_fraction == 0) {
+    asm volatile(
+        "1:\n\t"
+        "xvld $xr0, %[src0], 0\n\t"
+        "xvst $xr0, %[dst], 0\n\t"
+        "addi.d %[src0], %[src0], 32\n\t"
+        "addi.d %[dst], %[dst], 32\n\t"
+        "addi.d %[cnt], %[cnt], -16\n\t"
+        "bnez %[cnt], 1b\n\t"
+        : [src0] "+r"(src_ptr), [dst] "+r"(dst_ptr), [cnt] "+r"(width)
+        :
+        : "memory", "$xr0");
+    return;
+  }
+  if (y1_fraction == 128) {
+    HalfRow_16_LASX(src_ptr, src_stride, dst_ptr, width);
+    return;
+  }
+  asm volatile(
+      "xvreplgr2vr.h $xr4, %[f0]\n\t"
+      "xvreplgr2vr.h $xr5, %[f1]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src1], 0\n\t"
+      "xvmulwev.w.hu $xr2, $xr0, $xr4\n\t"
+      "xvmaddwev.w.hu $xr2, $xr1, $xr5\n\t"
+      "xvmulwod.w.hu $xr3, $xr0, $xr4\n\t"
+      "xvmaddwod.w.hu $xr3, $xr1, $xr5\n\t"
+      "xvsrari.w $xr2, $xr2, 8\n\t"
+      "xvsrari.w $xr3, $xr3, 8\n\t"
+      "xvpackev.h $xr3, $xr3, $xr2\n\t"
+      "xvst $xr3, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 32\n\t"
+      "addi.d %[src1], %[src1], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_ptr), [src1] "+r"(src_ptr1), [dst] "+r"(dst_ptr),
+        [cnt] "+r"(width)
+      : [f0] "r"(y0_fraction), [f1] "r"(y1_fraction)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
+}
+#endif  // HAS_INTERPOLATEROW_16_LASX
 
 #ifdef __cplusplus
 }  // extern "C"

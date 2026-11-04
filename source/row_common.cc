@@ -4381,36 +4381,6 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
-float ScaleSumSamples_C(const float* src, float* dst, float scale, int width) {
-  float fsum = 0.f;
-  int i;
-  for (i = 0; i < width; ++i) {
-    float v = *src++;
-    fsum += v * v;
-    *dst++ = v * scale;
-  }
-  return fsum;
-}
-
-float ScaleMaxSamples_C(const float* src, float* dst, float scale, int width) {
-  float fmax = 0.f;
-  int i;
-  for (i = 0; i < width; ++i) {
-    float v = *src++;
-    float vs = v * scale;
-    fmax = (v > fmax) ? v : fmax;
-    *dst++ = vs;
-  }
-  return fmax;
-}
-
-void ScaleSamples_C(const float* src, float* dst, float scale, int width) {
-  int i;
-  for (i = 0; i < width; ++i) {
-    *dst++ = *src++ * scale;
-  }
-}
-
 void GaussRow_C(const uint32_t* src, uint16_t* dst, int width) {
   int i;
   for (i = 0; i < width; ++i) {

@@ -138,6 +138,21 @@ static void ScalePlaneDown2(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN2_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ScaleRowDown2 =
+        filtering == kFilterNone
+            ? ScaleRowDown2_Any_LASX
+            : (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_LASX
+                                          : ScaleRowDown2Box_Any_LASX);
+    if (IS_ALIGNED(dst_width, 32)) {
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_LASX
+                                               : (filtering == kFilterLinear
+                                                      ? ScaleRowDown2Linear_LASX
+                                                      : ScaleRowDown2Box_LASX);
+    }
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN2_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     ScaleRowDown2 = filtering == kFilterNone
@@ -314,6 +329,15 @@ static void ScalePlaneDown4(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN4_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ScaleRowDown4 =
+        filtering ? ScaleRowDown4Box_Any_LASX : ScaleRowDown4_Any_LASX;
+    if (IS_ALIGNED(dst_width, 16)) {
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_LASX : ScaleRowDown4_LASX;
+    }
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN4_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Box_RVV : ScaleRowDown4_RVV;
@@ -444,6 +468,27 @@ static void ScalePlaneDown34(int src_width,
       } else {
         ScaleRowDown34_0 = ScaleRowDown34_0_Box_Any_LSX;
         ScaleRowDown34_1 = ScaleRowDown34_1_Box_Any_LSX;
+      }
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN34_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    if (dst_width % 24 == 0) {
+      if (!filtering) {
+        ScaleRowDown34_0 = ScaleRowDown34_LASX;
+        ScaleRowDown34_1 = ScaleRowDown34_LASX;
+      } else {
+        ScaleRowDown34_0 = ScaleRowDown34_0_Box_LASX;
+        ScaleRowDown34_1 = ScaleRowDown34_1_Box_LASX;
+      }
+    } else {
+      if (!filtering) {
+        ScaleRowDown34_0 = ScaleRowDown34_Any_LASX;
+        ScaleRowDown34_1 = ScaleRowDown34_Any_LASX;
+      } else {
+        ScaleRowDown34_0 = ScaleRowDown34_0_Box_Any_LASX;
+        ScaleRowDown34_1 = ScaleRowDown34_1_Box_Any_LASX;
       }
     }
   }
@@ -671,6 +716,26 @@ static void ScalePlaneDown38(int src_width,
       } else {
         ScaleRowDown38_3 = ScaleRowDown38_3_Box_LSX;
         ScaleRowDown38_2 = ScaleRowDown38_2_Box_LSX;
+      }
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN38_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_Any_LASX;
+      ScaleRowDown38_2 = ScaleRowDown38_Any_LASX;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_Any_LASX;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_Any_LASX;
+    }
+    if (dst_width % 12 == 0) {
+      if (!filtering) {
+        ScaleRowDown38_3 = ScaleRowDown38_LASX;
+        ScaleRowDown38_2 = ScaleRowDown38_LASX;
+      } else {
+        ScaleRowDown38_3 = ScaleRowDown38_3_Box_LASX;
+        ScaleRowDown38_2 = ScaleRowDown38_2_Box_LASX;
       }
     }
   }
@@ -979,6 +1044,14 @@ static int ScalePlaneBox(int src_width,
       }
     }
 #endif
+#if defined(HAS_SCALEADDROW_LASX)
+    if (TestCpuFlag(kCpuHasLASX)) {
+      ScaleAddRow = ScaleAddRow_Any_LASX;
+      if (IS_ALIGNED(src_width, 32)) {
+        ScaleAddRow = ScaleAddRow_LASX;
+      }
+    }
+#endif
 #if defined(HAS_SCALEADDROW_RVV)
     if (TestCpuFlag(kCpuHasRVV)) {
       ScaleAddRow = ScaleAddRow_RVV;
@@ -1193,6 +1266,14 @@ static int ScalePlaneBilinearDown(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEFILTERCOLS_LASX)
+  if (TestCpuFlag(kCpuHasLASX) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_Any_LASX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleFilterCols = ScaleFilterCols_LASX;
+    }
+  }
+#endif
 #if defined(HAS_SCALEFILTERCOLS_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_Any_WASMSIMD;
@@ -1294,6 +1375,22 @@ static int ScalePlaneBilinearDown_16(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_16_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_16_Any_LSX;
+    if (IS_ALIGNED(src_width, 8)) {
+      InterpolateRow = InterpolateRow_16_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_16_Any_LASX;
+    if (IS_ALIGNED(src_width, 16)) {
+      InterpolateRow = InterpolateRow_16_LASX;
+    }
+  }
+#endif
 
   uint32_t uy = y;
   for (j = 0; j < dst_height; ++j) {
@@ -1380,6 +1477,22 @@ static int ScalePlaneBilinearUp(int src_width,
     InterpolateRow = InterpolateRow_SME;
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_Any_LSX;
+    if (IS_ALIGNED(dst_width, 16)) {
+      InterpolateRow = InterpolateRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_Any_LASX;
+    if (IS_ALIGNED(dst_width, 32)) {
+      InterpolateRow = InterpolateRow_LASX;
+    }
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
     InterpolateRow = InterpolateRow_RVV;
@@ -1420,6 +1533,14 @@ static int ScalePlaneBilinearUp(int src_width,
     ScaleFilterCols = ScaleFilterCols_Any_LSX;
     if (IS_ALIGNED(dst_width, 4)) {
       ScaleFilterCols = ScaleFilterCols_LSX;
+    }
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_LASX)
+  if (filtering && TestCpuFlag(kCpuHasLASX) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_Any_LASX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleFilterCols = ScaleFilterCols_LASX;
     }
   }
 #endif
@@ -1907,6 +2028,22 @@ static int ScalePlaneBilinearUp_16(int src_width,
     InterpolateRow = InterpolateRow_16_Any_WASMSIMD;
     if (IS_ALIGNED(dst_width, 8)) {
       InterpolateRow = InterpolateRow_16_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    InterpolateRow = InterpolateRow_16_Any_LSX;
+    if (IS_ALIGNED(dst_width, 8)) {
+      InterpolateRow = InterpolateRow_16_LSX;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    InterpolateRow = InterpolateRow_16_Any_LASX;
+    if (IS_ALIGNED(dst_width, 16)) {
+      InterpolateRow = InterpolateRow_16_LASX;
     }
   }
 #endif

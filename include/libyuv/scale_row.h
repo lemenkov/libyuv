@@ -90,6 +90,9 @@ extern "C" {
 #define HAS_SCALEUVROWUP2_BILINEAR_AVX2
 #define HAS_SCALEUVROWUP2_LINEAR_16_AVX2
 #define HAS_SCALEUVROWUP2_LINEAR_AVX2
+#define HAS_SCALEMAXSAMPLES_AVX2
+#define HAS_SCALESAMPLES_AVX2
+#define HAS_SCALESUMSAMPLES_AVX2
 #endif
 
 // The following are available for AVX512 x64 platforms:
@@ -137,6 +140,9 @@ extern "C" {
 // The following are available on AArch64 Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_SCALEROWDOWN2_16_NEON
+#define HAS_SCALEMAXSAMPLES_NEON
+#define HAS_SCALESAMPLES_NEON
+#define HAS_SCALESUMSAMPLES_NEON
 #endif
 
 // The following are available on AArch64 SME platforms:
@@ -163,6 +169,26 @@ extern "C" {
 #define HAS_SCALEARGBFILTERCOLS_LSX
 #define HAS_SCALEROWDOWN34_LSX
 #define HAS_SCALEUVADDCOLS3_LSX
+#define HAS_SCALEMAXSAMPLES_LSX
+#define HAS_SCALESAMPLES_LSX
+#define HAS_SCALESUMSAMPLES_LSX
+#endif
+
+#if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_lp64)
+#define HAS_SCALEARGBROWDOWN2_LASX
+#define HAS_SCALEARGBROWDOWNEVEN_LASX
+#define HAS_SCALEROWDOWN2_LASX
+#define HAS_SCALEROWDOWN4_LASX
+#define HAS_SCALEROWDOWN38_LASX
+#define HAS_SCALEFILTERCOLS_LASX
+#define HAS_SCALEADDROW_LASX
+#define HAS_SCALEARGBCOLS_LASX
+#define HAS_SCALEARGBFILTERCOLS_LASX
+#define HAS_SCALEROWDOWN34_LASX
+#define HAS_SCALEUVADDCOLS3_LASX
+#define HAS_SCALEMAXSAMPLES_LASX
+#define HAS_SCALESAMPLES_LASX
+#define HAS_SCALESUMSAMPLES_LASX
 #endif
 
 #if !defined(LIBYUV_DISABLE_RVV) &&                          \
@@ -646,6 +672,9 @@ void ScaleUVAddCols3_16_C(int dst_width,
                           int scaleval,
                           const uint32_t* src_uv,
                           uint16_t* dst_uv);
+float ScaleMaxSamples_C(const float* src, float* dst, float scale, int width);
+float ScaleSumSamples_C(const float* src, float* dst, float scale, int width);
+void ScaleSamples_C(const float* src, float* dst, float scale, int width);
 
 // Specialized scalers for x86.
 void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
@@ -975,6 +1004,15 @@ void ScaleColsUp2_AVX2(uint8_t* dst_ptr,
                        int dst_width,
                        int x,
                        int dx);
+float ScaleMaxSamples_AVX2(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+float ScaleSumSamples_AVX2(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+void ScaleSamples_AVX2(const float* src, float* dst, float scale, int width);
 
 // ARGB Column functions
 void ScaleARGBCols_AVX2(uint8_t* dst_argb,
@@ -1079,6 +1117,18 @@ void ScaleARGBRowDown2Box_LSX(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
                               uint8_t* dst_argb,
                               int dst_width);
+void ScaleARGBRowDown2_LASX(const uint8_t* src_argb,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_argb,
+                            int dst_width);
+void ScaleARGBRowDown2Linear_LASX(const uint8_t* src_argb,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_argb,
+                                  int dst_width);
+void ScaleARGBRowDown2Box_LASX(const uint8_t* src_argb,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_argb,
+                               int dst_width);
 void ScaleARGBRowDown2_Any_AVX2(const uint8_t* src_ptr,
                                 ptrdiff_t src_stride,
                                 uint8_t* dst_ptr,
@@ -1115,6 +1165,18 @@ void ScaleARGBRowDown2Box_Any_LSX(const uint8_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint8_t* dst_ptr,
                                   int dst_width);
+void ScaleARGBRowDown2_Any_LASX(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width);
+void ScaleARGBRowDown2Linear_Any_LASX(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleARGBRowDown2Box_Any_LASX(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
 void ScaleARGBRowDownEven_AVX2(const uint8_t* src_argb,
                                ptrdiff_t src_stride,
                                int src_stepx,
@@ -1145,6 +1207,16 @@ void ScaleARGBRowDownEvenBox_LSX(const uint8_t* src_argb,
                                  int src_stepx,
                                  uint8_t* dst_argb,
                                  int dst_width);
+void ScaleARGBRowDownEven_LASX(const uint8_t* src_argb,
+                               ptrdiff_t src_stride,
+                               int32_t src_stepx,
+                               uint8_t* dst_argb,
+                               int dst_width);
+void ScaleARGBRowDownEvenBox_LASX(const uint8_t* src_argb,
+                                  ptrdiff_t src_stride,
+                                  int src_stepx,
+                                  uint8_t* dst_argb,
+                                  int dst_width);
 void ScaleARGBRowDownEven_RVV(const uint8_t* src_argb,
                               ptrdiff_t src_stride,
                               int32_t src_stepx,
@@ -1185,6 +1257,16 @@ void ScaleARGBRowDownEvenBox_Any_LSX(const uint8_t* src_ptr,
                                      int src_stepx,
                                      uint8_t* dst_ptr,
                                      int dst_width);
+void ScaleARGBRowDownEven_Any_LASX(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   int32_t src_stepx,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleARGBRowDownEvenBox_Any_LASX(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      int src_stepx,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
 
 // UV Row functions
 void ScaleUVRowDown2_AVX2(const uint8_t* src_ptr,
@@ -1430,6 +1512,14 @@ void ScaleUVAddCols3_Any_LSX(int dst_width,
                              int scaleval,
                              const uint16_t* src_uv,
                              uint8_t* dst_uv);
+void ScaleUVAddCols3_LASX(int dst_width,
+                          int scaleval,
+                          const uint16_t* src_uv,
+                          uint8_t* dst_uv);
+void ScaleUVAddCols3_Any_LASX(int dst_width,
+                              int scaleval,
+                              const uint16_t* src_uv,
+                              uint8_t* dst_uv);
 void ScaleUVAddCols3_WASMSIMD(int dst_width,
                               int scaleval,
                               const uint16_t* src_uv,
@@ -1652,6 +1742,15 @@ void ScaleFilterCols_Any_NEON(uint8_t* dst_ptr,
                               int dst_width,
                               int x,
                               int dx);
+float ScaleMaxSamples_NEON(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+float ScaleSumSamples_NEON(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+void ScaleSamples_NEON(const float* src, float* dst, float scale, int width);
 
 void ScaleRowDown2_LSX(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
@@ -1775,6 +1874,141 @@ void ScaleRowDown34_1_Box_Any_LSX(const uint8_t* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint8_t* dst_ptr,
                                   int dst_width);
+float ScaleMaxSamples_LSX(const float* src, float* dst, float scale, int width);
+float ScaleSumSamples_LSX(const float* src, float* dst, float scale, int width);
+void ScaleSamples_LSX(const float* src, float* dst, float scale, int width);
+
+void ScaleRowDown2_LASX(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst,
+                        int dst_width);
+void ScaleRowDown2Linear_LASX(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst,
+                              int dst_width);
+void ScaleRowDown2Box_LASX(const uint8_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst,
+                           int dst_width);
+void ScaleRowDown4_LASX(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst,
+                        int dst_width);
+void ScaleRowDown4Box_LASX(const uint8_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst,
+                           int dst_width);
+void ScaleRowDown38_LASX(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst,
+                         int dst_width);
+void ScaleRowDown38_2_Box_LASX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width);
+void ScaleRowDown38_3_Box_LASX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width);
+void ScaleAddRow_LASX(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width);
+void ScaleFilterCols_LASX(uint8_t* dst_ptr,
+                          const uint8_t* src_ptr,
+                          int dst_width,
+                          int x,
+                          int dx);
+void ScaleARGBFilterCols_LASX(uint8_t* dst_argb,
+                              const uint8_t* src_argb,
+                              int dst_width,
+                              int x,
+                              int dx);
+void ScaleARGBCols_LASX(uint8_t* dst_argb,
+                        const uint8_t* src_argb,
+                        int dst_width,
+                        int x,
+                        int dx);
+void ScaleRowDown34_LASX(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst,
+                         int dst_width);
+void ScaleRowDown34_0_Box_LASX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* d,
+                               int dst_width);
+void ScaleRowDown34_1_Box_LASX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* d,
+                               int dst_width);
+void ScaleRowDown2_Any_LASX(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int dst_width);
+void ScaleRowDown2Linear_Any_LASX(const uint8_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_ptr,
+                                  int dst_width);
+void ScaleRowDown2Box_Any_LASX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width);
+void ScaleRowDown4_Any_LASX(const uint8_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8_t* dst_ptr,
+                            int dst_width);
+void ScaleRowDown4Box_Any_LASX(const uint8_t* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_ptr,
+                               int dst_width);
+void ScaleRowDown38_Any_LASX(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width);
+void ScaleRowDown38_2_Box_Any_LASX(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown38_3_Box_Any_LASX(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleAddRow_Any_LASX(const uint8_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int src_width);
+void ScaleFilterCols_Any_LASX(uint8_t* dst_ptr,
+                              const uint8_t* src_ptr,
+                              int dst_width,
+                              int x,
+                              int dx);
+void ScaleARGBCols_Any_LASX(uint8_t* dst_ptr,
+                            const uint8_t* src_ptr,
+                            int dst_width,
+                            int x,
+                            int dx);
+void ScaleARGBFilterCols_Any_LASX(uint8_t* dst_ptr,
+                                  const uint8_t* src_ptr,
+                                  int dst_width,
+                                  int x,
+                                  int dx);
+void ScaleRowDown34_Any_LASX(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width);
+void ScaleRowDown34_0_Box_Any_LASX(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleRowDown34_1_Box_Any_LASX(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+float ScaleMaxSamples_LASX(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+float ScaleSumSamples_LASX(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+void ScaleSamples_LASX(const float* src, float* dst, float scale, int width);
 
 void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width);
 void ScaleRowDown2_RVV(const uint8_t* src_ptr,

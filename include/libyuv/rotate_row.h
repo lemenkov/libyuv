@@ -121,8 +121,11 @@ extern "C" {
 #endif
 
 #if !defined(LIBYUV_DISABLE_LASX) && defined(__loongarch_lp64)
+#define HAS_TRANSPOSEWX8_LASX
 #define HAS_TRANSPOSEWX16_LASX
+#define HAS_TRANSPOSEUVWX8_LASX
 #define HAS_TRANSPOSEUVWX16_LASX
+#define HAS_TRANSPOSEWX8_16_LASX
 #define HAS_TRANSPOSEWX16_16_LASX
 #define HAS_TRANSPOSEWX4_32_LASX
 #endif
@@ -207,6 +210,11 @@ void TransposeWx8_LSX(const uint8_t* src,
                       uint8_t* dst,
                       int dst_stride,
                       int width);
+void TransposeWx8_LASX(const uint8_t* src,
+                       int src_stride,
+                       uint8_t* dst,
+                       int dst_stride,
+                       int width);
 void TransposeWx16_LASX(const uint8_t* src,
                         int src_stride,
                         uint8_t* dst,
@@ -248,6 +256,11 @@ void TransposeWx8_Any_LSX(const uint8_t* src,
                           uint8_t* dst,
                           int dst_stride,
                           int width);
+void TransposeWx8_Any_LASX(const uint8_t* src,
+                           int src_stride,
+                           uint8_t* dst,
+                           int dst_stride,
+                           int width);
 void TransposeWx16_Any_LASX(const uint8_t* src,
                             int src_stride,
                             uint8_t* dst,
@@ -337,6 +350,13 @@ void TransposeUVWx8_LSX(const uint8_t* src,
                         uint8_t* dst_b,
                         int dst_stride_b,
                         int width);
+void TransposeUVWx8_LASX(const uint8_t* src,
+                         int src_stride,
+                         uint8_t* dst_a,
+                         int dst_stride_a,
+                         uint8_t* dst_b,
+                         int dst_stride_b,
+                         int width);
 void TransposeUVWx16_LASX(const uint8_t* src,
                           int src_stride,
                           uint8_t* dst_a,
@@ -387,6 +407,13 @@ void TransposeUVWx8_Any_LSX(const uint8_t* src,
                             uint8_t* dst_b,
                             int dst_stride_b,
                             int width);
+void TransposeUVWx8_Any_LASX(const uint8_t* src,
+                             int src_stride,
+                             uint8_t* dst_a,
+                             int dst_stride_a,
+                             uint8_t* dst_b,
+                             int dst_stride_b,
+                             int width);
 void TransposeUVWx16_Any_LASX(const uint8_t* src,
                               int src_stride,
                               uint8_t* dst_a,
@@ -468,6 +495,11 @@ void TransposeWx8_16_LSX(const uint16_t* src,
                          uint16_t* dst,
                          int dst_stride,
                          int width);
+void TransposeWx8_16_LASX(const uint16_t* src,
+                          int src_stride,
+                          uint16_t* dst,
+                          int dst_stride,
+                          int width);
 void TransposeWx16_16_LASX(const uint16_t* src,
                            int src_stride,
                            uint16_t* dst,
@@ -498,6 +530,11 @@ void TransposeWx8_16_Any_LSX(const uint16_t* src,
                              uint16_t* dst,
                              int dst_stride,
                              int width);
+void TransposeWx8_16_Any_LASX(const uint16_t* src,
+                              int src_stride,
+                              uint16_t* dst,
+                              int dst_stride,
+                              int width);
 void TransposeWx16_16_Any_LASX(const uint16_t* src,
                                int src_stride,
                                uint16_t* dst,

@@ -32,7 +32,8 @@
 #ifdef ENABLE_ROW_TESTS
 // row.h defines SIMD_ALIGNED, overriding unit_test.h
 // TODO(fbarchard): Remove row.h from unittests.  Test public functions.
-#include "libyuv/row.h" /* For ScaleSumSamples_Neon */
+#include "libyuv/row.h"
+#include "libyuv/scale_row.h" /* For ScaleSumSamples_Neon */
 #endif
 
 #if defined(__has_feature)
@@ -4869,6 +4870,26 @@ float TestScaleMaxSamples(int benchmark_width,
                                     reinterpret_cast<float*>(dst_opt), scale,
                                     kPixels);
       }
+#elif defined(HAS_SCALEMAXSAMPLES_LASX) || defined(HAS_SCALEMAXSAMPLES_LSX)
+#ifdef HAS_SCALEMAXSAMPLES_LASX
+      if (TestCpuFlag(kCpuHasLASX)) {
+        max_opt = ScaleMaxSamples_LASX(reinterpret_cast<float*>(orig_y),
+                                       reinterpret_cast<float*>(dst_opt), scale,
+                                       kPixels);
+      } else
+#endif
+#ifdef HAS_SCALEMAXSAMPLES_LSX
+          if (TestCpuFlag(kCpuHasLSX)) {
+        max_opt = ScaleMaxSamples_LSX(reinterpret_cast<float*>(orig_y),
+                                      reinterpret_cast<float*>(dst_opt), scale,
+                                      kPixels);
+      } else
+#endif
+      {
+        max_opt = ScaleMaxSamples_C(reinterpret_cast<float*>(orig_y),
+                                    reinterpret_cast<float*>(dst_opt), scale,
+                                    kPixels);
+      }
 #else
       max_opt =
           ScaleMaxSamples_C(reinterpret_cast<float*>(orig_y),
@@ -4952,6 +4973,26 @@ float TestScaleSumSamples(int benchmark_width,
                                        reinterpret_cast<float*>(dst_opt), scale,
                                        kPixels);
       } else {
+        sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
+                                    reinterpret_cast<float*>(dst_opt), scale,
+                                    kPixels);
+      }
+#elif defined(HAS_SCALESUMSAMPLES_LASX) || defined(HAS_SCALESUMSAMPLES_LSX)
+#ifdef HAS_SCALESUMSAMPLES_LASX
+      if (TestCpuFlag(kCpuHasLASX)) {
+        sum_opt = ScaleSumSamples_LASX(reinterpret_cast<float*>(orig_y),
+                                       reinterpret_cast<float*>(dst_opt), scale,
+                                       kPixels);
+      } else
+#endif
+#ifdef HAS_SCALESUMSAMPLES_LSX
+          if (TestCpuFlag(kCpuHasLSX)) {
+        sum_opt = ScaleSumSamples_LSX(reinterpret_cast<float*>(orig_y),
+                                      reinterpret_cast<float*>(dst_opt), scale,
+                                      kPixels);
+      } else
+#endif
+      {
         sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
                                     reinterpret_cast<float*>(dst_opt), scale,
                                     kPixels);
@@ -5046,6 +5087,23 @@ float TestScaleSamples(int benchmark_width,
         ScaleSamples_AVX2(reinterpret_cast<float*>(orig_y),
                           reinterpret_cast<float*>(dst_opt), scale, kPixels);
       } else {
+        ScaleSamples_C(reinterpret_cast<float*>(orig_y),
+                       reinterpret_cast<float*>(dst_opt), scale, kPixels);
+      }
+#elif defined(HAS_SCALESAMPLES_LASX) || defined(HAS_SCALESAMPLES_LSX)
+#ifdef HAS_SCALESAMPLES_LASX
+      if (TestCpuFlag(kCpuHasLASX)) {
+        ScaleSamples_LASX(reinterpret_cast<float*>(orig_y),
+                          reinterpret_cast<float*>(dst_opt), scale, kPixels);
+      } else
+#endif
+#ifdef HAS_SCALESAMPLES_LSX
+          if (TestCpuFlag(kCpuHasLSX)) {
+        ScaleSamples_LSX(reinterpret_cast<float*>(orig_y),
+                         reinterpret_cast<float*>(dst_opt), scale, kPixels);
+      } else
+#endif
+      {
         ScaleSamples_C(reinterpret_cast<float*>(orig_y),
                        reinterpret_cast<float*>(dst_opt), scale, kPixels);
       }
@@ -5451,6 +5509,24 @@ TEST_F(LibYUVPlanarTest, HalfRow_Opt) {
         }
       } else
 #endif
+#if defined(HAS_HALFROW_LASX)
+          if (TestCpuFlag(kCpuHasLASX)) {
+        if (IS_ALIGNED(width, 32)) {
+          HalfRow_LASX(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_Any_LASX(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
+#if defined(HAS_HALFROW_LSX)
+          if (TestCpuFlag(kCpuHasLSX)) {
+        if (IS_ALIGNED(width, 16)) {
+          HalfRow_LSX(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_Any_LSX(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
       {
         HalfRow_C(src_pixels, stride, dst_pixels_opt, width);
       }
@@ -5503,6 +5579,24 @@ TEST_F(LibYUVPlanarTest, HalfRow_16_Opt) {
           HalfRow_16_NEON(src_pixels, stride, dst_pixels_opt, width);
         } else {
           HalfRow_16_Any_NEON(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
+#if defined(HAS_HALFROW_16_LASX)
+          if (TestCpuFlag(kCpuHasLASX)) {
+        if (IS_ALIGNED(width, 16)) {
+          HalfRow_16_LASX(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_16_Any_LASX(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
+#if defined(HAS_HALFROW_16_LSX)
+          if (TestCpuFlag(kCpuHasLSX)) {
+        if (IS_ALIGNED(width, 8)) {
+          HalfRow_16_LSX(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_16_Any_LSX(src_pixels, stride, dst_pixels_opt, width);
         }
       } else
 #endif

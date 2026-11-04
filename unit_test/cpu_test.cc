@@ -310,6 +310,15 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef __loongarch__
   printf("__loongarch__ %d\n", __loongarch__);
 #endif
+#ifdef __loongarch_lp64
+  printf("__loongarch_lp64 %d\n", __loongarch_lp64);
+#endif
+#ifdef __loongarch_sx
+  printf("__loongarch_sx %d\n", __loongarch_sx);
+#endif
+#ifdef __loongarch_asx
+  printf("__loongarch_asx %d\n", __loongarch_asx);
+#endif
 #ifdef __wasm__
   printf("__wasm__ %d\n", __wasm__);
 #endif
@@ -456,6 +465,10 @@ TEST_F(LibYUVBaseTest, MAYBE_TestSetCpuFlags) {
   ASSERT_EQ(cpu_flags, TestCpuFlag(-1));
 
   cpu_flags = kCpuHasX86 | kCpuInitialized;
+  SetCpuFlags(cpu_flags);
+  ASSERT_EQ(cpu_flags, TestCpuFlag(-1));
+
+  cpu_flags = kCpuHasLOONGARCH | kCpuHasLSX | kCpuHasLASX | kCpuInitialized;
   SetCpuFlags(cpu_flags);
   ASSERT_EQ(cpu_flags, TestCpuFlag(-1));
 
