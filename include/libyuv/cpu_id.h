@@ -74,6 +74,7 @@ static const int kCpuHasLASX = 0x200;
 // These flags are only valid on WASM processors.
 static const int kCpuHasWASM = 0x40;
 static const int kCpuHasWASMSIMD = 0x100;
+static const int kCpuHasRELAXEDSIMD = 0x200;
 
 // These flags are only valid on Hexagon processors.
 static const int kCpuHasHexagon = 0x80;
@@ -102,6 +103,8 @@ LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
 int RiscvCpuCaps(const char* cpuinfo_name);
+LIBYUV_API
+int WasmCpuCaps(void);
 
 #ifdef __linux__
 // On Linux, parse AArch64 features from getauxval(AT_HWCAP{,2}).

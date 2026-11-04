@@ -167,8 +167,10 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   int has_wasm = TestCpuFlag(kCpuHasWASM);
   if (has_wasm) {
     int has_wasm_simd = TestCpuFlag(kCpuHasWASMSIMD);
+    int has_relaxed_simd = TestCpuFlag(kCpuHasRELAXEDSIMD);
     printf("Has WASM 0x%x\n", has_wasm);
     printf("Has WASM SIMD 0x%x\n", has_wasm_simd);
+    printf("Has RELAXED SIMD 0x%x\n", has_relaxed_simd);
   }
 #endif  // defined(__wasm__)
 
@@ -325,6 +327,9 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef __wasm_simd128__
   printf("__wasm_simd128__ %d\n", __wasm_simd128__);
 #endif
+#ifdef __wasm_relaxed_simd__
+  printf("__wasm_relaxed_simd__ %d\n", __wasm_relaxed_simd__);
+#endif
 #ifdef __hexagon__
   printf("__hexagon__ %d\n", __hexagon__);
 #endif
@@ -469,6 +474,11 @@ TEST_F(LibYUVBaseTest, MAYBE_TestSetCpuFlags) {
   ASSERT_EQ(cpu_flags, TestCpuFlag(-1));
 
   cpu_flags = kCpuHasLOONGARCH | kCpuHasLSX | kCpuHasLASX | kCpuInitialized;
+  SetCpuFlags(cpu_flags);
+  ASSERT_EQ(cpu_flags, TestCpuFlag(-1));
+
+  cpu_flags =
+      kCpuHasWASM | kCpuHasWASMSIMD | kCpuHasRELAXEDSIMD | kCpuInitialized;
   SetCpuFlags(cpu_flags);
   ASSERT_EQ(cpu_flags, TestCpuFlag(-1));
 

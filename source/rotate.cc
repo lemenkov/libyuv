@@ -290,6 +290,14 @@ void RotatePlane180(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_RELAXEDSIMD)
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    MirrorRow = MirrorRow_Any_RELAXEDSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorRow = MirrorRow_RELAXEDSIMD;
+    }
+  }
+#endif
 #if defined(HAS_MIRRORROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     MirrorRow = MirrorRow_HVX;
@@ -348,6 +356,11 @@ void RotatePlane180(const uint8_t* src,
 #if defined(HAS_COPYROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_LASX : CopyRow_Any_LASX;
+  }
+#endif
+#if defined(HAS_COPYROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_WASMSIMD : CopyRow_Any_WASMSIMD;
   }
 #endif
 
@@ -630,6 +643,14 @@ void SplitRotateUV180(const uint8_t* src,
     MirrorSplitUVRow = MirrorSplitUVRow_Any_WASMSIMD;
     if (IS_ALIGNED(width, 16)) {
       MirrorSplitUVRow = MirrorSplitUVRow_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORSPLITUVROW_RELAXEDSIMD)
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_Any_RELAXEDSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorSplitUVRow = MirrorSplitUVRow_RELAXEDSIMD;
     }
   }
 #endif

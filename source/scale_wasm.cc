@@ -11,22 +11,27 @@
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h"
 
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#if (!defined(LIBYUV_DISABLE_WASMSIMD) ||     \
+     !defined(LIBYUV_DISABLE_RELAXEDSIMD)) && \
+    defined(__wasm_simd128__)
 #include <wasm_simd128.h>
 
 #ifdef __cplusplus
 namespace libyuv {
-extern "C" {
 #endif
 
 // Arbitrary i8x16.shuffle masks are rematerialized on every use by V8, so
 // shuffles that do not map to a single instruction use swizzle with masks
 // loaded before the loop.  Mask indices of 128 produce 0.
+template <bool kRelaxed>
+static inline v128_t WasmSwizzle(v128_t a, v128_t b) {
 #ifdef __wasm_relaxed_simd__
-#define LIBYUV_WASM_SWIZZLE wasm_i8x16_relaxed_swizzle
-#else
-#define LIBYUV_WASM_SWIZZLE wasm_i8x16_swizzle
+  if (kRelaxed) {
+    return wasm_i8x16_relaxed_swizzle(a, b);
+  }
 #endif
+  return wasm_i8x16_swizzle(a, b);
+}
 
 // Load a constant vector.  The empty asm hides the address so the compiler
 // keeps the vector in a local instead of sinking a v128.const into the loop.
@@ -148,7 +153,8 @@ void ScaleRowDown4Box_WASMSIMD(const uint8_t* src_ptr,
 }
 #endif  // HAS_SCALEROWDOWN4_WASMSIMD
 
-#ifdef HAS_SCALEROWDOWN34_WASMSIMD
+#if defined(HAS_SCALEROWDOWN34_WASMSIMD) || \
+    defined(HAS_SCALEROWDOWN34_RELAXEDSIMD)
 static const uint8_t kShuf34[8][16] = {
     // ScaleRowDown34: 16 bytes from a, then b, then 8 bytes from b.
     {0, 1, 3, 4, 5, 7, 8, 9, 11, 12, 13, 15, 128, 128, 128, 128},
@@ -164,10 +170,11 @@ static const uint8_t kShuf34[8][16] = {
 };
 
 // Point sample 32 pixels to 24, keeping pixels 0, 1 and 3 of every 4.
-void ScaleRowDown34_WASMSIMD(const uint8_t* src_ptr,
-                             ptrdiff_t src_stride,
-                             uint8_t* dst_ptr,
-                             int dst_width) {
+template <bool kRelaxed>
+static inline void ScaleRowDown34_Wasm(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width) {
   const v128_t m0 = LoadConst(kShuf34[0]);
   const v128_t m1 = LoadConst(kShuf34[1]);
   const v128_t m2 = LoadConst(kShuf34[2]);
@@ -175,9 +182,9 @@ void ScaleRowDown34_WASMSIMD(const uint8_t* src_ptr,
   while (dst_width > 0) {
     v128_t a = wasm_v128_load(src_ptr);
     v128_t b = wasm_v128_load(src_ptr + 16);
-    wasm_v128_store(dst_ptr, wasm_v128_or(LIBYUV_WASM_SWIZZLE(a, m0),
-                                          LIBYUV_WASM_SWIZZLE(b, m1)));
-    wasm_v128_store64_lane(dst_ptr + 16, LIBYUV_WASM_SWIZZLE(b, m2), 0);
+    wasm_v128_store(dst_ptr, wasm_v128_or(WasmSwizzle<kRelaxed>(a, m0),
+                                          WasmSwizzle<kRelaxed>(b, m1)));
+    wasm_v128_store64_lane(dst_ptr + 16, WasmSwizzle<kRelaxed>(b, m2), 0);
     src_ptr += 32;
     dst_ptr += 24;
     dst_width -= 24;
@@ -194,18 +201,20 @@ static inline v128_t AvgFloor(v128_t a, v128_t b) {
 // Horizontal 4 to 3 filter of 16 pixels.  Result bytes 4n+0..2 are
 //   (3 * s0 + s1 + 2) >> 2, (s1 + s2 + 1) >> 1, (s2 + 3 * s3 + 2) >> 2
 // using (3 * a + b + 2) >> 2 == avgr(a, (a + b) >> 1).  Byte 4n+3 is unused.
+template <bool kRelaxed>
 static inline v128_t Filter34(v128_t s, v128_t mp, v128_t ma) {
-  v128_t p = LIBYUV_WASM_SWIZZLE(s, mp);  // s0 s1 s3
-  v128_t a = LIBYUV_WASM_SWIZZLE(s, ma);  // s0 s2 s2
-  v128_t b = wasm_u32x4_shr(s, 8);        // s1 s2 s3
+  v128_t p = WasmSwizzle<kRelaxed>(s, mp);  // s0 s1 s3
+  v128_t a = WasmSwizzle<kRelaxed>(s, ma);  // s0 s2 s2
+  v128_t b = wasm_u32x4_shr(s, 8);          // s1 s2 s3
   return wasm_u8x16_avgr(p, AvgFloor(a, b));
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-void ScaleRowDown34_1_Box_WASMSIMD(const uint8_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   uint8_t* dst_ptr,
-                                   int dst_width) {
+template <bool kRelaxed>
+static inline void ScaleRowDown34_1_Box_Wasm(const uint8_t* src_ptr,
+                                             ptrdiff_t src_stride,
+                                             uint8_t* dst_ptr,
+                                             int dst_width) {
   const uint8_t* t = src_ptr + src_stride;
   const v128_t mp = LoadConst(kShuf34[3]);
   const v128_t ma = LoadConst(kShuf34[4]);
@@ -213,13 +222,15 @@ void ScaleRowDown34_1_Box_WASMSIMD(const uint8_t* src_ptr,
   const v128_t m1 = LoadConst(kShuf34[6]);
   const v128_t m2 = LoadConst(kShuf34[7]);
   while (dst_width > 0) {
-    v128_t a = wasm_u8x16_avgr(Filter34(wasm_v128_load(src_ptr), mp, ma),
-                               Filter34(wasm_v128_load(t), mp, ma));
-    v128_t b = wasm_u8x16_avgr(Filter34(wasm_v128_load(src_ptr + 16), mp, ma),
-                               Filter34(wasm_v128_load(t + 16), mp, ma));
-    wasm_v128_store(dst_ptr, wasm_v128_or(LIBYUV_WASM_SWIZZLE(a, m0),
-                                          LIBYUV_WASM_SWIZZLE(b, m1)));
-    wasm_v128_store64_lane(dst_ptr + 16, LIBYUV_WASM_SWIZZLE(b, m2), 0);
+    v128_t a =
+        wasm_u8x16_avgr(Filter34<kRelaxed>(wasm_v128_load(src_ptr), mp, ma),
+                        Filter34<kRelaxed>(wasm_v128_load(t), mp, ma));
+    v128_t b = wasm_u8x16_avgr(
+        Filter34<kRelaxed>(wasm_v128_load(src_ptr + 16), mp, ma),
+        Filter34<kRelaxed>(wasm_v128_load(t + 16), mp, ma));
+    wasm_v128_store(dst_ptr, wasm_v128_or(WasmSwizzle<kRelaxed>(a, m0),
+                                          WasmSwizzle<kRelaxed>(b, m1)));
+    wasm_v128_store64_lane(dst_ptr + 16, WasmSwizzle<kRelaxed>(b, m2), 0);
     src_ptr += 32;
     t += 32;
     dst_ptr += 24;
@@ -228,10 +239,11 @@ void ScaleRowDown34_1_Box_WASMSIMD(const uint8_t* src_ptr,
 }
 
 // Filter rows 0 and 1 together, 3 : 1
-void ScaleRowDown34_0_Box_WASMSIMD(const uint8_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   uint8_t* dst_ptr,
-                                   int dst_width) {
+template <bool kRelaxed>
+static inline void ScaleRowDown34_0_Box_Wasm(const uint8_t* src_ptr,
+                                             ptrdiff_t src_stride,
+                                             uint8_t* dst_ptr,
+                                             int dst_width) {
   const uint8_t* t = src_ptr + src_stride;
   const v128_t mp = LoadConst(kShuf34[3]);
   const v128_t ma = LoadConst(kShuf34[4]);
@@ -239,24 +251,67 @@ void ScaleRowDown34_0_Box_WASMSIMD(const uint8_t* src_ptr,
   const v128_t m1 = LoadConst(kShuf34[6]);
   const v128_t m2 = LoadConst(kShuf34[7]);
   while (dst_width > 0) {
-    v128_t a0 = Filter34(wasm_v128_load(src_ptr), mp, ma);
-    v128_t b0 = Filter34(wasm_v128_load(src_ptr + 16), mp, ma);
-    v128_t a1 = Filter34(wasm_v128_load(t), mp, ma);
-    v128_t b1 = Filter34(wasm_v128_load(t + 16), mp, ma);
+    v128_t a0 = Filter34<kRelaxed>(wasm_v128_load(src_ptr), mp, ma);
+    v128_t b0 = Filter34<kRelaxed>(wasm_v128_load(src_ptr + 16), mp, ma);
+    v128_t a1 = Filter34<kRelaxed>(wasm_v128_load(t), mp, ma);
+    v128_t b1 = Filter34<kRelaxed>(wasm_v128_load(t + 16), mp, ma);
     v128_t a = wasm_u8x16_avgr(a0, AvgFloor(a0, a1));
     v128_t b = wasm_u8x16_avgr(b0, AvgFloor(b0, b1));
-    wasm_v128_store(dst_ptr, wasm_v128_or(LIBYUV_WASM_SWIZZLE(a, m0),
-                                          LIBYUV_WASM_SWIZZLE(b, m1)));
-    wasm_v128_store64_lane(dst_ptr + 16, LIBYUV_WASM_SWIZZLE(b, m2), 0);
+    wasm_v128_store(dst_ptr, wasm_v128_or(WasmSwizzle<kRelaxed>(a, m0),
+                                          WasmSwizzle<kRelaxed>(b, m1)));
+    wasm_v128_store64_lane(dst_ptr + 16, WasmSwizzle<kRelaxed>(b, m2), 0);
     src_ptr += 32;
     t += 32;
     dst_ptr += 24;
     dst_width -= 24;
   }
 }
+
+#ifdef HAS_SCALEROWDOWN34_WASMSIMD
+void ScaleRowDown34_WASMSIMD(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width) {
+  ScaleRowDown34_Wasm<false>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown34_1_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width) {
+  ScaleRowDown34_1_Box_Wasm<false>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown34_0_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width) {
+  ScaleRowDown34_0_Box_Wasm<false>(src_ptr, src_stride, dst_ptr, dst_width);
+}
 #endif  // HAS_SCALEROWDOWN34_WASMSIMD
 
-#ifdef HAS_SCALEROWDOWN38_WASMSIMD
+#ifdef HAS_SCALEROWDOWN34_RELAXEDSIMD
+void ScaleRowDown34_RELAXEDSIMD(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width) {
+  ScaleRowDown34_Wasm<true>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown34_1_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width) {
+  ScaleRowDown34_1_Box_Wasm<true>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown34_0_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width) {
+  ScaleRowDown34_0_Box_Wasm<true>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+#endif  // HAS_SCALEROWDOWN34_RELAXEDSIMD
+#endif  // HAS_SCALEROWDOWN34_WASMSIMD || HAS_SCALEROWDOWN34_RELAXEDSIMD
+
+#if defined(HAS_SCALEROWDOWN38_WASMSIMD) || \
+    defined(HAS_SCALEROWDOWN38_RELAXEDSIMD)
 static const uint8_t kShuf38[3][16] = {
     // ScaleRowDown38: 6 bytes from a, then 6 bytes from b.
     {0, 3, 6, 8, 11, 14, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128},
@@ -266,17 +321,18 @@ static const uint8_t kShuf38[3][16] = {
 };
 
 // Point sample 32 pixels to 12, keeping pixels 0, 3 and 6 of every 8.
-void ScaleRowDown38_WASMSIMD(const uint8_t* src_ptr,
-                             ptrdiff_t src_stride,
-                             uint8_t* dst_ptr,
-                             int dst_width) {
+template <bool kRelaxed>
+static inline void ScaleRowDown38_Wasm(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       int dst_width) {
   const v128_t m0 = LoadConst(kShuf38[0]);
   const v128_t m1 = LoadConst(kShuf38[1]);
   (void)src_stride;
   while (dst_width > 0) {
     v128_t d =
-        wasm_v128_or(LIBYUV_WASM_SWIZZLE(wasm_v128_load(src_ptr), m0),
-                     LIBYUV_WASM_SWIZZLE(wasm_v128_load(src_ptr + 16), m1));
+        wasm_v128_or(WasmSwizzle<kRelaxed>(wasm_v128_load(src_ptr), m0),
+                     WasmSwizzle<kRelaxed>(wasm_v128_load(src_ptr + 16), m1));
     wasm_v128_store64_lane(dst_ptr, d, 0);
     wasm_v128_store32_lane(dst_ptr + 8, d, 2);
     src_ptr += 32;
@@ -299,6 +355,7 @@ static inline v128_t Sum38(v128_t s, v128_t k) {
 }
 
 // Pack 12 results from Sum38 and store them.
+template <bool kRelaxed>
 static inline void Store38(uint8_t* dst_ptr,
                            v128_t m,
                            v128_t a,
@@ -307,16 +364,17 @@ static inline void Store38(uint8_t* dst_ptr,
                            v128_t d) {
   v128_t r = wasm_u8x16_narrow_i16x8(wasm_u16x8_narrow_i32x4(a, b),
                                      wasm_u16x8_narrow_i32x4(c, d));
-  r = LIBYUV_WASM_SWIZZLE(r, m);
+  r = WasmSwizzle<kRelaxed>(r, m);
   wasm_v128_store64_lane(dst_ptr, r, 0);
   wasm_v128_store32_lane(dst_ptr + 8, r, 2);
 }
 
 // 8x3 -> 3x1
-void ScaleRowDown38_3_Box_WASMSIMD(const uint8_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   uint8_t* dst_ptr,
-                                   int dst_width) {
+template <bool kRelaxed>
+static inline void ScaleRowDown38_3_Box_Wasm(const uint8_t* src_ptr,
+                                             ptrdiff_t src_stride,
+                                             uint8_t* dst_ptr,
+                                             int dst_width) {
   const v128_t k =
       wasm_i16x8_const(65536 / 9, 0, 0, 65536 / 9, 0, 0, 65536 / 6, 0);
   const v128_t m = LoadConst(kShuf38[2]);
@@ -328,8 +386,8 @@ void ScaleRowDown38_3_Box_WASMSIMD(const uint8_t* src_ptr,
                                            wasm_u16x8_load8x8(p + src_stride)),
                             wasm_u16x8_load8x8(p + src_stride * 2));
     }
-    Store38(dst_ptr, m, Sum38(s[0], k), Sum38(s[1], k), Sum38(s[2], k),
-            Sum38(s[3], k));
+    Store38<kRelaxed>(dst_ptr, m, Sum38(s[0], k), Sum38(s[1], k),
+                      Sum38(s[2], k), Sum38(s[3], k));
     src_ptr += 32;
     dst_ptr += 12;
     dst_width -= 12;
@@ -337,10 +395,11 @@ void ScaleRowDown38_3_Box_WASMSIMD(const uint8_t* src_ptr,
 }
 
 // 8x2 -> 3x1
-void ScaleRowDown38_2_Box_WASMSIMD(const uint8_t* src_ptr,
-                                   ptrdiff_t src_stride,
-                                   uint8_t* dst_ptr,
-                                   int dst_width) {
+template <bool kRelaxed>
+static inline void ScaleRowDown38_2_Box_Wasm(const uint8_t* src_ptr,
+                                             ptrdiff_t src_stride,
+                                             uint8_t* dst_ptr,
+                                             int dst_width) {
   const v128_t k =
       wasm_i16x8_const(65536 / 6, 0, 0, 65536 / 6, 0, 0, 65536 / 4, 0);
   const v128_t m = LoadConst(kShuf38[2]);
@@ -351,14 +410,56 @@ void ScaleRowDown38_2_Box_WASMSIMD(const uint8_t* src_ptr,
       s[i] = wasm_i16x8_add(wasm_u16x8_load8x8(p),
                             wasm_u16x8_load8x8(p + src_stride));
     }
-    Store38(dst_ptr, m, Sum38(s[0], k), Sum38(s[1], k), Sum38(s[2], k),
-            Sum38(s[3], k));
+    Store38<kRelaxed>(dst_ptr, m, Sum38(s[0], k), Sum38(s[1], k),
+                      Sum38(s[2], k), Sum38(s[3], k));
     src_ptr += 32;
     dst_ptr += 12;
     dst_width -= 12;
   }
 }
+
+#ifdef HAS_SCALEROWDOWN38_WASMSIMD
+void ScaleRowDown38_WASMSIMD(const uint8_t* src_ptr,
+                             ptrdiff_t src_stride,
+                             uint8_t* dst_ptr,
+                             int dst_width) {
+  ScaleRowDown38_Wasm<false>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown38_3_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width) {
+  ScaleRowDown38_3_Box_Wasm<false>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown38_2_Box_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   int dst_width) {
+  ScaleRowDown38_2_Box_Wasm<false>(src_ptr, src_stride, dst_ptr, dst_width);
+}
 #endif  // HAS_SCALEROWDOWN38_WASMSIMD
+
+#ifdef HAS_SCALEROWDOWN38_RELAXEDSIMD
+void ScaleRowDown38_RELAXEDSIMD(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width) {
+  ScaleRowDown38_Wasm<true>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown38_3_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width) {
+  ScaleRowDown38_3_Box_Wasm<true>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+void ScaleRowDown38_2_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width) {
+  ScaleRowDown38_2_Box_Wasm<true>(src_ptr, src_stride, dst_ptr, dst_width);
+}
+#endif  // HAS_SCALEROWDOWN38_RELAXEDSIMD
+#endif  // HAS_SCALEROWDOWN38_WASMSIMD || HAS_SCALEROWDOWN38_RELAXEDSIMD
 
 #ifdef HAS_SCALEFILTERCOLS_WASMSIMD
 // Bilinear column filtering with 7 bit fractions, matching ScaleFilterCols_C:
@@ -705,8 +806,492 @@ void ScaleUVAddCols3_WASMSIMD(int dst_width,
 }
 #endif  // HAS_SCALEUVADDCOLS3_WASMSIMD
 
+#ifdef HAS_SCALEUVROWDOWN2_WASMSIMD
+void ScaleUVRowDown2_WASMSIMD(const uint8_t* src_uv,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_uv,
+                              int dst_width) {
+  int x;
+  (void)src_stride;
+  for (x = 0; x < dst_width - 7; x += 8) {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 16);
+    src_uv += 32;
+    const v128_t d = wasm_i16x8_shuffle(s0, s1, 1, 3, 5, 7, 9, 11, 13, 15);
+    wasm_v128_store(dst_uv, d);
+    dst_uv += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWDOWN2_WASMSIMD
+
+#ifdef HAS_SCALEUVROWDOWN2LINEAR_WASMSIMD
+void ScaleUVRowDown2Linear_WASMSIMD(const uint8_t* src_uv,
+                                    ptrdiff_t src_stride,
+                                    uint8_t* dst_uv,
+                                    int dst_width) {
+  int x;
+  (void)src_stride;
+  for (x = 0; x < dst_width - 7; x += 8) {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 16);
+    src_uv += 32;
+    const v128_t even = wasm_i16x8_shuffle(s0, s1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t odd = wasm_i16x8_shuffle(s0, s1, 1, 3, 5, 7, 9, 11, 13, 15);
+    wasm_v128_store(dst_uv, wasm_u8x16_avgr(even, odd));
+    dst_uv += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWDOWN2LINEAR_WASMSIMD
+
+#ifdef HAS_SCALEUVROWDOWN2BOX_WASMSIMD
+void ScaleUVRowDown2Box_WASMSIMD(const uint8_t* src_uv,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_uv,
+                                 int dst_width) {
+  int x;
+  const uint8_t* t_uv = src_uv + src_stride;
+  const v128_t kTwo = wasm_i16x8_splat(2);
+  for (x = 0; x < dst_width - 7; x += 8) {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 16);
+    const v128_t t0 = wasm_v128_load(t_uv);
+    const v128_t t1 = wasm_v128_load(t_uv + 16);
+    src_uv += 32;
+    t_uv += 32;
+    const v128_t s_even = wasm_i16x8_shuffle(s0, s1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t s_odd = wasm_i16x8_shuffle(s0, s1, 1, 3, 5, 7, 9, 11, 13, 15);
+    const v128_t t_even = wasm_i16x8_shuffle(t0, t1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t t_odd = wasm_i16x8_shuffle(t0, t1, 1, 3, 5, 7, 9, 11, 13, 15);
+    const v128_t sum_lo =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_u16x8_extend_low_u8x16(s_even),
+                                      wasm_u16x8_extend_low_u8x16(s_odd)),
+                       wasm_i16x8_add(wasm_u16x8_extend_low_u8x16(t_even),
+                                      wasm_u16x8_extend_low_u8x16(t_odd)));
+    const v128_t sum_hi =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_u16x8_extend_high_u8x16(s_even),
+                                      wasm_u16x8_extend_high_u8x16(s_odd)),
+                       wasm_i16x8_add(wasm_u16x8_extend_high_u8x16(t_even),
+                                      wasm_u16x8_extend_high_u8x16(t_odd)));
+    const v128_t avg_lo = wasm_u16x8_shr(wasm_i16x8_add(sum_lo, kTwo), 2);
+    const v128_t avg_hi = wasm_u16x8_shr(wasm_i16x8_add(sum_hi, kTwo), 2);
+    wasm_v128_store(dst_uv, wasm_u8x16_narrow_i16x8(avg_lo, avg_hi));
+    dst_uv += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWDOWN2BOX_WASMSIMD
+
+#ifdef HAS_SCALEUVROWDOWNEVEN_WASMSIMD
+void ScaleUVRowDownEven_WASMSIMD(const uint8_t* src_uv,
+                                 ptrdiff_t src_stride,
+                                 int src_stepx,
+                                 uint8_t* dst_uv,
+                                 int dst_width) {
+  int x;
+  const ptrdiff_t step = (ptrdiff_t)src_stepx * 2;
+  (void)src_stride;
+  v128_t v = wasm_i32x4_splat(0);
+  for (x = 0; x < dst_width - 3; x += 4) {
+    v = wasm_v128_load16_lane(src_uv, v, 0);
+    v = wasm_v128_load16_lane(src_uv + step, v, 1);
+    v = wasm_v128_load16_lane(src_uv + step * 2, v, 2);
+    v = wasm_v128_load16_lane(src_uv + step * 3, v, 3);
+    wasm_v128_store64_lane(dst_uv, v, 0);
+    src_uv += step * 4;
+    dst_uv += 8;
+  }
+}
+#endif  // HAS_SCALEUVROWDOWNEVEN_WASMSIMD
+
+#if defined(HAS_SCALEROWUP2_LINEAR_WASMSIMD) || \
+    defined(HAS_SCALEROWUP2_BILINEAR_WASMSIMD)
+static inline void ScaleRowUp2Madd31_Wasm(const uint8_t* src,
+                                          v128_t* out_lo,
+                                          v128_t* out_hi) {
+  const v128_t s0 = wasm_u16x8_load8x8(src);
+  const v128_t s1 = wasm_u16x8_load8x8(src + 1);
+  const v128_t near_lo = wasm_i16x8_shuffle(s0, s1, 0, 8, 1, 9, 2, 10, 3, 11);
+  const v128_t far_lo = wasm_i16x8_shuffle(s0, s1, 8, 0, 9, 1, 10, 2, 11, 3);
+  const v128_t near_hi = wasm_i16x8_shuffle(s0, s1, 4, 12, 5, 13, 6, 14, 7, 15);
+  const v128_t far_hi = wasm_i16x8_shuffle(s0, s1, 12, 4, 13, 5, 14, 6, 15, 7);
+  *out_lo = wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(near_lo, 1), near_lo),
+                           far_lo);
+  *out_hi = wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(near_hi, 1), near_hi),
+                           far_hi);
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_WASMSIMD || HAS_SCALEROWUP2_BILINEAR_WASMSIMD
+
+#if defined(HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD) || \
+    defined(HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD)
+static inline void ScaleRowUp2Madd31_Relaxed(const uint8_t* src,
+                                             v128_t* out_lo,
+                                             v128_t* out_hi) {
+  const v128_t kBias80 = wasm_i8x16_splat(-128);
+  const v128_t kMadd31 =
+      wasm_i8x16_const(3, 1, 1, 3, 3, 1, 1, 3, 3, 1, 1, 3, 3, 1, 1, 3);
+  const v128_t s0 = wasm_v128_xor(wasm_v128_load64_zero(src), kBias80);
+  const v128_t s1 = wasm_v128_xor(wasm_v128_load64_zero(src + 1), kBias80);
+  const v128_t lo = wasm_i8x16_shuffle(s0, s1, 0, 16, 0, 16, 1, 17, 1, 17, 2,
+                                       18, 2, 18, 3, 19, 3, 19);
+  const v128_t hi = wasm_i8x16_shuffle(s0, s1, 4, 20, 4, 20, 5, 21, 5, 21, 6,
+                                       22, 6, 22, 7, 23, 7, 23);
+  *out_lo = wasm_i16x8_relaxed_dot_i8x16_i7x16(lo, kMadd31);
+  *out_hi = wasm_i16x8_relaxed_dot_i8x16_i7x16(hi, kMadd31);
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD ||
+        // HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD
+
+#ifdef HAS_SCALEROWUP2_LINEAR_WASMSIMD
+void ScaleRowUp2_Linear_WASMSIMD(const uint8_t* src_ptr,
+                                 uint8_t* dst_ptr,
+                                 int dst_width) {
+  int x;
+  const v128_t kTwo = wasm_i16x8_splat(2);
+  for (x = 0; x < dst_width - 15; x += 16) {
+    v128_t lo, hi;
+    ScaleRowUp2Madd31_Wasm(src_ptr, &lo, &hi);
+    src_ptr += 8;
+    lo = wasm_u16x8_shr(wasm_i16x8_add(lo, kTwo), 2);
+    hi = wasm_u16x8_shr(wasm_i16x8_add(hi, kTwo), 2);
+    wasm_v128_store(dst_ptr, wasm_u8x16_narrow_i16x8(lo, hi));
+    dst_ptr += 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_WASMSIMD
+
+#ifdef HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD
+void ScaleRowUp2_Linear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                    uint8_t* dst_ptr,
+                                    int dst_width) {
+  int x;
+  const v128_t kBias514 = wasm_i16x8_splat(512 + 2);
+  for (x = 0; x < dst_width - 15; x += 16) {
+    v128_t lo, hi;
+    ScaleRowUp2Madd31_Relaxed(src_ptr, &lo, &hi);
+    src_ptr += 8;
+    lo = wasm_u16x8_shr(wasm_i16x8_add(lo, kBias514), 2);
+    hi = wasm_u16x8_shr(wasm_i16x8_add(hi, kBias514), 2);
+    wasm_v128_store(dst_ptr, wasm_u8x16_narrow_i16x8(lo, hi));
+    dst_ptr += 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD
+
+#ifdef HAS_SCALEROWUP2_BILINEAR_WASMSIMD
+void ScaleRowUp2_Bilinear_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   ptrdiff_t dst_stride,
+                                   int dst_width) {
+  int x;
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  const v128_t kEight = wasm_i16x8_splat(8);
+  for (x = 0; x < dst_width - 15; x += 16) {
+    v128_t s_lo, s_hi, t_lo, t_hi;
+    ScaleRowUp2Madd31_Wasm(s, &s_lo, &s_hi);
+    ScaleRowUp2Madd31_Wasm(t, &t_lo, &t_hi);
+    s += 8;
+    t += 8;
+    const v128_t d_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_lo, 1), s_lo),
+                       wasm_i16x8_add(t_lo, kEight)),
+        4);
+    const v128_t d_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_hi, 1), s_hi),
+                       wasm_i16x8_add(t_hi, kEight)),
+        4);
+    const v128_t e_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_lo, 1), t_lo),
+                       wasm_i16x8_add(s_lo, kEight)),
+        4);
+    const v128_t e_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_hi, 1), t_hi),
+                       wasm_i16x8_add(s_hi, kEight)),
+        4);
+    wasm_v128_store(d, wasm_u8x16_narrow_i16x8(d_lo, d_hi));
+    wasm_v128_store(e, wasm_u8x16_narrow_i16x8(e_lo, e_hi));
+    d += 16;
+    e += 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_BILINEAR_WASMSIMD
+
+#ifdef HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD
+void ScaleRowUp2_Bilinear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      ptrdiff_t dst_stride,
+                                      int dst_width) {
+  int x;
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  const v128_t kBias2056 = wasm_i16x8_splat(2048 + 8);
+  for (x = 0; x < dst_width - 15; x += 16) {
+    v128_t s_lo, s_hi, t_lo, t_hi;
+    ScaleRowUp2Madd31_Relaxed(s, &s_lo, &s_hi);
+    ScaleRowUp2Madd31_Relaxed(t, &t_lo, &t_hi);
+    s += 8;
+    t += 8;
+    const v128_t d_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_lo, 1), s_lo),
+                       wasm_i16x8_add(t_lo, kBias2056)),
+        4);
+    const v128_t d_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_hi, 1), s_hi),
+                       wasm_i16x8_add(t_hi, kBias2056)),
+        4);
+    const v128_t e_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_lo, 1), t_lo),
+                       wasm_i16x8_add(s_lo, kBias2056)),
+        4);
+    const v128_t e_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_hi, 1), t_hi),
+                       wasm_i16x8_add(s_hi, kBias2056)),
+        4);
+    wasm_v128_store(d, wasm_u8x16_narrow_i16x8(d_lo, d_hi));
+    wasm_v128_store(e, wasm_u8x16_narrow_i16x8(e_lo, e_hi));
+    d += 16;
+    e += 16;
+  }
+}
+#endif  // HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD
+
+#if defined(HAS_SCALEUVROWUP2_LINEAR_WASMSIMD) || \
+    defined(HAS_SCALEUVROWUP2_BILINEAR_WASMSIMD)
+static inline void ScaleUVRowUp2Madd31_Wasm(const uint8_t* src,
+                                            v128_t* out_lo,
+                                            v128_t* out_hi) {
+  const v128_t s0 = wasm_u16x8_load8x8(src);
+  const v128_t s1 = wasm_u16x8_load8x8(src + 2);
+  const v128_t near_lo = wasm_i16x8_shuffle(s0, s1, 0, 1, 8, 9, 2, 3, 10, 11);
+  const v128_t far_lo = wasm_i16x8_shuffle(s0, s1, 8, 9, 0, 1, 10, 11, 2, 3);
+  const v128_t near_hi = wasm_i16x8_shuffle(s0, s1, 4, 5, 12, 13, 6, 7, 14, 15);
+  const v128_t far_hi = wasm_i16x8_shuffle(s0, s1, 12, 13, 4, 5, 14, 15, 6, 7);
+  *out_lo = wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(near_lo, 1), near_lo),
+                           far_lo);
+  *out_hi = wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(near_hi, 1), near_hi),
+                           far_hi);
+}
+#endif  // HAS_SCALEUVROWUP2_LINEAR_WASMSIMD ||
+        // HAS_SCALEUVROWUP2_BILINEAR_WASMSIMD
+
+#if defined(HAS_SCALEUVROWUP2_LINEAR_RELAXEDSIMD) || \
+    defined(HAS_SCALEUVROWUP2_BILINEAR_RELAXEDSIMD)
+static inline void ScaleUVRowUp2Madd31_Relaxed(const uint8_t* src,
+                                               v128_t* out_lo,
+                                               v128_t* out_hi) {
+  const v128_t kBias80 = wasm_i8x16_splat(-128);
+  const v128_t kUVMadd31 =
+      wasm_i8x16_const(3, 1, 3, 1, 1, 3, 1, 3, 3, 1, 3, 1, 1, 3, 1, 3);
+  const v128_t s0 = wasm_v128_xor(wasm_v128_load64_zero(src), kBias80);
+  const v128_t s1 = wasm_v128_xor(wasm_v128_load64_zero(src + 2), kBias80);
+  const v128_t lo = wasm_i8x16_shuffle(s0, s1, 0, 16, 1, 17, 0, 16, 1, 17, 2,
+                                       18, 3, 19, 2, 18, 3, 19);
+  const v128_t hi = wasm_i8x16_shuffle(s0, s1, 4, 20, 5, 21, 4, 20, 5, 21, 6,
+                                       22, 7, 23, 6, 22, 7, 23);
+  *out_lo = wasm_i16x8_relaxed_dot_i8x16_i7x16(lo, kUVMadd31);
+  *out_hi = wasm_i16x8_relaxed_dot_i8x16_i7x16(hi, kUVMadd31);
+}
+#endif  // HAS_SCALEUVROWUP2_LINEAR_RELAXEDSIMD ||
+        // HAS_SCALEUVROWUP2_BILINEAR_RELAXEDSIMD
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_WASMSIMD
+void ScaleUVRowUp2_Linear_WASMSIMD(const uint8_t* src_ptr,
+                                   uint8_t* dst_ptr,
+                                   int dst_width) {
+  int x;
+  const v128_t kTwo = wasm_i16x8_splat(2);
+  for (x = 0; x < dst_width - 7; x += 8) {
+    v128_t lo, hi;
+    ScaleUVRowUp2Madd31_Wasm(src_ptr, &lo, &hi);
+    src_ptr += 8;
+    lo = wasm_u16x8_shr(wasm_i16x8_add(lo, kTwo), 2);
+    hi = wasm_u16x8_shr(wasm_i16x8_add(hi, kTwo), 2);
+    wasm_v128_store(dst_ptr, wasm_u8x16_narrow_i16x8(lo, hi));
+    dst_ptr += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_LINEAR_WASMSIMD
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_RELAXEDSIMD
+void ScaleUVRowUp2_Linear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      uint8_t* dst_ptr,
+                                      int dst_width) {
+  int x;
+  const v128_t kBias514 = wasm_i16x8_splat(512 + 2);
+  for (x = 0; x < dst_width - 7; x += 8) {
+    v128_t lo, hi;
+    ScaleUVRowUp2Madd31_Relaxed(src_ptr, &lo, &hi);
+    src_ptr += 8;
+    lo = wasm_u16x8_shr(wasm_i16x8_add(lo, kBias514), 2);
+    hi = wasm_u16x8_shr(wasm_i16x8_add(hi, kBias514), 2);
+    wasm_v128_store(dst_ptr, wasm_u8x16_narrow_i16x8(lo, hi));
+    dst_ptr += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_LINEAR_RELAXEDSIMD
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_WASMSIMD
+void ScaleUVRowUp2_Bilinear_WASMSIMD(const uint8_t* src_ptr,
+                                     ptrdiff_t src_stride,
+                                     uint8_t* dst_ptr,
+                                     ptrdiff_t dst_stride,
+                                     int dst_width) {
+  int x;
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  const v128_t kEight = wasm_i16x8_splat(8);
+  for (x = 0; x < dst_width - 7; x += 8) {
+    v128_t s_lo, s_hi, t_lo, t_hi;
+    ScaleUVRowUp2Madd31_Wasm(s, &s_lo, &s_hi);
+    ScaleUVRowUp2Madd31_Wasm(t, &t_lo, &t_hi);
+    s += 8;
+    t += 8;
+    const v128_t d_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_lo, 1), s_lo),
+                       wasm_i16x8_add(t_lo, kEight)),
+        4);
+    const v128_t d_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_hi, 1), s_hi),
+                       wasm_i16x8_add(t_hi, kEight)),
+        4);
+    const v128_t e_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_lo, 1), t_lo),
+                       wasm_i16x8_add(s_lo, kEight)),
+        4);
+    const v128_t e_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_hi, 1), t_hi),
+                       wasm_i16x8_add(s_hi, kEight)),
+        4);
+    wasm_v128_store(d, wasm_u8x16_narrow_i16x8(d_lo, d_hi));
+    wasm_v128_store(e, wasm_u8x16_narrow_i16x8(e_lo, e_hi));
+    d += 16;
+    e += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_BILINEAR_WASMSIMD
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_RELAXEDSIMD
+void ScaleUVRowUp2_Bilinear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                        ptrdiff_t src_stride,
+                                        uint8_t* dst_ptr,
+                                        ptrdiff_t dst_stride,
+                                        int dst_width) {
+  int x;
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  uint8_t* d = dst_ptr;
+  uint8_t* e = dst_ptr + dst_stride;
+  const v128_t kBias2056 = wasm_i16x8_splat(2048 + 8);
+  for (x = 0; x < dst_width - 7; x += 8) {
+    v128_t s_lo, s_hi, t_lo, t_hi;
+    ScaleUVRowUp2Madd31_Relaxed(s, &s_lo, &s_hi);
+    ScaleUVRowUp2Madd31_Relaxed(t, &t_lo, &t_hi);
+    s += 8;
+    t += 8;
+    const v128_t d_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_lo, 1), s_lo),
+                       wasm_i16x8_add(t_lo, kBias2056)),
+        4);
+    const v128_t d_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(s_hi, 1), s_hi),
+                       wasm_i16x8_add(t_hi, kBias2056)),
+        4);
+    const v128_t e_lo = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_lo, 1), t_lo),
+                       wasm_i16x8_add(s_lo, kBias2056)),
+        4);
+    const v128_t e_hi = wasm_u16x8_shr(
+        wasm_i16x8_add(wasm_i16x8_add(wasm_i16x8_shl(t_hi, 1), t_hi),
+                       wasm_i16x8_add(s_hi, kBias2056)),
+        4);
+    wasm_v128_store(d, wasm_u8x16_narrow_i16x8(d_lo, d_hi));
+    wasm_v128_store(e, wasm_u8x16_narrow_i16x8(e_lo, e_hi));
+    d += 16;
+    e += 16;
+  }
+}
+#endif  // HAS_SCALEUVROWUP2_BILINEAR_RELAXEDSIMD
+
+#ifdef HAS_SCALESAMPLES_WASMSIMD
+void ScaleSamples_WASMSIMD(const float* src,
+                           float* dst,
+                           float scale,
+                           int width) {
+  const v128_t vscale = wasm_f32x4_splat(scale);
+  for (; width >= 4; width -= 4) {
+    const v128_t v = wasm_v128_load(src);
+    src += 4;
+    wasm_v128_store(dst, wasm_f32x4_mul(v, vscale));
+    dst += 4;
+  }
+  for (; width > 0; --width) {
+    *dst++ = *src++ * scale;
+  }
+}
+#endif  // HAS_SCALESAMPLES_WASMSIMD
+
+#ifdef HAS_SCALESUMSAMPLES_WASMSIMD
+float ScaleSumSamples_WASMSIMD(const float* src,
+                               float* dst,
+                               float scale,
+                               int width) {
+  v128_t vsum = wasm_f32x4_splat(0.f);
+  const v128_t vscale = wasm_f32x4_splat(scale);
+  for (; width >= 4; width -= 4) {
+    const v128_t v = wasm_v128_load(src);
+    src += 4;
+    vsum = wasm_f32x4_add(vsum, wasm_f32x4_mul(v, v));
+    wasm_v128_store(dst, wasm_f32x4_mul(v, vscale));
+    dst += 4;
+  }
+  vsum = wasm_f32x4_add(vsum, wasm_i32x4_shuffle(vsum, vsum, 2, 3, 0, 1));
+  vsum = wasm_f32x4_add(vsum, wasm_i32x4_shuffle(vsum, vsum, 1, 0, 3, 2));
+  float fsum = wasm_f32x4_extract_lane(vsum, 0);
+  for (; width > 0; --width) {
+    const float v = *src++;
+    fsum += v * v;
+    *dst++ = v * scale;
+  }
+  return fsum;
+}
+#endif  // HAS_SCALESUMSAMPLES_WASMSIMD
+
+#ifdef HAS_SCALEMAXSAMPLES_WASMSIMD
+float ScaleMaxSamples_WASMSIMD(const float* src,
+                               float* dst,
+                               float scale,
+                               int width) {
+  v128_t vmax = wasm_f32x4_splat(0.f);
+  const v128_t vscale = wasm_f32x4_splat(scale);
+  for (; width >= 4; width -= 4) {
+    const v128_t v = wasm_v128_load(src);
+    src += 4;
+    vmax = wasm_f32x4_pmax(vmax, v);
+    wasm_v128_store(dst, wasm_f32x4_mul(v, vscale));
+    dst += 4;
+  }
+  vmax = wasm_f32x4_pmax(vmax, wasm_i32x4_shuffle(vmax, vmax, 2, 3, 0, 1));
+  vmax = wasm_f32x4_pmax(vmax, wasm_i32x4_shuffle(vmax, vmax, 1, 0, 3, 2));
+  float fmax = wasm_f32x4_extract_lane(vmax, 0);
+  for (; width > 0; --width) {
+    const float v = *src++;
+    if (v > fmax) {
+      fmax = v;
+    }
+    *dst++ = v * scale;
+  }
+  return fmax;
+}
+#endif  // HAS_SCALEMAXSAMPLES_WASMSIMD
+
 #ifdef __cplusplus
-}  // extern "C"
 }  // namespace libyuv
 #endif
 

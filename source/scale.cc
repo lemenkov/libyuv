@@ -546,6 +546,27 @@ static void ScalePlaneDown34(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN34_RELAXEDSIMD)
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    if (dst_width % 24 == 0) {
+      if (!filtering) {
+        ScaleRowDown34_0 = ScaleRowDown34_RELAXEDSIMD;
+        ScaleRowDown34_1 = ScaleRowDown34_RELAXEDSIMD;
+      } else {
+        ScaleRowDown34_0 = ScaleRowDown34_0_Box_RELAXEDSIMD;
+        ScaleRowDown34_1 = ScaleRowDown34_1_Box_RELAXEDSIMD;
+      }
+    } else {
+      if (!filtering) {
+        ScaleRowDown34_0 = ScaleRowDown34_Any_RELAXEDSIMD;
+        ScaleRowDown34_1 = ScaleRowDown34_Any_RELAXEDSIMD;
+      } else {
+        ScaleRowDown34_0 = ScaleRowDown34_0_Box_Any_RELAXEDSIMD;
+        ScaleRowDown34_1 = ScaleRowDown34_1_Box_Any_RELAXEDSIMD;
+      }
+    }
+  }
+#endif
 
   for (y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown34_0(src_ptr, filter_stride, dst_ptr, dst_width);
@@ -767,6 +788,26 @@ static void ScalePlaneDown38(int src_width,
       } else {
         ScaleRowDown38_3 = ScaleRowDown38_3_Box_WASMSIMD;
         ScaleRowDown38_2 = ScaleRowDown38_2_Box_WASMSIMD;
+      }
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN38_RELAXEDSIMD)
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_Any_RELAXEDSIMD;
+      ScaleRowDown38_2 = ScaleRowDown38_Any_RELAXEDSIMD;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_Any_RELAXEDSIMD;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_Any_RELAXEDSIMD;
+    }
+    if (dst_width % 12 == 0) {
+      if (!filtering) {
+        ScaleRowDown38_3 = ScaleRowDown38_RELAXEDSIMD;
+        ScaleRowDown38_2 = ScaleRowDown38_RELAXEDSIMD;
+      } else {
+        ScaleRowDown38_3 = ScaleRowDown38_3_Box_RELAXEDSIMD;
+        ScaleRowDown38_2 = ScaleRowDown38_2_Box_RELAXEDSIMD;
       }
     }
   }
@@ -1675,6 +1716,16 @@ static void ScalePlaneUp2_Linear(int src_width,
     ScaleRowUp = ScaleRowUp2_Linear_RVV;
   }
 #endif
+#ifdef HAS_SCALEROWUP2_LINEAR_WASMSIMD
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    ScaleRowUp = ScaleRowUp2_Linear_Any_WASMSIMD;
+  }
+#endif
+#ifdef HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    ScaleRowUp = ScaleRowUp2_Linear_Any_RELAXEDSIMD;
+  }
+#endif
 
   if (dst_height == 1) {
     ScaleRowUp(src_ptr + ((src_height - 1) / 2) * src_stride, dst_ptr,
@@ -1739,6 +1790,16 @@ static void ScalePlaneUp2_Bilinear(int src_width,
 #ifdef HAS_SCALEROWUP2_BILINEAR_RVV
   if (TestCpuFlag(kCpuHasRVV)) {
     Scale2RowUp = ScaleRowUp2_Bilinear_RVV;
+  }
+#endif
+#ifdef HAS_SCALEROWUP2_BILINEAR_WASMSIMD
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_Any_WASMSIMD;
+  }
+#endif
+#ifdef HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    Scale2RowUp = ScaleRowUp2_Bilinear_Any_RELAXEDSIMD;
   }
 #endif
 

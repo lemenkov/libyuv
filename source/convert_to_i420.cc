@@ -126,6 +126,14 @@ static int NV16ToI420(const uint8_t* src_y,
     SplitUVRow = SplitUVRow_RVV;
   }
 #endif
+#if defined(HAS_SPLITUVROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    SplitUVRow = SplitUVRow_Any_WASMSIMD;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_WASMSIMD;
+    }
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
@@ -343,6 +351,14 @@ static int NV24ToI420(const uint8_t* src_y,
     ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_HVX;
   }
 #endif
+#if defined(HAS_SCALEUVROWDOWN2_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_Any_WASMSIMD;
+    if (IS_ALIGNED(halfwidth, 8)) {
+      ScaleUVRowDown2Linear = ScaleUVRowDown2Linear_WASMSIMD;
+    }
+  }
+#endif
 #if defined(HAS_SPLITUVROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     SplitUVRow = SplitUVRow_Any_SSE2;
@@ -406,6 +422,14 @@ static int NV24ToI420(const uint8_t* src_y,
 #if defined(HAS_SPLITUVROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     SplitUVRow = SplitUVRow_HVX;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    SplitUVRow = SplitUVRow_Any_WASMSIMD;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      SplitUVRow = SplitUVRow_WASMSIMD;
+    }
   }
 #endif
 

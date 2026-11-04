@@ -11,7 +11,7 @@
 #include "libyuv/rotate_row.h"
 #include "libyuv/row.h"
 
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#if !defined(LIBYUV_DISABLE_WASMSIMD) && defined(__wasm_simd128__)
 #include <wasm_simd128.h>
 
 #ifdef __cplusplus

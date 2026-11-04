@@ -588,6 +588,26 @@ SDANY(ScaleRowDown34_1_Box_Any_WASMSIMD,
       1,
       23)
 #endif
+#ifdef HAS_SCALEROWDOWN34_RELAXEDSIMD
+SDANY(ScaleRowDown34_Any_RELAXEDSIMD,
+      ScaleRowDown34_RELAXEDSIMD,
+      ScaleRowDown34_C,
+      4 / 3,
+      1,
+      23)
+SDANY(ScaleRowDown34_0_Box_Any_RELAXEDSIMD,
+      ScaleRowDown34_0_Box_RELAXEDSIMD,
+      ScaleRowDown34_0_Box_C,
+      4 / 3,
+      1,
+      23)
+SDANY(ScaleRowDown34_1_Box_Any_RELAXEDSIMD,
+      ScaleRowDown34_1_Box_RELAXEDSIMD,
+      ScaleRowDown34_1_Box_C,
+      4 / 3,
+      1,
+      23)
+#endif
 #ifdef HAS_SCALEROWDOWN38_WASMSIMD
 SDANY(ScaleRowDown38_Any_WASMSIMD,
       ScaleRowDown38_WASMSIMD,
@@ -607,6 +627,50 @@ SDANY(ScaleRowDown38_2_Box_Any_WASMSIMD,
       8 / 3,
       1,
       11)
+#endif
+#ifdef HAS_SCALEROWDOWN38_RELAXEDSIMD
+SDANY(ScaleRowDown38_Any_RELAXEDSIMD,
+      ScaleRowDown38_RELAXEDSIMD,
+      ScaleRowDown38_C,
+      8 / 3,
+      1,
+      11)
+SDANY(ScaleRowDown38_3_Box_Any_RELAXEDSIMD,
+      ScaleRowDown38_3_Box_RELAXEDSIMD,
+      ScaleRowDown38_3_Box_C,
+      8 / 3,
+      1,
+      11)
+SDANY(ScaleRowDown38_2_Box_Any_RELAXEDSIMD,
+      ScaleRowDown38_2_Box_RELAXEDSIMD,
+      ScaleRowDown38_2_Box_C,
+      8 / 3,
+      1,
+      11)
+#endif
+#ifdef HAS_SCALEUVROWDOWN2_WASMSIMD
+SDANY(ScaleUVRowDown2_Any_WASMSIMD,
+      ScaleUVRowDown2_WASMSIMD,
+      ScaleUVRowDown2_C,
+      2,
+      2,
+      7)
+#endif
+#ifdef HAS_SCALEUVROWDOWN2LINEAR_WASMSIMD
+SDANY(ScaleUVRowDown2Linear_Any_WASMSIMD,
+      ScaleUVRowDown2Linear_WASMSIMD,
+      ScaleUVRowDown2Linear_C,
+      2,
+      2,
+      7)
+#endif
+#ifdef HAS_SCALEUVROWDOWN2BOX_WASMSIMD
+SDANY(ScaleUVRowDown2Box_Any_WASMSIMD,
+      ScaleUVRowDown2Box_WASMSIMD,
+      ScaleUVRowDown2Box_C,
+      2,
+      2,
+      7)
 #endif
 #ifdef HAS_SCALEARGBROWDOWN2_WASMSIMD
 SDANY(ScaleARGBRowDown2_Any_WASMSIMD,
@@ -704,6 +768,13 @@ SDAANY(ScaleUVRowDownEven_Any_AVX2,
 #ifdef HAS_SCALEUVROWDOWNEVEN_NEON
 SDAANY(ScaleUVRowDownEven_Any_NEON,
        ScaleUVRowDownEven_NEON,
+       ScaleUVRowDownEven_C,
+       2,
+       3)
+#endif
+#ifdef HAS_SCALEUVROWDOWNEVEN_WASMSIMD
+SDAANY(ScaleUVRowDownEven_Any_WASMSIMD,
+       ScaleUVRowDownEven_WASMSIMD,
        ScaleUVRowDownEven_C,
        2,
        3)
@@ -997,6 +1068,22 @@ SUH2LANY(ScaleRowUp2_Linear_16_Any_NEON,
          uint16_t)
 #endif
 
+#ifdef HAS_SCALEROWUP2_LINEAR_WASMSIMD
+SUH2LANY(ScaleRowUp2_Linear_Any_WASMSIMD,
+         ScaleRowUp2_Linear_WASMSIMD,
+         ScaleRowUp2_Linear_C,
+         15,
+         uint8_t)
+#endif
+
+#ifdef HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD
+SUH2LANY(ScaleRowUp2_Linear_Any_RELAXEDSIMD,
+         ScaleRowUp2_Linear_RELAXEDSIMD,
+         ScaleRowUp2_Linear_C,
+         15,
+         uint8_t)
+#endif
+
 #undef SUH2LANY
 
 // Scale up 2 times using bilinear filter.
@@ -1117,6 +1204,22 @@ SU2BLANY(ScaleRowUp2_Bilinear_16_Any_NEON,
          uint16_t)
 #endif
 
+#ifdef HAS_SCALEROWUP2_BILINEAR_WASMSIMD
+SU2BLANY(ScaleRowUp2_Bilinear_Any_WASMSIMD,
+         ScaleRowUp2_Bilinear_WASMSIMD,
+         ScaleRowUp2_Bilinear_C,
+         15,
+         uint8_t)
+#endif
+
+#ifdef HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD
+SU2BLANY(ScaleRowUp2_Bilinear_Any_RELAXEDSIMD,
+         ScaleRowUp2_Bilinear_RELAXEDSIMD,
+         ScaleRowUp2_Bilinear_C,
+         15,
+         uint8_t)
+#endif
+
 #undef SU2BLANY
 
 // Scale bi-planar plane up horizontally 2 times using linear filter.
@@ -1196,6 +1299,22 @@ SBUH2LANY(ScaleUVRowUp2_Linear_16_Any_NEON,
           ScaleUVRowUp2_Linear_16_C,
           7,
           uint16_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_WASMSIMD
+SBUH2LANY(ScaleUVRowUp2_Linear_Any_WASMSIMD,
+          ScaleUVRowUp2_Linear_WASMSIMD,
+          ScaleUVRowUp2_Linear_C,
+          7,
+          uint8_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2_LINEAR_RELAXEDSIMD
+SBUH2LANY(ScaleUVRowUp2_Linear_Any_RELAXEDSIMD,
+          ScaleUVRowUp2_Linear_RELAXEDSIMD,
+          ScaleUVRowUp2_Linear_C,
+          7,
+          uint8_t)
 #endif
 
 #undef SBUH2LANY
@@ -1295,6 +1414,22 @@ SBU2BLANY(ScaleUVRowUp2_Bilinear_16_Any_NEON,
           ScaleUVRowUp2_Bilinear_16_C,
           7,
           uint16_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_WASMSIMD
+SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_WASMSIMD,
+          ScaleUVRowUp2_Bilinear_WASMSIMD,
+          ScaleUVRowUp2_Bilinear_C,
+          7,
+          uint8_t)
+#endif
+
+#ifdef HAS_SCALEUVROWUP2_BILINEAR_RELAXEDSIMD
+SBU2BLANY(ScaleUVRowUp2_Bilinear_Any_RELAXEDSIMD,
+          ScaleUVRowUp2_Bilinear_RELAXEDSIMD,
+          ScaleUVRowUp2_Bilinear_C,
+          7,
+          uint8_t)
 #endif
 
 #undef SBU2BLANY

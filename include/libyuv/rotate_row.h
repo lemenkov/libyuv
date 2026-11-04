@@ -136,7 +136,7 @@ extern "C" {
 #define HAS_TRANSPOSEWXH_32_RVV
 #endif
 
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#if !defined(LIBYUV_DISABLE_WASMSIMD) && defined(__wasm_simd128__)
 #define HAS_TRANSPOSEWX8_WASMSIMD
 #define HAS_TRANSPOSEUVWX8_WASMSIMD
 #define HAS_TRANSPOSEWX16_WASMSIMD

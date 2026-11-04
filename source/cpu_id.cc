@@ -9,6 +9,11 @@
  */
 
 #include "libyuv/cpu_id.h"
+#include "libyuv/cpu_support.h"
+
+#if defined(__wasm__) && defined(__wasm_simd128__)
+#include <wasm_simd128.h>
+#endif
 
 #if defined(_MSC_VER)
 #include <intrin.h>  // For __cpuidex()
@@ -420,6 +425,41 @@ LIBYUV_API SAFEBUFFERS int LoongArchCpuCaps(void) {
   return flag;
 }
 
+// For WebAssembly, but public to allow testing on any CPU.
+LIBYUV_API SAFEBUFFERS int WasmCpuCaps(void) {
+  int flag = 0;
+#if defined(__wasm__)
+#if !defined(LIBYUV_DISABLE_WASMSIMD) && defined(__wasm_simd128__)
+  flag |= kCpuHasWASMSIMD;
+#endif
+#if !defined(LIBYUV_DISABLE_RELAXEDSIMD) && defined(__wasm_relaxed_simd__)
+  // Probe whether the runtime executes Relaxed SIMD instructions natively on
+  // the host CPU:
+  // - On x86 (SSSE3/AVX2/AVX-512), i8x16.relaxed_swizzle lowers to vpshufb,
+  //   which masks out-of-range index 16 by 0x0f and selects lane 0 (non-zero),
+  //   whereas deterministic i8x16.swizzle zeroes out-of-range indices.
+  // - On AArch64 (Neon fmla) and x86 (FMA3/AVX2 vfmadd213ps),
+  //   f32x4.relaxed_madd(16777218.f, 3.f, 3.f) computes a single-rounded
+  //   fused multiply-add (50331656.f), whereas unfused mul+add rounds twice
+  //   (50331660.f).
+  const v128_t kNonZero = wasm_i8x16_splat(1);
+  const volatile v128_t kIndex16 = wasm_i8x16_splat(16);
+  const v128_t swizzle_diff =
+      wasm_v128_xor(wasm_i8x16_relaxed_swizzle(kNonZero, kIndex16),
+                    wasm_i8x16_swizzle(kNonZero, kIndex16));
+  const volatile v128_t kFmaA = wasm_f32x4_splat(16777218.0f);
+  const v128_t kFmaB = wasm_f32x4_splat(3.0f);
+  const v128_t fma_diff =
+      wasm_v128_xor(wasm_f32x4_relaxed_madd(kFmaA, kFmaB, kFmaB),
+                    wasm_f32x4_add(kFmaB, wasm_f32x4_mul(kFmaA, kFmaB)));
+  if (wasm_v128_any_true(wasm_v128_or(swizzle_diff, fma_diff))) {
+    flag |= kCpuHasRELAXEDSIMD;
+  }
+#endif
+#endif  // defined(__wasm__)
+  return flag;
+}
+
 static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info = 0;
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \
@@ -552,10 +592,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   cpu_info |= kCpuHasRISCV;
 #endif  // __riscv
 #if defined(__wasm__)
-  cpu_info = kCpuHasWASM;
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
-  cpu_info |= kCpuHasWASMSIMD;
-#endif
+  cpu_info = WasmCpuCaps();
+  cpu_info |= kCpuHasWASM;
 #endif  // __wasm__
 #if defined(__hexagon__)
   cpu_info = kCpuHasHexagon;

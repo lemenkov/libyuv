@@ -252,6 +252,11 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
     HammingDistance = HammingDistance_WASMSIMD;
   }
 #endif
+#if defined(HAS_HAMMINGDISTANCE_RELAXEDSIMD)
+  if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
+    HammingDistance = HammingDistance_RELAXEDSIMD;
+  }
+#endif
 #if defined(HAS_HAMMINGDISTANCE_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     HammingDistance = HammingDistance_HVX;

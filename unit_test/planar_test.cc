@@ -4890,6 +4890,16 @@ float TestScaleMaxSamples(int benchmark_width,
                                     reinterpret_cast<float*>(dst_opt), scale,
                                     kPixels);
       }
+#elif defined(HAS_SCALEMAXSAMPLES_WASMSIMD)
+      if (TestCpuFlag(kCpuHasWASMSIMD)) {
+        max_opt = ScaleMaxSamples_WASMSIMD(reinterpret_cast<float*>(orig_y),
+                                           reinterpret_cast<float*>(dst_opt),
+                                           scale, kPixels);
+      } else {
+        max_opt = ScaleMaxSamples_C(reinterpret_cast<float*>(orig_y),
+                                    reinterpret_cast<float*>(dst_opt), scale,
+                                    kPixels);
+      }
 #else
       max_opt =
           ScaleMaxSamples_C(reinterpret_cast<float*>(orig_y),
@@ -4993,6 +5003,16 @@ float TestScaleSumSamples(int benchmark_width,
       } else
 #endif
       {
+        sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
+                                    reinterpret_cast<float*>(dst_opt), scale,
+                                    kPixels);
+      }
+#elif defined(HAS_SCALESUMSAMPLES_WASMSIMD)
+      if (TestCpuFlag(kCpuHasWASMSIMD)) {
+        sum_opt = ScaleSumSamples_WASMSIMD(reinterpret_cast<float*>(orig_y),
+                                           reinterpret_cast<float*>(dst_opt),
+                                           scale, kPixels);
+      } else {
         sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
                                     reinterpret_cast<float*>(dst_opt), scale,
                                     kPixels);
@@ -5107,6 +5127,15 @@ float TestScaleSamples(int benchmark_width,
         ScaleSamples_C(reinterpret_cast<float*>(orig_y),
                        reinterpret_cast<float*>(dst_opt), scale, kPixels);
       }
+#elif defined(HAS_SCALESAMPLES_WASMSIMD)
+      if (TestCpuFlag(kCpuHasWASMSIMD)) {
+        ScaleSamples_WASMSIMD(reinterpret_cast<float*>(orig_y),
+                              reinterpret_cast<float*>(dst_opt), scale,
+                              kPixels);
+      } else {
+        ScaleSamples_C(reinterpret_cast<float*>(orig_y),
+                       reinterpret_cast<float*>(dst_opt), scale, kPixels);
+      }
 #else
       ScaleSamples_C(reinterpret_cast<float*>(orig_y),
                      reinterpret_cast<float*>(dst_opt), scale, kPixels);
@@ -5173,6 +5202,12 @@ float TestCopySamples(int benchmark_width,
 #ifdef HAS_COPYROW_NEON
       if (TestCpuFlag(kCpuHasNEON)) {
         CopyRow_NEON(orig_y, dst_opt, kPixels * 4);
+      } else {
+        CopyRow_C(orig_y, dst_opt, kPixels * 4);
+      }
+#elif defined(HAS_COPYROW_WASMSIMD)
+      if (TestCpuFlag(kCpuHasWASMSIMD)) {
+        CopyRow_WASMSIMD(orig_y, dst_opt, kPixels * 4);
       } else {
         CopyRow_C(orig_y, dst_opt, kPixels * 4);
       }

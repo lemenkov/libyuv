@@ -26,6 +26,15 @@ extern "C" {
 #define LIBYUV_DISABLE_NEON
 #endif
 
+#if defined(LIBYUV_DISABLE_WASM)
+#if !defined(LIBYUV_DISABLE_WASMSIMD)
+#define LIBYUV_DISABLE_WASMSIMD
+#endif
+#if !defined(LIBYUV_DISABLE_RELAXEDSIMD)
+#define LIBYUV_DISABLE_RELAXEDSIMD
+#endif
+#endif
+
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)

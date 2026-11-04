@@ -414,6 +414,14 @@ int I422ToYUY2(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOYUY2ROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    I422ToYUY2Row = I422ToYUY2Row_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToYUY2Row = I422ToYUY2Row_WASMSIMD;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToYUY2Row(src_y, src_u, src_v, dst_yuy2, width);
@@ -487,6 +495,14 @@ int I420ToYUY2(const uint8_t* src_y,
     I422ToYUY2Row = I422ToYUY2Row_Any_LASX;
     if (IS_ALIGNED(width, 32)) {
       I422ToYUY2Row = I422ToYUY2Row_LASX;
+    }
+  }
+#endif
+#if defined(HAS_I422TOYUY2ROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    I422ToYUY2Row = I422ToYUY2Row_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToYUY2Row = I422ToYUY2Row_WASMSIMD;
     }
   }
 #endif
@@ -579,6 +595,14 @@ int I422ToUYVY(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOUYVYROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    I422ToUYVYRow = I422ToUYVYRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToUYVYRow = I422ToUYVYRow_WASMSIMD;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToUYVYRow(src_y, src_u, src_v, dst_uyvy, width);
@@ -652,6 +676,14 @@ int I420ToUYVY(const uint8_t* src_y,
     I422ToUYVYRow = I422ToUYVYRow_Any_LASX;
     if (IS_ALIGNED(width, 32)) {
       I422ToUYVYRow = I422ToUYVYRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    I422ToUYVYRow = I422ToUYVYRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToUYVYRow = I422ToUYVYRow_WASMSIMD;
     }
   }
 #endif
@@ -887,6 +919,14 @@ static int I4xxToPxxx(const uint8_t* src_y,
     MergeUVRow_16 = MergeUVRow_16_Any_LASX;
     if (IS_ALIGNED(uv_width, 16)) {
       MergeUVRow_16 = MergeUVRow_16_LASX;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_16_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    MergeUVRow_16 = MergeUVRow_16_Any_WASMSIMD;
+    if (IS_ALIGNED(uv_width, 8)) {
+      MergeUVRow_16 = MergeUVRow_16_WASMSIMD;
     }
   }
 #endif

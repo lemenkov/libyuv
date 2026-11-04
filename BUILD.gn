@@ -50,7 +50,10 @@ config("libyuv_config") {
     defines += [ "LIBYUV_DISABLE_LASX" ]
   }
   if (current_cpu == "wasm") {
-    cflags_cc = [ "-msimd128" ]
+    cflags_cc = [
+      "-msimd128",
+      "-mrelaxed-simd",
+    ]
   }
 }
 

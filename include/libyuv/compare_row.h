@@ -152,13 +152,18 @@ extern "C" {
 #endif
 
 // The following are available for WebAssembly SIMD128:
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#if !defined(LIBYUV_DISABLE_WASMSIMD) && defined(__wasm_simd128__)
 #define HAS_HAMMINGDISTANCE_WASMSIMD
 #define HAS_SUMSQUAREERROR_WASMSIMD
 #define HAS_HASHDJB2_WASMSIMD
 #define HAS_SSIM4X4ROW_WASMSIMD
 #define HAS_SSIMWINDOWROW_WASMSIMD
 #define HAS_ARGBDETECTROW_WASMSIMD
+#endif
+
+// The following are available for WebAssembly Relaxed SIMD:
+#if !defined(LIBYUV_DISABLE_RELAXEDSIMD) && defined(__wasm_relaxed_simd__)
+#define HAS_HAMMINGDISTANCE_RELAXEDSIMD
 #endif
 
 // The following are available for Hexagon HVX:
@@ -207,6 +212,9 @@ uint32_t HammingDistance_LASX(const uint8_t* src_a,
 uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count);
+uint32_t HammingDistance_RELAXEDSIMD(const uint8_t* src_a,
+                                     const uint8_t* src_b,
+                                     int count);
 uint32_t HammingDistance_HVX(const uint8_t* src_a,
                              const uint8_t* src_b,
                              int count);

@@ -135,7 +135,13 @@ static int TestCpuEnv(int cpu_info) {
 #endif
 #if defined(__wasm__)
   if (TestEnv("LIBYUV_DISABLE_WASM")) {
+    cpu_info &= ~(libyuv::kCpuHasWASMSIMD | libyuv::kCpuHasRELAXEDSIMD);
+  }
+  if (TestEnv("LIBYUV_DISABLE_WASMSIMD")) {
     cpu_info &= ~libyuv::kCpuHasWASMSIMD;
+  }
+  if (TestEnv("LIBYUV_DISABLE_RELAXEDSIMD")) {
+    cpu_info &= ~libyuv::kCpuHasRELAXEDSIMD;
   }
 #endif
 #if defined(__hexagon__)

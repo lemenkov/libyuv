@@ -221,6 +221,14 @@ static int NV24ToARGB(const uint8_t* src_y,
     I444ToARGBRow = I444ToARGBRow_HVX;
   }
 #endif
+#if defined(HAS_I444TOARGBROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    I444ToARGBRow = I444ToARGBRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 8)) {
+      I444ToARGBRow = I444ToARGBRow_WASMSIMD;
+    }
+  }
+#endif
 
 #if defined(HAS_SPLITUVROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
@@ -285,6 +293,14 @@ static int NV24ToARGB(const uint8_t* src_y,
 #if defined(HAS_SPLITUVROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     SplitUVRow = SplitUVRow_HVX;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    SplitUVRow = SplitUVRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 16)) {
+      SplitUVRow = SplitUVRow_WASMSIMD;
+    }
   }
 #endif
 

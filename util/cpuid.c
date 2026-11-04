@@ -140,8 +140,10 @@ int main(int argc, const char* argv[]) {
   int has_wasm = TestCpuFlag(kCpuHasWASM);
   if (has_wasm) {
     int has_wasm_simd = TestCpuFlag(kCpuHasWASMSIMD);
+    int has_relaxed_simd = TestCpuFlag(kCpuHasRELAXEDSIMD);
     printf("Has WASM 0x%x\n", has_wasm);
     printf("Has WASM SIMD 0x%x\n", has_wasm_simd);
+    printf("Has RELAXED SIMD 0x%x\n", has_relaxed_simd);
   }
 #endif  // defined(__wasm__)
 

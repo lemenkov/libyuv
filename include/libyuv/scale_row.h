@@ -232,7 +232,7 @@ extern "C" {
 #endif
 
 // The following are available for WebAssembly SIMD128:
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#if !defined(LIBYUV_DISABLE_WASMSIMD) && defined(__wasm_simd128__)
 #define HAS_SCALEADDROW_WASMSIMD
 #define HAS_SCALEARGBCOLS_WASMSIMD
 #define HAS_SCALEARGBCOLSUP2_WASMSIMD
@@ -240,11 +240,32 @@ extern "C" {
 #define HAS_SCALEARGBROWDOWN2_WASMSIMD
 #define HAS_SCALEARGBROWDOWNEVEN_WASMSIMD
 #define HAS_SCALEFILTERCOLS_WASMSIMD
+#define HAS_SCALEMAXSAMPLES_WASMSIMD
 #define HAS_SCALEROWDOWN2_WASMSIMD
 #define HAS_SCALEROWDOWN34_WASMSIMD
 #define HAS_SCALEROWDOWN38_WASMSIMD
 #define HAS_SCALEROWDOWN4_WASMSIMD
+#define HAS_SCALEROWUP2_BILINEAR_WASMSIMD
+#define HAS_SCALEROWUP2_LINEAR_WASMSIMD
+#define HAS_SCALESAMPLES_WASMSIMD
+#define HAS_SCALESUMSAMPLES_WASMSIMD
 #define HAS_SCALEUVADDCOLS3_WASMSIMD
+#define HAS_SCALEUVROWDOWN2_WASMSIMD
+#define HAS_SCALEUVROWDOWN2BOX_WASMSIMD
+#define HAS_SCALEUVROWDOWN2LINEAR_WASMSIMD
+#define HAS_SCALEUVROWDOWNEVEN_WASMSIMD
+#define HAS_SCALEUVROWUP2_BILINEAR_WASMSIMD
+#define HAS_SCALEUVROWUP2_LINEAR_WASMSIMD
+#endif
+
+// The following are available for WebAssembly Relaxed SIMD:
+#if !defined(LIBYUV_DISABLE_RELAXEDSIMD) && defined(__wasm_relaxed_simd__)
+#define HAS_SCALEROWDOWN34_RELAXEDSIMD
+#define HAS_SCALEROWDOWN38_RELAXEDSIMD
+#define HAS_SCALEROWUP2_BILINEAR_RELAXEDSIMD
+#define HAS_SCALEROWUP2_LINEAR_RELAXEDSIMD
+#define HAS_SCALEUVROWUP2_BILINEAR_RELAXEDSIMD
+#define HAS_SCALEUVROWUP2_LINEAR_RELAXEDSIMD
 #endif
 
 // The following are available for Hexagon HVX:
@@ -2247,6 +2268,164 @@ void ScaleARGBColsUp2_WASMSIMD(uint8_t* dst_argb,
                                int dst_width,
                                int x,
                                int dx);
+void ScaleRowDown34_RELAXEDSIMD(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width);
+void ScaleRowDown34_0_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleRowDown34_1_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleRowDown38_RELAXEDSIMD(const uint8_t* src_ptr,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_ptr,
+                                int dst_width);
+void ScaleRowDown38_3_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleRowDown38_2_Box_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleRowDown34_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8_t* dst_ptr,
+                                    int dst_width);
+void ScaleRowDown34_0_Box_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleRowDown34_1_Box_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleRowDown38_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8_t* dst_ptr,
+                                    int dst_width);
+void ScaleRowDown38_3_Box_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleRowDown38_2_Box_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleUVRowDown2_WASMSIMD(const uint8_t* src_ptr,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_uv,
+                              int dst_width);
+void ScaleUVRowDown2Linear_WASMSIMD(const uint8_t* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8_t* dst_uv,
+                                    int dst_width);
+void ScaleUVRowDown2Box_WASMSIMD(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_uv,
+                                 int dst_width);
+void ScaleUVRowDown2_Any_WASMSIMD(const uint8_t* src_ptr,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_ptr,
+                                  int dst_width);
+void ScaleUVRowDown2Linear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                        ptrdiff_t src_stride,
+                                        uint8_t* dst_ptr,
+                                        int dst_width);
+void ScaleUVRowDown2Box_Any_WASMSIMD(const uint8_t* src_ptr,
+                                     ptrdiff_t src_stride,
+                                     uint8_t* dst_ptr,
+                                     int dst_width);
+void ScaleUVRowDownEven_WASMSIMD(const uint8_t* src_ptr,
+                                 ptrdiff_t src_stride,
+                                 int src_stepx,
+                                 uint8_t* dst_ptr,
+                                 int dst_width);
+void ScaleUVRowDownEven_Any_WASMSIMD(const uint8_t* src_ptr,
+                                     ptrdiff_t src_stride,
+                                     int src_stepx,
+                                     uint8_t* dst_ptr,
+                                     int dst_width);
+void ScaleRowUp2_Linear_WASMSIMD(const uint8_t* src_ptr,
+                                 uint8_t* dst_ptr,
+                                 int dst_width);
+void ScaleRowUp2_Linear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                    uint8_t* dst_ptr,
+                                    int dst_width);
+void ScaleRowUp2_Linear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                     uint8_t* dst_ptr,
+                                     int dst_width);
+void ScaleRowUp2_Linear_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                        uint8_t* dst_ptr,
+                                        int dst_width);
+void ScaleRowUp2_Bilinear_WASMSIMD(const uint8_t* src_ptr,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_ptr,
+                                   ptrdiff_t dst_stride,
+                                   int dst_width);
+void ScaleRowUp2_Bilinear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_ptr,
+                                      ptrdiff_t dst_stride,
+                                      int dst_width);
+void ScaleRowUp2_Bilinear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       ptrdiff_t src_stride,
+                                       uint8_t* dst_ptr,
+                                       ptrdiff_t dst_stride,
+                                       int dst_width);
+void ScaleRowUp2_Bilinear_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          ptrdiff_t dst_stride,
+                                          int dst_width);
+void ScaleUVRowUp2_Linear_WASMSIMD(const uint8_t* src_ptr,
+                                   uint8_t* dst_ptr,
+                                   int dst_width);
+void ScaleUVRowUp2_Linear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                      uint8_t* dst_ptr,
+                                      int dst_width);
+void ScaleUVRowUp2_Linear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                       uint8_t* dst_ptr,
+                                       int dst_width);
+void ScaleUVRowUp2_Linear_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                          uint8_t* dst_ptr,
+                                          int dst_width);
+void ScaleUVRowUp2_Bilinear_WASMSIMD(const uint8_t* src_ptr,
+                                     ptrdiff_t src_stride,
+                                     uint8_t* dst_ptr,
+                                     ptrdiff_t dst_stride,
+                                     int dst_width);
+void ScaleUVRowUp2_Bilinear_RELAXEDSIMD(const uint8_t* src_ptr,
+                                        ptrdiff_t src_stride,
+                                        uint8_t* dst_ptr,
+                                        ptrdiff_t dst_stride,
+                                        int dst_width);
+void ScaleUVRowUp2_Bilinear_Any_WASMSIMD(const uint8_t* src_ptr,
+                                         ptrdiff_t src_stride,
+                                         uint8_t* dst_ptr,
+                                         ptrdiff_t dst_stride,
+                                         int dst_width);
+void ScaleUVRowUp2_Bilinear_Any_RELAXEDSIMD(const uint8_t* src_ptr,
+                                            ptrdiff_t src_stride,
+                                            uint8_t* dst_ptr,
+                                            ptrdiff_t dst_stride,
+                                            int dst_width);
+void ScaleSamples_WASMSIMD(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+float ScaleSumSamples_WASMSIMD(const float* src,
+                               float* dst,
+                               float scale,
+                               int width);
+float ScaleMaxSamples_WASMSIMD(const float* src,
+                               float* dst,
+                               float scale,
+                               int width);
 
 void ScaleAddRow_HVX(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width);
 void ScaleRowDown2_HVX(const uint8_t* src_ptr,

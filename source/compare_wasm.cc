@@ -12,7 +12,8 @@
 #include "libyuv/row.h"
 #include "libyuv/video_common.h"
 
-#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+#if (!defined(LIBYUV_DISABLE_WASMSIMD) && defined(__wasm_simd128__)) || \
+    (!defined(LIBYUV_DISABLE_RELAXEDSIMD) && defined(__wasm_relaxed_simd__))
 #include <wasm_simd128.h>
 
 #ifdef __cplusplus
@@ -29,15 +30,11 @@ static inline uint32_t SumLanes_WASMSIMD(v128_t sum) {
 
 #if defined(HAS_HAMMINGDISTANCE_WASMSIMD)
 // Bit counts of 64 bytes are added as bytes, then accumulated into 32 bit
-// lanes using relaxed i8x16 dot product when available or pairwise widening
-// adds. Count is a multiple of 64.
+// lanes using pairwise widening adds. Count is a multiple of 64.
 uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
                                   const uint8_t* src_b,
                                   int count) {
   v128_t sum = wasm_i32x4_splat(0);
-#ifdef __wasm_relaxed_simd__
-  const v128_t ones = wasm_i8x16_splat(1);
-#endif
   while (count > 0) {
     v128_t c0 = wasm_i8x16_popcnt(
         wasm_v128_xor(wasm_v128_load(src_a), wasm_v128_load(src_b)));
@@ -48,12 +45,8 @@ uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
     v128_t c3 = wasm_i8x16_popcnt(
         wasm_v128_xor(wasm_v128_load(src_a + 48), wasm_v128_load(src_b + 48)));
     v128_t c = wasm_i8x16_add(wasm_i8x16_add(c0, c1), wasm_i8x16_add(c2, c3));
-#ifdef __wasm_relaxed_simd__
-    sum = wasm_i32x4_relaxed_dot_i8x16_i7x16_add(c, ones, sum);
-#else
     sum = wasm_i32x4_add(sum, wasm_u32x4_extadd_pairwise_u16x8(
                                   wasm_u16x8_extadd_pairwise_u8x16(c)));
-#endif
     src_a += 64;
     src_b += 64;
     count -= 64;
@@ -61,6 +54,33 @@ uint32_t HammingDistance_WASMSIMD(const uint8_t* src_a,
   return SumLanes_WASMSIMD(sum);
 }
 #endif  // HAS_HAMMINGDISTANCE_WASMSIMD
+
+#if defined(HAS_HAMMINGDISTANCE_RELAXEDSIMD)
+// Bit counts of 64 bytes are added as bytes, then accumulated into 32 bit
+// lanes using relaxed i8x16 dot product. Count is a multiple of 64.
+uint32_t HammingDistance_RELAXEDSIMD(const uint8_t* src_a,
+                                     const uint8_t* src_b,
+                                     int count) {
+  v128_t sum = wasm_i32x4_splat(0);
+  const v128_t ones = wasm_i8x16_splat(1);
+  while (count > 0) {
+    v128_t c0 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a), wasm_v128_load(src_b)));
+    v128_t c1 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a + 16), wasm_v128_load(src_b + 16)));
+    v128_t c2 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a + 32), wasm_v128_load(src_b + 32)));
+    v128_t c3 = wasm_i8x16_popcnt(
+        wasm_v128_xor(wasm_v128_load(src_a + 48), wasm_v128_load(src_b + 48)));
+    v128_t c = wasm_i8x16_add(wasm_i8x16_add(c0, c1), wasm_i8x16_add(c2, c3));
+    sum = wasm_i32x4_relaxed_dot_i8x16_i7x16_add(c, ones, sum);
+    src_a += 64;
+    src_b += 64;
+    count -= 64;
+  }
+  return SumLanes_WASMSIMD(sum);
+}
+#endif  // HAS_HAMMINGDISTANCE_RELAXEDSIMD
 
 #if defined(HAS_SUMSQUAREERROR_WASMSIMD)
 // Differences are widened to signed 16 bits and squared with i32x4.dot.
