@@ -197,8 +197,8 @@ static int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_AVX512VBMI2")) {
     cpu_info &= ~libyuv::kCpuHasAVX512VBMI2;
   }
-  if (TestEnv("LIBYUV_DISABLE_AVX512VBITALG")) {
-    cpu_info &= ~libyuv::kCpuHasAVX512VBITALG;
+  if (TestEnv("LIBYUV_DISABLE_APX")) {
+    cpu_info &= ~libyuv::kCpuHasAPX;
   }
   if (TestEnv("LIBYUV_DISABLE_AVX10")) {
     cpu_info &= ~libyuv::kCpuHasAVX10;

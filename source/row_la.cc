@@ -3691,9 +3691,9 @@ void DetileRow_16_LSX(const uint16_t* src,
 #endif  // HAS_DETILEROW_16_LSX
 
 #ifdef HAS_MERGEARGBROW_LSX
-void MergeARGBRow_LSX(const uint8_t* src_b,
+void MergeARGBRow_LSX(const uint8_t* src_r,
                       const uint8_t* src_g,
-                      const uint8_t* src_r,
+                      const uint8_t* src_b,
                       const uint8_t* src_a,
                       uint8_t* dst_argb,
                       int width) {
@@ -3731,9 +3731,9 @@ void MergeARGBRow_LSX(const uint8_t* src_b,
 #endif  // HAS_MERGEARGBROW_LSX
 
 #ifdef HAS_MERGEXRGBROW_LSX
-void MergeXRGBRow_LSX(const uint8_t* src_b,
+void MergeXRGBRow_LSX(const uint8_t* src_r,
                       const uint8_t* src_g,
-                      const uint8_t* src_r,
+                      const uint8_t* src_b,
                       uint8_t* dst_argb,
                       int width) {
   asm volatile(
@@ -3770,9 +3770,9 @@ void MergeXRGBRow_LSX(const uint8_t* src_b,
 
 #ifdef HAS_SPLITARGBROW_LSX
 void SplitARGBRow_LSX(const uint8_t* src_argb,
-                      uint8_t* dst_b,
-                      uint8_t* dst_g,
                       uint8_t* dst_r,
+                      uint8_t* dst_g,
+                      uint8_t* dst_b,
                       uint8_t* dst_a,
                       int width) {
   asm volatile(
@@ -3810,9 +3810,9 @@ void SplitARGBRow_LSX(const uint8_t* src_argb,
 
 #ifdef HAS_SPLITXRGBROW_LSX
 void SplitXRGBRow_LSX(const uint8_t* src_argb,
-                      uint8_t* dst_b,
-                      uint8_t* dst_g,
                       uint8_t* dst_r,
+                      uint8_t* dst_g,
+                      uint8_t* dst_b,
                       int width) {
   asm volatile(
       "1:\n\t"
@@ -8039,9 +8039,9 @@ void DetileRow_16_LASX(const uint16_t* src,
 #endif  // HAS_DETILEROW_16_LASX
 
 #ifdef HAS_MERGEARGBROW_LASX
-void MergeARGBRow_LASX(const uint8_t* src_b,
+void MergeARGBRow_LASX(const uint8_t* src_r,
                        const uint8_t* src_g,
-                       const uint8_t* src_r,
+                       const uint8_t* src_b,
                        const uint8_t* src_a,
                        uint8_t* dst_argb,
                        int width) {
@@ -8078,9 +8078,9 @@ void MergeARGBRow_LASX(const uint8_t* src_b,
 #endif  // HAS_MERGEARGBROW_LASX
 
 #ifdef HAS_MERGEXRGBROW_LASX
-void MergeXRGBRow_LASX(const uint8_t* src_b,
+void MergeXRGBRow_LASX(const uint8_t* src_r,
                        const uint8_t* src_g,
-                       const uint8_t* src_r,
+                       const uint8_t* src_b,
                        uint8_t* dst_argb,
                        int width) {
   asm volatile(
@@ -8115,9 +8115,9 @@ void MergeXRGBRow_LASX(const uint8_t* src_b,
 
 #ifdef HAS_SPLITARGBROW_LASX
 void SplitARGBRow_LASX(const uint8_t* src_argb,
-                       uint8_t* dst_b,
-                       uint8_t* dst_g,
                        uint8_t* dst_r,
+                       uint8_t* dst_g,
+                       uint8_t* dst_b,
                        uint8_t* dst_a,
                        int width) {
   asm volatile(
@@ -8156,9 +8156,9 @@ void SplitARGBRow_LASX(const uint8_t* src_argb,
 
 #ifdef HAS_SPLITXRGBROW_LASX
 void SplitXRGBRow_LASX(const uint8_t* src_argb,
-                       uint8_t* dst_b,
-                       uint8_t* dst_g,
                        uint8_t* dst_r,
+                       uint8_t* dst_g,
+                       uint8_t* dst_b,
                        int width) {
   asm volatile(
       "1:\n\t"

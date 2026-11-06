@@ -3581,17 +3581,19 @@ void ComputeCumulativeSumRow_C(const uint8_t* row,
                                int32_t* cumsum,
                                const int32_t* previous_cumsum,
                                int width) {
-  int32_t row_sum[4] = {0, 0, 0, 0};
+  uint32_t row_sum[4] = {0, 0, 0, 0};
+  uint32_t* u_cumsum = (uint32_t*)cumsum;
+  const uint32_t* u_previous_cumsum = (const uint32_t*)previous_cumsum;
   int x;
   for (x = 0; x < width; ++x) {
     row_sum[0] += row[x * 4 + 0];
     row_sum[1] += row[x * 4 + 1];
     row_sum[2] += row[x * 4 + 2];
     row_sum[3] += row[x * 4 + 3];
-    cumsum[x * 4 + 0] = row_sum[0] + previous_cumsum[x * 4 + 0];
-    cumsum[x * 4 + 1] = row_sum[1] + previous_cumsum[x * 4 + 1];
-    cumsum[x * 4 + 2] = row_sum[2] + previous_cumsum[x * 4 + 2];
-    cumsum[x * 4 + 3] = row_sum[3] + previous_cumsum[x * 4 + 3];
+    u_cumsum[x * 4 + 0] = row_sum[0] + u_previous_cumsum[x * 4 + 0];
+    u_cumsum[x * 4 + 1] = row_sum[1] + u_previous_cumsum[x * 4 + 1];
+    u_cumsum[x * 4 + 2] = row_sum[2] + u_previous_cumsum[x * 4 + 2];
+    u_cumsum[x * 4 + 3] = row_sum[3] + u_previous_cumsum[x * 4 + 3];
   }
 }
 
@@ -3601,27 +3603,25 @@ void CumulativeSumToAverageRow_C(const int32_t* tl,
                                  int area,
                                  uint8_t* dst,
                                  int count) {
+  const uint32_t* u_tl = (const uint32_t*)tl;
+  const uint32_t* u_bl = (const uint32_t*)bl;
   float ooa;
   int i;
   assert(area != 0);
 
   ooa = 1.0f / STATIC_CAST(float, area);
   for (i = 0; i < count; ++i) {
-    dst[0] =
-        (uint8_t)(STATIC_CAST(float, bl[w + 0] + tl[0] - bl[0] - tl[w + 0]) *
-                  ooa);
-    dst[1] =
-        (uint8_t)(STATIC_CAST(float, bl[w + 1] + tl[1] - bl[1] - tl[w + 1]) *
-                  ooa);
-    dst[2] =
-        (uint8_t)(STATIC_CAST(float, bl[w + 2] + tl[2] - bl[2] - tl[w + 2]) *
-                  ooa);
-    dst[3] =
-        (uint8_t)(STATIC_CAST(float, bl[w + 3] + tl[3] - bl[3] - tl[w + 3]) *
-                  ooa);
+    uint32_t sum0 = u_bl[w + 0] + u_tl[0] - u_bl[0] - u_tl[w + 0];
+    uint32_t sum1 = u_bl[w + 1] + u_tl[1] - u_bl[1] - u_tl[w + 1];
+    uint32_t sum2 = u_bl[w + 2] + u_tl[2] - u_bl[2] - u_tl[w + 2];
+    uint32_t sum3 = u_bl[w + 3] + u_tl[3] - u_bl[3] - u_tl[w + 3];
+    dst[0] = (uint8_t)(STATIC_CAST(float, sum0) * ooa);
+    dst[1] = (uint8_t)(STATIC_CAST(float, sum1) * ooa);
+    dst[2] = (uint8_t)(STATIC_CAST(float, sum2) * ooa);
+    dst[3] = (uint8_t)(STATIC_CAST(float, sum3) * ooa);
     dst += 4;
-    tl += 4;
-    bl += 4;
+    u_tl += 4;
+    u_bl += 4;
   }
 }
 

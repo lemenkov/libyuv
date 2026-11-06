@@ -1380,7 +1380,7 @@ static int ScalePlaneBilinearDown_16(int src_width,
 #if defined(HAS_INTERPOLATEROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_16_Any_AVX2;
-    if (IS_ALIGNED(src_width, 32)) {
+    if (IS_ALIGNED(src_width, 16)) {
       InterpolateRow = InterpolateRow_16_AVX2;
     }
   }
@@ -2056,7 +2056,7 @@ static int ScalePlaneBilinearUp_16(int src_width,
 #if defined(HAS_INTERPOLATEROW_16_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_16_Any_AVX2;
-    if (IS_ALIGNED(dst_width, 32)) {
+    if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_16_AVX2;
     }
   }
@@ -2297,11 +2297,11 @@ int ScalePlane(const uint8_t* src,
     int dy = 0;
     int y = 0;
     // Check for 1 pixel and avoid FixedDiv overflow.
-    // TODO(b/573815252): Fix center row calculation when dst_height == 1 and
-    // src_height == 32768.
     if (dst_height == 1 && src_height >= 32768) {
-      dy = FixedDiv(src_height, src_height);
-      y = CENTERSTART(dy, -32768);
+      dy = 0;
+      y = (filtering == kFilterLinear || filtering == kFilterNone)
+              ? ((src_height / 2) << 16)
+              : (((src_height / 2) << 16) - 32768);
     } else if (dst_height <= src_height) {
       // When scaling down, use the center 2 rows to filter.
       dy = FixedDiv(src_height, dst_height);
@@ -2418,11 +2418,11 @@ int ScalePlane_16(const uint16_t* src,
     int dy = 0;
     int y = 0;
     // Check for 1 pixel and avoid FixedDiv overflow.
-    // TODO(b/573815252): Fix center row calculation when dst_height == 1 and
-    // src_height == 32768.
     if (dst_height == 1 && src_height >= 32768) {
-      dy = FixedDiv(src_height, src_height);
-      y = CENTERSTART(dy, -32768);
+      dy = 0;
+      y = (filtering == kFilterLinear || filtering == kFilterNone)
+              ? ((src_height / 2) << 16)
+              : (((src_height / 2) << 16) - 32768);
     } else if (dst_height <= src_height) {
       // When scaling down, use the center 2 rows to filter.
       dy = FixedDiv(src_height, dst_height);

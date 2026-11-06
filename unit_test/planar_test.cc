@@ -3482,25 +3482,20 @@ TEST_F(LibYUVPlanarTest, SwapUVPlane_Opt) {
 }
 
 TEST_F(LibYUVPlanarTest, MergeRGBPlane_Opt) {
-  // Round count up to multiple of 16
+  // Merge the same C split planes with C and Opt so a channel order bug in
+  // MergeRGBRow cannot be masked by a matching bug in SplitRGBRow.
   const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 3);
   align_buffer_page_end(tmp_pixels_c_r, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_r, kPixels);
   align_buffer_page_end(tmp_pixels_c_g, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_g, kPixels);
   align_buffer_page_end(tmp_pixels_c_b, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_b, kPixels);
   align_buffer_page_end(dst_pixels_c, kPixels * 3);
   align_buffer_page_end(dst_pixels_opt, kPixels * 3);
 
   MemRandomize(src_pixels, kPixels * 3);
   MemRandomize(tmp_pixels_c_r, kPixels);
-  MemRandomize(tmp_pixels_opt_r, kPixels);
   MemRandomize(tmp_pixels_c_g, kPixels);
-  MemRandomize(tmp_pixels_opt_g, kPixels);
   MemRandomize(tmp_pixels_c_b, kPixels);
-  MemRandomize(tmp_pixels_opt_b, kPixels);
   MemRandomize(dst_pixels_c, kPixels * 3);
   MemRandomize(dst_pixels_opt, kPixels * 3);
 
@@ -3515,14 +3510,9 @@ TEST_F(LibYUVPlanarTest, MergeRGBPlane_Opt) {
                 benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
-  SplitRGBPlane(src_pixels, benchmark_width_ * 3, tmp_pixels_opt_r,
-                benchmark_width_, tmp_pixels_opt_g, benchmark_width_,
-                tmp_pixels_opt_b, benchmark_width_, benchmark_width_,
-                benchmark_height_);
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    MergeRGBPlane(tmp_pixels_opt_r, benchmark_width_, tmp_pixels_opt_g,
-                  benchmark_width_, tmp_pixels_opt_b, benchmark_width_,
+    MergeRGBPlane(tmp_pixels_c_r, benchmark_width_, tmp_pixels_c_g,
+                  benchmark_width_, tmp_pixels_c_b, benchmark_width_,
                   dst_pixels_opt, benchmark_width_ * 3, benchmark_width_,
                   benchmark_height_);
   }
@@ -3533,11 +3523,8 @@ TEST_F(LibYUVPlanarTest, MergeRGBPlane_Opt) {
 
   free_aligned_buffer_page_end(src_pixels);
   free_aligned_buffer_page_end(tmp_pixels_c_r);
-  free_aligned_buffer_page_end(tmp_pixels_opt_r);
   free_aligned_buffer_page_end(tmp_pixels_c_g);
-  free_aligned_buffer_page_end(tmp_pixels_opt_g);
   free_aligned_buffer_page_end(tmp_pixels_c_b);
-  free_aligned_buffer_page_end(tmp_pixels_opt_b);
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
 }
@@ -3587,6 +3574,13 @@ TEST_F(LibYUVPlanarTest, SplitRGBPlane_Opt) {
                 dst_pixels_opt, benchmark_width_ * 3, benchmark_width_,
                 benchmark_height_);
 
+  // Compare the split planes directly. A round trip alone would hide a
+  // channel swap that is mirrored in MergeRGBRow.
+  for (int i = 0; i < kPixels; ++i) {
+    ASSERT_EQ(tmp_pixels_c_r[i], tmp_pixels_opt_r[i]);
+    ASSERT_EQ(tmp_pixels_c_g[i], tmp_pixels_opt_g[i]);
+    ASSERT_EQ(tmp_pixels_c_b[i], tmp_pixels_opt_b[i]);
+  }
   for (int i = 0; i < kPixels * 3; ++i) {
     ASSERT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
@@ -3621,28 +3615,22 @@ TEST_F(LibYUVPlanarTest, SplitRGBPlaneOverflow) {
 }
 
 TEST_F(LibYUVPlanarTest, MergeARGBPlane_Opt) {
+  // Merge the same C split planes with C and Opt so a channel order bug in
+  // MergeARGBRow cannot be masked by a matching bug in SplitARGBRow.
   const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(tmp_pixels_c_r, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_r, kPixels);
   align_buffer_page_end(tmp_pixels_c_g, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_g, kPixels);
   align_buffer_page_end(tmp_pixels_c_b, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_b, kPixels);
   align_buffer_page_end(tmp_pixels_c_a, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_a, kPixels);
   align_buffer_page_end(dst_pixels_c, kPixels * 4);
   align_buffer_page_end(dst_pixels_opt, kPixels * 4);
 
   MemRandomize(src_pixels, kPixels * 4);
   MemRandomize(tmp_pixels_c_r, kPixels);
-  MemRandomize(tmp_pixels_opt_r, kPixels);
   MemRandomize(tmp_pixels_c_g, kPixels);
-  MemRandomize(tmp_pixels_opt_g, kPixels);
   MemRandomize(tmp_pixels_c_b, kPixels);
-  MemRandomize(tmp_pixels_opt_b, kPixels);
   MemRandomize(tmp_pixels_c_a, kPixels);
-  MemRandomize(tmp_pixels_opt_a, kPixels);
   MemRandomize(dst_pixels_opt, kPixels * 4);
   MemRandomize(dst_pixels_c, kPixels * 4);
 
@@ -3657,15 +3645,10 @@ TEST_F(LibYUVPlanarTest, MergeARGBPlane_Opt) {
                  benchmark_width_ * 4, benchmark_width_, benchmark_height_);
 
   MaskCpuFlags(benchmark_cpu_info_);
-  SplitARGBPlane(src_pixels, benchmark_width_ * 4, tmp_pixels_opt_r,
-                 benchmark_width_, tmp_pixels_opt_g, benchmark_width_,
-                 tmp_pixels_opt_b, benchmark_width_, tmp_pixels_opt_a,
-                 benchmark_width_, benchmark_width_, benchmark_height_);
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    MergeARGBPlane(tmp_pixels_opt_r, benchmark_width_, tmp_pixels_opt_g,
-                   benchmark_width_, tmp_pixels_opt_b, benchmark_width_,
-                   tmp_pixels_opt_a, benchmark_width_, dst_pixels_opt,
+    MergeARGBPlane(tmp_pixels_c_r, benchmark_width_, tmp_pixels_c_g,
+                   benchmark_width_, tmp_pixels_c_b, benchmark_width_,
+                   tmp_pixels_c_a, benchmark_width_, dst_pixels_opt,
                    benchmark_width_ * 4, benchmark_width_, benchmark_height_);
   }
 
@@ -3675,13 +3658,9 @@ TEST_F(LibYUVPlanarTest, MergeARGBPlane_Opt) {
 
   free_aligned_buffer_page_end(src_pixels);
   free_aligned_buffer_page_end(tmp_pixels_c_r);
-  free_aligned_buffer_page_end(tmp_pixels_opt_r);
   free_aligned_buffer_page_end(tmp_pixels_c_g);
-  free_aligned_buffer_page_end(tmp_pixels_opt_g);
   free_aligned_buffer_page_end(tmp_pixels_c_b);
-  free_aligned_buffer_page_end(tmp_pixels_opt_b);
   free_aligned_buffer_page_end(tmp_pixels_c_a);
-  free_aligned_buffer_page_end(tmp_pixels_opt_a);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(dst_pixels_c);
 }
@@ -3735,6 +3714,14 @@ TEST_F(LibYUVPlanarTest, SplitARGBPlane_Opt) {
                  tmp_pixels_opt_a, benchmark_width_, dst_pixels_opt,
                  benchmark_width_ * 4, benchmark_width_, benchmark_height_);
 
+  // Compare the split planes directly. A round trip alone would hide a
+  // channel swap that is mirrored in MergeARGBRow.
+  for (int i = 0; i < kPixels; ++i) {
+    ASSERT_EQ(tmp_pixels_c_r[i], tmp_pixels_opt_r[i]);
+    ASSERT_EQ(tmp_pixels_c_g[i], tmp_pixels_opt_g[i]);
+    ASSERT_EQ(tmp_pixels_c_b[i], tmp_pixels_opt_b[i]);
+    ASSERT_EQ(tmp_pixels_c_a[i], tmp_pixels_opt_a[i]);
+  }
   for (int i = 0; i < kPixels * 4; ++i) {
     ASSERT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
@@ -3772,24 +3759,20 @@ TEST_F(LibYUVPlanarTest, SplitARGBPlaneOverflow) {
 }
 
 TEST_F(LibYUVPlanarTest, MergeXRGBPlane_Opt) {
+  // Merge the same C split planes with C and Opt so a channel order bug in
+  // MergeXRGBRow cannot be masked by a matching bug in SplitXRGBRow.
   const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_pixels, kPixels * 4);
   align_buffer_page_end(tmp_pixels_c_r, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_r, kPixels);
   align_buffer_page_end(tmp_pixels_c_g, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_g, kPixels);
   align_buffer_page_end(tmp_pixels_c_b, kPixels);
-  align_buffer_page_end(tmp_pixels_opt_b, kPixels);
   align_buffer_page_end(dst_pixels_c, kPixels * 4);
   align_buffer_page_end(dst_pixels_opt, kPixels * 4);
 
   MemRandomize(src_pixels, kPixels * 4);
   MemRandomize(tmp_pixels_c_r, kPixels);
-  MemRandomize(tmp_pixels_opt_r, kPixels);
   MemRandomize(tmp_pixels_c_g, kPixels);
-  MemRandomize(tmp_pixels_opt_g, kPixels);
   MemRandomize(tmp_pixels_c_b, kPixels);
-  MemRandomize(tmp_pixels_opt_b, kPixels);
   MemRandomize(dst_pixels_c, kPixels * 4);
   MemRandomize(dst_pixels_opt, kPixels * 4);
 
@@ -3804,15 +3787,10 @@ TEST_F(LibYUVPlanarTest, MergeXRGBPlane_Opt) {
                  benchmark_height_);
 
   MaskCpuFlags(benchmark_cpu_info_);
-  SplitARGBPlane(src_pixels, benchmark_width_ * 4, tmp_pixels_opt_r,
-                 benchmark_width_, tmp_pixels_opt_g, benchmark_width_,
-                 tmp_pixels_opt_b, benchmark_width_, NULL, 0, benchmark_width_,
-                 benchmark_height_);
-
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    MergeARGBPlane(tmp_pixels_opt_r, benchmark_width_, tmp_pixels_opt_g,
-                   benchmark_width_, tmp_pixels_opt_b, benchmark_width_, NULL,
-                   0, dst_pixels_opt, benchmark_width_ * 4, benchmark_width_,
+    MergeARGBPlane(tmp_pixels_c_r, benchmark_width_, tmp_pixels_c_g,
+                   benchmark_width_, tmp_pixels_c_b, benchmark_width_, NULL, 0,
+                   dst_pixels_opt, benchmark_width_ * 4, benchmark_width_,
                    benchmark_height_);
   }
 
@@ -3822,11 +3800,8 @@ TEST_F(LibYUVPlanarTest, MergeXRGBPlane_Opt) {
 
   free_aligned_buffer_page_end(src_pixels);
   free_aligned_buffer_page_end(tmp_pixels_c_r);
-  free_aligned_buffer_page_end(tmp_pixels_opt_r);
   free_aligned_buffer_page_end(tmp_pixels_c_g);
-  free_aligned_buffer_page_end(tmp_pixels_opt_g);
   free_aligned_buffer_page_end(tmp_pixels_c_b);
-  free_aligned_buffer_page_end(tmp_pixels_opt_b);
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
 }
@@ -3876,6 +3851,13 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
                  dst_pixels_opt, benchmark_width_ * 4, benchmark_width_,
                  benchmark_height_);
 
+  // Compare the split planes directly. A round trip alone would hide a
+  // channel swap that is mirrored in MergeXRGBRow.
+  for (int i = 0; i < kPixels; ++i) {
+    ASSERT_EQ(tmp_pixels_c_r[i], tmp_pixels_opt_r[i]);
+    ASSERT_EQ(tmp_pixels_c_g[i], tmp_pixels_opt_g[i]);
+    ASSERT_EQ(tmp_pixels_c_b[i], tmp_pixels_opt_b[i]);
+  }
   for (int i = 0; i < kPixels * 4; ++i) {
     ASSERT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
@@ -3889,6 +3871,91 @@ TEST_F(LibYUVPlanarTest, SplitXRGBPlane_Opt) {
   free_aligned_buffer_page_end(tmp_pixels_opt_b);
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
+}
+
+// Check absolute channel order for packed <-> planar RGB conversions using
+// known byte values, independent of the C reference and of round trips.
+// libyuv ARGB/XRGB are B, G, R, A in memory; RGB (MergeRGBPlane) is R, G, B.
+TEST_F(LibYUVPlanarTest, SplitMergePlane_ChannelOrder) {
+  const int kWidth = 64 * 3 + 7;  // Exercise SIMD main loops and tails.
+  align_buffer_page_end(packed, kWidth * 4);
+  align_buffer_page_end(plane_r, kWidth);
+  align_buffer_page_end(plane_g, kWidth);
+  align_buffer_page_end(plane_b, kWidth);
+  align_buffer_page_end(plane_a, kWidth);
+  align_buffer_page_end(dst, kWidth * 4);
+
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  // ARGB: memory order B, G, R, A.
+  for (int i = 0; i < kWidth; ++i) {
+    packed[i * 4 + 0] = (uint8_t)(i * 4 + 0);  // B
+    packed[i * 4 + 1] = (uint8_t)(i * 4 + 1);  // G
+    packed[i * 4 + 2] = (uint8_t)(i * 4 + 2);  // R
+    packed[i * 4 + 3] = (uint8_t)(i * 4 + 3);  // A
+  }
+  SplitARGBPlane(packed, kWidth * 4, plane_r, kWidth, plane_g, kWidth, plane_b,
+                 kWidth, plane_a, kWidth, kWidth, 1);
+  for (int i = 0; i < kWidth; ++i) {
+    ASSERT_EQ((uint8_t)(i * 4 + 0), plane_b[i]) << "SplitARGB B " << i;
+    ASSERT_EQ((uint8_t)(i * 4 + 1), plane_g[i]) << "SplitARGB G " << i;
+    ASSERT_EQ((uint8_t)(i * 4 + 2), plane_r[i]) << "SplitARGB R " << i;
+    ASSERT_EQ((uint8_t)(i * 4 + 3), plane_a[i]) << "SplitARGB A " << i;
+  }
+  memset(dst, 0, kWidth * 4);
+  MergeARGBPlane(plane_r, kWidth, plane_g, kWidth, plane_b, kWidth, plane_a,
+                 kWidth, dst, kWidth * 4, kWidth, 1);
+  for (int i = 0; i < kWidth * 4; ++i) {
+    ASSERT_EQ(packed[i], dst[i]) << "MergeARGB byte " << i;
+  }
+
+  // XRGB: dst_a == NULL selects SplitXRGBRow / MergeXRGBRow.
+  memset(plane_r, 0, kWidth);
+  memset(plane_g, 0, kWidth);
+  memset(plane_b, 0, kWidth);
+  SplitARGBPlane(packed, kWidth * 4, plane_r, kWidth, plane_g, kWidth, plane_b,
+                 kWidth, NULL, 0, kWidth, 1);
+  for (int i = 0; i < kWidth; ++i) {
+    ASSERT_EQ((uint8_t)(i * 4 + 0), plane_b[i]) << "SplitXRGB B " << i;
+    ASSERT_EQ((uint8_t)(i * 4 + 1), plane_g[i]) << "SplitXRGB G " << i;
+    ASSERT_EQ((uint8_t)(i * 4 + 2), plane_r[i]) << "SplitXRGB R " << i;
+  }
+  memset(dst, 0, kWidth * 4);
+  MergeARGBPlane(plane_r, kWidth, plane_g, kWidth, plane_b, kWidth, NULL, 0,
+                 dst, kWidth * 4, kWidth, 1);
+  for (int i = 0; i < kWidth; ++i) {
+    ASSERT_EQ(packed[i * 4 + 0], dst[i * 4 + 0]) << "MergeXRGB B " << i;
+    ASSERT_EQ(packed[i * 4 + 1], dst[i * 4 + 1]) << "MergeXRGB G " << i;
+    ASSERT_EQ(packed[i * 4 + 2], dst[i * 4 + 2]) << "MergeXRGB R " << i;
+    ASSERT_EQ(255, dst[i * 4 + 3]) << "MergeXRGB A " << i;
+  }
+
+  // RGB: memory order R, G, B.
+  for (int i = 0; i < kWidth; ++i) {
+    packed[i * 3 + 0] = (uint8_t)(i * 3 + 0);  // R
+    packed[i * 3 + 1] = (uint8_t)(i * 3 + 1);  // G
+    packed[i * 3 + 2] = (uint8_t)(i * 3 + 2);  // B
+  }
+  SplitRGBPlane(packed, kWidth * 3, plane_r, kWidth, plane_g, kWidth, plane_b,
+                kWidth, kWidth, 1);
+  for (int i = 0; i < kWidth; ++i) {
+    ASSERT_EQ((uint8_t)(i * 3 + 0), plane_r[i]) << "SplitRGB R " << i;
+    ASSERT_EQ((uint8_t)(i * 3 + 1), plane_g[i]) << "SplitRGB G " << i;
+    ASSERT_EQ((uint8_t)(i * 3 + 2), plane_b[i]) << "SplitRGB B " << i;
+  }
+  memset(dst, 0, kWidth * 3);
+  MergeRGBPlane(plane_r, kWidth, plane_g, kWidth, plane_b, kWidth, dst,
+                kWidth * 3, kWidth, 1);
+  for (int i = 0; i < kWidth * 3; ++i) {
+    ASSERT_EQ(packed[i], dst[i]) << "MergeRGB byte " << i;
+  }
+
+  free_aligned_buffer_page_end(packed);
+  free_aligned_buffer_page_end(plane_r);
+  free_aligned_buffer_page_end(plane_g);
+  free_aligned_buffer_page_end(plane_b);
+  free_aligned_buffer_page_end(plane_a);
+  free_aligned_buffer_page_end(dst);
 }
 
 // Merge 4 channels

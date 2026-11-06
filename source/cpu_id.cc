@@ -32,6 +32,39 @@
 #include <sys/auxv.h>  // For getauxval()
 #endif
 
+#if !defined(__pnacl__) && !defined(__CLR_VER) && defined(__linux__) && \
+    defined(__x86_64__)
+#include <sys/syscall.h>
+#include <unistd.h>
+#ifndef ARCH_GET_XCOMP_PERM
+#define ARCH_GET_XCOMP_PERM 0x1022
+#endif
+#ifndef XFEATURE_XTILEDATA
+#define XFEATURE_XTILEDATA 18
+#endif
+// Linux 5.16+ disables AMX tile data (XTILEDATA) per process with XFD until
+// the process requests it via arch_prctl(ARCH_REQ_XCOMP_PERM). Executing a
+// tile instruction without permission raises SIGILL even though XCR0 reports
+// tile state as enabled. libyuv only queries the permission and does not
+// request it, so it never changes process state (signal frame size) or trips
+// sandbox policies. Applications that want AMX/ACE kernels should request
+// XTILEDATA permission before libyuv detects CPU features.
+static int HasXTilePermission(void) {
+  unsigned long bitmask = 0;
+  if (syscall(SYS_arch_prctl, ARCH_GET_XCOMP_PERM, &bitmask) != 0) {
+    return 0;
+  }
+  return (bitmask & (1UL << XFEATURE_XTILEDATA)) != 0;
+}
+#elif !defined(__pnacl__) && !defined(__CLR_VER) &&                 \
+    (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+     defined(_M_IX86))
+// Other operating systems enable tile state when XCR0 reports it.
+static int HasXTilePermission(void) {
+  return 1;
+}
+#endif
+
 #if defined(_WIN32) && defined(__aarch64__)
 #undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -140,7 +173,7 @@ static int GetXCR0() {
 #if defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 160040219)
   xcr0 = (int)_xgetbv(0);  // VS2010 SP1 required.  NOLINT
 #elif defined(__i386__) || defined(__x86_64__)
-  asm(".byte 0x0f, 0x01, 0xd0" : "=a"(xcr0) : "c"(0) : "%edx");
+  __asm__ __volatile__(".byte 0x0f, 0x01, 0xd0" : "=a"(xcr0) : "c"(0) : "edx");
 #endif  // defined(__i386__) || defined(__x86_64__)
   return xcr0;
 }
@@ -516,6 +549,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
              ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
              ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
              ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
+             ((cpu_amdinfo21[0] & 0x00008000) ? kCpuHasERMS : 0) |
              ((cpu_info7[3] & 0x00000010) ? kCpuHasFSMR : 0);
 
   // AVX requires OS saves YMM registers.
@@ -525,25 +559,29 @@ static SAFEBUFFERS int GetCpuFlags(void) {
                 ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
                 ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0) |
                 ((cpu_einfo7[0] & 0x00000010) ? kCpuHasAVXVNNI : 0) |
-                ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0);
+                ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0) |
+                ((cpu_einfo7[3] & 0x00200000) ? kCpuHasAPX : 0);
 
-    cpu_info |= ((cpu_amdinfo21[0] & 0x00008000) ? kCpuHasERMS : 0);
-
-    // Detect AVX512bw
-    if ((GetXCR0() & 0xe0) == 0xe0 && (cpu_info7[1] & 0x00010000)) {
-      cpu_info |= ((cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0) |
-                  ((cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0) |
-                  ((cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0) |
-                  ((cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0) |
-                  ((cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0) |
-                  ((cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0) |
-                  ((cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0) |
-                  ((cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0) |
-                  ((cpu_info21[0] & 0x00800000) ? kCpuHasAVX512BMM : 0) |
-                  ((cpu_einfo1e[0] & 0x00000040) ? kCpuHasAMXTF32 : 0);
+    // Detect AVX512bw / AVX10 (512-bit vector support)
+    int has_avx512 = (cpu_info7[1] & 0x00010000) ||
+                     ((cpu_einfo7[3] & 0x00080000) && cpu_info0[0] >= 0x24 &&
+                      (cpu_info24[1] & 0x00040000));
+    if ((GetXCR0() & 0xe0) == 0xe0 && has_avx512) {
+      int has_tile = ((GetXCR0() & 0x60000) == 0x60000) &&
+                     ((cpu_info7[3] & 0x01000000) != 0) && HasXTilePermission();
+      cpu_info |=
+          ((cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0) |
+          ((cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0) |
+          ((cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0) |
+          ((cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0) |
+          ((cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0) |
+          ((cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0) |
+          ((has_tile && (cpu_info7[3] & 0x02000000)) ? kCpuHasAMXINT8 : 0) |
+          ((cpu_amdinfo21[0] & 0x00800000) ? kCpuHasAVX512BMM : 0) |
+          ((cpu_einfo1e[0] & 0x00000040) ? kCpuHasAMXTF32 : 0);
       if (cpu_info0[0] >= 0x24 && (cpu_einfo7[3] & 0x00080000)) {
         cpu_info |= ((cpu_info24[1] & 0xFF) >= 2) ? kCpuHasAVX10_2 : 0;
-        if ((GetXCR0() & 0x001600e6) == 0x001600e6 &&
+        if (has_tile && (GetXCR0() & 0x001000e6) == 0x001000e6 &&
             (cpu_einfo7[2] & 0x00000800) && (cpu_einfo1d_2[0] & 0xff) >= 1 &&
             ((cpu_info24[1] & 0xff) >= 2 ||
              ((cpu_info24[1] & 0xff) >= 1 &&

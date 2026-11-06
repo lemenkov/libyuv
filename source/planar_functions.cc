@@ -60,6 +60,11 @@ void CopyPlane(const uint8_t* src_y,
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
   }
 #endif
+#if defined(HAS_COPYROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_ERMS;
+  }
+#endif
 #if defined(HAS_COPYROW_AVX)
   if (TestCpuFlag(kCpuHasAVX)) {
     CopyRow = IS_ALIGNED(width, 64) ? CopyRow_AVX : CopyRow_Any_AVX;
@@ -68,11 +73,6 @@ void CopyPlane(const uint8_t* src_y,
 #if defined(HAS_COPYROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     CopyRow = CopyRow_AVX512BW;
-  }
-#endif
-#if defined(HAS_COPYROW_ERMS)
-  if (TestCpuFlag(kCpuHasERMS)) {
-    CopyRow = CopyRow_ERMS;
   }
 #endif
 #if defined(HAS_COPYROW_NEON)
@@ -5054,17 +5054,17 @@ void SetPlane(uint8_t* dst_y,
     }
   }
 #endif
+#if defined(HAS_SETROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    SetRow = SetRow_ERMS;
+  }
+#endif
 #if defined(HAS_SETROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     SetRow = SetRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       SetRow = SetRow_AVX2;
     }
-  }
-#endif
-#if defined(HAS_SETROW_ERMS)
-  if (TestCpuFlag(kCpuHasERMS)) {
-    SetRow = SetRow_ERMS;
   }
 #endif
 #if defined(HAS_SETROW_LSX)
@@ -6028,7 +6028,7 @@ int ARGBBlur(const uint8_t* src_argb,
   int32_t* max_cumsum_bot_row;
   int32_t* cumsum_top_row;
 
-  if (!src_argb || !dst_argb || width <= 0 || height == 0 ||
+  if (!src_argb || !dst_argb || !dst_cumsum || width <= 0 || height == 0 ||
       height == INT_MIN) {
     return -1;
   }
@@ -6060,8 +6060,10 @@ int ARGBBlur(const uint8_t* src_argb,
 #endif
   // Compute enough CumulativeSum for first row to be blurred. After this
   // one row of CumulativeSum is updated at a time.
-  ARGBComputeCumulativeSum(src_argb, src_stride_argb, dst_cumsum,
-                           dst_stride32_cumsum, width, radius);
+  if (ARGBComputeCumulativeSum(src_argb, src_stride_argb, dst_cumsum,
+                               dst_stride32_cumsum, width, radius) != 0) {
+    return -1;
+  }
 
   src_argb = src_argb + radius * src_stride_argb;
   cumsum_bot_row = &dst_cumsum[(radius - 1) * dst_stride32_cumsum];

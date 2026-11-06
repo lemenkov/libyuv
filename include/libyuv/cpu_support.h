@@ -155,8 +155,7 @@ extern "C" {
 #endif  // __clang__
 
 // clang >= 7.0.0 required for AVX512.
-#if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && \
-    (defined(__x86_64__) || defined(__i386__))
+#if defined(__clang__) && !defined(LIBYUV_ENABLE_ROWWIN) && defined(__x86_64__)
 // clang in xcode follows a different versioning scheme.
 // TODO(fbarchard): fix xcode 9 ios b/789.
 #if (__clang_major__ >= 7) && !defined(__APPLE__)

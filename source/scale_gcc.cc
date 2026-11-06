@@ -3352,6 +3352,9 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
 
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_X86(int num, int div) {
+#if defined(__x86_64__)
+  return (int)(((int64_t)num * 65536) / div);
+#else
   asm volatile(
       "cdq         \n"
       "shld        $0x10,%%eax,%%edx             \n"
@@ -3362,10 +3365,14 @@ int FixedDiv_X86(int num, int div) {
       : "c"(div)   // %1
       : "memory", "cc", "edx");
   return num;
+#endif
 }
 
 // Divide num - 1 by div - 1 and return as 16.16 fixed point result.
 int FixedDiv1_X86(int num, int div) {
+#if defined(__x86_64__)
+  return (int)((((int64_t)num * 65536) - 0x00010001) / (div - 1));
+#else
   asm volatile(
       "cdq         \n"
       "shld        $0x10,%%eax,%%edx             \n"
@@ -3380,6 +3387,7 @@ int FixedDiv1_X86(int num, int div) {
       :
       : "memory", "cc", "edx");
   return num;
+#endif
 }
 
 #ifdef HAS_SCALEUVROWDOWN2_AVX2

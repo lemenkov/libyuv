@@ -212,7 +212,7 @@ int main(int argc, const char* argv[]) {
     int has_avx512vnni = TestCpuFlag(kCpuHasAVX512VNNI);
     int has_avx512vbmi = TestCpuFlag(kCpuHasAVX512VBMI);
     int has_avx512vbmi2 = TestCpuFlag(kCpuHasAVX512VBMI2);
-    int has_avx512vbitalg = TestCpuFlag(kCpuHasAVX512VBITALG);
+    int has_apx = TestCpuFlag(kCpuHasAPX);
     int has_avx10 = TestCpuFlag(kCpuHasAVX10);
     int has_avx10_2 = TestCpuFlag(kCpuHasAVX10_2);
     int has_avxvnni = TestCpuFlag(kCpuHasAVXVNNI);
@@ -237,7 +237,7 @@ int main(int argc, const char* argv[]) {
     printf("Has AVX512VNNI 0x%x\n", has_avx512vnni);
     printf("Has AVX512VBMI 0x%x\n", has_avx512vbmi);
     printf("Has AVX512VBMI2 0x%x\n", has_avx512vbmi2);
-    printf("Has AVX512VBITALG 0x%x\n", has_avx512vbitalg);
+    printf("Has APX 0x%x\n", has_apx);
     printf("Has AVX10 0x%x\n", has_avx10);
     printf("Has AVX10_2 0x%x\n", has_avx10_2);
     printf("HAS AVXVNNI 0x%x\n", has_avxvnni);

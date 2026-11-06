@@ -308,6 +308,11 @@ void RotatePlane180(const uint8_t* src,
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
   }
 #endif
+#if defined(HAS_COPYROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_ERMS;
+  }
+#endif
 #if defined(HAS_COPYROW_AVX)
   if (TestCpuFlag(kCpuHasAVX)) {
     CopyRow = IS_ALIGNED(width, 64) ? CopyRow_AVX : CopyRow_Any_AVX;
@@ -316,11 +321,6 @@ void RotatePlane180(const uint8_t* src,
 #if defined(HAS_COPYROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     CopyRow = CopyRow_AVX512BW;
-  }
-#endif
-#if defined(HAS_COPYROW_ERMS)
-  if (TestCpuFlag(kCpuHasERMS)) {
-    CopyRow = CopyRow_ERMS;
   }
 #endif
 #if defined(HAS_COPYROW_NEON)

@@ -1469,9 +1469,9 @@ void SplitARGBRow_WASMSIMD(const uint8_t* src_argb,
                                      11, 15, 19, 23, 27, 31);
     v128_t ra23 = wasm_i8x16_shuffle(s2, s3, 2, 6, 10, 14, 18, 22, 26, 30, 3, 7,
                                      11, 15, 19, 23, 27, 31);
-    wasm_v128_store(dst_r, wasm_i64x2_shuffle(bg01, bg23, 0, 2));
+    wasm_v128_store(dst_b, wasm_i64x2_shuffle(bg01, bg23, 0, 2));
     wasm_v128_store(dst_g, wasm_i64x2_shuffle(bg01, bg23, 1, 3));
-    wasm_v128_store(dst_b, wasm_i64x2_shuffle(ra01, ra23, 0, 2));
+    wasm_v128_store(dst_r, wasm_i64x2_shuffle(ra01, ra23, 0, 2));
     wasm_v128_store(dst_a, wasm_i64x2_shuffle(ra01, ra23, 1, 3));
     src_argb += 64;
     dst_r += 16;
@@ -1496,22 +1496,22 @@ void MergeARGBRow_WASMSIMD(const uint8_t* src_r,
     v128_t g = wasm_v128_load(src_g);
     v128_t b = wasm_v128_load(src_b);
     v128_t a = wasm_v128_load(src_a);
-    v128_t rg0 = wasm_i8x16_shuffle(r, g, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
+    v128_t bg0 = wasm_i8x16_shuffle(b, g, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
                                     21, 6, 22, 7, 23);
-    v128_t rg1 = wasm_i8x16_shuffle(r, g, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
+    v128_t bg1 = wasm_i8x16_shuffle(b, g, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
                                     13, 29, 14, 30, 15, 31);
-    v128_t ba0 = wasm_i8x16_shuffle(b, a, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
+    v128_t ra0 = wasm_i8x16_shuffle(r, a, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
                                     21, 6, 22, 7, 23);
-    v128_t ba1 = wasm_i8x16_shuffle(b, a, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
+    v128_t ra1 = wasm_i8x16_shuffle(r, a, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
                                     13, 29, 14, 30, 15, 31);
     wasm_v128_store(dst_argb,
-                    wasm_i16x8_shuffle(rg0, ba0, 0, 8, 1, 9, 2, 10, 3, 11));
+                    wasm_i16x8_shuffle(bg0, ra0, 0, 8, 1, 9, 2, 10, 3, 11));
     wasm_v128_store(dst_argb + 16,
-                    wasm_i16x8_shuffle(rg0, ba0, 4, 12, 5, 13, 6, 14, 7, 15));
+                    wasm_i16x8_shuffle(bg0, ra0, 4, 12, 5, 13, 6, 14, 7, 15));
     wasm_v128_store(dst_argb + 32,
-                    wasm_i16x8_shuffle(rg1, ba1, 0, 8, 1, 9, 2, 10, 3, 11));
+                    wasm_i16x8_shuffle(bg1, ra1, 0, 8, 1, 9, 2, 10, 3, 11));
     wasm_v128_store(dst_argb + 48,
-                    wasm_i16x8_shuffle(rg1, ba1, 4, 12, 5, 13, 6, 14, 7, 15));
+                    wasm_i16x8_shuffle(bg1, ra1, 4, 12, 5, 13, 6, 14, 7, 15));
     src_r += 16;
     src_g += 16;
     src_b += 16;
@@ -1542,9 +1542,9 @@ void SplitXRGBRow_WASMSIMD(const uint8_t* src_argb,
                                     10, 14, 18, 22, 26, 30);
     v128_t r23 = wasm_i8x16_shuffle(s2, s3, 2, 6, 10, 14, 18, 22, 26, 30, 2, 6,
                                     10, 14, 18, 22, 26, 30);
-    wasm_v128_store(dst_r, wasm_i64x2_shuffle(bg01, bg23, 0, 2));
+    wasm_v128_store(dst_b, wasm_i64x2_shuffle(bg01, bg23, 0, 2));
     wasm_v128_store(dst_g, wasm_i64x2_shuffle(bg01, bg23, 1, 3));
-    wasm_v128_store(dst_b, wasm_i64x2_shuffle(r01, r23, 0, 2));
+    wasm_v128_store(dst_r, wasm_i64x2_shuffle(r01, r23, 0, 2));
     src_argb += 64;
     dst_r += 16;
     dst_g += 16;
@@ -1566,22 +1566,22 @@ void MergeXRGBRow_WASMSIMD(const uint8_t* src_r,
     v128_t r = wasm_v128_load(src_r);
     v128_t g = wasm_v128_load(src_g);
     v128_t b = wasm_v128_load(src_b);
-    v128_t rg0 = wasm_i8x16_shuffle(r, g, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
+    v128_t bg0 = wasm_i8x16_shuffle(b, g, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
                                     21, 6, 22, 7, 23);
-    v128_t rg1 = wasm_i8x16_shuffle(r, g, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
+    v128_t bg1 = wasm_i8x16_shuffle(b, g, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
                                     13, 29, 14, 30, 15, 31);
-    v128_t ba0 = wasm_i8x16_shuffle(b, a, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
+    v128_t ra0 = wasm_i8x16_shuffle(r, a, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
                                     21, 6, 22, 7, 23);
-    v128_t ba1 = wasm_i8x16_shuffle(b, a, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
+    v128_t ra1 = wasm_i8x16_shuffle(r, a, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
                                     13, 29, 14, 30, 15, 31);
     wasm_v128_store(dst_argb,
-                    wasm_i16x8_shuffle(rg0, ba0, 0, 8, 1, 9, 2, 10, 3, 11));
+                    wasm_i16x8_shuffle(bg0, ra0, 0, 8, 1, 9, 2, 10, 3, 11));
     wasm_v128_store(dst_argb + 16,
-                    wasm_i16x8_shuffle(rg0, ba0, 4, 12, 5, 13, 6, 14, 7, 15));
+                    wasm_i16x8_shuffle(bg0, ra0, 4, 12, 5, 13, 6, 14, 7, 15));
     wasm_v128_store(dst_argb + 32,
-                    wasm_i16x8_shuffle(rg1, ba1, 0, 8, 1, 9, 2, 10, 3, 11));
+                    wasm_i16x8_shuffle(bg1, ra1, 0, 8, 1, 9, 2, 10, 3, 11));
     wasm_v128_store(dst_argb + 48,
-                    wasm_i16x8_shuffle(rg1, ba1, 4, 12, 5, 13, 6, 14, 7, 15));
+                    wasm_i16x8_shuffle(bg1, ra1, 4, 12, 5, 13, 6, 14, 7, 15));
     src_r += 16;
     src_g += 16;
     src_b += 16;
