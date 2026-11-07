@@ -7254,6 +7254,39 @@ void HalfMergeUVRow_LASX(const uint8_t* src_u,
 }
 #endif  // HAS_HALFMERGEUVROW_LASX
 
+#ifdef HAS_HALFUVROW_LASX
+void HalfUVRow_LASX(const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    uint8_t* dst_uv,
+                    int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[su], 0\n\t"
+      "xvldx $xr2, %[su], %[stu]\n\t"
+      "xvavgr.bu $xr0, $xr0, $xr2\n\t"
+      "xvld $xr1, %[sv], 0\n\t"
+      "xvldx $xr3, %[sv], %[stv]\n\t"
+      "xvavgr.bu $xr1, $xr1, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvilvl.b $xr2, $xr1, $xr0\n\t"
+      "xvilvh.b $xr3, $xr1, $xr0\n\t"
+      "xvst $xr2, %[dst], 0\n\t"
+      "xvst $xr3, %[dst], 32\n\t"
+      "addi.d %[su], %[su], 32\n\t"
+      "addi.d %[sv], %[sv], 32\n\t"
+      "addi.d %[dst], %[dst], 64\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      :
+      [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv), [cnt] "+r"(width)
+      : [stu] "r"((ptrdiff_t)src_stride_u), [stv] "r"((ptrdiff_t)src_stride_v)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_HALFUVROW_LASX
+
 #ifdef HAS_CONVERT16TO8ROW_LASX
 void Convert16To8Row_LASX(const uint16_t* src_y,
                           uint8_t* dst_y,

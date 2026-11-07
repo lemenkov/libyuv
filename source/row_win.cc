@@ -8546,6 +8546,61 @@ void MergeUVRow_AVX512BW(const uint8_t* src_u,
 }
 #endif  // HAS_MERGEUVROW_AVX512BW
 
+#ifdef HAS_HALFUVROW_AVX512BW
+static const uint64_t kPermHalfUV0_AVX512BW[8] = {0, 1, 8, 9, 2, 3, 10, 11};
+static const uint64_t kPermHalfUV1_AVX512BW[8] = {4, 5, 12, 13, 6, 7, 14, 15};
+
+LIBYUV_TARGET_AVX512BW
+void HalfUVRow_AVX512BW(const uint8_t* src_u,
+                        int src_stride_u,
+                        const uint8_t* src_v,
+                        int src_stride_v,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const __m512i zmm_p0 =
+      _mm512_loadu_si512((const __m512i*)kPermHalfUV0_AVX512BW);
+  const __m512i zmm_p1 =
+      _mm512_loadu_si512((const __m512i*)kPermHalfUV1_AVX512BW);
+  while (width >= 64) {
+    __m512i u = _mm512_avg_epu8(_mm512_loadu_si512((const __m512i*)src_u),
+                                _mm512_loadu_si512((const __m512i*)src_u1));
+    __m512i v = _mm512_avg_epu8(_mm512_loadu_si512((const __m512i*)src_v),
+                                _mm512_loadu_si512((const __m512i*)src_v1));
+    __m512i lo = _mm512_unpacklo_epi8(u, v);
+    __m512i hi = _mm512_unpackhi_epi8(u, v);
+    _mm512_storeu_si512((__m512i*)dst_uv,
+                        _mm512_permutex2var_epi64(lo, zmm_p0, hi));
+    _mm512_storeu_si512((__m512i*)(dst_uv + 64),
+                        _mm512_permutex2var_epi64(lo, zmm_p1, hi));
+    src_u += 64;
+    src_u1 += 64;
+    src_v += 64;
+    src_v1 += 64;
+    dst_uv += 128;
+    width -= 64;
+  }
+  if (width > 0) {
+    __mmask64 k = ((uint64_t)1 << width) - 1u;
+    __m512i u = _mm512_avg_epu8(_mm512_maskz_loadu_epi8(k, src_u),
+                                _mm512_maskz_loadu_epi8(k, src_u1));
+    __m512i v = _mm512_avg_epu8(_mm512_maskz_loadu_epi8(k, src_v),
+                                _mm512_maskz_loadu_epi8(k, src_v1));
+    __m512i lo = _mm512_unpacklo_epi8(u, v);
+    __m512i hi = _mm512_unpackhi_epi8(u, v);
+    _mm512_mask_storeu_epi16(dst_uv, (__mmask32)k,
+                             _mm512_permutex2var_epi64(lo, zmm_p0, hi));
+    __mmask32 k_hi = (__mmask32)(k >> 32);
+    if (k_hi) {
+      _mm512_mask_storeu_epi16(dst_uv + 64, k_hi,
+                               _mm512_permutex2var_epi64(lo, zmm_p1, hi));
+    }
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_HALFUVROW_AVX512BW
+
 #ifdef HAS_MULTIPLYROW_16_AVX512BW
 LIBYUV_TARGET_AVX512BW
 void MultiplyRow_16_AVX512BW(const uint16_t* src_y,
@@ -9171,6 +9226,36 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
   _mm256_zeroupper();
 }
 #endif  // HAS_HALFMERGEUVROW_AVX2
+
+#ifdef HAS_HALFUVROW_AVX2
+LIBYUV_TARGET_AVX2
+void HalfUVRow_AVX2(const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    uint8_t* dst_uv,
+                    int width) {
+  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  do {
+    __m256i u = _mm256_avg_epu8(_mm256_loadu_si256((const __m256i*)src_u),
+                                _mm256_loadu_si256((const __m256i*)src_u1));
+    __m256i v = _mm256_avg_epu8(_mm256_loadu_si256((const __m256i*)src_v),
+                                _mm256_loadu_si256((const __m256i*)src_v1));
+    u = _mm256_permute4x64_epi64(u, 0xd8);
+    v = _mm256_permute4x64_epi64(v, 0xd8);
+    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_unpacklo_epi8(u, v));
+    _mm256_storeu_si256((__m256i*)(dst_uv + 32), _mm256_unpackhi_epi8(u, v));
+    src_u += 32;
+    src_u1 += 32;
+    src_v += 32;
+    src_v1 += 32;
+    dst_uv += 64;
+    width -= 32;
+  } while (width > 0);
+  _mm256_zeroupper();
+}
+#endif  // HAS_HALFUVROW_AVX2
 
 #ifdef HAS_CONVERT8TO8ROW_AVX2
 LIBYUV_TARGET_AVX2

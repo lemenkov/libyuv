@@ -1046,6 +1046,45 @@ ANY21HMS(HalfMergeUVRow_Any_WASMSIMD, HalfMergeUVRow_WASMSIMD, 15)
 #endif
 #undef ANY21HMS
 
+// Any 2 planes to 1 vertical-half merged UV row with stride (2 rows of U and
+// V).
+#define ANY21HS(NAMEANY, ANY_SIMD, MASK)                                     \
+  void NAMEANY(const uint8_t* src_u, int src_stride_u, const uint8_t* src_v, \
+               int src_stride_v, uint8_t* dst_uv, int width) {               \
+    SIMD_ALIGNED(uint8_t vin[64 * 4]);                                       \
+    static_assert(MASK + 1 <= sizeof(vin) / 4, "vin buffer too small");      \
+    SIMD_ALIGNED(uint8_t vout[128]);                                         \
+    static_assert((MASK + 1) * 2 <= sizeof(vout), "vout buffer too small");  \
+    MSAN_MEMSET(vin, 0, sizeof(vin));   /* for msan */                       \
+    MSAN_MEMSET(vout, 0, sizeof(vout)); /* for msan */                       \
+    int r = width & MASK;                                                    \
+    int n = width & ~MASK;                                                   \
+    if (n > 0) {                                                             \
+      ANY_SIMD(src_u, src_stride_u, src_v, src_stride_v, dst_uv, n);         \
+    }                                                                        \
+    ptrdiff_t np = n;                                                        \
+    memcpy(vin, src_u + np, r);                                              \
+    memcpy(vin + 64, src_u + (ptrdiff_t)src_stride_u + np, r);               \
+    memcpy(vin + 128, src_v + np, r);                                        \
+    memcpy(vin + 192, src_v + (ptrdiff_t)src_stride_v + np, r);              \
+    ANY_SIMD(vin, 64, vin + 128, 64, vout, MASK + 1);                        \
+    memcpy(dst_uv + np * 2, vout, r * 2);                                    \
+  }
+
+#ifdef HAS_HALFUVROW_AVX2
+ANY21HS(HalfUVRow_Any_AVX2, HalfUVRow_AVX2, 31)
+#endif
+#ifdef HAS_HALFUVROW_NEON
+ANY21HS(HalfUVRow_Any_NEON, HalfUVRow_NEON, 15)
+#endif
+#ifdef HAS_HALFUVROW_LASX
+ANY21HS(HalfUVRow_Any_LASX, HalfUVRow_LASX, 31)
+#endif
+#ifdef HAS_HALFUVROW_WASMSIMD
+ANY21HS(HalfUVRow_Any_WASMSIMD, HalfUVRow_WASMSIMD, 15)
+#endif
+#undef ANY21HS
+
 // Any 2 planes to 1 with yuvconstants
 #define ANY21C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)            \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr, \

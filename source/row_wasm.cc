@@ -1226,6 +1226,36 @@ void HalfMergeUVRow_WASMSIMD(const uint8_t* src_u,
 }
 #endif  // HAS_HALFMERGEUVROW_WASMSIMD
 
+#ifdef HAS_HALFUVROW_WASMSIMD
+void HalfUVRow_WASMSIMD(const uint8_t* src_u,
+                        int src_stride_u,
+                        const uint8_t* src_v,
+                        int src_stride_v,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  do {
+    asm(""
+        : "+r"(src_u), "+r"(src_u1), "+r"(src_v), "+r"(src_v1), "+r"(dst_uv));
+    v128_t u = wasm_u8x16_avgr(wasm_v128_load(src_u), wasm_v128_load(src_u1));
+    v128_t v = wasm_u8x16_avgr(wasm_v128_load(src_v), wasm_v128_load(src_v1));
+    v128_t uv0 = wasm_i8x16_shuffle(u, v, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5,
+                                    21, 6, 22, 7, 23);
+    v128_t uv1 = wasm_i8x16_shuffle(u, v, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28,
+                                    13, 29, 14, 30, 15, 31);
+    wasm_v128_store(dst_uv, uv0);
+    wasm_v128_store(dst_uv + 16, uv1);
+    src_u += 16;
+    src_u1 += 16;
+    src_v += 16;
+    src_v1 += 16;
+    dst_uv += 32;
+    width -= 16;
+  } while (width > 0);
+}
+#endif  // HAS_HALFUVROW_WASMSIMD
+
 #ifdef HAS_MERGEUVROW_WASMSIMD
 void MergeUVRow_WASMSIMD(const uint8_t* src_u,
                          const uint8_t* src_v,

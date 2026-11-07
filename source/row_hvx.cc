@@ -278,6 +278,35 @@ void MergeUVRow_HVX(const uint8_t* src_u,
   }
 }
 
+void HalfUVRow_HVX(const uint8_t* src_u,
+                   int src_stride_u,
+                   const uint8_t* src_v,
+                   int src_stride_v,
+                   uint8_t* dst_uv,
+                   int width) {
+  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  while (width > 0) {
+    int w = width >= 128 ? 128 : width;
+    HVX_Vector u = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_u, w),
+                                          vloadu_partial_zero(src_u1, w));
+    HVX_Vector v = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_v, w),
+                                          vloadu_partial_zero(src_v1, w));
+    HVX_VectorPair uv = Q6_W_vshuff_VVR(v, u, -1);
+    int dst_bytes = w * 2;
+    vstoreu_partial(dst_uv, Q6_V_lo_W(uv), dst_bytes > 128 ? 128 : dst_bytes);
+    if (dst_bytes > 128) {
+      vstoreu_partial(dst_uv + 128, Q6_V_hi_W(uv), dst_bytes - 128);
+    }
+    src_u += 128;
+    src_u1 += 128;
+    src_v += 128;
+    src_v1 += 128;
+    dst_uv += 256;
+    width -= 128;
+  }
+}
+
 void SplitUVRow_16_HVX(const uint16_t* src_uv,
                        uint16_t* dst_u,
                        uint16_t* dst_v,

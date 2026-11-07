@@ -3747,6 +3747,35 @@ void HalfMergeUVRow_NEON(const uint8_t* src_u,
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
+void HalfUVRow_NEON(const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    uint8_t* dst_uv,
+                    int width) {
+  const uint8_t* src_u_1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v_1 = src_v + (ptrdiff_t)src_stride_v;
+  asm volatile(
+      "1:                                        \n"
+      "vld1.8      {q0}, [%0]!                   \n"  // load 16 U row 0
+      "vld1.8      {q2}, [%1]!                   \n"  // load 16 U row 1
+      "vld1.8      {q1}, [%2]!                   \n"  // load 16 V row 0
+      "vld1.8      {q3}, [%3]!                   \n"  // load 16 V row 1
+      "subs        %5, %5, #16                   \n"  // 16 UV pixels per loop
+      "vrhadd.u8   q0, q0, q2                    \n"
+      "vrhadd.u8   q1, q1, q3                    \n"
+      "vst2.8      {q0, q1}, [%4]!               \n"  // store 16 UV pixels
+      "bgt         1b                            \n"
+      : "+r"(src_u),    // %0
+        "+r"(src_u_1),  // %1
+        "+r"(src_v),    // %2
+        "+r"(src_v_1),  // %3
+        "+r"(dst_uv),   // %4
+        "+r"(width)     // %5
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
 void SplitUVRow_16_NEON(const uint16_t* src_uv,
                         uint16_t* dst_u,
                         uint16_t* dst_v,

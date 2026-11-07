@@ -1348,7 +1348,8 @@ int I422ToI210(const uint8_t* src_y,
   return 0;
 }
 
-// TODO(fbarchard): Implement row conversion.
+// 422 chroma is 1/2 width, 1x height
+// 420 chroma is 1/2 width, 1/2 height
 LIBYUV_API
 int I422ToNV21(const uint8_t* src_y,
                int src_stride_y,
@@ -1362,17 +1363,18 @@ int I422ToNV21(const uint8_t* src_y,
                int dst_stride_vu,
                int width,
                int height) {
-  int r;
+  int y;
+  void (*HalfUVRow)(const uint8_t* src_u, int src_stride_u,
+                    const uint8_t* src_v, int src_stride_v, uint8_t* dst_uv,
+                    int width) = HalfUVRow_C;
+  int halfwidth = (width + 1) >> 1;
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_vu || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
   }
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    halfheight = (height + 1) >> 1;
     if (src_y) {
       src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
       src_stride_y = -src_stride_y;
@@ -1382,26 +1384,66 @@ int I422ToNV21(const uint8_t* src_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-
-  // Allocate u and v buffers
-  const uint64_t plane_size = (uint64_t)halfwidth * halfheight;
-  if (plane_size > SIZE_MAX / 2)
-    return 1;
-  align_buffer_64(plane_u, (size_t)plane_size * 2);
-  if (!plane_u)
-    return 1;
-  uint8_t* plane_v = plane_u + (size_t)plane_size;
-
-  r = I422ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
-                 dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth,
-                 width, height);
-  if (r != 0) {
-    free_aligned_buffer_64(plane_u);
-    return r;
+#if defined(HAS_HALFUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    HalfUVRow = HalfUVRow_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      HalfUVRow = HalfUVRow_NEON;
+    }
   }
-  MergeUVPlane(plane_v, halfwidth, plane_u, halfwidth, dst_vu, dst_stride_vu,
-               halfwidth, halfheight);
-  free_aligned_buffer_64(plane_u);
+#endif
+#if defined(HAS_HALFUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    HalfUVRow = HalfUVRow_Any_AVX2;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      HalfUVRow = HalfUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_HALFUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    HalfUVRow = HalfUVRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_HALFUVROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    HalfUVRow = HalfUVRow_Any_LASX;
+    if (IS_ALIGNED(halfwidth, 32)) {
+      HalfUVRow = HalfUVRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_HALFUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    HalfUVRow = HalfUVRow_RVV;
+  }
+#endif
+#if defined(HAS_HALFUVROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    HalfUVRow = HalfUVRow_Any_WASMSIMD;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      HalfUVRow = HalfUVRow_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_HALFUVROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    HalfUVRow = HalfUVRow_HVX;
+  }
+#endif
+
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+  for (y = 0; y < height - 1; y += 2) {
+    HalfUVRow(src_v, src_stride_v, src_u, src_stride_u, dst_vu, halfwidth);
+    src_u += (ptrdiff_t)src_stride_u * 2;
+    src_v += (ptrdiff_t)src_stride_v * 2;
+    dst_vu += dst_stride_vu;
+  }
+  if (height & 1) {
+    HalfUVRow(src_v, 0, src_u, 0, dst_vu, halfwidth);
+  }
   return 0;
 }
 
@@ -1570,205 +1612,6 @@ int MT2TToP010(const uint8_t* src_y,
   }
   return 0;
 }
-
-#ifdef I422TONV21_ROW_VERSION
-// Unittest fails for this version.
-// 422 chroma is 1/2 width, 1x height
-// 420 chroma is 1/2 width, 1/2 height
-// Swap src_u and src_v to implement I422ToNV12
-LIBYUV_API
-int I422ToNV21(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_vu,
-               int dst_stride_vu,
-               int width,
-               int height) {
-  int y;
-  void (*MergeUVRow)(const uint8_t* src_u, const uint8_t* src_v,
-                     uint8_t* dst_uv, int width) = MergeUVRow_C;
-  void (*InterpolateRow)(uint8_t* dst_ptr, const uint8_t* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) = InterpolateRow_C;
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  if ((!src_y && dst_y) || !src_u || !src_v || !dst_vu || width <= 0 ||
-      height == 0 || height == INT_MIN) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
-    src_u = src_u + (ptrdiff_t)(halfheight - 1) * src_stride_u;
-    src_v = src_v + (ptrdiff_t)(halfheight - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
-  }
-#if defined(HAS_MERGEUVROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    MergeUVRow = MergeUVRow_Any_SSE2;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow = MergeUVRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    MergeUVRow = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow = MergeUVRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW)) {
-    MergeUVRow = MergeUVRow_AVX512BW;
-  }
-#endif
-#if defined(HAS_MERGEUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    MergeUVRow = MergeUVRow_Any_NEON;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow = MergeUVRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    MergeUVRow = MergeUVRow_SVE2;
-  }
-#endif
-#if defined(HAS_MERGEUVROW_SME)
-  if (TestCpuFlag(kCpuHasSME)) {
-    MergeUVRow = MergeUVRow_SME;
-  }
-#endif
-#if defined(HAS_MERGEUVROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    MergeUVRow = MergeUVRow_Any_LSX;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow = MergeUVRow_LSX;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_LASX)
-  if (TestCpuFlag(kCpuHasLASX)) {
-    MergeUVRow = MergeUVRow_Any_LASX;
-    if (IS_ALIGNED(halfwidth, 32)) {
-      MergeUVRow = MergeUVRow_LASX;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_RVV)
-  if (TestCpuFlag(kCpuHasRVV)) {
-    MergeUVRow = MergeUVRow_RVV;
-  }
-#endif
-#if defined(HAS_MERGEUVROW_WASMSIMD)
-  if (TestCpuFlag(kCpuHasWASMSIMD)) {
-    MergeUVRow = MergeUVRow_Any_WASMSIMD;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow = MergeUVRow_WASMSIMD;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    InterpolateRow = InterpolateRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      InterpolateRow = InterpolateRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW)) {
-    InterpolateRow = InterpolateRow_AVX512BW;
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    InterpolateRow = InterpolateRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    InterpolateRow = InterpolateRow_SVE2;
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SME)
-  if (TestCpuFlag(kCpuHasSME)) {
-    InterpolateRow = InterpolateRow_SME;
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    InterpolateRow = InterpolateRow_Any_LSX;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_LSX;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_LASX)
-  if (TestCpuFlag(kCpuHasLASX)) {
-    InterpolateRow = InterpolateRow_Any_LASX;
-    if (IS_ALIGNED(width, 32)) {
-      InterpolateRow = InterpolateRow_LASX;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_RVV)
-  if (TestCpuFlag(kCpuHasRVV)) {
-    InterpolateRow = InterpolateRow_RVV;
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_WASMSIMD)
-  if (TestCpuFlag(kCpuHasWASMSIMD)) {
-    InterpolateRow = InterpolateRow_Any_WASMSIMD;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_WASMSIMD;
-    }
-  }
-#endif
-
-  if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, halfwidth, height);
-  }
-  {
-    // Allocate 2 rows of vu.
-    int awidth = halfwidth * 2;
-    align_buffer_64(row_vu_0, awidth * 2);
-    uint8_t* row_vu_1 = row_vu_0 + awidth;
-    if (!row_vu_0)
-      return 1;
-
-    for (y = 0; y < height - 1; y += 2) {
-      MergeUVRow(src_v, src_u, row_vu_0, halfwidth);
-      MergeUVRow(src_v + src_stride_v, src_u + src_stride_u, row_vu_1,
-                 halfwidth);
-      InterpolateRow(dst_vu, row_vu_0, awidth, awidth, 128);
-      src_u += src_stride_u * 2;
-      src_v += src_stride_v * 2;
-      dst_vu += dst_stride_vu;
-    }
-    if (height & 1) {
-      MergeUVRow(src_v, src_u, dst_vu, halfwidth);
-    }
-    free_aligned_buffer_64(row_vu_0);
-  }
-  return 0;
-}
-#endif  // I422TONV21_ROW_VERSION
 
 // 444 chroma is 1x width, 1x height
 // 420 chroma is 1/2 width, 1/2 height

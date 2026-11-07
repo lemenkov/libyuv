@@ -1710,6 +1710,48 @@ void MergeUVRow_RVV(const uint8_t* src_u,
 }
 #endif
 
+#ifdef HAS_HALFUVROW_RVV
+void HalfUVRow_RVV(const uint8_t* src_u,
+                   int src_stride_u,
+                   const uint8_t* src_v,
+                   int src_stride_v,
+                   uint8_t* dst_uv,
+                   int width) {
+  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  size_t vl;
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vle8.v      v8, (%[src_u])                \n"
+      "vle8.v      v16, (%[src_u1])              \n"
+      "vaaddu.vv   v8, v8, v16                   \n"
+      "vle8.v      v12, (%[src_v])               \n"
+      "vle8.v      v20, (%[src_v1])              \n"
+      "vaaddu.vv   v12, v12, v20                 \n"
+      "vsseg2e8.v  v8, (%[dst_uv])               \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src_u], %[src_u], %[vl]     \n"
+      "add         %[src_u1], %[src_u1], %[vl]   \n"
+      "add         %[src_v], %[src_v], %[vl]     \n"
+      "add         %[src_v1], %[src_v1], %[vl]   \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[dst_uv], %[dst_uv], %[vl]   \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_u] "+r"(src_u),    // %[src_u]
+        [src_u1] "+r"(src_u1),  // %[src_u1]
+        [src_v] "+r"(src_v),    // %[src_v]
+        [src_v1] "+r"(src_v1),  // %[src_v1]
+        [dst_uv] "+r"(dst_uv),  // %[dst_uv]
+        [w] "+r"(width),        // %[w]
+        [vl] "=&r"(vl)          // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#endif
+
 #ifdef HAS_SWAPUVROW_RVV
 void SwapUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   assert(width != 0);

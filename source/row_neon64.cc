@@ -5346,6 +5346,67 @@ void HalfMergeUVRow_NEON(const uint8_t* src_u,
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
+void HalfUVRow_NEON(const uint8_t* src_u,
+                    int src_stride_u,
+                    const uint8_t* src_v,
+                    int src_stride_v,
+                    uint8_t* dst_uv,
+                    int width) {
+  const uint8_t* src_u_1 = src_u + (ptrdiff_t)src_stride_u;
+  const uint8_t* src_v_1 = src_v + (ptrdiff_t)src_stride_v;
+#if defined(LIBYUV_USE_ST2)
+  asm volatile(
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], #16           \n"  // load 16 U row 0
+      "ld1         {v2.16b}, [%1], #16           \n"  // load 16 U row 1
+      "ld1         {v1.16b}, [%2], #16           \n"  // load 16 V row 0
+      "ld1         {v3.16b}, [%3], #16           \n"  // load 16 V row 1
+      "subs        %w5, %w5, #16                 \n"  // 16 UV pixels per loop
+      "urhadd      v0.16b, v0.16b, v2.16b        \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "urhadd      v1.16b, v1.16b, v3.16b        \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "prfm        pldl1keep, [%3, 448]          \n"
+      "st2         {v0.16b, v1.16b}, [%4], #32   \n"  // store 16 UV pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_u),    // %0
+        "+r"(src_u_1),  // %1
+        "+r"(src_v),    // %2
+        "+r"(src_v_1),  // %3
+        "+r"(dst_uv),   // %4
+        "+r"(width)     // %5
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+#else
+  asm volatile(
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], #16           \n"  // load 16 U row 0
+      "ld1         {v2.16b}, [%1], #16           \n"  // load 16 U row 1
+      "ld1         {v1.16b}, [%2], #16           \n"  // load 16 V row 0
+      "ld1         {v3.16b}, [%3], #16           \n"  // load 16 V row 1
+      "subs        %w5, %w5, #16                 \n"  // 16 UV pixels per loop
+      "urhadd      v0.16b, v0.16b, v2.16b        \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "urhadd      v1.16b, v1.16b, v3.16b        \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "zip1        v2.16b, v0.16b, v1.16b        \n"
+      "prfm        pldl1keep, [%2, 448]          \n"
+      "zip2        v3.16b, v0.16b, v1.16b        \n"
+      "prfm        pldl1keep, [%3, 448]          \n"
+      "st1         {v2.16b, v3.16b}, [%4], #32   \n"  // store 16 UV pixels
+      "b.gt        1b                            \n"
+      : "+r"(src_u),    // %0
+        "+r"(src_u_1),  // %1
+        "+r"(src_v),    // %2
+        "+r"(src_v_1),  // %3
+        "+r"(dst_uv),   // %4
+        "+r"(width)     // %5
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+#endif
+}
+
 void SplitUVRow_16_NEON(const uint16_t* src_uv,
                         uint16_t* dst_u,
                         uint16_t* dst_v,
