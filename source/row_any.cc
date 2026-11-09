@@ -2932,6 +2932,9 @@ ANY11H(HalfRow_Any_AVX2, HalfRow_AVX2, uint8_t, 31)
 #ifdef HAS_HALFROW_16_AVX2
 ANY11H(HalfRow_16_Any_AVX2, HalfRow_16_AVX2, uint16_t, 15)
 #endif
+#ifdef HAS_HALFROW_NEON
+ANY11H(HalfRow_Any_NEON, HalfRow_NEON, uint8_t, 15)
+#endif
 #ifdef HAS_HALFROW_LSX
 ANY11H(HalfRow_Any_LSX, HalfRow_LSX, uint8_t, 15)
 #endif

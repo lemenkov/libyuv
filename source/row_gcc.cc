@@ -8856,23 +8856,95 @@ void HalfRow_AVX2(const uint8_t* src_uv,
                   uint8_t* dst_uv,
                   int width) {
   asm volatile(
+      "sub         %0,%1                         \n"
+      "sub         $0x40,%2                      \n"
+      "jl          2f                            \n"
+
+      // 64 bytes per loop.
       LABELALIGN
       "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
+      "vmovdqu     0x20(%0),%%ymm1               \n"
       "vpavgb      (%0,%3,1),%%ymm0,%%ymm0       \n"
-      "lea         0x20(%0),%0                   \n"
-      "vmovdqu     %%ymm0,(%1)                   \n"
-      "lea         0x20(%1),%1                   \n"
-      "sub         $0x20,%2                      \n"
-      "jg          1b                            \n"
+      "vpavgb      0x20(%0,%3,1),%%ymm1,%%ymm1   \n"
+      "vmovdqu     %%ymm0,(%0,%1,1)              \n"
+      "vmovdqu     %%ymm1,0x20(%0,%1,1)          \n"
+      "lea         0x40(%0),%0                   \n"
+      "sub         $0x40,%2                      \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x40,%2                      \n"
+      "jle         99f                           \n"
+      "vmovdqu     (%0),%%ymm0                   \n"
+      "vpavgb      (%0,%3,1),%%ymm0,%%ymm0       \n"
+      "vmovdqu     %%ymm0,(%0,%1,1)              \n"
+
+      "99:         \n"
       "vzeroupper  \n"
       : "+r"(src_uv),       // %0
         "+r"(dst_uv),       // %1
         "+r"(width)         // %2
       : "r"(src_uv_stride)  // %3
-      : "memory", "cc", "xmm0");
+      : "memory", "cc", "xmm0", "xmm1");
 }
 #endif  // HAS_HALFROW_AVX2
+
+#ifdef HAS_HALFROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void HalfRow_AVX512BW(const uint8_t* src_uv,
+                      ptrdiff_t src_uv_stride,
+                      uint8_t* dst_uv,
+                      int width) {
+  uintptr_t temp;
+  asm volatile(
+      "sub         %[src],%[dst]                 \n"
+      "sub         $0x80,%[width]                \n"
+      "jl          2f                            \n"
+
+      // 128 bytes per loop.
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu64   (%[src]),%%zmm0               \n"
+      "vmovdqu64   0x40(%[src]),%%zmm1           \n"
+      "vpavgb      (%[src],%[stride],1),%%zmm0,%%zmm0\n"
+      "vpavgb      0x40(%[src],%[stride],1),%%zmm1,%%zmm1\n"
+      "vmovdqu64   %%zmm0,(%[src],%[dst],1)      \n"
+      "vmovdqu64   %%zmm1,0x40(%[src],%[dst],1)  \n"
+      "lea         0x80(%[src]),%[src]           \n"
+      "sub         $0x80,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x40,%[width]                \n"
+      "jl          3f                            \n"
+      "vmovdqu64   (%[src]),%%zmm0               \n"
+      "vpavgb      (%[src],%[stride],1),%%zmm0,%%zmm0\n"
+      "vmovdqu64   %%zmm0,(%[src],%[dst],1)      \n"
+      "lea         0x40(%[src]),%[src]           \n"
+      "sub         $0x40,%[width]                \n"
+
+      "3:          \n"
+      "add         $0x40,%[width]                \n"
+      "jle         99f                           \n"
+      "mov         $-1,%q[temp]                  \n"
+      "bzhi        %q[width],%q[temp],%q[temp]   \n"
+      "kmovq       %q[temp],%%k1                 \n"
+      "vmovdqu8    (%[src]),%%zmm0%{%%k1%}%{z%}  \n"
+      "vmovdqu8    (%[src],%[stride],1),%%zmm1%{%%k1%}%{z%}\n"
+      "vpavgb      %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu8    %%zmm0,(%[src],%[dst],1)%{%%k1%}\n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : [src] "+r"(src_uv),          // %[src]
+        [dst] "+r"(dst_uv),          // %[dst]
+        [width] "+r"(width),         // %[width]
+        [temp] "=&r"(temp)           // %[temp]
+      : [stride] "r"(src_uv_stride)  // %[stride]
+      : "memory", "cc", "xmm0", "xmm1", "k1");
+}
+#endif  // HAS_HALFROW_AVX512BW
 
 #ifdef HAS_HALFROW_16_AVX2
 void HalfRow_16_AVX2(const uint16_t* src_uv,

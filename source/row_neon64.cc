@@ -5346,6 +5346,43 @@ void HalfMergeUVRow_NEON(const uint8_t* src_u,
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
+void HalfRow_NEON(const uint8_t* src_uv,
+                  ptrdiff_t src_uv_stride,
+                  uint8_t* dst_uv,
+                  int width) {
+  const uint8_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "subs        %w3, %w3, #32                 \n"
+      "b.lt        2f                            \n"
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ld1         {v0.16b}, [%0], #16           \n"
+      "ld1         {v2.16b}, [%1], #16           \n"
+      "ld1         {v1.16b}, [%0], #16           \n"
+      "ld1         {v3.16b}, [%1], #16           \n"
+      "subs        %w3, %w3, #32                 \n"
+      "urhadd      v0.16b, v0.16b, v2.16b        \n"
+      "urhadd      v1.16b, v1.16b, v3.16b        \n"
+      "str         q0, [%2]                      \n"
+      "str         q1, [%2, #16]                 \n"
+      "add         %2, %2, #32                   \n"
+      "b.ge        1b                            \n"
+      "2:                                        \n"
+      "adds        %w3, %w3, #32                 \n"
+      "b.eq        99f                           \n"
+      "ldr         q0, [%0]                      \n"
+      "ldr         q2, [%1]                      \n"
+      "urhadd      v0.16b, v0.16b, v2.16b        \n"
+      "str         q0, [%2]                      \n"
+      "99:                                       \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+}
+
 void HalfUVRow_NEON(const uint8_t* src_u,
                     int src_stride_u,
                     const uint8_t* src_v,

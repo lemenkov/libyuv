@@ -9164,17 +9164,64 @@ void HalfRow_AVX2(const uint8_t* src_uv,
                   ptrdiff_t src_uv_stride,
                   uint8_t* dst_uv,
                   int width) {
-  do {
+  while (width >= 64) {
     __m256i r0 = _mm256_loadu_si256((const __m256i*)src_uv);
-    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride));
-    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_avg_epu8(r0, r1));
-    src_uv += 32;
-    dst_uv += 32;
-    width -= 32;
-  } while (width > 0);
+    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_uv + 32));
+    __m256i s0 = _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride));
+    __m256i s1 =
+        _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride + 32));
+    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_avg_epu8(r0, s0));
+    _mm256_storeu_si256((__m256i*)(dst_uv + 32), _mm256_avg_epu8(r1, s1));
+    src_uv += 64;
+    dst_uv += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_uv);
+    __m256i s0 = _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride));
+    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_avg_epu8(r0, s0));
+  }
   _mm256_zeroupper();
 }
 #endif  // HAS_HALFROW_AVX2
+
+#ifdef HAS_HALFROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void HalfRow_AVX512BW(const uint8_t* src_uv,
+                      ptrdiff_t src_uv_stride,
+                      uint8_t* dst_uv,
+                      int width) {
+  const uint8_t* src_uv1 = src_uv + src_uv_stride;
+  while (width >= 128) {
+    __m512i r0 = _mm512_loadu_si512((const __m512i*)src_uv);
+    __m512i r1 = _mm512_loadu_si512((const __m512i*)(src_uv + 64));
+    __m512i s0 = _mm512_loadu_si512((const __m512i*)src_uv1);
+    __m512i s1 = _mm512_loadu_si512((const __m512i*)(src_uv1 + 64));
+    _mm512_storeu_si512((__m512i*)dst_uv, _mm512_avg_epu8(r0, s0));
+    _mm512_storeu_si512((__m512i*)(dst_uv + 64), _mm512_avg_epu8(r1, s1));
+    src_uv += 128;
+    src_uv1 += 128;
+    dst_uv += 128;
+    width -= 128;
+  }
+  if (width >= 64) {
+    __m512i r0 = _mm512_loadu_si512((const __m512i*)src_uv);
+    __m512i s0 = _mm512_loadu_si512((const __m512i*)src_uv1);
+    _mm512_storeu_si512((__m512i*)dst_uv, _mm512_avg_epu8(r0, s0));
+    src_uv += 64;
+    src_uv1 += 64;
+    dst_uv += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    __mmask64 mask = (__mmask64)((1ULL << width) - 1ULL);
+    __m512i r0 = _mm512_maskz_loadu_epi8(mask, src_uv);
+    __m512i r1 = _mm512_maskz_loadu_epi8(mask, src_uv1);
+    _mm512_mask_storeu_epi8(dst_uv, mask, _mm512_avg_epu8(r0, r1));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_HALFROW_AVX512BW
 
 #ifdef HAS_HALFROW_16_AVX2
 LIBYUV_TARGET_AVX2

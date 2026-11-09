@@ -566,6 +566,7 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_AVX512BW
 #define HAS_CONVERT8TO16ROW_AVX512BW
 #define HAS_COPYROW_AVX512BW
+#define HAS_HALFROW_AVX512BW
 #define HAS_HALFROW_16TO8_AVX512BW
 #define HAS_HALFWIDTHROW_16TO8_AVX512BW
 #define HAS_J400TOARGBROW_AVX512BW
@@ -593,6 +594,7 @@ extern "C" {
 #define HAS_ARGBTORAWROW_AVX512BW
 #define HAS_CONVERT16TO8ROW_AVX512BW
 #define HAS_CONVERT8TO16ROW_AVX512BW
+#define HAS_HALFROW_AVX512BW
 #define HAS_HALFROW_16TO8_AVX512BW
 #define HAS_HALFWIDTHROW_16TO8_AVX512BW
 #define HAS_MULTIPLYROW_16_AVX512BW
@@ -750,6 +752,7 @@ extern "C" {
 #define HAS_HALFFLOATROW_NEON
 #define HAS_HALFMERGEUVROW_NEON
 #define HAS_HALFUVROW_NEON
+#define HAS_HALFROW_NEON
 #define HAS_HALFROW_16TO8_NEON
 #define HAS_HALFWIDTHROW_16TO8_NEON
 #define HAS_I400TOARGBROW_NEON
@@ -1264,6 +1267,7 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_RVV
 #define HAS_CONVERT8TO16ROW_RVV
 #define HAS_COPYROW_RVV
+#define HAS_HALFROW_RVV
 #define HAS_HALFROW_16TO8_RVV
 #define HAS_HALFUVROW_RVV
 #define HAS_HALFWIDTHROW_16TO8_RVV
@@ -1520,6 +1524,7 @@ extern "C" {
 #define HAS_COPYROW_16_HVX
 #define HAS_COPYROW_HVX
 #define HAS_DIVIDEROW_16_HVX
+#define HAS_HALFROW_HVX
 #define HAS_HALFROW_16TO8_HVX
 #define HAS_HALFUVROW_HVX
 #define HAS_I400TOARGBROW_HVX
@@ -4597,6 +4602,18 @@ void HalfRow_Any_AVX2(const uint8_t* src_ptr,
                       ptrdiff_t src_stride,
                       uint8_t* dst_ptr,
                       int width);
+void HalfRow_AVX512BW(const uint8_t* src_uv,
+                      ptrdiff_t src_uv_stride,
+                      uint8_t* dst_uv,
+                      int width);
+void HalfRow_NEON(const uint8_t* src_uv,
+                  ptrdiff_t src_uv_stride,
+                  uint8_t* dst_uv,
+                  int width);
+void HalfRow_Any_NEON(const uint8_t* src_ptr,
+                      ptrdiff_t src_stride,
+                      uint8_t* dst_ptr,
+                      int width);
 void HalfRow_SME(const uint8_t* src_uv,
                  ptrdiff_t src_uv_stride,
                  uint8_t* dst_uv,
@@ -4621,6 +4638,10 @@ void HalfRow_Any_LASX(const uint8_t* src_ptr,
                       ptrdiff_t src_stride,
                       uint8_t* dst_ptr,
                       int width);
+void HalfRow_RVV(const uint8_t* src_uv,
+                 ptrdiff_t src_uv_stride,
+                 uint8_t* dst_uv,
+                 int width);
 
 void HalfRow_16_C(const uint16_t* src_uv,
                   ptrdiff_t src_uv_stride,
@@ -10265,6 +10286,10 @@ void MergeUVRow_HVX(const uint8_t* src_u,
                     const uint8_t* src_v,
                     uint8_t* dst_uv,
                     int width);
+void HalfRow_HVX(const uint8_t* src_uv,
+                 ptrdiff_t src_uv_stride,
+                 uint8_t* dst_uv,
+                 int width);
 void HalfUVRow_HVX(const uint8_t* src_u,
                    int src_stride_u,
                    const uint8_t* src_v,

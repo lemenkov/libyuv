@@ -5583,8 +5583,13 @@ TEST_F(LibYUVPlanarTest, HalfRow_Opt) {
       memset(dst_pixels_opt, 0, kMaxPixels);
       memset(dst_pixels_c, 1, kMaxPixels);
       HalfRow_C(src_pixels, stride, dst_pixels_c, width);
+#if defined(HAS_HALFROW_AVX512BW)
+      if (TestCpuFlag(kCpuHasAVX512BW)) {
+        HalfRow_AVX512BW(src_pixels, stride, dst_pixels_opt, width);
+      } else
+#endif
 #if defined(HAS_HALFROW_AVX2)
-      if (TestCpuFlag(kCpuHasAVX2)) {
+          if (TestCpuFlag(kCpuHasAVX2)) {
         if (IS_ALIGNED(width, 32)) {
           HalfRow_AVX2(src_pixels, stride, dst_pixels_opt, width);
         } else {
@@ -5627,6 +5632,25 @@ TEST_F(LibYUVPlanarTest, HalfRow_Opt) {
         } else {
           HalfRow_Any_LSX(src_pixels, stride, dst_pixels_opt, width);
         }
+      } else
+#endif
+#if defined(HAS_HALFROW_RVV)
+          if (TestCpuFlag(kCpuHasRVV)) {
+        HalfRow_RVV(src_pixels, stride, dst_pixels_opt, width);
+      } else
+#endif
+#if defined(HAS_HALFROW_WASMSIMD)
+          if (TestCpuFlag(kCpuHasWASMSIMD)) {
+        if (IS_ALIGNED(width, 16)) {
+          HalfRow_WASMSIMD(src_pixels, stride, dst_pixels_opt, width);
+        } else {
+          HalfRow_Any_WASMSIMD(src_pixels, stride, dst_pixels_opt, width);
+        }
+      } else
+#endif
+#if defined(HAS_HALFROW_HVX)
+          if (TestCpuFlag(kCpuHasHVX)) {
+        HalfRow_HVX(src_pixels, stride, dst_pixels_opt, width);
       } else
 #endif
       {

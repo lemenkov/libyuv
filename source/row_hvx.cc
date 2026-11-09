@@ -278,6 +278,27 @@ void MergeUVRow_HVX(const uint8_t* src_u,
   }
 }
 
+void HalfRow_HVX(const uint8_t* src_uv,
+                 ptrdiff_t src_uv_stride,
+                 uint8_t* dst_uv,
+                 int width) {
+  const uint8_t* src_uv1 = src_uv + src_uv_stride;
+  while (width >= 128) {
+    HVX_Vector s0 = vloadu(src_uv);
+    HVX_Vector s1 = vloadu(src_uv1);
+    vstoreu(dst_uv, Q6_Vub_vavg_VubVub_rnd(s0, s1));
+    src_uv += 128;
+    src_uv1 += 128;
+    dst_uv += 128;
+    width -= 128;
+  }
+  if (width > 0) {
+    HVX_Vector s0 = vloadu_partial_zero(src_uv, width);
+    HVX_Vector s1 = vloadu_partial_zero(src_uv1, width);
+    vstoreu_partial(dst_uv, Q6_Vub_vavg_VubVub_rnd(s0, s1), width);
+  }
+}
+
 void HalfUVRow_HVX(const uint8_t* src_u,
                    int src_stride_u,
                    const uint8_t* src_v,

@@ -3326,6 +3326,75 @@ TEST_F(LibYUVConvertTest, I422ToNV21Widths) {
   }
 }
 
+TEST_F(LibYUVConvertTest, I422ToI420Widths) {
+  for (int height : {1, 2, 3, 4, -3, -4}) {
+    const int abs_h = height < 0 ? -height : height;
+    const int halfheight = (abs_h + 1) >> 1;
+    for (int width :
+         {1,  2,  3,   15,  16,  17,  30,  31,  32,  33,  62,  63, 64,
+          65, 66, 126, 127, 128, 129, 130, 254, 255, 256, 257, 258}) {
+      const int halfwidth = (width + 1) >> 1;
+      align_buffer_page_end(src_y, width * abs_h);
+      align_buffer_page_end(src_u, halfwidth * abs_h);
+      align_buffer_page_end(src_v, halfwidth * abs_h);
+      align_buffer_page_end(dst_y_c, width * abs_h);
+      align_buffer_page_end(dst_u_c, halfwidth * halfheight);
+      align_buffer_page_end(dst_v_c, halfwidth * halfheight);
+      align_buffer_page_end(dst_y_opt, width * abs_h);
+      align_buffer_page_end(dst_u_opt, halfwidth * halfheight);
+      align_buffer_page_end(dst_v_opt, halfwidth * halfheight);
+      MemRandomize(src_y, width * abs_h);
+      MemRandomize(src_u, halfwidth * abs_h);
+      MemRandomize(src_v, halfwidth * abs_h);
+
+      MaskCpuFlags(disable_cpu_flags_);
+      EXPECT_EQ(0, I422ToI420(src_y, width, src_u, halfwidth, src_v, halfwidth,
+                              dst_y_c, width, dst_u_c, halfwidth, dst_v_c,
+                              halfwidth, width, height));
+      MaskCpuFlags(benchmark_cpu_info_);
+      EXPECT_EQ(0, I422ToI420(src_y, width, src_u, halfwidth, src_v, halfwidth,
+                              dst_y_opt, width, dst_u_opt, halfwidth, dst_v_opt,
+                              halfwidth, width, height));
+      EXPECT_EQ(0, memcmp(dst_y_c, dst_y_opt, width * abs_h));
+      EXPECT_EQ(0, memcmp(dst_u_c, dst_u_opt, halfwidth * halfheight));
+      EXPECT_EQ(0, memcmp(dst_v_c, dst_v_opt, halfwidth * halfheight));
+
+      // Also test AVX2 fallback when AVX512BW is present.
+      if (benchmark_cpu_info_ & kCpuHasAVX512BW) {
+        memset(dst_u_opt, 0, halfwidth * halfheight);
+        memset(dst_v_opt, 0, halfwidth * halfheight);
+        MaskCpuFlags(benchmark_cpu_info_ & ~kCpuHasAVX512BW);
+        EXPECT_EQ(0,
+                  I422ToI420(src_y, width, src_u, halfwidth, src_v, halfwidth,
+                             dst_y_opt, width, dst_u_opt, halfwidth, dst_v_opt,
+                             halfwidth, width, height));
+        EXPECT_EQ(0, memcmp(dst_u_c, dst_u_opt, halfwidth * halfheight));
+        EXPECT_EQ(0, memcmp(dst_v_c, dst_v_opt, halfwidth * halfheight));
+        MaskCpuFlags(benchmark_cpu_info_);
+      }
+
+      // Also test NULL dst_y (UV-only conversion).
+      memset(dst_u_opt, 0, halfwidth * halfheight);
+      memset(dst_v_opt, 0, halfwidth * halfheight);
+      EXPECT_EQ(0, I422ToI420(NULL, 0, src_u, halfwidth, src_v, halfwidth, NULL,
+                              0, dst_u_opt, halfwidth, dst_v_opt, halfwidth,
+                              width, height));
+      EXPECT_EQ(0, memcmp(dst_u_c, dst_u_opt, halfwidth * halfheight));
+      EXPECT_EQ(0, memcmp(dst_v_c, dst_v_opt, halfwidth * halfheight));
+
+      free_aligned_buffer_page_end(src_y);
+      free_aligned_buffer_page_end(src_u);
+      free_aligned_buffer_page_end(src_v);
+      free_aligned_buffer_page_end(dst_y_c);
+      free_aligned_buffer_page_end(dst_u_c);
+      free_aligned_buffer_page_end(dst_v_c);
+      free_aligned_buffer_page_end(dst_y_opt);
+      free_aligned_buffer_page_end(dst_u_opt);
+      free_aligned_buffer_page_end(dst_v_opt);
+    }
+  }
+}
+
 #endif  // !defined(LEAN_TESTS)
 
 }  // namespace libyuv
