@@ -458,6 +458,17 @@ __arm_locally_streaming void HalfMergeUVRow_SME(const uint8_t* src_u,
                         width);
 }
 
+#ifdef HAS_HALFUVROW_SME
+__arm_locally_streaming void HalfUVRow_SME(const uint8_t* src_u,
+                                           ptrdiff_t src_stride_u,
+                                           const uint8_t* src_v,
+                                           ptrdiff_t src_stride_v,
+                                           uint8_t* dst_uv,
+                                           int width) {
+  HalfUVRow_SVE_SC(src_u, src_stride_u, src_v, src_stride_v, dst_uv, width);
+}
+#endif  // HAS_HALFUVROW_SME
+
 __arm_locally_streaming void MergeUVRow_16_SME(const uint16_t* src_u,
                                                const uint16_t* src_v,
                                                uint16_t* dst_uv,

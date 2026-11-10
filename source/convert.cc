@@ -1280,7 +1280,7 @@ int I412ToP412(const uint16_t* src_y,
 }
 
 static void HalfPlane(const uint8_t* src_uv,
-                      int src_stride_uv,
+                      ptrdiff_t src_stride_uv,
                       uint8_t* dst_uv,
                       int dst_stride_uv,
                       int width,
@@ -1292,7 +1292,7 @@ static void HalfPlane(const uint8_t* src_uv,
   int y;
   for (y = 0; y < height - 1; y += 2) {
     HalfRow(src_uv, src_stride_uv, dst_uv, width);
-    src_uv += (ptrdiff_t)src_stride_uv * 2;
+    src_uv += src_stride_uv * 2;
     dst_uv += dst_stride_uv;
   }
   if (height & 1) {
@@ -1319,29 +1319,40 @@ int I422ToI420(const uint8_t* src_y,
                int height) {
   void (*HalfRow)(const uint8_t* src_uv, ptrdiff_t src_uv_stride,
                   uint8_t* dst_uv, int width) = HalfRow_C;
-  int halfwidth = (width + 1) >> 1;
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
   }
+  const int orig_height = height;
+  int halfwidth = (width >> 1) + (width & 1);
+  ptrdiff_t stride_u = src_stride_u;
+  ptrdiff_t stride_v = src_stride_v;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    if (src_y) {
-      src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
-      src_stride_y = -src_stride_y;
+    if (height > 1) {
+      src_u = src_u + (ptrdiff_t)(height - 1) * stride_u;
+      src_v = src_v + (ptrdiff_t)(height - 1) * stride_v;
+      stride_u = -stride_u;
+      stride_v = -stride_v;
     }
-    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
-    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
   }
 #if defined(HAS_HALFROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     HalfRow = HalfRow_Any_NEON;
-    if (IS_ALIGNED(halfwidth, 16)) {
+    if (IS_ALIGNED(halfwidth, 32)) {
       HalfRow = HalfRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_HALFROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    HalfRow = HalfRow_SVE2;
+  }
+#endif
+#if defined(HAS_HALFROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    HalfRow = HalfRow_SME;
   }
 #endif
 #if defined(HAS_HALFROW_AVX2)
@@ -1355,6 +1366,14 @@ int I422ToI420(const uint8_t* src_y,
 #if defined(HAS_HALFROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     HalfRow = HalfRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_HALFROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    HalfRow = HalfRow_Any_LSX;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      HalfRow = HalfRow_LSX;
+    }
   }
 #endif
 #if defined(HAS_HALFROW_LASX)
@@ -1385,12 +1404,10 @@ int I422ToI420(const uint8_t* src_y,
 #endif
 
   if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, orig_height);
   }
-  HalfPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height,
-            HalfRow);
-  HalfPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height,
-            HalfRow);
+  HalfPlane(src_u, stride_u, dst_u, dst_stride_u, halfwidth, height, HalfRow);
+  HalfPlane(src_v, stride_v, dst_v, dst_stride_v, halfwidth, height, HalfRow);
   return 0;
 }
 
@@ -1442,6 +1459,7 @@ int I422ToI210(const uint8_t* src_y,
 
 // 422 chroma is 1/2 width, 1x height
 // 420 chroma is 1/2 width, 1/2 height
+// Swap src_u and src_v to implement I422ToNV12
 LIBYUV_API
 int I422ToNV21(const uint8_t* src_y,
                int src_stride_y,
@@ -1456,25 +1474,26 @@ int I422ToNV21(const uint8_t* src_y,
                int width,
                int height) {
   int y;
-  void (*HalfUVRow)(const uint8_t* src_u, int src_stride_u,
-                    const uint8_t* src_v, int src_stride_v, uint8_t* dst_uv,
-                    int width) = HalfUVRow_C;
-  int halfwidth = (width + 1) >> 1;
+  void (*HalfUVRow)(const uint8_t* src_u, ptrdiff_t src_stride_u,
+                    const uint8_t* src_v, ptrdiff_t src_stride_v,
+                    uint8_t* dst_uv, int width) = HalfUVRow_C;
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_vu || width <= 0 ||
       height == 0 || height == INT_MIN) {
     return -1;
   }
+  const int orig_height = height;
+  int halfwidth = (width >> 1) + (width & 1);
+  ptrdiff_t stride_u = src_stride_u;
+  ptrdiff_t stride_v = src_stride_v;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    if (src_y) {
-      src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
-      src_stride_y = -src_stride_y;
+    if (height > 1) {
+      src_u = src_u + (ptrdiff_t)(height - 1) * stride_u;
+      src_v = src_v + (ptrdiff_t)(height - 1) * stride_v;
+      stride_u = -stride_u;
+      stride_v = -stride_v;
     }
-    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
-    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
   }
 #if defined(HAS_HALFUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
@@ -1482,6 +1501,16 @@ int I422ToNV21(const uint8_t* src_y,
     if (IS_ALIGNED(halfwidth, 16)) {
       HalfUVRow = HalfUVRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_HALFUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    HalfUVRow = HalfUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_HALFUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    HalfUVRow = HalfUVRow_SME;
   }
 #endif
 #if defined(HAS_HALFUVROW_AVX2)
@@ -1495,6 +1524,14 @@ int I422ToNV21(const uint8_t* src_y,
 #if defined(HAS_HALFUVROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     HalfUVRow = HalfUVRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_HALFUVROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    HalfUVRow = HalfUVRow_Any_LSX;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      HalfUVRow = HalfUVRow_LSX;
+    }
   }
 #endif
 #if defined(HAS_HALFUVROW_LASX)
@@ -1525,12 +1562,12 @@ int I422ToNV21(const uint8_t* src_y,
 #endif
 
   if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, orig_height);
   }
   for (y = 0; y < height - 1; y += 2) {
-    HalfUVRow(src_v, src_stride_v, src_u, src_stride_u, dst_vu, halfwidth);
-    src_u += (ptrdiff_t)src_stride_u * 2;
-    src_v += (ptrdiff_t)src_stride_v * 2;
+    HalfUVRow(src_v, stride_v, src_u, stride_u, dst_vu, halfwidth);
+    src_u += stride_u * 2;
+    src_v += stride_v * 2;
     dst_vu += dst_stride_vu;
   }
   if (height & 1) {

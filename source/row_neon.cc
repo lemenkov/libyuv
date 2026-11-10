@@ -3753,8 +3753,6 @@ void HalfRow_NEON(const uint8_t* src_uv,
                   int width) {
   const uint8_t* src_uv1 = src_uv + src_uv_stride;
   asm volatile(
-      "subs        %3, %3, #32                   \n"
-      "blt         2f                            \n"
       "1:                                        \n"
       "vld1.8      {q0, q1}, [%0]!               \n"
       "vld1.8      {q2, q3}, [%1]!               \n"
@@ -3762,15 +3760,7 @@ void HalfRow_NEON(const uint8_t* src_uv,
       "vrhadd.u8   q0, q0, q2                    \n"
       "vrhadd.u8   q1, q1, q3                    \n"
       "vst1.8      {q0, q1}, [%2]!               \n"
-      "bge         1b                            \n"
-      "2:                                        \n"
-      "adds        %3, %3, #32                   \n"
-      "beq         99f                           \n"
-      "vld1.8      {q0}, [%0]!                   \n"
-      "vld1.8      {q2}, [%1]!                   \n"
-      "vrhadd.u8   q0, q0, q2                    \n"
-      "vst1.8      {q0}, [%2]!                   \n"
-      "99:                                       \n"
+      "bgt         1b                            \n"
       : "+r"(src_uv),   // %0
         "+r"(src_uv1),  // %1
         "+r"(dst_uv),   // %2
@@ -3780,13 +3770,13 @@ void HalfRow_NEON(const uint8_t* src_uv,
 }
 
 void HalfUVRow_NEON(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width) {
-  const uint8_t* src_u_1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v_1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u_1 = src_u + src_stride_u;
+  const uint8_t* src_v_1 = src_v + src_stride_v;
   asm volatile(
       "1:                                        \n"
       "vld1.8      {q0}, [%0]!                   \n"  // load 16 U row 0

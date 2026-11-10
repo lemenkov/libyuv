@@ -1744,13 +1744,13 @@ void HalfRow_RVV(const uint8_t* src_uv,
 
 #ifdef HAS_HALFUVROW_RVV
 void HalfUVRow_RVV(const uint8_t* src_u,
-                   int src_stride_u,
+                   ptrdiff_t src_stride_u,
                    const uint8_t* src_v,
-                   int src_stride_v,
+                   ptrdiff_t src_stride_v,
                    uint8_t* dst_uv,
                    int width) {
-  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
   size_t vl;
   asm volatile(
       "csrwi       vxrm, 0                       \n"

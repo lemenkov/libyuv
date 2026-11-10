@@ -1228,13 +1228,13 @@ void HalfMergeUVRow_WASMSIMD(const uint8_t* src_u,
 
 #ifdef HAS_HALFUVROW_WASMSIMD
 void HalfUVRow_WASMSIMD(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width) {
-  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
   do {
     asm(""
         : "+r"(src_u), "+r"(src_u1), "+r"(src_v), "+r"(src_v1), "+r"(dst_uv));

@@ -436,6 +436,17 @@ void HalfMergeUVRow_SVE2(const uint8_t* src_u,
                         width);
 }
 
+#ifdef HAS_HALFUVROW_SVE2
+void HalfUVRow_SVE2(const uint8_t* src_u,
+                    ptrdiff_t src_stride_u,
+                    const uint8_t* src_v,
+                    ptrdiff_t src_stride_v,
+                    uint8_t* dst_uv,
+                    int width) {
+  HalfUVRow_SVE_SC(src_u, src_stride_u, src_v, src_stride_v, dst_uv, width);
+}
+#endif  // HAS_HALFUVROW_SVE2
+
 void CopyRow_SVE2(const uint8_t* src, uint8_t* dst, int width) {
   CopyRow_SVE_SC(src, dst, width);
 }

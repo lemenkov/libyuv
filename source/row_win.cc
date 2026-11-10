@@ -8552,13 +8552,13 @@ static const uint64_t kPermHalfUV1_AVX512BW[8] = {4, 5, 12, 13, 6, 7, 14, 15};
 
 LIBYUV_TARGET_AVX512BW
 void HalfUVRow_AVX512BW(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width) {
-  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
   const __m512i zmm_p0 =
       _mm512_loadu_si512((const __m512i*)kPermHalfUV0_AVX512BW);
   const __m512i zmm_p1 =
@@ -9164,23 +9164,14 @@ void HalfRow_AVX2(const uint8_t* src_uv,
                   ptrdiff_t src_uv_stride,
                   uint8_t* dst_uv,
                   int width) {
-  while (width >= 64) {
+  do {
     __m256i r0 = _mm256_loadu_si256((const __m256i*)src_uv);
-    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_uv + 32));
-    __m256i s0 = _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride));
-    __m256i s1 =
-        _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride + 32));
-    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_avg_epu8(r0, s0));
-    _mm256_storeu_si256((__m256i*)(dst_uv + 32), _mm256_avg_epu8(r1, s1));
-    src_uv += 64;
-    dst_uv += 64;
-    width -= 64;
-  }
-  if (width > 0) {
-    __m256i r0 = _mm256_loadu_si256((const __m256i*)src_uv);
-    __m256i s0 = _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride));
-    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_avg_epu8(r0, s0));
-  }
+    __m256i r1 = _mm256_loadu_si256((const __m256i*)(src_uv + src_uv_stride));
+    _mm256_storeu_si256((__m256i*)dst_uv, _mm256_avg_epu8(r0, r1));
+    src_uv += 32;
+    dst_uv += 32;
+    width -= 32;
+  } while (width > 0);
   _mm256_zeroupper();
 }
 #endif  // HAS_HALFROW_AVX2
@@ -9192,19 +9183,7 @@ void HalfRow_AVX512BW(const uint8_t* src_uv,
                       uint8_t* dst_uv,
                       int width) {
   const uint8_t* src_uv1 = src_uv + src_uv_stride;
-  while (width >= 128) {
-    __m512i r0 = _mm512_loadu_si512((const __m512i*)src_uv);
-    __m512i r1 = _mm512_loadu_si512((const __m512i*)(src_uv + 64));
-    __m512i s0 = _mm512_loadu_si512((const __m512i*)src_uv1);
-    __m512i s1 = _mm512_loadu_si512((const __m512i*)(src_uv1 + 64));
-    _mm512_storeu_si512((__m512i*)dst_uv, _mm512_avg_epu8(r0, s0));
-    _mm512_storeu_si512((__m512i*)(dst_uv + 64), _mm512_avg_epu8(r1, s1));
-    src_uv += 128;
-    src_uv1 += 128;
-    dst_uv += 128;
-    width -= 128;
-  }
-  if (width >= 64) {
+  while (width >= 64) {
     __m512i r0 = _mm512_loadu_si512((const __m512i*)src_uv);
     __m512i s0 = _mm512_loadu_si512((const __m512i*)src_uv1);
     _mm512_storeu_si512((__m512i*)dst_uv, _mm512_avg_epu8(r0, s0));
@@ -9277,13 +9256,13 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
 #ifdef HAS_HALFUVROW_AVX2
 LIBYUV_TARGET_AVX2
 void HalfUVRow_AVX2(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width) {
-  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
   do {
     __m256i u = _mm256_avg_epu8(_mm256_loadu_si256((const __m256i*)src_u),
                                 _mm256_loadu_si256((const __m256i*)src_u1));

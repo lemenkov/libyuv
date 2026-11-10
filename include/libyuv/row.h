@@ -900,6 +900,7 @@ extern "C" {
 #define HAS_HALFMERGEUVROW_SVE2
 #define HAS_HALFROW_16_SVE2
 #define HAS_HALFROW_SVE2
+#define HAS_HALFUVROW_SVE2
 // Disabled: NEON version is faster for 128 bit vectors.
 // #define HAS_HALFROW_16TO8_SVE2
 // Disabled: NEON version is faster for 128 bit vectors.
@@ -973,6 +974,7 @@ extern "C" {
 #define HAS_HALFROW_16_SME
 #define HAS_HALFROW_16TO8_SME
 #define HAS_HALFROW_SME
+#define HAS_HALFUVROW_SME
 #define HAS_HALFWIDTHROW_16TO8_SME
 #define HAS_I210ALPHATOARGBROW_SME
 #define HAS_I210TOAR30ROW_SME
@@ -1082,6 +1084,7 @@ extern "C" {
 #define HAS_HALFROW_16_LSX
 #define HAS_HALFROW_16TO8_LSX
 #define HAS_HALFROW_LSX
+#define HAS_HALFUVROW_LSX
 #define HAS_I400TOARGBROW_LSX
 #define HAS_I422ALPHATOARGBROW_LSX
 #define HAS_I422TOARGB1555ROW_LSX
@@ -3666,57 +3669,81 @@ void HalfMergeUVRow_Any_LASX(const uint8_t* src_u,
                              int width);
 
 void HalfUVRow_C(const uint8_t* src_u,
-                 int src_stride_u,
+                 ptrdiff_t src_stride_u,
                  const uint8_t* src_v,
-                 int src_stride_v,
+                 ptrdiff_t src_stride_v,
                  uint8_t* dst_uv,
                  int width);
 void HalfUVRow_NEON(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width);
-void HalfUVRow_AVX2(const uint8_t* src_u,
-                    int src_stride_u,
+void HalfUVRow_SVE2(const uint8_t* src_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
+                    uint8_t* dst_uv,
+                    int width);
+void HalfUVRow_SME(const uint8_t* src_u,
+                   ptrdiff_t src_stride_u,
+                   const uint8_t* src_v,
+                   ptrdiff_t src_stride_v,
+                   uint8_t* dst_uv,
+                   int width);
+void HalfUVRow_AVX2(const uint8_t* src_u,
+                    ptrdiff_t src_stride_u,
+                    const uint8_t* src_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width);
 void HalfUVRow_AVX512BW(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width);
 void HalfUVRow_Any_AVX2(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width);
 void HalfUVRow_Any_NEON(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width);
+void HalfUVRow_LSX(const uint8_t* src_u,
+                   ptrdiff_t src_stride_u,
+                   const uint8_t* src_v,
+                   ptrdiff_t src_stride_v,
+                   uint8_t* dst_uv,
+                   int width);
+void HalfUVRow_Any_LSX(const uint8_t* src_u,
+                       ptrdiff_t src_stride_u,
+                       const uint8_t* src_v,
+                       ptrdiff_t src_stride_v,
+                       uint8_t* dst_uv,
+                       int width);
 void HalfUVRow_LASX(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width);
 void HalfUVRow_Any_LASX(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width);
 void HalfUVRow_RVV(const uint8_t* src_u,
-                   int src_stride_u,
+                   ptrdiff_t src_stride_u,
                    const uint8_t* src_v,
-                   int src_stride_v,
+                   ptrdiff_t src_stride_v,
                    uint8_t* dst_uv,
                    int width);
 
@@ -9355,15 +9382,15 @@ void HalfMergeUVRow_Any_WASMSIMD(const uint8_t* src_u,
                                  uint8_t* dst_uv,
                                  int width);
 void HalfUVRow_WASMSIMD(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width);
 void HalfUVRow_Any_WASMSIMD(const uint8_t* src_u,
-                            int src_stride_u,
+                            ptrdiff_t src_stride_u,
                             const uint8_t* src_v,
-                            int src_stride_v,
+                            ptrdiff_t src_stride_v,
                             uint8_t* dst_uv,
                             int width);
 void SplitRGBRow_WASMSIMD(const uint8_t* src_rgb,
@@ -10291,9 +10318,9 @@ void HalfRow_HVX(const uint8_t* src_uv,
                  uint8_t* dst_uv,
                  int width);
 void HalfUVRow_HVX(const uint8_t* src_u,
-                   int src_stride_u,
+                   ptrdiff_t src_stride_u,
                    const uint8_t* src_v,
-                   int src_stride_v,
+                   ptrdiff_t src_stride_v,
                    uint8_t* dst_uv,
                    int width);
 void SplitUVRow_16_HVX(const uint16_t* src_uv,

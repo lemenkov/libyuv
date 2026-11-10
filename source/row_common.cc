@@ -4551,13 +4551,13 @@ void HalfMergeUVRow_C(const uint8_t* src_u,
 }
 
 void HalfUVRow_C(const uint8_t* src_u,
-                 int src_stride_u,
+                 ptrdiff_t src_stride_u,
                  const uint8_t* src_v,
-                 int src_stride_v,
+                 ptrdiff_t src_stride_v,
                  uint8_t* dst_uv,
                  int width) {
-  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
   int x;
   for (x = 0; x < width; ++x) {
     dst_uv[0] = (src_u[x] + src_u1[x] + 1) >> 1;

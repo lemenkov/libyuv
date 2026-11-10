@@ -300,13 +300,13 @@ void HalfRow_HVX(const uint8_t* src_uv,
 }
 
 void HalfUVRow_HVX(const uint8_t* src_u,
-                   int src_stride_u,
+                   ptrdiff_t src_stride_u,
                    const uint8_t* src_v,
-                   int src_stride_v,
+                   ptrdiff_t src_stride_v,
                    uint8_t* dst_uv,
                    int width) {
-  const uint8_t* src_u1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
   while (width > 0) {
     int w = width >= 128 ? 128 : width;
     HVX_Vector u = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_u, w),

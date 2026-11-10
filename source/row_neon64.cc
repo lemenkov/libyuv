@@ -5352,29 +5352,15 @@ void HalfRow_NEON(const uint8_t* src_uv,
                   int width) {
   const uint8_t* src_uv1 = src_uv + src_uv_stride;
   asm volatile(
-      "subs        %w3, %w3, #32                 \n"
-      "b.lt        2f                            \n"
       ".p2align    4                             \n"
       "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"
-      "ld1         {v2.16b}, [%1], #16           \n"
-      "ld1         {v1.16b}, [%0], #16           \n"
-      "ld1         {v3.16b}, [%1], #16           \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
       "subs        %w3, %w3, #32                 \n"
       "urhadd      v0.16b, v0.16b, v2.16b        \n"
       "urhadd      v1.16b, v1.16b, v3.16b        \n"
-      "str         q0, [%2]                      \n"
-      "str         q1, [%2, #16]                 \n"
-      "add         %2, %2, #32                   \n"
-      "b.ge        1b                            \n"
-      "2:                                        \n"
-      "adds        %w3, %w3, #32                 \n"
-      "b.eq        99f                           \n"
-      "ldr         q0, [%0]                      \n"
-      "ldr         q2, [%1]                      \n"
-      "urhadd      v0.16b, v0.16b, v2.16b        \n"
-      "str         q0, [%2]                      \n"
-      "99:                                       \n"
+      "stp         q0, q1, [%2], #32             \n"
+      "b.gt        1b                            \n"
       : "+r"(src_uv),   // %0
         "+r"(src_uv1),  // %1
         "+r"(dst_uv),   // %2
@@ -5384,27 +5370,23 @@ void HalfRow_NEON(const uint8_t* src_uv,
 }
 
 void HalfUVRow_NEON(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width) {
-  const uint8_t* src_u_1 = src_u + (ptrdiff_t)src_stride_u;
-  const uint8_t* src_v_1 = src_v + (ptrdiff_t)src_stride_v;
+  const uint8_t* src_u_1 = src_u + src_stride_u;
+  const uint8_t* src_v_1 = src_v + src_stride_v;
 #if defined(LIBYUV_USE_ST2)
   asm volatile(
       "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 16 U row 0
-      "ld1         {v2.16b}, [%1], #16           \n"  // load 16 U row 1
-      "ld1         {v1.16b}, [%2], #16           \n"  // load 16 V row 0
-      "ld1         {v3.16b}, [%3], #16           \n"  // load 16 V row 1
+      "ldr         q0, [%0], #16                 \n"  // load 16 U row 0
+      "ldr         q2, [%1], #16                 \n"  // load 16 U row 1
+      "ldr         q1, [%2], #16                 \n"  // load 16 V row 0
+      "ldr         q3, [%3], #16                 \n"  // load 16 V row 1
       "subs        %w5, %w5, #16                 \n"  // 16 UV pixels per loop
       "urhadd      v0.16b, v0.16b, v2.16b        \n"
-      "prfm        pldl1keep, [%0, 448]          \n"
       "urhadd      v1.16b, v1.16b, v3.16b        \n"
-      "prfm        pldl1keep, [%1, 448]          \n"
-      "prfm        pldl1keep, [%2, 448]          \n"
-      "prfm        pldl1keep, [%3, 448]          \n"
       "st2         {v0.16b, v1.16b}, [%4], #32   \n"  // store 16 UV pixels
       "b.gt        1b                            \n"
       : "+r"(src_u),    // %0
@@ -5418,20 +5400,16 @@ void HalfUVRow_NEON(const uint8_t* src_u,
 #else
   asm volatile(
       "1:                                        \n"
-      "ld1         {v0.16b}, [%0], #16           \n"  // load 16 U row 0
-      "ld1         {v2.16b}, [%1], #16           \n"  // load 16 U row 1
-      "ld1         {v1.16b}, [%2], #16           \n"  // load 16 V row 0
-      "ld1         {v3.16b}, [%3], #16           \n"  // load 16 V row 1
+      "ldr         q0, [%0], #16                 \n"  // load 16 U row 0
+      "ldr         q2, [%1], #16                 \n"  // load 16 U row 1
+      "ldr         q1, [%2], #16                 \n"  // load 16 V row 0
+      "ldr         q3, [%3], #16                 \n"  // load 16 V row 1
       "subs        %w5, %w5, #16                 \n"  // 16 UV pixels per loop
       "urhadd      v0.16b, v0.16b, v2.16b        \n"
-      "prfm        pldl1keep, [%0, 448]          \n"
       "urhadd      v1.16b, v1.16b, v3.16b        \n"
-      "prfm        pldl1keep, [%1, 448]          \n"
       "zip1        v2.16b, v0.16b, v1.16b        \n"
-      "prfm        pldl1keep, [%2, 448]          \n"
       "zip2        v3.16b, v0.16b, v1.16b        \n"
-      "prfm        pldl1keep, [%3, 448]          \n"
-      "st1         {v2.16b, v3.16b}, [%4], #32   \n"  // store 16 UV pixels
+      "stp         q2, q3, [%4], #32             \n"  // store 16 UV pixels
       "b.gt        1b                            \n"
       : "+r"(src_u),    // %0
         "+r"(src_u_1),  // %1

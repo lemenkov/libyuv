@@ -8856,37 +8856,22 @@ void HalfRow_AVX2(const uint8_t* src_uv,
                   uint8_t* dst_uv,
                   int width) {
   asm volatile(
-      "sub         %0,%1                         \n"
-      "sub         $0x40,%2                      \n"
-      "jl          2f                            \n"
-
-      // 64 bytes per loop.
+      // 32 bytes per loop.
       LABELALIGN
       "1:          \n"
       "vmovdqu     (%0),%%ymm0                   \n"
-      "vmovdqu     0x20(%0),%%ymm1               \n"
       "vpavgb      (%0,%3,1),%%ymm0,%%ymm0       \n"
-      "vpavgb      0x20(%0,%3,1),%%ymm1,%%ymm1   \n"
-      "vmovdqu     %%ymm0,(%0,%1,1)              \n"
-      "vmovdqu     %%ymm1,0x20(%0,%1,1)          \n"
-      "lea         0x40(%0),%0                   \n"
-      "sub         $0x40,%2                      \n"
-      "jge         1b                            \n"
-
-      "2:          \n"
-      "add         $0x40,%2                      \n"
-      "jle         99f                           \n"
-      "vmovdqu     (%0),%%ymm0                   \n"
-      "vpavgb      (%0,%3,1),%%ymm0,%%ymm0       \n"
-      "vmovdqu     %%ymm0,(%0,%1,1)              \n"
-
-      "99:         \n"
+      "lea         0x20(%0),%0                   \n"
+      "vmovdqu     %%ymm0,(%1)                   \n"
+      "lea         0x20(%1),%1                   \n"
+      "sub         $0x20,%2                      \n"
+      "jg          1b                            \n"
       "vzeroupper  \n"
       : "+r"(src_uv),       // %0
         "+r"(dst_uv),       // %1
         "+r"(width)         // %2
       : "r"(src_uv_stride)  // %3
-      : "memory", "cc", "xmm0", "xmm1");
+      : "memory", "cc", "xmm0");
 }
 #endif  // HAS_HALFROW_AVX2
 
@@ -8898,33 +8883,21 @@ void HalfRow_AVX512BW(const uint8_t* src_uv,
                       int width) {
   uintptr_t temp;
   asm volatile(
-      "sub         %[src],%[dst]                 \n"
-      "sub         $0x80,%[width]                \n"
+      "sub         $0x40,%[width]                \n"
       "jl          2f                            \n"
 
-      // 128 bytes per loop.
+      // 64 bytes per loop.
       LABELALIGN
       "1:          \n"
       "vmovdqu64   (%[src]),%%zmm0               \n"
-      "vmovdqu64   0x40(%[src]),%%zmm1           \n"
       "vpavgb      (%[src],%[stride],1),%%zmm0,%%zmm0\n"
-      "vpavgb      0x40(%[src],%[stride],1),%%zmm1,%%zmm1\n"
-      "vmovdqu64   %%zmm0,(%[src],%[dst],1)      \n"
-      "vmovdqu64   %%zmm1,0x40(%[src],%[dst],1)  \n"
-      "lea         0x80(%[src]),%[src]           \n"
-      "sub         $0x80,%[width]                \n"
+      "lea         0x40(%[src]),%[src]           \n"
+      "vmovdqu64   %%zmm0,(%[dst])               \n"
+      "lea         0x40(%[dst]),%[dst]           \n"
+      "sub         $0x40,%[width]                \n"
       "jge         1b                            \n"
 
       "2:          \n"
-      "add         $0x40,%[width]                \n"
-      "jl          3f                            \n"
-      "vmovdqu64   (%[src]),%%zmm0               \n"
-      "vpavgb      (%[src],%[stride],1),%%zmm0,%%zmm0\n"
-      "vmovdqu64   %%zmm0,(%[src],%[dst],1)      \n"
-      "lea         0x40(%[src]),%[src]           \n"
-      "sub         $0x40,%[width]                \n"
-
-      "3:          \n"
       "add         $0x40,%[width]                \n"
       "jle         99f                           \n"
       "mov         $-1,%q[temp]                  \n"
@@ -8933,7 +8906,7 @@ void HalfRow_AVX512BW(const uint8_t* src_uv,
       "vmovdqu8    (%[src]),%%zmm0%{%%k1%}%{z%}  \n"
       "vmovdqu8    (%[src],%[stride],1),%%zmm1%{%%k1%}%{z%}\n"
       "vpavgb      %%zmm1,%%zmm0,%%zmm0          \n"
-      "vmovdqu8    %%zmm0,(%[src],%[dst],1)%{%%k1%}\n"
+      "vmovdqu8    %%zmm0,(%[dst])%{%%k1%}       \n"
 
       "99:         \n"
       "vzeroupper  \n"
@@ -15458,34 +15431,33 @@ void HalfMergeUVRow_AVX2(const uint8_t* src_u,
 
 #ifdef HAS_HALFUVROW_AVX2
 void HalfUVRow_AVX2(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width) {
-  asm volatile(
-      LABELALIGN
-      "1:                                        \n"
-      "vmovdqu     (%[u]),%%ymm0                 \n"
-      "vpavgb      (%[u],%[su],1),%%ymm0,%%ymm0  \n"
-      "vmovdqu     (%[v]),%%ymm1                 \n"
-      "vpavgb      (%[v],%[sv],1),%%ymm1,%%ymm1  \n"
-      "lea         0x20(%[u]),%[u]               \n"
-      "lea         0x20(%[v]),%[v]               \n"
-      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
-      "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
-      "vpunpcklbw  %%ymm1,%%ymm0,%%ymm2          \n"
-      "vpunpckhbw  %%ymm1,%%ymm0,%%ymm3          \n"
-      "vmovdqu     %%ymm2,(%[dst])               \n"
-      "vmovdqu     %%ymm3,0x20(%[dst])           \n"
-      "lea         0x40(%[dst]),%[dst]           \n"
-      "sub         $0x20,%[width]                \n"
-      "jg          1b                            \n"
-      "vzeroupper                                \n"
-      :
-      [u] "+r"(src_u), [v] "+r"(src_v), [dst] "+r"(dst_uv), [width] "+r"(width)
-      : [su] "r"((ptrdiff_t)src_stride_u), [sv] "r"((ptrdiff_t)src_stride_v)
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+  asm volatile(LABELALIGN
+               "1:                                        \n"
+               "vmovdqu     (%[u]),%%ymm0                 \n"
+               "vpavgb      (%[u],%[su],1),%%ymm0,%%ymm0  \n"
+               "vmovdqu     (%[v]),%%ymm1                 \n"
+               "vpavgb      (%[v],%[sv],1),%%ymm1,%%ymm1  \n"
+               "lea         0x20(%[u]),%[u]               \n"
+               "lea         0x20(%[v]),%[v]               \n"
+               "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+               "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
+               "vpunpcklbw  %%ymm1,%%ymm0,%%ymm2          \n"
+               "vpunpckhbw  %%ymm1,%%ymm0,%%ymm3          \n"
+               "vmovdqu     %%ymm2,(%[dst])               \n"
+               "vmovdqu     %%ymm3,0x20(%[dst])           \n"
+               "lea         0x40(%[dst]),%[dst]           \n"
+               "sub         $0x20,%[width]                \n"
+               "jg          1b                            \n"
+               "vzeroupper                                \n"
+               : [u] "+r"(src_u), [v] "+r"(src_v), [dst] "+r"(dst_uv),
+                 [width] "+r"(width)
+               : [su] "r"(src_stride_u), [sv] "r"(src_stride_v)
+               : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
 }
 #endif  // HAS_HALFUVROW_AVX2
 
@@ -16747,9 +16719,9 @@ static const uint64_t kPermHalfUV1_AVX512BW[8] = {4, 5, 12, 13, 6, 7, 14, 15};
 
 LIBYUV_TARGET_AVX512BW
 void HalfUVRow_AVX512BW(const uint8_t* src_u,
-                        int src_stride_u,
+                        ptrdiff_t src_stride_u,
                         const uint8_t* src_v,
-                        int src_stride_v,
+                        ptrdiff_t src_stride_v,
                         uint8_t* dst_uv,
                         int width) {
   uintptr_t temp;
@@ -16804,7 +16776,7 @@ void HalfUVRow_AVX512BW(const uint8_t* src_u,
       "vzeroupper                                \n"
       : [u] "+r"(src_u), [v] "+r"(src_v), [dst] "+r"(dst_uv),
         [width] "+r"(width64), [temp] "=&r"(temp)
-      : [su] "r"((ptrdiff_t)src_stride_u), [sv] "r"((ptrdiff_t)src_stride_v),
+      : [su] "r"(src_stride_u), [sv] "r"(src_stride_v),
         [p0] "m"(kPermHalfUV0_AVX512BW), [p1] "m"(kPermHalfUV1_AVX512BW)
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm16", "xmm17", "k1",
         "k2");

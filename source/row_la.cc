@@ -2929,6 +2929,37 @@ void HalfMergeUVRow_LSX(const uint8_t* src_u,
 }
 #endif  // HAS_HALFMERGEUVROW_LSX
 
+#ifdef HAS_HALFUVROW_LSX
+void HalfUVRow_LSX(const uint8_t* src_u,
+                   ptrdiff_t src_stride_u,
+                   const uint8_t* src_v,
+                   ptrdiff_t src_stride_v,
+                   uint8_t* dst_uv,
+                   int width) {
+  asm volatile(
+      "1:\n\t"
+      "vld $vr0, %[su], 0\n\t"
+      "vldx $vr2, %[su], %[stu]\n\t"
+      "vavgr.bu $vr0, $vr0, $vr2\n\t"
+      "vld $vr1, %[sv], 0\n\t"
+      "vldx $vr3, %[sv], %[stv]\n\t"
+      "vavgr.bu $vr1, $vr1, $vr3\n\t"
+      "vilvl.b $vr2, $vr1, $vr0\n\t"
+      "vilvh.b $vr3, $vr1, $vr0\n\t"
+      "vst $vr2, %[dst], 0\n\t"
+      "vst $vr3, %[dst], 16\n\t"
+      "addi.d %[su], %[su], 16\n\t"
+      "addi.d %[sv], %[sv], 16\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      :
+      [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv), [cnt] "+r"(width)
+      : [stu] "r"(src_stride_u), [stv] "r"(src_stride_v)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3");
+}
+#endif  // HAS_HALFUVROW_LSX
+
 #ifdef HAS_CONVERT16TO8ROW_LSX
 void Convert16To8Row_LSX(const uint16_t* src_y,
                          uint8_t* dst_y,
@@ -7256,9 +7287,9 @@ void HalfMergeUVRow_LASX(const uint8_t* src_u,
 
 #ifdef HAS_HALFUVROW_LASX
 void HalfUVRow_LASX(const uint8_t* src_u,
-                    int src_stride_u,
+                    ptrdiff_t src_stride_u,
                     const uint8_t* src_v,
-                    int src_stride_v,
+                    ptrdiff_t src_stride_v,
                     uint8_t* dst_uv,
                     int width) {
   asm volatile(
@@ -7282,7 +7313,7 @@ void HalfUVRow_LASX(const uint8_t* src_u,
       "bnez %[cnt], 1b\n\t"
       :
       [su] "+r"(src_u), [sv] "+r"(src_v), [dst] "+r"(dst_uv), [cnt] "+r"(width)
-      : [stu] "r"((ptrdiff_t)src_stride_u), [stv] "r"((ptrdiff_t)src_stride_v)
+      : [stu] "r"(src_stride_u), [stv] "r"(src_stride_v)
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
 }
 #endif  // HAS_HALFUVROW_LASX
