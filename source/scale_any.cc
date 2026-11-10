@@ -153,7 +153,7 @@ SDANY(ScaleRowDown2Linear_Any_NEON,
       ScaleRowDown2Linear_C,
       2,
       1,
-      15)
+      31)
 SDANY(ScaleRowDown2Box_Any_NEON,
       ScaleRowDown2Box_NEON,
       ScaleRowDown2Box_C,

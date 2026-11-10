@@ -38,9 +38,9 @@ void ScaleRowDown2_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      // load even pixels into q0, odd into q1
-      "vld2.8      {q0, q1}, [%0]!               \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 32 pixels
       "subs        %2, %2, #16                   \n"  // 16 processed per loop
+      "vuzp.8      q0, q1                        \n"  // even in q0, odd in q1
       "vst1.8      {q1}, [%1]!                   \n"  // store odd pixels
       "bgt         1b                            \n"
       : "+r"(src_ptr),   // %0
@@ -51,7 +51,7 @@ void ScaleRowDown2_NEON(const uint8_t* src_ptr,
   );
 }
 
-// Read 32x1 average down and write 16x1.
+// Read 64x1 average down and write 32x1.
 void ScaleRowDown2Linear_NEON(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst,
@@ -59,16 +59,20 @@ void ScaleRowDown2Linear_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "vld2.8      {q0, q1}, [%0]!               \n"  // load 32 pixels
-      "subs        %2, %2, #16                   \n"  // 16 processed per loop
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 32 pixels
+      "vld1.8      {q2, q3}, [%0]!               \n"  // load 32 pixels
+      "subs        %2, %2, #32                   \n"  // 32 processed per loop
+      "vuzp.8      q0, q1                        \n"  // even in q0, odd in q1
+      "vuzp.8      q2, q3                        \n"  // even in q2, odd in q3
       "vrhadd.u8   q0, q0, q1                    \n"  // rounding half add
-      "vst1.8      {q0}, [%1]!                   \n"
+      "vrhadd.u8   q1, q2, q3                    \n"  // rounding half add
+      "vst1.8      {q0, q1}, [%1]!               \n"
       "bgt         1b                            \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
         "+r"(dst_width)  // %2
       :
-      : "memory", "cc", "q0", "q1"  // Clobber List
+      : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
   );
 }
 
@@ -110,15 +114,19 @@ void ScaleRowDown4_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  // src line 0
-      "subs        %2, %2, #8                    \n"  // 8 processed per loop
-      "vst1.8      {d2}, [%1]!                   \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"
+      "vld1.8      {q2, q3}, [%0]!               \n"
+      "subs        %2, %2, #16                   \n"  // 16 processed per loop
+      "vuzp.16     q0, q1                        \n"
+      "vuzp.16     q2, q3                        \n"
+      "vuzp.8      q1, q3                        \n"
+      "vst1.8      {q1}, [%1]!                   \n"
       "bgt         1b                            \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
       :
-      : "q0", "q1", "memory", "cc");
+      : "memory", "cc", "q0", "q1", "q2", "q3");
 }
 
 void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
@@ -130,19 +138,25 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
   const uint8_t* src_ptr3 = src_ptr + src_stride * 3;
   asm volatile(
       "1:          \n"
-      "vld1.8      {q0}, [%0]!                   \n"  // load up 16x4
-      "vld1.8      {q1}, [%3]!                   \n"
-      "vld1.8      {q2}, [%4]!                   \n"
-      "vld1.8      {q3}, [%5]!                   \n"
-      "subs        %2, %2, #4                    \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load up 32x4
+      "vld1.8      {q2, q3}, [%3]!               \n"
+      "vld1.8      {q8, q9}, [%4]!               \n"
+      "vld1.8      {q10, q11}, [%5]!             \n"
+      "subs        %2, %2, #8                    \n"
       "vpaddl.u8   q0, q0                        \n"
-      "vpadal.u8   q0, q1                        \n"
+      "vpaddl.u8   q1, q1                        \n"
+      "vpaddl.u8   q8, q8                        \n"
+      "vpaddl.u8   q9, q9                        \n"
       "vpadal.u8   q0, q2                        \n"
-      "vpadal.u8   q0, q3                        \n"
-      "vpaddl.u16  q0, q0                        \n"
-      "vrshrn.u32  d0, q0, #4                    \n"  // divide by 16 w/rounding
-      "vmovn.u16   d0, q0                        \n"
-      "vst1.32     {d0[0]}, [%1]!                \n"
+      "vpadal.u8   q1, q3                        \n"
+      "vpadal.u8   q8, q10                       \n"
+      "vpadal.u8   q9, q11                       \n"
+      "vadd.u16    q0, q0, q8                    \n"
+      "vadd.u16    q1, q1, q9                    \n"
+      "vpadd.u16   d0, d0, d1                    \n"
+      "vpadd.u16   d1, d2, d3                    \n"
+      "vrshrn.u16  d0, q0, #4                    \n"  // divide by 16 w/rounding
+      "vst1.8      {d0}, [%1]!                   \n"
       "bgt         1b                            \n"
       : "+r"(src_ptr),    // %0
         "+r"(dst_ptr),    // %1
@@ -151,7 +165,7 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
         "+r"(src_ptr2),   // %4
         "+r"(src_ptr3)    // %5
       :
-      : "q0", "q1", "q2", "q3", "memory", "cc");
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11");
 }
 
 // Down scale from 4 to 3 pixels. Use the neon multilane read/write
@@ -1095,11 +1109,13 @@ void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "vld4.32     {d0, d2, d4, d6}, [%0]!       \n"  // load 8 ARGB pixels.
-      "vld4.32     {d1, d3, d5, d7}, [%0]!       \n"  // load next 8 ARGB
+      "vld1.32     {q0, q1}, [%0]!               \n"  // load 8 ARGB pixels.
+      "vld1.32     {q2, q3}, [%0]!               \n"  // load next 8 ARGB
       "subs        %2, %2, #8                    \n"  // 8 processed per loop
-      "vmov        q2, q1                        \n"  // load next 8 ARGB
-      "vst2.32     {q2, q3}, [%1]!               \n"  // store odd pixels
+      "vuzp.32     q0, q1                        \n"
+      "vuzp.32     q2, q3                        \n"
+      "vst1.32     {q1}, [%1]!                   \n"  // store odd pixels
+      "vst1.32     {q3}, [%1]!                   \n"
       "bgt         1b                            \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
@@ -1109,13 +1125,6 @@ void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
   );
 }
 
-//  46:  f964 018d   vld4.32  {d16,d18,d20,d22}, [r4]!
-//  4a:  3e04        subs  r6, #4
-//  4c:  f964 118d   vld4.32  {d17,d19,d21,d23}, [r4]!
-//  50:  ef64 21f4   vorr  q9, q10, q10
-//  54:  f942 038d   vst2.32  {d16-d19}, [r2]!
-//  58:  d1f5        bne.n  46 <ScaleARGBRowDown2_C+0x46>
-
 void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
                                   ptrdiff_t src_stride,
                                   uint8_t* dst_argb,
@@ -1123,12 +1132,14 @@ void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "vld4.32     {d0, d2, d4, d6}, [%0]!       \n"  // load 8 ARGB pixels.
-      "vld4.32     {d1, d3, d5, d7}, [%0]!       \n"  // load next 8 ARGB
+      "vld1.32     {q0, q1}, [%0]!               \n"  // load 8 ARGB pixels.
+      "vld1.32     {q2, q3}, [%0]!               \n"  // load next 8 ARGB
       "subs        %2, %2, #8                    \n"  // 8 processed per loop
+      "vuzp.32     q0, q1                        \n"
+      "vuzp.32     q2, q3                        \n"
       "vrhadd.u8   q0, q0, q1                    \n"  // rounding half add
       "vrhadd.u8   q1, q2, q3                    \n"  // rounding half add
-      "vst2.32     {q0, q1}, [%1]!               \n"
+      "vst1.32     {q0, q1}, [%1]!               \n"
       "bgt         1b                            \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_argb),  // %1
@@ -1146,24 +1157,32 @@ void ScaleARGBRowDown2Box_NEON(const uint8_t* src_ptr,
       // change the stride to row 2 pointer
       "add         %1, %1, %0                    \n"
       "1:          \n"
-      "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  // load 8 ARGB pixels.
-      "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"  // load next 8 ARGB
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 8 ARGB pixels.
+      "vld1.8      {q8, q9}, [%1]!               \n"  // load 8 more ARGB
       "subs        %3, %3, #8                    \n"  // 8 processed per loop.
-      "vpaddl.u8   q0, q0                        \n"  // B 16 bytes -> 8 shorts.
-      "vpaddl.u8   q1, q1                        \n"  // G 16 bytes -> 8 shorts.
-      "vpaddl.u8   q2, q2                        \n"  // R 16 bytes -> 8 shorts.
-      "vpaddl.u8   q3, q3                        \n"  // A 16 bytes -> 8 shorts.
-      "vld4.8      {d16, d18, d20, d22}, [%1]!   \n"  // load 8 more ARGB
-      "vld4.8      {d17, d19, d21, d23}, [%1]!   \n"  // load last 8 ARGB
-      "vpadal.u8   q0, q8                        \n"  // B 16 bytes -> 8 shorts.
-      "vpadal.u8   q1, q9                        \n"  // G 16 bytes -> 8 shorts.
-      "vpadal.u8   q2, q10                       \n"  // R 16 bytes -> 8 shorts.
-      "vpadal.u8   q3, q11                       \n"  // A 16 bytes -> 8 shorts.
-      "vrshrn.u16  d0, q0, #2                    \n"  // round and pack to bytes
-      "vrshrn.u16  d1, q1, #2                    \n"
-      "vrshrn.u16  d2, q2, #2                    \n"
-      "vrshrn.u16  d3, q3, #2                    \n"
-      "vst4.8      {d0, d1, d2, d3}, [%2]!       \n"
+      "vaddl.u8    q2, d0, d16                   \n"
+      "vaddl.u8    q3, d1, d17                   \n"
+      "vaddl.u8    q10, d2, d18                  \n"
+      "vaddl.u8    q11, d3, d19                  \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load next 8 ARGB
+      "vld1.8      {q8, q9}, [%1]!               \n"  // load last 8 ARGB
+      "vadd.u16    d4, d4, d5                    \n"
+      "vadd.u16    d5, d6, d7                    \n"
+      "vadd.u16    d20, d20, d21                 \n"
+      "vadd.u16    d21, d22, d23                 \n"
+      "vrshrn.u16  d4, q2, #2                    \n"
+      "vrshrn.u16  d5, q10, #2                   \n"
+      "vaddl.u8    q3, d0, d16                   \n"
+      "vaddl.u8    q10, d1, d17                  \n"
+      "vaddl.u8    q11, d2, d18                  \n"
+      "vaddl.u8    q0, d3, d19                   \n"
+      "vadd.u16    d6, d6, d7                    \n"
+      "vadd.u16    d7, d20, d21                  \n"
+      "vadd.u16    d22, d22, d23                 \n"
+      "vadd.u16    d23, d0, d1                   \n"
+      "vrshrn.u16  d6, q3, #2                    \n"
+      "vrshrn.u16  d7, q11, #2                   \n"
+      "vst1.8      {q2, q3}, [%2]!               \n"
       "bgt         1b                            \n"
       : "+r"(src_ptr),     // %0
         "+r"(src_stride),  // %1
@@ -1358,9 +1377,9 @@ void ScaleUVRowDown2_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "vld2.16     {d0, d2}, [%0]!               \n"  // load 8 UV pixels.
-      "vld2.16     {d1, d3}, [%0]!               \n"  // load next 8 UV
+      "vld1.16     {q0, q1}, [%0]!               \n"  // load 16 UV pixels.
       "subs        %2, %2, #8                    \n"  // 8 processed per loop.
+      "vuzp.16     q0, q1                        \n"
       "vst1.16     {q1}, [%1]!                   \n"  // store 8 UV
       "bgt         1b                            \n"
       : "+r"(src_ptr),   // %0
@@ -1377,9 +1396,9 @@ void ScaleUVRowDown2Linear_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "vld2.16     {d0, d2}, [%0]!               \n"  // load 8 UV pixels.
-      "vld2.16     {d1, d3}, [%0]!               \n"  // load next 8 UV
+      "vld1.16     {q0, q1}, [%0]!               \n"  // load 16 UV pixels.
       "subs        %2, %2, #8                    \n"  // 8 processed per loop.
+      "vuzp.16     q0, q1                        \n"
       "vrhadd.u8   q0, q0, q1                    \n"  // rounding half add
       "vst1.16     {q0}, [%1]!                   \n"  // store 8 UV
       "bgt         1b                            \n"
@@ -1398,25 +1417,27 @@ void ScaleUVRowDown2Box_NEON(const uint8_t* src_ptr,
       // change the stride to row 2 pointer
       "add         %1, %1, %0                    \n"
       "1:          \n"
-      "vld2.8      {d0, d2}, [%0]!               \n"  // load 8 UV pixels.
-      "vld2.8      {d1, d3}, [%0]!               \n"  // load next 8 UV
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 16 UV pixels.
+      "vld1.8      {q8, q9}, [%1]!               \n"  // load 16 more UV
       "subs        %3, %3, #8                    \n"  // 8 processed per loop.
-      "vpaddl.u8   q0, q0                        \n"  // U 16 bytes -> 8 shorts.
-      "vpaddl.u8   q1, q1                        \n"  // V 16 bytes -> 8 shorts.
-      "vld2.8      {d16, d18}, [%1]!             \n"  // load 8 more UV
-      "vld2.8      {d17, d19}, [%1]!             \n"  // load last 8 UV
-      "vpadal.u8   q0, q8                        \n"  // U 16 bytes -> 8 shorts.
-      "vpadal.u8   q1, q9                        \n"  // V 16 bytes -> 8 shorts.
+      "vuzp.16     q0, q1                        \n"
+      "vuzp.16     q8, q9                        \n"
+      "vaddl.u8    q2, d0, d2                    \n"
+      "vaddl.u8    q3, d1, d3                    \n"
+      "vaddl.u8    q0, d16, d18                  \n"
+      "vaddl.u8    q1, d17, d19                  \n"
+      "vadd.u16    q0, q0, q2                    \n"
+      "vadd.u16    q1, q1, q3                    \n"
       "vrshrn.u16  d0, q0, #2                    \n"  // round and pack to bytes
       "vrshrn.u16  d1, q1, #2                    \n"
-      "vst2.8      {d0, d1}, [%2]!               \n"
+      "vst1.8      {q0}, [%2]!                   \n"
       "bgt         1b                            \n"
       : "+r"(src_ptr),     // %0
         "+r"(src_stride),  // %1
         "+r"(dst),         // %2
         "+r"(dst_width)    // %3
       :
-      : "memory", "cc", "q0", "q1", "q8", "q9");
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9");
 }
 
 // Reads 4 pixels at a time.

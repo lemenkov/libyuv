@@ -133,6 +133,27 @@ void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
                            int dst_width) {
   (void)src_stride;
   int vl;
+#ifdef __riscv_zve64x
+  asm volatile(
+      "1:          \n"
+      "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
+      "vle64.v     v8, (%[src])                   \n"
+      "vnsrl.wx    v16, v8, %[c32]                \n"
+      "vse32.v     v16, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]              \n"
+      "slli        %[vl], %[vl], 2                \n"
+      "add         %[dst], %[dst], %[vl]          \n"
+      "slli        %[vl], %[vl], 1                \n"
+      "add         %[src], %[src], %[vl]          \n"
+      "bgtz        %[w], 1b                       \n"
+      : [w] "+r"(dst_width),   // %[w]
+        [src] "+r"(src_argb),  // %[src]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [vl] "=&r"(vl)         // %[vl]
+      : [c32] "r"(32)          // %[c32]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19");
+#else
   asm volatile(
       "1:          \n"
       "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
@@ -151,6 +172,7 @@ void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
       :
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
+#endif
 }
 #endif
 
@@ -163,6 +185,32 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
   int vl;
   // NOTE: To match behavior on other platforms, vxrm (fixed-point rounding mode
   // register) is set to round-to-nearest-up mode(0).
+#ifdef __riscv_zve64x
+  asm volatile(
+      "csrwi       vxrm, 0                        \n"
+
+      "1:          \n"
+      "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
+      "vle64.v     v8, (%[src])                   \n"
+      "sub         %[w], %[w], %[vl]              \n"
+      "vnsrl.wi    v16, v8, 0                     \n"
+      "vnsrl.wx    v20, v8, %[c32]                \n"
+      "slli        %[vl], %[vl], 2                \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma    \n"
+      "vaaddu.vv   v16, v16, v20                  \n"
+      "vse8.v      v16, (%[dst_argb])             \n"
+      "add         %[dst_argb], %[dst_argb], %[vl]\n"
+      "slli        %[vl], %[vl], 1                \n"
+      "add         %[src], %[src], %[vl]          \n"
+      "bgtz        %[w], 1b                       \n"
+      : [w] "+r"(dst_width),        // %[w]
+        [src] "+r"(src_argb),       // %[src]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
+        [vl] "=&r"(vl)              // %[vl]
+      : [c32] "r"(32)               // %[c32]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+#else
   asm volatile(
       "csrwi       vxrm, 0                        \n"
 
@@ -185,6 +233,7 @@ void ScaleARGBRowDown2Linear_RVV(const uint8_t* src_argb,
       :
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15");
+#endif
 }
 #endif
 
@@ -194,6 +243,42 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
                               uint8_t* dst_argb,
                               int dst_width) {
   int vl;
+#ifdef __riscv_zve64x
+  asm volatile(
+      "add         %[src1], %[src0], %[src1]      \n"
+
+      "1:          \n"
+      "vsetvli     %[vl], %[w], e32, m2, ta, ma   \n"
+      "vle64.v     v8, (%[src0])                  \n"
+      "vle64.v     v12, (%[src1])                 \n"
+      "sub         %[w], %[w], %[vl]              \n"
+      "vnsrl.wi    v16, v8, 0                     \n"
+      "vnsrl.wx    v18, v8, %[c32]                \n"
+      "vnsrl.wi    v20, v12, 0                    \n"
+      "vnsrl.wx    v22, v12, %[c32]               \n"
+      "slli        %[vl], %[vl], 2                \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma    \n"
+      "vwaddu.vx   v8, v16, %[c2]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
+      "vwaddu.wv   v8, v8, v20                    \n"
+      "vwaddu.wv   v8, v8, v22                    \n"
+      "vnsrl.wi    v16, v8, 2                     \n"
+      "vse8.v      v16, (%[dst_argb])             \n"
+      "add         %[dst_argb], %[dst_argb], %[vl]\n"
+      "slli        %[vl], %[vl], 1                \n"
+      "add         %[src0], %[src0], %[vl]        \n"
+      "add         %[src1], %[src1], %[vl]        \n"
+      "bgtz        %[w], 1b                       \n"
+      : [w] "+r"(dst_width),        // %[w]
+        [src0] "+r"(src_argb),      // %[src0]
+        [src1] "+r"(src_stride),    // %[src1]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
+        [vl] "=&r"(vl)              // %[vl]
+      : [c2] "r"(2),                // %[c2]
+        [c32] "r"(32)               // %[c32]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+#else
   asm volatile(
       "add         %[src1], %[src0], %[src1]      \n"
 
@@ -223,6 +308,7 @@ void ScaleARGBRowDown2Box_RVV(const uint8_t* src_argb,
       : [c2] "r"(2)                 // %[c2]
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
         "v19", "v20", "v21", "v22", "v23");
+#endif
 }
 #endif
 
@@ -370,8 +456,12 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
 
       "1:          \n"
       "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
-      "vlseg2e8.v  v16, (%[s])                    \n"
-      "vlseg2e8.v  v20, (%[t])                    \n"
+      "vle16.v     v8, (%[s])                     \n"
+      "vle16.v     v12, (%[t])                    \n"
+      "vnsrl.wi    v16, v8, 0                     \n"
+      "vnsrl.wi    v18, v8, 8                     \n"
+      "vnsrl.wi    v20, v12, 0                    \n"
+      "vnsrl.wi    v22, v12, 8                    \n"
       "vwaddu.vx   v8, v16, %[c2]                 \n"
       "vwaddu.wv   v8, v8, v18                    \n"
       "vwaddu.wv   v8, v8, v20                    \n"
@@ -390,8 +480,8 @@ void ScaleRowDown2Box_RVV(const uint8_t* src_ptr,
         [dst] "+r"(dst),       // %[dst]
         [vl] "=&r"(vl)         // %[vl]
       : [c2] "r"(2)            // %[c2]
-      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
-        "v19", "v20", "v21", "v22", "v23");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 
 void ScaleRowDown2Box_Odd_RVV(const uint8_t* src_ptr,
@@ -417,9 +507,12 @@ void ScaleRowDown4_RVV(const uint8_t* src_ptr,
   int vl;
   asm volatile(
       "1:          \n"
-      "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
-      "vlseg4e8.v  v8, (%[src_ptr])               \n"
-      "vse8.v      v12, (%[dst_ptr])              \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma   \n"
+      "vle32.v     v8, (%[src_ptr])               \n"
+      "vnsrl.wi    v16, v8, 16                    \n"
+      "vsetvli     zero, zero, e8, m2, ta, ma     \n"
+      "vnsrl.wi    v8, v16, 0                     \n"
+      "vse8.v      v8, (%[dst_ptr])               \n"
       "sub         %[w], %[w], %[vl]              \n"
       "add         %[dst_ptr], %[dst_ptr], %[vl]  \n"
       "slli        %[vl], %[vl], 2                \n"
@@ -431,7 +524,7 @@ void ScaleRowDown4_RVV(const uint8_t* src_ptr,
         [vl] "=&r"(vl)            // %[vl]
       :
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15");
+        "v15", "v16", "v17", "v18", "v19");
 }
 #endif
 
@@ -442,43 +535,43 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
                           int dst_width) {
   const uint8_t* src_ptr1;
   const uint8_t* src_ptr2;
-  int vl;
+  int vl, vl2;
   asm volatile(
       "add         %[src_ptr1], %[src_ptr], %[src_ptr3]\n"
       "add         %[src_ptr2], %[src_ptr1], %[src_ptr3]\n"
       "add         %[src_ptr3], %[src_ptr2], %[src_ptr3]\n"
 
       "1:          \n"
-      "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
-      "vlseg4e8.v  v16, (%[src_ptr])              \n"
-      "vlseg4e8.v  v24, (%[src_ptr1])             \n"
-      "vwaddu.vx   v8, v16, %[c8]                 \n"
-      "vwaddu.wv   v8, v8, v18                    \n"
-      "vwaddu.wv   v8, v8, v20                    \n"
-      "vwaddu.wv   v8, v8, v22                    \n"
-      "vwaddu.wv   v8, v8, v24                    \n"
-      "vwaddu.wv   v8, v8, v26                    \n"
-      "vwaddu.wv   v8, v8, v28                    \n"
-      "vwaddu.wv   v8, v8, v30                    \n"
-      "vlseg4e8.v  v16, (%[src_ptr2])             \n"
-      "vlseg4e8.v  v24, (%[src_ptr3])             \n"
-      "vwaddu.wv   v8, v8, v16                    \n"
-      "vwaddu.wv   v8, v8, v18                    \n"
-      "vwaddu.wv   v8, v8, v20                    \n"
-      "vwaddu.wv   v8, v8, v22                    \n"
-      "vwaddu.wv   v8, v8, v24                    \n"
-      "vwaddu.wv   v8, v8, v26                    \n"
-      "vwaddu.wv   v8, v8, v28                    \n"
-      "vwaddu.wv   v8, v8, v30                    \n"
+      "vsetvli     %[vl], %[w], e8, m1, ta, ma    \n"
+      "slli        %[vl2], %[vl], 2               \n"
+      "vsetvli     zero, %[vl2], e8, m4, ta, ma   \n"
+      "vle8.v      v8, (%[src_ptr])               \n"
+      "vle8.v      v12, (%[src_ptr1])             \n"
+      "vwaddu.vv   v16, v8, v12                   \n"
+      "vle8.v      v8, (%[src_ptr2])              \n"
+      "vle8.v      v12, (%[src_ptr3])             \n"
+      "vwaddu.wv   v16, v16, v8                   \n"
+      "vwaddu.wv   v16, v16, v12                  \n"
+      "srli        %[vl2], %[vl2], 1              \n"
+      "vsetvli     zero, %[vl2], e16, m4, ta, ma  \n"
+      "vnsrl.wi    v8, v16, 0                     \n"
+      "vnsrl.wi    v12, v16, 16                   \n"
+      "vadd.vv     v16, v8, v12                   \n"
+      "vsetvli     zero, %[vl], e16, m2, ta, ma   \n"
+      "vnsrl.wi    v8, v16, 0                     \n"
+      "vnsrl.wi    v10, v16, 16                   \n"
+      "vadd.vv     v8, v8, v10                    \n"
+      "vadd.vi     v8, v8, 8                      \n"
+      "vsetvli     zero, zero, e8, m1, ta, ma     \n"
       "vnsrl.wi    v16, v8, 4                     \n"
       "vse8.v      v16, (%[dst_ptr])              \n"
       "sub         %[w], %[w], %[vl]              \n"
       "add         %[dst_ptr], %[dst_ptr], %[vl]  \n"
-      "slli        %[vl], %[vl], 2                \n"
-      "add         %[src_ptr], %[src_ptr], %[vl]  \n"
-      "add         %[src_ptr1], %[src_ptr1], %[vl]\n"
-      "add         %[src_ptr2], %[src_ptr2], %[vl]\n"
-      "add         %[src_ptr3], %[src_ptr3], %[vl]\n"
+      "slli        %[vl2], %[vl], 2               \n"
+      "add         %[src_ptr], %[src_ptr], %[vl2] \n"
+      "add         %[src_ptr1], %[src_ptr1], %[vl2]\n"
+      "add         %[src_ptr2], %[src_ptr2], %[vl2]\n"
+      "add         %[src_ptr3], %[src_ptr3], %[vl2]\n"
       "bgtz        %[w], 1b                       \n"
       : [w] "+r"(dst_width),          // %[w]
         [src_ptr] "+r"(src_ptr),      // %[src_ptr]
@@ -486,11 +579,11 @@ void ScaleRowDown4Box_RVV(const uint8_t* src_ptr,
         [src_ptr2] "=&r"(src_ptr2),   // %[src_ptr2]
         [src_ptr3] "+r"(src_stride),  // %[src_ptr3]
         [dst_ptr] "+r"(dst_ptr),      // %[dst_ptr]
-        [vl] "=&r"(vl)                // %[vl]
-      : [c8] "r"(8)                   // %[c8]
-      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
-        "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28",
-        "v29", "v30", "v31");
+        [vl] "=&r"(vl),               // %[vl]
+        [vl2] "=&r"(vl2)              // %[vl2]
+      :
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif
 
@@ -1012,13 +1105,15 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
       "csrwi       vxrm, 0                        \n"
 
       "1:          \n"
-      "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
-      "vlseg4e8.v  v8, (%[src_uv])                \n"
-      "vaaddu.vv   v8, v8, v12                    \n"
-      "vaaddu.vv   v10, v10, v14                  \n"
-      "vsseg2e8.v  v8, (%[dst_uv])                \n"
+      "vsetvli     %[vl], %[w], e16, m2, ta, ma   \n"
+      "vle32.v     v8, (%[src_uv])                \n"
       "sub         %[w], %[w], %[vl]              \n"
+      "vnsrl.wi    v16, v8, 0                     \n"
+      "vnsrl.wi    v18, v8, 16                    \n"
       "slli        %[vl], %[vl], 1                \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma    \n"
+      "vaaddu.vv   v16, v16, v18                  \n"
+      "vse8.v      v16, (%[dst_uv])               \n"
       "add         %[dst_uv], %[dst_uv], %[vl]    \n"
       "slli        %[vl], %[vl], 1                \n"
       "add         %[src_uv], %[src_uv], %[vl]    \n"
@@ -1028,8 +1123,8 @@ void ScaleUVRowDown2Linear_RVV(const uint8_t* src_uv,
         [dst_uv] "+r"(dst_uv),  // %[dst_uv]
         [vl] "=&r"(vl)          // %[vl]
       :
-      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17", "v18",
+        "v19");
 }
 #endif
 
@@ -1043,22 +1138,22 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
       "add         %[src_uv_row1], %[src_uv], %[src_uv_row1]\n"
 
       "1:          \n"
-      "vsetvli     %[vl], %[w], e8, m2, ta, ma    \n"
-      "vlseg4e8.v  v14, (%[src_uv])               \n"
-      "vlseg4e8.v  v22, (%[src_uv_row1])          \n"
-      "vwaddu.vx   v8, v14, %[c2]                 \n"
-      "vwaddu.wv   v8, v8, v18                    \n"
-      "vwaddu.wv   v8, v8, v22                    \n"
-      "vwaddu.wv   v8, v8, v26                    \n"
-      "vwaddu.vx   v12, v16, %[c2]                \n"
-      "vwaddu.wv   v12, v12, v20                  \n"
-      "vwaddu.wv   v12, v12, v24                  \n"
-      "vwaddu.wv   v12, v12, v28                  \n"
-      "vnsrl.wi    v16, v8, 2                     \n"
-      "vnsrl.wi    v18, v12, 2                    \n"
-      "vsseg2e8.v  v16, (%[dst_uv])               \n"
+      "vsetvli     %[vl], %[w], e16, m2, ta, ma   \n"
+      "vle32.v     v8, (%[src_uv])                \n"
+      "vle32.v     v12, (%[src_uv_row1])          \n"
       "sub         %[w], %[w], %[vl]              \n"
+      "vnsrl.wi    v16, v8, 0                     \n"
+      "vnsrl.wi    v18, v8, 16                    \n"
+      "vnsrl.wi    v20, v12, 0                    \n"
+      "vnsrl.wi    v22, v12, 16                   \n"
       "slli        %[vl], %[vl], 1                \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma    \n"
+      "vwaddu.vx   v8, v16, %[c2]                 \n"
+      "vwaddu.wv   v8, v8, v18                    \n"
+      "vwaddu.wv   v8, v8, v20                    \n"
+      "vwaddu.wv   v8, v8, v22                    \n"
+      "vnsrl.wi    v16, v8, 2                     \n"
+      "vse8.v      v16, (%[dst_uv])               \n"
       "add         %[dst_uv], %[dst_uv], %[vl]    \n"
       "slli        %[vl], %[vl], 1                \n"
       "add         %[src_uv], %[src_uv], %[vl]    \n"
@@ -1071,8 +1166,7 @@ void ScaleUVRowDown2Box_RVV(const uint8_t* src_uv,
         [vl] "=&r"(vl)                   // %[vl]
       : [c2] "r"(2)                      // %[c2]
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
-        "v25", "v26", "v27", "v28", "v29");
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif
 
@@ -1084,27 +1178,30 @@ void ScaleUVRowDown4_RVV(const uint8_t* src_uv,
                          int dst_width) {
   (void)src_stride;
   (void)src_stepx;
-  int vl;
+  int vl, vl2;
   asm volatile(
       "1:          \n"
-      "vsetvli     %[vl], %[w], e32, m2, ta, ma   \n"
-      "vle64.v     v8, (%[src_uv])                \n"
+      "vsetvli     %[vl], %[w], e16, m2, ta, ma   \n"
+      "slli        %[vl2], %[vl], 1               \n"
+      "vsetvli     zero, %[vl2], e16, m4, ta, ma  \n"
+      "vle32.v     v8, (%[src_uv])                \n"
       "vnsrl.wi    v16, v8, 0                     \n"
-      "vsetvli     zero, zero, e16, m1, ta, ma    \n"
+      "vsetvli     zero, %[vl], e16, m2, ta, ma   \n"
       "vnsrl.wi    v8, v16, 0                     \n"
       "vse16.v     v8, (%[dst_uv])                \n"
       "sub         %[w], %[w], %[vl]              \n"
-      "slli        %[vl], %[vl], 1                \n"
-      "add         %[dst_uv], %[dst_uv], %[vl]    \n"
-      "slli        %[vl], %[vl], 2                \n"
-      "add         %[src_uv], %[src_uv], %[vl]    \n"
+      "add         %[dst_uv], %[dst_uv], %[vl2]   \n"
+      "slli        %[vl2], %[vl2], 2              \n"
+      "add         %[src_uv], %[src_uv], %[vl2]   \n"
       "bgtz        %[w], 1b                       \n"
       : [w] "+r"(dst_width),    // %[w]
         [src_uv] "+r"(src_uv),  // %[src_uv]
         [dst_uv] "+r"(dst_uv),  // %[dst_uv]
-        [vl] "=&r"(vl)          // %[vl]
+        [vl] "=&r"(vl),         // %[vl]
+        [vl2] "=&r"(vl2)        // %[vl2]
       :
-      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v16", "v17");
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19");
 }
 #endif
 

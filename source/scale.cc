@@ -68,7 +68,11 @@ static void ScalePlaneDown2(int src_width,
             ? ScaleRowDown2_Any_NEON
             : (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_NEON
                                           : ScaleRowDown2Box_Any_NEON);
-    if (IS_ALIGNED(dst_width, 16)) {
+    if (IS_ALIGNED(dst_width, 16) && filtering != kFilterLinear) {
+      ScaleRowDown2 =
+          filtering == kFilterNone ? ScaleRowDown2_NEON : ScaleRowDown2Box_NEON;
+    }
+    if (IS_ALIGNED(dst_width, 32)) {
       ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_NEON
                                                : (filtering == kFilterLinear
                                                       ? ScaleRowDown2Linear_NEON
