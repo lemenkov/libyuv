@@ -1295,36 +1295,39 @@ static int ScalePlaneBilinearDown(int src_width,
     ScaleFilterCols = ScaleFilterCols_AVX2;
   }
 #endif
+#if defined(HAS_SCALEFILTERCOLS_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_AVX512BW;
+  }
+#endif
 #if defined(HAS_SCALEFILTERCOLS_NEON)
   if (TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_NEON;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleFilterCols = ScaleFilterCols_NEON;
-    }
+    ScaleFilterCols = ScaleFilterCols_NEON;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_LSX)
   if (TestCpuFlag(kCpuHasLSX) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_LSX;
-    if (IS_ALIGNED(dst_width, 4)) {
-      ScaleFilterCols = ScaleFilterCols_LSX;
-    }
+    ScaleFilterCols = ScaleFilterCols_LSX;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_LASX)
   if (TestCpuFlag(kCpuHasLASX) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_LASX;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleFilterCols = ScaleFilterCols_LASX;
-    }
+    ScaleFilterCols = ScaleFilterCols_LASX;
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_RVV)
+  if (TestCpuFlag(kCpuHasRVV) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_RVV;
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_HVX)
+  if (TestCpuFlag(kCpuHasHVX) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_HVX;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_WASMSIMD;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleFilterCols = ScaleFilterCols_WASMSIMD;
-    }
+    ScaleFilterCols = ScaleFilterCols_WASMSIMD;
   }
 #endif
 
@@ -1565,36 +1568,39 @@ static int ScalePlaneBilinearUp(int src_width,
     ScaleFilterCols = ScaleFilterCols_AVX2;
   }
 #endif
+#if defined(HAS_SCALEFILTERCOLS_AVX512BW)
+  if (filtering && TestCpuFlag(kCpuHasAVX512BW) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_AVX512BW;
+  }
+#endif
 #if defined(HAS_SCALEFILTERCOLS_NEON)
   if (filtering && TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_NEON;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleFilterCols = ScaleFilterCols_NEON;
-    }
+    ScaleFilterCols = ScaleFilterCols_NEON;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_LSX)
   if (filtering && TestCpuFlag(kCpuHasLSX) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_LSX;
-    if (IS_ALIGNED(dst_width, 4)) {
-      ScaleFilterCols = ScaleFilterCols_LSX;
-    }
+    ScaleFilterCols = ScaleFilterCols_LSX;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_LASX)
   if (filtering && TestCpuFlag(kCpuHasLASX) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_LASX;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleFilterCols = ScaleFilterCols_LASX;
-    }
+    ScaleFilterCols = ScaleFilterCols_LASX;
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_RVV)
+  if (filtering && TestCpuFlag(kCpuHasRVV) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_RVV;
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_HVX)
+  if (filtering && TestCpuFlag(kCpuHasHVX) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_HVX;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_WASMSIMD)
   if (filtering && TestCpuFlag(kCpuHasWASMSIMD) && src_width < 32768) {
-    ScaleFilterCols = ScaleFilterCols_Any_WASMSIMD;
-    if (IS_ALIGNED(dst_width, 8)) {
-      ScaleFilterCols = ScaleFilterCols_WASMSIMD;
-    }
+    ScaleFilterCols = ScaleFilterCols_WASMSIMD;
   }
 #endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {

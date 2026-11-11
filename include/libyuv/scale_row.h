@@ -93,6 +93,7 @@ extern "C" {
 #define HAS_SCALEMAXSAMPLES_AVX2
 #define HAS_SCALESAMPLES_AVX2
 #define HAS_SCALESUMSAMPLES_AVX2
+#define HAS_SCALEUVFILTERCOLS_AVX2
 #endif
 
 // The following are available for AVX512 x64 platforms:
@@ -105,6 +106,10 @@ extern "C" {
 #define HAS_SCALEADDCOLS2_AVX512BW
 #define HAS_SCALEUVADDCOLS3_AVX512VBMI
 #define HAS_SCALEROWDOWN2_AVX512BW
+#define HAS_SCALEARGBROWDOWN2_AVX512BW
+#define HAS_SCALEFILTERCOLS_AVX512BW
+#define HAS_SCALEARGBFILTERCOLS_AVX512BW
+#define HAS_SCALEUVFILTERCOLS_AVX512BW
 #endif
 
 // The following are available on Neon platforms:
@@ -116,6 +121,7 @@ extern "C" {
 #define HAS_SCALEARGBROWDOWN2_NEON
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
 #define HAS_SCALEFILTERCOLS_NEON
+#define HAS_SCALEUVFILTERCOLS_NEON
 #define HAS_SCALEROWDOWN2_NEON
 #define HAS_SCALEROWDOWN34_NEON
 #define HAS_SCALEROWDOWN38_NEON
@@ -164,6 +170,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN4_LSX
 #define HAS_SCALEROWDOWN38_LSX
 #define HAS_SCALEFILTERCOLS_LSX
+#define HAS_SCALEUVFILTERCOLS_LSX
 #define HAS_SCALEADDROW_LSX
 #define HAS_SCALEARGBCOLS_LSX
 #define HAS_SCALEARGBFILTERCOLS_LSX
@@ -181,6 +188,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN4_LASX
 #define HAS_SCALEROWDOWN38_LASX
 #define HAS_SCALEFILTERCOLS_LASX
+#define HAS_SCALEUVFILTERCOLS_LASX
 #define HAS_SCALEADDROW_LASX
 #define HAS_SCALEARGBCOLS_LASX
 #define HAS_SCALEARGBFILTERCOLS_LASX
@@ -223,6 +231,8 @@ extern "C" {
 #define HAS_SCALEUVROWDOWN2LINEAR_RVV
 #define HAS_SCALEUVROWDOWN4_RVV
 #define HAS_SCALEARGBFILTERCOLS_RVV
+#define HAS_SCALEFILTERCOLS_RVV
+#define HAS_SCALEUVFILTERCOLS_RVV
 #endif
 
 // The following are available for WebAssembly SIMD128:
@@ -244,6 +254,7 @@ extern "C" {
 #define HAS_SCALESAMPLES_WASMSIMD
 #define HAS_SCALESUMSAMPLES_WASMSIMD
 #define HAS_SCALEUVADDCOLS3_WASMSIMD
+#define HAS_SCALEUVFILTERCOLS_WASMSIMD
 #define HAS_SCALEUVROWDOWN2_WASMSIMD
 #define HAS_SCALEUVROWDOWN2BOX_WASMSIMD
 #define HAS_SCALEUVROWDOWN2LINEAR_WASMSIMD
@@ -265,11 +276,14 @@ extern "C" {
 // The following are available for Hexagon HVX:
 #if !defined(LIBYUV_DISABLE_HVX) && defined(__HVX__)
 #define HAS_SCALEADDROW_HVX
+#define HAS_SCALEARGBFILTERCOLS_HVX
 #define HAS_SCALEARGBROWDOWN2_HVX
+#define HAS_SCALEFILTERCOLS_HVX
 #define HAS_SCALEROWDOWN2_16_HVX
 #define HAS_SCALEROWDOWN2_HVX
 #define HAS_SCALEROWDOWN4_HVX
 #define HAS_SCALEUVADDCOLS3_HVX
+#define HAS_SCALEUVFILTERCOLS_HVX
 #define HAS_SCALEUVROWDOWN2_HVX
 #define HAS_SCALEUVROWDOWN2BOX_HVX
 #define HAS_SCALEUVROWDOWN2LINEAR_HVX
@@ -1014,6 +1028,21 @@ void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
                           int dst_width,
                           int x,
                           int dx);
+void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
+                              const uint8_t* src_ptr,
+                              int dst_width,
+                              int x,
+                              int dx);
+void ScaleUVFilterCols_AVX2(uint8_t* dst_uv,
+                            const uint8_t* src_uv,
+                            int dst_width,
+                            int x,
+                            int dx);
+void ScaleUVFilterCols_AVX512BW(uint8_t* dst_uv,
+                                const uint8_t* src_uv,
+                                int dst_width,
+                                int x,
+                                int dx);
 void ScaleColsUp2_AVX2(uint8_t* dst_ptr,
                        const uint8_t* src_ptr,
                        int dst_width,
@@ -1040,6 +1069,11 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
                               int dst_width,
                               int x,
                               int dx);
+void ScaleARGBFilterCols_AVX512BW(uint8_t* dst_argb,
+                                  const uint8_t* src_argb,
+                                  int dst_width,
+                                  int x,
+                                  int dx);
 void ScaleARGBColsUp2_AVX2(uint8_t* dst_argb,
                            const uint8_t* src_argb,
                            int dst_width,
@@ -1055,21 +1089,26 @@ void ScaleARGBCols_NEON(uint8_t* dst_argb,
                         int dst_width,
                         int x,
                         int dx);
-void ScaleARGBFilterCols_Any_NEON(uint8_t* dst_ptr,
-                                  const uint8_t* src_ptr,
-                                  int dst_width,
-                                  int x,
-                                  int dx);
 void ScaleARGBCols_Any_NEON(uint8_t* dst_ptr,
                             const uint8_t* src_ptr,
                             int dst_width,
                             int x,
                             int dx);
+void ScaleFilterCols_RVV(uint8_t* dst_ptr,
+                         const uint8_t* src_ptr,
+                         int dst_width,
+                         int x,
+                         int dx);
 void ScaleARGBFilterCols_RVV(uint8_t* dst_argb,
                              const uint8_t* src_argb,
                              int dst_width,
                              int x,
                              int dx);
+void ScaleUVFilterCols_RVV(uint8_t* dst_uv,
+                           const uint8_t* src_uv,
+                           int dst_width,
+                           int x,
+                           int dx);
 
 // ARGB Row functions
 void ScaleARGBRowDown2_AVX2(const uint8_t* src_argb,
@@ -1084,6 +1123,18 @@ void ScaleARGBRowDown2Box_AVX2(const uint8_t* src_argb,
                                ptrdiff_t src_stride,
                                uint8_t* dst_argb,
                                int dst_width);
+void ScaleARGBRowDown2_AVX512BW(const uint8_t* src_argb,
+                                ptrdiff_t src_stride,
+                                uint8_t* dst_argb,
+                                int dst_width);
+void ScaleARGBRowDown2Linear_AVX512BW(const uint8_t* src_argb,
+                                      ptrdiff_t src_stride,
+                                      uint8_t* dst_argb,
+                                      int dst_width);
+void ScaleARGBRowDown2Box_AVX512BW(const uint8_t* src_argb,
+                                   ptrdiff_t src_stride,
+                                   uint8_t* dst_argb,
+                                   int dst_width);
 void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
                             uint8_t* dst,
@@ -1751,12 +1802,11 @@ void ScaleFilterCols_NEON(uint8_t* dst_ptr,
                           int dst_width,
                           int x,
                           int dx);
-
-void ScaleFilterCols_Any_NEON(uint8_t* dst_ptr,
-                              const uint8_t* src_ptr,
-                              int dst_width,
-                              int x,
-                              int dx);
+void ScaleUVFilterCols_NEON(uint8_t* dst_uv,
+                            const uint8_t* src_uv,
+                            int dst_width,
+                            int x,
+                            int dx);
 float ScaleMaxSamples_NEON(const float* src,
                            float* dst,
                            float scale,
@@ -1862,21 +1912,11 @@ void ScaleRowDown38_3_Box_Any_LSX(const uint8_t* src_ptr,
 void ScaleAddRow_Any_LSX(const uint8_t* src_ptr,
                          uint16_t* dst_ptr,
                          int src_width);
-void ScaleFilterCols_Any_LSX(uint8_t* dst_ptr,
-                             const uint8_t* src_ptr,
-                             int dst_width,
-                             int x,
-                             int dx);
 void ScaleARGBCols_Any_LSX(uint8_t* dst_ptr,
                            const uint8_t* src_ptr,
                            int dst_width,
                            int x,
                            int dx);
-void ScaleARGBFilterCols_Any_LSX(uint8_t* dst_ptr,
-                                 const uint8_t* src_ptr,
-                                 int dst_width,
-                                 int x,
-                                 int dx);
 void ScaleRowDown34_Any_LSX(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
                             uint8_t* dst_ptr,
@@ -1988,21 +2028,11 @@ void ScaleRowDown38_3_Box_Any_LASX(const uint8_t* src_ptr,
 void ScaleAddRow_Any_LASX(const uint8_t* src_ptr,
                           uint16_t* dst_ptr,
                           int src_width);
-void ScaleFilterCols_Any_LASX(uint8_t* dst_ptr,
-                              const uint8_t* src_ptr,
-                              int dst_width,
-                              int x,
-                              int dx);
 void ScaleARGBCols_Any_LASX(uint8_t* dst_ptr,
                             const uint8_t* src_ptr,
                             int dst_width,
                             int x,
                             int dx);
-void ScaleARGBFilterCols_Any_LASX(uint8_t* dst_ptr,
-                                  const uint8_t* src_ptr,
-                                  int dst_width,
-                                  int x,
-                                  int dx);
 void ScaleRowDown34_Any_LASX(const uint8_t* src_ptr,
                              ptrdiff_t src_stride,
                              uint8_t* dst_ptr,
@@ -2024,6 +2054,16 @@ float ScaleSumSamples_LASX(const float* src,
                            float scale,
                            int width);
 void ScaleSamples_LASX(const float* src, float* dst, float scale, int width);
+void ScaleUVFilterCols_LSX(uint8_t* dst_uv,
+                           const uint8_t* src_uv,
+                           int dst_width,
+                           int x,
+                           int dx);
+void ScaleUVFilterCols_LASX(uint8_t* dst_uv,
+                            const uint8_t* src_uv,
+                            int dst_width,
+                            int x,
+                            int dx);
 
 void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width);
 void ScaleRowDown2_RVV(const uint8_t* src_ptr,
@@ -2188,11 +2228,11 @@ void ScaleFilterCols_WASMSIMD(uint8_t* dst_ptr,
                               int dst_width,
                               int x,
                               int dx);
-void ScaleFilterCols_Any_WASMSIMD(uint8_t* dst_ptr,
-                                  const uint8_t* src_ptr,
-                                  int dst_width,
-                                  int x,
-                                  int dx);
+void ScaleUVFilterCols_WASMSIMD(uint8_t* dst_uv,
+                                const uint8_t* src_uv,
+                                int dst_width,
+                                int x,
+                                int dx);
 void ScaleARGBRowDown2_WASMSIMD(const uint8_t* src_argb,
                                 ptrdiff_t src_stride,
                                 uint8_t* dst_argb,
@@ -2252,11 +2292,6 @@ void ScaleARGBFilterCols_WASMSIMD(uint8_t* dst_argb,
                                   int dst_width,
                                   int x,
                                   int dx);
-void ScaleARGBFilterCols_Any_WASMSIMD(uint8_t* dst_ptr,
-                                      const uint8_t* src_ptr,
-                                      int dst_width,
-                                      int x,
-                                      int dx);
 void ScaleARGBColsUp2_WASMSIMD(uint8_t* dst_argb,
                                const uint8_t* src_argb,
                                int dst_width,
@@ -2482,6 +2517,21 @@ void ScaleUVRowDown2Box_HVX(const uint8_t* src_ptr,
                             ptrdiff_t src_stride,
                             uint8_t* dst_uv,
                             int dst_width);
+void ScaleFilterCols_HVX(uint8_t* dst_ptr,
+                         const uint8_t* src_ptr,
+                         int dst_width,
+                         int x,
+                         int dx);
+void ScaleARGBFilterCols_HVX(uint8_t* dst_argb,
+                             const uint8_t* src_argb,
+                             int dst_width,
+                             int x,
+                             int dx);
+void ScaleUVFilterCols_HVX(uint8_t* dst_uv,
+                           const uint8_t* src_uv,
+                           int dst_width,
+                           int x,
+                           int dx);
 
 #ifdef __cplusplus
 }  // extern "C"

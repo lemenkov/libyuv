@@ -651,7 +651,7 @@ void ScaleUVAddCols3_LSX(int dst_width,
 #endif  // HAS_SCALEUVADDCOLS3_LSX
 
 #if defined(HAS_SCALEFILTERCOLS_LSX) || defined(HAS_SCALEARGBCOLS_LSX) || \
-    defined(HAS_SCALEARGBFILTERCOLS_LSX)
+    defined(HAS_SCALEARGBFILTERCOLS_LSX) || defined(HAS_SCALEUVFILTERCOLS_LSX)
 static const uint64_t kRamp0123[2] = {0x0000000100000000ULL,
                                       0x0000000300000002ULL};
 #endif
@@ -662,6 +662,8 @@ void ScaleFilterCols_LSX(uint8_t* dst_ptr,
                          int dst_width,
                          int x,
                          int dx) {
+  ptrdiff_t np = dst_width & ~3;
+  int rem = dst_width & 3;
   ptrdiff_t i0, i1, i2, i3;
   uint32_t p0, p1;
   asm volatile(
@@ -720,6 +722,9 @@ void ScaleFilterCols_LSX(uint8_t* dst_ptr,
         [ramp] "r"(kRamp0123)  // %[ramp]
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7");
+  if (rem) {
+    ScaleFilterCols_C(dst_ptr, src_ptr, rem, (int)(x + np * dx), dx);
+  }
 }
 #endif  // HAS_SCALEFILTERCOLS_LSX
 
@@ -782,6 +787,8 @@ void ScaleARGBFilterCols_LSX(uint8_t* dst_argb,
                              int dst_width,
                              int x,
                              int dx) {
+  ptrdiff_t np = dst_width & ~3;
+  int rem = dst_width & 3;
   ptrdiff_t i0, i1, i2, i3;
   uint64_t p0, p1;
   asm volatile(
@@ -844,8 +851,85 @@ void ScaleARGBFilterCols_LSX(uint8_t* dst_argb,
         [ramp] "r"(kRamp0123)  // %[ramp]
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8");
+  if (rem) {
+    ScaleARGBFilterCols_C(dst_argb, src_argb, rem, (int)(x + np * dx), dx);
+  }
 }
 #endif  // HAS_SCALEARGBFILTERCOLS_LSX
+
+#ifdef HAS_SCALEUVFILTERCOLS_LSX
+void ScaleUVFilterCols_LSX(uint8_t* dst_uv,
+                           const uint8_t* src_uv,
+                           int dst_width,
+                           int x,
+                           int dx) {
+  ptrdiff_t np = dst_width & ~3;
+  int rem = dst_width & 3;
+  ptrdiff_t i0, i1, i2, i3;
+  uint32_t p0, p1;
+  asm volatile(
+      "srli.w     %[w], %[w], 2                        \n"
+      "beqz       %[w], 2f                             \n"
+      "vld        $vr0, %[ramp], 0                     \n"
+      "vreplgr2vr.w $vr1, %[dx]                        \n"
+      "vreplgr2vr.w $vr2, %[x]                         \n"
+      "vmul.w     $vr0, $vr1, $vr0                     \n"
+      "vslli.w    $vr1, $vr1, 2                        \n"
+      "vadd.w     $vr2, $vr2, $vr0                     \n"
+      "vldi       $vr3, 0x7f                           \n"
+      "vsrli.w    $vr3, $vr3, 24                       \n"
+      "vaddi.wu   $vr4, $vr3, 1                        \n"
+      "1:                                              \n"
+      "vsrai.w    $vr5, $vr2, 16                       \n"
+      "vslli.w    $vr5, $vr5, 1                        \n"
+      "vsrai.w    $vr6, $vr2, 9                        \n"
+      "vand.v     $vr6, $vr6, $vr3                     \n"
+      "vsub.w     $vr7, $vr4, $vr6                     \n"
+      "vslli.w    $vr6, $vr6, 8                        \n"
+      "vor.v      $vr6, $vr6, $vr7                     \n"
+      "vshuf4i.b  $vr6, $vr6, 0x44                     \n"
+      "vadd.w     $vr2, $vr2, $vr1                     \n"
+      "vpickve2gr.w %[i0], $vr5, 0                     \n"
+      "vpickve2gr.w %[i1], $vr5, 1                     \n"
+      "vpickve2gr.w %[i2], $vr5, 2                     \n"
+      "vpickve2gr.w %[i3], $vr5, 3                     \n"
+      "ldx.w      %[p0], %[src], %[i0]                 \n"
+      "ldx.w      %[p1], %[src], %[i1]                 \n"
+      "vinsgr2vr.w $vr5, %[p0], 0                      \n"
+      "vinsgr2vr.w $vr5, %[p1], 1                      \n"
+      "ldx.w      %[p0], %[src], %[i2]                 \n"
+      "ldx.w      %[p1], %[src], %[i3]                 \n"
+      "vinsgr2vr.w $vr5, %[p0], 2                      \n"
+      "vinsgr2vr.w $vr5, %[p1], 3                      \n"
+      "vshuf4i.b  $vr5, $vr5, 0xd8                     \n"
+      "vmulwev.h.bu $vr7, $vr5, $vr6                  \n"
+      "vmaddwod.h.bu $vr7, $vr5, $vr6                 \n"
+      "vsrari.h   $vr5, $vr7, 7                        \n"
+      "vpickev.b  $vr5, $vr5, $vr5                     \n"
+      "vstelm.d   $vr5, %[dst], 0, 0                   \n"
+      "addi.d     %[dst], %[dst], 8                    \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [dst] "+r"(dst_uv),    // %[dst]
+        [w] "+r"(dst_width),   // %[w]
+        [i0] "=&r"(i0),        // %[i0]
+        [i1] "=&r"(i1),        // %[i1]
+        [i2] "=&r"(i2),        // %[i2]
+        [i3] "=&r"(i3),        // %[i3]
+        [p0] "=&r"(p0),        // %[p0]
+        [p1] "=&r"(p1)         // %[p1]
+      : [src] "r"(src_uv),     // %[src]
+        [x] "r"(x),            // %[x]
+        [dx] "r"(dx),          // %[dx]
+        [ramp] "r"(kRamp0123)  // %[ramp]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7");
+  if (rem) {
+    ScaleUVFilterCols_C(dst_uv, src_uv, rem, (int)(x + np * dx), dx);
+  }
+}
+#endif  // HAS_SCALEUVFILTERCOLS_LSX
 
 #if defined(HAS_SCALEROWDOWN34_LSX) || defined(HAS_SCALEROWDOWN34_LASX)
 static const uint64_t kScale34Shuf[2] = {0x0908070504030100ULL,
@@ -1769,7 +1853,8 @@ void ScaleUVAddCols3_LASX(int dst_width,
 #endif  // HAS_SCALEUVADDCOLS3_LASX
 
 #if defined(HAS_SCALEFILTERCOLS_LASX) || defined(HAS_SCALEARGBCOLS_LASX) || \
-    defined(HAS_SCALEARGBFILTERCOLS_LASX)
+    defined(HAS_SCALEARGBFILTERCOLS_LASX) ||                                \
+    defined(HAS_SCALEUVFILTERCOLS_LASX)
 static const uint64_t kRamp01234567[4] = {
     0x0000000100000000ULL, 0x0000000300000002ULL, 0x0000000500000004ULL,
     0x0000000700000006ULL};
@@ -1781,6 +1866,8 @@ void ScaleFilterCols_LASX(uint8_t* dst_ptr,
                           int dst_width,
                           int x,
                           int dx) {
+  ptrdiff_t np = dst_width & ~7;
+  int rem = dst_width & 7;
   ptrdiff_t i0, i1, i2, i3;
   uint32_t p0, p1;
   asm volatile(
@@ -1852,6 +1939,9 @@ void ScaleFilterCols_LASX(uint8_t* dst_ptr,
         [ramp] "r"(kRamp01234567)  // %[ramp]
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
         "$xr7");
+  if (rem) {
+    ScaleFilterCols_C(dst_ptr, src_ptr, rem, (int)(x + np * dx), dx);
+  }
 }
 #endif  // HAS_SCALEFILTERCOLS_LASX
 
@@ -1927,6 +2017,8 @@ void ScaleARGBFilterCols_LASX(uint8_t* dst_argb,
                               int dst_width,
                               int x,
                               int dx) {
+  ptrdiff_t np = dst_width & ~7;
+  int rem = dst_width & 7;
   ptrdiff_t i0, i1, i2, i3;
   uint64_t p0, p1;
   asm volatile(
@@ -2001,8 +2093,98 @@ void ScaleARGBFilterCols_LASX(uint8_t* dst_argb,
         [ramp] "r"(kRamp01234567)  // %[ramp]
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
         "$xr7", "$xr8");
+  if (rem) {
+    ScaleARGBFilterCols_C(dst_argb, src_argb, rem, (int)(x + np * dx), dx);
+  }
 }
 #endif  // HAS_SCALEARGBFILTERCOLS_LASX
+
+#ifdef HAS_SCALEUVFILTERCOLS_LASX
+void ScaleUVFilterCols_LASX(uint8_t* dst_uv,
+                            const uint8_t* src_uv,
+                            int dst_width,
+                            int x,
+                            int dx) {
+  ptrdiff_t np = dst_width & ~7;
+  int rem = dst_width & 7;
+  ptrdiff_t i0, i1, i2, i3;
+  uint32_t p0, p1;
+  asm volatile(
+      "srli.w     %[w], %[w], 3                        \n"
+      "beqz       %[w], 2f                             \n"
+      "xvld       $xr0, %[ramp], 0                     \n"
+      "xvreplgr2vr.w $xr1, %[dx]                       \n"
+      "xvreplgr2vr.w $xr2, %[x]                        \n"
+      "xvmul.w    $xr0, $xr1, $xr0                     \n"
+      "xvslli.w   $xr1, $xr1, 3                        \n"
+      "xvadd.w    $xr2, $xr2, $xr0                     \n"
+      "xvldi      $xr3, 0x7f                           \n"
+      "xvsrli.w   $xr3, $xr3, 24                       \n"
+      "xvaddi.wu  $xr4, $xr3, 1                        \n"
+      "1:                                              \n"
+      "xvsrai.w   $xr5, $xr2, 16                       \n"
+      "xvslli.w   $xr5, $xr5, 1                        \n"
+      "xvsrai.w   $xr6, $xr2, 9                        \n"
+      "xvand.v    $xr6, $xr6, $xr3                     \n"
+      "xvsub.w    $xr7, $xr4, $xr6                     \n"
+      "xvslli.w   $xr6, $xr6, 8                        \n"
+      "xvor.v     $xr6, $xr6, $xr7                     \n"
+      "xvshuf4i.b $xr6, $xr6, 0x44                     \n"
+      "xvadd.w    $xr2, $xr2, $xr1                     \n"
+      "xvpickve2gr.w %[i0], $xr5, 0                    \n"
+      "xvpickve2gr.w %[i1], $xr5, 1                    \n"
+      "xvpickve2gr.w %[i2], $xr5, 2                    \n"
+      "xvpickve2gr.w %[i3], $xr5, 3                    \n"
+      "ldx.w      %[p0], %[src], %[i0]                 \n"
+      "ldx.w      %[p1], %[src], %[i1]                 \n"
+      "xvinsgr2vr.w $xr0, %[p0], 0                     \n"
+      "xvinsgr2vr.w $xr0, %[p1], 1                     \n"
+      "ldx.w      %[p0], %[src], %[i2]                 \n"
+      "ldx.w      %[p1], %[src], %[i3]                 \n"
+      "xvinsgr2vr.w $xr0, %[p0], 2                     \n"
+      "xvinsgr2vr.w $xr0, %[p1], 3                     \n"
+      "xvpickve2gr.w %[i0], $xr5, 4                    \n"
+      "xvpickve2gr.w %[i1], $xr5, 5                    \n"
+      "xvpickve2gr.w %[i2], $xr5, 6                    \n"
+      "xvpickve2gr.w %[i3], $xr5, 7                    \n"
+      "ldx.w      %[p0], %[src], %[i0]                 \n"
+      "ldx.w      %[p1], %[src], %[i1]                 \n"
+      "xvinsgr2vr.w $xr0, %[p0], 4                     \n"
+      "xvinsgr2vr.w $xr0, %[p1], 5                     \n"
+      "ldx.w      %[p0], %[src], %[i2]                 \n"
+      "ldx.w      %[p1], %[src], %[i3]                 \n"
+      "xvinsgr2vr.w $xr0, %[p0], 6                     \n"
+      "xvinsgr2vr.w $xr0, %[p1], 7                     \n"
+      "xvshuf4i.b $xr0, $xr0, 0xd8                     \n"
+      "xvmulwev.h.bu $xr7, $xr0, $xr6                  \n"
+      "xvmaddwod.h.bu $xr7, $xr0, $xr6                 \n"
+      "xvsrari.h  $xr5, $xr7, 7                        \n"
+      "xvpickev.b $xr5, $xr5, $xr5                     \n"
+      "xvstelm.d  $xr5, %[dst], 0, 0                   \n"
+      "xvstelm.d  $xr5, %[dst], 8, 2                   \n"
+      "addi.d     %[dst], %[dst], 16                   \n"
+      "addi.w     %[w], %[w], -1                       \n"
+      "bnez       %[w], 1b                             \n"
+      "2:                                              \n"
+      : [dst] "+r"(dst_uv),        // %[dst]
+        [w] "+r"(dst_width),       // %[w]
+        [i0] "=&r"(i0),            // %[i0]
+        [i1] "=&r"(i1),            // %[i1]
+        [i2] "=&r"(i2),            // %[i2]
+        [i3] "=&r"(i3),            // %[i3]
+        [p0] "=&r"(p0),            // %[p0]
+        [p1] "=&r"(p1)             // %[p1]
+      : [src] "r"(src_uv),         // %[src]
+        [x] "r"(x),                // %[x]
+        [dx] "r"(dx),              // %[dx]
+        [ramp] "r"(kRamp01234567)  // %[ramp]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+  if (rem) {
+    ScaleUVFilterCols_C(dst_uv, src_uv, rem, (int)(x + np * dx), dx);
+  }
+}
+#endif  // HAS_SCALEUVFILTERCOLS_LASX
 
 #ifdef HAS_SCALEROWDOWN34_LASX
 void ScaleRowDown34_LASX(const uint8_t* src_ptr,

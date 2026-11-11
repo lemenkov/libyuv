@@ -4652,6 +4652,11 @@ int ARGBAdd(const uint8_t* src_argb0,
     }
   }
 #endif
+#if defined(HAS_ARGBADDROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBAddRow = ARGBAddRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_ARGBADDROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBAddRow = ARGBAddRow_Any_NEON;
@@ -4674,6 +4679,11 @@ int ARGBAdd(const uint8_t* src_argb0,
     if (IS_ALIGNED(width, 8)) {
       ARGBAddRow = ARGBAddRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_ARGBADDROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBAddRow = ARGBAddRow_RVV;
   }
 #endif
 #if defined(HAS_ARGBADDROW_HVX)
@@ -4746,6 +4756,11 @@ int ARGBSubtract(const uint8_t* src_argb0,
     }
   }
 #endif
+#if defined(HAS_ARGBSUBTRACTROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBSubtractRow = ARGBSubtractRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_ARGBSUBTRACTROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBSubtractRow = ARGBSubtractRow_Any_NEON;
@@ -4768,6 +4783,11 @@ int ARGBSubtract(const uint8_t* src_argb0,
     if (IS_ALIGNED(width, 8)) {
       ARGBSubtractRow = ARGBSubtractRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_ARGBSUBTRACTROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBSubtractRow = ARGBSubtractRow_RVV;
   }
 #endif
 #if defined(HAS_ARGBSUBTRACTROW_HVX)
@@ -5387,12 +5407,39 @@ int ARGBUnattenuate(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBUNATTENUATEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_ARGBUNATTENUATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGBUnattenuateRow = ARGBUnattenuateRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBUnattenuateRow = ARGBUnattenuateRow_NEON;
-    }
+    ARGBUnattenuateRow = ARGBUnattenuateRow_NEON;
+  }
+#endif
+#if defined(HAS_ARGBUNATTENUATEROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_LSX;
+  }
+#endif
+#if defined(HAS_ARGBUNATTENUATEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_LASX;
+  }
+#endif
+#if defined(HAS_ARGBUNATTENUATEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_RVV;
+  }
+#endif
+#if defined(HAS_ARGBUNATTENUATEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_HVX;
+  }
+#endif
+#if defined(HAS_ARGBUNATTENUATEROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_WASMSIMD;
   }
 #endif
 

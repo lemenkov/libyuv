@@ -238,7 +238,8 @@ static int ARGBClipTestFilter(int src_width,
 #define DX(x, nom, denom) static_cast<int>((Abs(x) / nom) * nom)
 #define SX(x, nom, denom) static_cast<int>((x / nom) * denom)
 
-#define TEST_FACTOR1(DISABLED_, name, filter, nom, denom, max_diff)          \
+#define TEST_FACTOR1(DISABLED_, name, filter, nom, denom, max_diff,          \
+                     clip_max_diff)                                          \
   TEST_F(LibYUVScaleTest, ARGBScaleDownBy##name##_##filter) {                \
     int diff = ARGBTestFilter(                                               \
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
@@ -252,27 +253,26 @@ static int ARGBClipTestFilter(int src_width,
         SX(benchmark_width_, nom, denom), SX(benchmark_height_, nom, denom), \
         DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
         kFilter##filter, benchmark_iterations_);                             \
-    ASSERT_LE(diff, max_diff);                                               \
+    ASSERT_LE(diff, clip_max_diff);                                          \
   }
 
-// Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
-// filtering is different fixed point implementations for SSSE3, Neon and C.
+// Test a scale factor with all 4 filters.  Expect exact for SIMD vs C.
 #ifndef DISABLE_SLOW_TESTS
-#define TEST_FACTOR(name, nom, denom)           \
-  TEST_FACTOR1(, name, None, nom, denom, 0)     \
-  TEST_FACTOR1(, name, Linear, nom, denom, 3)   \
-  TEST_FACTOR1(, name, Bilinear, nom, denom, 3) \
-  TEST_FACTOR1(, name, Box, nom, denom, 3)
+#define TEST_FACTOR(name, nom, denom)              \
+  TEST_FACTOR1(, name, None, nom, denom, 0, 0)     \
+  TEST_FACTOR1(, name, Linear, nom, denom, 0, 3)   \
+  TEST_FACTOR1(, name, Bilinear, nom, denom, 0, 3) \
+  TEST_FACTOR1(, name, Box, nom, denom, 0, 3)
 #else
 #if defined(ENABLE_FULL_TESTS)
-#define TEST_FACTOR(name, nom, denom)                    \
-  TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0)     \
-  TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, 3)   \
-  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
-  TEST_FACTOR1(DISABLED_, name, Box, nom, denom, 3)
+#define TEST_FACTOR(name, nom, denom)                       \
+  TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0, 0)     \
+  TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, 0, 3)   \
+  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 0, 3) \
+  TEST_FACTOR1(DISABLED_, name, Box, nom, denom, 0, 3)
 #else
 #define TEST_FACTOR(name, nom, denom) \
-  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3)
+  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 0, 3)
 #endif
 #endif
 
@@ -289,7 +289,8 @@ TEST_FACTOR(3, 1, 3)
 #undef SX
 #undef DX
 
-#define TEST_SCALETO1(DISABLED_, name, width, height, filter, max_diff)        \
+#define TEST_SCALETO1(DISABLED_, name, width, height, filter, max_diff,        \
+                      clip_max_diff)                                           \
   TEST_F(LibYUVScaleTest, name##To##width##x##height##_##filter) {             \
     int diff = ARGBTestFilter(benchmark_width_, benchmark_height_, width,      \
                               height, kFilter##filter, benchmark_iterations_,  \
@@ -308,33 +309,33 @@ TEST_FACTOR(3, 1, 3)
     int diff =                                                                 \
         ARGBClipTestFilter(benchmark_width_, benchmark_height_, width, height, \
                            kFilter##filter, benchmark_iterations_);            \
-    ASSERT_LE(diff, max_diff);                                                 \
+    ASSERT_LE(diff, clip_max_diff);                                            \
   }                                                                            \
   TEST_F(LibYUVScaleTest,                                                      \
          DISABLED_##name##ClipFrom##width##x##height##_##filter) {             \
     int diff = ARGBClipTestFilter(width, height, Abs(benchmark_width_),        \
                                   Abs(benchmark_height_), kFilter##filter,     \
                                   benchmark_iterations_);                      \
-    ASSERT_LE(diff, max_diff);                                                 \
+    ASSERT_LE(diff, clip_max_diff);                                            \
   }
 
 #ifndef DISABLE_SLOW_TESTS
 // Test scale to a specified size with all 4 filters.
-#define TEST_SCALETO(name, width, height)           \
-  TEST_SCALETO1(, name, width, height, None, 0)     \
-  TEST_SCALETO1(, name, width, height, Linear, 3)   \
-  TEST_SCALETO1(, name, width, height, Bilinear, 3) \
-  TEST_SCALETO1(, name, width, height, Box, 3)
+#define TEST_SCALETO(name, width, height)              \
+  TEST_SCALETO1(, name, width, height, None, 0, 0)     \
+  TEST_SCALETO1(, name, width, height, Linear, 0, 3)   \
+  TEST_SCALETO1(, name, width, height, Bilinear, 0, 3) \
+  TEST_SCALETO1(, name, width, height, Box, 0, 3)
 #else
 #if defined(ENABLE_FULL_TESTS)
-#define TEST_SCALETO(name, width, height)                    \
-  TEST_SCALETO1(DISABLED_, name, width, height, None, 0)     \
-  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3)   \
-  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3) \
-  TEST_SCALETO1(DISABLED_, name, width, height, Box, 3)
+#define TEST_SCALETO(name, width, height)                       \
+  TEST_SCALETO1(DISABLED_, name, width, height, None, 0, 0)     \
+  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 0, 3)   \
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 0, 3) \
+  TEST_SCALETO1(DISABLED_, name, width, height, Box, 0, 3)
 #else
 #define TEST_SCALETO(name, width, height) \
-  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3)
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 0, 3)
 #endif
 #endif
 
@@ -580,10 +581,10 @@ TEST_F(LibYUVScaleTest, ARGBTest4x) {
               kFilterBilinear);
   }
 
-  ASSERT_NEAR(66, dest_pixels[0], 4);
-  ASSERT_NEAR(255 - 66, dest_pixels[1], 4);
-  ASSERT_NEAR(67, dest_pixels[2], 4);
-  ASSERT_NEAR(76, dest_pixels[3], 4);
+  ASSERT_EQ(66, dest_pixels[0]);
+  ASSERT_EQ(190, dest_pixels[1]);
+  ASSERT_EQ(67, dest_pixels[2]);
+  ASSERT_EQ(76, dest_pixels[3]);
 
   ARGBScale(orig_pixels, kSrcStride, 640, 4, dest_pixels, kDstStride, 160, 1,
             kFilterNone);

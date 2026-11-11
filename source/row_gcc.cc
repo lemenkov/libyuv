@@ -12131,6 +12131,8 @@ void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
                              int width) {
   uintptr_t alpha;
   asm volatile(
+      "pcmpeqw     %%xmm4,%%xmm4                 \n"
+      "psllw       $0x8,%%xmm4                   \n"
       // 4 pixel loop.
       LABELALIGN
       "1:          \n"
@@ -12155,6 +12157,10 @@ void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
       "movlhps     %%xmm3,%%xmm2                 \n"
       "pmulhuw     %%xmm2,%%xmm1                 \n"
       "lea         0x10(%0),%0                   \n"
+      "paddusw     %%xmm4,%%xmm0                 \n"
+      "psubw       %%xmm4,%%xmm0                 \n"
+      "paddusw     %%xmm4,%%xmm1                 \n"
+      "psubw       %%xmm4,%%xmm1                 \n"
       "packuswb    %%xmm1,%%xmm0                 \n"
       "movdqu      %%xmm0,(%1)                   \n"
       "lea         0x10(%1),%1                   \n"
@@ -12165,7 +12171,7 @@ void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
         "+r"(width),        // %2
         "=&r"(alpha)        // %3
       : "r"(fixed_invtbl8)  // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
 }
 #endif  // HAS_ARGBUNATTENUATEROW_SSE2
 
@@ -12181,6 +12187,8 @@ void ARGBUnattenuateRow_AVX2(const uint8_t* src_argb,
   asm volatile(
       "sub         %0,%1                         \n"
       "vbroadcasti128 %5,%%ymm5                  \n"
+      "vpcmpeqw    %%ymm4,%%ymm4,%%ymm4          \n"
+      "vpsrlw      $0x8,%%ymm4,%%ymm4            \n"
 
       // 8 pixel loop.
       LABELALIGN
@@ -12220,6 +12228,8 @@ void ARGBUnattenuateRow_AVX2(const uint8_t* src_argb,
       "vpshufb     %%ymm5,%%ymm3,%%ymm3          \n"
       "vpmulhuw    %%ymm2,%%ymm0,%%ymm0          \n"
       "vpmulhuw    %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpminuw     %%ymm4,%%ymm0,%%ymm0          \n"
+      "vpminuw     %%ymm4,%%ymm1,%%ymm1          \n"
       "vpackuswb   %%ymm1,%%ymm0,%%ymm0          \n"
       "vmovdqu     %%ymm0,0x00(%0,%1,1)          \n"
       "lea         0x20(%0),%0                   \n"
@@ -17724,6 +17734,199 @@ void OMITFP ARGBOrRow_AVX512BW(const uint8_t* src_argb,
       : "memory", "cc", "xmm0", "xmm1", "k1");
 }
 #endif  // HAS_ARGBORROW_AVX512BW
+
+#ifdef HAS_ARGBADDROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void OMITFP ARGBAddRow_AVX512BW(const uint8_t* src_argb,
+                                const uint8_t* src_argb1,
+                                uint8_t* dst_argb,
+                                int width) {
+  uintptr_t temp;
+  asm volatile(
+      "sub         $0x10,%[width]                \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu8    (%[src0]),%%zmm0              \n"
+      "lea         0x40(%[src0]),%[src0]         \n"
+      "vpaddusb    (%[src1]),%%zmm0,%%zmm0       \n"
+      "lea         0x40(%[src1]),%[src1]         \n"
+      "vmovdqu8    %%zmm0,(%[dst])               \n"
+      "lea         0x40(%[dst]),%[dst]           \n"
+      "sub         $0x10,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:                                        \n"
+      "add         $0x10,%[width]                \n"
+      "jle         99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q[width],%[temp],%[temp]     \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%[src0]),%%zmm0%{%%k1%}%{z%} \n"
+      "vmovdqu32   (%[src1]),%%zmm1%{%%k1%}%{z%} \n"
+      "vpaddusb    %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu32   %%zmm0,(%[dst])%{%%k1%}       \n"
+
+      "99:                                       \n"
+      "vzeroupper                                \n"
+      : [src0] "+r"(src_argb), [src1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [width] "+r"(width), [temp] "=&r"(temp)
+      :
+      : "memory", "cc", "xmm0", "xmm1", "k1");
+}
+#endif  // HAS_ARGBADDROW_AVX512BW
+
+#ifdef HAS_ARGBSUBTRACTROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void OMITFP ARGBSubtractRow_AVX512BW(const uint8_t* src_argb,
+                                     const uint8_t* src_argb1,
+                                     uint8_t* dst_argb,
+                                     int width) {
+  uintptr_t temp;
+  asm volatile(
+      "sub         $0x10,%[width]                \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu8    (%[src0]),%%zmm0              \n"
+      "lea         0x40(%[src0]),%[src0]         \n"
+      "vpsubusb    (%[src1]),%%zmm0,%%zmm0       \n"
+      "lea         0x40(%[src1]),%[src1]         \n"
+      "vmovdqu8    %%zmm0,(%[dst])               \n"
+      "lea         0x40(%[dst]),%[dst]           \n"
+      "sub         $0x10,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:                                        \n"
+      "add         $0x10,%[width]                \n"
+      "jle         99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q[width],%[temp],%[temp]     \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%[src0]),%%zmm0%{%%k1%}%{z%} \n"
+      "vmovdqu32   (%[src1]),%%zmm1%{%%k1%}%{z%} \n"
+      "vpsubusb    %%zmm1,%%zmm0,%%zmm0          \n"
+      "vmovdqu32   %%zmm0,(%[dst])%{%%k1%}       \n"
+
+      "99:                                       \n"
+      "vzeroupper                                \n"
+      : [src0] "+r"(src_argb), [src1] "+r"(src_argb1), [dst] "+r"(dst_argb),
+        [width] "+r"(width), [temp] "=&r"(temp)
+      :
+      : "memory", "cc", "xmm0", "xmm1", "k1");
+}
+#endif  // HAS_ARGBSUBTRACTROW_AVX512BW
+
+#ifdef HAS_ARGBUNATTENUATEROW_AVX512BW
+static const uvec8 kUnattenShufLo_AVX512 = {
+    0u, 1u, 0u, 1u, 0u, 1u, 2u, 3u, 4u, 5u, 4u, 5u, 4u, 5u, 6u, 7u};
+static const uvec8 kUnattenShufHi_AVX512 = {
+    8u, 9u, 8u, 9u, 8u, 9u, 10u, 11u, 12u, 13u, 12u, 13u, 12u, 13u, 14u, 15u};
+
+LIBYUV_TARGET_AVX512BW
+void OMITFP ARGBUnattenuateRow_AVX512BW(const uint8_t* src_argb,
+                                        uint8_t* dst_argb,
+                                        int width) {
+  uintptr_t temp;
+  asm volatile(
+      "vmovdqu16   0x000(%[tbl]),%%zmm16         \n"
+      "vmovdqu16   0x040(%[tbl]),%%zmm17         \n"
+      "vmovdqu16   0x080(%[tbl]),%%zmm18         \n"
+      "vmovdqu16   0x0c0(%[tbl]),%%zmm19         \n"
+      "vmovdqu16   0x100(%[tbl]),%%zmm20         \n"
+      "vmovdqu16   0x140(%[tbl]),%%zmm21         \n"
+      "vmovdqu16   0x180(%[tbl]),%%zmm22         \n"
+      "vmovdqu16   0x1c0(%[tbl]),%%zmm23         \n"
+      "vpternlogd  $0xff,%%zmm24,%%zmm24,%%zmm24 \n"
+      "vpsrlw      $8,%%zmm24,%%zmm29            \n"  // 0x00ff
+      "vpsrlw      $15,%%zmm24,%%zmm25           \n"
+      "vpsllw      $6,%%zmm25,%%zmm26            \n"  // 0x0040
+      "vpsllw      $7,%%zmm25,%%zmm25            \n"  // 0x0080
+      "vpsrld      $24,%%zmm24,%%zmm24           \n"
+      "vpslld      $16,%%zmm24,%%zmm24           \n"  // 0x00ff0000
+      "vbroadcasti32x4 %[shuf_lo],%%zmm27        \n"
+      "vbroadcasti32x4 %[shuf_hi],%%zmm28        \n"
+      "sub         $0x10,%[width]                \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu32   (%[src]),%%zmm0               \n"
+      "lea         0x40(%[src]),%[src]           \n"
+      "vpsrld      $24,%%zmm0,%%zmm3             \n"
+      "vpord       %%zmm24,%%zmm3,%%zmm3         \n"
+      "vptestmw    %%zmm26,%%zmm3,%%k2           \n"
+      "vptestmw    %%zmm25,%%zmm3,%%k3           \n"
+      "vmovdqa64   %%zmm3,%%zmm4                 \n"
+      "vmovdqa64   %%zmm3,%%zmm5                 \n"
+      "vmovdqa64   %%zmm3,%%zmm6                 \n"
+      "vpermi2w    %%zmm17,%%zmm16,%%zmm3        \n"
+      "vpermi2w    %%zmm19,%%zmm18,%%zmm4        \n"
+      "vpermi2w    %%zmm21,%%zmm20,%%zmm5        \n"
+      "vpermi2w    %%zmm23,%%zmm22,%%zmm6        \n"
+      "vmovdqu16   %%zmm4,%%zmm3%{%%k2%}         \n"
+      "vmovdqu16   %%zmm6,%%zmm5%{%%k2%}         \n"
+      "vmovdqu16   %%zmm5,%%zmm3%{%%k3%}         \n"
+      "vpunpcklbw  %%zmm0,%%zmm0,%%zmm1          \n"
+      "vpunpckhbw  %%zmm0,%%zmm0,%%zmm2          \n"
+      "vpshufb     %%zmm27,%%zmm3,%%zmm4         \n"
+      "vpshufb     %%zmm28,%%zmm3,%%zmm3         \n"
+      "vpmulhuw    %%zmm4,%%zmm1,%%zmm1          \n"
+      "vpmulhuw    %%zmm3,%%zmm2,%%zmm2          \n"
+      "vpminuw     %%zmm29,%%zmm1,%%zmm1         \n"
+      "vpminuw     %%zmm29,%%zmm2,%%zmm2         \n"
+      "vpackuswb   %%zmm2,%%zmm1,%%zmm0          \n"
+      "vmovdqu32   %%zmm0,(%[dst])               \n"
+      "lea         0x40(%[dst]),%[dst]           \n"
+      "sub         $0x10,%[width]                \n"
+      "jge         1b                            \n"
+
+      "2:                                        \n"
+      "add         $0x10,%[width]                \n"
+      "jle         99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q[width],%[temp],%[temp]     \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "vmovdqu32   (%[src]),%%zmm0%{%%k1%}%{z%}  \n"
+      "vpsrld      $24,%%zmm0,%%zmm3             \n"
+      "vpord       %%zmm24,%%zmm3,%%zmm3         \n"
+      "vptestmw    %%zmm26,%%zmm3,%%k2           \n"
+      "vptestmw    %%zmm25,%%zmm3,%%k3           \n"
+      "vmovdqa64   %%zmm3,%%zmm4                 \n"
+      "vmovdqa64   %%zmm3,%%zmm5                 \n"
+      "vmovdqa64   %%zmm3,%%zmm6                 \n"
+      "vpermi2w    %%zmm17,%%zmm16,%%zmm3        \n"
+      "vpermi2w    %%zmm19,%%zmm18,%%zmm4        \n"
+      "vpermi2w    %%zmm21,%%zmm20,%%zmm5        \n"
+      "vpermi2w    %%zmm23,%%zmm22,%%zmm6        \n"
+      "vmovdqu16   %%zmm4,%%zmm3%{%%k2%}         \n"
+      "vmovdqu16   %%zmm6,%%zmm5%{%%k2%}         \n"
+      "vmovdqu16   %%zmm5,%%zmm3%{%%k3%}         \n"
+      "vpunpcklbw  %%zmm0,%%zmm0,%%zmm1          \n"
+      "vpunpckhbw  %%zmm0,%%zmm0,%%zmm2          \n"
+      "vpshufb     %%zmm27,%%zmm3,%%zmm4         \n"
+      "vpshufb     %%zmm28,%%zmm3,%%zmm3         \n"
+      "vpmulhuw    %%zmm4,%%zmm1,%%zmm1          \n"
+      "vpmulhuw    %%zmm3,%%zmm2,%%zmm2          \n"
+      "vpminuw     %%zmm29,%%zmm1,%%zmm1         \n"
+      "vpminuw     %%zmm29,%%zmm2,%%zmm2         \n"
+      "vpackuswb   %%zmm2,%%zmm1,%%zmm0          \n"
+      "vmovdqu32   %%zmm0,(%[dst])%{%%k1%}       \n"
+
+      "99:                                       \n"
+      "vzeroupper                                \n"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [width] "+r"(width),
+        [temp] "=&r"(temp)
+      : [tbl] "r"(fixed_invtbl16), [shuf_lo] "m"(kUnattenShufLo_AVX512),
+        [shuf_hi] "m"(kUnattenShufHi_AVX512)
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm16", "xmm17", "xmm18", "xmm19", "xmm20", "xmm21", "xmm22", "xmm23",
+        "xmm24", "xmm25", "xmm26", "xmm27", "xmm28", "xmm29", "k1", "k2",
+        "k3");
+}
+#endif  // HAS_ARGBUNATTENUATEROW_AVX512BW
 
 #ifdef HAS_ARGBALPHABLENDROW_SSSE3
 void ARGBAlphaBlendRow_SSSE3(const uint8_t* src_argb,

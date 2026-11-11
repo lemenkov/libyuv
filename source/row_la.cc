@@ -1756,6 +1756,63 @@ void ARGBAttenuateRow_LSX(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBATTENUATEROW_LSX
 
+#ifdef HAS_ARGBUNATTENUATEROW_LSX
+void ARGBUnattenuateRow_LSX(const uint8_t* src_argb,
+                            uint8_t* dst_argb,
+                            int width) {
+  uint64_t t0, t1;
+  asm volatile(
+      "addi.w %[cnt], %[cnt], -4\n\t"
+      "bltz %[cnt], 2f\n\t"
+      "vldi $vr5, 0xff\n\t"
+      "vslli.w $vr5, $vr5, 24\n\t"
+      "1:\n\t"
+      "vld $vr0, %[src], 0\n\t"
+      "ld.bu %[t0], %[src], 3\n\t"
+      "ld.bu %[t1], %[src], 7\n\t"
+      "slli.d %[t0], %[t0], 2\n\t"
+      "slli.d %[t1], %[t1], 2\n\t"
+      "ldx.wu %[t0], %[tbl], %[t0]\n\t"
+      "ldx.wu %[t1], %[tbl], %[t1]\n\t"
+      "vinsgr2vr.w $vr3, %[t0], 0\n\t"
+      "vinsgr2vr.w $vr3, %[t1], 2\n\t"
+      "vshuf4i.h $vr3, $vr3, 0x40\n\t"
+      "ld.bu %[t0], %[src], 11\n\t"
+      "ld.bu %[t1], %[src], 15\n\t"
+      "slli.d %[t0], %[t0], 2\n\t"
+      "slli.d %[t1], %[t1], 2\n\t"
+      "ldx.wu %[t0], %[tbl], %[t0]\n\t"
+      "ldx.wu %[t1], %[tbl], %[t1]\n\t"
+      "vinsgr2vr.w $vr4, %[t0], 0\n\t"
+      "vinsgr2vr.w $vr4, %[t1], 2\n\t"
+      "vshuf4i.h $vr4, $vr4, 0x40\n\t"
+      "vilvl.b $vr1, $vr0, $vr0\n\t"
+      "vilvh.b $vr2, $vr0, $vr0\n\t"
+      "vmuh.hu $vr1, $vr1, $vr3\n\t"
+      "vmuh.hu $vr2, $vr2, $vr4\n\t"
+      "vsat.hu $vr1, $vr1, 7\n\t"
+      "vsat.hu $vr2, $vr2, 7\n\t"
+      "vpickev.b $vr1, $vr2, $vr1\n\t"
+      "vand.v $vr0, $vr0, $vr5\n\t"
+      "vandn.v $vr1, $vr5, $vr1\n\t"
+      "vor.v $vr1, $vr1, $vr0\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 16\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.w %[cnt], %[cnt], -4\n\t"
+      "bgez %[cnt], 1b\n\t"
+      "2:\n\t"
+      "addi.w %[cnt], %[cnt], 4\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [cnt] "+r"(width),
+        [t0] "=&r"(t0), [t1] "=&r"(t1)
+      : [tbl] "r"(fixed_invtbl8)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5");
+  if (width > 0) {
+    ARGBUnattenuateRow_C(src_argb, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBUNATTENUATEROW_LSX
+
 #ifdef HAS_ARGBBLENDROW_LSX
 void ARGBBlendRow_LSX(const uint8_t* src_argb0,
                       const uint8_t* src_argb1,
@@ -2226,7 +2283,7 @@ void InterpolateRow_LSX(uint8_t* dst_ptr,
       "vmaddwod.h.bu $vr0, $vr2, $vr3\n\t"
       "vmulwev.h.bu $vr1, $vr4, $vr3\n\t"
       "vmaddwod.h.bu $vr1, $vr4, $vr3\n\t"
-      "vsrarni.b.h $vr1, $vr0, 8\n\t"
+      "vsrlrni.b.h $vr1, $vr0, 8\n\t"
       "vst $vr1, %[dst], 0\n\t"
       "addi.d %[s0], %[s0], 16\n\t"
       "addi.d %[s1], %[s1], 16\n\t"
@@ -2277,12 +2334,14 @@ void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
                           uint8_t* dst_y,
                           int width,
                           const struct ArgbConstants* c) {
+  uint16_t add_y;
+  __builtin_memcpy(&add_y, &c->kAddY[0], sizeof(add_y));
   asm volatile(
       "vldrepl.b $vr0, %[c], 0\n\t"
       "vldrepl.b $vr1, %[c], 1\n\t"
       "vldrepl.b $vr2, %[c], 2\n\t"
       "vldrepl.b $vr3, %[c], 3\n\t"
-      "vldrepl.h $vr4, %[c], 96\n\t"
+      "vreplgr2vr.h $vr4, %[add_y]\n\t"
       "1:\n\t"
       "vld $vr5, %[src], 0\n\t"
       "vld $vr6, %[src], 16\n\t"
@@ -2300,11 +2359,145 @@ void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
       "addi.d %[cnt], %[cnt], -8\n\t"
       "bnez %[cnt], 1b\n\t"
       : [src] "+r"(src_argb), [dst] "+r"(dst_y), [cnt] "+r"(width)
-      : [c] "r"(c)
+      : [c] "r"(c), [add_y] "r"(add_y)
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8", "$vr9");
 }
 #endif  // HAS_ARGBTOYMATRIXROW_LSX
+
+#ifdef HAS_ARGBTOUV444MATRIXROW_LSX
+void ARGBToUV444MatrixRow_LSX(const uint8_t* src_argb,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width,
+                              const struct ArgbConstants* c) {
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "vldrepl.b $vr0, %[c], 32\n\t"
+      "vldrepl.b $vr1, %[c], 33\n\t"
+      "vldrepl.b $vr2, %[c], 34\n\t"
+      "vldrepl.b $vr3, %[c], 35\n\t"
+      "vldrepl.b $vr10, %[c], 64\n\t"
+      "vldrepl.b $vr11, %[c], 65\n\t"
+      "vldrepl.b $vr12, %[c], 66\n\t"
+      "vldrepl.b $vr13, %[c], 67\n\t"
+      "vreplgr2vr.h $vr4, %[add_uv]\n\t"
+      "1:\n\t"
+      "vld $vr5, %[src], 0\n\t"
+      "vld $vr6, %[src], 16\n\t"
+      "vpickev.b $vr7, $vr6, $vr5\n\t"
+      "vpickod.b $vr8, $vr6, $vr5\n\t"
+      "vmulwev.h.bu.b $vr9, $vr7, $vr0\n\t"
+      "vmaddwev.h.bu.b $vr9, $vr8, $vr1\n\t"
+      "vmaddwod.h.bu.b $vr9, $vr7, $vr2\n\t"
+      "vmaddwod.h.bu.b $vr9, $vr8, $vr3\n\t"
+      "vsub.h $vr9, $vr4, $vr9\n\t"
+      "vmulwev.h.bu.b $vr14, $vr7, $vr10\n\t"
+      "vmaddwev.h.bu.b $vr14, $vr8, $vr11\n\t"
+      "vmaddwod.h.bu.b $vr14, $vr7, $vr12\n\t"
+      "vmaddwod.h.bu.b $vr14, $vr8, $vr13\n\t"
+      "vsub.h $vr14, $vr4, $vr14\n\t"
+      "vpickod.b $vr9, $vr14, $vr9\n\t"
+      "vstelm.d $vr9, %[du], 0, 0\n\t"
+      "vstelm.d $vr9, %[dv], 0, 1\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[du], %[du], 8\n\t"
+      "addi.d %[dv], %[dv], 8\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [du] "+r"(dst_u), [dv] "+r"(dst_v),
+        [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14");
+}
+#endif  // HAS_ARGBTOUV444MATRIXROW_LSX
+
+#ifdef HAS_ARGBTOUVMATRIXROW_LSX
+void ARGBToUVMatrixRow_LSX(const uint8_t* src_argb,
+                           int src_stride_argb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width,
+                           const struct ArgbConstants* c) {
+  const uint8_t* next_argb = src_argb + src_stride_argb;
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "vldrepl.b $vr0, %[c], 32\n\t"
+      "vldrepl.b $vr1, %[c], 33\n\t"
+      "vldrepl.b $vr2, %[c], 34\n\t"
+      "vldrepl.b $vr3, %[c], 35\n\t"
+      "vldrepl.b $vr10, %[c], 64\n\t"
+      "vldrepl.b $vr11, %[c], 65\n\t"
+      "vldrepl.b $vr12, %[c], 66\n\t"
+      "vldrepl.b $vr13, %[c], 67\n\t"
+      "vreplgr2vr.h $vr4, %[add_uv]\n\t"
+      "1:\n\t"
+      "vld $vr14, %[s0], 0\n\t"
+      "vld $vr15, %[s0], 16\n\t"
+      "vld $vr16, %[s1], 0\n\t"
+      "vld $vr17, %[s1], 16\n\t"
+      "vpickev.w $vr18, $vr15, $vr14\n\t"
+      "vpickod.w $vr19, $vr15, $vr14\n\t"
+      "vpickev.w $vr20, $vr17, $vr16\n\t"
+      "vpickod.w $vr21, $vr17, $vr16\n\t"
+      "vaddwev.h.bu $vr14, $vr18, $vr19\n\t"
+      "vaddwod.h.bu $vr15, $vr18, $vr19\n\t"
+      "vaddwev.h.bu $vr16, $vr20, $vr21\n\t"
+      "vaddwod.h.bu $vr17, $vr20, $vr21\n\t"
+      "vadd.h $vr14, $vr14, $vr16\n\t"
+      "vadd.h $vr15, $vr15, $vr17\n\t"
+      "vsrari.h $vr14, $vr14, 2\n\t"
+      "vsrari.h $vr15, $vr15, 2\n\t"
+      "vpackev.b $vr5, $vr15, $vr14\n\t"
+      "vld $vr14, %[s0], 32\n\t"
+      "vld $vr15, %[s0], 48\n\t"
+      "vld $vr16, %[s1], 32\n\t"
+      "vld $vr17, %[s1], 48\n\t"
+      "vpickev.w $vr18, $vr15, $vr14\n\t"
+      "vpickod.w $vr19, $vr15, $vr14\n\t"
+      "vpickev.w $vr20, $vr17, $vr16\n\t"
+      "vpickod.w $vr21, $vr17, $vr16\n\t"
+      "vaddwev.h.bu $vr14, $vr18, $vr19\n\t"
+      "vaddwod.h.bu $vr15, $vr18, $vr19\n\t"
+      "vaddwev.h.bu $vr16, $vr20, $vr21\n\t"
+      "vaddwod.h.bu $vr17, $vr20, $vr21\n\t"
+      "vadd.h $vr14, $vr14, $vr16\n\t"
+      "vadd.h $vr15, $vr15, $vr17\n\t"
+      "vsrari.h $vr14, $vr14, 2\n\t"
+      "vsrari.h $vr15, $vr15, 2\n\t"
+      "vpackev.b $vr6, $vr15, $vr14\n\t"
+      "vpickev.b $vr7, $vr6, $vr5\n\t"
+      "vpickod.b $vr8, $vr6, $vr5\n\t"
+      "vmulwev.h.bu.b $vr9, $vr7, $vr0\n\t"
+      "vmaddwev.h.bu.b $vr9, $vr8, $vr1\n\t"
+      "vmaddwod.h.bu.b $vr9, $vr7, $vr2\n\t"
+      "vmaddwod.h.bu.b $vr9, $vr8, $vr3\n\t"
+      "vsub.h $vr9, $vr4, $vr9\n\t"
+      "vmulwev.h.bu.b $vr14, $vr7, $vr10\n\t"
+      "vmaddwev.h.bu.b $vr14, $vr8, $vr11\n\t"
+      "vmaddwod.h.bu.b $vr14, $vr7, $vr12\n\t"
+      "vmaddwod.h.bu.b $vr14, $vr8, $vr13\n\t"
+      "vsub.h $vr14, $vr4, $vr14\n\t"
+      "vpickod.b $vr9, $vr14, $vr9\n\t"
+      "vstelm.d $vr9, %[du], 0, 0\n\t"
+      "vstelm.d $vr9, %[dv], 0, 1\n\t"
+      "addi.d %[s0], %[s0], 64\n\t"
+      "addi.d %[s1], %[s1], 64\n\t"
+      "addi.d %[du], %[du], 8\n\t"
+      "addi.d %[dv], %[dv], 8\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src_argb), [s1] "+r"(next_argb), [du] "+r"(dst_u),
+        [dv] "+r"(dst_v), [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14",
+        "$vr15", "$vr16", "$vr17", "$vr18", "$vr19", "$vr20", "$vr21");
+}
+#endif  // HAS_ARGBTOUVMATRIXROW_LSX
 
 #ifdef HAS_RGBTOYMATRIXROW_LSX
 void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
@@ -2314,11 +2507,13 @@ void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
   static const uint8_t kShuf[32] = {0, 1, 2,  0,  3,  4, 5,  0,  6,  7, 8,
                                     0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
                                     9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+  uint16_t add_y;
+  __builtin_memcpy(&add_y, &c->kAddY[0], sizeof(add_y));
   asm volatile(
       "vldrepl.b $vr0, %[c], 0\n\t"
       "vldrepl.b $vr1, %[c], 1\n\t"
       "vldrepl.b $vr2, %[c], 2\n\t"
-      "vldrepl.h $vr3, %[c], 96\n\t"
+      "vreplgr2vr.h $vr3, %[add_y]\n\t"
       "vld $vr4, %[shuf], 0\n\t"
       "vld $vr5, %[shuf], 16\n\t"
       "1:\n\t"
@@ -2349,11 +2544,178 @@ void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
       "addi.d %[cnt], %[cnt], -16\n\t"
       "bnez %[cnt], 1b\n\t"
       : [src] "+r"(src_rgba), [dst] "+r"(dst_y), [cnt] "+r"(width)
-      : [c] "r"(c), [shuf] "r"(kShuf)
+      : [c] "r"(c), [add_y] "r"(add_y), [shuf] "r"(kShuf)
       : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
         "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13");
 }
 #endif  // HAS_RGBTOYMATRIXROW_LSX
+
+#ifdef HAS_RGBTOUV444MATRIXROW_LSX
+void RGBToUV444MatrixRow_LSX(const uint8_t* src_rgb,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width,
+                             const struct ArgbConstants* c) {
+  static const uint8_t kShuf[32] = {0, 1, 2,  0,  3,  4, 5,  0,  6,  7, 8,
+                                    0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
+                                    9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "vldrepl.b $vr0, %[c], 32\n\t"
+      "vldrepl.b $vr1, %[c], 33\n\t"
+      "vldrepl.b $vr2, %[c], 34\n\t"
+      "vldrepl.b $vr14, %[c], 64\n\t"
+      "vldrepl.b $vr15, %[c], 65\n\t"
+      "vldrepl.b $vr16, %[c], 66\n\t"
+      "vreplgr2vr.h $vr3, %[add_uv]\n\t"
+      "vld $vr4, %[shuf], 0\n\t"
+      "vld $vr5, %[shuf], 16\n\t"
+      "1:\n\t"
+      "vld $vr6, %[src], 0\n\t"
+      "vld $vr7, %[src], 12\n\t"
+      "vld $vr8, %[src], 24\n\t"
+      "vld $vr9, %[src], 32\n\t"
+      "vshuf.b $vr6, $vr6, $vr6, $vr4\n\t"
+      "vshuf.b $vr7, $vr7, $vr7, $vr4\n\t"
+      "vshuf.b $vr8, $vr8, $vr8, $vr4\n\t"
+      "vshuf.b $vr9, $vr9, $vr9, $vr5\n\t"
+      "vpickev.b $vr10, $vr7, $vr6\n\t"
+      "vpickod.b $vr11, $vr7, $vr6\n\t"
+      "vmulwev.h.bu.b $vr12, $vr10, $vr0\n\t"
+      "vmaddwev.h.bu.b $vr12, $vr11, $vr1\n\t"
+      "vmaddwod.h.bu.b $vr12, $vr10, $vr2\n\t"
+      "vsub.h $vr12, $vr3, $vr12\n\t"
+      "vmulwev.h.bu.b $vr17, $vr10, $vr14\n\t"
+      "vmaddwev.h.bu.b $vr17, $vr11, $vr15\n\t"
+      "vmaddwod.h.bu.b $vr17, $vr10, $vr16\n\t"
+      "vsub.h $vr17, $vr3, $vr17\n\t"
+      "vpickev.b $vr10, $vr9, $vr8\n\t"
+      "vpickod.b $vr11, $vr9, $vr8\n\t"
+      "vmulwev.h.bu.b $vr13, $vr10, $vr0\n\t"
+      "vmaddwev.h.bu.b $vr13, $vr11, $vr1\n\t"
+      "vmaddwod.h.bu.b $vr13, $vr10, $vr2\n\t"
+      "vsub.h $vr13, $vr3, $vr13\n\t"
+      "vmulwev.h.bu.b $vr18, $vr10, $vr14\n\t"
+      "vmaddwev.h.bu.b $vr18, $vr11, $vr15\n\t"
+      "vmaddwod.h.bu.b $vr18, $vr10, $vr16\n\t"
+      "vsub.h $vr18, $vr3, $vr18\n\t"
+      "vpickod.b $vr12, $vr13, $vr12\n\t"
+      "vpickod.b $vr17, $vr18, $vr17\n\t"
+      "vst $vr12, %[du], 0\n\t"
+      "vst $vr17, %[dv], 0\n\t"
+      "addi.d %[src], %[src], 48\n\t"
+      "addi.d %[du], %[du], 16\n\t"
+      "addi.d %[dv], %[dv], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_rgb), [du] "+r"(dst_u), [dv] "+r"(dst_v),
+        [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv), [shuf] "r"(kShuf)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14",
+        "$vr15", "$vr16", "$vr17", "$vr18");
+}
+#endif  // HAS_RGBTOUV444MATRIXROW_LSX
+
+#ifdef HAS_RGBTOUVMATRIXROW_LSX
+void RGBToUVMatrixRow_LSX(const uint8_t* src_rgb,
+                          int src_stride_rgb,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width,
+                          const struct ArgbConstants* c) {
+  static const uint8_t kShuf[32] = {0, 1, 2,  0,  3,  4, 5,  0,  6,  7, 8,
+                                    0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
+                                    9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+  const uint8_t* next_rgb = src_rgb + src_stride_rgb;
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "vldrepl.b $vr20, %[c], 32\n\t"
+      "vsrai.h $vr20, $vr20, 8\n\t"
+      "vldrepl.b $vr21, %[c], 33\n\t"
+      "vsrai.h $vr21, $vr21, 8\n\t"
+      "vldrepl.b $vr22, %[c], 34\n\t"
+      "vsrai.h $vr22, $vr22, 8\n\t"
+      "vldrepl.b $vr23, %[c], 64\n\t"
+      "vsrai.h $vr23, $vr23, 8\n\t"
+      "vldrepl.b $vr24, %[c], 65\n\t"
+      "vsrai.h $vr24, $vr24, 8\n\t"
+      "vldrepl.b $vr25, %[c], 66\n\t"
+      "vsrai.h $vr25, $vr25, 8\n\t"
+      "vreplgr2vr.h $vr26, %[add_uv]\n\t"
+      "vld $vr16, %[shuf], 0\n\t"
+      "vld $vr17, %[shuf], 16\n\t"
+      "1:\n\t"
+      "vld $vr8, %[s0], 0\n\t"
+      "vld $vr9, %[s0], 12\n\t"
+      "vld $vr10, %[s0], 24\n\t"
+      "vld $vr11, %[s0], 32\n\t"
+      "vshuf.b $vr8, $vr8, $vr8, $vr16\n\t"
+      "vshuf.b $vr9, $vr9, $vr9, $vr16\n\t"
+      "vshuf.b $vr10, $vr10, $vr10, $vr16\n\t"
+      "vshuf.b $vr11, $vr11, $vr11, $vr17\n\t"
+      "vpickev.b $vr12, $vr9, $vr8\n\t"
+      "vpickod.b $vr13, $vr9, $vr8\n\t"
+      "vpickev.b $vr14, $vr11, $vr10\n\t"
+      "vpickod.b $vr15, $vr11, $vr10\n\t"
+      "vpickev.b $vr0, $vr14, $vr12\n\t"
+      "vpickod.b $vr2, $vr14, $vr12\n\t"
+      "vpickev.b $vr1, $vr15, $vr13\n\t"
+      "vld $vr8, %[s1], 0\n\t"
+      "vld $vr9, %[s1], 12\n\t"
+      "vld $vr10, %[s1], 24\n\t"
+      "vld $vr11, %[s1], 32\n\t"
+      "vshuf.b $vr8, $vr8, $vr8, $vr16\n\t"
+      "vshuf.b $vr9, $vr9, $vr9, $vr16\n\t"
+      "vshuf.b $vr10, $vr10, $vr10, $vr16\n\t"
+      "vshuf.b $vr11, $vr11, $vr11, $vr17\n\t"
+      "vpickev.b $vr12, $vr9, $vr8\n\t"
+      "vpickod.b $vr13, $vr9, $vr8\n\t"
+      "vpickev.b $vr14, $vr11, $vr10\n\t"
+      "vpickod.b $vr15, $vr11, $vr10\n\t"
+      "vpickev.b $vr3, $vr14, $vr12\n\t"
+      "vpickod.b $vr5, $vr14, $vr12\n\t"
+      "vpickev.b $vr4, $vr15, $vr13\n\t"
+      "vhaddw.hu.bu $vr0, $vr0, $vr0\n\t"
+      "vhaddw.hu.bu $vr3, $vr3, $vr3\n\t"
+      "vadd.h $vr0, $vr0, $vr3\n\t"
+      "vsrari.h $vr0, $vr0, 2\n\t"
+      "vhaddw.hu.bu $vr1, $vr1, $vr1\n\t"
+      "vhaddw.hu.bu $vr4, $vr4, $vr4\n\t"
+      "vadd.h $vr1, $vr1, $vr4\n\t"
+      "vsrari.h $vr1, $vr1, 2\n\t"
+      "vhaddw.hu.bu $vr2, $vr2, $vr2\n\t"
+      "vhaddw.hu.bu $vr5, $vr5, $vr5\n\t"
+      "vadd.h $vr2, $vr2, $vr5\n\t"
+      "vsrari.h $vr2, $vr2, 2\n\t"
+      "vor.v $vr6, $vr26, $vr26\n\t"
+      "vor.v $vr7, $vr26, $vr26\n\t"
+      "vmsub.h $vr6, $vr0, $vr20\n\t"
+      "vmsub.h $vr6, $vr1, $vr21\n\t"
+      "vmsub.h $vr6, $vr2, $vr22\n\t"
+      "vmsub.h $vr7, $vr0, $vr23\n\t"
+      "vmsub.h $vr7, $vr1, $vr24\n\t"
+      "vmsub.h $vr7, $vr2, $vr25\n\t"
+      "vpickod.b $vr6, $vr7, $vr6\n\t"
+      "vstelm.d $vr6, %[du], 0, 0\n\t"
+      "vstelm.d $vr6, %[dv], 0, 1\n\t"
+      "addi.d %[s0], %[s0], 48\n\t"
+      "addi.d %[s1], %[s1], 48\n\t"
+      "addi.d %[du], %[du], 8\n\t"
+      "addi.d %[dv], %[dv], 8\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src_rgb), [s1] "+r"(next_rgb), [du] "+r"(dst_u),
+        [dv] "+r"(dst_v), [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv), [shuf] "r"(kShuf)
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11", "$vr12", "$vr13", "$vr14",
+        "$vr15", "$vr16", "$vr17", "$vr20", "$vr21", "$vr22", "$vr23", "$vr24",
+        "$vr25", "$vr26");
+}
+#endif  // HAS_RGBTOUVMATRIXROW_LSX
 
 #ifdef HAS_RGB565TOYROW_LSX
 void RGB565ToYRow_LSX(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
@@ -6010,6 +6372,79 @@ void ARGBAttenuateRow_LASX(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBATTENUATEROW_LASX
 
+#ifdef HAS_ARGBUNATTENUATEROW_LASX
+void ARGBUnattenuateRow_LASX(const uint8_t* src_argb,
+                             uint8_t* dst_argb,
+                             int width) {
+  uint64_t t0, t1;
+  asm volatile(
+      "addi.w %[cnt], %[cnt], -8\n\t"
+      "bltz %[cnt], 2f\n\t"
+      "xvldi $xr5, 0xff\n\t"
+      "xvslli.w $xr5, $xr5, 24\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "ld.bu %[t0], %[src], 3\n\t"
+      "ld.bu %[t1], %[src], 7\n\t"
+      "slli.d %[t0], %[t0], 2\n\t"
+      "slli.d %[t1], %[t1], 2\n\t"
+      "ldx.wu %[t0], %[tbl], %[t0]\n\t"
+      "ldx.wu %[t1], %[tbl], %[t1]\n\t"
+      "xvinsgr2vr.w $xr3, %[t0], 0\n\t"
+      "xvinsgr2vr.w $xr3, %[t1], 2\n\t"
+      "ld.bu %[t0], %[src], 19\n\t"
+      "ld.bu %[t1], %[src], 23\n\t"
+      "slli.d %[t0], %[t0], 2\n\t"
+      "slli.d %[t1], %[t1], 2\n\t"
+      "ldx.wu %[t0], %[tbl], %[t0]\n\t"
+      "ldx.wu %[t1], %[tbl], %[t1]\n\t"
+      "xvinsgr2vr.w $xr3, %[t0], 4\n\t"
+      "xvinsgr2vr.w $xr3, %[t1], 6\n\t"
+      "xvshuf4i.h $xr3, $xr3, 0x40\n\t"
+      "ld.bu %[t0], %[src], 11\n\t"
+      "ld.bu %[t1], %[src], 15\n\t"
+      "slli.d %[t0], %[t0], 2\n\t"
+      "slli.d %[t1], %[t1], 2\n\t"
+      "ldx.wu %[t0], %[tbl], %[t0]\n\t"
+      "ldx.wu %[t1], %[tbl], %[t1]\n\t"
+      "xvinsgr2vr.w $xr4, %[t0], 0\n\t"
+      "xvinsgr2vr.w $xr4, %[t1], 2\n\t"
+      "ld.bu %[t0], %[src], 27\n\t"
+      "ld.bu %[t1], %[src], 31\n\t"
+      "slli.d %[t0], %[t0], 2\n\t"
+      "slli.d %[t1], %[t1], 2\n\t"
+      "ldx.wu %[t0], %[tbl], %[t0]\n\t"
+      "ldx.wu %[t1], %[tbl], %[t1]\n\t"
+      "xvinsgr2vr.w $xr4, %[t0], 4\n\t"
+      "xvinsgr2vr.w $xr4, %[t1], 6\n\t"
+      "xvshuf4i.h $xr4, $xr4, 0x40\n\t"
+      "xvilvl.b $xr1, $xr0, $xr0\n\t"
+      "xvilvh.b $xr2, $xr0, $xr0\n\t"
+      "xvmuh.hu $xr1, $xr1, $xr3\n\t"
+      "xvmuh.hu $xr2, $xr2, $xr4\n\t"
+      "xvsat.hu $xr1, $xr1, 7\n\t"
+      "xvsat.hu $xr2, $xr2, 7\n\t"
+      "xvpickev.b $xr1, $xr2, $xr1\n\t"
+      "xvand.v $xr0, $xr0, $xr5\n\t"
+      "xvandn.v $xr1, $xr5, $xr1\n\t"
+      "xvor.v $xr1, $xr1, $xr0\n\t"
+      "xvst $xr1, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 32\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.w %[cnt], %[cnt], -8\n\t"
+      "bgez %[cnt], 1b\n\t"
+      "2:\n\t"
+      "addi.w %[cnt], %[cnt], 8\n\t"
+      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [cnt] "+r"(width),
+        [t0] "=&r"(t0), [t1] "=&r"(t1)
+      : [tbl] "r"(fixed_invtbl8)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
+  if (width > 0) {
+    ARGBUnattenuateRow_C(src_argb, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBUNATTENUATEROW_LASX
+
 #ifdef HAS_ARGBBLENDROW_LASX
 void ARGBBlendRow_LASX(const uint8_t* src_argb0,
                        const uint8_t* src_argb1,
@@ -6519,7 +6954,7 @@ void InterpolateRow_LASX(uint8_t* dst_ptr,
       "xvmaddwod.h.bu $xr0, $xr2, $xr3\n\t"
       "xvmulwev.h.bu $xr1, $xr4, $xr3\n\t"
       "xvmaddwod.h.bu $xr1, $xr4, $xr3\n\t"
-      "xvsrarni.b.h $xr1, $xr0, 8\n\t"
+      "xvsrlrni.b.h $xr1, $xr0, 8\n\t"
       "xvst $xr1, %[dst], 0\n\t"
       "addi.d %[s0], %[s0], 32\n\t"
       "addi.d %[s1], %[s1], 32\n\t"
@@ -6570,12 +7005,14 @@ void ARGBToYMatrixRow_LASX(const uint8_t* src_argb,
                            uint8_t* dst_y,
                            int width,
                            const struct ArgbConstants* c) {
+  uint16_t add_y;
+  __builtin_memcpy(&add_y, &c->kAddY[0], sizeof(add_y));
   asm volatile(
       "xvldrepl.b $xr0, %[c], 0\n\t"
       "xvldrepl.b $xr1, %[c], 1\n\t"
       "xvldrepl.b $xr2, %[c], 2\n\t"
       "xvldrepl.b $xr3, %[c], 3\n\t"
-      "xvldrepl.h $xr4, %[c], 96\n\t"
+      "xvreplgr2vr.h $xr4, %[add_y]\n\t"
       "1:\n\t"
       "vld $vr5, %[src], 0\n\t"
       "vld $vr31, %[src], 32\n\t"
@@ -6598,11 +7035,161 @@ void ARGBToYMatrixRow_LASX(const uint8_t* src_argb,
       "addi.d %[cnt], %[cnt], -16\n\t"
       "bnez %[cnt], 1b\n\t"
       : [src] "+r"(src_argb), [dst] "+r"(dst_y), [cnt] "+r"(width)
-      : [c] "r"(c)
+      : [c] "r"(c), [add_y] "r"(add_y)
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
         "$xr7", "$xr8", "$xr9", "$xr31");
 }
 #endif  // HAS_ARGBTOYMATRIXROW_LASX
+
+#ifdef HAS_ARGBTOUV444MATRIXROW_LASX
+void ARGBToUV444MatrixRow_LASX(const uint8_t* src_argb,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width,
+                               const struct ArgbConstants* c) {
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "xvldrepl.b $xr0, %[c], 32\n\t"
+      "xvldrepl.b $xr1, %[c], 33\n\t"
+      "xvldrepl.b $xr2, %[c], 34\n\t"
+      "xvldrepl.b $xr3, %[c], 35\n\t"
+      "xvldrepl.b $xr10, %[c], 64\n\t"
+      "xvldrepl.b $xr11, %[c], 65\n\t"
+      "xvldrepl.b $xr12, %[c], 66\n\t"
+      "xvldrepl.b $xr13, %[c], 67\n\t"
+      "xvreplgr2vr.h $xr4, %[add_uv]\n\t"
+      "1:\n\t"
+      "vld $vr5, %[src], 0\n\t"
+      "vld $vr31, %[src], 32\n\t"
+      "xvpermi.q $xr5, $xr31, 0x02\n\t"
+      "vld $vr6, %[src], 16\n\t"
+      "vld $vr31, %[src], 48\n\t"
+      "xvpermi.q $xr6, $xr31, 0x02\n\t"
+      "xvpickev.b $xr7, $xr6, $xr5\n\t"
+      "xvpickod.b $xr8, $xr6, $xr5\n\t"
+      "xvmulwev.h.bu.b $xr9, $xr7, $xr0\n\t"
+      "xvmaddwev.h.bu.b $xr9, $xr8, $xr1\n\t"
+      "xvmaddwod.h.bu.b $xr9, $xr7, $xr2\n\t"
+      "xvmaddwod.h.bu.b $xr9, $xr8, $xr3\n\t"
+      "xvsub.h $xr9, $xr4, $xr9\n\t"
+      "xvmulwev.h.bu.b $xr14, $xr7, $xr10\n\t"
+      "xvmaddwev.h.bu.b $xr14, $xr8, $xr11\n\t"
+      "xvmaddwod.h.bu.b $xr14, $xr7, $xr12\n\t"
+      "xvmaddwod.h.bu.b $xr14, $xr8, $xr13\n\t"
+      "xvsub.h $xr14, $xr4, $xr14\n\t"
+      "xvpickod.b $xr9, $xr14, $xr9\n\t"
+      "xvpermi.d $xr31, $xr9, 0xd8\n\t"
+      "vst $vr31, %[du], 0\n\t"
+      "vstelm.d $vr9, %[dv], 0, 1\n\t"
+      "xvpermi.q $xr31, $xr9, 0x01\n\t"
+      "vstelm.d $vr31, %[dv], 8, 1\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[du], %[du], 16\n\t"
+      "addi.d %[dv], %[dv], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_argb), [du] "+r"(dst_u), [dv] "+r"(dst_v),
+        [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr31");
+}
+#endif  // HAS_ARGBTOUV444MATRIXROW_LASX
+
+#ifdef HAS_ARGBTOUVMATRIXROW_LASX
+void ARGBToUVMatrixRow_LASX(const uint8_t* src_argb,
+                            int src_stride_argb,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width,
+                            const struct ArgbConstants* c) {
+  const uint8_t* next_argb = src_argb + src_stride_argb;
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "xvldrepl.b $xr0, %[c], 32\n\t"
+      "xvldrepl.b $xr1, %[c], 33\n\t"
+      "xvldrepl.b $xr2, %[c], 34\n\t"
+      "xvldrepl.b $xr3, %[c], 35\n\t"
+      "xvldrepl.b $xr10, %[c], 64\n\t"
+      "xvldrepl.b $xr11, %[c], 65\n\t"
+      "xvldrepl.b $xr12, %[c], 66\n\t"
+      "xvldrepl.b $xr13, %[c], 67\n\t"
+      "xvreplgr2vr.h $xr4, %[add_uv]\n\t"
+      "1:\n\t"
+      "xvld $xr14, %[s0], 0\n\t"
+      "xvld $xr15, %[s0], 32\n\t"
+      "xvld $xr16, %[s1], 0\n\t"
+      "xvld $xr17, %[s1], 32\n\t"
+      "xvpickev.w $xr18, $xr15, $xr14\n\t"
+      "xvpickod.w $xr19, $xr15, $xr14\n\t"
+      "xvpickev.w $xr20, $xr17, $xr16\n\t"
+      "xvpickod.w $xr21, $xr17, $xr16\n\t"
+      "xvaddwev.h.bu $xr14, $xr18, $xr19\n\t"
+      "xvaddwod.h.bu $xr15, $xr18, $xr19\n\t"
+      "xvaddwev.h.bu $xr16, $xr20, $xr21\n\t"
+      "xvaddwod.h.bu $xr17, $xr20, $xr21\n\t"
+      "xvadd.h $xr14, $xr14, $xr16\n\t"
+      "xvadd.h $xr15, $xr15, $xr17\n\t"
+      "xvsrari.h $xr14, $xr14, 2\n\t"
+      "xvsrari.h $xr15, $xr15, 2\n\t"
+      "xvpackev.b $xr5, $xr15, $xr14\n\t"
+      "xvpermi.d $xr5, $xr5, 0xd8\n\t"
+      "xvld $xr14, %[s0], 64\n\t"
+      "xvld $xr15, %[s0], 96\n\t"
+      "xvld $xr16, %[s1], 64\n\t"
+      "xvld $xr17, %[s1], 96\n\t"
+      "xvpickev.w $xr18, $xr15, $xr14\n\t"
+      "xvpickod.w $xr19, $xr15, $xr14\n\t"
+      "xvpickev.w $xr20, $xr17, $xr16\n\t"
+      "xvpickod.w $xr21, $xr17, $xr16\n\t"
+      "xvaddwev.h.bu $xr14, $xr18, $xr19\n\t"
+      "xvaddwod.h.bu $xr15, $xr18, $xr19\n\t"
+      "xvaddwev.h.bu $xr16, $xr20, $xr21\n\t"
+      "xvaddwod.h.bu $xr17, $xr20, $xr21\n\t"
+      "xvadd.h $xr14, $xr14, $xr16\n\t"
+      "xvadd.h $xr15, $xr15, $xr17\n\t"
+      "xvsrari.h $xr14, $xr14, 2\n\t"
+      "xvsrari.h $xr15, $xr15, 2\n\t"
+      "xvpackev.b $xr6, $xr15, $xr14\n\t"
+      "xvpermi.d $xr6, $xr6, 0xd8\n\t"
+      "xvor.v $xr7, $xr5, $xr5\n\t"
+      "xvpermi.q $xr5, $xr6, 0x02\n\t"
+      "xvpermi.q $xr6, $xr7, 0x31\n\t"
+      "xvpickev.b $xr7, $xr6, $xr5\n\t"
+      "xvpickod.b $xr8, $xr6, $xr5\n\t"
+      "xvmulwev.h.bu.b $xr9, $xr7, $xr0\n\t"
+      "xvmaddwev.h.bu.b $xr9, $xr8, $xr1\n\t"
+      "xvmaddwod.h.bu.b $xr9, $xr7, $xr2\n\t"
+      "xvmaddwod.h.bu.b $xr9, $xr8, $xr3\n\t"
+      "xvsub.h $xr9, $xr4, $xr9\n\t"
+      "xvmulwev.h.bu.b $xr14, $xr7, $xr10\n\t"
+      "xvmaddwev.h.bu.b $xr14, $xr8, $xr11\n\t"
+      "xvmaddwod.h.bu.b $xr14, $xr7, $xr12\n\t"
+      "xvmaddwod.h.bu.b $xr14, $xr8, $xr13\n\t"
+      "xvsub.h $xr14, $xr4, $xr14\n\t"
+      "xvpickod.b $xr9, $xr14, $xr9\n\t"
+      "xvpermi.d $xr31, $xr9, 0xd8\n\t"
+      "vst $vr31, %[du], 0\n\t"
+      "vstelm.d $vr9, %[dv], 0, 1\n\t"
+      "xvpermi.q $xr31, $xr9, 0x01\n\t"
+      "vstelm.d $vr31, %[dv], 8, 1\n\t"
+      "addi.d %[s0], %[s0], 128\n\t"
+      "addi.d %[s1], %[s1], 128\n\t"
+      "addi.d %[du], %[du], 16\n\t"
+      "addi.d %[dv], %[dv], 16\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src_argb), [s1] "+r"(next_argb), [du] "+r"(dst_u),
+        [dv] "+r"(dst_v), [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr15", "$xr16", "$xr17", "$xr18", "$xr19", "$xr20", "$xr21", "$xr31");
+}
+#endif  // HAS_ARGBTOUVMATRIXROW_LASX
 
 #ifdef HAS_RGBTOYMATRIXROW_LASX
 void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
@@ -6610,13 +7197,15 @@ void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
                           int width,
                           const struct ArgbConstants* c) {
   static const uint8_t kShuf[32] = {0, 1, 2,  0,  3,  4, 5,  0,  6,  7, 8,
-                                    0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
-                                    9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+                                     0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
+                                     9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+  uint16_t add_y;
+  __builtin_memcpy(&add_y, &c->kAddY[0], sizeof(add_y));
   asm volatile(
       "xvldrepl.b $xr0, %[c], 0\n\t"
       "xvldrepl.b $xr1, %[c], 1\n\t"
       "xvldrepl.b $xr2, %[c], 2\n\t"
-      "xvldrepl.h $xr3, %[c], 96\n\t"
+      "xvreplgr2vr.h $xr3, %[add_y]\n\t"
       "vld $vr4, %[shuf], 0\n\t"
       "xvpermi.q $xr4, $xr4, 0x00\n\t"
       "vld $vr5, %[shuf], 16\n\t"
@@ -6657,11 +7246,209 @@ void RGBToYMatrixRow_LASX(const uint8_t* src_rgba,
       "addi.d %[cnt], %[cnt], -32\n\t"
       "bnez %[cnt], 1b\n\t"
       : [src] "+r"(src_rgba), [dst] "+r"(dst_y), [cnt] "+r"(width)
-      : [c] "r"(c), [shuf] "r"(kShuf)
+      : [c] "r"(c), [add_y] "r"(add_y), [shuf] "r"(kShuf)
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
         "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr31");
 }
 #endif  // HAS_RGBTOYMATRIXROW_LASX
+
+#ifdef HAS_RGBTOUV444MATRIXROW_LASX
+void RGBToUV444MatrixRow_LASX(const uint8_t* src_rgb,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int width,
+                              const struct ArgbConstants* c) {
+  static const uint8_t kShuf[32] = {0, 1, 2,  0,  3,  4, 5,  0,  6,  7, 8,
+                                     0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
+                                     9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "xvldrepl.b $xr0, %[c], 32\n\t"
+      "xvldrepl.b $xr1, %[c], 33\n\t"
+      "xvldrepl.b $xr2, %[c], 34\n\t"
+      "xvldrepl.b $xr14, %[c], 64\n\t"
+      "xvldrepl.b $xr15, %[c], 65\n\t"
+      "xvldrepl.b $xr16, %[c], 66\n\t"
+      "xvreplgr2vr.h $xr3, %[add_uv]\n\t"
+      "vld $vr4, %[shuf], 0\n\t"
+      "xvpermi.q $xr4, $xr4, 0x00\n\t"
+      "vld $vr5, %[shuf], 16\n\t"
+      "xvpermi.q $xr5, $xr5, 0x00\n\t"
+      "1:\n\t"
+      "vld $vr6, %[src], 0\n\t"
+      "vld $vr31, %[src], 48\n\t"
+      "xvpermi.q $xr6, $xr31, 0x02\n\t"
+      "vld $vr7, %[src], 12\n\t"
+      "vld $vr31, %[src], 60\n\t"
+      "xvpermi.q $xr7, $xr31, 0x02\n\t"
+      "vld $vr8, %[src], 24\n\t"
+      "vld $vr31, %[src], 72\n\t"
+      "xvpermi.q $xr8, $xr31, 0x02\n\t"
+      "vld $vr9, %[src], 32\n\t"
+      "vld $vr31, %[src], 80\n\t"
+      "xvpermi.q $xr9, $xr31, 0x02\n\t"
+      "xvshuf.b $xr6, $xr6, $xr6, $xr4\n\t"
+      "xvshuf.b $xr7, $xr7, $xr7, $xr4\n\t"
+      "xvshuf.b $xr8, $xr8, $xr8, $xr4\n\t"
+      "xvshuf.b $xr9, $xr9, $xr9, $xr5\n\t"
+      "xvpickev.b $xr10, $xr7, $xr6\n\t"
+      "xvpickod.b $xr11, $xr7, $xr6\n\t"
+      "xvmulwev.h.bu.b $xr12, $xr10, $xr0\n\t"
+      "xvmaddwev.h.bu.b $xr12, $xr11, $xr1\n\t"
+      "xvmaddwod.h.bu.b $xr12, $xr10, $xr2\n\t"
+      "xvsub.h $xr12, $xr3, $xr12\n\t"
+      "xvmulwev.h.bu.b $xr17, $xr10, $xr14\n\t"
+      "xvmaddwev.h.bu.b $xr17, $xr11, $xr15\n\t"
+      "xvmaddwod.h.bu.b $xr17, $xr10, $xr16\n\t"
+      "xvsub.h $xr17, $xr3, $xr17\n\t"
+      "xvpickev.b $xr10, $xr9, $xr8\n\t"
+      "xvpickod.b $xr11, $xr9, $xr8\n\t"
+      "xvmulwev.h.bu.b $xr13, $xr10, $xr0\n\t"
+      "xvmaddwev.h.bu.b $xr13, $xr11, $xr1\n\t"
+      "xvmaddwod.h.bu.b $xr13, $xr10, $xr2\n\t"
+      "xvsub.h $xr13, $xr3, $xr13\n\t"
+      "xvmulwev.h.bu.b $xr18, $xr10, $xr14\n\t"
+      "xvmaddwev.h.bu.b $xr18, $xr11, $xr15\n\t"
+      "xvmaddwod.h.bu.b $xr18, $xr10, $xr16\n\t"
+      "xvsub.h $xr18, $xr3, $xr18\n\t"
+      "xvpickod.b $xr12, $xr13, $xr12\n\t"
+      "xvpickod.b $xr17, $xr18, $xr17\n\t"
+      "xvst $xr12, %[du], 0\n\t"
+      "xvst $xr17, %[dv], 0\n\t"
+      "addi.d %[src], %[src], 96\n\t"
+      "addi.d %[du], %[du], 32\n\t"
+      "addi.d %[dv], %[dv], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_rgb), [du] "+r"(dst_u), [dv] "+r"(dst_v),
+        [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv), [shuf] "r"(kShuf)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr15", "$xr16", "$xr17", "$xr18", "$xr31");
+}
+#endif  // HAS_RGBTOUV444MATRIXROW_LASX
+
+#ifdef HAS_RGBTOUVMATRIXROW_LASX
+void RGBToUVMatrixRow_LASX(const uint8_t* src_rgb,
+                           int src_stride_rgb,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width,
+                           const struct ArgbConstants* c) {
+  static const uint8_t kShuf[32] = {0, 1, 2,  0,  3,  4, 5,  0,  6,  7, 8,
+                                     0, 9, 10, 11, 0,  4, 5,  6,  0,  7, 8,
+                                     9, 0, 10, 11, 12, 0, 13, 14, 15, 0};
+  const uint8_t* next_rgb = src_rgb + src_stride_rgb;
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV[0], sizeof(add_uv));
+  asm volatile(
+      "xvldrepl.b $xr20, %[c], 32\n\t"
+      "xvsrai.h $xr20, $xr20, 8\n\t"
+      "xvldrepl.b $xr21, %[c], 33\n\t"
+      "xvsrai.h $xr21, $xr21, 8\n\t"
+      "xvldrepl.b $xr22, %[c], 34\n\t"
+      "xvsrai.h $xr22, $xr22, 8\n\t"
+      "xvldrepl.b $xr23, %[c], 64\n\t"
+      "xvsrai.h $xr23, $xr23, 8\n\t"
+      "xvldrepl.b $xr24, %[c], 65\n\t"
+      "xvsrai.h $xr24, $xr24, 8\n\t"
+      "xvldrepl.b $xr25, %[c], 66\n\t"
+      "xvsrai.h $xr25, $xr25, 8\n\t"
+      "xvreplgr2vr.h $xr26, %[add_uv]\n\t"
+      "vld $vr16, %[shuf], 0\n\t"
+      "xvpermi.q $xr16, $xr16, 0x00\n\t"
+      "vld $vr17, %[shuf], 16\n\t"
+      "xvpermi.q $xr17, $xr17, 0x00\n\t"
+      "1:\n\t"
+      "vld $vr8, %[s0], 0\n\t"
+      "vld $vr31, %[s0], 48\n\t"
+      "xvpermi.q $xr8, $xr31, 0x02\n\t"
+      "vld $vr9, %[s0], 12\n\t"
+      "vld $vr31, %[s0], 60\n\t"
+      "xvpermi.q $xr9, $xr31, 0x02\n\t"
+      "vld $vr10, %[s0], 24\n\t"
+      "vld $vr31, %[s0], 72\n\t"
+      "xvpermi.q $xr10, $xr31, 0x02\n\t"
+      "vld $vr11, %[s0], 32\n\t"
+      "vld $vr31, %[s0], 80\n\t"
+      "xvpermi.q $xr11, $xr31, 0x02\n\t"
+      "xvshuf.b $xr8, $xr8, $xr8, $xr16\n\t"
+      "xvshuf.b $xr9, $xr9, $xr9, $xr16\n\t"
+      "xvshuf.b $xr10, $xr10, $xr10, $xr16\n\t"
+      "xvshuf.b $xr11, $xr11, $xr11, $xr17\n\t"
+      "xvpickev.b $xr12, $xr9, $xr8\n\t"
+      "xvpickod.b $xr13, $xr9, $xr8\n\t"
+      "xvpickev.b $xr14, $xr11, $xr10\n\t"
+      "xvpickod.b $xr15, $xr11, $xr10\n\t"
+      "xvpickev.b $xr0, $xr14, $xr12\n\t"
+      "xvpickod.b $xr2, $xr14, $xr12\n\t"
+      "xvpickev.b $xr1, $xr15, $xr13\n\t"
+      "vld $vr8, %[s1], 0\n\t"
+      "vld $vr31, %[s1], 48\n\t"
+      "xvpermi.q $xr8, $xr31, 0x02\n\t"
+      "vld $vr9, %[s1], 12\n\t"
+      "vld $vr31, %[s1], 60\n\t"
+      "xvpermi.q $xr9, $xr31, 0x02\n\t"
+      "vld $vr10, %[s1], 24\n\t"
+      "vld $vr31, %[s1], 72\n\t"
+      "xvpermi.q $xr10, $xr31, 0x02\n\t"
+      "vld $vr11, %[s1], 32\n\t"
+      "vld $vr31, %[s1], 80\n\t"
+      "xvpermi.q $xr11, $xr31, 0x02\n\t"
+      "xvshuf.b $xr8, $xr8, $xr8, $xr16\n\t"
+      "xvshuf.b $xr9, $xr9, $xr9, $xr16\n\t"
+      "xvshuf.b $xr10, $xr10, $xr10, $xr16\n\t"
+      "xvshuf.b $xr11, $xr11, $xr11, $xr17\n\t"
+      "xvpickev.b $xr12, $xr9, $xr8\n\t"
+      "xvpickod.b $xr13, $xr9, $xr8\n\t"
+      "xvpickev.b $xr14, $xr11, $xr10\n\t"
+      "xvpickod.b $xr15, $xr11, $xr10\n\t"
+      "xvpickev.b $xr3, $xr14, $xr12\n\t"
+      "xvpickod.b $xr5, $xr14, $xr12\n\t"
+      "xvpickev.b $xr4, $xr15, $xr13\n\t"
+      "xvhaddw.hu.bu $xr0, $xr0, $xr0\n\t"
+      "xvhaddw.hu.bu $xr3, $xr3, $xr3\n\t"
+      "xvadd.h $xr0, $xr0, $xr3\n\t"
+      "xvsrari.h $xr0, $xr0, 2\n\t"
+      "xvhaddw.hu.bu $xr1, $xr1, $xr1\n\t"
+      "xvhaddw.hu.bu $xr4, $xr4, $xr4\n\t"
+      "xvadd.h $xr1, $xr1, $xr4\n\t"
+      "xvsrari.h $xr1, $xr1, 2\n\t"
+      "xvhaddw.hu.bu $xr2, $xr2, $xr2\n\t"
+      "xvhaddw.hu.bu $xr5, $xr5, $xr5\n\t"
+      "xvadd.h $xr2, $xr2, $xr5\n\t"
+      "xvsrari.h $xr2, $xr2, 2\n\t"
+      "xvor.v $xr6, $xr26, $xr26\n\t"
+      "xvor.v $xr7, $xr26, $xr26\n\t"
+      "xvmsub.h $xr6, $xr0, $xr20\n\t"
+      "xvmsub.h $xr6, $xr1, $xr21\n\t"
+      "xvmsub.h $xr6, $xr2, $xr22\n\t"
+      "xvmsub.h $xr7, $xr0, $xr23\n\t"
+      "xvmsub.h $xr7, $xr1, $xr24\n\t"
+      "xvmsub.h $xr7, $xr2, $xr25\n\t"
+      "xvpickod.b $xr6, $xr7, $xr6\n\t"
+      "xvpermi.d $xr31, $xr6, 0xd8\n\t"
+      "vst $vr31, %[du], 0\n\t"
+      "vstelm.d $vr6, %[dv], 0, 1\n\t"
+      "xvpermi.q $xr31, $xr6, 0x01\n\t"
+      "vstelm.d $vr31, %[dv], 8, 1\n\t"
+      "addi.d %[s0], %[s0], 96\n\t"
+      "addi.d %[s1], %[s1], 96\n\t"
+      "addi.d %[du], %[du], 16\n\t"
+      "addi.d %[dv], %[dv], 16\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [s0] "+r"(src_rgb), [s1] "+r"(next_rgb), [du] "+r"(dst_u),
+        [dv] "+r"(dst_v), [cnt] "+r"(width)
+      : [c] "r"(c), [add_uv] "r"(add_uv), [shuf] "r"(kShuf)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11", "$xr12", "$xr13", "$xr14",
+        "$xr15", "$xr16", "$xr17", "$xr20", "$xr21", "$xr22", "$xr23", "$xr24",
+        "$xr25", "$xr26", "$xr31");
+}
+#endif  // HAS_RGBTOUVMATRIXROW_LASX
 
 #ifdef HAS_RGB565TOYROW_LASX
 void RGB565ToYRow_LASX(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {

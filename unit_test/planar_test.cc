@@ -22,6 +22,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/scale.h"
+#include "libyuv/scale_argb.h"
 #include "libyuv/scale_uv.h"
 
 #if !defined(LIBYUV_USING_SHARED_LIBRARY) && !defined(COMPONENT_BUILD) && \
@@ -1386,35 +1387,35 @@ TEST_F(LibYUVPlanarTest, ARGBBlend_Any) {
   int max_diff =
       TestBlend(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 1);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Unaligned) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 1, 1);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Invert) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, -1, 0, 1);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Unattenuated) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBBlend_Opt) {
   int max_diff =
       TestBlend(benchmark_width_, benchmark_height_, benchmark_iterations_,
                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0, 1);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 static void TestBlendPlane(int width,
@@ -2139,28 +2140,28 @@ TEST_F(LibYUVPlanarTest, ARGBAdd_Any) {
   int max_diff =
       TestAdd(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
               disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBAdd_Unaligned) {
   int max_diff =
       TestAdd(benchmark_width_, benchmark_height_, benchmark_iterations_,
               disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBAdd_Invert) {
   int max_diff =
       TestAdd(benchmark_width_, benchmark_height_, benchmark_iterations_,
               disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBAdd_Opt) {
   int max_diff =
       TestAdd(benchmark_width_, benchmark_height_, benchmark_iterations_,
               disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 static int TestSubtract(int width,
@@ -2213,28 +2214,28 @@ TEST_F(LibYUVPlanarTest, ARGBSubtract_Any) {
   int max_diff = TestSubtract(benchmark_width_ + 1, benchmark_height_,
                               benchmark_iterations_, disable_cpu_flags_,
                               benchmark_cpu_info_, +1, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBSubtract_Unaligned) {
   int max_diff =
       TestSubtract(benchmark_width_, benchmark_height_, benchmark_iterations_,
                    disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBSubtract_Invert) {
   int max_diff =
       TestSubtract(benchmark_width_, benchmark_height_, benchmark_iterations_,
                    disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, ARGBSubtract_Opt) {
   int max_diff =
       TestSubtract(benchmark_width_, benchmark_height_, benchmark_iterations_,
                    disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
-  ASSERT_LE(max_diff, 1);
+  ASSERT_EQ(max_diff, 0);
 }
 
 static int TestSobel(int width,
@@ -6365,6 +6366,155 @@ TEST_F(LibYUVPlanarTest, ARGBAlphaBlend_AllAlphas) {
   free_aligned_buffer_page_end(dst_argb_opt);
 }
 
+// Compare ARGBBlend on premultiplied foreground over opaque background against
+// ARGBUnattenuate + ARGBAlphaBlend across all valid (sa, f) pairs.
+TEST_F(LibYUVPlanarTest, ARGBAlphaBlendVsUnattenuateBlend) {
+  const int kWidth = 256;
+  const int kHeight = 256;
+  const int kStride = kWidth * 4;
+  align_buffer_page_end(src_argb_att, kStride * kHeight);
+  align_buffer_page_end(src_argb_unatt, kStride * kHeight);
+  align_buffer_page_end(src_argb1, kStride * kHeight);
+  align_buffer_page_end(dst_blend, kStride * kHeight);
+  align_buffer_page_end(dst_alphablend, kStride * kHeight);
+
+  for (int sa = 0; sa < 256; ++sa) {
+    for (int x = 0; x < 256; ++x) {
+      int idx = (sa * 256 + x) * 4;
+      // Valid premultiplied foreground channels (0 <= f <= sa).
+      src_argb_att[idx + 0] = static_cast<uint8_t>((x * sa + 255) >> 8);
+      src_argb_att[idx + 1] =
+          static_cast<uint8_t>((((255 - x) * sa) + 255) >> 8);
+      src_argb_att[idx + 2] =
+          static_cast<uint8_t>((((x * 73 + 19) & 255) * sa + 255) >> 8);
+      src_argb_att[idx + 3] = static_cast<uint8_t>(sa);
+      // Opaque background (ARGBBlend sets destination alpha to 255).
+      src_argb1[idx + 0] = static_cast<uint8_t>((x * 17 + sa * 19 + 53) & 255);
+      src_argb1[idx + 1] = static_cast<uint8_t>((x * 23 + sa * 31 + 71) & 255);
+      src_argb1[idx + 2] = static_cast<uint8_t>((x * 37 + sa * 41 + 89) & 255);
+      src_argb1[idx + 3] = 255u;
+    }
+  }
+
+  MaskCpuFlags(benchmark_cpu_info_);
+  ARGBBlend(src_argb_att, kStride, src_argb1, kStride, dst_blend, kStride,
+            kWidth, kHeight);
+  ARGBUnattenuate(src_argb_att, kStride, src_argb_unatt, kStride, kWidth,
+                  kHeight);
+  ARGBAlphaBlend(src_argb_unatt, kStride, src_argb1, kStride, dst_alphablend,
+                 kStride, kWidth, kHeight);
+
+  int hist[511] = {0};
+  int max_diff = 0;
+  for (int sa = 0; sa < 256; ++sa) {
+    for (int x = 0; x < 256; ++x) {
+      int idx = (sa * 256 + x) * 4;
+      ASSERT_EQ(255u, dst_blend[idx + 3]);
+      ASSERT_EQ(255u, dst_alphablend[idx + 3]);
+      for (int c = 0; c < 3; ++c) {
+        int diff = static_cast<int>(dst_alphablend[idx + c]) -
+                   static_cast<int>(dst_blend[idx + c]);
+        ++hist[diff + 255];
+        int abs_diff = abs(diff);
+        if (abs_diff > max_diff) {
+          max_diff = abs_diff;
+        }
+        if (sa == 0 || sa == 255) {
+          ASSERT_EQ(0, abs_diff);
+        }
+      }
+    }
+  }
+
+  printf("ARGBAlphaBlend vs ARGBUnattenuate+ARGBBlend diff hist:");
+  for (int i = 0; i < 511; ++i) {
+    if (hist[i]) {
+      printf(" [%+d]=%d", i - 255, hist[i]);
+    }
+  }
+  printf(" (max_diff=%d)\n", max_diff);
+  EXPECT_LE(max_diff, 2);
+
+  // Also compare straight-alpha foreground over opaque background:
+  // ARGBAlphaBlend vs ARGBAttenuate + ARGBBlend.
+  for (int sa = 0; sa < 256; ++sa) {
+    for (int x = 0; x < 256; ++x) {
+      int idx = (sa * 256 + x) * 4;
+      src_argb_unatt[idx + 0] = static_cast<uint8_t>(x);
+      src_argb_unatt[idx + 1] = static_cast<uint8_t>(255 - x);
+      src_argb_unatt[idx + 2] = static_cast<uint8_t>((x * 73 + 19) & 255);
+      src_argb_unatt[idx + 3] = static_cast<uint8_t>(sa);
+    }
+  }
+  ARGBAlphaBlend(src_argb_unatt, kStride, src_argb1, kStride, dst_alphablend,
+                 kStride, kWidth, kHeight);
+  ARGBAttenuate(src_argb_unatt, kStride, src_argb_att, kStride, kWidth,
+                kHeight);
+  ARGBBlend(src_argb_att, kStride, src_argb1, kStride, dst_blend, kStride,
+            kWidth, kHeight);
+  int max_att_diff = 0;
+  for (int sa = 0; sa < 256; ++sa) {
+    for (int x = 0; x < 256; ++x) {
+      int idx = (sa * 256 + x) * 4;
+      for (int c = 0; c < 4; ++c) {
+        int abs_diff = abs(static_cast<int>(dst_alphablend[idx + c]) -
+                           static_cast<int>(dst_blend[idx + c]));
+        if (abs_diff > max_att_diff) {
+          max_att_diff = abs_diff;
+        }
+        if (sa == 0 || sa == 255 || c == 3) {
+          ASSERT_EQ(0, abs_diff);
+        }
+      }
+    }
+  }
+  EXPECT_LE(max_att_diff, 2);
+
+  // Also test semi-transparent background (da >= 128) via
+  // ARGBAttenuate + ARGBBlend + composite alpha + ARGBUnattenuate vs
+  // ARGBAlphaBlend.
+  int max_semi_diff = 0;
+  for (int y = 0; y < 128; ++y) {
+    int da = 128 + y;
+    for (int sa = 0; sa < 256; ++sa) {
+      int idx = (y * 256 + sa) * 4;
+      src_argb_unatt[idx + 0] = static_cast<uint8_t>((sa * 7 + da * 3 + 13) & 255);
+      src_argb_unatt[idx + 1] = static_cast<uint8_t>((sa * 13 + da * 5 + 29) & 255);
+      src_argb_unatt[idx + 2] =
+          static_cast<uint8_t>((sa * 29 + da * 11 + 47) & 255);
+      src_argb_unatt[idx + 3] = static_cast<uint8_t>(sa);
+      src_argb1[idx + 0] = static_cast<uint8_t>((da * 17 + sa * 19 + 53) & 255);
+      src_argb1[idx + 1] = static_cast<uint8_t>((da * 23 + sa * 31 + 71) & 255);
+      src_argb1[idx + 2] = static_cast<uint8_t>((da * 37 + sa * 41 + 89) & 255);
+      src_argb1[idx + 3] = static_cast<uint8_t>(da);
+    }
+  }
+  ARGBAlphaBlend(src_argb_unatt, kStride, src_argb1, kStride, dst_alphablend,
+                 kStride, kWidth, 128);
+  ARGBAttenuate(src_argb_unatt, kStride, src_argb_att, kStride, kWidth, 128);
+  ARGBAttenuate(src_argb1, kStride, dst_blend, kStride, kWidth, 128);
+  ARGBBlend(src_argb_att, kStride, dst_blend, kStride, dst_blend, kStride,
+            kWidth, 128);
+  for (int i = 0; i < kWidth * 128; ++i) {
+    dst_blend[i * 4 + 3] = dst_alphablend[i * 4 + 3];
+  }
+  ARGBUnattenuate(dst_blend, kStride, dst_blend, kStride, kWidth, 128);
+  for (int i = 0; i < kStride * 128; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_alphablend[i]) - static_cast<int>(dst_blend[i]));
+    if (abs_diff > max_semi_diff) {
+      max_semi_diff = abs_diff;
+    }
+  }
+  EXPECT_LE(max_semi_diff, 4);
+
+  free_aligned_buffer_page_end(src_argb_att);
+  free_aligned_buffer_page_end(src_argb_unatt);
+  free_aligned_buffer_page_end(src_argb1);
+  free_aligned_buffer_page_end(dst_blend);
+  free_aligned_buffer_page_end(dst_alphablend);
+}
+
 TEST_F(LibYUVPlanarTest, MSanUninitializedInputsAndTails) {
   static const int kWidths[] = {1, 7, 15, 16, 17, 31, 32, 33, 63, 64, 65, 99};
   const int kMaxW = 128;
@@ -7006,9 +7156,12 @@ TEST_F(LibYUVPlanarTest, UnalignedMatrixConstantsAndCustomKAddUV) {
     ARGBToI420Matrix(src_argb, kWidth * 4, y_opt, kWidth, u_opt, kWidth / 2,
                      v_opt, kWidth / 2, argbc, kWidth, kHeight);
     I400ToARGBMatrix(y_c, kWidth, rgb_opt, kWidth * 4, yuvc, kWidth, kHeight);
+    for (int i = 0; i < kWidth * kHeight; ++i) {
+      ASSERT_EQ(y_c[i], y_opt[i]) << "mode=" << m << " i=" << i;
+    }
     for (int i = 0; i < (kWidth / 2) * (kHeight / 2); ++i) {
-      ASSERT_NEAR(u_c[i], u_opt[i], 1) << "mode=" << m << " i=" << i;
-      ASSERT_NEAR(v_c[i], v_opt[i], 1) << "mode=" << m << " i=" << i;
+      ASSERT_EQ(u_c[i], u_opt[i]) << "mode=" << m << " i=" << i;
+      ASSERT_EQ(v_c[i], v_opt[i]) << "mode=" << m << " i=" << i;
     }
     for (int i = 0; i < kWidth * 4 * kHeight; ++i) {
       ASSERT_EQ(rgb_c[i], rgb_opt[i]) << "mode=" << m << " i=" << i;
@@ -7075,6 +7228,303 @@ TEST_F(LibYUVPlanarTest, MergeAR64Depth16AndMergeARGB16To8Depth8Clamp) {
   free_aligned_buffer_page_end_16(ar64_opt);
   free_aligned_buffer_page_end(argb_c);
   free_aligned_buffer_page_end(argb_opt);
+}
+
+// Cross-platform bit-exact verification across all CPU dispatch modes.
+// Uses deterministic inputs and hardcoded HashDjb2 checksums so every platform
+// and SIMD ISA (C, SSE2/SSSE3, AVX2, AVX512BW/VNNI/VBMI, NEON, DotProd, I8MM,
+// SVE2, SME, LSX, LASX, RVV, WASMSIMD/RELAXEDSIMD, HVX) is proven to produce
+// bitwise-identical outputs.
+TEST_F(LibYUVPlanarTest, BitExactCrossPlatformChecksums) {
+  int modes[8];
+  int num_modes = 0;
+  modes[num_modes++] = 1;  // Pure C reference.
+  modes[num_modes++] = benchmark_cpu_info_;
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
+    defined(_M_X64)
+  const int kNoAvx512 =
+      benchmark_cpu_info_ & ~(kCpuHasAVX512BW | kCpuHasAVX512VL |
+                              kCpuHasAVX512VNNI | kCpuHasAVX512VBMI);
+  const int kNoAvx2 = kNoAvx512 & ~kCpuHasAVX2;
+  const int kNoSsse3 = kNoAvx2 & ~kCpuHasSSSE3;
+  modes[num_modes++] = kNoAvx512;
+  modes[num_modes++] = kNoAvx2;
+  modes[num_modes++] = kNoSsse3;
+#elif defined(__arm__) || defined(__aarch64__)
+  const int kNoSve =
+      benchmark_cpu_info_ & ~(kCpuHasSME | kCpuHasSVE2 | kCpuHasSVE);
+  const int kNoI8mm = kNoSve & ~kCpuHasNeonI8MM;
+  const int kNoDotProd = kNoI8mm & ~kCpuHasNeonDotProd;
+  modes[num_modes++] = kNoSve;
+  modes[num_modes++] = kNoI8mm;
+  modes[num_modes++] = kNoDotProd;
+#elif defined(__loongarch__)
+  modes[num_modes++] = benchmark_cpu_info_ & ~kCpuHasLASX;
+#elif defined(__wasm__)
+  modes[num_modes++] = benchmark_cpu_info_ & ~kCpuHasRELAXEDSIMD;
+#endif
+
+  const int kMaxW = 129;
+  const int kMaxH = 7;
+  align_buffer_page_end(src_argb, kMaxW * 4 * kMaxH);
+  align_buffer_page_end(src_argb2, kMaxW * 4 * kMaxH);
+  align_buffer_page_end(src_rgb24, kMaxW * 3 * kMaxH);
+  align_buffer_page_end(src_alpha, kMaxW * kMaxH);
+  align_buffer_page_end(dst_buf0, kMaxW * 4 * kMaxH);
+  align_buffer_page_end(dst_buf1, kMaxW * 4 * kMaxH);
+  align_buffer_page_end(dst_buf2, kMaxW * 4 * kMaxH);
+  align_buffer_page_end(dst_buf3, kMaxW * 4 * kMaxH);
+
+  for (int i = 0; i < kMaxW * 4 * kMaxH; ++i) {
+    uint32_t v = static_cast<uint32_t>(i) * 2654435761u + 12345u;
+    src_argb[i] = static_cast<uint8_t>((v >> 24) ^ (v >> 11));
+    uint32_t v2 = static_cast<uint32_t>(i) * 2246822519u + 54321u;
+    src_argb2[i] = static_cast<uint8_t>((v2 >> 24) ^ (v2 >> 13));
+  }
+  // Force edge alpha values (0, 1, 127, 128, 254, 255) and f > a cases for
+  // ARGBUnattenuate clamping.
+  const uint8_t kEdgeAlphas[8] = {0, 1, 2, 64, 127, 128, 254, 255};
+  for (int p = 0; p < 32; ++p) {
+    src_argb[p * 4 + 3] = kEdgeAlphas[p & 7];
+    if ((p & 3) == 1) {
+      src_argb[p * 4 + 0] = 255;
+      src_argb[p * 4 + 1] = 200;
+      src_argb[p * 4 + 2] = 129;
+    }
+  }
+  for (int i = 0; i < kMaxW * 3 * kMaxH; ++i) {
+    uint32_t v = static_cast<uint32_t>(i) * 3266489917u + 98765u;
+    src_rgb24[i] = static_cast<uint8_t>((v >> 24) ^ (v >> 9));
+  }
+  for (int i = 0; i < kMaxW * kMaxH; ++i) {
+    uint32_t v = static_cast<uint32_t>(i) * 668265263u + 13579u;
+    src_alpha[i] = static_cast<uint8_t>((v >> 24) ^ (v >> 15));
+  }
+  for (int p = 0; p < 8; ++p) {
+    src_alpha[p] = kEdgeAlphas[p];
+  }
+
+  const int kWideW = 32768;
+  align_buffer_page_end(wide_argb, kWideW * 4 * 2);
+  for (int i = 0; i < kWideW * 4 * 2; ++i) {
+    uint32_t v = static_cast<uint32_t>(i) * 1664525u + 1013904223u;
+    wide_argb[i] = static_cast<uint8_t>(v >> 24);
+  }
+
+  const int kWidths[] = {1, 3, 15, 16, 17, 37, 65, 129};
+  uint32_t ref_yuv_hash = 0;
+  uint32_t ref_planar_hash = 0;
+  uint32_t ref_scale_hash = 0;
+
+  for (int m = 0; m < num_modes; ++m) {
+    MaskCpuFlags(modes[m]);
+    uint32_t yuv_hash = 5381u;
+    uint32_t planar_hash = 5381u;
+    uint32_t scale_hash = 5381u;
+
+    // 1. RGB/ARGB -> YUV 420 / 444 / NV12 / NV21 / Matrix across widths.
+    for (size_t wi = 0; wi < sizeof(kWidths) / sizeof(kWidths[0]); ++wi) {
+      const int w = kWidths[wi];
+      const int h = 5;
+      const int uvw = (w + 1) / 2;
+      const int uvh = (h + 1) / 2;
+
+      ARGBToI420(src_argb, w * 4, dst_buf0, w, dst_buf1, uvw, dst_buf2, uvw, w,
+                 h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      ARGBToJ420(src_argb, w * 4, dst_buf0, w, dst_buf1, uvw, dst_buf2, uvw, w,
+                 h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      ARGBToI420Matrix(src_argb, w * 4, dst_buf0, w, dst_buf1, uvw, dst_buf2,
+                       uvw, &kArgbH709Constants, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      ARGBToI420Matrix(src_argb, w * 4, dst_buf0, w, dst_buf1, uvw, dst_buf2,
+                       uvw, &kArgbV2020Constants, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      ARGBToI444(src_argb, w * 4, dst_buf0, w, dst_buf1, w, dst_buf2, w, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, w * h, yuv_hash);
+
+      ARGBToJ444(src_argb, w * 4, dst_buf0, w, dst_buf1, w, dst_buf2, w, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, w * h, yuv_hash);
+
+      ARGBToI444Matrix(src_argb, w * 4, dst_buf0, w, dst_buf1, w, dst_buf2, w,
+                       &kArgbF709Constants, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, w * h, yuv_hash);
+
+      RGB24ToI420(src_rgb24, w * 3, dst_buf0, w, dst_buf1, uvw, dst_buf2, uvw,
+                  w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      RGB24ToJ420(src_rgb24, w * 3, dst_buf0, w, dst_buf1, uvw, dst_buf2, uvw,
+                  w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      RAWToI420(src_rgb24, w * 3, dst_buf0, w, dst_buf1, uvw, dst_buf2, uvw, w,
+                h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * uvh, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, uvw * uvh, yuv_hash);
+
+      RAWToI444(src_rgb24, w * 3, dst_buf0, w, dst_buf1, w, dst_buf2, w, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, w * h, yuv_hash);
+
+      RAWToJ444(src_rgb24, w * 3, dst_buf0, w, dst_buf1, w, dst_buf2, w, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf2, w * h, yuv_hash);
+
+      ARGBToNV12(src_argb, w * 4, dst_buf0, w, dst_buf1, uvw * 2, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * 2 * uvh, yuv_hash);
+
+      ARGBToNV21(src_argb, w * 4, dst_buf0, w, dst_buf1, uvw * 2, w, h);
+      yuv_hash = HashDjb2(dst_buf0, w * h, yuv_hash);
+      yuv_hash = HashDjb2(dst_buf1, uvw * 2 * uvh, yuv_hash);
+    }
+
+    // 2. Attenuate, Unattenuate, Blend, BlendPlane, Add, Subtract.
+    for (size_t wi = 0; wi < sizeof(kWidths) / sizeof(kWidths[0]); ++wi) {
+      const int w = kWidths[wi];
+      const int h = 3;
+
+      ARGBAttenuate(src_argb, w * 4, dst_buf0, w * 4, w, h);
+      planar_hash = HashDjb2(dst_buf0, w * 4 * h, planar_hash);
+
+      ARGBUnattenuate(src_argb, w * 4, dst_buf0, w * 4, w, h);
+      planar_hash = HashDjb2(dst_buf0, w * 4 * h, planar_hash);
+
+      ARGBBlend(src_argb, w * 4, src_argb2, w * 4, dst_buf0, w * 4, w, h);
+      planar_hash = HashDjb2(dst_buf0, w * 4 * h, planar_hash);
+
+      BlendPlane(src_argb, w, src_argb2, w, src_alpha, w, dst_buf0, w, w, h);
+      planar_hash = HashDjb2(dst_buf0, w * h, planar_hash);
+
+      ARGBAdd(src_argb, w * 4, src_argb2, w * 4, dst_buf0, w * 4, w, h);
+      planar_hash = HashDjb2(dst_buf0, w * 4 * h, planar_hash);
+
+      ARGBSubtract(src_argb, w * 4, src_argb2, w * 4, dst_buf0, w * 4, w, h);
+      planar_hash = HashDjb2(dst_buf0, w * 4 * h, planar_hash);
+    }
+
+    // 3. ScalePlane, ARGBScale, UVScale, I420Scale, NV12Scale (including
+    // negative src_width horizontal flip and >=32768 FilterCols64).
+    const FilterMode kFilters[] = {kFilterLinear, kFilterBilinear, kFilterBox};
+    for (int fi = 0; fi < 3; ++fi) {
+      const FilterMode f = kFilters[fi];
+
+      // Upscale 37x7 -> 65x5 and downscale 65x6 -> 37x4, plus horizontal flip.
+      ScalePlane(src_argb, 37, 37, 7, dst_buf0, 65, 65, 5, f);
+      scale_hash = HashDjb2(dst_buf0, 65 * 5, scale_hash);
+      ScalePlane(src_argb, 65, 65, 6, dst_buf0, 37, 37, 4, f);
+      scale_hash = HashDjb2(dst_buf0, 37 * 4, scale_hash);
+      ScalePlane(src_argb, 37, -37, 5, dst_buf0, 65, 65, 4, f);
+      scale_hash = HashDjb2(dst_buf0, 65 * 4, scale_hash);
+
+      ARGBScale(src_argb, 37 * 4, 37, 7, dst_buf0, 65 * 4, 65, 5, f);
+      scale_hash = HashDjb2(dst_buf0, 65 * 4 * 5, scale_hash);
+      ARGBScale(src_argb, 65 * 4, 65, 6, dst_buf0, 37 * 4, 37, 4, f);
+      scale_hash = HashDjb2(dst_buf0, 37 * 4 * 4, scale_hash);
+      ARGBScale(src_argb, 37 * 4, -37, 5, dst_buf0, 65 * 4, 65, 4, f);
+      scale_hash = HashDjb2(dst_buf0, 65 * 4 * 4, scale_hash);
+
+      UVScale(src_argb, 37 * 2, 37, 7, dst_buf0, 65 * 2, 65, 5, f);
+      scale_hash = HashDjb2(dst_buf0, 65 * 2 * 5, scale_hash);
+      UVScale(src_argb, 65 * 2, 65, 6, dst_buf0, 37 * 2, 37, 4, f);
+      scale_hash = HashDjb2(dst_buf0, 37 * 2 * 4, scale_hash);
+      UVScale(src_argb, 37 * 2, -37, 5, dst_buf0, 65 * 2, 65, 4, f);
+      scale_hash = HashDjb2(dst_buf0, 65 * 2 * 4, scale_hash);
+
+      // I420Scale vs NV12Scale byte-for-byte equivalence (38x6 -> 66x4 and
+      // horizontal flip -38x6 -> 66x4).
+      for (int sign = 1; sign >= -1; sign -= 2) {
+        const int sw = 38 * sign;
+        const int suvw = 19;
+        const int dw = 66;
+        const int dh = 4;
+        const int duvw = 33;
+        const int duvh = 2;
+        MergeUVPlane(src_argb2, suvw, src_rgb24, suvw, dst_buf3, suvw * 2, suvw,
+                     3);
+        I420Scale(src_argb, 38, src_argb2, suvw, src_rgb24, suvw, sw, 6,
+                  dst_buf0, dw, dst_buf1, duvw, dst_buf1 + duvw * duvh, duvw,
+                  dw, dh, f);
+        NV12Scale(src_argb, 38, dst_buf3, suvw * 2, sw, 6, dst_buf2, dw,
+                  dst_buf2 + dw * dh, duvw * 2, dw, dh, f);
+        MergeUVPlane(dst_buf1, duvw, dst_buf1 + duvw * duvh, duvw, dst_buf3,
+                     duvw * 2, duvw, duvh);
+        for (int i = 0; i < dw * dh; ++i) {
+          ASSERT_EQ(dst_buf0[i], dst_buf2[i]) << "mode=" << m << " f=" << fi;
+        }
+        for (int i = 0; i < duvw * 2 * duvh; ++i) {
+          ASSERT_EQ(dst_buf3[i], dst_buf2[dw * dh + i])
+              << "mode=" << m << " f=" << fi << " sign=" << sign;
+        }
+        scale_hash = HashDjb2(dst_buf2, dw * dh + duvw * 2 * duvh, scale_hash);
+      }
+    }
+
+    // FilterCols64 (src_width == 32768).
+    ScalePlane(wide_argb, kWideW, kWideW, 2, dst_buf0, 37, 37, 1,
+               kFilterBilinear);
+    scale_hash = HashDjb2(dst_buf0, 37, scale_hash);
+    UVScale(wide_argb, kWideW * 2, kWideW, 2, dst_buf0, 37 * 2, 37, 1,
+            kFilterBilinear);
+    scale_hash = HashDjb2(dst_buf0, 37 * 2, scale_hash);
+    ARGBScale(wide_argb, kWideW * 4, kWideW, 2, dst_buf0, 37 * 4, 37, 1,
+              kFilterBilinear);
+    scale_hash = HashDjb2(dst_buf0, 37 * 4, scale_hash);
+
+    if (m == 0) {
+      ref_yuv_hash = yuv_hash;
+      ref_planar_hash = planar_hash;
+      ref_scale_hash = scale_hash;
+    } else {
+      EXPECT_EQ(ref_yuv_hash, yuv_hash) << "mode=" << m << " flags=" << modes[m];
+      EXPECT_EQ(ref_planar_hash, planar_hash)
+          << "mode=" << m << " flags=" << modes[m];
+      EXPECT_EQ(ref_scale_hash, scale_hash)
+          << "mode=" << m << " flags=" << modes[m];
+    }
+  }
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  EXPECT_EQ(1816395425u, ref_yuv_hash);
+  EXPECT_EQ(3354405213u, ref_planar_hash);
+  EXPECT_EQ(1226119865u, ref_scale_hash);
+
+  free_aligned_buffer_page_end(wide_argb);
+  free_aligned_buffer_page_end(dst_buf3);
+  free_aligned_buffer_page_end(dst_buf2);
+  free_aligned_buffer_page_end(dst_buf1);
+  free_aligned_buffer_page_end(dst_buf0);
+  free_aligned_buffer_page_end(src_alpha);
+  free_aligned_buffer_page_end(src_rgb24);
+  free_aligned_buffer_page_end(src_argb2);
+  free_aligned_buffer_page_end(src_argb);
 }
 
 }  // namespace libyuv

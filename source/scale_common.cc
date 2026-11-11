@@ -568,14 +568,9 @@ void ScaleColsUp2_16_C(uint16_t* dst_ptr,
 }
 
 // (1-f)a + fb can be replaced with a + f(b-a)
-#if defined(__arm__) || defined(__aarch64__)
-#define BLENDER(a, b, f) \
-  (uint8_t)((int)(a) + ((((int)((f)) * ((int)(b) - (int)(a))) + 0x8000) >> 16))
-#else
-// Intel uses 7 bit math with rounding.
+// 7 bit math with rounding matches all SIMD implementations.
 #define BLENDER(a, b, f) \
   (uint8_t)((int)(a) + (((int)((f) >> 9) * ((int)(b) - (int)(a)) + 0x40) >> 7))
-#endif
 
 void ScaleFilterCols_C(uint8_t* dst_ptr,
                        const uint8_t* src_ptr,

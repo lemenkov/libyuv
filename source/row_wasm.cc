@@ -4400,6 +4400,40 @@ void ARGBAttenuateRow_RELAXEDSIMD(const uint8_t* src_argb,
 #endif  // HAS_ARGBATTENUATEROW_RELAXEDSIMD
 #endif  // HAS_ARGBATTENUATEROW_WASMSIMD || HAS_ARGBATTENUATEROW_RELAXEDSIMD
 
+#ifdef HAS_ARGBUNATTENUATEROW_WASMSIMD
+void ARGBUnattenuateRow_WASMSIMD(const uint8_t* src_argb,
+                                 uint8_t* dst_argb,
+                                 int width) {
+  while (width >= 4) {
+    asm("" : "+r"(src_argb), "+r"(dst_argb));
+    v128_t s = wasm_v128_load(src_argb);
+    uint16_t ia0 = fixed_invtbl16[src_argb[3]];
+    uint16_t ia1 = fixed_invtbl16[src_argb[7]];
+    uint16_t ia2 = fixed_invtbl16[src_argb[11]];
+    uint16_t ia3 = fixed_invtbl16[src_argb[15]];
+    v128_t ia01 = wasm_u16x8_make(ia0, ia0, ia0, 0x0100, ia1, ia1, ia1, 0x0100);
+    v128_t ia23 = wasm_u16x8_make(ia2, ia2, ia2, 0x0100, ia3, ia3, ia3, 0x0100);
+    v128_t f01 = wasm_i8x16_shuffle(s, s, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6,
+                                    6, 7, 7);
+    v128_t f23 = wasm_i8x16_shuffle(s, s, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12,
+                                    13, 13, 14, 14, 15, 15);
+    v128_t p0 = wasm_u32x4_shr(wasm_u32x4_extmul_low_u16x8(f01, ia01), 16);
+    v128_t p1 = wasm_u32x4_shr(wasm_u32x4_extmul_high_u16x8(f01, ia01), 16);
+    v128_t p2 = wasm_u32x4_shr(wasm_u32x4_extmul_low_u16x8(f23, ia23), 16);
+    v128_t p3 = wasm_u32x4_shr(wasm_u32x4_extmul_high_u16x8(f23, ia23), 16);
+    v128_t res = wasm_u8x16_narrow_i16x8(wasm_i16x8_narrow_i32x4(p0, p1),
+                                         wasm_i16x8_narrow_i32x4(p2, p3));
+    wasm_v128_store(dst_argb, res);
+    src_argb += 16;
+    dst_argb += 16;
+    width -= 4;
+  }
+  if (width > 0) {
+    ARGBUnattenuateRow_C(src_argb, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBUNATTENUATEROW_WASMSIMD
+
 #ifdef HAS_ARGBEXTRACTALPHAROW_WASMSIMD
 void ARGBExtractAlphaRow_WASMSIMD(const uint8_t* src_argb,
                                   uint8_t* dst_a,

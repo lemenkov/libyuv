@@ -2335,20 +2335,31 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
                                             uint8_t* dst_u,
                                             uint8_t* dst_v,
                                             int width,
-                                            const int8_t* uvconstants)
+                                            const struct ArgbConstants* c)
     STREAMING_COMPATIBLE {
   const uint8_t* src_argb_1 = src_argb + src_stride_argb;
+  const int odd = width & 1;
+  const int even_width = width & ~1;
+  const uint8_t* odd_src0 = src_argb + (ptrdiff_t)even_width * 4;
+  const uint8_t* odd_src1 = src_argb_1 + (ptrdiff_t)even_width * 4;
+  uint8_t* odd_dst_u = dst_u + (even_width >> 1);
+  uint8_t* odd_dst_v = dst_v + (even_width >> 1);
+  uint32_t u_coeff;
+  uint32_t v_coeff;
+  uint16_t add_uv;
+  __builtin_memcpy(&u_coeff, &c->kRGBToU, sizeof(u_coeff));
+  __builtin_memcpy(&v_coeff, &c->kRGBToV, sizeof(v_coeff));
+  __builtin_memcpy(&add_uv, &c->kAddUV, sizeof(add_uv));
   uint64_t vl;
   asm("cntd %x0" : "=r"(vl));
 
-  // Width is a multiple of two here, so halve it.
   width >>= 1;
 
   asm volatile(
       "ptrue    p0.b                                 \n"
-      "ld1rw    {z24.s}, p0/z, [%[uvconstants]]      \n"
-      "ld1rw    {z25.s}, p0/z, [%[uvconstants], #4]  \n"
-      "mov      z26.h, #0x8000                       \n"  // 128.0 (0x8000)
+      "dup      z24.s, %w[u_coeff]                   \n"
+      "dup      z25.s, %w[v_coeff]                   \n"
+      "dup      z26.h, %w[add_uv]                    \n"
 
       // Generate some TBL indices to undo the interleaving from ADDP.
       "index    z0.s, #0, #1                         \n"
@@ -2381,18 +2392,49 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
       "b.gt     3b                                   \n"
 
       "99:                                           \n"
-      : [src0] "+r"(src_argb),           // %[src0]
-        [src1] "+r"(src_argb_1),         // %[src1]
-        [dst_u] "+r"(dst_u),             // %[dst_u]
-        [dst_v] "+r"(dst_v),             // %[dst_v]
-        [width] "+r"(width)              // %[width]
-      : [uvconstants] "r"(uvconstants),  // %[uvconstants]
-        [vl] "r"(vl),                    // %[vl]
-        [vl2] "r"(vl * 2),               // %[vl2]
-        [vl3] "r"(vl * 3)                // %[vl3]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16",
+      : [src0] "+r"(src_argb),            // %[src0]
+        [src1] "+r"(src_argb_1),          // %[src1]
+        [dst_u] "+r"(dst_u),              // %[dst_u]
+        [dst_v] "+r"(dst_v),              // %[dst_v]
+        [width] "+r"(width)               // %[width]
+      : [u_coeff] "r"(u_coeff),           // %[u_coeff]
+        [v_coeff] "r"(v_coeff),           // %[v_coeff]
+        [add_uv] "r"((uint32_t)add_uv),   // %[add_uv]
+        [vl] "r"(vl),                     // %[vl]
+        [vl2] "r"(vl * 2),                // %[vl2]
+        [vl3] "r"(vl * 3)                 // %[vl3]
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "z16",
         "z17", "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26",
         "z27", "p0", "p1", "p2", "p3", "p4", "p5");
+
+  if (odd) {
+    asm volatile(
+        "ptrue    p0.b                                 \n"
+        "ptrue    p1.s, vl1                            \n"
+        "dup      z24.s, %w[u_coeff]                   \n"
+        "dup      z25.s, %w[v_coeff]                   \n"
+        "dup      z26.h, %w[add_uv]                    \n"
+        "ld1w     {z0.s}, p1/z, [%[src0]]              \n"
+        "ld1w     {z4.s}, p1/z, [%[src1]]              \n"
+        "urhadd   z0.b, p0/m, z0.b, z4.b               \n"
+        "mov      z16.b, #0                            \n"
+        "mov      z20.b, #0                            \n"
+        "usdot    z16.s, z0.b, z24.b                   \n"
+        "usdot    z20.s, z0.b, z25.b                   \n"
+        "subhnb   z16.b, z26.h, z16.h                  \n"
+        "subhnb   z20.b, z26.h, z20.h                  \n"
+        "st1b     {z16.s}, p1, [%[dst_u]]              \n"
+        "st1b     {z20.s}, p1, [%[dst_v]]              \n"
+        :
+        : [src0] "r"(odd_src0),
+          [src1] "r"(odd_src1),
+          [dst_u] "r"(odd_dst_u),
+          [dst_v] "r"(odd_dst_v),
+          [u_coeff] "r"(u_coeff),
+          [v_coeff] "r"(v_coeff),
+          [add_uv] "r"((uint32_t)add_uv)
+        : "memory", "z0", "z4", "z16", "z20", "z24", "z25", "z26", "p0", "p1");
+  }
 }
 
 #define ARGBTOYMATRIX_SVE                              \
@@ -2423,13 +2465,16 @@ static inline void ARGBToYMatrixRow_SVE_SC(const uint8_t* src_argb,
                                            int width,
                                            const struct ArgbConstants* c)
     STREAMING_COMPATIBLE {
+  uint32_t y_coeff;
+  uint16_t add_y;
+  __builtin_memcpy(&y_coeff, &c->kRGBToY, sizeof(y_coeff));
+  __builtin_memcpy(&add_y, &c->kAddY, sizeof(add_y));
   uint64_t vl;
   asm("cntw %x0" : "=r"(vl));
 
   asm volatile(
-      "ptrue    p0.b                                 \n"
-      "ld1rw    {z24.s}, p0/z, [%[c]]                \n"
-      "ld1rh    {z25.h}, p0/z, [%[c], #48]           \n"
+      "dup      z24.s, %w[y_coeff]                   \n"
+      "dup      z25.h, %w[add_y]                     \n"
 
       "subs     %w[width], %w[width], %w[vl], lsl #2 \n"
       "b.lt     2f                                   \n"
@@ -2457,15 +2502,16 @@ static inline void ARGBToYMatrixRow_SVE_SC(const uint8_t* src_argb,
       "b.gt     3b                                   \n"
 
       "99:                                           \n"
-      : [src] "+r"(src_argb),  // %[src]
-        [dst_y] "+r"(dst_y),   // %[dst_y]
-        [width] "+r"(width)    // %[width]
-      : [c] "r"(c),            // %[c]
-        [vl] "r"(vl),          // %[vl]
-        [vl2] "r"(vl * 2),     // %[vl2]
-        [vl3] "r"(vl * 3)      // %[vl3]
-      : "cc", "memory", "z0", "z1", "z2", "z3", "z16", "z17", "z18", "z19",
-        "z20", "z24", "z25", "p0", "p1", "p2", "p3", "p4", "p5");
+      : [src] "+r"(src_argb),           // %[src]
+        [dst_y] "+r"(dst_y),            // %[dst_y]
+        [width] "+r"(width)             // %[width]
+      : [y_coeff] "r"(y_coeff),         // %[y_coeff]
+        [add_y] "r"((uint32_t)add_y),   // %[add_y]
+        [vl] "r"(vl),                   // %[vl]
+        [vl2] "r"(vl * 2),              // %[vl2]
+        [vl3] "r"(vl * 3)               // %[vl3]
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z16", "z17", "z18", "z19",
+        "z20", "z24", "z25", "p1", "p2", "p3", "p4", "p5");
 }
 
 #define SSIM4X4_SVE                                               \

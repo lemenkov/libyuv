@@ -617,6 +617,152 @@ void ScaleUVRowDown2Box_HVX(const uint8_t* src_ptr,
   }
 }
 
+void ScaleFilterCols_HVX(uint8_t* dst_ptr,
+                         const uint8_t* src_ptr,
+                         int dst_width,
+                         int x,
+                         int dx) {
+  uint16_t x_init[64] __attribute__((aligned(128)));
+  uint32_t ux = (uint32_t)x;
+  const uint32_t udx = (uint32_t)dx;
+  for (int i = 0; i < 64; ++i) {
+    x_init[i] = (uint16_t)(ux + (uint32_t)i * udx);
+  }
+  HVX_Vector v_x0 = vloada(x_init);
+  HVX_Vector v_dx64 = Q6_Vh_vsplat_R((int16_t)(64u * udx));
+  HVX_Vector v_x1 = Q6_Vh_vadd_VhVh(v_x0, v_dx64);
+  HVX_Vector v_dx128 = Q6_Vh_vsplat_R((int16_t)(128u * udx));
+  HVX_Vector v_7f = Q6_Vh_vsplat_R(0x7f);
+  HVX_Vector v_64 = Q6_Vh_vsplat_R(64);
+
+  while (dst_width > 0) {
+    int w = dst_width >= 128 ? 128 : dst_width;
+    int w0 = w >= 64 ? 64 : w;
+    uint16_t pairs0[64] __attribute__((aligned(128)));
+    for (int i = 0; i < w0; ++i) {
+      memcpy(&pairs0[i], src_ptr + (x >> 16), 2);
+      x = (int)((uint32_t)x + udx);
+    }
+    HVX_VectorPair ab0 = Q6_Wuh_vzxt_Vub(vloada(pairs0));
+    HVX_Vector f0 = Q6_V_vand_VV(Q6_Vuh_vlsr_VuhR(v_x0, 9), v_7f);
+    v_x0 = Q6_Vh_vadd_VhVh(v_x0, v_dx128);
+    HVX_Vector diff0 = Q6_Vh_vsub_VhVh(Q6_V_hi_W(ab0), Q6_V_lo_W(ab0));
+    HVX_Vector d0 = Q6_Vh_vadd_VhVh(
+        Q6_V_lo_W(ab0),
+        Q6_Vh_vasr_VhR(Q6_Vh_vmpyiacc_VhVhVh(v_64, diff0, f0), 7));
+
+    HVX_Vector d1 = Q6_V_vzero();
+    if (w > 64) {
+      int w1 = w - 64;
+      uint16_t pairs1[64] __attribute__((aligned(128)));
+      for (int i = 0; i < w1; ++i) {
+        memcpy(&pairs1[i], src_ptr + (x >> 16), 2);
+        x = (int)((uint32_t)x + udx);
+      }
+      HVX_VectorPair ab1 = Q6_Wuh_vzxt_Vub(vloada(pairs1));
+      HVX_Vector f1 = Q6_V_vand_VV(Q6_Vuh_vlsr_VuhR(v_x1, 9), v_7f);
+      v_x1 = Q6_Vh_vadd_VhVh(v_x1, v_dx128);
+      HVX_Vector diff1 = Q6_Vh_vsub_VhVh(Q6_V_hi_W(ab1), Q6_V_lo_W(ab1));
+      d1 = Q6_Vh_vadd_VhVh(
+          Q6_V_lo_W(ab1),
+          Q6_Vh_vasr_VhR(Q6_Vh_vmpyiacc_VhVhVh(v_64, diff1, f1), 7));
+    }
+    HVX_Vector out = Q6_Vb_vpacke_VhVh(d1, d0);
+    vstoreu_partial(dst_ptr, out, w);
+    dst_ptr += 128;
+    dst_width -= 128;
+  }
+}
+
+void ScaleARGBFilterCols_HVX(uint8_t* dst_argb,
+                             const uint8_t* src_argb,
+                             int dst_width,
+                             int x,
+                             int dx) {
+  uint16_t x_init[64] __attribute__((aligned(128)));
+  uint32_t ux = (uint32_t)x;
+  const uint32_t udx = (uint32_t)dx;
+  for (int i = 0; i < 32; ++i) {
+    uint16_t xi = (uint16_t)(ux + (uint32_t)i * udx);
+    x_init[2 * i + 0] = xi;
+    x_init[2 * i + 1] = xi;
+  }
+  HVX_Vector v_x = vloada(x_init);
+  HVX_Vector v_dx32 = Q6_Vh_vsplat_R((int16_t)(32u * udx));
+  HVX_Vector v_007f = Q6_Vh_vsplat_R(0x7f);
+  HVX_Vector v_7f_byte = Q6_Vb_vsplat_R(0x7f);
+
+  while (dst_width > 0) {
+    int w = dst_width >= 32 ? 32 : dst_width;
+    uint32_t a_buf[32] __attribute__((aligned(128)));
+    uint32_t b_buf[32] __attribute__((aligned(128)));
+    for (int i = 0; i < w; ++i) {
+      const uint8_t* p = src_argb + (x >> 16) * 4;
+      memcpy(&a_buf[i], p, 4);
+      memcpy(&b_buf[i], p + 4, 4);
+      x = (int)((uint32_t)x + udx);
+    }
+    HVX_Vector v_a = vloada(a_buf);
+    HVX_Vector v_b = vloada(b_buf);
+    HVX_Vector f16 = Q6_V_vand_VV(Q6_Vuh_vlsr_VuhR(v_x, 9), v_007f);
+    v_x = Q6_Vh_vadd_VhVh(v_x, v_dx32);
+    HVX_Vector f8 = Q6_V_vor_VV(f16, Q6_Vh_vasl_VhR(f16, 8));
+    HVX_Vector inv_f8 = Q6_V_vxor_VV(f8, v_7f_byte);
+    HVX_VectorPair prod = Q6_Wuh_vmpy_VubVub(v_a, inv_f8);
+    prod = Q6_Wuh_vmpyacc_WuhVubVub(prod, v_b, f8);
+    HVX_Vector lo = Q6_Vuh_vlsr_VuhR(Q6_V_lo_W(prod), 7);
+    HVX_Vector hi = Q6_Vuh_vlsr_VuhR(Q6_V_hi_W(prod), 7);
+    HVX_Vector out = Q6_Vb_vshuffe_VbVb(hi, lo);
+    vstoreu_partial(dst_argb, out, w * 4);
+    dst_argb += 128;
+    dst_width -= 32;
+  }
+}
+
+void ScaleUVFilterCols_HVX(uint8_t* dst_uv,
+                           const uint8_t* src_uv,
+                           int dst_width,
+                           int x,
+                           int dx) {
+  uint16_t x_init[64] __attribute__((aligned(128)));
+  uint32_t ux = (uint32_t)x;
+  const uint32_t udx = (uint32_t)dx;
+  for (int i = 0; i < 64; ++i) {
+    x_init[i] = (uint16_t)(ux + (uint32_t)i * udx);
+  }
+  HVX_Vector v_x = vloada(x_init);
+  HVX_Vector v_dx64 = Q6_Vh_vsplat_R((int16_t)(64u * udx));
+  HVX_Vector v_007f = Q6_Vh_vsplat_R(0x7f);
+  HVX_Vector v_80_byte = Q6_Vb_vsplat_R((int8_t)0x80);
+  HVX_Vector v_64 = Q6_Vh_vsplat_R(64);
+
+  while (dst_width > 0) {
+    int w = dst_width >= 64 ? 64 : dst_width;
+    uint16_t a_buf[64] __attribute__((aligned(128)));
+    uint16_t b_buf[64] __attribute__((aligned(128)));
+    for (int i = 0; i < w; ++i) {
+      const uint8_t* p = src_uv + (x >> 16) * 2;
+      memcpy(&a_buf[i], p, 2);
+      memcpy(&b_buf[i], p + 2, 2);
+      x = (int)((uint32_t)x + udx);
+    }
+    HVX_Vector v_a = vloada(a_buf);
+    HVX_Vector v_b = vloada(b_buf);
+    HVX_Vector f16 = Q6_V_vand_VV(Q6_Vuh_vlsr_VuhR(v_x, 9), v_007f);
+    v_x = Q6_Vh_vadd_VhVh(v_x, v_dx64);
+    HVX_Vector f8 = Q6_V_vor_VV(f16, Q6_Vh_vasl_VhR(f16, 8));
+    HVX_Vector inv_f8 = Q6_Vb_vsub_VbVb(v_80_byte, f8);
+    HVX_VectorPair prod = Q6_Wuh_vmpy_VubVub(v_a, inv_f8);
+    prod = Q6_Wuh_vmpyacc_WuhVubVub(prod, v_b, f8);
+    HVX_Vector lo = Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_V_lo_W(prod), v_64), 7);
+    HVX_Vector hi = Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_V_hi_W(prod), v_64), 7);
+    HVX_Vector out = Q6_Vb_vshuffe_VbVb(hi, lo);
+    vstoreu_partial(dst_uv, out, w * 2);
+    dst_uv += 128;
+    dst_width -= 64;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

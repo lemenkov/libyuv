@@ -1160,24 +1160,24 @@ static int P410TestFilter(int src_width,
     ASSERT_LE(diff, max_diff);                                                \
   }
 
-// Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
-// filtering is different fixed point implementations for SSSE3, Neon and C.
+// Test a scale factor with all 4 filters.  Expect exact for SIMD vs C except
+// ScaleRowDown34 and ScaleRowDown38 Linear/Bilinear/Box.
 #ifndef DISABLE_SLOW_TESTS
-#define TEST_FACTOR(name, nom, denom, boxdiff)  \
-  TEST_FACTOR1(, name, None, nom, denom, 0)     \
-  TEST_FACTOR1(, name, Linear, nom, denom, 3)   \
-  TEST_FACTOR1(, name, Bilinear, nom, denom, 3) \
+#define TEST_FACTOR(name, nom, denom, boxdiff)        \
+  TEST_FACTOR1(, name, None, nom, denom, 0)           \
+  TEST_FACTOR1(, name, Linear, nom, denom, boxdiff)   \
+  TEST_FACTOR1(, name, Bilinear, nom, denom, boxdiff) \
   TEST_FACTOR1(, name, Box, nom, denom, boxdiff)
 #else
 #if defined(ENABLE_FULL_TESTS)
-#define TEST_FACTOR(name, nom, denom, boxdiff)           \
-  TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0)     \
-  TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, 3)   \
-  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
+#define TEST_FACTOR(name, nom, denom, boxdiff)                 \
+  TEST_FACTOR1(DISABLED_, name, None, nom, denom, 0)           \
+  TEST_FACTOR1(DISABLED_, name, Linear, nom, denom, boxdiff)   \
+  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, boxdiff) \
   TEST_FACTOR1(DISABLED_, name, Box, nom, denom, boxdiff)
 #else
-#define TEST_FACTOR(name, nom, denom, boxdiff)           \
-  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, 3) \
+#define TEST_FACTOR(name, nom, denom, boxdiff)                 \
+  TEST_FACTOR1(DISABLED_, name, Bilinear, nom, denom, boxdiff) \
   TEST_FACTOR1(DISABLED_, name, Box, nom, denom, boxdiff)
 #endif
 #endif
@@ -1195,190 +1195,191 @@ TEST_FACTOR(3, 1, 3, 0)
 #undef SX
 #undef DX
 
-#define TEST_SCALETO1(DISABLED_, name, width, height, filter, max_diff)       \
-  TEST_F(LibYUVScaleTest, I420##name##To##width##x##height##_##filter) {      \
-    int diff = I420TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, I444##name##To##width##x##height##_##filter) {      \
-    int diff = I444TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I420##name##To##width##x##height##_##filter##_12) {       \
-    int diff = I420TestFilter_12(                                             \
-        benchmark_width_, benchmark_height_, width, height, kFilter##filter,  \
-        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);      \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I444##name##To##width##x##height##_##filter##_12) {       \
-    int diff = I444TestFilter_12(                                             \
-        benchmark_width_, benchmark_height_, width, height, kFilter##filter,  \
-        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);      \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I420##name##To##width##x##height##_##filter##_16) {       \
-    int diff = I420TestFilter_16(                                             \
-        benchmark_width_, benchmark_height_, width, height, kFilter##filter,  \
-        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);      \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I444##name##To##width##x##height##_##filter##_16) {       \
-    int diff = I444TestFilter_16(                                             \
-        benchmark_width_, benchmark_height_, width, height, kFilter##filter,  \
-        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);      \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, NV12##name##To##width##x##height##_##filter) {      \
-    int diff = NV12TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, NV16##name##To##width##x##height##_##filter) {      \
-    int diff = NV16TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, NV24##name##To##width##x##height##_##filter) {      \
-    int diff = NV24TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, P010##name##To##width##x##height##_##filter) {      \
-    int diff = P010TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, P210##name##To##width##x##height##_##filter) {      \
-    int diff = P210TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, P410##name##To##width##x##height##_##filter) {      \
-    int diff = P410TestFilter(benchmark_width_, benchmark_height_, width,     \
-                              height, kFilter##filter, benchmark_iterations_, \
-                              disable_cpu_flags_, benchmark_cpu_info_);       \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, I420##name##From##width##x##height##_##filter) {    \
-    int diff = I420TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, I444##name##From##width##x##height##_##filter) {    \
-    int diff = I444TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I420##name##From##width##x##height##_##filter##_12) {     \
-    int diff = I420TestFilter_12(width, height, Abs(benchmark_width_),        \
-                                 Abs(benchmark_height_), kFilter##filter,     \
-                                 benchmark_iterations_, disable_cpu_flags_,   \
-                                 benchmark_cpu_info_);                        \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I444##name##From##width##x##height##_##filter##_12) {     \
-    int diff = I444TestFilter_12(width, height, Abs(benchmark_width_),        \
-                                 Abs(benchmark_height_), kFilter##filter,     \
-                                 benchmark_iterations_, disable_cpu_flags_,   \
-                                 benchmark_cpu_info_);                        \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I420##name##From##width##x##height##_##filter##_16) {     \
-    int diff = I420TestFilter_16(width, height, Abs(benchmark_width_),        \
-                                 Abs(benchmark_height_), kFilter##filter,     \
-                                 benchmark_iterations_, disable_cpu_flags_,   \
-                                 benchmark_cpu_info_);                        \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest,                                                     \
-         DISABLED_##I444##name##From##width##x##height##_##filter##_16) {     \
-    int diff = I444TestFilter_16(width, height, Abs(benchmark_width_),        \
-                                 Abs(benchmark_height_), kFilter##filter,     \
-                                 benchmark_iterations_, disable_cpu_flags_,   \
-                                 benchmark_cpu_info_);                        \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, NV12##name##From##width##x##height##_##filter) {    \
-    int diff = NV12TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, NV16##name##From##width##x##height##_##filter) {    \
-    int diff = NV16TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, NV24##name##From##width##x##height##_##filter) {    \
-    int diff = NV24TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, P010##name##From##width##x##height##_##filter) {    \
-    int diff = P010TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, P210##name##From##width##x##height##_##filter) {    \
-    int diff = P210TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
-  }                                                                           \
-  TEST_F(LibYUVScaleTest, P410##name##From##width##x##height##_##filter) {    \
-    int diff = P410TestFilter(width, height, Abs(benchmark_width_),           \
-                              Abs(benchmark_height_), kFilter##filter,        \
-                              benchmark_iterations_, disable_cpu_flags_,      \
-                              benchmark_cpu_info_);                           \
-    ASSERT_LE(diff, max_diff);                                                \
+#define TEST_SCALETO1(DISABLED_, name, width, height, filter, max_diff,        \
+                      max_diff16)                                              \
+  TEST_F(LibYUVScaleTest, I420##name##To##width##x##height##_##filter) {       \
+    int diff = I420TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, I444##name##To##width##x##height##_##filter) {       \
+    int diff = I444TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I420##name##To##width##x##height##_##filter##_12) {        \
+    int diff = I420TestFilter_12(                                              \
+        benchmark_width_, benchmark_height_, width, height, kFilter##filter,   \
+        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I444##name##To##width##x##height##_##filter##_12) {        \
+    int diff = I444TestFilter_12(                                              \
+        benchmark_width_, benchmark_height_, width, height, kFilter##filter,   \
+        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I420##name##To##width##x##height##_##filter##_16) {        \
+    int diff = I420TestFilter_16(                                              \
+        benchmark_width_, benchmark_height_, width, height, kFilter##filter,   \
+        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I444##name##To##width##x##height##_##filter##_16) {        \
+    int diff = I444TestFilter_16(                                              \
+        benchmark_width_, benchmark_height_, width, height, kFilter##filter,   \
+        benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_);       \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, NV12##name##To##width##x##height##_##filter) {       \
+    int diff = NV12TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, NV16##name##To##width##x##height##_##filter) {       \
+    int diff = NV16TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, NV24##name##To##width##x##height##_##filter) {       \
+    int diff = NV24TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, P010##name##To##width##x##height##_##filter) {       \
+    int diff = P010TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, P210##name##To##width##x##height##_##filter) {       \
+    int diff = P210TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, P410##name##To##width##x##height##_##filter) {       \
+    int diff = P410TestFilter(benchmark_width_, benchmark_height_, width,      \
+                              height, kFilter##filter, benchmark_iterations_,  \
+                              disable_cpu_flags_, benchmark_cpu_info_);        \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, I420##name##From##width##x##height##_##filter) {     \
+    int diff = I420TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, I444##name##From##width##x##height##_##filter) {     \
+    int diff = I444TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I420##name##From##width##x##height##_##filter##_12) {      \
+    int diff = I420TestFilter_12(width, height, Abs(benchmark_width_),         \
+                                 Abs(benchmark_height_), kFilter##filter,      \
+                                 benchmark_iterations_, disable_cpu_flags_,    \
+                                 benchmark_cpu_info_);                         \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I444##name##From##width##x##height##_##filter##_12) {      \
+    int diff = I444TestFilter_12(width, height, Abs(benchmark_width_),         \
+                                 Abs(benchmark_height_), kFilter##filter,      \
+                                 benchmark_iterations_, disable_cpu_flags_,    \
+                                 benchmark_cpu_info_);                         \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I420##name##From##width##x##height##_##filter##_16) {      \
+    int diff = I420TestFilter_16(width, height, Abs(benchmark_width_),         \
+                                 Abs(benchmark_height_), kFilter##filter,      \
+                                 benchmark_iterations_, disable_cpu_flags_,    \
+                                 benchmark_cpu_info_);                         \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest,                                                      \
+         DISABLED_##I444##name##From##width##x##height##_##filter##_16) {      \
+    int diff = I444TestFilter_16(width, height, Abs(benchmark_width_),         \
+                                 Abs(benchmark_height_), kFilter##filter,      \
+                                 benchmark_iterations_, disable_cpu_flags_,    \
+                                 benchmark_cpu_info_);                         \
+    ASSERT_LE(diff, max_diff16);                                               \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, NV12##name##From##width##x##height##_##filter) {     \
+    int diff = NV12TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, NV16##name##From##width##x##height##_##filter) {     \
+    int diff = NV16TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, NV24##name##From##width##x##height##_##filter) {     \
+    int diff = NV24TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, P010##name##From##width##x##height##_##filter) {     \
+    int diff = P010TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, P210##name##From##width##x##height##_##filter) {     \
+    int diff = P210TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
+  }                                                                            \
+  TEST_F(LibYUVScaleTest, P410##name##From##width##x##height##_##filter) {     \
+    int diff = P410TestFilter(width, height, Abs(benchmark_width_),            \
+                              Abs(benchmark_height_), kFilter##filter,         \
+                              benchmark_iterations_, disable_cpu_flags_,       \
+                              benchmark_cpu_info_);                            \
+    ASSERT_LE(diff, max_diff);                                                 \
   }
 
 #ifndef DISABLE_SLOW_TESTS
 // Test scale to a specified size with all 4 filters.
-#define TEST_SCALETO(name, width, height)           \
-  TEST_SCALETO1(, name, width, height, None, 0)     \
-  TEST_SCALETO1(, name, width, height, Linear, 3)   \
-  TEST_SCALETO1(, name, width, height, Bilinear, 3) \
-  TEST_SCALETO1(, name, width, height, Box, 3)
+#define TEST_SCALETO(name, width, height)              \
+  TEST_SCALETO1(, name, width, height, None, 0, 0)     \
+  TEST_SCALETO1(, name, width, height, Linear, 0, 2)   \
+  TEST_SCALETO1(, name, width, height, Bilinear, 0, 2) \
+  TEST_SCALETO1(, name, width, height, Box, 0, 2)
 #else
 #if defined(ENABLE_FULL_TESTS)
-#define TEST_SCALETO(name, width, height)                    \
-  TEST_SCALETO1(DISABLED_, name, width, height, None, 0)     \
-  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 3)   \
-  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3) \
-  TEST_SCALETO1(DISABLED_, name, width, height, Box, 3)
+#define TEST_SCALETO(name, width, height)                       \
+  TEST_SCALETO1(DISABLED_, name, width, height, None, 0, 0)     \
+  TEST_SCALETO1(DISABLED_, name, width, height, Linear, 0, 2)   \
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 0, 2) \
+  TEST_SCALETO1(DISABLED_, name, width, height, Box, 0, 2)
 #else
-#define TEST_SCALETO(name, width, height)                    \
-  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 3) \
-  TEST_SCALETO1(DISABLED_, name, width, height, Box, 3)
+#define TEST_SCALETO(name, width, height)                       \
+  TEST_SCALETO1(DISABLED_, name, width, height, Bilinear, 0, 2) \
+  TEST_SCALETO1(DISABLED_, name, width, height, Box, 0, 2)
 #endif
 #endif
 
@@ -1396,7 +1397,7 @@ TEST_SCALETO(Scale, 1080, 1920)  // for rotated phones
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
-#define TEST_SCALESWAPXY1(DISABLED_, name, filter, max_diff)               \
+#define TEST_SCALESWAPXY1(DISABLED_, name, filter, max_diff, max_diff16)   \
   TEST_F(LibYUVScaleTest, I420##name##SwapXY_##filter) {                   \
     int diff = I420TestFilter(benchmark_width_, benchmark_height_,         \
                               benchmark_height_, benchmark_width_,         \
@@ -1416,28 +1417,28 @@ TEST_SCALETO(Scale, 1080, 1920)  // for rotated phones
                                  benchmark_height_, benchmark_width_,      \
                                  kFilter##filter, benchmark_iterations_,   \
                                  disable_cpu_flags_, benchmark_cpu_info_); \
-    ASSERT_LE(diff, max_diff);                                             \
+    ASSERT_LE(diff, max_diff16);                                           \
   }                                                                        \
   TEST_F(LibYUVScaleTest, DISABLED_##I444##name##SwapXY_##filter##_12) {   \
     int diff = I444TestFilter_12(benchmark_width_, benchmark_height_,      \
                                  benchmark_height_, benchmark_width_,      \
                                  kFilter##filter, benchmark_iterations_,   \
                                  disable_cpu_flags_, benchmark_cpu_info_); \
-    ASSERT_LE(diff, max_diff);                                             \
+    ASSERT_LE(diff, max_diff16);                                           \
   }                                                                        \
   TEST_F(LibYUVScaleTest, DISABLED_##I420##name##SwapXY_##filter##_16) {   \
     int diff = I420TestFilter_16(benchmark_width_, benchmark_height_,      \
                                  benchmark_height_, benchmark_width_,      \
                                  kFilter##filter, benchmark_iterations_,   \
                                  disable_cpu_flags_, benchmark_cpu_info_); \
-    ASSERT_LE(diff, max_diff);                                             \
+    ASSERT_LE(diff, max_diff16);                                           \
   }                                                                        \
   TEST_F(LibYUVScaleTest, DISABLED_##I444##name##SwapXY_##filter##_16) {   \
     int diff = I444TestFilter_16(benchmark_width_, benchmark_height_,      \
                                  benchmark_height_, benchmark_width_,      \
                                  kFilter##filter, benchmark_iterations_,   \
                                  disable_cpu_flags_, benchmark_cpu_info_); \
-    ASSERT_LE(diff, max_diff);                                             \
+    ASSERT_LE(diff, max_diff16);                                           \
   }                                                                        \
   TEST_F(LibYUVScaleTest, NV12##name##SwapXY_##filter) {                   \
     int diff = NV12TestFilter(benchmark_width_, benchmark_height_,         \
@@ -1484,19 +1485,19 @@ TEST_SCALETO(Scale, 1080, 1920)  // for rotated phones
 
 // Test scale to a specified size with all 4 filters.
 #ifndef DISABLE_SLOW_TESTS
-TEST_SCALESWAPXY1(, Scale, None, 0)
-TEST_SCALESWAPXY1(, Scale, Linear, 3)
-TEST_SCALESWAPXY1(, Scale, Bilinear, 3)
-TEST_SCALESWAPXY1(, Scale, Box, 3)
+TEST_SCALESWAPXY1(, Scale, None, 0, 0)
+TEST_SCALESWAPXY1(, Scale, Linear, 0, 2)
+TEST_SCALESWAPXY1(, Scale, Bilinear, 0, 2)
+TEST_SCALESWAPXY1(, Scale, Box, 0, 2)
 #else
 #if defined(ENABLE_FULL_TESTS)
-TEST_SCALESWAPXY1(DISABLED_, Scale, None, 0)
-TEST_SCALESWAPXY1(DISABLED_, Scale, Linear, 3)
-TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 3)
-TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 3)
+TEST_SCALESWAPXY1(DISABLED_, Scale, None, 0, 0)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Linear, 0, 2)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 0, 2)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 0, 2)
 #else
-TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 3)
-TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 3)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Bilinear, 0, 2)
+TEST_SCALESWAPXY1(DISABLED_, Scale, Box, 0, 2)
 #endif
 #endif
 #undef TEST_SCALESWAPXY1

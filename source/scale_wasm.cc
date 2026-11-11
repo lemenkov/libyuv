@@ -480,7 +480,7 @@ void ScaleFilterCols_WASMSIMD(uint8_t* dst_ptr,
   const v128_t dx8 = wasm_i16x8_splat((int16_t)(udx * 8));
   const v128_t maskff = wasm_i16x8_const_splat(0xff);
   const v128_t round = wasm_i16x8_const_splat(64);
-  while (dst_width > 0) {
+  while (dst_width >= 8) {
     v128_t p = wasm_i16x8_const_splat(0);
     p = wasm_v128_load16_lane(src_ptr + ((int)ux >> 16), p, 0);
     ux += udx;
@@ -508,8 +508,54 @@ void ScaleFilterCols_WASMSIMD(uint8_t* dst_ptr,
     dst_ptr += 8;
     dst_width -= 8;
   }
+  if (dst_width > 0) {
+    ScaleFilterCols_C(dst_ptr, src_ptr, dst_width, (int)ux, dx);
+  }
 }
 #endif  // HAS_SCALEFILTERCOLS_WASMSIMD
+
+#ifdef HAS_SCALEUVFILTERCOLS_WASMSIMD
+void ScaleUVFilterCols_WASMSIMD(uint8_t* dst_uv,
+                                const uint8_t* src_uv,
+                                int dst_width,
+                                int x,
+                                int dx) {
+  uint32_t ux = (uint32_t)x;
+  const uint32_t udx = (uint32_t)dx;
+  int16_t x0 = (int16_t)ux;
+  int16_t x1 = (int16_t)(ux + udx);
+  int16_t x2 = (int16_t)(ux + udx * 2);
+  int16_t x3 = (int16_t)(ux + udx * 3);
+  v128_t xv = wasm_i16x8_make(x0, x0, x1, x1, x2, x2, x3, x3);
+  const v128_t dx4 = wasm_i16x8_splat((int16_t)(udx * 4));
+  const v128_t round = wasm_i16x8_const_splat(64);
+  while (dst_width >= 4) {
+    v128_t p = wasm_v128_load32_zero(src_uv + ((int)ux >> 16) * 2);
+    ux += udx;
+    p = wasm_v128_load32_lane(src_uv + ((int)ux >> 16) * 2, p, 1);
+    ux += udx;
+    p = wasm_v128_load32_lane(src_uv + ((int)ux >> 16) * 2, p, 2);
+    ux += udx;
+    p = wasm_v128_load32_lane(src_uv + ((int)ux >> 16) * 2, p, 3);
+    ux += udx;
+    v128_t a = wasm_u16x8_extend_low_u8x16(
+        wasm_i16x8_shuffle(p, p, 0, 2, 4, 6, 0, 2, 4, 6));
+    v128_t b = wasm_u16x8_extend_low_u8x16(
+        wasm_i16x8_shuffle(p, p, 1, 3, 5, 7, 1, 3, 5, 7));
+    v128_t f = wasm_u16x8_shr(xv, 9);
+    xv = wasm_i16x8_add(xv, dx4);
+    v128_t d = wasm_i16x8_sub(b, a);
+    d = wasm_i16x8_shr(wasm_i16x8_add(wasm_i16x8_mul(d, f), round), 7);
+    v128_t r = wasm_i16x8_add(d, a);
+    wasm_v128_store64_lane(dst_uv, wasm_u8x16_narrow_i16x8(r, r), 0);
+    dst_uv += 8;
+    dst_width -= 4;
+  }
+  if (dst_width > 0) {
+    ScaleUVFilterCols_C(dst_uv, src_uv, dst_width, (int)ux, dx);
+  }
+}
+#endif  // HAS_SCALEUVFILTERCOLS_WASMSIMD
 
 #if defined(HAS_SCALEARGBROWDOWN2_WASMSIMD) || \
     defined(HAS_SCALEARGBROWDOWNEVEN_WASMSIMD)
@@ -683,7 +729,7 @@ void ScaleARGBFilterCols_WASMSIMD(uint8_t* dst_argb,
   v128_t x23 = wasm_i16x8_make(x2, x2, x2, x2, x3, x3, x3, x3);
   const v128_t dx4 = wasm_i16x8_splat((int16_t)(udx * 4));
   const v128_t k7f = wasm_i16x8_const_splat(0x7f);
-  while (dst_width > 0) {
+  while (dst_width >= 4) {
     // Load pixel pairs (a, b) for 4 pixels.
     v128_t p0 = wasm_v128_load64_zero(src_argb + ((int)ux >> 16) * 4);
     ux += udx;
@@ -710,6 +756,9 @@ void ScaleARGBFilterCols_WASMSIMD(uint8_t* dst_argb,
                                                       wasm_u16x8_shr(r1, 7)));
     dst_argb += 16;
     dst_width -= 4;
+  }
+  if (dst_width > 0) {
+    ScaleARGBFilterCols_C(dst_argb, src_argb, dst_width, (int)ux, dx);
   }
 }
 #endif  // HAS_SCALEARGBFILTERCOLS_WASMSIMD

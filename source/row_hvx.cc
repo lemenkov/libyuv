@@ -800,6 +800,57 @@ void ARGBAttenuateRow_HVX(const uint8_t* src_argb,
   }
 }
 
+void ARGBUnattenuateRow_HVX(const uint8_t* src_argb,
+                            uint8_t* dst_argb,
+                            int width) {
+  HVX_Vector v255 = Q6_Vh_vsplat_R(255);
+  HVX_Vector v_a_mask = Q6_V_vsplat_R(0xFF000000u);
+  HVX_Vector tbl0 = Q6_Vh_vshuff_Vh(vloadu(&fixed_invtbl16[0]));
+  HVX_Vector tbl1 = Q6_Vh_vshuff_Vh(vloadu(&fixed_invtbl16[64]));
+  HVX_Vector tbl2 = Q6_Vh_vshuff_Vh(vloadu(&fixed_invtbl16[128]));
+  HVX_Vector tbl3 = Q6_Vh_vshuff_Vh(vloadu(&fixed_invtbl16[192]));
+  int bytes = width * 4;
+  while (bytes > 0) {
+    int b_cnt = bytes >= 128 ? 128 : bytes;
+    HVX_Vector src = vloadu_partial_zero(src_argb, b_cnt);
+    HVX_Vector t = Q6_Vb_vshuffo_VbVb(src, src);
+    HVX_Vector a_idx = Q6_V_vor_VV(Q6_Vh_vshuffo_VhVh(t, t), v_a_mask);
+
+    HVX_VectorPair ia = Q6_Wh_vlut16_VbVhR(a_idx, tbl0, 0);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl0, 1);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl0, 2);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl0, 3);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl1, 4);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl1, 5);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl1, 6);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl1, 7);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl2, 8);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl2, 9);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl2, 10);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl2, 11);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl3, 12);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl3, 13);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl3, 14);
+    ia = Q6_Wh_vlut16or_WhVbVhR(ia, a_idx, tbl3, 15);
+
+    HVX_VectorPair w_src = Q6_Wuh_vzxt_Vub(src);
+    HVX_Vector f_even = Q6_V_lo_W(w_src);
+    HVX_Vector f_odd = Q6_V_hi_W(w_src);
+    f_even = Q6_V_vor_VV(f_even, Q6_Vh_vasl_VhR(f_even, 8));
+    f_odd = Q6_V_vor_VV(f_odd, Q6_Vh_vasl_VhR(f_odd, 8));
+
+    HVX_Vector res_even = Q6_Vuh_vmin_VuhVuh(
+        Q6_Vuh_vmpy_VuhVuh_rs16(f_even, Q6_V_lo_W(ia)), v255);
+    HVX_Vector res_odd = Q6_Vuh_vmin_VuhVuh(
+        Q6_Vuh_vmpy_VuhVuh_rs16(f_odd, Q6_V_hi_W(ia)), v255);
+    HVX_Vector out = Q6_Vb_vshuffe_VbVb(res_odd, res_even);
+    vstoreu_partial(dst_argb, out, b_cnt);
+    src_argb += 128;
+    dst_argb += 128;
+    bytes -= 128;
+  }
+}
+
 void ARGBMultiplyRow_HVX(const uint8_t* src_argb,
                          const uint8_t* src_argb1,
                          uint8_t* dst_argb,
@@ -1729,8 +1780,10 @@ void ARGBToYMatrixRow_HVX(const uint8_t* src_argb,
                           int width,
                           const struct ArgbConstants* c) {
   uint32_t coeff_y;
+  uint16_t add_y;
   memcpy(&coeff_y, c->kRGBToY, sizeof(coeff_y));
-  HVX_Vector v_add_y = Q6_V_vsplat_R((uint32_t)c->kAddY[0]);
+  memcpy(&add_y, c->kAddY, sizeof(add_y));
+  HVX_Vector v_add_y = Q6_V_vsplat_R((uint32_t)add_y);
   while (width > 0) {
     int w = width >= 128 ? 128 : width;
     int src_bytes = w * 4;
@@ -1774,9 +1827,11 @@ void ARGBToUV444MatrixRow_HVX(const uint8_t* src_argb,
                               const struct ArgbConstants* c) {
   int32_t coeff_u;
   int32_t coeff_v;
+  uint16_t add_uv;
   memcpy(&coeff_u, c->kRGBToU, sizeof(coeff_u));
   memcpy(&coeff_v, c->kRGBToV, sizeof(coeff_v));
-  HVX_Vector v_add_uv = Q6_V_vsplat_R((uint32_t)c->kAddUV[0]);
+  memcpy(&add_uv, c->kAddUV, sizeof(add_uv));
+  HVX_Vector v_add_uv = Q6_V_vsplat_R((uint32_t)add_uv);
   while (width > 0) {
     int w = width >= 128 ? 128 : width;
     int src_bytes = w * 4;
@@ -1835,9 +1890,11 @@ void ARGBToUVMatrixRow_HVX(const uint8_t* src_argb,
                            const struct ArgbConstants* c) {
   int32_t coeff_u;
   int32_t coeff_v;
+  uint16_t add_uv;
   memcpy(&coeff_u, c->kRGBToU, sizeof(coeff_u));
   memcpy(&coeff_v, c->kRGBToV, sizeof(coeff_v));
-  HVX_Vector v_add_uv = Q6_V_vsplat_R((uint32_t)c->kAddUV[0]);
+  memcpy(&add_uv, c->kAddUV, sizeof(add_uv));
+  HVX_Vector v_add_uv = Q6_V_vsplat_R((uint32_t)add_uv);
   HVX_Vector vtwo = Q6_Vh_vsplat_R(2);
   const uint8_t* src_argb1 = src_argb + src_stride_argb;
 
@@ -1895,6 +1952,204 @@ void ARGBToUVMatrixRow_HVX(const uint8_t* src_argb,
   if (width & 1) {
     HVX_Vector s0 = vloadu_partial_zero(src_argb, 4);
     HVX_Vector t0 = vloadu_partial_zero(src_argb1, 4);
+    HVX_Vector avg = Q6_Vub_vavg_VubVub_rnd(s0, t0);
+    HVX_Vector u0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(avg, coeff_u)), 8);
+    HVX_Vector v0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(avg, coeff_v)), 8);
+    vstoreu_partial(dst_u, u0, 1);
+    vstoreu_partial(dst_v, v0, 1);
+  }
+}
+
+// vdelta control vector to expand 32 RGB24 pixels (96 bytes) into 32 4-byte
+// lanes (out[4*i + c] = in[3*i + c] for c = 0..2).
+static const uint8_t kRGB24ToARGBCtrl[128] __attribute__((aligned(128))) = {
+    0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x01, 0x06, 0x02, 0x02, 0x06, 0x04,
+    0x03, 0x05, 0x0d, 0x0c, 0x04, 0x04, 0x04, 0x00, 0x0d, 0x0f, 0x09, 0x0a,
+    0x06, 0x02, 0x0a, 0x08, 0x1b, 0x19, 0x19, 0x18, 0x08, 0x08, 0x08, 0x08,
+    0x09, 0x0b, 0x01, 0x06, 0x1a, 0x1a, 0x1e, 0x1c, 0x13, 0x15, 0x15, 0x14,
+    0x0c, 0x0c, 0x04, 0x00, 0x15, 0x17, 0x11, 0x12, 0x36, 0x32, 0x32, 0x30,
+    0x33, 0x31, 0x31, 0x30, 0x10, 0x10, 0x10, 0x10, 0x11, 0x13, 0x11, 0x16,
+    0x12, 0x12, 0x16, 0x14, 0x03, 0x05, 0x0d, 0x0c, 0x34, 0x34, 0x34, 0x30,
+    0x3d, 0x3f, 0x39, 0x3a, 0x26, 0x22, 0x2a, 0x28, 0x2b, 0x29, 0x29, 0x28,
+    0x18, 0x18, 0x18, 0x18, 0x09, 0x0b, 0x01, 0x06, 0x2a, 0x2a, 0x2e, 0x2c,
+    0x23, 0x25, 0x25, 0x24, 0x6c, 0x6c, 0x64, 0x60, 0x65, 0x67, 0x61, 0x62,
+    0x66, 0x62, 0x62, 0x60, 0x63, 0x61, 0x61, 0x60,
+};
+
+static __inline HVX_Vector ExpandRGB24ToARGB_HVX(const uint8_t* src_rgb,
+                                                 int n_pixels,
+                                                 HVX_Vector v_ctrl,
+                                                 HVX_Vector v_rgb_mask) {
+  if (n_pixels <= 0) {
+    return Q6_V_vzero();
+  }
+  int n_bytes = n_pixels >= 32 ? 96 : n_pixels * 3;
+  HVX_Vector raw = vloadu_partial_zero(src_rgb, n_bytes);
+  return Q6_V_vand_VV(Q6_V_vdelta_VV(raw, v_ctrl), v_rgb_mask);
+}
+
+void RGBToYMatrixRow_HVX(const uint8_t* src_rgb,
+                         uint8_t* dst_y,
+                         int width,
+                         const struct ArgbConstants* c) {
+  uint32_t coeff_y;
+  uint16_t add_y;
+  memcpy(&coeff_y, c->kRGBToY, sizeof(coeff_y));
+  memcpy(&add_y, c->kAddY, sizeof(add_y));
+  HVX_Vector v_add_y = Q6_V_vsplat_R((uint32_t)add_y);
+  HVX_Vector v_ctrl = vloada(kRGB24ToARGBCtrl);
+  HVX_Vector v_rgb_mask = Q6_V_vsplat_R(0x00FFFFFFu);
+  while (width > 0) {
+    int w = width >= 128 ? 128 : width;
+    HVX_Vector s0 = ExpandRGB24ToARGB_HVX(src_rgb, w, v_ctrl, v_rgb_mask);
+    HVX_Vector s1 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 96, w - 32, v_ctrl, v_rgb_mask);
+    HVX_Vector s2 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 192, w - 64, v_ctrl, v_rgb_mask);
+    HVX_Vector s3 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 288, w - 96, v_ctrl, v_rgb_mask);
+    HVX_Vector y0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vadd_VwVw(Q6_Vuw_vrmpy_VubRub(s0, coeff_y), v_add_y), 8);
+    HVX_Vector y1 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vadd_VwVw(Q6_Vuw_vrmpy_VubRub(s1, coeff_y), v_add_y), 8);
+    HVX_Vector y2 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vadd_VwVw(Q6_Vuw_vrmpy_VubRub(s2, coeff_y), v_add_y), 8);
+    HVX_Vector y3 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vadd_VwVw(Q6_Vuw_vrmpy_VubRub(s3, coeff_y), v_add_y), 8);
+    HVX_Vector y01 = Q6_Vh_vpacke_VwVw(y1, y0);
+    HVX_Vector y23 = Q6_Vh_vpacke_VwVw(y3, y2);
+    HVX_Vector out = Q6_Vb_vpacke_VhVh(y23, y01);
+    vstoreu_partial(dst_y, out, w);
+    src_rgb += 384;
+    dst_y += 128;
+    width -= 128;
+  }
+}
+
+void RGBToUV444MatrixRow_HVX(const uint8_t* src_rgb,
+                             uint8_t* dst_u,
+                             uint8_t* dst_v,
+                             int width,
+                             const struct ArgbConstants* c) {
+  int32_t coeff_u;
+  int32_t coeff_v;
+  uint16_t add_uv;
+  memcpy(&coeff_u, c->kRGBToU, sizeof(coeff_u));
+  memcpy(&coeff_v, c->kRGBToV, sizeof(coeff_v));
+  memcpy(&add_uv, c->kAddUV, sizeof(add_uv));
+  HVX_Vector v_add_uv = Q6_V_vsplat_R((uint32_t)add_uv);
+  HVX_Vector v_ctrl = vloada(kRGB24ToARGBCtrl);
+  HVX_Vector v_rgb_mask = Q6_V_vsplat_R(0x00FFFFFFu);
+  while (width > 0) {
+    int w = width >= 128 ? 128 : width;
+    HVX_Vector s0 = ExpandRGB24ToARGB_HVX(src_rgb, w, v_ctrl, v_rgb_mask);
+    HVX_Vector s1 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 96, w - 32, v_ctrl, v_rgb_mask);
+    HVX_Vector s2 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 192, w - 64, v_ctrl, v_rgb_mask);
+    HVX_Vector s3 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 288, w - 96, v_ctrl, v_rgb_mask);
+
+    HVX_Vector u0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s0, coeff_u)), 8);
+    HVX_Vector u1 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s1, coeff_u)), 8);
+    HVX_Vector u2 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s2, coeff_u)), 8);
+    HVX_Vector u3 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s3, coeff_u)), 8);
+    HVX_Vector u_out =
+        Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(u3, u2), Q6_Vh_vpacke_VwVw(u1, u0));
+    vstoreu_partial(dst_u, u_out, w);
+
+    HVX_Vector v0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s0, coeff_v)), 8);
+    HVX_Vector v1 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s1, coeff_v)), 8);
+    HVX_Vector v2 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s2, coeff_v)), 8);
+    HVX_Vector v3 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(s3, coeff_v)), 8);
+    HVX_Vector v_out =
+        Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(v3, v2), Q6_Vh_vpacke_VwVw(v1, v0));
+    vstoreu_partial(dst_v, v_out, w);
+
+    src_rgb += 384;
+    dst_u += 128;
+    dst_v += 128;
+    width -= 128;
+  }
+}
+
+void RGBToUVMatrixRow_HVX(const uint8_t* src_rgb,
+                          int src_stride_rgb,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width,
+                          const struct ArgbConstants* c) {
+  int32_t coeff_u;
+  int32_t coeff_v;
+  uint16_t add_uv;
+  memcpy(&coeff_u, c->kRGBToU, sizeof(coeff_u));
+  memcpy(&coeff_v, c->kRGBToV, sizeof(coeff_v));
+  memcpy(&add_uv, c->kAddUV, sizeof(add_uv));
+  HVX_Vector v_add_uv = Q6_V_vsplat_R((uint32_t)add_uv);
+  HVX_Vector v_ctrl = vloada(kRGB24ToARGBCtrl);
+  HVX_Vector v_rgb_mask = Q6_V_vsplat_R(0x00FFFFFFu);
+  HVX_Vector vtwo = Q6_Vh_vsplat_R(2);
+  const uint8_t* src_rgb1 = src_rgb + src_stride_rgb;
+
+  int even_width = width & ~1;
+  while (even_width > 0) {
+    int w = even_width >= 64 ? 64 : even_width;
+    int uv_w = w >> 1;
+    HVX_Vector s0 = ExpandRGB24ToARGB_HVX(src_rgb, w, v_ctrl, v_rgb_mask);
+    HVX_Vector s1 =
+        ExpandRGB24ToARGB_HVX(src_rgb + 96, w - 32, v_ctrl, v_rgb_mask);
+    HVX_Vector t0 = ExpandRGB24ToARGB_HVX(src_rgb1, w, v_ctrl, v_rgb_mask);
+    HVX_Vector t1 =
+        ExpandRGB24ToARGB_HVX(src_rgb1 + 96, w - 32, v_ctrl, v_rgb_mask);
+
+    HVX_VectorPair ds = Q6_W_vdeal_VVR(s1, s0, -4);
+    HVX_VectorPair dt = Q6_W_vdeal_VVR(t1, t0, -4);
+    HVX_VectorPair s_even = Q6_Wuh_vunpack_Vub(Q6_V_lo_W(ds));
+    HVX_VectorPair s_odd = Q6_Wuh_vunpack_Vub(Q6_V_hi_W(ds));
+    HVX_VectorPair t_even = Q6_Wuh_vunpack_Vub(Q6_V_lo_W(dt));
+    HVX_VectorPair t_odd = Q6_Wuh_vunpack_Vub(Q6_V_hi_W(dt));
+
+    HVX_Vector sum_lo = Q6_Vh_vadd_VhVh(Q6_V_lo_W(s_even), Q6_V_lo_W(s_odd));
+    sum_lo = Q6_Vh_vadd_VhVh(sum_lo, Q6_V_lo_W(t_even));
+    sum_lo = Q6_Vh_vadd_VhVh(sum_lo, Q6_V_lo_W(t_odd));
+    sum_lo = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sum_lo, vtwo), 2);
+
+    HVX_Vector sum_hi = Q6_Vh_vadd_VhVh(Q6_V_hi_W(s_even), Q6_V_hi_W(s_odd));
+    sum_hi = Q6_Vh_vadd_VhVh(sum_hi, Q6_V_hi_W(t_even));
+    sum_hi = Q6_Vh_vadd_VhVh(sum_hi, Q6_V_hi_W(t_odd));
+    sum_hi = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sum_hi, vtwo), 2);
+
+    HVX_Vector avg = Q6_Vub_vpack_VhVh_sat(sum_hi, sum_lo);
+    HVX_Vector u0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(avg, coeff_u)), 8);
+    HVX_Vector v0 = Q6_Vuw_vlsr_VuwR(
+        Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(avg, coeff_v)), 8);
+    HVX_Vector u_out =
+        Q6_Vb_vpacke_VhVh(Q6_V_vzero(), Q6_Vh_vpacke_VwVw(Q6_V_vzero(), u0));
+    HVX_Vector v_out =
+        Q6_Vb_vpacke_VhVh(Q6_V_vzero(), Q6_Vh_vpacke_VwVw(Q6_V_vzero(), v0));
+    vstoreu_partial(dst_u, u_out, uv_w);
+    vstoreu_partial(dst_v, v_out, uv_w);
+
+    src_rgb += w * 3;
+    src_rgb1 += w * 3;
+    dst_u += uv_w;
+    dst_v += uv_w;
+    even_width -= w;
+  }
+  if (width & 1) {
+    HVX_Vector s0 = vloadu_partial_zero(src_rgb, 3);
+    HVX_Vector t0 = vloadu_partial_zero(src_rgb1, 3);
     HVX_Vector avg = Q6_Vub_vavg_VubVub_rnd(s0, t0);
     HVX_Vector u0 = Q6_Vuw_vlsr_VuwR(
         Q6_Vw_vsub_VwVw(v_add_uv, Q6_Vw_vrmpy_VubRb(avg, coeff_u)), 8);

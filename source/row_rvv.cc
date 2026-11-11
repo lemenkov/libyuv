@@ -1818,11 +1818,12 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
                           int width,
                           const struct ArgbConstants* c) {
   assert(width != 0);
+  uint16_t add_y;
+  __builtin_memcpy(&add_y, &c->kAddY, sizeof(add_y));
   size_t vl, tmp;
   asm volatile(
-      "lhu         %[tmp], 48(%[c])              \n"
       "vsetvli     zero, %[w], e16, m4, ta, ma   \n"
-      "vmv.v.x     v8, %[tmp]                    \n"
+      "vmv.v.x     v8, %[add_y]                  \n"
       "lbu         %[vl], 0(%[c])                \n"
       "lbu         %[tmp], 1(%[c])               \n"
       "vsetvli     zero, zero, e8, m2, ta, ma    \n"
@@ -1855,7 +1856,8 @@ void ARGBToYMatrixRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
-      : [c] "r"(c)                  // %[c]
+      : [c] "r"(c),                 // %[c]
+        [add_y] "r"(add_y)          // %[add_y]
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29", "v30", "v31");
@@ -1868,11 +1870,12 @@ void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
                          int width,
                          const struct ArgbConstants* c) {
   assert(width != 0);
+  uint16_t add_y;
+  __builtin_memcpy(&add_y, &c->kAddY, sizeof(add_y));
   size_t vl, tmp;
   asm volatile(
-      "lhu         %[tmp], 48(%[c])              \n"
       "vsetvli     zero, %[w], e16, m4, ta, ma   \n"
-      "vmv.v.x     v8, %[tmp]                    \n"
+      "vmv.v.x     v8, %[add_y]                  \n"
       "lbu         %[vl], 0(%[c])                \n"
       "lbu         %[tmp], 1(%[c])               \n"
       "vsetvli     zero, zero, e8, m2, ta, ma    \n"
@@ -1903,7 +1906,8 @@ void RGBToYMatrixRow_RVV(const uint8_t* src_rgb,
         [w] "+r"(width),          // %[w]
         [vl] "=&r"(vl),           // %[vl]
         [tmp] "=&r"(tmp)          // %[tmp]
-      : [c] "r"(c)                // %[c]
+      : [c] "r"(c),               // %[c]
+        [add_y] "r"(add_y)        // %[add_y]
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
         "v25", "v26", "v27", "v28", "v29");
@@ -1917,11 +1921,12 @@ void ARGBToUV444MatrixRow_RVV(const uint8_t* src_argb,
                               int width,
                               const struct ArgbConstants* c) {
   assert(width != 0);
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV, sizeof(add_uv));
   size_t vl, tmp;
   asm volatile(
-      "lh          %[tmp], 64(%[c])              \n"
       "vsetvli     zero, %[w], e16, m4, ta, ma   \n"
-      "vmv.v.x     v16, %[tmp]                   \n"
+      "vmv.v.x     v16, %[add_uv]                \n"
       "vsetvli     zero, zero, e8, m2, ta, ma    \n"
       "lb          %[vl], 16(%[c])               \n"
       "lb          %[tmp], 17(%[c])              \n"
@@ -1973,7 +1978,8 @@ void ARGBToUV444MatrixRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),            // %[w]
         [vl] "=&r"(vl),             // %[vl]
         [tmp] "=&r"(tmp)            // %[tmp]
-      : [c] "r"(c)                  // %[c]
+      : [c] "r"(c),                 // %[c]
+        [add_uv] "r"(add_uv)        // %[add_uv]
       : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
         "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27",
@@ -1991,14 +1997,15 @@ void ARGBToUVMatrixRow_RVV(const uint8_t* src_argb,
   assert(width != 0);
   const uint8_t* src_argb_0 = src_argb;
   const uint8_t* src_argb_1 = src_argb + src_stride_argb;
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV, sizeof(add_uv));
   int w = width >> 1;
   if (w > 0) {
     size_t w_len = (size_t)w;
     size_t vl, tmp;
     asm volatile(
-        "lh          %[tmp], 64(%[c])              \n"
         "vsetvli     zero, %[w_len], e16, m2, ta, ma\n"
-        "vmv.v.x     v8, %[tmp]                    \n"
+        "vmv.v.x     v8, %[add_uv]                 \n"
         "vsetvli     zero, zero, e8, m1, ta, ma    \n"
         "lb          %[vl], 16(%[c])               \n"
         "lb          %[tmp], 17(%[c])              \n"
@@ -2081,23 +2088,22 @@ void ARGBToUVMatrixRow_RVV(const uint8_t* src_argb,
           [w_len] "+r"(w_len),            // %[w_len]
           [vl] "=&r"(vl),                 // %[vl]
           [tmp] "=&r"(tmp)                // %[tmp]
-        : [c] "r"(c)                      // %[c]
+        : [c] "r"(c),                     // %[c]
+          [add_uv] "r"(add_uv)            // %[add_uv]
         : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6",
           "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
           "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",
           "v27");
   }
   if (width & 1) {
+    const int8_t* ku = (const int8_t*)&c->kRGBToU;
+    const int8_t* kv = (const int8_t*)&c->kRGBToV;
     uint8_t b = (src_argb_0[0] + src_argb_1[0] + 1) >> 1;
     uint8_t g = (src_argb_0[1] + src_argb_1[1] + 1) >> 1;
     uint8_t r = (src_argb_0[2] + src_argb_1[2] + 1) >> 1;
     uint8_t a = (src_argb_0[3] + src_argb_1[3] + 1) >> 1;
-    dst_u[0] = (c->kAddUV[0] - (c->kRGBToU[0] * b + c->kRGBToU[1] * g +
-                                c->kRGBToU[2] * r + c->kRGBToU[3] * a)) >>
-               8;
-    dst_v[0] = (c->kAddUV[0] - (c->kRGBToV[0] * b + c->kRGBToV[1] * g +
-                                c->kRGBToV[2] * r + c->kRGBToV[3] * a)) >>
-               8;
+    dst_u[0] = (add_uv - (ku[0] * b + ku[1] * g + ku[2] * r + ku[3] * a)) >> 8;
+    dst_v[0] = (add_uv - (kv[0] * b + kv[1] * g + kv[2] * r + kv[3] * a)) >> 8;
   }
 }
 #endif
@@ -2109,11 +2115,12 @@ void RGBToUV444MatrixRow_RVV(const uint8_t* src_rgb,
                              int width,
                              const struct ArgbConstants* c) {
   assert(width != 0);
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV, sizeof(add_uv));
   size_t vl, tmp;
   asm volatile(
-      "lh          %[tmp], 64(%[c])              \n"
       "vsetvli     zero, %[w], e16, m4, ta, ma   \n"
-      "vmv.v.x     v16, %[tmp]                   \n"
+      "vmv.v.x     v16, %[add_uv]                \n"
       "vsetvli     zero, zero, e8, m2, ta, ma    \n"
       "lb          %[vl], 16(%[c])               \n"
       "lb          %[tmp], 17(%[c])              \n"
@@ -2160,7 +2167,8 @@ void RGBToUV444MatrixRow_RVV(const uint8_t* src_rgb,
         [w] "+r"(width),          // %[w]
         [vl] "=&r"(vl),           // %[vl]
         [tmp] "=&r"(tmp)          // %[tmp]
-      : [c] "r"(c)                // %[c]
+      : [c] "r"(c),               // %[c]
+        [add_uv] "r"(add_uv)      // %[add_uv]
       : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v8", "v9",
         "v10", "v11", "v12", "v13", "v16", "v17", "v18", "v19", "v20", "v21",
         "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29");
@@ -2177,14 +2185,15 @@ void RGBToUVMatrixRow_RVV(const uint8_t* src_rgb,
   assert(width != 0);
   const uint8_t* src_rgb_0 = src_rgb;
   const uint8_t* src_rgb_1 = src_rgb + src_stride_rgb;
+  uint16_t add_uv;
+  __builtin_memcpy(&add_uv, &c->kAddUV, sizeof(add_uv));
   int w = width >> 1;
   if (w > 0) {
     size_t w_len = (size_t)w;
     size_t vl, tmp;
     asm volatile(
-        "lh          %[tmp], 64(%[c])              \n"
         "vsetvli     zero, %[w_len], e16, m2, ta, ma\n"
-        "vmv.v.x     v8, %[tmp]                    \n"
+        "vmv.v.x     v8, %[add_uv]                 \n"
         "vsetvli     zero, zero, e8, m1, ta, ma    \n"
         "lb          %[vl], 16(%[c])               \n"
         "lb          %[tmp], 17(%[c])              \n"
@@ -2256,21 +2265,20 @@ void RGBToUVMatrixRow_RVV(const uint8_t* src_rgb,
           [w_len] "+r"(w_len),          // %[w_len]
           [vl] "=&r"(vl),               // %[vl]
           [tmp] "=&r"(tmp)              // %[tmp]
-        : [c] "r"(c)                    // %[c]
+        : [c] "r"(c),                   // %[c]
+          [add_uv] "r"(add_uv)          // %[add_uv]
         : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v8",
           "v9", "v10", "v11", "v12", "v14", "v15", "v16", "v18", "v19", "v20",
           "v21", "v22", "v23", "v24", "v25");
   }
   if (width & 1) {
+    const int8_t* ku = (const int8_t*)&c->kRGBToU;
+    const int8_t* kv = (const int8_t*)&c->kRGBToV;
     uint8_t b = (src_rgb_0[0] + src_rgb_1[0] + 1) >> 1;
     uint8_t g = (src_rgb_0[1] + src_rgb_1[1] + 1) >> 1;
     uint8_t r = (src_rgb_0[2] + src_rgb_1[2] + 1) >> 1;
-    dst_u[0] = (c->kAddUV[0] -
-                (c->kRGBToU[0] * b + c->kRGBToU[1] * g + c->kRGBToU[2] * r)) >>
-               8;
-    dst_v[0] = (c->kAddUV[0] -
-                (c->kRGBToV[0] * b + c->kRGBToV[1] * g + c->kRGBToV[2] * r)) >>
-               8;
+    dst_u[0] = (add_uv - (ku[0] * b + ku[1] * g + ku[2] * r)) >> 8;
+    dst_v[0] = (add_uv - (kv[0] * b + kv[1] * g + kv[2] * r)) >> 8;
   }
 }
 #endif
@@ -2292,12 +2300,16 @@ void ARGBBlendRow_RVV(const uint8_t* src_argb,
       "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
       "vlseg4e8.v  v16, (%[src_argb])            \n"
       "vlseg4e8.v  v24, (%[src_argb1])           \n"
-      "vmulhu.vv   v8, v24, v22                  \n"
-      "vmulhu.vv   v10, v26, v22                 \n"
-      "vmulhu.vv   v12, v28, v22                 \n"
-      "vsub.vv     v8, v24, v8                   \n"
-      "vsub.vv     v10, v26, v10                 \n"
-      "vsub.vv     v12, v28, v12                 \n"
+      "vnot.v      v22, v22                      \n"
+      "vwmulu.vv   v0, v24, v22                  \n"
+      "vwaddu.wv   v0, v0, v24                   \n"
+      "vnsrl.wi    v8, v0, 8                     \n"
+      "vwmulu.vv   v0, v26, v22                  \n"
+      "vwaddu.wv   v0, v0, v26                   \n"
+      "vnsrl.wi    v10, v0, 8                    \n"
+      "vwmulu.vv   v0, v28, v22                  \n"
+      "vwaddu.wv   v0, v0, v28                   \n"
+      "vnsrl.wi    v12, v0, 8                    \n"
       "vsaddu.vv   v8, v8, v16                   \n"
       "vsaddu.vv   v10, v10, v18                 \n"
       "vsaddu.vv   v12, v12, v20                 \n"
@@ -2314,9 +2326,116 @@ void ARGBBlendRow_RVV(const uint8_t* src_argb,
         [w] "+r"(width),              // %[w]
         [vl] "=&r"(vl)                // %[vl]
       :
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v8", "v9", "v10",
+        "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20",
+        "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30",
+        "v31");
+}
+#endif
+
+#ifdef HAS_ARGBADDROW_RVV
+void ARGBAddRow_RVV(const uint8_t* src_argb,
+                    const uint8_t* src_argb1,
+                    uint8_t* dst_argb,
+                    int width) {
+  size_t vl;
+  int w = width * 4;
+  asm volatile(
+      "1:                                           \n"
+      "vsetvli     %[vl], %[w], e8, m8, ta, ma      \n"
+      "vle8.v      v8, (%[src0])                    \n"
+      "vle8.v      v16, (%[src1])                   \n"
+      "vsaddu.vv   v8, v8, v16                      \n"
+      "vse8.v      v8, (%[dst])                     \n"
+      "sub         %[w], %[w], %[vl]                \n"
+      "add         %[src0], %[src0], %[vl]          \n"
+      "add         %[src1], %[src1], %[vl]          \n"
+      "add         %[dst], %[dst], %[vl]            \n"
+      "bgtz        %[w], 1b                         \n"
+      : [src0] "+r"(src_argb),   // %[src0]
+        [src1] "+r"(src_argb1),  // %[src1]
+        [dst] "+r"(dst_argb),    // %[dst]
+        [w] "+r"(w),             // %[w]
+        [vl] "=&r"(vl)           // %[vl]
+      :
       : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
-        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
-        "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#endif
+
+#ifdef HAS_ARGBSUBTRACTROW_RVV
+void ARGBSubtractRow_RVV(const uint8_t* src_argb,
+                         const uint8_t* src_argb1,
+                         uint8_t* dst_argb,
+                         int width) {
+  size_t vl;
+  int w = width * 4;
+  asm volatile(
+      "1:                                           \n"
+      "vsetvli     %[vl], %[w], e8, m8, ta, ma      \n"
+      "vle8.v      v8, (%[src0])                    \n"
+      "vle8.v      v16, (%[src1])                   \n"
+      "vssubu.vv   v8, v8, v16                      \n"
+      "vse8.v      v8, (%[dst])                     \n"
+      "sub         %[w], %[w], %[vl]                \n"
+      "add         %[src0], %[src0], %[vl]          \n"
+      "add         %[src1], %[src1], %[vl]          \n"
+      "add         %[dst], %[dst], %[vl]            \n"
+      "bgtz        %[w], 1b                         \n"
+      : [src0] "+r"(src_argb),   // %[src0]
+        [src1] "+r"(src_argb1),  // %[src1]
+        [dst] "+r"(dst_argb),    // %[dst]
+        [w] "+r"(w),             // %[w]
+        [vl] "=&r"(vl)           // %[vl]
+      :
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#endif
+
+#ifdef HAS_ARGBUNATTENUATEROW_RVV
+void ARGBUnattenuateRow_RVV(const uint8_t* src_argb,
+                            uint8_t* dst_argb,
+                            int width) {
+  size_t vl;
+  asm volatile(
+      "1:                                           \n"
+      "vsetvli     %[vl], %[w], e8, m1, ta, ma      \n"
+      "vlseg4e8.v  v8, (%[src_argb])                \n"
+      "vwaddu.vv   v12, v11, v11                    \n"
+      "vsetvli     zero, zero, e16, m2, ta, ma      \n"
+      "vluxei16.v  v14, (%[tbl]), v12               \n"
+      "vzext.vf2   v16, v8                          \n"
+      "vzext.vf2   v18, v9                          \n"
+      "vzext.vf2   v20, v10                         \n"
+      "vmul.vx     v16, v16, %[k0101]               \n"
+      "vmul.vx     v18, v18, %[k0101]               \n"
+      "vmul.vx     v20, v20, %[k0101]               \n"
+      "vmulhu.vv   v16, v16, v14                    \n"
+      "vmulhu.vv   v18, v18, v14                    \n"
+      "vmulhu.vv   v20, v20, v14                    \n"
+      "vminu.vx    v16, v16, %[k255]                \n"
+      "vminu.vx    v18, v18, %[k255]                \n"
+      "vminu.vx    v20, v20, %[k255]                \n"
+      "vsetvli     zero, zero, e8, m1, ta, ma       \n"
+      "vnsrl.wi    v8, v16, 0                       \n"
+      "vnsrl.wi    v9, v18, 0                       \n"
+      "vnsrl.wi    v10, v20, 0                      \n"
+      "vsseg4e8.v  v8, (%[dst_argb])                \n"
+      "sub         %[w], %[w], %[vl]                \n"
+      "slli        %[vl], %[vl], 2                  \n"
+      "add         %[src_argb], %[src_argb], %[vl]  \n"
+      "add         %[dst_argb], %[dst_argb], %[vl]  \n"
+      "bgtz        %[w], 1b                         \n"
+      : [src_argb] "+r"(src_argb),  // %[src_argb]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
+        [w] "+r"(width),            // %[w]
+        [vl] "=&r"(vl)              // %[vl]
+      : [tbl] "r"(fixed_invtbl16),  // %[tbl]
+        [k0101] "r"(0x0101),        // %[k0101]
+        [k255] "r"(255)             // %[k255]
+      : RVV_VL_CLOBBER "memory", "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21");
 }
 #endif
 

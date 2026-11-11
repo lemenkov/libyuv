@@ -919,6 +919,46 @@ static int ScaleUVBilinearDown(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEUVFILTERCOLS_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_AVX2;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_AVX512BW;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_NEON;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_LSX)
+  if (TestCpuFlag(kCpuHasLSX) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_LSX;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_LASX)
+  if (TestCpuFlag(kCpuHasLASX) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_LASX;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_RVV)
+  if (TestCpuFlag(kCpuHasRVV) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_RVV;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_HVX)
+  if (TestCpuFlag(kCpuHasHVX) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_HVX;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_WASMSIMD;
+  }
+#endif
   // TODO(fbarchard): Consider not allocating row buffer for kFilterLinear.
   // Allocate a row of UV.
   {
@@ -1137,7 +1177,7 @@ static int ScaleUVBilinearUp(int src_width,
 #if defined(HAS_INTERPOLATEROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     InterpolateRow = InterpolateRow_Any_LSX;
-    if (IS_ALIGNED(dst_width, 16)) {
+    if (IS_ALIGNED(dst_width, 8)) {
       InterpolateRow = InterpolateRow_LSX;
     }
   }
@@ -1145,7 +1185,7 @@ static int ScaleUVBilinearUp(int src_width,
 #if defined(HAS_INTERPOLATEROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     InterpolateRow = InterpolateRow_Any_LASX;
-    if (IS_ALIGNED(dst_width, 32)) {
+    if (IS_ALIGNED(dst_width, 16)) {
       InterpolateRow = InterpolateRow_LASX;
     }
   }
@@ -1171,6 +1211,46 @@ static int ScaleUVBilinearUp(int src_width,
   if (src_width >= 32768) {
     ScaleUVFilterCols = filtering ? ScaleUVFilterCols64_C : ScaleUVCols64_C;
   }
+#if defined(HAS_SCALEUVFILTERCOLS_AVX2)
+  if (filtering && TestCpuFlag(kCpuHasAVX2) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_AVX2;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_AVX512BW)
+  if (filtering && TestCpuFlag(kCpuHasAVX512BW) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_AVX512BW;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_NEON)
+  if (filtering && TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_NEON;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_LSX)
+  if (filtering && TestCpuFlag(kCpuHasLSX) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_LSX;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_LASX)
+  if (filtering && TestCpuFlag(kCpuHasLASX) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_LASX;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_RVV)
+  if (filtering && TestCpuFlag(kCpuHasRVV) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_RVV;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_HVX)
+  if (filtering && TestCpuFlag(kCpuHasHVX) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_HVX;
+  }
+#endif
+#if defined(HAS_SCALEUVFILTERCOLS_WASMSIMD)
+  if (filtering && TestCpuFlag(kCpuHasWASMSIMD) && src_width < 32768) {
+    ScaleUVFilterCols = ScaleUVFilterCols_WASMSIMD;
+  }
+#endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
     ScaleUVFilterCols = ScaleUVColsUp2_C;
   }

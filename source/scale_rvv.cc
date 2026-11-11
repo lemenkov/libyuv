@@ -46,13 +46,64 @@ extern "C" {
 #endif
 #endif
 
+#ifdef HAS_SCALEFILTERCOLS_RVV
+void ScaleFilterCols_RVV(uint8_t* dst_ptr,
+                         const uint8_t* src_ptr,
+                         int dst_width,
+                         int x,
+                         int dx) {
+  int vl, vl_dx;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
+      "vmv.v.x     v0, %[x]                       \n"
+      "vid.v       v4                             \n"
+      "vmacc.vx    v0, %[dx], v4                  \n"
+
+      "1:                                         \n"
+      "vsra.vi     v4, v0, 16                     \n"
+      "vsrl.vi     v8, v0, 9                      \n"
+      "vand.vx     v8, v8, %[c_7f]                \n"
+      "mul         %[vl_dx], %[vl], %[dx]         \n"
+      "vadd.vx     v0, v0, %[vl_dx]               \n"
+      "vsetvli     zero, zero, e16, m2, ta, ma    \n"
+      "vnsrl.wi    v12, v8, 0                     \n"
+      "vsetvli     zero, zero, e8, m1, ta, ma     \n"
+      "vluxseg2ei32.v v16, (%[src_ptr]), v4       \n"
+      "vwsubu.vv   v18, v17, v16                  \n"
+      "vsetvli     zero, zero, e16, m2, ta, ma    \n"
+      "vmul.vv     v18, v18, v12                  \n"
+      "vadd.vx     v18, v18, %[c_64]              \n"
+      "vsra.vi     v18, v18, 7                    \n"
+      "vzext.vf2   v20, v16                       \n"
+      "vadd.vv     v18, v18, v20                  \n"
+      "vsetvli     zero, zero, e8, m1, ta, ma     \n"
+      "vnsrl.wi    v16, v18, 0                    \n"
+      "vse8.v      v16, (%[dst_ptr])              \n"
+      "sub         %[w], %[w], %[vl]              \n"
+      "add         %[dst_ptr], %[dst_ptr], %[vl]  \n"
+      "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
+      "bgtz        %[w], 1b                       \n"
+      : [w] "+r"(dst_width),       // %[w]
+        [dst_ptr] "+r"(dst_ptr),   // %[dst_ptr]
+        [vl] "=&r"(vl),            // %[vl]
+        [vl_dx] "=&r"(vl_dx)       // %[vl_dx]
+      : [src_ptr] "r"(src_ptr),    // %[src_ptr]
+        [x] "r"(x),                // %[x]
+        [dx] "r"(dx),              // %[dx]
+        [c_7f] "r"(0x7f),          // %[c_7f]
+        [c_64] "r"(64)             // %[c_64]
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+        "v8", "v9", "v10", "v11", "v12", "v13", "v16", "v17", "v18", "v19",
+        "v20", "v21");
+}
+#endif
+
 #ifdef HAS_SCALEARGBFILTERCOLS_RVV
 void ScaleARGBFilterCols_RVV(uint8_t* dst_argb,
                              const uint8_t* src_argb,
                              int dst_width,
                              int x,
                              int dx) {
-  assert(x >= 0);
   int vl, vl_dx;
   asm volatile(
       "vsetvli     %[vl], %[w], e32, m2, ta, ma   \n"
@@ -62,7 +113,7 @@ void ScaleARGBFilterCols_RVV(uint8_t* dst_argb,
 
       "1:          \n"
       // idx is x >> 16, byte index is (x >> 14) & ~3u
-      "vsrl.vi     v2, v0, 14                     \n"
+      "vsra.vi     v2, v0, 14                     \n"
       "vand.vi     v2, v2, -4                     \n"
       // Read Packed ARGB w/ byte index.
       "vluxseg2ei32.v v4, (%[src_argb]), v2        \n"
@@ -98,6 +149,64 @@ void ScaleARGBFilterCols_RVV(uint8_t* dst_argb,
         [c_7f7f7f7f] "r"(0x7f7f7f7fu)   // %[c_7f7f7f7f]
       : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+}
+#endif
+
+#ifdef HAS_SCALEUVFILTERCOLS_RVV
+void ScaleUVFilterCols_RVV(uint8_t* dst_uv,
+                           const uint8_t* src_uv,
+                           int dst_width,
+                           int x,
+                           int dx) {
+  int vl, vl_dx;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
+      "vmv.v.x     v0, %[x]                       \n"
+      "vid.v       v4                             \n"
+      "vmacc.vx    v0, %[dx], v4                  \n"
+
+      "1:                                         \n"
+      "vsra.vi     v4, v0, 15                     \n"
+      "vand.vi     v4, v4, -2                     \n"
+      "vsrl.vi     v8, v0, 9                      \n"
+      "vand.vx     v8, v8, %[c_7f]                \n"
+      "mul         %[vl_dx], %[vl], %[dx]         \n"
+      "vadd.vx     v0, v0, %[vl_dx]               \n"
+      "vsetvli     zero, zero, e16, m2, ta, ma    \n"
+      "vnsrl.wi    v12, v8, 0                     \n"
+      "vsetvli     zero, zero, e8, m1, ta, ma     \n"
+      "vluxseg4ei32.v v16, (%[src_uv]), v4        \n"
+      "vnsrl.wi    v14, v12, 0                    \n"
+      "vrsub.vx    v15, v14, %[c_80]              \n"
+      "vwmulu.vv   v20, v16, v15                  \n"
+      "vwmaccu.vv  v20, v14, v18                  \n"
+      "vwmulu.vv   v22, v17, v15                  \n"
+      "vwmaccu.vv  v22, v14, v19                  \n"
+      "vsetvli     zero, zero, e16, m2, ta, ma    \n"
+      "vadd.vx     v20, v20, %[c_64]              \n"
+      "vadd.vx     v22, v22, %[c_64]              \n"
+      "vsetvli     zero, zero, e8, m1, ta, ma     \n"
+      "vnsrl.wi    v16, v20, 7                    \n"
+      "vnsrl.wi    v17, v22, 7                    \n"
+      "vsseg2e8.v  v16, (%[dst_uv])               \n"
+      "sub         %[w], %[w], %[vl]              \n"
+      "slli        %[vl], %[vl], 1                \n"
+      "add         %[dst_uv], %[dst_uv], %[vl]    \n"
+      "vsetvli     %[vl], %[w], e32, m4, ta, ma   \n"
+      "bgtz        %[w], 1b                       \n"
+      : [w] "+r"(dst_width),      // %[w]
+        [dst_uv] "+r"(dst_uv),    // %[dst_uv]
+        [vl] "=&r"(vl),           // %[vl]
+        [vl_dx] "=&r"(vl_dx)      // %[vl_dx]
+      : [src_uv] "r"(src_uv),     // %[src_uv]
+        [x] "r"(x),               // %[x]
+        [dx] "r"(dx),             // %[dx]
+        [c_7f] "r"(0x7f),         // %[c_7f]
+        [c_80] "r"(0x80),         // %[c_80]
+        [c_64] "r"(64)            // %[c_64]
+      : RVV_VL_CLOBBER "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+        "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
+        "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif
 

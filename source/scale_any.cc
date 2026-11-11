@@ -891,15 +891,6 @@ SAANY(ScaleAddRow_Any_WASMSIMD, ScaleAddRow_WASMSIMD, ScaleAddRow_C, 15)
     TERP_C(dst_ptr + np * BPP, src_ptr, r, x + np * dx, dx);                   \
   }
 
-#ifdef HAS_SCALEFILTERCOLS_NEON
-CANY(ScaleFilterCols_Any_NEON, ScaleFilterCols_NEON, ScaleFilterCols_C, 1, 7)
-#endif
-#ifdef HAS_SCALEFILTERCOLS_LSX
-CANY(ScaleFilterCols_Any_LSX, ScaleFilterCols_LSX, ScaleFilterCols_C, 1, 3)
-#endif
-#ifdef HAS_SCALEFILTERCOLS_LASX
-CANY(ScaleFilterCols_Any_LASX, ScaleFilterCols_LASX, ScaleFilterCols_C, 1, 7)
-#endif
 #ifdef HAS_SCALEARGBCOLS_NEON
 CANY(ScaleARGBCols_Any_NEON, ScaleARGBCols_NEON, ScaleARGBCols_C, 4, 7)
 #endif
@@ -909,43 +900,8 @@ CANY(ScaleARGBCols_Any_LSX, ScaleARGBCols_LSX, ScaleARGBCols_C, 4, 3)
 #ifdef HAS_SCALEARGBCOLS_LASX
 CANY(ScaleARGBCols_Any_LASX, ScaleARGBCols_LASX, ScaleARGBCols_C, 4, 7)
 #endif
-#ifdef HAS_SCALEARGBFILTERCOLS_NEON
-CANY(ScaleARGBFilterCols_Any_NEON,
-     ScaleARGBFilterCols_NEON,
-     ScaleARGBFilterCols_C,
-     4,
-     3)
-#endif
-#ifdef HAS_SCALEARGBFILTERCOLS_LSX
-CANY(ScaleARGBFilterCols_Any_LSX,
-     ScaleARGBFilterCols_LSX,
-     ScaleARGBFilterCols_C,
-     4,
-     3)
-#endif
-#ifdef HAS_SCALEARGBFILTERCOLS_LASX
-CANY(ScaleARGBFilterCols_Any_LASX,
-     ScaleARGBFilterCols_LASX,
-     ScaleARGBFilterCols_C,
-     4,
-     7)
-#endif
-#ifdef HAS_SCALEFILTERCOLS_WASMSIMD
-CANY(ScaleFilterCols_Any_WASMSIMD,
-     ScaleFilterCols_WASMSIMD,
-     ScaleFilterCols_C,
-     1,
-     7)
-#endif
 #ifdef HAS_SCALEARGBCOLS_WASMSIMD
 CANY(ScaleARGBCols_Any_WASMSIMD, ScaleARGBCols_WASMSIMD, ScaleARGBCols_C, 4, 3)
-#endif
-#ifdef HAS_SCALEARGBFILTERCOLS_WASMSIMD
-CANY(ScaleARGBFilterCols_Any_WASMSIMD,
-     ScaleARGBFilterCols_WASMSIMD,
-     ScaleARGBFilterCols_C,
-     4,
-     3)
 #endif
 #undef CANY
 
