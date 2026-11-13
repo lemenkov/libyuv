@@ -3712,8 +3712,237 @@ void HalfRow_16_C(const uint16_t* src_uv,
                   int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
+    dst_uv[x] = STATIC_CAST(
+        uint16_t, ((uint32_t)src_uv[x] + src_uv[src_uv_stride + x] + 1u) >> 1);
   }
+}
+
+void HalfWidthRow_C(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] = (src_ptr[0] + src_ptr[1] + 1) >> 1;
+    src_ptr += 2;
+  }
+}
+
+void HalfWidthRow_Odd_C(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] = (src_ptr[0] + src_ptr[1] + 1) >> 1;
+    src_ptr += 2;
+  }
+  dst_ptr[width] = src_ptr[0];
+}
+
+void HalfWidthRow_16_C(const uint16_t* src_ptr, uint16_t* dst_ptr, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_ptr[0] + src_ptr[1] + 1u) >> 1);
+    src_ptr += 2;
+  }
+}
+
+void HalfWidthRow_16_Odd_C(const uint16_t* src_ptr,
+                           uint16_t* dst_ptr,
+                           int width) {
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_ptr[0] + src_ptr[1] + 1u) >> 1);
+    src_ptr += 2;
+  }
+  dst_ptr[width] = src_ptr[0];
+}
+
+void HalfWidthUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] = (src_uv[0] + src_uv[2] + 1) >> 1;
+    dst_uv[1] = (src_uv[1] + src_uv[3] + 1) >> 1;
+    src_uv += 4;
+    dst_uv += 2;
+  }
+}
+
+void HalfWidthUVRow_Odd_C(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] = (src_uv[0] + src_uv[2] + 1) >> 1;
+    dst_uv[1] = (src_uv[1] + src_uv[3] + 1) >> 1;
+    src_uv += 4;
+    dst_uv += 2;
+  }
+  dst_uv[0] = src_uv[0];
+  dst_uv[1] = src_uv[1];
+}
+
+void HalfWidthUVRow_16_C(const uint16_t* src_uv, uint16_t* dst_uv, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_uv[0] + src_uv[2] + 1u) >> 1);
+    dst_uv[1] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_uv[1] + src_uv[3] + 1u) >> 1);
+    src_uv += 4;
+    dst_uv += 2;
+  }
+}
+
+void HalfWidthUVRow_16_Odd_C(const uint16_t* src_uv,
+                             uint16_t* dst_uv,
+                             int width) {
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_uv[0] + src_uv[2] + 1u) >> 1);
+    dst_uv[1] =
+        STATIC_CAST(uint16_t, ((uint32_t)src_uv[1] + src_uv[3] + 1u) >> 1);
+    src_uv += 4;
+    dst_uv += 2;
+  }
+  dst_uv[0] = src_uv[0];
+  dst_uv[1] = src_uv[1];
+}
+
+void HalfBoxRow_C(const uint8_t* src_ptr,
+                  ptrdiff_t src_stride,
+                  uint8_t* dst_ptr,
+                  int width) {
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
+    s += 2;
+    t += 2;
+  }
+}
+
+void HalfBoxRow_Odd_C(const uint8_t* src_ptr,
+                      ptrdiff_t src_stride,
+                      uint8_t* dst_ptr,
+                      int width) {
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
+    s += 2;
+    t += 2;
+  }
+  dst_ptr[width] = (s[0] + t[0] + 1) >> 1;
+}
+
+void HalfBoxRow_16_C(const uint16_t* src_ptr,
+                     ptrdiff_t src_stride,
+                     uint16_t* dst_ptr,
+                     int width) {
+  const uint16_t* s = src_ptr;
+  const uint16_t* t = src_ptr + src_stride;
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] =
+        STATIC_CAST(uint16_t, ((uint32_t)s[0] + s[1] + t[0] + t[1] + 2u) >> 2);
+    s += 2;
+    t += 2;
+  }
+}
+
+void HalfBoxRow_16_Odd_C(const uint16_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint16_t* dst_ptr,
+                         int width) {
+  const uint16_t* s = src_ptr;
+  const uint16_t* t = src_ptr + src_stride;
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_ptr[x] =
+        STATIC_CAST(uint16_t, ((uint32_t)s[0] + s[1] + t[0] + t[1] + 2u) >> 2);
+    s += 2;
+    t += 2;
+  }
+  dst_ptr[width] = STATIC_CAST(uint16_t, ((uint32_t)s[0] + t[0] + 1u) >> 1);
+}
+
+void HalfBoxUVRow_C(const uint8_t* src_uv,
+                    ptrdiff_t src_stride_uv,
+                    uint8_t* dst_uv,
+                    int width) {
+  const uint8_t* s = src_uv;
+  const uint8_t* t = src_uv + src_stride_uv;
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] = (s[0] + s[2] + t[0] + t[2] + 2) >> 2;
+    dst_uv[1] = (s[1] + s[3] + t[1] + t[3] + 2) >> 2;
+    s += 4;
+    t += 4;
+    dst_uv += 2;
+  }
+}
+
+void HalfBoxUVRow_Odd_C(const uint8_t* src_uv,
+                        ptrdiff_t src_stride_uv,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* s = src_uv;
+  const uint8_t* t = src_uv + src_stride_uv;
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] = (s[0] + s[2] + t[0] + t[2] + 2) >> 2;
+    dst_uv[1] = (s[1] + s[3] + t[1] + t[3] + 2) >> 2;
+    s += 4;
+    t += 4;
+    dst_uv += 2;
+  }
+  dst_uv[0] = (s[0] + t[0] + 1) >> 1;
+  dst_uv[1] = (s[1] + t[1] + 1) >> 1;
+}
+
+void HalfBoxUVRow_16_C(const uint16_t* src_uv,
+                       ptrdiff_t src_stride_uv,
+                       uint16_t* dst_uv,
+                       int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_stride_uv;
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] =
+        STATIC_CAST(uint16_t, ((uint32_t)s[0] + s[2] + t[0] + t[2] + 2u) >> 2);
+    dst_uv[1] =
+        STATIC_CAST(uint16_t, ((uint32_t)s[1] + s[3] + t[1] + t[3] + 2u) >> 2);
+    s += 4;
+    t += 4;
+    dst_uv += 2;
+  }
+}
+
+void HalfBoxUVRow_16_Odd_C(const uint16_t* src_uv,
+                           ptrdiff_t src_stride_uv,
+                           uint16_t* dst_uv,
+                           int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_stride_uv;
+  int x;
+  width -= 1;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] =
+        STATIC_CAST(uint16_t, ((uint32_t)s[0] + s[2] + t[0] + t[2] + 2u) >> 2);
+    dst_uv[1] =
+        STATIC_CAST(uint16_t, ((uint32_t)s[1] + s[3] + t[1] + t[3] + 2u) >> 2);
+    s += 4;
+    t += 4;
+    dst_uv += 2;
+  }
+  dst_uv[0] = STATIC_CAST(uint16_t, ((uint32_t)s[0] + t[0] + 1u) >> 1);
+  dst_uv[1] = STATIC_CAST(uint16_t, ((uint32_t)s[1] + t[1] + 1u) >> 1);
 }
 
 void HalfRow_16To8_C(const uint16_t* src_uv,

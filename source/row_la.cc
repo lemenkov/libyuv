@@ -8341,6 +8341,242 @@ void HalfRow_16_LASX(const uint16_t* src_uv,
 }
 #endif  // HAS_HALFROW_16_LASX
 
+#ifdef HAS_HALFWIDTHROW_LASX
+void HalfWidthRow_LASX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.b $xr2, $xr1, $xr0\n\t"
+      "xvpickod.b $xr3, $xr1, $xr0\n\t"
+      "xvavgr.bu $xr0, $xr2, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ptr), [dst] "+r"(dst_ptr), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_HALFWIDTHROW_LASX
+
+#ifdef HAS_HALFWIDTHROW_16_LASX
+void HalfWidthRow_16_LASX(const uint16_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.h $xr2, $xr1, $xr0\n\t"
+      "xvpickod.h $xr3, $xr1, $xr0\n\t"
+      "xvavgr.hu $xr0, $xr2, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ptr), [dst] "+r"(dst_ptr), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_HALFWIDTHROW_16_LASX
+
+#ifdef HAS_HALFWIDTHUVROW_LASX
+void HalfWidthUVRow_LASX(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.h $xr2, $xr1, $xr0\n\t"
+      "xvpickod.h $xr3, $xr1, $xr0\n\t"
+      "xvavgr.bu $xr0, $xr2, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [dst] "+r"(dst_uv), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_HALFWIDTHUVROW_LASX
+
+#ifdef HAS_HALFWIDTHUVROW_16_LASX
+void HalfWidthUVRow_16_LASX(const uint16_t* src_uv,
+                            uint16_t* dst_uv,
+                            int width) {
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvpickev.w $xr2, $xr1, $xr0\n\t"
+      "xvpickod.w $xr3, $xr1, $xr0\n\t"
+      "xvavgr.hu $xr0, $xr2, $xr3\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [dst] "+r"(dst_uv), [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
+}
+#endif  // HAS_HALFWIDTHUVROW_16_LASX
+
+#ifdef HAS_HALFBOXROW_LASX
+void HalfBoxRow_LASX(const uint8_t* src_ptr,
+                     ptrdiff_t src_stride,
+                     uint8_t* dst_ptr,
+                     int width) {
+  const uint8_t* src_nex = src_ptr + src_stride;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvld $xr2, %[nex], 0\n\t"
+      "xvld $xr3, %[nex], 32\n\t"
+      "xvaddwev.h.bu $xr4, $xr0, $xr2\n\t"
+      "xvaddwod.h.bu $xr5, $xr0, $xr2\n\t"
+      "xvaddwev.h.bu $xr6, $xr1, $xr3\n\t"
+      "xvaddwod.h.bu $xr7, $xr1, $xr3\n\t"
+      "xvadd.h $xr4, $xr4, $xr5\n\t"
+      "xvadd.h $xr6, $xr6, $xr7\n\t"
+      "xvsrarni.b.h $xr6, $xr4, 2\n\t"
+      "xvpermi.d $xr6, $xr6, 0xd8\n\t"
+      "xvst $xr6, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[nex], %[nex], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -32\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ptr), [nex] "+r"(src_nex), [dst] "+r"(dst_ptr),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+}
+#endif  // HAS_HALFBOXROW_LASX
+
+#ifdef HAS_HALFBOXROW_16_LASX
+void HalfBoxRow_16_LASX(const uint16_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint16_t* dst_ptr,
+                        int width) {
+  const uint16_t* src_nex = src_ptr + src_stride;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvld $xr2, %[nex], 0\n\t"
+      "xvld $xr3, %[nex], 32\n\t"
+      "xvaddwev.w.hu $xr4, $xr0, $xr2\n\t"
+      "xvaddwod.w.hu $xr5, $xr0, $xr2\n\t"
+      "xvaddwev.w.hu $xr6, $xr1, $xr3\n\t"
+      "xvaddwod.w.hu $xr7, $xr1, $xr3\n\t"
+      "xvadd.w $xr4, $xr4, $xr5\n\t"
+      "xvadd.w $xr6, $xr6, $xr7\n\t"
+      "xvsrarni.h.w $xr6, $xr4, 2\n\t"
+      "xvpermi.d $xr6, $xr6, 0xd8\n\t"
+      "xvst $xr6, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[nex], %[nex], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_ptr), [nex] "+r"(src_nex), [dst] "+r"(dst_ptr),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+}
+#endif  // HAS_HALFBOXROW_16_LASX
+
+#ifdef HAS_HALFBOXUVROW_LASX
+void HalfBoxUVRow_LASX(const uint8_t* src_uv,
+                       ptrdiff_t src_stride_uv,
+                       uint8_t* dst_uv,
+                       int width) {
+  const uint8_t* src_nex = src_uv + src_stride_uv;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvld $xr2, %[nex], 0\n\t"
+      "xvld $xr3, %[nex], 32\n\t"
+      "xvpickev.h $xr4, $xr1, $xr0\n\t"
+      "xvpickod.h $xr5, $xr1, $xr0\n\t"
+      "xvpickev.h $xr6, $xr3, $xr2\n\t"
+      "xvpickod.h $xr7, $xr3, $xr2\n\t"
+      "xvaddwev.h.bu $xr0, $xr4, $xr5\n\t"
+      "xvaddwod.h.bu $xr1, $xr4, $xr5\n\t"
+      "xvaddwev.h.bu $xr2, $xr6, $xr7\n\t"
+      "xvaddwod.h.bu $xr3, $xr6, $xr7\n\t"
+      "xvadd.h $xr0, $xr0, $xr2\n\t"
+      "xvadd.h $xr1, $xr1, $xr3\n\t"
+      "xvsrari.h $xr0, $xr0, 2\n\t"
+      "xvsrari.h $xr1, $xr1, 2\n\t"
+      "xvpackev.b $xr0, $xr1, $xr0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[nex], %[nex], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [nex] "+r"(src_nex), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+}
+#endif  // HAS_HALFBOXUVROW_LASX
+
+#ifdef HAS_HALFBOXUVROW_16_LASX
+void HalfBoxUVRow_16_LASX(const uint16_t* src_uv,
+                          ptrdiff_t src_stride_uv,
+                          uint16_t* dst_uv,
+                          int width) {
+  const uint16_t* src_nex = src_uv + src_stride_uv;
+  asm volatile(
+      "1:\n\t"
+      "xvld $xr0, %[src], 0\n\t"
+      "xvld $xr1, %[src], 32\n\t"
+      "xvld $xr2, %[nex], 0\n\t"
+      "xvld $xr3, %[nex], 32\n\t"
+      "xvpickev.w $xr4, $xr1, $xr0\n\t"
+      "xvpickod.w $xr5, $xr1, $xr0\n\t"
+      "xvpickev.w $xr6, $xr3, $xr2\n\t"
+      "xvpickod.w $xr7, $xr3, $xr2\n\t"
+      "xvaddwev.w.hu $xr0, $xr4, $xr5\n\t"
+      "xvaddwod.w.hu $xr1, $xr4, $xr5\n\t"
+      "xvaddwev.w.hu $xr2, $xr6, $xr7\n\t"
+      "xvaddwod.w.hu $xr3, $xr6, $xr7\n\t"
+      "xvadd.w $xr0, $xr0, $xr2\n\t"
+      "xvadd.w $xr1, $xr1, $xr3\n\t"
+      "xvsrari.w $xr0, $xr0, 2\n\t"
+      "xvsrari.w $xr1, $xr1, 2\n\t"
+      "xvpackev.h $xr0, $xr1, $xr0\n\t"
+      "xvpermi.d $xr0, $xr0, 0xd8\n\t"
+      "xvst $xr0, %[dst], 0\n\t"
+      "addi.d %[src], %[src], 64\n\t"
+      "addi.d %[nex], %[nex], 64\n\t"
+      "addi.d %[dst], %[dst], 32\n\t"
+      "addi.d %[cnt], %[cnt], -8\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src] "+r"(src_uv), [nex] "+r"(src_nex), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      :
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7");
+}
+#endif  // HAS_HALFBOXUVROW_16_LASX
+
 #ifdef HAS_ARGBCOPYALPHAROW_LASX
 void ARGBCopyAlphaRow_LASX(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
@@ -8538,6 +8774,46 @@ void HalfRow_16To8_LASX(const uint16_t* src_uv,
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
 }
 #endif  // HAS_HALFROW_16TO8_LASX
+
+#ifdef HAS_HALFWIDTHROW_16TO8_LASX
+// 2x2 box filter of 16 bit samples, scaled to 8 bit.  16 pixels per loop.
+// scale is 1 << (24 - depth) and must not exceed 32768 (depth 9 or more).
+void HalfWidthRow_16To8_LASX(const uint16_t* src_uv,
+                             ptrdiff_t src_uv_stride,
+                             uint8_t* dst_uv,
+                             int scale,
+                             int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "xvreplgr2vr.h $xr6, %[scl]\n\t"
+      "1:\n\t"
+      "xvld $xr0, %[src0], 0\n\t"
+      "xvld $xr1, %[src0], 32\n\t"
+      "xvld $xr2, %[src1], 0\n\t"
+      "xvld $xr3, %[src1], 32\n\t"
+      "xvaddwev.w.hu $xr4, $xr0, $xr2\n\t"
+      "xvaddwod.w.hu $xr0, $xr0, $xr2\n\t"
+      "xvaddwev.w.hu $xr5, $xr1, $xr3\n\t"
+      "xvaddwod.w.hu $xr1, $xr1, $xr3\n\t"
+      "xvadd.w $xr0, $xr0, $xr4\n\t"
+      "xvadd.w $xr1, $xr1, $xr5\n\t"
+      "xvsrarni.h.w $xr1, $xr0, 2\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "xvmuh.hu $xr1, $xr1, $xr6\n\t"
+      "xvssrani.bu.h $xr1, $xr1, 0\n\t"
+      "xvpermi.d $xr1, $xr1, 0xd8\n\t"
+      "vst $vr1, %[dst], 0\n\t"
+      "addi.d %[src0], %[src0], 64\n\t"
+      "addi.d %[src1], %[src1], 64\n\t"
+      "addi.d %[dst], %[dst], 16\n\t"
+      "addi.d %[cnt], %[cnt], -16\n\t"
+      "bnez %[cnt], 1b\n\t"
+      : [src0] "+r"(src_uv), [src1] "+r"(src_uv1), [dst] "+r"(dst_uv),
+        [cnt] "+r"(width)
+      : [scl] "r"(scale)
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_HALFWIDTHROW_16TO8_LASX
 
 #ifdef HAS_AR30TOAB30ROW_LASX
 void AR30ToAB30Row_LASX(const uint8_t* src_ar30,

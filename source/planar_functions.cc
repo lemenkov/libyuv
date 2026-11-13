@@ -17,7 +17,6 @@
 #include "libyuv/convert_from_argb.h"  // For ArgbConstants
 #include "libyuv/cpu_id.h"
 #include "libyuv/row.h"
-#include "libyuv/scale_row.h"  // for ScaleRowDown2
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -1053,6 +1052,11 @@ void SplitUVPlane_16(const uint16_t* src_uv,
 #if defined(HAS_SPLITUVROW_16_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     SplitUVRow_16 = SplitUVRow_16_HVX;
+  }
+#endif
+#if defined(HAS_SPLITUVROW_16_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SplitUVRow_16 = SplitUVRow_16_RVV;
   }
 #endif
 #if defined(HAS_SPLITUVROW_16_LSX)
@@ -4291,8 +4295,8 @@ int I420Blend(const uint8_t* src_y0,
   void (*BlendPlaneRow)(const uint8_t* src0, const uint8_t* src1,
                         const uint8_t* alpha, uint8_t* dst, int width) =
       BlendPlaneRow_C;
-  void (*ScaleRowDown2)(const uint8_t* src_ptr, ptrdiff_t src_stride,
-                        uint8_t* dst_ptr, int dst_width) = ScaleRowDown2Box_C;
+  void (*HalfBoxRow)(const uint8_t* src_ptr, ptrdiff_t src_stride,
+                     uint8_t* dst_ptr, int dst_width) = HalfBoxRow_C;
 
   if (!src_y0 || !src_u0 || !src_v0 || !src_y1 || !src_u1 || !src_v1 ||
       !alpha || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0 ||
@@ -4380,88 +4384,85 @@ int I420Blend(const uint8_t* src_y0,
   }
 #endif
   if (!IS_ALIGNED(width, 2)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Odd_C;
+    HalfBoxRow = HalfBoxRow_Odd_C;
   }
-#if defined(HAS_SCALEROWDOWN2_NEON)
+#if defined(HAS_HALFBOXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Odd_NEON;
+    HalfBoxRow = HalfBoxRow_Odd_NEON;
     if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_Any_NEON;
+      HalfBoxRow = HalfBoxRow_Any_NEON;
       if (IS_ALIGNED(halfwidth, 16)) {
-        ScaleRowDown2 = ScaleRowDown2Box_NEON;
+        HalfBoxRow = HalfBoxRow_NEON;
       }
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_SSSE3)
+#if defined(HAS_HALFBOXROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    HalfBoxRow = IS_ALIGNED(width, 2) ? HalfBoxRow_SVE2 : HalfBoxRow_Odd_SVE2;
+  }
+#endif
+#if defined(HAS_HALFBOXROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    HalfBoxRow = IS_ALIGNED(width, 2) ? HalfBoxRow_SME : HalfBoxRow_Odd_SME;
+  }
+#endif
+#if defined(HAS_HALFBOXROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Odd_SSSE3;
+    HalfBoxRow = HalfBoxRow_Odd_SSSE3;
     if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_Any_SSSE3;
+      HalfBoxRow = HalfBoxRow_Any_SSSE3;
       if (IS_ALIGNED(halfwidth, 16)) {
-        ScaleRowDown2 = ScaleRowDown2Box_SSSE3;
+        HalfBoxRow = HalfBoxRow_SSSE3;
       }
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_AVX2)
+#if defined(HAS_HALFBOXROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Odd_AVX2;
+    HalfBoxRow = HalfBoxRow_Odd_AVX2;
     if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_Any_AVX2;
+      HalfBoxRow = HalfBoxRow_Any_AVX2;
       if (IS_ALIGNED(halfwidth, 32)) {
-        ScaleRowDown2 = ScaleRowDown2Box_AVX2;
+        HalfBoxRow = HalfBoxRow_AVX2;
       }
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_AVX512BW)
+#if defined(HAS_HALFBOXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Odd_AVX512BW;
-    if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_AVX512BW;
-    }
+    HalfBoxRow =
+        IS_ALIGNED(width, 2) ? HalfBoxRow_AVX512BW : HalfBoxRow_Odd_AVX512BW;
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2BOX_RVV)
+#if defined(HAS_HALFBOXROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-    ScaleRowDown2 =
-        IS_ALIGNED(width, 2) ? ScaleRowDown2Box_RVV : ScaleRowDown2Box_Odd_RVV;
+    HalfBoxRow = IS_ALIGNED(width, 2) ? HalfBoxRow_RVV : HalfBoxRow_Odd_RVV;
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_WASMSIMD)
+#if defined(HAS_HALFBOXROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Odd_WASMSIMD;
+    HalfBoxRow = HalfBoxRow_Odd_WASMSIMD;
     if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_Any_WASMSIMD;
+      HalfBoxRow = HalfBoxRow_Any_WASMSIMD;
       if (IS_ALIGNED(halfwidth, 16)) {
-        ScaleRowDown2 = ScaleRowDown2Box_WASMSIMD;
+        HalfBoxRow = HalfBoxRow_WASMSIMD;
       }
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_HVX)
+#if defined(HAS_HALFBOXROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
-    ScaleRowDown2 =
-        IS_ALIGNED(width, 2) ? ScaleRowDown2Box_HVX : ScaleRowDown2Box_Odd_HVX;
+    HalfBoxRow = IS_ALIGNED(width, 2) ? HalfBoxRow_HVX : HalfBoxRow_Odd_HVX;
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_Any_LSX;
-      if (IS_ALIGNED(halfwidth, 16)) {
-        ScaleRowDown2 = ScaleRowDown2Box_LSX;
-      }
-    }
-  }
-#endif
-#if defined(HAS_SCALEROWDOWN2_LASX)
+#if defined(HAS_HALFBOXROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
+    HalfBoxRow = HalfBoxRow_Odd_LASX;
     if (IS_ALIGNED(width, 2)) {
-      ScaleRowDown2 = ScaleRowDown2Box_Any_LASX;
+      HalfBoxRow = HalfBoxRow_Any_LASX;
       if (IS_ALIGNED(halfwidth, 32)) {
-        ScaleRowDown2 = ScaleRowDown2Box_LASX;
+        HalfBoxRow = HalfBoxRow_LASX;
       }
     }
   }
@@ -4477,7 +4478,7 @@ int I420Blend(const uint8_t* src_y0,
       alpha_stride = 0;
     }
     // Subsample 2 rows of UV to half width and half height.
-    ScaleRowDown2(alpha, alpha_stride, halfalpha, halfwidth);
+    HalfBoxRow(alpha, alpha_stride, halfalpha, halfwidth);
     alpha += (ptrdiff_t)alpha_stride * 2;
     BlendPlaneRow(src_u0, src_u1, halfalpha, dst_u, halfwidth);
     BlendPlaneRow(src_v0, src_v1, halfalpha, dst_v, halfwidth);
@@ -7916,9 +7917,8 @@ int UYVYToNV12(const uint8_t* src_uyvy,
   int awidth = halfwidth * 2;
   void (*SplitUVRow)(const uint8_t* src_uv, uint8_t* dst_u, uint8_t* dst_v,
                      int width) = SplitUVRow_C;
-  void (*InterpolateRow)(uint8_t* dst_ptr, const uint8_t* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) = InterpolateRow_C;
+  void (*HalfRow)(const uint8_t* src_uv, ptrdiff_t src_uv_stride,
+                  uint8_t* dst_uv, int width) = HalfRow_C;
 
   if (!src_uyvy || !dst_y || !dst_uv || width <= 0 || height == 0 ||
       height == INT_MIN) {
@@ -8005,69 +8005,69 @@ int UYVYToNV12(const uint8_t* src_uyvy,
   }
 #endif
 
-#if defined(HAS_INTERPOLATEROW_AVX2)
+#if defined(HAS_HALFROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    InterpolateRow = InterpolateRow_Any_AVX2;
+    HalfRow = HalfRow_Any_AVX2;
     if (IS_ALIGNED(awidth, 32)) {
-      InterpolateRow = InterpolateRow_AVX2;
+      HalfRow = HalfRow_AVX2;
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_AVX512BW)
+#if defined(HAS_HALFROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
-    InterpolateRow = InterpolateRow_AVX512BW;
+    HalfRow = HalfRow_AVX512BW;
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_NEON)
+#if defined(HAS_HALFROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    InterpolateRow = InterpolateRow_Any_NEON;
-    if (IS_ALIGNED(awidth, 16)) {
-      InterpolateRow = InterpolateRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SVE2)
-  if (TestCpuFlag(kCpuHasSVE2)) {
-    InterpolateRow = InterpolateRow_SVE2;
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SME)
-  if (TestCpuFlag(kCpuHasSME)) {
-    InterpolateRow = InterpolateRow_SME;
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    InterpolateRow = InterpolateRow_Any_LSX;
-    if (IS_ALIGNED(awidth, 16)) {
-      InterpolateRow = InterpolateRow_LSX;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_LASX)
-  if (TestCpuFlag(kCpuHasLASX)) {
-    InterpolateRow = InterpolateRow_Any_LASX;
+    HalfRow = HalfRow_Any_NEON;
     if (IS_ALIGNED(awidth, 32)) {
-      InterpolateRow = InterpolateRow_LASX;
+      HalfRow = HalfRow_NEON;
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_RVV)
-  if (TestCpuFlag(kCpuHasRVV)) {
-    InterpolateRow = InterpolateRow_RVV;
+#if defined(HAS_HALFROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    HalfRow = HalfRow_SVE2;
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_WASMSIMD)
-  if (TestCpuFlag(kCpuHasWASMSIMD)) {
-    InterpolateRow = InterpolateRow_Any_WASMSIMD;
+#if defined(HAS_HALFROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    HalfRow = HalfRow_SME;
+  }
+#endif
+#if defined(HAS_HALFROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    HalfRow = HalfRow_Any_LSX;
     if (IS_ALIGNED(awidth, 16)) {
-      InterpolateRow = InterpolateRow_WASMSIMD;
+      HalfRow = HalfRow_LSX;
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_HVX)
+#if defined(HAS_HALFROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    HalfRow = HalfRow_Any_LASX;
+    if (IS_ALIGNED(awidth, 32)) {
+      HalfRow = HalfRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_HALFROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    HalfRow = HalfRow_RVV;
+  }
+#endif
+#if defined(HAS_HALFROW_WASMSIMD)
+  if (TestCpuFlag(kCpuHasWASMSIMD)) {
+    HalfRow = HalfRow_Any_WASMSIMD;
+    if (IS_ALIGNED(awidth, 16)) {
+      HalfRow = HalfRow_WASMSIMD;
+    }
+  }
+#endif
+#if defined(HAS_HALFROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
-    InterpolateRow = InterpolateRow_HVX;
+    HalfRow = HalfRow_HVX;
   }
 #endif
 
@@ -8083,7 +8083,7 @@ int UYVYToNV12(const uint8_t* src_uyvy,
       memcpy(dst_y, rows, width);
       SplitUVRow(src_uyvy + src_stride_uyvy, rows + awidth * 2, rows, awidth);
       memcpy(dst_y + dst_stride_y, rows, width);
-      InterpolateRow(dst_uv, rows + awidth, awidth, awidth, 128);
+      HalfRow(rows + awidth, awidth, dst_uv, awidth);
       src_uyvy += src_stride_uyvy * 2;
       dst_y += dst_stride_y * 2;
       dst_uv += dst_stride_uv;

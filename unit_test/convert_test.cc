@@ -179,7 +179,14 @@ namespace libyuv {
 
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOP(I422, uint8_t, 1, 2, 1, I420, uint8_t, 1, 2, 2, 8)
+TESTPLANARTOP(I444, uint8_t, 1, 1, 1, I422, uint8_t, 1, 2, 1, 8)
 TESTPLANARTOP(I444, uint8_t, 1, 1, 1, I420, uint8_t, 1, 2, 2, 8)
+TESTPLANARTOP(J422, uint8_t, 1, 2, 1, J420, uint8_t, 1, 2, 2, 8)
+TESTPLANARTOP(J444, uint8_t, 1, 1, 1, J422, uint8_t, 1, 2, 1, 8)
+TESTPLANARTOP(J444, uint8_t, 1, 1, 1, J420, uint8_t, 1, 2, 2, 8)
+TESTPLANARTOP(H422, uint8_t, 1, 2, 1, H420, uint8_t, 1, 2, 2, 8)
+TESTPLANARTOP(H444, uint8_t, 1, 1, 1, H422, uint8_t, 1, 2, 1, 8)
+TESTPLANARTOP(H444, uint8_t, 1, 1, 1, H420, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I422, uint8_t, 1, 2, 1, 8)
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I444, uint8_t, 1, 1, 1, 8)
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420Mirror, uint8_t, 1, 2, 2, 8)
@@ -198,10 +205,18 @@ TESTPLANARTOP(I010, uint16_t, 2, 2, 2, I410, uint16_t, 2, 1, 1, 10)
 TESTPLANARTOP(I210, uint16_t, 2, 2, 1, I410, uint16_t, 2, 1, 1, 10)
 TESTPLANARTOP(I012, uint16_t, 2, 2, 2, I412, uint16_t, 2, 1, 1, 12)
 TESTPLANARTOP(I212, uint16_t, 2, 2, 1, I412, uint16_t, 2, 1, 1, 12)
+TESTPLANARTOP(I410, uint16_t, 2, 1, 1, I210, uint16_t, 2, 2, 1, 10)
 TESTPLANARTOP(I410, uint16_t, 2, 1, 1, I010, uint16_t, 2, 2, 2, 10)
 TESTPLANARTOP(I210, uint16_t, 2, 2, 1, I010, uint16_t, 2, 2, 2, 10)
+TESTPLANARTOP(I412, uint16_t, 2, 1, 1, I212, uint16_t, 2, 2, 1, 12)
 TESTPLANARTOP(I412, uint16_t, 2, 1, 1, I012, uint16_t, 2, 2, 2, 12)
 TESTPLANARTOP(I212, uint16_t, 2, 2, 1, I012, uint16_t, 2, 2, 2, 12)
+TESTPLANARTOP(H410, uint16_t, 2, 1, 1, H210, uint16_t, 2, 2, 1, 10)
+TESTPLANARTOP(H410, uint16_t, 2, 1, 1, H010, uint16_t, 2, 2, 2, 10)
+TESTPLANARTOP(H210, uint16_t, 2, 2, 1, H010, uint16_t, 2, 2, 2, 10)
+TESTPLANARTOP(H412, uint16_t, 2, 1, 1, H212, uint16_t, 2, 2, 1, 12)
+TESTPLANARTOP(H412, uint16_t, 2, 1, 1, H012, uint16_t, 2, 2, 2, 12)
+TESTPLANARTOP(H212, uint16_t, 2, 2, 1, H012, uint16_t, 2, 2, 2, 12)
 TESTPLANARTOP(I010, uint16_t, 2, 2, 2, I420, uint8_t, 1, 2, 2, 10)
 TESTPLANARTOP(I210, uint16_t, 2, 2, 1, I420, uint8_t, 1, 2, 2, 10)
 TESTPLANARTOP(I210, uint16_t, 2, 2, 1, I422, uint8_t, 1, 2, 1, 10)
@@ -454,6 +469,7 @@ static int I400ToNV21(const uint8_t* src_y,
 
 TESTPLANARTOBP(I420, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOBP(I420, uint8_t, 1, 2, 2, NV21, uint8_t, 1, 2, 2, 8)
+TESTPLANARTOBP(I422, uint8_t, 1, 2, 1, NV12, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOBP(I422, uint8_t, 1, 2, 1, NV21, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOBP(I444, uint8_t, 1, 1, 1, NV12, uint8_t, 1, 2, 2, 8)
 TESTPLANARTOBP(I444, uint8_t, 1, 1, 1, NV21, uint8_t, 1, 2, 2, 8)
@@ -598,6 +614,8 @@ TESTCONVERTFROMI420(P410, uint16_t, 2, 1, 1)
 TESTCONVERTTOI420(P010, uint16_t, 2, 2, 2)
 TESTCONVERTTOI420(P210, uint16_t, 2, 2, 1)
 TESTCONVERTTOI420(P410, uint16_t, 2, 1, 1)
+TESTCONVERTTOI420(NV16, uint8_t, 1, 2, 1)
+TESTCONVERTTOI420(NV24, uint8_t, 1, 1, 1)
 
 #define TESTCONVERTTOI420SMOKE(FMT, BPC, SUBSAMP_X, SUBSAMP_Y)                 \
   TEST_F(LibYUVConvertTest, ConvertToI420_##FMT) {                             \
@@ -782,12 +800,98 @@ TESTBPTOBP(NV21, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(NV12, uint8_t, 1, 2, 2, NV12Mirror, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(NV12, uint8_t, 1, 2, 2, NV24, uint8_t, 1, 1, 1, 8, 1, 1)
 TESTBPTOBP(NV16, uint8_t, 1, 2, 1, NV24, uint8_t, 1, 1, 1, 8, 1, 1)
+TESTBPTOBP(NV24, uint8_t, 1, 1, 1, NV16, uint8_t, 1, 2, 1, 8, 1, 1)
+TESTBPTOBP(NV16, uint8_t, 1, 2, 1, NV12, uint8_t, 1, 2, 2, 8, 1, 1)
+TESTBPTOBP(NV24, uint8_t, 1, 1, 1, NV12, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(P010, uint16_t, 2, 2, 2, P410, uint16_t, 2, 1, 1, 10, 1, 1)
 TESTBPTOBP(P210, uint16_t, 2, 2, 1, P410, uint16_t, 2, 1, 1, 10, 1, 1)
+TESTBPTOBP(P410, uint16_t, 2, 1, 1, P210, uint16_t, 2, 2, 1, 10, 1, 1)
+TESTBPTOBP(P210, uint16_t, 2, 2, 1, P010, uint16_t, 2, 2, 2, 10, 1, 1)
+TESTBPTOBP(P410, uint16_t, 2, 1, 1, P010, uint16_t, 2, 2, 2, 10, 1, 1)
 TESTBPTOBP(P012, uint16_t, 2, 2, 2, P412, uint16_t, 2, 1, 1, 10, 1, 1)
 TESTBPTOBP(P212, uint16_t, 2, 2, 1, P412, uint16_t, 2, 1, 1, 12, 1, 1)
+TESTBPTOBP(P412, uint16_t, 2, 1, 1, P212, uint16_t, 2, 2, 1, 12, 1, 1)
+TESTBPTOBP(P212, uint16_t, 2, 2, 1, P012, uint16_t, 2, 2, 2, 12, 1, 1)
+TESTBPTOBP(P412, uint16_t, 2, 1, 1, P012, uint16_t, 2, 2, 2, 12, 1, 1)
 TESTBPTOBP(P016, uint16_t, 2, 2, 2, P416, uint16_t, 2, 1, 1, 12, 1, 1)
 TESTBPTOBP(P216, uint16_t, 2, 2, 1, P416, uint16_t, 2, 1, 1, 12, 1, 1)
+TESTBPTOBP(P416, uint16_t, 2, 1, 1, P216, uint16_t, 2, 2, 1, 16, 1, 1)
+TESTBPTOBP(P216, uint16_t, 2, 2, 1, P016, uint16_t, 2, 2, 2, 16, 1, 1)
+TESTBPTOBP(P416, uint16_t, 2, 1, 1, P016, uint16_t, 2, 2, 2, 16, 1, 1)
+
+#define TESTBPTOPI(SRC_FMT, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, DST_FMT,             \
+                   DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF, DOY)      \
+  TEST_F(LibYUVConvertTest, SRC_FMT##To##DST_FMT##N) {                         \
+    const int kWidth = W1280;                                                  \
+    const int kHeight = benchmark_height_;                                     \
+    const int kSrcHalfWidth = SUBSAMPLE(kWidth, SRC_SUBSAMP_X);                \
+    const int kSrcHalfHeight = SUBSAMPLE(kHeight, SRC_SUBSAMP_Y);              \
+    const int kDstHalfWidth = SUBSAMPLE(kWidth, DST_SUBSAMP_X);                \
+    const int kDstHalfHeight = SUBSAMPLE(kHeight, DST_SUBSAMP_Y);              \
+    align_buffer_page_end(src_y, kWidth * kHeight + OFF);                      \
+    align_buffer_page_end(src_uv, 2 * kSrcHalfWidth * kSrcHalfHeight + OFF);   \
+    align_buffer_page_end(dst_y_c, kWidth * kHeight);                          \
+    align_buffer_page_end(dst_u_c, kDstHalfWidth * kDstHalfHeight);            \
+    align_buffer_page_end(dst_v_c, kDstHalfWidth * kDstHalfHeight);            \
+    align_buffer_page_end(dst_y_opt, kWidth * kHeight);                        \
+    align_buffer_page_end(dst_u_opt, kDstHalfWidth * kDstHalfHeight);          \
+    align_buffer_page_end(dst_v_opt, kDstHalfWidth * kDstHalfHeight);          \
+    MemRandomize(src_y + OFF, kWidth * kHeight);                               \
+    MemRandomize(src_uv + OFF, 2 * kSrcHalfWidth * kSrcHalfHeight);            \
+    memset(dst_y_c, 1, kWidth * kHeight);                                      \
+    memset(dst_u_c, 2, kDstHalfWidth * kDstHalfHeight);                        \
+    memset(dst_v_c, 3, kDstHalfWidth * kDstHalfHeight);                        \
+    memset(dst_y_opt, 101, kWidth * kHeight);                                  \
+    memset(dst_u_opt, 102, kDstHalfWidth * kDstHalfHeight);                    \
+    memset(dst_v_opt, 103, kDstHalfWidth * kDstHalfHeight);                    \
+    MaskCpuFlags(disable_cpu_flags_);                                          \
+    SRC_FMT##To##DST_FMT(src_y + OFF, kWidth, src_uv + OFF, 2 * kSrcHalfWidth, \
+                         DOY ? dst_y_c : NULL, kWidth, dst_u_c, kDstHalfWidth, \
+                         dst_v_c, kDstHalfWidth, kWidth, NEG kHeight);         \
+    MaskCpuFlags(benchmark_cpu_info_);                                         \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                          \
+      SRC_FMT##To##DST_FMT(src_y + OFF, kWidth, src_uv + OFF,                  \
+                           2 * kSrcHalfWidth, DOY ? dst_y_opt : NULL, kWidth,  \
+                           dst_u_opt, kDstHalfWidth, dst_v_opt, kDstHalfWidth, \
+                           kWidth, NEG kHeight);                               \
+    }                                                                          \
+    if (DOY) {                                                                 \
+      ASSERT_EQ(0, memcmp(dst_y_c, dst_y_opt, kWidth * kHeight));              \
+    }                                                                          \
+    ASSERT_EQ(0, memcmp(dst_u_c, dst_u_opt, kDstHalfWidth * kDstHalfHeight));  \
+    ASSERT_EQ(0, memcmp(dst_v_c, dst_v_opt, kDstHalfWidth * kDstHalfHeight));  \
+    free_aligned_buffer_page_end(dst_y_c);                                     \
+    free_aligned_buffer_page_end(dst_u_c);                                     \
+    free_aligned_buffer_page_end(dst_v_c);                                     \
+    free_aligned_buffer_page_end(dst_y_opt);                                   \
+    free_aligned_buffer_page_end(dst_u_opt);                                   \
+    free_aligned_buffer_page_end(dst_v_opt);                                   \
+    free_aligned_buffer_page_end(src_y);                                       \
+    free_aligned_buffer_page_end(src_uv);                                      \
+  }
+
+#if defined(ENABLE_FULL_TESTS)
+#define TESTBPTOP(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X,       \
+                  DST_SUB_Y)                                               \
+  TESTBPTOPI(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X, DST_SUB_Y, \
+             benchmark_width_ + 1, _Any, +, 0, 1)                          \
+  TESTBPTOPI(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X, DST_SUB_Y, \
+             benchmark_width_, _Unaligned, +, 2, 1)                        \
+  TESTBPTOPI(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X, DST_SUB_Y, \
+             benchmark_width_, _Invert, -, 0, 1)                           \
+  TESTBPTOPI(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X, DST_SUB_Y, \
+             benchmark_width_, _Opt, +, 0, 1)                              \
+  TESTBPTOPI(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X, DST_SUB_Y, \
+             benchmark_width_, _NullY, +, 0, 0)
+#else
+#define TESTBPTOP(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X,       \
+                  DST_SUB_Y)                                               \
+  TESTBPTOPI(SRC_FMT, SRC_SUB_X, SRC_SUB_Y, DST_FMT, DST_SUB_X, DST_SUB_Y, \
+             benchmark_width_, _Opt, +, 0, 1)
+#endif
+
+TESTBPTOP(NV16, 2, 1, I420, 2, 2)
+TESTBPTOP(NV24, 1, 1, I420, 2, 2)
 TESTBPTOBP(MM21, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8, 16, 32)
 TESTBPTOBP(MT2T, uint8_t, 10 / 8, 2, 2, P010, uint16_t, 2, 2, 2, 10, 16, 32)
 TESTBPTOBP(P010, uint16_t, 2, 2, 2, NV12, uint8_t, 1, 2, 2, 8, 1, 1)
@@ -3288,6 +3392,9 @@ static int GetI422TestCpuMasks(int benchmark_cpu_info, int cpu_masks[4]) {
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     cpu_masks[num_masks++] = base_mask & ~kCpuHasAVX512BW;
   }
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    cpu_masks[num_masks++] = base_mask & ~(kCpuHasAVX512BW | kCpuHasAVX2);
+  }
 #elif defined(__aarch64__)
   if (TestCpuFlag(kCpuHasSME)) {
     cpu_masks[num_masks++] = base_mask & ~kCpuHasSME;
@@ -3617,6 +3724,405 @@ TEST_F(LibYUVConvertTest, I422OverflowGuards) {
   free_aligned_buffer_page_end(dst_u_ref);
   free_aligned_buffer_page_end(dst_v_ref);
   free_aligned_buffer_page_end(dst_vu_ref);
+}
+
+TEST_F(LibYUVConvertTest, HalfConvertWidthsAndIdentities) {
+  const int kHeights[] = {1, 2, 3, 4, -1, -3, -4};
+  const int kWidths[] = {1,  2,  3,  15, 16,  17,  31,  32,
+                         33, 63, 64, 65, 127, 128, 129, 257};
+  const int kMaxW = 260;
+  const int kMaxH = 4;
+
+  align_buffer_page_end(y8, kMaxW * kMaxH);
+  align_buffer_page_end(u8, kMaxW * kMaxH);
+  align_buffer_page_end(v8, kMaxW * kMaxH);
+  align_buffer_page_end(uv8, kMaxW * 2 * kMaxH);
+  align_buffer_page_end(dy8_c, kMaxW * kMaxH);
+  align_buffer_page_end(du8_c, kMaxW * kMaxH);
+  align_buffer_page_end(dv8_c, kMaxW * kMaxH);
+  align_buffer_page_end(duv8_c, kMaxW * 2 * kMaxH);
+  align_buffer_page_end(dy8_opt, kMaxW * kMaxH);
+  align_buffer_page_end(du8_opt, kMaxW * kMaxH);
+  align_buffer_page_end(dv8_opt, kMaxW * kMaxH);
+  align_buffer_page_end(duv8_opt, kMaxW * 2 * kMaxH);
+
+  align_buffer_page_end_16(y16, kMaxW * kMaxH);
+  align_buffer_page_end_16(u16, kMaxW * kMaxH);
+  align_buffer_page_end_16(v16, kMaxW * kMaxH);
+  align_buffer_page_end_16(uv16, kMaxW * 2 * kMaxH);
+  align_buffer_page_end_16(dy16_c, kMaxW * kMaxH);
+  align_buffer_page_end_16(du16_c, kMaxW * kMaxH);
+  align_buffer_page_end_16(dv16_c, kMaxW * kMaxH);
+  align_buffer_page_end_16(duv16_c, kMaxW * 2 * kMaxH);
+  align_buffer_page_end_16(dy16_opt, kMaxW * kMaxH);
+  align_buffer_page_end_16(du16_opt, kMaxW * kMaxH);
+  align_buffer_page_end_16(dv16_opt, kMaxW * kMaxH);
+  align_buffer_page_end_16(duv16_opt, kMaxW * 2 * kMaxH);
+
+  MemRandomize(y8, kMaxW * kMaxH);
+  MemRandomize(u8, kMaxW * kMaxH);
+  MemRandomize(v8, kMaxW * kMaxH);
+  MemRandomize(uv8, kMaxW * 2 * kMaxH);
+
+  const uint16_t kEdgeVals[] = {0x0000u, 0x0001u, 0x7fffu,
+                                0x8000u, 0xfffeu, 0xffffu};
+  for (int i = 0; i < kMaxW * kMaxH; ++i) {
+    y16[i] = (i < 24) ? kEdgeVals[i % 6] : static_cast<uint16_t>(fastrand());
+    u16[i] =
+        (i < 24) ? kEdgeVals[(i + 1) % 6] : static_cast<uint16_t>(fastrand());
+    v16[i] =
+        (i < 24) ? kEdgeVals[(i + 2) % 6] : static_cast<uint16_t>(fastrand());
+  }
+  for (int i = 0; i < kMaxW * 2 * kMaxH; ++i) {
+    uv16[i] = (i < 48) ? kEdgeVals[i % 6] : static_cast<uint16_t>(fastrand());
+  }
+
+  int cpu_masks[4];
+  const int num_masks = GetI422TestCpuMasks(benchmark_cpu_info_, cpu_masks);
+
+  for (int height : kHeights) {
+    const int abs_h = height < 0 ? -height : height;
+    const int half_h = (abs_h + 1) >> 1;
+    for (int width : kWidths) {
+      const int half_w = (width + 1) >> 1;
+
+      // Mathematical 1-pass vs 2-step identities in C:
+      MaskCpuFlags(disable_cpu_flags_);
+      // 1) NV24ToI420 == NV24ToNV12 + NV12ToI420
+      EXPECT_EQ(0, NV24ToI420(y8, width, uv8, width * 2, dy8_c, width, du8_c,
+                              half_w, dv8_c, half_w, width, height));
+      EXPECT_EQ(0, NV24ToNV12(y8, width, uv8, width * 2, dy8_opt, width, duv8_c,
+                              half_w * 2, width, height));
+      EXPECT_EQ(0,
+                NV12ToI420(dy8_opt, width, duv8_c, half_w * 2, dy8_opt, width,
+                           du8_opt, half_w, dv8_opt, half_w, width, abs_h));
+      ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+      ASSERT_EQ(0, memcmp(du8_c, du8_opt, half_w * half_h));
+      ASSERT_EQ(0, memcmp(dv8_c, dv8_opt, half_w * half_h));
+
+      // 2) NV16ToI420 == NV16ToNV12 + NV12ToI420
+      EXPECT_EQ(0, NV16ToI420(y8, width, uv8, half_w * 2, dy8_c, width, du8_c,
+                              half_w, dv8_c, half_w, width, height));
+      EXPECT_EQ(0, NV16ToNV12(y8, width, uv8, half_w * 2, dy8_opt, width,
+                              duv8_c, half_w * 2, width, height));
+      EXPECT_EQ(0,
+                NV12ToI420(dy8_opt, width, duv8_c, half_w * 2, dy8_opt, width,
+                           du8_opt, half_w, dv8_opt, half_w, width, abs_h));
+      ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+      ASSERT_EQ(0, memcmp(du8_c, du8_opt, half_w * half_h));
+      ASSERT_EQ(0, memcmp(dv8_c, dv8_opt, half_w * half_h));
+
+      // 3) I422ToNV12 == I422ToI420 + I420ToNV12
+      EXPECT_EQ(0, I422ToNV12(y8, width, u8, half_w, v8, half_w, dy8_c, width,
+                              duv8_c, half_w * 2, width, height));
+      EXPECT_EQ(0, I422ToI420(y8, width, u8, half_w, v8, half_w, dy8_opt, width,
+                              du8_opt, half_w, dv8_opt, half_w, width, height));
+      EXPECT_EQ(0,
+                I420ToNV12(dy8_opt, width, du8_opt, half_w, dv8_opt, half_w,
+                           dy8_opt, width, duv8_opt, half_w * 2, width, abs_h));
+      ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+      ASSERT_EQ(0, memcmp(duv8_c, duv8_opt, half_w * 2 * half_h));
+
+      // Multi-CPU-mask exact byte-level verification (including full 16-bit
+      // unsigned values 0..65535 for P416/P216/P016/I410/I210/I010):
+      for (int m = 0; m < num_masks; ++m) {
+        const int cpu_mask = cpu_masks[m];
+
+        // I444ToI422 & I444ToI420
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, I444ToI422(y8, width, u8, width, v8, width, dy8_c, width,
+                                du8_c, half_w, dv8_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0,
+                  I444ToI422(y8, width, u8, width, v8, width, dy8_opt, width,
+                             du8_opt, half_w, dv8_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(du8_c, du8_opt, half_w * abs_h));
+        ASSERT_EQ(0, memcmp(dv8_c, dv8_opt, half_w * abs_h));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, I444ToI420(y8, width, u8, width, v8, width, dy8_c, width,
+                                du8_c, half_w, dv8_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0,
+                  I444ToI420(y8, width, u8, width, v8, width, dy8_opt, width,
+                             du8_opt, half_w, dv8_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(du8_c, du8_opt, half_w * half_h));
+        ASSERT_EQ(0, memcmp(dv8_c, dv8_opt, half_w * half_h));
+
+        // I422ToNV12, NV16ToI420, NV24ToI420, NV24ToNV16, NV16ToNV12,
+        // NV24ToNV12
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, I422ToNV12(y8, width, u8, half_w, v8, half_w, dy8_c, width,
+                                duv8_c, half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, I422ToNV12(y8, width, u8, half_w, v8, half_w, dy8_opt,
+                                width, duv8_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(duv8_c, duv8_opt, half_w * 2 * half_h));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, NV16ToI420(y8, width, uv8, half_w * 2, dy8_c, width, du8_c,
+                                half_w, dv8_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(
+            0, NV16ToI420(y8, width, uv8, half_w * 2, dy8_opt, width, du8_opt,
+                          half_w, dv8_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(du8_c, du8_opt, half_w * half_h));
+        ASSERT_EQ(0, memcmp(dv8_c, dv8_opt, half_w * half_h));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, NV24ToI420(y8, width, uv8, width * 2, dy8_c, width, du8_c,
+                                half_w, dv8_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0,
+                  NV24ToI420(y8, width, uv8, width * 2, dy8_opt, width, du8_opt,
+                             half_w, dv8_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(du8_c, du8_opt, half_w * half_h));
+        ASSERT_EQ(0, memcmp(dv8_c, dv8_opt, half_w * half_h));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, NV24ToNV16(y8, width, uv8, width * 2, dy8_c, width, duv8_c,
+                                half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, NV24ToNV16(y8, width, uv8, width * 2, dy8_opt, width,
+                                duv8_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(duv8_c, duv8_opt, half_w * 2 * abs_h));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, NV16ToNV12(y8, width, uv8, half_w * 2, dy8_c, width,
+                                duv8_c, half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, NV16ToNV12(y8, width, uv8, half_w * 2, dy8_opt, width,
+                                duv8_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(duv8_c, duv8_opt, half_w * 2 * half_h));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, NV24ToNV12(y8, width, uv8, width * 2, dy8_c, width, duv8_c,
+                                half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, NV24ToNV12(y8, width, uv8, width * 2, dy8_opt, width,
+                                duv8_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(dy8_c, dy8_opt, width * abs_h));
+        ASSERT_EQ(0, memcmp(duv8_c, duv8_opt, half_w * 2 * half_h));
+
+        // 16-bit full-range (0..65535) byte-exact comparisons:
+        // I410ToI210, I410ToI010, I210ToI010, P410ToP210, P210ToP010,
+        // P410ToP010
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0,
+                  I410ToI210(y16, width, u16, width, v16, width, dy16_c, width,
+                             du16_c, half_w, dv16_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(
+            0, I410ToI210(y16, width, u16, width, v16, width, dy16_opt, width,
+                          du16_opt, half_w, dv16_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy16_c, dy16_opt, width * abs_h * 2));
+        ASSERT_EQ(0, memcmp(du16_c, du16_opt, half_w * abs_h * 2));
+        ASSERT_EQ(0, memcmp(dv16_c, dv16_opt, half_w * abs_h * 2));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0,
+                  I410ToI010(y16, width, u16, width, v16, width, dy16_c, width,
+                             du16_c, half_w, dv16_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(
+            0, I410ToI010(y16, width, u16, width, v16, width, dy16_opt, width,
+                          du16_opt, half_w, dv16_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy16_c, dy16_opt, width * abs_h * 2));
+        ASSERT_EQ(0, memcmp(du16_c, du16_opt, half_w * half_h * 2));
+        ASSERT_EQ(0, memcmp(dv16_c, dv16_opt, half_w * half_h * 2));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(
+            0, I210ToI010(y16, width, u16, half_w, v16, half_w, dy16_c, width,
+                          du16_c, half_w, dv16_c, half_w, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(
+            0, I210ToI010(y16, width, u16, half_w, v16, half_w, dy16_opt, width,
+                          du16_opt, half_w, dv16_opt, half_w, width, height));
+        ASSERT_EQ(0, memcmp(dy16_c, dy16_opt, width * abs_h * 2));
+        ASSERT_EQ(0, memcmp(du16_c, du16_opt, half_w * half_h * 2));
+        ASSERT_EQ(0, memcmp(dv16_c, dv16_opt, half_w * half_h * 2));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, P410ToP210(y16, width, uv16, width * 2, dy16_c, width,
+                                duv16_c, half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, P410ToP210(y16, width, uv16, width * 2, dy16_opt, width,
+                                duv16_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(dy16_c, dy16_opt, width * abs_h * 2));
+        ASSERT_EQ(0, memcmp(duv16_c, duv16_opt, half_w * 2 * abs_h * 2));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, P210ToP010(y16, width, uv16, half_w * 2, dy16_c, width,
+                                duv16_c, half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, P210ToP010(y16, width, uv16, half_w * 2, dy16_opt, width,
+                                duv16_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(dy16_c, dy16_opt, width * abs_h * 2));
+        ASSERT_EQ(0, memcmp(duv16_c, duv16_opt, half_w * 2 * half_h * 2));
+
+        MaskCpuFlags(disable_cpu_flags_);
+        EXPECT_EQ(0, P410ToP010(y16, width, uv16, width * 2, dy16_c, width,
+                                duv16_c, half_w * 2, width, height));
+        MaskCpuFlags(cpu_mask);
+        EXPECT_EQ(0, P410ToP010(y16, width, uv16, width * 2, dy16_c, width,
+                                duv16_opt, half_w * 2, width, height));
+        ASSERT_EQ(0, memcmp(duv16_c, duv16_opt, half_w * 2 * half_h * 2));
+      }
+    }
+  }
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  free_aligned_buffer_page_end(y8);
+  free_aligned_buffer_page_end(u8);
+  free_aligned_buffer_page_end(v8);
+  free_aligned_buffer_page_end(uv8);
+  free_aligned_buffer_page_end(dy8_c);
+  free_aligned_buffer_page_end(du8_c);
+  free_aligned_buffer_page_end(dv8_c);
+  free_aligned_buffer_page_end(duv8_c);
+  free_aligned_buffer_page_end(dy8_opt);
+  free_aligned_buffer_page_end(du8_opt);
+  free_aligned_buffer_page_end(dv8_opt);
+  free_aligned_buffer_page_end(duv8_opt);
+  free_aligned_buffer_page_end_16(y16);
+  free_aligned_buffer_page_end_16(u16);
+  free_aligned_buffer_page_end_16(v16);
+  free_aligned_buffer_page_end_16(uv16);
+  free_aligned_buffer_page_end_16(dy16_c);
+  free_aligned_buffer_page_end_16(du16_c);
+  free_aligned_buffer_page_end_16(dv16_c);
+  free_aligned_buffer_page_end_16(duv16_c);
+  free_aligned_buffer_page_end_16(dy16_opt);
+  free_aligned_buffer_page_end_16(du16_opt);
+  free_aligned_buffer_page_end_16(dv16_opt);
+  free_aligned_buffer_page_end_16(duv16_opt);
+}
+
+TEST_F(LibYUVConvertTest, HalfConvertOverflowGuards) {
+  const int w = 32;
+  const int hw = 16;
+  align_buffer_page_end(y8, w);
+  align_buffer_page_end(u8, w);
+  align_buffer_page_end(v8, w);
+  align_buffer_page_end(uv8, w * 2);
+  align_buffer_page_end(dy8, w);
+  align_buffer_page_end(du8, w);
+  align_buffer_page_end(dv8, w);
+  align_buffer_page_end(duv8, w * 2);
+  align_buffer_page_end_16(y16, w);
+  align_buffer_page_end_16(u16, w);
+  align_buffer_page_end_16(v16, w);
+  align_buffer_page_end_16(uv16, w * 2);
+  align_buffer_page_end_16(dy16, w);
+  align_buffer_page_end_16(du16, w);
+  align_buffer_page_end_16(dv16, w);
+  align_buffer_page_end_16(duv16, w * 2);
+  MemRandomize(y8, w);
+  MemRandomize(u8, w);
+  MemRandomize(v8, w);
+  MemRandomize(uv8, w * 2);
+  MemRandomize(reinterpret_cast<uint8_t*>(y16), w * 2);
+  MemRandomize(reinterpret_cast<uint8_t*>(u16), w * 2);
+  MemRandomize(reinterpret_cast<uint8_t*>(v16), w * 2);
+  MemRandomize(reinterpret_cast<uint8_t*>(uv16), w * 4);
+
+  EXPECT_EQ(-1, I444ToI422(y8, w, u8, w, v8, w, dy8, w, du8, hw, dv8, hw,
+                           INT_MAX, 0));
+  EXPECT_EQ(-1, I444ToI422(y8, w, u8, w, v8, w, dy8, w, du8, hw, dv8, hw, w,
+                           INT_MIN));
+  EXPECT_EQ(0, I444ToI422(NULL, INT_MIN, u8, INT_MIN, v8, INT_MIN, NULL, 0, du8,
+                          hw, dv8, hw, w, -1));
+
+  EXPECT_EQ(-1, I444ToI420(y8, w, u8, w, v8, w, dy8, w, du8, hw, dv8, hw,
+                           INT_MAX, 0));
+  EXPECT_EQ(-1, I444ToI420(y8, w, u8, w, v8, w, dy8, w, du8, hw, dv8, hw, w,
+                           INT_MIN));
+  EXPECT_EQ(0, I444ToI420(NULL, INT_MIN, u8, INT_MIN, v8, INT_MIN, NULL, 0, du8,
+                          hw, dv8, hw, w, -1));
+
+  EXPECT_EQ(-1, I422ToNV12(y8, w, u8, hw, v8, hw, dy8, w, duv8, w, INT_MAX, 0));
+  EXPECT_EQ(-1, I422ToNV12(y8, w, u8, hw, v8, hw, dy8, w, duv8, w, w, INT_MIN));
+  EXPECT_EQ(0, I422ToNV12(NULL, INT_MIN, u8, INT_MIN, v8, INT_MIN, NULL, 0,
+                          duv8, w, w, -1));
+
+  EXPECT_EQ(-1,
+            NV16ToI420(y8, w, uv8, w, dy8, w, du8, hw, dv8, hw, INT_MAX, 2));
+  EXPECT_EQ(-1,
+            NV16ToI420(y8, w, uv8, w, dy8, w, du8, hw, dv8, hw, w, INT_MIN));
+  EXPECT_EQ(0, NV16ToI420(NULL, INT_MIN, uv8, INT_MIN, NULL, 0, du8, hw, dv8,
+                          hw, w, -1));
+
+  EXPECT_EQ(
+      -1, NV24ToI420(y8, w, uv8, w * 2, dy8, w, du8, hw, dv8, hw, INT_MAX, 2));
+  EXPECT_EQ(
+      -1, NV24ToI420(y8, w, uv8, w * 2, dy8, w, du8, hw, dv8, hw, w, INT_MIN));
+  EXPECT_EQ(0, NV24ToI420(NULL, INT_MIN, uv8, INT_MIN, NULL, 0, du8, hw, dv8,
+                          hw, w, -1));
+
+  EXPECT_EQ(-1, NV24ToNV16(y8, w, uv8, w * 2, dy8, w, duv8, w, INT_MAX, 0));
+  EXPECT_EQ(-1, NV24ToNV16(y8, w, uv8, w * 2, dy8, w, NULL, w, INT_MAX, 2));
+  EXPECT_EQ(-1, NV24ToNV16(y8, w, uv8, w * 2, dy8, w, duv8, w, w, INT_MIN));
+  EXPECT_EQ(0,
+            NV24ToNV16(NULL, INT_MIN, uv8, INT_MIN, NULL, 0, duv8, w, w, -1));
+
+  EXPECT_EQ(-1, NV16ToNV12(y8, w, uv8, w, dy8, w, duv8, w, INT_MAX, 2));
+  EXPECT_EQ(-1, NV16ToNV12(y8, w, uv8, w, dy8, w, duv8, w, w, INT_MIN));
+  EXPECT_EQ(0,
+            NV16ToNV12(NULL, INT_MIN, uv8, INT_MIN, NULL, 0, duv8, w, w, -1));
+
+  EXPECT_EQ(-1, NV24ToNV12(y8, w, uv8, w * 2, dy8, w, duv8, w, INT_MAX, 0));
+  EXPECT_EQ(-1, NV24ToNV12(y8, w, uv8, w * 2, dy8, w, NULL, w, INT_MAX, 2));
+  EXPECT_EQ(-1, NV24ToNV12(y8, w, uv8, w * 2, dy8, w, duv8, w, w, INT_MIN));
+  EXPECT_EQ(0,
+            NV24ToNV12(NULL, INT_MIN, uv8, INT_MIN, NULL, 0, duv8, w, w, -1));
+
+  EXPECT_EQ(-1, I410ToI210(y16, w, u16, w, v16, w, dy16, w, du16, hw, dv16, hw,
+                           INT_MAX, 0));
+  EXPECT_EQ(-1, I410ToI210(y16, w, u16, w, v16, w, dy16, w, NULL, hw, dv16, hw,
+                           INT_MAX, 2));
+  EXPECT_EQ(0, I410ToI210(NULL, INT_MIN, u16, INT_MIN, v16, INT_MIN, NULL, 0,
+                          du16, hw, dv16, hw, w, -1));
+  EXPECT_EQ(0, I410ToI010(NULL, INT_MIN, u16, INT_MIN, v16, INT_MIN, NULL, 0,
+                          du16, hw, dv16, hw, w, -1));
+  EXPECT_EQ(0, I210ToI010(NULL, INT_MIN, u16, INT_MIN, v16, INT_MIN, NULL, 0,
+                          du16, hw, dv16, hw, w, -1));
+
+  EXPECT_EQ(-1, P410ToP210(y16, w, uv16, w * 2, dy16, w, duv16, w, INT_MAX, 0));
+  EXPECT_EQ(-1, P410ToP210(y16, w, uv16, w * 2, dy16, w, NULL, w, INT_MAX, 2));
+  EXPECT_EQ(0,
+            P410ToP210(NULL, INT_MIN, uv16, INT_MIN, NULL, 0, duv16, w, w, -1));
+  EXPECT_EQ(-1, P210ToP010(y16, w, uv16, w, dy16, w, duv16, w, INT_MAX, 2));
+  EXPECT_EQ(0,
+            P210ToP010(NULL, INT_MIN, uv16, INT_MIN, NULL, 0, duv16, w, w, -1));
+  EXPECT_EQ(-1, P410ToP010(y16, w, uv16, w * 2, dy16, w, duv16, w, INT_MAX, 0));
+  EXPECT_EQ(-1, P410ToP010(y16, w, uv16, w * 2, dy16, w, NULL, w, INT_MAX, 2));
+  EXPECT_EQ(0,
+            P410ToP010(NULL, INT_MIN, uv16, INT_MIN, NULL, 0, duv16, w, w, -1));
+
+  free_aligned_buffer_page_end(y8);
+  free_aligned_buffer_page_end(u8);
+  free_aligned_buffer_page_end(v8);
+  free_aligned_buffer_page_end(uv8);
+  free_aligned_buffer_page_end(dy8);
+  free_aligned_buffer_page_end(du8);
+  free_aligned_buffer_page_end(dv8);
+  free_aligned_buffer_page_end(duv8);
+  free_aligned_buffer_page_end_16(y16);
+  free_aligned_buffer_page_end_16(u16);
+  free_aligned_buffer_page_end_16(v16);
+  free_aligned_buffer_page_end_16(uv16);
+  free_aligned_buffer_page_end_16(dy16);
+  free_aligned_buffer_page_end_16(du16);
+  free_aligned_buffer_page_end_16(dv16);
+  free_aligned_buffer_page_end_16(duv16);
 }
 
 #endif  // !defined(LEAN_TESTS)

@@ -30,7 +30,28 @@ extern "C" {
 
 struct ArgbConstants;
 
+// Convert I444 to I422.
+#define J444ToJ422 I444ToI422
+#define H444ToH422 I444ToI422
+LIBYUV_API
+int I444ToI422(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
 // Convert I444 to I420.
+#define J444ToJ420 I444ToI420
+#define H444ToH420 I444ToI420
 LIBYUV_API
 int I444ToI420(const uint8_t* src_y,
                int src_stride_y,
@@ -78,6 +99,8 @@ int I444ToNV21(const uint8_t* src_y,
                int height);
 
 // Convert I422 to I420.
+#define J422ToJ420 I422ToI420
+#define H422ToH420 I422ToI420
 LIBYUV_API
 int I422ToI420(const uint8_t* src_y,
                int src_stride_y,
@@ -179,6 +202,21 @@ int MT2TToP010(const uint8_t* src_y,
                uint16_t* dst_y,
                int dst_stride_y,
                uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert I422 to NV12.
+LIBYUV_API
+int I422ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
                int dst_stride_uv,
                int width,
                int height);
@@ -434,6 +472,25 @@ int P010ToNV12(const uint16_t* src_y,
                int dst_stride_y,
                uint8_t* dst_uv,
                int dst_stride_uv,
+               int width,
+               int height);
+
+#define I412ToI212 I410ToI210
+#define H410ToH210 I410ToI210
+#define H412ToH212 I410ToI210
+LIBYUV_API
+int I410ToI210(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
                int width,
                int height);
 
@@ -693,6 +750,36 @@ int NV21ToI420(const uint8_t* src_y,
                int width,
                int height);
 
+// Convert NV16 to I420.
+LIBYUV_API
+int NV16ToI420(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+// Convert NV24 to I420.
+LIBYUV_API
+int NV24ToI420(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
 // Convert NV12 to NV24.
 LIBYUV_API
 int NV12ToNV24(const uint8_t* src_y,
@@ -709,6 +796,45 @@ int NV12ToNV24(const uint8_t* src_y,
 // Convert NV16 to NV24.
 LIBYUV_API
 int NV16ToNV24(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert NV24 to NV16.
+LIBYUV_API
+int NV24ToNV16(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert NV16 to NV12.
+LIBYUV_API
+int NV16ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert NV24 to NV12.
+LIBYUV_API
+int NV24ToNV12(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_uv,
                int src_stride_uv,
@@ -861,6 +987,63 @@ int P210ToP410(const uint16_t* src_y,
 
 // Convert P216 to P416.
 #define P216ToP416 P210ToP410
+
+// Convert P410 to P210.
+LIBYUV_API
+int P410ToP210(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert P412 to P212.
+#define P412ToP212 P410ToP210
+
+// Convert P416 to P216.
+#define P416ToP216 P410ToP210
+
+// Convert P210 to P010.
+LIBYUV_API
+int P210ToP010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert P212 to P012.
+#define P212ToP012 P210ToP010
+
+// Convert P216 to P016.
+#define P216ToP016 P210ToP010
+
+// Convert P410 to P010.
+LIBYUV_API
+int P410ToP010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert P412 to P012.
+#define P412ToP012 P410ToP010
+
+// Convert P416 to P016.
+#define P416ToP016 P410ToP010
 
 // Convert YUY2 to I420.
 LIBYUV_API

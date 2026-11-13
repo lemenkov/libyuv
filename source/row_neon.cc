@@ -3780,6 +3780,220 @@ void HalfRow_NEON(const uint8_t* src_uv,
       : "memory", "cc", "q0", "q1", "q2", "q3");
 }
 
+void HalfRow_16_NEON(const uint16_t* src_uv,
+                     ptrdiff_t src_uv_stride,
+                     uint16_t* dst_uv,
+                     int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      "1:                                        \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"
+      "vld1.16     {q2, q3}, [%1]!               \n"
+      "subs        %3, %3, #16                   \n"
+      "vrhadd.u16  q0, q0, q2                    \n"
+      "vrhadd.u16  q1, q1, q3                    \n"
+      "vst1.16     {q0, q1}, [%2]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfWidthRow_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"
+      "vld1.8      {q2, q3}, [%0]!               \n"
+      "subs        %2, %2, #32                   \n"
+      "vuzp.8      q0, q1                        \n"
+      "vuzp.8      q2, q3                        \n"
+      "vrhadd.u8   q0, q0, q1                    \n"
+      "vrhadd.u8   q1, q2, q3                    \n"
+      "vst1.8      {q0, q1}, [%1]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),  // %0
+        "+r"(dst_ptr),  // %1
+        "+r"(width)     // %2
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfWidthRow_16_NEON(const uint16_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"
+      "vld1.16     {q2, q3}, [%0]!               \n"
+      "subs        %2, %2, #16                   \n"
+      "vuzp.16     q0, q1                        \n"
+      "vuzp.16     q2, q3                        \n"
+      "vrhadd.u16  q0, q0, q1                    \n"
+      "vrhadd.u16  q1, q2, q3                    \n"
+      "vst1.16     {q0, q1}, [%1]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),  // %0
+        "+r"(dst_ptr),  // %1
+        "+r"(width)     // %2
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfWidthUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"
+      "vld1.8      {q2, q3}, [%0]!               \n"
+      "subs        %2, %2, #16                   \n"
+      "vuzp.16     q0, q1                        \n"
+      "vuzp.16     q2, q3                        \n"
+      "vrhadd.u8   q0, q0, q1                    \n"
+      "vrhadd.u8   q1, q2, q3                    \n"
+      "vst1.8      {q0, q1}, [%1]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_uv),  // %1
+        "+r"(width)    // %2
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfWidthUVRow_16_NEON(const uint16_t* src_uv,
+                            uint16_t* dst_uv,
+                            int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"
+      "vld1.16     {q2, q3}, [%0]!               \n"
+      "subs        %2, %2, #8                    \n"
+      "vuzp.32     q0, q1                        \n"
+      "vuzp.32     q2, q3                        \n"
+      "vrhadd.u16  q0, q0, q1                    \n"
+      "vrhadd.u16  q1, q2, q3                    \n"
+      "vst1.16     {q0, q1}, [%1]!               \n"
+      "bgt         1b                            \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_uv),  // %1
+        "+r"(width)    // %2
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfBoxRow_NEON(const uint8_t* src_ptr,
+                     ptrdiff_t src_stride,
+                     uint8_t* dst_ptr,
+                     int width) {
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  asm volatile(
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"
+      "vld1.8      {q2, q3}, [%1]!               \n"
+      "subs        %3, %3, #16                   \n"
+      "vpaddl.u8   q0, q0                        \n"
+      "vpaddl.u8   q1, q1                        \n"
+      "vpadal.u8   q0, q2                        \n"
+      "vpadal.u8   q1, q3                        \n"
+      "vrshrn.u16  d0, q0, #2                    \n"
+      "vrshrn.u16  d1, q1, #2                    \n"
+      "vst1.8      {q0}, [%2]!                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_ptr1),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(width)      // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfBoxRow_16_NEON(const uint16_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint16_t* dst_ptr,
+                        int width) {
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  asm volatile(
+      "1:                                        \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"
+      "vld1.16     {q2, q3}, [%1]!               \n"
+      "subs        %3, %3, #8                    \n"
+      "vpaddl.u16  q0, q0                        \n"
+      "vpaddl.u16  q1, q1                        \n"
+      "vpadal.u16  q0, q2                        \n"
+      "vpadal.u16  q1, q3                        \n"
+      "vrshrn.u32  d0, q0, #2                    \n"
+      "vrshrn.u32  d1, q1, #2                    \n"
+      "vst1.16     {q0}, [%2]!                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_ptr1),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(width)      // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfBoxUVRow_NEON(const uint8_t* src_uv,
+                       ptrdiff_t src_stride_uv,
+                       uint8_t* dst_uv,
+                       int width) {
+  const uint8_t* src_uv1 = src_uv + src_stride_uv;
+  asm volatile(
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"
+      "vuzp.16     q0, q1                        \n"
+      "vaddl.u8    q2, d0, d2                    \n"
+      "vaddl.u8    q3, d1, d3                    \n"
+      "vld1.8      {q0, q1}, [%1]!               \n"
+      "subs        %3, %3, #8                    \n"
+      "vuzp.16     q0, q1                        \n"
+      "vaddw.u8    q2, q2, d0                    \n"
+      "vaddw.u8    q3, q3, d1                    \n"
+      "vaddw.u8    q2, q2, d2                    \n"
+      "vaddw.u8    q3, q3, d3                    \n"
+      "vrshrn.u16  d0, q2, #2                    \n"
+      "vrshrn.u16  d1, q3, #2                    \n"
+      "vst1.8      {q0}, [%2]!                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
+void HalfBoxUVRow_16_NEON(const uint16_t* src_uv,
+                          ptrdiff_t src_stride_uv,
+                          uint16_t* dst_uv,
+                          int width) {
+  const uint16_t* src_uv1 = src_uv + src_stride_uv;
+  asm volatile(
+      "1:                                        \n"
+      "vld1.16     {q0, q1}, [%0]!               \n"
+      "vuzp.32     q0, q1                        \n"
+      "vaddl.u16   q2, d0, d2                    \n"
+      "vaddl.u16   q3, d1, d3                    \n"
+      "vld1.16     {q0, q1}, [%1]!               \n"
+      "subs        %3, %3, #4                    \n"
+      "vuzp.32     q0, q1                        \n"
+      "vaddw.u16   q2, q2, d0                    \n"
+      "vaddw.u16   q3, q3, d1                    \n"
+      "vaddw.u16   q2, q2, d2                    \n"
+      "vaddw.u16   q3, q3, d3                    \n"
+      "vrshrn.u32  d0, q2, #2                    \n"
+      "vrshrn.u32  d1, q3, #2                    \n"
+      "vst1.16     {q0}, [%2]!                   \n"
+      "bgt         1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "q0", "q1", "q2", "q3");
+}
+
 void HalfUVRow_NEON(const uint8_t* src_u,
                     ptrdiff_t src_stride_u,
                     const uint8_t* src_v,

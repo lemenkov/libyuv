@@ -299,6 +299,374 @@ void HalfRow_HVX(const uint8_t* src_uv,
   }
 }
 
+void HalfRow_16_HVX(const uint16_t* src_uv,
+                    ptrdiff_t src_uv_stride,
+                    uint16_t* dst_uv,
+                    int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  while (width >= 64) {
+    HVX_Vector s0 = vloadu(src_uv);
+    HVX_Vector s1 = vloadu(src_uv1);
+    vstoreu(dst_uv, Q6_Vuh_vavg_VuhVuh_rnd(s0, s1));
+    src_uv += 64;
+    src_uv1 += 64;
+    dst_uv += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    int bytes = width * 2;
+    HVX_Vector s0 = vloadu_partial_zero(src_uv, bytes);
+    HVX_Vector s1 = vloadu_partial_zero(src_uv1, bytes);
+    vstoreu_partial(dst_uv, Q6_Vuh_vavg_VuhVuh_rnd(s0, s1), bytes);
+  }
+}
+
+void HalfWidthRow_HVX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  while (width > 0) {
+    int w = width >= 128 ? 128 : width;
+    int src_bytes = w * 2;
+    HVX_Vector s0 =
+        vloadu_partial_zero(src_ptr, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(src_ptr + 128, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair d = Q6_W_vdeal_VVR(s1, s0, -1);
+    HVX_Vector avg = Q6_Vub_vavg_VubVub_rnd(Q6_V_lo_W(d), Q6_V_hi_W(d));
+    vstoreu_partial(dst_ptr, avg, w);
+    src_ptr += 256;
+    dst_ptr += 128;
+    width -= 128;
+  }
+}
+
+void HalfWidthRow_Odd_HVX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfWidthRow_HVX(src_ptr, dst_ptr, width);
+    src_ptr += (ptrdiff_t)width * 2;
+    dst_ptr += width;
+  }
+  dst_ptr[0] = src_ptr[0];
+}
+
+void HalfWidthRow_16_HVX(const uint16_t* src_ptr,
+                         uint16_t* dst_ptr,
+                         int width) {
+  while (width > 0) {
+    int w = width >= 64 ? 64 : width;
+    int src_bytes = w * 4;
+    HVX_Vector s0 =
+        vloadu_partial_zero(src_ptr, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(src_ptr + 64, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair d = Q6_W_vdeal_VVR(s1, s0, -2);
+    HVX_Vector avg = Q6_Vuh_vavg_VuhVuh_rnd(Q6_V_lo_W(d), Q6_V_hi_W(d));
+    vstoreu_partial(dst_ptr, avg, w * 2);
+    src_ptr += 128;
+    dst_ptr += 64;
+    width -= 64;
+  }
+}
+
+void HalfWidthRow_16_Odd_HVX(const uint16_t* src_ptr,
+                             uint16_t* dst_ptr,
+                             int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfWidthRow_16_HVX(src_ptr, dst_ptr, width);
+    src_ptr += (ptrdiff_t)width * 2;
+    dst_ptr += width;
+  }
+  dst_ptr[0] = src_ptr[0];
+}
+
+void HalfWidthUVRow_HVX(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  while (width > 0) {
+    int w = width >= 64 ? 64 : width;
+    int src_bytes = w * 4;
+    HVX_Vector s0 =
+        vloadu_partial_zero(src_uv, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(src_uv + 128, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair d = Q6_W_vdeal_VVR(s1, s0, -2);
+    HVX_Vector avg = Q6_Vub_vavg_VubVub_rnd(Q6_V_lo_W(d), Q6_V_hi_W(d));
+    vstoreu_partial(dst_uv, avg, w * 2);
+    src_uv += 256;
+    dst_uv += 128;
+    width -= 64;
+  }
+}
+
+void HalfWidthUVRow_Odd_HVX(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfWidthUVRow_HVX(src_uv, dst_uv, width);
+    src_uv += (ptrdiff_t)width * 4;
+    dst_uv += (ptrdiff_t)width * 2;
+  }
+  dst_uv[0] = src_uv[0];
+  dst_uv[1] = src_uv[1];
+}
+
+void HalfWidthUVRow_16_HVX(const uint16_t* src_uv,
+                           uint16_t* dst_uv,
+                           int width) {
+  while (width > 0) {
+    int w = width >= 32 ? 32 : width;
+    int src_bytes = w * 8;
+    HVX_Vector s0 =
+        vloadu_partial_zero(src_uv, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(src_uv + 64, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair d = Q6_W_vdeal_VVR(s1, s0, -4);
+    HVX_Vector avg = Q6_Vuh_vavg_VuhVuh_rnd(Q6_V_lo_W(d), Q6_V_hi_W(d));
+    vstoreu_partial(dst_uv, avg, w * 4);
+    src_uv += 128;
+    dst_uv += 64;
+    width -= 32;
+  }
+}
+
+void HalfWidthUVRow_16_Odd_HVX(const uint16_t* src_uv,
+                               uint16_t* dst_uv,
+                               int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfWidthUVRow_16_HVX(src_uv, dst_uv, width);
+    src_uv += (ptrdiff_t)width * 4;
+    dst_uv += (ptrdiff_t)width * 2;
+  }
+  dst_uv[0] = src_uv[0];
+  dst_uv[1] = src_uv[1];
+}
+
+void HalfBoxRow_HVX(const uint8_t* src_ptr,
+                    ptrdiff_t src_stride,
+                    uint8_t* dst_ptr,
+                    int width) {
+  const uint8_t* s = src_ptr;
+  const uint8_t* t = src_ptr + src_stride;
+  const int32_t kOnes = 0x01010101;
+  HVX_Vector vtwo = Q6_Vh_vsplat_R(2);
+  while (width > 0) {
+    int w = width >= 128 ? 128 : width;
+    int src_bytes = w * 2;
+    HVX_Vector s0 = vloadu_partial_zero(s, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector t0 = vloadu_partial_zero(t, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector sum0 = Q6_Vh_vdmpy_VubRb(s0, kOnes);
+    sum0 = Q6_Vh_vdmpyacc_VhVubRb(sum0, t0, kOnes);
+    sum0 = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sum0, vtwo), 2);
+
+    HVX_Vector sum1 = Q6_V_vzero();
+    if (src_bytes > 128) {
+      HVX_Vector s1 = vloadu_partial_zero(s + 128, src_bytes - 128);
+      HVX_Vector t1 = vloadu_partial_zero(t + 128, src_bytes - 128);
+      sum1 = Q6_Vh_vdmpy_VubRb(s1, kOnes);
+      sum1 = Q6_Vh_vdmpyacc_VhVubRb(sum1, t1, kOnes);
+      sum1 = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sum1, vtwo), 2);
+    }
+    HVX_Vector out = Q6_Vub_vpack_VhVh_sat(sum1, sum0);
+    vstoreu_partial(dst_ptr, out, w);
+    s += 256;
+    t += 256;
+    dst_ptr += 128;
+    width -= 128;
+  }
+}
+
+void HalfBoxRow_Odd_HVX(const uint8_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint8_t* dst_ptr,
+                        int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfBoxRow_HVX(src_ptr, src_stride, dst_ptr, width);
+    src_ptr += (ptrdiff_t)width * 2;
+    dst_ptr += width;
+  }
+  const uint8_t* t = src_ptr + src_stride;
+  dst_ptr[0] = (uint8_t)((src_ptr[0] + t[0] + 1) >> 1);
+}
+
+void HalfBoxRow_16_HVX(const uint16_t* src_ptr,
+                       ptrdiff_t src_stride,
+                       uint16_t* dst_ptr,
+                       int width) {
+  const uint16_t* s = src_ptr;
+  const uint16_t* t = src_ptr + src_stride;
+  HVX_Vector vtwo = Q6_V_vsplat_R(2);
+  while (width > 0) {
+    int w = width >= 64 ? 64 : width;
+    int src_bytes = w * 4;
+    HVX_Vector s0 = vloadu_partial_zero(s, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector t0 = vloadu_partial_zero(t, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(s + 64, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_Vector t1 = src_bytes > 128
+                        ? vloadu_partial_zero(t + 64, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair ds = Q6_W_vdeal_VVR(s1, s0, -2);
+    HVX_VectorPair dt = Q6_W_vdeal_VVR(t1, t0, -2);
+    HVX_VectorPair s_even = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(ds));
+    HVX_VectorPair s_odd = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(ds));
+    HVX_VectorPair t_even = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(dt));
+    HVX_VectorPair t_odd = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(dt));
+
+    HVX_Vector sum_lo = Q6_Vw_vadd_VwVw(Q6_V_lo_W(s_even), Q6_V_lo_W(s_odd));
+    sum_lo = Q6_Vw_vadd_VwVw(sum_lo, Q6_V_lo_W(t_even));
+    sum_lo = Q6_Vw_vadd_VwVw(sum_lo, Q6_V_lo_W(t_odd));
+    sum_lo = Q6_Vw_vasr_VwR(Q6_Vw_vadd_VwVw(sum_lo, vtwo), 2);
+
+    HVX_Vector sum_hi = Q6_Vw_vadd_VwVw(Q6_V_hi_W(s_even), Q6_V_hi_W(s_odd));
+    sum_hi = Q6_Vw_vadd_VwVw(sum_hi, Q6_V_hi_W(t_even));
+    sum_hi = Q6_Vw_vadd_VwVw(sum_hi, Q6_V_hi_W(t_odd));
+    sum_hi = Q6_Vw_vasr_VwR(Q6_Vw_vadd_VwVw(sum_hi, vtwo), 2);
+
+    HVX_Vector out = Q6_Vuh_vpack_VwVw_sat(sum_hi, sum_lo);
+    vstoreu_partial(dst_ptr, out, w * 2);
+    s += 128;
+    t += 128;
+    dst_ptr += 64;
+    width -= 64;
+  }
+}
+
+void HalfBoxRow_16_Odd_HVX(const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           uint16_t* dst_ptr,
+                           int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfBoxRow_16_HVX(src_ptr, src_stride, dst_ptr, width);
+    src_ptr += (ptrdiff_t)width * 2;
+    dst_ptr += width;
+  }
+  const uint16_t* t = src_ptr + src_stride;
+  dst_ptr[0] = (uint16_t)(((uint32_t)src_ptr[0] + (uint32_t)t[0] + 1u) >> 1);
+}
+
+void HalfBoxUVRow_HVX(const uint8_t* src_uv,
+                      ptrdiff_t src_stride_uv,
+                      uint8_t* dst_uv,
+                      int width) {
+  const uint8_t* s = src_uv;
+  const uint8_t* t = src_uv + src_stride_uv;
+  HVX_Vector vtwo = Q6_Vh_vsplat_R(2);
+  while (width > 0) {
+    int w = width >= 64 ? 64 : width;
+    int src_bytes = w * 4;
+    HVX_Vector s0 = vloadu_partial_zero(s, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector t0 = vloadu_partial_zero(t, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(s + 128, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_Vector t1 = src_bytes > 128
+                        ? vloadu_partial_zero(t + 128, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair ds = Q6_W_vdeal_VVR(s1, s0, -2);
+    HVX_VectorPair dt = Q6_W_vdeal_VVR(t1, t0, -2);
+    HVX_VectorPair s_even = Q6_Wuh_vunpack_Vub(Q6_V_lo_W(ds));
+    HVX_VectorPair s_odd = Q6_Wuh_vunpack_Vub(Q6_V_hi_W(ds));
+    HVX_VectorPair t_even = Q6_Wuh_vunpack_Vub(Q6_V_lo_W(dt));
+    HVX_VectorPair t_odd = Q6_Wuh_vunpack_Vub(Q6_V_hi_W(dt));
+
+    HVX_Vector sum_lo = Q6_Vh_vadd_VhVh(Q6_V_lo_W(s_even), Q6_V_lo_W(s_odd));
+    sum_lo = Q6_Vh_vadd_VhVh(sum_lo, Q6_V_lo_W(t_even));
+    sum_lo = Q6_Vh_vadd_VhVh(sum_lo, Q6_V_lo_W(t_odd));
+    sum_lo = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sum_lo, vtwo), 2);
+
+    HVX_Vector sum_hi = Q6_Vh_vadd_VhVh(Q6_V_hi_W(s_even), Q6_V_hi_W(s_odd));
+    sum_hi = Q6_Vh_vadd_VhVh(sum_hi, Q6_V_hi_W(t_even));
+    sum_hi = Q6_Vh_vadd_VhVh(sum_hi, Q6_V_hi_W(t_odd));
+    sum_hi = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sum_hi, vtwo), 2);
+
+    HVX_Vector out = Q6_Vub_vpack_VhVh_sat(sum_hi, sum_lo);
+    vstoreu_partial(dst_uv, out, w * 2);
+    s += 256;
+    t += 256;
+    dst_uv += 128;
+    width -= 64;
+  }
+}
+
+void HalfBoxUVRow_Odd_HVX(const uint8_t* src_uv,
+                          ptrdiff_t src_stride_uv,
+                          uint8_t* dst_uv,
+                          int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfBoxUVRow_HVX(src_uv, src_stride_uv, dst_uv, width);
+    src_uv += (ptrdiff_t)width * 4;
+    dst_uv += (ptrdiff_t)width * 2;
+  }
+  const uint8_t* t_uv = src_uv + src_stride_uv;
+  dst_uv[0] = (uint8_t)((src_uv[0] + t_uv[0] + 1) >> 1);
+  dst_uv[1] = (uint8_t)((src_uv[1] + t_uv[1] + 1) >> 1);
+}
+
+void HalfBoxUVRow_16_HVX(const uint16_t* src_uv,
+                         ptrdiff_t src_stride_uv,
+                         uint16_t* dst_uv,
+                         int width) {
+  const uint16_t* s = src_uv;
+  const uint16_t* t = src_uv + src_stride_uv;
+  HVX_Vector vtwo = Q6_V_vsplat_R(2);
+  while (width > 0) {
+    int w = width >= 32 ? 32 : width;
+    int src_bytes = w * 8;
+    HVX_Vector s0 = vloadu_partial_zero(s, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector t0 = vloadu_partial_zero(t, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 = src_bytes > 128
+                        ? vloadu_partial_zero(s + 64, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_Vector t1 = src_bytes > 128
+                        ? vloadu_partial_zero(t + 64, src_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_VectorPair ds = Q6_W_vdeal_VVR(s1, s0, -4);
+    HVX_VectorPair dt = Q6_W_vdeal_VVR(t1, t0, -4);
+    HVX_VectorPair s_even = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(ds));
+    HVX_VectorPair s_odd = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(ds));
+    HVX_VectorPair t_even = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(dt));
+    HVX_VectorPair t_odd = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(dt));
+
+    HVX_Vector sum_lo = Q6_Vw_vadd_VwVw(Q6_V_lo_W(s_even), Q6_V_lo_W(s_odd));
+    sum_lo = Q6_Vw_vadd_VwVw(sum_lo, Q6_V_lo_W(t_even));
+    sum_lo = Q6_Vw_vadd_VwVw(sum_lo, Q6_V_lo_W(t_odd));
+    sum_lo = Q6_Vw_vasr_VwR(Q6_Vw_vadd_VwVw(sum_lo, vtwo), 2);
+
+    HVX_Vector sum_hi = Q6_Vw_vadd_VwVw(Q6_V_hi_W(s_even), Q6_V_hi_W(s_odd));
+    sum_hi = Q6_Vw_vadd_VwVw(sum_hi, Q6_V_hi_W(t_even));
+    sum_hi = Q6_Vw_vadd_VwVw(sum_hi, Q6_V_hi_W(t_odd));
+    sum_hi = Q6_Vw_vasr_VwR(Q6_Vw_vadd_VwVw(sum_hi, vtwo), 2);
+
+    HVX_Vector out = Q6_Vuh_vpack_VwVw_sat(sum_hi, sum_lo);
+    vstoreu_partial(dst_uv, out, w * 4);
+    s += 128;
+    t += 128;
+    dst_uv += 64;
+    width -= 32;
+  }
+}
+
+void HalfBoxUVRow_16_Odd_HVX(const uint16_t* src_uv,
+                             ptrdiff_t src_stride_uv,
+                             uint16_t* dst_uv,
+                             int width) {
+  width -= 1;
+  if (width > 0) {
+    HalfBoxUVRow_16_HVX(src_uv, src_stride_uv, dst_uv, width);
+    src_uv += (ptrdiff_t)width * 4;
+    dst_uv += (ptrdiff_t)width * 2;
+  }
+  const uint16_t* t_uv = src_uv + src_stride_uv;
+  dst_uv[0] = (uint16_t)(((uint32_t)src_uv[0] + (uint32_t)t_uv[0] + 1u) >> 1);
+  dst_uv[1] = (uint16_t)(((uint32_t)src_uv[1] + (uint32_t)t_uv[1] + 1u) >> 1);
+}
+
 void HalfUVRow_HVX(const uint8_t* src_u,
                    ptrdiff_t src_stride_u,
                    const uint8_t* src_v,
@@ -1147,6 +1515,81 @@ void HalfRow_16To8_HVX(const uint16_t* src_uv,
     dst_uv += 128;
     width -= 128;
   }
+}
+
+// 2x2 box filter of two pairs of 16 bit source vectors, scaled:
+// (((s[0] + s[1] + t[0] + t[1] + 2) >> 2) * scale) >> 16.
+// Returns 64 results as 16 bit lanes: the 32 results of s0/t0 in the even
+// lanes and the 32 results of s1/t1 in the odd lanes.
+static __inline HVX_Vector HalfWidth16To8_HVX(HVX_Vector s0,
+                                              HVX_Vector s1,
+                                              HVX_Vector t0,
+                                              HVX_Vector t1,
+                                              HVX_Vector vscale) {
+  // Widening vertical add: even columns in lo, odd columns in hi.
+  HVX_VectorPair c0 = Q6_Ww_vadd_VuhVuh(s0, t0);
+  HVX_VectorPair c1 = Q6_Ww_vadd_VuhVuh(s1, t1);
+  HVX_Vector sum0 = Q6_Vw_vadd_VwVw(Q6_V_lo_W(c0), Q6_V_hi_W(c0));
+  HVX_Vector sum1 = Q6_Vw_vadd_VwVw(Q6_V_lo_W(c1), Q6_V_hi_W(c1));
+  // (sum + 2) >> 2 narrowed to 16 bit: sum0 to even lanes, sum1 to odd lanes.
+  HVX_Vector avg = Q6_Vuh_vasr_VwVwR_rnd_sat(sum1, sum0, 2);
+  return Q6_Vuh_vmpy_VuhVuh_rs16(avg, vscale);
+}
+
+// scale is 1 << (24 - depth) and must not exceed 32768 (depth 9 or more).
+void HalfWidthRow_16To8_HVX(const uint16_t* src_uv,
+                            ptrdiff_t src_uv_stride,
+                            uint8_t* dst_uv,
+                            int scale,
+                            int width) {
+  const uint8_t* s = (const uint8_t*)src_uv;
+  const uint8_t* t = (const uint8_t*)(src_uv + src_uv_stride);
+  HVX_Vector vscale = Q6_Vh_vsplat_R(scale);
+  // Each 128 byte source vector makes 32 pixels.  Vectors 0 and 2 are paired
+  // and vectors 1 and 3 are paired, so that after packing to bytes a single
+  // deal of even and odd bytes puts the 128 pixels in order.
+  while (width >= 128) {
+    HVX_Vector h0 = HalfWidth16To8_HVX(vloadu(s), vloadu(s + 256), vloadu(t),
+                                       vloadu(t + 256), vscale);
+    HVX_Vector h1 =
+        HalfWidth16To8_HVX(vloadu(s + 128), vloadu(s + 384), vloadu(t + 128),
+                           vloadu(t + 384), vscale);
+    vstoreu(dst_uv, Q6_Vb_vdeal_Vb(Q6_Vub_vpack_VhVh_sat(h1, h0)));
+    s += 512;
+    t += 512;
+    dst_uv += 128;
+    width -= 128;
+  }
+  if (width > 0) {
+    // Source bytes per row.  vloadu_partial_zero() returns zero without
+    // reading when its length is 0 or less.
+    int n = width * 4;
+    HVX_Vector h0 = HalfWidth16To8_HVX(
+        vloadu_partial_zero(s, n), vloadu_partial_zero(s + 256, n - 256),
+        vloadu_partial_zero(t, n), vloadu_partial_zero(t + 256, n - 256),
+        vscale);
+    HVX_Vector h1 =
+        HalfWidth16To8_HVX(vloadu_partial_zero(s + 128, n - 128),
+                           vloadu_partial_zero(s + 384, n - 384),
+                           vloadu_partial_zero(t + 128, n - 128),
+                           vloadu_partial_zero(t + 384, n - 384), vscale);
+    vstoreu_partial(dst_uv, Q6_Vb_vdeal_Vb(Q6_Vub_vpack_VhVh_sat(h1, h0)),
+                    width);
+  }
+}
+
+void HalfWidthRow_16To8_Odd_HVX(const uint16_t* src_uv,
+                                ptrdiff_t src_uv_stride,
+                                uint8_t* dst_uv,
+                                int scale,
+                                int width) {
+  int n = width - 1;
+  if (n > 0) {
+    HalfWidthRow_16To8_HVX(src_uv, src_uv_stride, dst_uv, scale, n);
+    src_uv += (ptrdiff_t)n * 2;
+    dst_uv += n;
+  }
+  HalfWidthRow_16To8_Odd_C(src_uv, src_uv_stride, dst_uv, scale, 1);
 }
 
 void YUY2ToYRow_HVX(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {

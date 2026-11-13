@@ -5359,6 +5359,8 @@ void HalfRow_NEON(const uint8_t* src_uv,
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"
       "subs        %w3, %w3, #32                 \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
       "urhadd      v0.16b, v0.16b, v2.16b        \n"
       "urhadd      v1.16b, v1.16b, v3.16b        \n"
       "stp         q0, q1, [%2], #32             \n"
@@ -5369,6 +5371,247 @@ void HalfRow_NEON(const uint8_t* src_uv,
         "+r"(width)     // %3
       :
       : "memory", "cc", "v0", "v1", "v2", "v3");
+}
+
+void HalfRow_16_NEON(const uint16_t* src_uv,
+                     ptrdiff_t src_uv_stride,
+                     uint16_t* dst_uv,
+                     int width) {
+  const uint16_t* src_uv1 = src_uv + src_uv_stride;
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
+      "subs        %w3, %w3, #16                 \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "urhadd      v0.8h, v0.8h, v2.8h           \n"
+      "urhadd      v1.8h, v1.8h, v3.8h           \n"
+      "stp         q0, q1, [%2], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+}
+
+void HalfWidthRow_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%0], #32             \n"
+      "subs        %w2, %w2, #32                 \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uzp1        v4.16b, v0.16b, v1.16b        \n"
+      "uzp2        v0.16b, v0.16b, v1.16b        \n"
+      "uzp1        v5.16b, v2.16b, v3.16b        \n"
+      "uzp2        v2.16b, v2.16b, v3.16b        \n"
+      "urhadd      v0.16b, v4.16b, v0.16b        \n"
+      "urhadd      v1.16b, v5.16b, v2.16b        \n"
+      "stp         q0, q1, [%1], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),  // %0
+        "+r"(dst_ptr),  // %1
+        "+r"(width)     // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5");
+}
+
+void HalfWidthRow_16_NEON(const uint16_t* src_ptr,
+                          uint16_t* dst_ptr,
+                          int width) {
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%0], #32             \n"
+      "subs        %w2, %w2, #16                 \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uzp1        v4.8h, v0.8h, v1.8h           \n"
+      "uzp2        v0.8h, v0.8h, v1.8h           \n"
+      "uzp1        v5.8h, v2.8h, v3.8h           \n"
+      "uzp2        v2.8h, v2.8h, v3.8h           \n"
+      "urhadd      v0.8h, v4.8h, v0.8h           \n"
+      "urhadd      v1.8h, v5.8h, v2.8h           \n"
+      "stp         q0, q1, [%1], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),  // %0
+        "+r"(dst_ptr),  // %1
+        "+r"(width)     // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5");
+}
+
+void HalfWidthUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%0], #32             \n"
+      "subs        %w2, %w2, #16                 \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uzp1        v4.8h, v0.8h, v1.8h           \n"
+      "uzp2        v0.8h, v0.8h, v1.8h           \n"
+      "uzp1        v5.8h, v2.8h, v3.8h           \n"
+      "uzp2        v2.8h, v2.8h, v3.8h           \n"
+      "urhadd      v0.16b, v4.16b, v0.16b        \n"
+      "urhadd      v1.16b, v5.16b, v2.16b        \n"
+      "stp         q0, q1, [%1], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_uv),  // %1
+        "+r"(width)    // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5");
+}
+
+void HalfWidthUVRow_16_NEON(const uint16_t* src_uv,
+                            uint16_t* dst_uv,
+                            int width) {
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%0], #32             \n"
+      "subs        %w2, %w2, #8                  \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "uzp1        v4.4s, v0.4s, v1.4s           \n"
+      "uzp2        v0.4s, v0.4s, v1.4s           \n"
+      "uzp1        v5.4s, v2.4s, v3.4s           \n"
+      "uzp2        v2.4s, v2.4s, v3.4s           \n"
+      "urhadd      v0.8h, v4.8h, v0.8h           \n"
+      "urhadd      v1.8h, v5.8h, v2.8h           \n"
+      "stp         q0, q1, [%1], #32             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_uv),  // %1
+        "+r"(width)    // %2
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5");
+}
+
+void HalfBoxRow_NEON(const uint8_t* src_ptr,
+                     ptrdiff_t src_stride,
+                     uint8_t* dst_ptr,
+                     int width) {
+  const uint8_t* src_ptr1 = src_ptr + src_stride;
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
+      "subs        %w3, %w3, #16                 \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uaddlp      v0.8h, v0.16b                 \n"
+      "uaddlp      v1.8h, v1.16b                 \n"
+      "uadalp      v0.8h, v2.16b                 \n"
+      "uadalp      v1.8h, v3.16b                 \n"
+      "rshrn       v0.8b, v0.8h, #2              \n"
+      "rshrn       v1.8b, v1.8h, #2              \n"
+      "stp         d0, d1, [%2], #16             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_ptr1),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(width)      // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+}
+
+void HalfBoxRow_16_NEON(const uint16_t* src_ptr,
+                        ptrdiff_t src_stride,
+                        uint16_t* dst_ptr,
+                        int width) {
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
+      "subs        %w3, %w3, #8                  \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uaddlp      v0.4s, v0.8h                  \n"
+      "uaddlp      v1.4s, v1.8h                  \n"
+      "uadalp      v0.4s, v2.8h                  \n"
+      "uadalp      v1.4s, v3.8h                  \n"
+      "rshrn       v0.4h, v0.4s, #2              \n"
+      "rshrn       v1.4h, v1.4s, #2              \n"
+      "stp         d0, d1, [%2], #16             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_ptr),   // %0
+        "+r"(src_ptr1),  // %1
+        "+r"(dst_ptr),   // %2
+        "+r"(width)      // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3");
+}
+
+void HalfBoxUVRow_NEON(const uint8_t* src_uv,
+                       ptrdiff_t src_stride_uv,
+                       uint8_t* dst_uv,
+                       int width) {
+  const uint8_t* src_uv1 = src_uv + src_stride_uv;
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
+      "subs        %w3, %w3, #8                  \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uaddl       v4.8h, v0.8b, v2.8b           \n"
+      "uaddl2      v5.8h, v0.16b, v2.16b         \n"
+      "uaddl       v6.8h, v1.8b, v3.8b           \n"
+      "uaddl2      v7.8h, v1.16b, v3.16b         \n"
+      "addp        v4.4s, v4.4s, v5.4s           \n"
+      "addp        v6.4s, v6.4s, v7.4s           \n"
+      "rshrn       v0.8b, v4.8h, #2              \n"
+      "rshrn       v1.8b, v6.8h, #2              \n"
+      "stp         d0, d1, [%2], #16             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+}
+
+void HalfBoxUVRow_16_NEON(const uint16_t* src_uv,
+                          ptrdiff_t src_stride_uv,
+                          uint16_t* dst_uv,
+                          int width) {
+  const uint16_t* src_uv1 = src_uv + src_stride_uv;
+  asm volatile(
+      ".p2align    4                             \n"
+      "1:                                        \n"
+      "ldp         q0, q1, [%0], #32             \n"
+      "ldp         q2, q3, [%1], #32             \n"
+      "subs        %w3, %w3, #4                  \n"
+      "prfm        pldl1keep, [%0, 448]          \n"
+      "prfm        pldl1keep, [%1, 448]          \n"
+      "uaddl       v4.4s, v0.4h, v2.4h           \n"
+      "uaddl2      v5.4s, v0.8h, v2.8h           \n"
+      "uaddl       v6.4s, v1.4h, v3.4h           \n"
+      "uaddl2      v7.4s, v1.8h, v3.8h           \n"
+      "addp        v4.2d, v4.2d, v5.2d           \n"
+      "addp        v6.2d, v6.2d, v7.2d           \n"
+      "rshrn       v0.4h, v4.4s, #2              \n"
+      "rshrn       v1.4h, v6.4s, #2              \n"
+      "stp         d0, d1, [%2], #16             \n"
+      "b.gt        1b                            \n"
+      : "+r"(src_uv),   // %0
+        "+r"(src_uv1),  // %1
+        "+r"(dst_uv),   // %2
+        "+r"(width)     // %3
+      :
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
 void HalfUVRow_NEON(const uint8_t* src_u,

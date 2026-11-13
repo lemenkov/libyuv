@@ -2399,6 +2399,203 @@ void HalfRow_16_WASMSIMD(const uint16_t* src_uv,
 }
 #endif  // HAS_HALFROW_16_WASMSIMD
 
+#ifdef HAS_HALFWIDTHROW_WASMSIMD
+void HalfWidthRow_WASMSIMD(const uint8_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           int width) {
+  const v128_t zero = wasm_i16x8_const_splat(0);
+  do {
+    v128_t a = wasm_u16x8_extadd_pairwise_u8x16(wasm_v128_load(src_ptr));
+    v128_t b = wasm_u16x8_extadd_pairwise_u8x16(wasm_v128_load(src_ptr + 16));
+    a = wasm_u16x8_avgr(a, zero);
+    b = wasm_u16x8_avgr(b, zero);
+    wasm_v128_store(dst_ptr, wasm_u8x16_narrow_i16x8(a, b));
+    src_ptr += 32;
+    dst_ptr += 16;
+    width -= 16;
+  } while (width > 0);
+}
+#endif  // HAS_HALFWIDTHROW_WASMSIMD
+
+#ifdef HAS_HALFWIDTHROW_16_WASMSIMD
+void HalfWidthRow_16_WASMSIMD(const uint16_t* src_ptr,
+                              uint16_t* dst_ptr,
+                              int width) {
+  do {
+    const v128_t s0 = wasm_v128_load(src_ptr);
+    const v128_t s1 = wasm_v128_load(src_ptr + 8);
+    const v128_t even = wasm_i16x8_shuffle(s0, s1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t odd = wasm_i16x8_shuffle(s0, s1, 1, 3, 5, 7, 9, 11, 13, 15);
+    wasm_v128_store(dst_ptr, wasm_u16x8_avgr(even, odd));
+    src_ptr += 16;
+    dst_ptr += 8;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_HALFWIDTHROW_16_WASMSIMD
+
+#ifdef HAS_HALFWIDTHUVROW_WASMSIMD
+void HalfWidthUVRow_WASMSIMD(const uint8_t* src_uv,
+                             uint8_t* dst_uv,
+                             int width) {
+  do {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 16);
+    const v128_t even = wasm_i16x8_shuffle(s0, s1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t odd = wasm_i16x8_shuffle(s0, s1, 1, 3, 5, 7, 9, 11, 13, 15);
+    wasm_v128_store(dst_uv, wasm_u8x16_avgr(even, odd));
+    src_uv += 32;
+    dst_uv += 16;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_HALFWIDTHUVROW_WASMSIMD
+
+#ifdef HAS_HALFWIDTHUVROW_16_WASMSIMD
+void HalfWidthUVRow_16_WASMSIMD(const uint16_t* src_uv,
+                                uint16_t* dst_uv,
+                                int width) {
+  do {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 8);
+    const v128_t even = wasm_i32x4_shuffle(s0, s1, 0, 2, 4, 6);
+    const v128_t odd = wasm_i32x4_shuffle(s0, s1, 1, 3, 5, 7);
+    wasm_v128_store(dst_uv, wasm_u16x8_avgr(even, odd));
+    src_uv += 16;
+    dst_uv += 8;
+    width -= 4;
+  } while (width > 0);
+}
+#endif  // HAS_HALFWIDTHUVROW_16_WASMSIMD
+
+#ifdef HAS_HALFBOXROW_WASMSIMD
+void HalfBoxRow_WASMSIMD(const uint8_t* src_ptr,
+                         ptrdiff_t src_stride,
+                         uint8_t* dst_ptr,
+                         int width) {
+  const uint8_t* t = src_ptr + src_stride;
+  const v128_t two = wasm_i16x8_const_splat(2);
+  do {
+    v128_t a = wasm_i16x8_add(
+        wasm_u16x8_extadd_pairwise_u8x16(wasm_v128_load(src_ptr)),
+        wasm_u16x8_extadd_pairwise_u8x16(wasm_v128_load(t)));
+    v128_t b = wasm_i16x8_add(
+        wasm_u16x8_extadd_pairwise_u8x16(wasm_v128_load(src_ptr + 16)),
+        wasm_u16x8_extadd_pairwise_u8x16(wasm_v128_load(t + 16)));
+    a = wasm_u16x8_shr(wasm_i16x8_add(a, two), 2);
+    b = wasm_u16x8_shr(wasm_i16x8_add(b, two), 2);
+    wasm_v128_store(dst_ptr, wasm_u8x16_narrow_i16x8(a, b));
+    src_ptr += 32;
+    t += 32;
+    dst_ptr += 16;
+    width -= 16;
+  } while (width > 0);
+}
+#endif  // HAS_HALFBOXROW_WASMSIMD
+
+#ifdef HAS_HALFBOXROW_16_WASMSIMD
+void HalfBoxRow_16_WASMSIMD(const uint16_t* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint16_t* dst_ptr,
+                            int width) {
+  const uint16_t* t = src_ptr + src_stride;
+  const v128_t two = wasm_i32x4_const_splat(2);
+  do {
+    v128_t r0a = wasm_v128_load(src_ptr);
+    v128_t r0b = wasm_v128_load(src_ptr + 8);
+    v128_t r1a = wasm_v128_load(t);
+    v128_t r1b = wasm_v128_load(t + 8);
+    v128_t sum0 = wasm_i32x4_add(wasm_u32x4_extadd_pairwise_u16x8(r0a),
+                                 wasm_u32x4_extadd_pairwise_u16x8(r1a));
+    v128_t sum1 = wasm_i32x4_add(wasm_u32x4_extadd_pairwise_u16x8(r0b),
+                                 wasm_u32x4_extadd_pairwise_u16x8(r1b));
+    v128_t avg0 = wasm_u32x4_shr(wasm_i32x4_add(sum0, two), 2);
+    v128_t avg1 = wasm_u32x4_shr(wasm_i32x4_add(sum1, two), 2);
+    wasm_v128_store(dst_ptr,
+                    wasm_i16x8_shuffle(avg0, avg1, 0, 2, 4, 6, 8, 10, 12, 14));
+    src_ptr += 16;
+    t += 16;
+    dst_ptr += 8;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_HALFBOXROW_16_WASMSIMD
+
+#ifdef HAS_HALFBOXUVROW_WASMSIMD
+void HalfBoxUVRow_WASMSIMD(const uint8_t* src_uv,
+                           ptrdiff_t src_stride_uv,
+                           uint8_t* dst_uv,
+                           int width) {
+  const uint8_t* t_uv = src_uv + src_stride_uv;
+  const v128_t two = wasm_i16x8_const_splat(2);
+  do {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 16);
+    const v128_t t0 = wasm_v128_load(t_uv);
+    const v128_t t1 = wasm_v128_load(t_uv + 16);
+    const v128_t s_even = wasm_i16x8_shuffle(s0, s1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t s_odd = wasm_i16x8_shuffle(s0, s1, 1, 3, 5, 7, 9, 11, 13, 15);
+    const v128_t t_even = wasm_i16x8_shuffle(t0, t1, 0, 2, 4, 6, 8, 10, 12, 14);
+    const v128_t t_odd = wasm_i16x8_shuffle(t0, t1, 1, 3, 5, 7, 9, 11, 13, 15);
+    const v128_t sum_lo =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_u16x8_extend_low_u8x16(s_even),
+                                      wasm_u16x8_extend_low_u8x16(s_odd)),
+                       wasm_i16x8_add(wasm_u16x8_extend_low_u8x16(t_even),
+                                      wasm_u16x8_extend_low_u8x16(t_odd)));
+    const v128_t sum_hi =
+        wasm_i16x8_add(wasm_i16x8_add(wasm_u16x8_extend_high_u8x16(s_even),
+                                      wasm_u16x8_extend_high_u8x16(s_odd)),
+                       wasm_i16x8_add(wasm_u16x8_extend_high_u8x16(t_even),
+                                      wasm_u16x8_extend_high_u8x16(t_odd)));
+    const v128_t avg_lo = wasm_u16x8_shr(wasm_i16x8_add(sum_lo, two), 2);
+    const v128_t avg_hi = wasm_u16x8_shr(wasm_i16x8_add(sum_hi, two), 2);
+    wasm_v128_store(dst_uv, wasm_u8x16_narrow_i16x8(avg_lo, avg_hi));
+    src_uv += 32;
+    t_uv += 32;
+    dst_uv += 16;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_HALFBOXUVROW_WASMSIMD
+
+#ifdef HAS_HALFBOXUVROW_16_WASMSIMD
+void HalfBoxUVRow_16_WASMSIMD(const uint16_t* src_uv,
+                              ptrdiff_t src_stride_uv,
+                              uint16_t* dst_uv,
+                              int width) {
+  const uint16_t* t_uv = src_uv + src_stride_uv;
+  const v128_t two = wasm_i32x4_const_splat(2);
+  do {
+    const v128_t s0 = wasm_v128_load(src_uv);
+    const v128_t s1 = wasm_v128_load(src_uv + 8);
+    const v128_t t0 = wasm_v128_load(t_uv);
+    const v128_t t1 = wasm_v128_load(t_uv + 8);
+    const v128_t s_even = wasm_i32x4_shuffle(s0, s1, 0, 2, 4, 6);
+    const v128_t s_odd = wasm_i32x4_shuffle(s0, s1, 1, 3, 5, 7);
+    const v128_t t_even = wasm_i32x4_shuffle(t0, t1, 0, 2, 4, 6);
+    const v128_t t_odd = wasm_i32x4_shuffle(t0, t1, 1, 3, 5, 7);
+    const v128_t sum_lo =
+        wasm_i32x4_add(wasm_i32x4_add(wasm_u32x4_extend_low_u16x8(s_even),
+                                      wasm_u32x4_extend_low_u16x8(s_odd)),
+                       wasm_i32x4_add(wasm_u32x4_extend_low_u16x8(t_even),
+                                      wasm_u32x4_extend_low_u16x8(t_odd)));
+    const v128_t sum_hi =
+        wasm_i32x4_add(wasm_i32x4_add(wasm_u32x4_extend_high_u16x8(s_even),
+                                      wasm_u32x4_extend_high_u16x8(s_odd)),
+                       wasm_i32x4_add(wasm_u32x4_extend_high_u16x8(t_even),
+                                      wasm_u32x4_extend_high_u16x8(t_odd)));
+    const v128_t avg_lo = wasm_u32x4_shr(wasm_i32x4_add(sum_lo, two), 2);
+    const v128_t avg_hi = wasm_u32x4_shr(wasm_i32x4_add(sum_hi, two), 2);
+    wasm_v128_store(
+        dst_uv, wasm_i16x8_shuffle(avg_lo, avg_hi, 0, 2, 4, 6, 8, 10, 12, 14));
+    src_uv += 16;
+    t_uv += 16;
+    dst_uv += 8;
+    width -= 4;
+  } while (width > 0);
+}
+#endif  // HAS_HALFBOXUVROW_16_WASMSIMD
+
 #ifdef HAS_HALFROW_16TO8_WASMSIMD
 void HalfRow_16To8_WASMSIMD(const uint16_t* src_uv,
                             ptrdiff_t src_uv_stride,
