@@ -211,22 +211,34 @@ void ScaleRowDown34_NEON(const uint8_t* src_ptr,
       : "memory", "cc", "v0", "v1", "v2", "v3", "v29", "v30", "v31");
 }
 
+#if !defined(LIBYUV_USE_ST3)
+static const uvec8 kShuf34Interleave[3] = {
+    {0, 16, 32, 1, 17, 33, 2, 18, 34, 3, 19, 35, 4, 20, 36, 5},
+    {21, 37, 6, 22, 38, 7, 23, 39, 8, 24, 40, 9, 25, 41, 10, 26},
+    {42, 11, 27, 43, 12, 28, 44, 13, 29, 45, 14, 30, 46, 15, 31, 47}};
+#endif
+
 void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
                                ptrdiff_t src_stride,
                                uint8_t* dst_ptr,
                                int dst_width) {
   asm volatile(
+#if !defined(LIBYUV_USE_ST3)
+      "ld1         {v29.16b,v30.16b,v31.16b}, [%[kShuf]] \n"
+#endif
       "movi        v24.16b, #3                   \n"
       "add         %3, %3, %0                    \n"
 
       "1:          \n"
-      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // src line 0
-      "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%3], #64 \n"  // src line 1
+      "ldp         q0, q1, [%0]                  \n"  // src line 0
+      "ldp         q2, q3, [%0, #32]             \n"
+      "add         %0, %0, #64                   \n"
+      "ldp         q4, q5, [%3]                  \n"  // src line 1
+      "ldp         q6, q7, [%3, #32]             \n"
+      "add         %3, %3, #64                   \n"
       "subs        %w2, %w2, #48                 \n"
 
-      // filter src line 0 with src line 1
-      // expand chars to shorts to allow for room
-      // when adding lines together
+      // filter src line 0 with src line 1: (3 * line_0 + line_1 + 2) >> 2
       "ushll       v16.8h, v4.8b, #0             \n"
       "ushll       v17.8h, v5.8b, #0             \n"
       "ushll       v18.8h, v6.8b, #0             \n"
@@ -236,7 +248,6 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "ushll2      v22.8h, v6.16b, #0            \n"
       "ushll2      v23.8h, v7.16b, #0            \n"
 
-      // 3 * line_0 + line_1
       "umlal       v16.8h, v0.8b, v24.8b         \n"
       "umlal       v17.8h, v1.8b, v24.8b         \n"
       "umlal       v18.8h, v2.8b, v24.8b         \n"
@@ -247,16 +258,25 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "umlal2      v23.8h, v3.16b, v24.16b       \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
 
-      // (3 * line_0 + line_1 + 2) >> 2
-      "uqrshrn     v0.8b, v16.8h, #2             \n"
-      "uqrshrn     v1.8b, v17.8h, #2             \n"
-      "uqrshrn     v2.8b, v18.8h, #2             \n"
-      "uqrshrn     v3.8b, v19.8h, #2             \n"
-      "uqrshrn2    v0.16b, v20.8h, #2            \n"
-      "uqrshrn2    v1.16b, v21.8h, #2            \n"
-      "uqrshrn2    v2.16b, v22.8h, #2            \n"
-      "uqrshrn2    v3.16b, v23.8h, #2            \n"
+      "uqrshrn     v4.8b, v16.8h, #2             \n"
+      "uqrshrn     v5.8b, v17.8h, #2             \n"
+      "uqrshrn     v6.8b, v18.8h, #2             \n"
+      "uqrshrn     v7.8b, v19.8h, #2             \n"
+      "uqrshrn2    v4.16b, v20.8h, #2            \n"
+      "uqrshrn2    v5.16b, v21.8h, #2            \n"
+      "uqrshrn2    v6.16b, v22.8h, #2            \n"
+      "uqrshrn2    v7.16b, v23.8h, #2            \n"
       "prfm        pldl1keep, [%3, 448]          \n"
+
+      // Deinterleave 64 bytes in v4..v7 into 4 streams v0..v3
+      "uzp1        v16.16b, v4.16b, v5.16b       \n"
+      "uzp2        v17.16b, v4.16b, v5.16b       \n"
+      "uzp1        v18.16b, v6.16b, v7.16b       \n"
+      "uzp2        v19.16b, v6.16b, v7.16b       \n"
+      "uzp1        v0.16b, v16.16b, v18.16b      \n"
+      "uzp2        v2.16b, v16.16b, v18.16b      \n"
+      "uzp1        v1.16b, v17.16b, v19.16b      \n"
+      "uzp2        v3.16b, v17.16b, v19.16b      \n"
 
       // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "ushll       v16.8h, v1.8b, #0             \n"
@@ -277,7 +297,15 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
       "uqrshrn     v2.8b, v16.8h, #2             \n"
       "uqrshrn2    v2.16b, v17.8h, #2            \n"
 
+#if defined(LIBYUV_USE_ST3)
       "st3         {v0.16b,v1.16b,v2.16b}, [%1], #48 \n"
+#else
+      "tbl         v4.16b, {v0.16b,v1.16b,v2.16b}, v29.16b \n"
+      "tbl         v5.16b, {v0.16b,v1.16b,v2.16b}, v30.16b \n"
+      "tbl         v6.16b, {v0.16b,v1.16b,v2.16b}, v31.16b \n"
+      "stp         q4, q5, [%1], #32             \n"
+      "str         q6, [%1], #16                 \n"
+#endif
 
       "b.gt        1b                            \n"
       : "+r"(src_ptr),    // %0
@@ -285,8 +313,16 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
         "+r"(dst_width),  // %2
         "+r"(src_stride)  // %3
       :
+#if !defined(LIBYUV_USE_ST3)
+      [kShuf] "r"(&kShuf34Interleave)
+#endif
       : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
-        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24");
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24"
+#if !defined(LIBYUV_USE_ST3)
+        ,
+        "v29", "v30", "v31"
+#endif
+  );
 }
 
 void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
@@ -294,19 +330,36 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
                                uint8_t* dst_ptr,
                                int dst_width) {
   asm volatile(
+#if !defined(LIBYUV_USE_ST3)
+      "ld1         {v29.16b,v30.16b,v31.16b}, [%[kShuf]] \n"
+#endif
       "movi        v20.16b, #3                   \n"
       "add         %3, %3, %0                    \n"
 
       "1:          \n"
-      "ld4         {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // src line 0
-      "ld4         {v4.16b,v5.16b,v6.16b,v7.16b}, [%3], #64 \n"  // src line 1
+      "ldp         q0, q1, [%0]                  \n"  // src line 0
+      "ldp         q2, q3, [%0, #32]             \n"
+      "add         %0, %0, #64                   \n"
+      "ldp         q4, q5, [%3]                  \n"  // src line 1
+      "ldp         q6, q7, [%3, #32]             \n"
+      "add         %3, %3, #64                   \n"
       "subs        %w2, %w2, #48                 \n"
       // average src line 0 with src line 1
-      "urhadd      v0.16b, v0.16b, v4.16b        \n"
-      "urhadd      v1.16b, v1.16b, v5.16b        \n"
-      "urhadd      v2.16b, v2.16b, v6.16b        \n"
-      "urhadd      v3.16b, v3.16b, v7.16b        \n"
+      "urhadd      v4.16b, v0.16b, v4.16b        \n"
+      "urhadd      v5.16b, v1.16b, v5.16b        \n"
+      "urhadd      v6.16b, v2.16b, v6.16b        \n"
+      "urhadd      v7.16b, v3.16b, v7.16b        \n"
       "prfm        pldl1keep, [%0, 448]          \n"  // prefetch 7 lines ahead
+
+      // Deinterleave 64 bytes in v4..v7 into 4 streams v0..v3
+      "uzp1        v16.16b, v4.16b, v5.16b       \n"
+      "uzp2        v17.16b, v4.16b, v5.16b       \n"
+      "uzp1        v18.16b, v6.16b, v7.16b       \n"
+      "uzp2        v19.16b, v6.16b, v7.16b       \n"
+      "uzp1        v0.16b, v16.16b, v18.16b      \n"
+      "uzp2        v2.16b, v16.16b, v18.16b      \n"
+      "uzp1        v1.16b, v17.16b, v19.16b      \n"
+      "uzp2        v3.16b, v17.16b, v19.16b      \n"
 
       // a0 = (src[0] * 3 + s[1] * 1 + 2) >> 2
       "ushll       v4.8h, v1.8b, #0              \n"
@@ -328,14 +381,31 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
       "uqrshrn     v2.8b, v4.8h, #2              \n"
       "uqrshrn2    v2.16b, v5.8h, #2             \n"
 
+#if defined(LIBYUV_USE_ST3)
       "st3         {v0.16b,v1.16b,v2.16b}, [%1], #48 \n"
+#else
+      "tbl         v4.16b, {v0.16b,v1.16b,v2.16b}, v29.16b \n"
+      "tbl         v5.16b, {v0.16b,v1.16b,v2.16b}, v30.16b \n"
+      "tbl         v6.16b, {v0.16b,v1.16b,v2.16b}, v31.16b \n"
+      "stp         q4, q5, [%1], #32             \n"
+      "str         q6, [%1], #16                 \n"
+#endif
       "b.gt        1b                            \n"
       : "+r"(src_ptr),    // %0
         "+r"(dst_ptr),    // %1
         "+r"(dst_width),  // %2
         "+r"(src_stride)  // %3
       :
-      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20");
+#if !defined(LIBYUV_USE_ST3)
+      [kShuf] "r"(&kShuf34Interleave)
+#endif
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
+        "v17", "v18", "v19", "v20"
+#if !defined(LIBYUV_USE_ST3)
+        ,
+        "v29", "v30", "v31"
+#endif
+  );
 }
 
 static const uvec8 kShuf38 = {0,  3,  6,  8,  11, 14, 16, 19,
@@ -1655,12 +1725,15 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:          \n"
-      "ld1         {v0.h}[0], [%0], %6           \n"
-      "ld1         {v1.h}[0], [%1], %6           \n"
-      "ld1         {v2.h}[0], [%2], %6           \n"
-      "ld1         {v3.h}[0], [%3], %6           \n"
+      "ldr         h0, [%0]                      \n"
+      "ldr         h1, [%2]                      \n"
+      "add         %0, %0, %6                    \n"
+      "add         %2, %2, %6                    \n"
+      "ld1         {v0.h}[1], [%1], %6           \n"
+      "ld1         {v1.h}[1], [%3], %6           \n"
       "subs        %w5, %w5, #4                  \n"  // 4 pixels per loop.
-      "st4         {v0.h, v1.h, v2.h, v3.h}[0], [%4], #8 \n"
+      "ins         v0.s[1], v1.s[0]              \n"
+      "str         d0, [%4], #8                  \n"
       "b.gt        1b                            \n"
       : "+r"(src_ptr),                 // %0
         "+r"(src1_ptr),                // %1
@@ -1669,7 +1742,7 @@ void ScaleUVRowDownEven_NEON(const uint8_t* src_ptr,
         "+r"(dst_ptr),                 // %4
         "+r"(dst_width)                // %5
       : "r"((int64_t)(src_stepx * 8))  // %6
-      : "memory", "cc", "v0", "v1", "v2", "v3");
+      : "memory", "cc", "v0", "v1");
 }
 
 // Scale UV columns by 3 box filter.

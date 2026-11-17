@@ -4670,6 +4670,106 @@ static inline void HalfWidthRow_16To8_SVE_SC(const uint16_t* src_uv,
         "z17", "z18", "z19", "z31", "p0", "p1", "p2", "p3");
 }
 
+static inline void ARGBShuffleRow_SVE_SC(const uint8_t* src_argb,
+                                         uint8_t* dst_argb,
+                                         const uint8_t* shuffler,
+                                         int width) STREAMING_COMPATIBLE {
+  uint64_t vl;
+  asm volatile(
+      "ptrue    p0.b                                    \n"
+      "ld1rqb   {z2.b}, p0/z, [%[shuffler]]             \n"
+      "index    z3.b, #0, #1                            \n"
+      "and      z3.b, z3.b, #0xf0                       \n"
+      "add      z2.b, z2.b, z3.b                        \n"
+      "cntw     %[vl], all, mul #2                      \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      "1:                                               \n"
+      "ld1w     {z0.s}, p0/z, [%[src]]                  \n"
+      "ld1w     {z1.s}, p0/z, [%[src], #1, mul vl]      \n"
+      "incb     %[src], all, mul #2                     \n"
+      "tbl      z0.b, {z0.b}, z2.b                      \n"
+      "tbl      z1.b, {z1.b}, z2.b                      \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st1w     {z0.s}, p0, [%[dst]]                    \n"
+      "st1w     {z1.s}, p0, [%[dst], #1, mul vl]        \n"
+      "incb     %[dst], all, mul #2                     \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.le     99f                                     \n"
+      "cntw     %[vl]                                   \n"
+      "whilelt  p0.s, wzr, %w[width]                    \n"
+      "whilelt  p1.s, %w[vl], %w[width]                 \n"
+
+      "ld1w     {z0.s}, p0/z, [%[src]]                  \n"
+      "ld1w     {z1.s}, p1/z, [%[src], #1, mul vl]      \n"
+      "tbl      z0.b, {z0.b}, z2.b                      \n"
+      "tbl      z1.b, {z1.b}, z2.b                      \n"
+      "st1w     {z0.s}, p0, [%[dst]]                    \n"
+      "st1w     {z1.s}, p1, [%[dst], #1, mul vl]        \n"
+
+      "99:                                              \n"
+      : [src] "+r"(src_argb),     // %[src]
+        [dst] "+r"(dst_argb),     // %[dst]
+        [width] "+r"(width),      // %[width]
+        [vl] "=&r"(vl)            // %[vl]
+      : [shuffler] "r"(shuffler)  // %[shuffler]
+      : "memory", "cc", "z0", "z1", "z2", "z3", "p0", "p1");
+}
+
+static inline void AR64ShuffleRow_SVE_SC(const uint8_t* src_ar64,
+                                         uint8_t* dst_ar64,
+                                         const uint8_t* shuffler,
+                                         int width) STREAMING_COMPATIBLE {
+  uint64_t vl;
+  asm volatile(
+      "ptrue    p0.b                                    \n"
+      "ld1rqb   {z2.b}, p0/z, [%[shuffler]]             \n"
+      "index    z3.b, #0, #1                            \n"
+      "and      z3.b, z3.b, #0xf0                       \n"
+      "add      z2.b, z2.b, z3.b                        \n"
+      "cntd     %[vl], all, mul #2                      \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.lt     2f                                      \n"
+
+      "1:                                               \n"
+      "ld1d     {z0.d}, p0/z, [%[src]]                  \n"
+      "ld1d     {z1.d}, p0/z, [%[src], #1, mul vl]      \n"
+      "incb     %[src], all, mul #2                     \n"
+      "tbl      z0.b, {z0.b}, z2.b                      \n"
+      "tbl      z1.b, {z1.b}, z2.b                      \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "st1d     {z0.d}, p0, [%[dst]]                    \n"
+      "st1d     {z1.d}, p0, [%[dst], #1, mul vl]        \n"
+      "incb     %[dst], all, mul #2                     \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl]            \n"
+      "b.le     99f                                     \n"
+      "cntd     %[vl]                                   \n"
+      "whilelt  p0.d, wzr, %w[width]                    \n"
+      "whilelt  p1.d, %w[vl], %w[width]                 \n"
+
+      "ld1d     {z0.d}, p0/z, [%[src]]                  \n"
+      "ld1d     {z1.d}, p1/z, [%[src], #1, mul vl]      \n"
+      "tbl      z0.b, {z0.b}, z2.b                      \n"
+      "tbl      z1.b, {z1.b}, z2.b                      \n"
+      "st1d     {z0.d}, p0, [%[dst]]                    \n"
+      "st1d     {z1.d}, p1, [%[dst], #1, mul vl]        \n"
+
+      "99:                                              \n"
+      : [src] "+r"(src_ar64),     // %[src]
+        [dst] "+r"(dst_ar64),     // %[dst]
+        [width] "+r"(width),      // %[width]
+        [vl] "=&r"(vl)            // %[vl]
+      : [shuffler] "r"(shuffler)  // %[shuffler]
+      : "memory", "cc", "z0", "z1", "z2", "z3", "p0", "p1");
+}
+
 #endif  // (!defined(LIBYUV_DISABLE_SVE) || (!defined(LIBYUV_DISABLE_SME) &&
         // (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)))) &&
         // defined(__aarch64__)

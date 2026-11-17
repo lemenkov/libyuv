@@ -23,7 +23,7 @@ extern "C" {
 
 static __inline HVX_Vector vloada(const void* ptr) {
   HVX_Vector v;
-  memcpy(&v, (const HVX_Vector*)ptr, sizeof(v));
+  memcpy(&v, (const HVX_Vector*)((uintptr_t)ptr & ~(uintptr_t)127), sizeof(v));
   return v;
 }
 
@@ -1820,61 +1820,97 @@ void I400ToARGBRow_HVX(const uint8_t* src_y,
   }
 }
 
-void ARGBToABGRRow_HVX(const uint8_t* src_argb, uint8_t* dst_abgr, int width) {
-  HVX_Vector ctrl = Q6_V_vsplat_R(0x00020002);
-  int bytes = width * 4;
-  while (bytes >= 128) {
-    vstoreu(dst_abgr, Q6_V_vdelta_VV(vloadu(src_argb), ctrl));
-    src_argb += 128;
-    dst_abgr += 128;
-    bytes -= 128;
-  }
-  if (bytes > 0) {
-    vstoreu_partial(dst_abgr,
-                    Q6_V_vdelta_VV(vloadu_partial_zero(src_argb, bytes), ctrl),
-                    bytes);
-  }
+// Packed (vrdelta_ctrl | (vdelta_ctrl << 8)) table for all 256 4-byte shuffles.
+// Each 8-bit half packs four 2-bit control lanes (b0 | b1<<2 | b2<<4 | b3<<6).
+// Entries with vrdelta_ctrl == 0 execute a single vdelta instruction.
+static const uint16_t kARGBShuffleHVXCtrl[256] = {
+    0x6400u, 0x6500u, 0x6204u, 0x6d00u, 0x6000u, 0x6100u, 0x6200u, 0x9d05u,
+    0x6704u, 0x6700u, 0x6600u, 0x6f00u, 0x6800u, 0x9805u, 0x6a00u, 0x6900u,
+    0xf400u, 0xf500u, 0xa205u, 0xfd00u, 0xf000u, 0xf100u, 0xf200u, 0xad05u,
+    0xa705u, 0xf700u, 0xf600u, 0xff00u, 0xf800u, 0xa805u, 0xfa00u, 0xf900u,
+    0x8004u, 0x8005u, 0x8204u, 0x8d04u, 0x8505u, 0x8405u, 0x7240u, 0x8d05u,
+    0x8704u, 0x7740u, 0x8604u, 0x8f04u, 0x8804u, 0x8805u, 0x8a04u, 0x8904u,
+    0x7400u, 0x7500u, 0x7204u, 0x7d00u, 0x7000u, 0x7100u, 0x7200u, 0x7210u,
+    0x7704u, 0x7700u, 0x7600u, 0x7f00u, 0x7800u, 0x7710u, 0x7a00u, 0x7900u,
+    0xa400u, 0xa500u, 0xf205u, 0xad00u, 0xa000u, 0xa100u, 0xa200u, 0xfd05u,
+    0xf705u, 0xa700u, 0xa600u, 0xaf00u, 0xa800u, 0xf805u, 0xaa00u, 0xa900u,
+    0x9400u, 0x9500u, 0x6205u, 0x9d00u, 0x9000u, 0x9100u, 0x9200u, 0x6d01u,
+    0x6705u, 0x9700u, 0x9600u, 0x9f00u, 0x9800u, 0x6801u, 0x9a00u, 0x9900u,
+    0x8400u, 0x8500u, 0x8d40u, 0x8d00u, 0x8000u, 0x8100u, 0x8200u, 0x8d01u,
+    0x8840u, 0x8700u, 0x8600u, 0x8f00u, 0x8800u, 0x8801u, 0x8a00u, 0x8900u,
+    0x7105u, 0x7005u, 0x7205u, 0x8d10u, 0x7505u, 0x7001u, 0x7201u, 0x7d01u,
+    0x7705u, 0x7701u, 0x7601u, 0x7f01u, 0x8810u, 0x7801u, 0x7a01u, 0x7901u,
+    0xd004u, 0xd005u, 0xd204u, 0xdd04u, 0xd505u, 0xd405u, 0x2240u, 0xdd05u,
+    0xd704u, 0x2740u, 0xd604u, 0xdf04u, 0xd804u, 0xd805u, 0xda04u, 0xd904u,
+    0xd400u, 0xd500u, 0xdd40u, 0xdd00u, 0xd000u, 0xd100u, 0xd200u, 0xdd01u,
+    0xd840u, 0xd700u, 0xd600u, 0xdf00u, 0xd800u, 0xd801u, 0xda00u, 0xd900u,
+    0x4400u, 0x4500u, 0x4204u, 0x4d00u, 0x4000u, 0x4100u, 0x4200u, 0x4d01u,
+    0x4704u, 0x4700u, 0x4600u, 0x4f00u, 0x4800u, 0x4801u, 0x4a00u, 0x4900u,
+    0x5400u, 0x5500u, 0x5204u, 0x5d00u, 0x5000u, 0x5100u, 0x5200u, 0x5d01u,
+    0x5704u, 0x5700u, 0x5600u, 0x5f00u, 0x5800u, 0x5801u, 0x5a00u, 0x5900u,
+    0x2400u, 0x2500u, 0x2204u, 0x2d00u, 0x2000u, 0x2100u, 0x2200u, 0x2210u,
+    0x2704u, 0x2700u, 0x2600u, 0x2f00u, 0x2800u, 0x2710u, 0x2a00u, 0x2900u,
+    0x2105u, 0x2005u, 0x2205u, 0xdd10u, 0x2505u, 0x2001u, 0x2201u, 0x2d01u,
+    0x2705u, 0x2701u, 0x2601u, 0x2f01u, 0xd810u, 0x2801u, 0x2a01u, 0x2901u,
+    0x0400u, 0x0500u, 0x0204u, 0x0d00u, 0x0000u, 0x0100u, 0x0200u, 0x0d01u,
+    0x0704u, 0x0700u, 0x0600u, 0x0f00u, 0x0800u, 0x0801u, 0x0a00u, 0x0900u,
+    0x1400u, 0x1500u, 0x1204u, 0x1d00u, 0x1000u, 0x1100u, 0x1200u, 0x1d01u,
+    0x1704u, 0x1700u, 0x1600u, 0x1f00u, 0x1800u, 0x1801u, 0x1a00u, 0x1900u,
+};
+
+static __inline uint32_t UnpackHVXCtrl4(uint8_t packed) {
+  return (uint32_t)(packed & 3u) | ((uint32_t)((packed >> 2) & 3u) << 8) |
+         ((uint32_t)((packed >> 4) & 3u) << 16) |
+         ((uint32_t)((packed >> 6) & 3u) << 24);
 }
 
-void ARGBToBGRARow_HVX(const uint8_t* src_argb, uint8_t* dst_bgra, int width) {
-  HVX_Vector ctrl = Q6_Vb_vsplat_R(0x03);
-  int bytes = width * 4;
-  while (bytes >= 128) {
-    vstoreu(dst_bgra, Q6_V_vdelta_VV(vloadu(src_argb), ctrl));
-    src_argb += 128;
-    dst_bgra += 128;
-    bytes -= 128;
+static __inline HVX_Vector Splat64_HVX(uint64_t val64) {
+  uint64_t buf[16];
+  for (int i = 0; i < 16; ++i) {
+    buf[i] = val64;
   }
-  if (bytes > 0) {
-    vstoreu_partial(dst_bgra,
-                    Q6_V_vdelta_VV(vloadu_partial_zero(src_argb, bytes), ctrl),
-                    bytes);
-  }
+  return vloadu(buf);
 }
 
-void ARGBToRGBARow_HVX(const uint8_t* src_argb, uint8_t* dst_rgba, int width) {
+void ARGBShuffleRow_HVX(const uint8_t* src_argb,
+                        uint8_t* dst_argb,
+                        const uint8_t* shuffler,
+                        int width) {
+  uint8_t key =
+      (uint8_t)((shuffler[0] & 3u) | ((shuffler[1] & 3u) << 2) |
+                ((shuffler[2] & 3u) << 4) | ((shuffler[3] & 3u) << 6));
+  uint16_t entry = kARGBShuffleHVXCtrl[key];
+  uint8_t p0 = (uint8_t)entry;
+  HVX_Vector v_c1 =
+      Q6_V_vsplat_R((int32_t)UnpackHVXCtrl4((uint8_t)(entry >> 8)));
   int bytes = width * 4;
-  while (bytes > 0) {
-    int b_cnt = bytes >= 128 ? 128 : bytes;
-    HVX_Vector v = vloadu_partial_zero(src_argb, b_cnt);
-    HVX_Vector out = Q6_V_vor_VV(Q6_Vw_vasl_VwR(v, 8), Q6_Vuw_vlsr_VuwR(v, 24));
-    vstoreu_partial(dst_rgba, out, b_cnt);
-    src_argb += 128;
-    dst_rgba += 128;
-    bytes -= 128;
-  }
-}
+  if (p0 == 0) {
+    while (bytes >= 128) {
+      vstoreu(dst_argb, Q6_V_vdelta_VV(vloadu(src_argb), v_c1));
+      src_argb += 128;
+      dst_argb += 128;
+      bytes -= 128;
+    }
 
-void RGBAToARGBRow_HVX(const uint8_t* src_rgba, uint8_t* dst_argb, int width) {
-  int bytes = width * 4;
-  while (bytes > 0) {
-    int b_cnt = bytes >= 128 ? 128 : bytes;
-    HVX_Vector v = vloadu_partial_zero(src_rgba, b_cnt);
-    HVX_Vector out = Q6_V_vor_VV(Q6_Vuw_vlsr_VuwR(v, 8), Q6_Vw_vasl_VwR(v, 24));
-    vstoreu_partial(dst_argb, out, b_cnt);
-    src_rgba += 128;
-    dst_argb += 128;
-    bytes -= 128;
+    if (bytes > 0) {
+      HVX_Vector v = vloadu_partial_zero(src_argb, bytes);
+      vstoreu_partial(dst_argb, Q6_V_vdelta_VV(v, v_c1), bytes);
+    }
+  } else {
+    HVX_Vector v_c0 = Q6_V_vsplat_R((int32_t)UnpackHVXCtrl4(p0));
+    while (bytes >= 128) {
+      HVX_Vector v = Q6_V_vrdelta_VV(vloadu(src_argb), v_c0);
+      vstoreu(dst_argb, Q6_V_vdelta_VV(v, v_c1));
+      src_argb += 128;
+      dst_argb += 128;
+      bytes -= 128;
+    }
+
+    if (bytes > 0) {
+      HVX_Vector v =
+          Q6_V_vrdelta_VV(vloadu_partial_zero(src_argb, bytes), v_c0);
+      vstoreu_partial(dst_argb, Q6_V_vdelta_VV(v, v_c1), bytes);
+    }
   }
 }
 
@@ -1937,22 +1973,83 @@ void AB64ToARGBRow_HVX(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
   }
 }
 
-void AR64ToAB64Row_HVX(const uint16_t* src_ar64,
-                       uint16_t* dst_ab64,
-                       int width) {
-  HVX_Vector ctrl = Q6_V_vsplat_R(0x00000404);
-  int bytes = width * 8;
-  const uint8_t* src = (const uint8_t*)src_ar64;
-  uint8_t* dst = (uint8_t*)dst_ab64;
-  while (bytes >= 128) {
-    vstoreu(dst, Q6_V_vdelta_VV(vloadu(src), ctrl));
-    src += 128;
-    dst += 128;
-    bytes -= 128;
+void AR64ShuffleRow_HVX(const uint8_t* src_ar64,
+                        uint8_t* dst_ar64,
+                        const uint8_t* shuffler,
+                        int width) {
+  uint8_t s[8];
+  uint8_t cand[8];
+  uint8_t test8[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+  for (int i = 0; i < 8; ++i) {
+    s[i] = shuffler[i] & 7u;
+    cand[i] = (uint8_t)(s[i] ^ (uint8_t)i);
   }
-  if (bytes > 0) {
-    vstoreu_partial(dst, Q6_V_vdelta_VV(vloadu_partial_zero(src, bytes), ctrl),
-                    bytes);
+  for (int st = 4; st >= 1; st >>= 1) {
+    uint8_t next8[8];
+    for (int i = 0; i < 8; ++i) {
+      next8[i] = (cand[i] & st) ? test8[i ^ st] : test8[i];
+    }
+    memcpy(test8, next8, 8);
+  }
+  int bytes = width * 8;
+  if (memcmp(test8, s, 8) == 0) {
+    uint64_t c64;
+    memcpy(&c64, cand, sizeof(c64));
+    HVX_Vector v_ctrl = Splat64_HVX(c64);
+    while (bytes >= 128) {
+      vstoreu(dst_ar64, Q6_V_vdelta_VV(vloadu(src_ar64), v_ctrl));
+      src_ar64 += 128;
+      dst_ar64 += 128;
+      bytes -= 128;
+    }
+
+    if (bytes > 0) {
+      HVX_Vector v = vloadu_partial_zero(src_ar64, bytes);
+      vstoreu_partial(dst_ar64, Q6_V_vdelta_VV(v, v_ctrl), bytes);
+    }
+  } else {
+    uint8_t k_lo = (uint8_t)((s[0] & 3u) | ((s[1] & 3u) << 2) |
+                             ((s[2] & 3u) << 4) | ((s[3] & 3u) << 6));
+    uint8_t k_hi = (uint8_t)((s[4] & 3u) | ((s[5] & 3u) << 2) |
+                             ((s[6] & 3u) << 4) | ((s[7] & 3u) << 6));
+    uint16_t e0 = kARGBShuffleHVXCtrl[k_lo];
+    uint16_t e1 = kARGBShuffleHVXCtrl[k_hi];
+    uint64_t c0_64 = (uint64_t)UnpackHVXCtrl4((uint8_t)e0) |
+                     ((uint64_t)UnpackHVXCtrl4((uint8_t)e1) << 32);
+    uint64_t c1_64 = (uint64_t)UnpackHVXCtrl4((uint8_t)(e0 >> 8)) |
+                     ((uint64_t)UnpackHVXCtrl4((uint8_t)(e1 >> 8)) << 32);
+    uint64_t sel_64 = 0;
+    for (int i = 0; i < 8; ++i) {
+      if (s[i] >= 4u) {
+        sel_64 |= (0xffULL << (i * 8));
+      }
+    }
+    HVX_Vector v_swap_lo = Splat64_HVX(0x0404040400000000ULL);
+    HVX_Vector v_swap_hi = Splat64_HVX(0x0000000004040404ULL);
+    HVX_Vector v_c0 = Splat64_HVX(c0_64);
+    HVX_Vector v_c1 = Splat64_HVX(c1_64);
+    HVX_VectorPred q_hi =
+        Q6_Q_vcmp_gt_VubVub(Splat64_HVX(sel_64), Q6_V_vzero());
+    while (bytes >= 128) {
+      HVX_Vector v = vloadu(src_ar64);
+      HVX_Vector lo = Q6_V_vdelta_VV(
+          Q6_V_vrdelta_VV(Q6_V_vdelta_VV(v, v_swap_lo), v_c0), v_c1);
+      HVX_Vector hi = Q6_V_vdelta_VV(
+          Q6_V_vrdelta_VV(Q6_V_vdelta_VV(v, v_swap_hi), v_c0), v_c1);
+      vstoreu(dst_ar64, Q6_V_vmux_QVV(q_hi, hi, lo));
+      src_ar64 += 128;
+      dst_ar64 += 128;
+      bytes -= 128;
+    }
+
+    if (bytes > 0) {
+      HVX_Vector v = vloadu_partial_zero(src_ar64, bytes);
+      HVX_Vector lo = Q6_V_vdelta_VV(
+          Q6_V_vrdelta_VV(Q6_V_vdelta_VV(v, v_swap_lo), v_c0), v_c1);
+      HVX_Vector hi = Q6_V_vdelta_VV(
+          Q6_V_vrdelta_VV(Q6_V_vdelta_VV(v, v_swap_hi), v_c0), v_c1);
+      vstoreu_partial(dst_ar64, Q6_V_vmux_QVV(q_hi, hi, lo), bytes);
+    }
   }
 }
 

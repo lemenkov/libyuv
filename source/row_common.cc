@@ -269,54 +269,6 @@ void AR30ToAB30Row_C(const uint8_t* src_ar30, uint8_t* dst_ab30, int width) {
   }
 }
 
-void ARGBToABGRRow_C(const uint8_t* src_argb, uint8_t* dst_abgr, int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint8_t b = src_argb[0];
-    uint8_t g = src_argb[1];
-    uint8_t r = src_argb[2];
-    uint8_t a = src_argb[3];
-    dst_abgr[0] = r;
-    dst_abgr[1] = g;
-    dst_abgr[2] = b;
-    dst_abgr[3] = a;
-    dst_abgr += 4;
-    src_argb += 4;
-  }
-}
-
-void ARGBToBGRARow_C(const uint8_t* src_argb, uint8_t* dst_bgra, int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint8_t b = src_argb[0];
-    uint8_t g = src_argb[1];
-    uint8_t r = src_argb[2];
-    uint8_t a = src_argb[3];
-    dst_bgra[0] = a;
-    dst_bgra[1] = r;
-    dst_bgra[2] = g;
-    dst_bgra[3] = b;
-    dst_bgra += 4;
-    src_argb += 4;
-  }
-}
-
-void ARGBToRGBARow_C(const uint8_t* src_argb, uint8_t* dst_rgba, int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint8_t b = src_argb[0];
-    uint8_t g = src_argb[1];
-    uint8_t r = src_argb[2];
-    uint8_t a = src_argb[3];
-    dst_rgba[0] = a;
-    dst_rgba[1] = b;
-    dst_rgba[2] = g;
-    dst_rgba[3] = r;
-    dst_rgba += 4;
-    src_argb += 4;
-  }
-}
-
 void ARGBToRGB24Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
@@ -342,22 +294,6 @@ void ARGBToRAWRow_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
     dst_rgb[2] = b;
     dst_rgb += 3;
     src_argb += 4;
-  }
-}
-
-void RGBAToARGBRow_C(const uint8_t* src_rgba, uint8_t* dst_argb, int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint8_t a = src_rgba[0];
-    uint8_t b = src_rgba[1];
-    uint8_t g = src_rgba[2];
-    uint8_t r = src_rgba[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_rgba += 4;
   }
 }
 
@@ -571,49 +507,41 @@ void AB64ToARGBRow_C(const uint16_t* src_ab64, uint8_t* dst_argb, int width) {
   }
 }
 
-void AR64ToAB64Row_C(const uint16_t* src_ar64, uint16_t* dst_ab64, int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    uint16_t b = src_ar64[0];
-    uint16_t g = src_ar64[1];
-    uint16_t r = src_ar64[2];
-    uint16_t a = src_ar64[3];
-    dst_ab64[0] = r;
-    dst_ab64[1] = g;
-    dst_ab64[2] = b;
-    dst_ab64[3] = a;
-    dst_ab64 += 4;
-    src_ar64 += 4;
-  }
-}
-
-// TODO(fbarchard): Make shuffle compatible with SIMD versions
-// width is in units of 32 bit ARGB pixels (2 per AR64 pixel) so that
-// AR64Shuffle can share the ARGBShuffleRow SIMD kernels.
+// Use first 8 shuffler values to reorder AR64 bytes.
 void AR64ShuffleRow_C(const uint8_t* src_ar64,
                       uint8_t* dst_ar64,
                       const uint8_t* shuffler,
                       int width) {
-  const uint16_t* src_ar64_16 = (const uint16_t*)src_ar64;
-  uint16_t* dst_ar64_16 = (uint16_t*)dst_ar64;
-  int index0 = shuffler[0] / 2;
-  int index1 = shuffler[2] / 2;
-  int index2 = shuffler[4] / 2;
-  int index3 = shuffler[6] / 2;
+  int index0 = shuffler[0];
+  int index1 = shuffler[1];
+  int index2 = shuffler[2];
+  int index3 = shuffler[3];
+  int index4 = shuffler[4];
+  int index5 = shuffler[5];
+  int index6 = shuffler[6];
+  int index7 = shuffler[7];
   // Shuffle a row of AR64.
   int x;
-  for (x = 0; x < width / 2; ++x) {
+  for (x = 0; x < width; ++x) {
     // To support in-place conversion.
-    uint16_t b = src_ar64_16[index0];
-    uint16_t g = src_ar64_16[index1];
-    uint16_t r = src_ar64_16[index2];
-    uint16_t a = src_ar64_16[index3];
-    dst_ar64_16[0] = b;
-    dst_ar64_16[1] = g;
-    dst_ar64_16[2] = r;
-    dst_ar64_16[3] = a;
-    src_ar64_16 += 4;
-    dst_ar64_16 += 4;
+    uint8_t b0 = src_ar64[index0];
+    uint8_t b1 = src_ar64[index1];
+    uint8_t g0 = src_ar64[index2];
+    uint8_t g1 = src_ar64[index3];
+    uint8_t r0 = src_ar64[index4];
+    uint8_t r1 = src_ar64[index5];
+    uint8_t a0 = src_ar64[index6];
+    uint8_t a1 = src_ar64[index7];
+    dst_ar64[0] = b0;
+    dst_ar64[1] = b1;
+    dst_ar64[2] = g0;
+    dst_ar64[3] = g1;
+    dst_ar64[4] = r0;
+    dst_ar64[5] = r1;
+    dst_ar64[6] = a0;
+    dst_ar64[7] = a1;
+    src_ar64 += 8;
+    dst_ar64 += 8;
   }
 }
 // BT601 8 bit Y:
@@ -1087,10 +1015,14 @@ void ARGBColorTableRow_C(uint8_t* dst_argb,
     int g = dst_argb[1];
     int r = dst_argb[2];
     int a = dst_argb[3];
-    dst_argb[0] = table_argb[b * 4 + 0];
-    dst_argb[1] = table_argb[g * 4 + 1];
-    dst_argb[2] = table_argb[r * 4 + 2];
-    dst_argb[3] = table_argb[a * 4 + 3];
+    uint8_t b_out = table_argb[b * 4 + 0];
+    uint8_t g_out = table_argb[g * 4 + 1];
+    uint8_t r_out = table_argb[r * 4 + 2];
+    uint8_t a_out = table_argb[a * 4 + 3];
+    dst_argb[0] = b_out;
+    dst_argb[1] = g_out;
+    dst_argb[2] = r_out;
+    dst_argb[3] = a_out;
     dst_argb += 4;
   }
 }
@@ -1104,9 +1036,12 @@ void RGBColorTableRow_C(uint8_t* dst_argb,
     int b = dst_argb[0];
     int g = dst_argb[1];
     int r = dst_argb[2];
-    dst_argb[0] = table_argb[b * 4 + 0];
-    dst_argb[1] = table_argb[g * 4 + 1];
-    dst_argb[2] = table_argb[r * 4 + 2];
+    uint8_t b_out = table_argb[b * 4 + 0];
+    uint8_t g_out = table_argb[g * 4 + 1];
+    uint8_t r_out = table_argb[r * 4 + 2];
+    dst_argb[0] = b_out;
+    dst_argb[1] = g_out;
+    dst_argb[2] = r_out;
     dst_argb += 4;
   }
 }
@@ -3672,29 +3607,6 @@ void CumulativeSumToAverageRow_C(const int32_t* tl,
   }
 }
 
-// Copy pixels from rotated source to destination row with a slope.
-LIBYUV_API
-void ARGBAffineRow_C(const uint8_t* src_argb,
-                     int src_argb_stride,
-                     uint8_t* dst_argb,
-                     const float* uv_dudv,
-                     int width) {
-  int i;
-  // Render a row of pixels from source into a buffer.
-  float uv[2];
-  uv[0] = uv_dudv[0];
-  uv[1] = uv_dudv[1];
-  for (i = 0; i < width; ++i) {
-    int x = (int)(uv[0]);
-    int y = (int)(uv[1]);
-    memcpy(dst_argb,
-           src_argb + (ptrdiff_t)y * src_argb_stride + (ptrdiff_t)x * 4, 4);
-    dst_argb += 4;
-    uv[0] += uv_dudv[2];
-    uv[1] += uv_dudv[3];
-  }
-}
-
 // Blend 2 rows into 1.
 void HalfRow_C(const uint8_t* src_uv,
                ptrdiff_t src_uv_stride,
@@ -4240,33 +4152,47 @@ void ARGBLumaColorTableRow_C(const uint8_t* src_argb,
   int i;
   for (i = 0; i < width - 1; i += 2) {
     // Luminance in rows, color values in columns.
-    const uint8_t* luma0 =
-        ((src_argb[0] * bc + src_argb[1] * gc + src_argb[2] * rc) & 0x7F00u) +
-        luma;
-    const uint8_t* luma1;
-    dst_argb[0] = luma0[src_argb[0]];
-    dst_argb[1] = luma0[src_argb[1]];
-    dst_argb[2] = luma0[src_argb[2]];
-    dst_argb[3] = src_argb[3];
-    luma1 =
-        ((src_argb[4] * bc + src_argb[5] * gc + src_argb[6] * rc) & 0x7F00u) +
-        luma;
-    dst_argb[4] = luma1[src_argb[4]];
-    dst_argb[5] = luma1[src_argb[5]];
-    dst_argb[6] = luma1[src_argb[6]];
-    dst_argb[7] = src_argb[7];
+    uint32_t b0 = src_argb[0];
+    uint32_t g0 = src_argb[1];
+    uint32_t r0 = src_argb[2];
+    uint8_t a0 = src_argb[3];
+    uint32_t b1 = src_argb[4];
+    uint32_t g1 = src_argb[5];
+    uint32_t r1 = src_argb[6];
+    uint8_t a1 = src_argb[7];
+    const uint8_t* luma0 = ((b0 * bc + g0 * gc + r0 * rc) & 0x7F00u) + luma;
+    const uint8_t* luma1 = ((b1 * bc + g1 * gc + r1 * rc) & 0x7F00u) + luma;
+    uint8_t out0 = luma0[b0];
+    uint8_t out1 = luma0[g0];
+    uint8_t out2 = luma0[r0];
+    uint8_t out4 = luma1[b1];
+    uint8_t out5 = luma1[g1];
+    uint8_t out6 = luma1[r1];
+    dst_argb[0] = out0;
+    dst_argb[1] = out1;
+    dst_argb[2] = out2;
+    dst_argb[3] = a0;
+    dst_argb[4] = out4;
+    dst_argb[5] = out5;
+    dst_argb[6] = out6;
+    dst_argb[7] = a1;
     src_argb += 8;
     dst_argb += 8;
   }
   if (width & 1) {
     // Luminance in rows, color values in columns.
-    const uint8_t* luma0 =
-        ((src_argb[0] * bc + src_argb[1] * gc + src_argb[2] * rc) & 0x7F00u) +
-        luma;
-    dst_argb[0] = luma0[src_argb[0]];
-    dst_argb[1] = luma0[src_argb[1]];
-    dst_argb[2] = luma0[src_argb[2]];
-    dst_argb[3] = src_argb[3];
+    uint32_t b0 = src_argb[0];
+    uint32_t g0 = src_argb[1];
+    uint32_t r0 = src_argb[2];
+    uint8_t a0 = src_argb[3];
+    const uint8_t* luma0 = ((b0 * bc + g0 * gc + r0 * rc) & 0x7F00u) + luma;
+    uint8_t out0 = luma0[b0];
+    uint8_t out1 = luma0[g0];
+    uint8_t out2 = luma0[r0];
+    dst_argb[0] = out0;
+    dst_argb[1] = out1;
+    dst_argb[2] = out2;
+    dst_argb[3] = a0;
   }
 }
 

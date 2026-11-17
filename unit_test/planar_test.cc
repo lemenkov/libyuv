@@ -1593,69 +1593,6 @@ TEST_F(LibYUVPlanarTest, I420Blend_Invert) {
                 disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
 }
 
-#ifdef ENABLE_ROW_TESTS
-TEST_F(LibYUVPlanarTest, TestAffine) {
-  SIMD_ALIGNED(uint8_t orig_pixels_0[2][1280][4]);
-  SIMD_ALIGNED(uint8_t interpolate_pixels_C[1280][4]);
-
-  for (int r = 0; r < 2; ++r) {
-    for (int i = 0; i < 1280; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        orig_pixels_0[r][i][j] = i + r * 17;
-      }
-    }
-  }
-
-  float uv_step[4] = {0.f, 0.f, 0.75f, 1.f / 1280.f};
-  const int stride = 1280 * 4;
-
-  ARGBAffineRow_C(&orig_pixels_0[0][0][0], stride, &interpolate_pixels_C[0][0],
-                  uv_step, 1280);
-  ASSERT_EQ(0u, interpolate_pixels_C[0][0]);
-  ASSERT_EQ(96u, interpolate_pixels_C[128][0]);
-  ASSERT_EQ(191u, interpolate_pixels_C[255][3]);
-
-#if defined(HAS_ARGBAFFINEROW_AVX2)
-  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
-  if (has_avx2) {
-    SIMD_ALIGNED(uint8_t interpolate_pixels_Opt[1280][4]);
-    ARGBAffineRow_AVX2(&orig_pixels_0[0][0][0], stride,
-                       &interpolate_pixels_Opt[0][0], uv_step, 1280);
-    ASSERT_EQ(0,
-              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1280 * 4));
-    ARGBAffineRow_AVX2(&orig_pixels_0[0][0][0], stride,
-                       &interpolate_pixels_Opt[0][0], uv_step, 1279);
-    ASSERT_EQ(0,
-              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1279 * 4));
-
-    for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-      ARGBAffineRow_AVX2(&orig_pixels_0[0][0][0], stride,
-                         &interpolate_pixels_Opt[0][0], uv_step, 1280);
-    }
-  }
-#endif
-#if defined(HAS_ARGBAFFINEROW_NEON)
-  int has_neon = TestCpuFlag(kCpuHasNEON);
-  if (has_neon) {
-    SIMD_ALIGNED(uint8_t interpolate_pixels_Opt[1280][4]);
-    ARGBAffineRow_NEON(&orig_pixels_0[0][0][0], stride,
-                       &interpolate_pixels_Opt[0][0], uv_step, 1280);
-    ASSERT_EQ(0,
-              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1280 * 4));
-    ARGBAffineRow_NEON(&orig_pixels_0[0][0][0], stride,
-                       &interpolate_pixels_Opt[0][0], uv_step, 1279);
-    ASSERT_EQ(0,
-              memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1279 * 4));
-
-    for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-      ARGBAffineRow_NEON(&orig_pixels_0[0][0][0], stride,
-                         &interpolate_pixels_Opt[0][0], uv_step, 1280);
-    }
-  }
-#endif
-}
-#endif  // ENABLE_ROW_TESTS
-
 static int TestCopyPlane(int benchmark_width,
                          int benchmark_height,
                          int benchmark_iterations,
@@ -7382,24 +7319,34 @@ TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Odd_Opt) {
 
 TEST_F(LibYUVPlanarTest, ARGBChannelReorderRow_C_Test) {
   const int kPixels = 65;
+  static const uint8_t kShufABGR[16] = {2,  1, 0, 3,  6,  5,  4,  7,
+                                        10, 9, 8, 11, 14, 13, 12, 15};
+  static const uint8_t kShufBGRA[16] = {3,  2,  1, 0, 7,  6,  5,  4,
+                                        11, 10, 9, 8, 15, 14, 13, 12};
+  static const uint8_t kShufARGBToRGBA[16] = {3,  0, 1, 2,  7,  4,  5,  6,
+                                              11, 8, 9, 10, 15, 12, 13, 14};
+  static const uint8_t kShufRGBAToARGB[16] = {1, 2,  3,  0, 5,  6,  7,  4,
+                                              9, 10, 11, 8, 13, 14, 15, 12};
+  static const uint8_t kShufAR64ToAB64[16] = {4,  5,  2,  3,  0, 1, 6,  7,
+                                              12, 13, 10, 11, 8, 9, 14, 15};
   align_buffer_page_end(src_argb, kPixels * 4);
   align_buffer_page_end(dst_row, kPixels * 4);
   align_buffer_page_end(dst_api, kPixels * 4);
   MemRandomize(src_argb, kPixels * 4);
 
-  ARGBToABGRRow_C(src_argb, dst_row, kPixels);
+  ARGBShuffleRow_C(src_argb, dst_row, kShufABGR, kPixels);
   ARGBToABGR(src_argb, kPixels * 4, dst_api, kPixels * 4, kPixels, 1);
   ASSERT_EQ(0, memcmp(dst_row, dst_api, kPixels * 4));
 
-  ARGBToBGRARow_C(src_argb, dst_row, kPixels);
+  ARGBShuffleRow_C(src_argb, dst_row, kShufBGRA, kPixels);
   ARGBToBGRA(src_argb, kPixels * 4, dst_api, kPixels * 4, kPixels, 1);
   ASSERT_EQ(0, memcmp(dst_row, dst_api, kPixels * 4));
 
-  ARGBToRGBARow_C(src_argb, dst_row, kPixels);
+  ARGBShuffleRow_C(src_argb, dst_row, kShufARGBToRGBA, kPixels);
   ARGBToRGBA(src_argb, kPixels * 4, dst_api, kPixels * 4, kPixels, 1);
   ASSERT_EQ(0, memcmp(dst_row, dst_api, kPixels * 4));
 
-  RGBAToARGBRow_C(src_argb, dst_row, kPixels);
+  ARGBShuffleRow_C(src_argb, dst_row, kShufRGBAToARGB, kPixels);
   RGBAToARGB(src_argb, kPixels * 4, dst_api, kPixels * 4, kPixels, 1);
   ASSERT_EQ(0, memcmp(dst_row, dst_api, kPixels * 4));
 
@@ -7409,7 +7356,9 @@ TEST_F(LibYUVPlanarTest, ARGBChannelReorderRow_C_Test) {
   for (int i = 0; i < kPixels * 4; ++i) {
     src_ar64[i] = static_cast<uint16_t>(fastrand());
   }
-  AR64ToAB64Row_C(src_ar64, dst_ab64_row, kPixels);
+  AR64ShuffleRow_C(reinterpret_cast<const uint8_t*>(src_ar64),
+                   reinterpret_cast<uint8_t*>(dst_ab64_row), kShufAR64ToAB64,
+                   kPixels);
   AR64ToAB64(src_ar64, kPixels * 4, dst_ab64_api, kPixels * 4, kPixels, 1);
   ASSERT_EQ(0, memcmp(dst_ab64_row, dst_ab64_api, kPixels * 8));
 
@@ -7421,6 +7370,62 @@ TEST_F(LibYUVPlanarTest, ARGBChannelReorderRow_C_Test) {
   free_aligned_buffer_page_end(dst_api);
 }
 #endif  // ENABLE_ROW_TESTS
+
+TEST_F(LibYUVPlanarTest, ARGBShuffle_Test) {
+  static const uint8_t kMasks[][16] = {
+      {2, 1, 0, 3, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15},
+      {3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12},
+      {3, 0, 1, 2, 7, 4, 5, 6, 11, 8, 9, 10, 15, 12, 13, 14},
+      {1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12},
+      {0, 0, 2, 3, 4, 4, 6, 7, 8, 8, 10, 11, 12, 12, 14, 15},
+  };
+  const int kMaxW = 65;
+  align_buffer_page_end(src, kMaxW * 4 + 16);
+  align_buffer_page_end(dst_c, kMaxW * 4 + 16);
+  align_buffer_page_end(dst_opt, kMaxW * 4 + 16);
+  MemRandomize(src, kMaxW * 4 + 16);
+  for (size_t m = 0; m < sizeof(kMasks) / sizeof(kMasks[0]); ++m) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      MaskCpuFlags(disable_cpu_flags_);
+      ARGBShuffle(src + 4, w * 4, dst_c + 4, w * 4, kMasks[m], w, 1);
+      MaskCpuFlags(benchmark_cpu_info_);
+      ARGBShuffle(src + 4, w * 4, dst_opt + 4, w * 4, kMasks[m], w, 1);
+      ASSERT_EQ(0, memcmp(dst_c + 4, dst_opt + 4, w * 4));
+    }
+  }
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+}
+
+TEST_F(LibYUVPlanarTest, AR64Shuffle_Test) {
+  static const uint8_t kMasks[][16] = {
+      {4, 5, 2, 3, 0, 1, 6, 7, 12, 13, 10, 11, 8, 9, 14, 15},
+      {6, 7, 4, 5, 2, 3, 0, 1, 14, 15, 12, 13, 10, 11, 8, 9},
+      {2, 3, 4, 5, 6, 7, 0, 1, 10, 11, 12, 13, 14, 15, 8, 9},
+      {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14},
+      {4, 7, 3, 6, 7, 5, 6, 7, 12, 15, 11, 14, 15, 13, 14, 15},
+  };
+  const int kMaxW = 65;
+  align_buffer_page_end_16(src, kMaxW * 4 + 8);
+  align_buffer_page_end_16(dst_c, kMaxW * 4 + 8);
+  align_buffer_page_end_16(dst_opt, kMaxW * 4 + 8);
+  for (int i = 0; i < kMaxW * 4 + 8; ++i) {
+    src[i] = static_cast<uint16_t>(fastrand());
+  }
+  for (size_t m = 0; m < sizeof(kMasks) / sizeof(kMasks[0]); ++m) {
+    for (int w = 1; w <= kMaxW; ++w) {
+      MaskCpuFlags(disable_cpu_flags_);
+      AR64Shuffle(src + 2, w * 4, dst_c + 2, w * 4, kMasks[m], w, 1);
+      MaskCpuFlags(benchmark_cpu_info_);
+      AR64Shuffle(src + 2, w * 4, dst_opt + 2, w * 4, kMasks[m], w, 1);
+      ASSERT_EQ(0, memcmp(dst_c + 2, dst_opt + 2, w * 8));
+    }
+  }
+  free_aligned_buffer_page_end_16(src);
+  free_aligned_buffer_page_end_16(dst_c);
+  free_aligned_buffer_page_end_16(dst_opt);
+}
 
 TEST_F(LibYUVPlanarTest, TestGaussPlane_F32) {
   const int kSize = benchmark_width_ * benchmark_height_ * 4;
@@ -9058,7 +9063,7 @@ TEST_F(LibYUVPlanarTest, BitExactCrossPlatformChecksums) {
 
   EXPECT_EQ(1816395425u, ref_yuv_hash);
   EXPECT_EQ(3354405213u, ref_planar_hash);
-  EXPECT_EQ(1226119865u, ref_scale_hash);
+  EXPECT_EQ(3034023865u, ref_scale_hash);
 
   free_aligned_buffer_page_end(wide_argb);
   free_aligned_buffer_page_end(dst_buf3);

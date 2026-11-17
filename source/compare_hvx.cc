@@ -25,7 +25,7 @@ extern "C" {
 
 static inline HVX_Vector vloada(const void* ptr) {
   HVX_Vector v;
-  memcpy(&v, (const HVX_Vector*)ptr, sizeof(v));
+  memcpy(&v, (const HVX_Vector*)((uintptr_t)ptr & ~(uintptr_t)127), sizeof(v));
   return v;
 }
 

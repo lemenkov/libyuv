@@ -2305,6 +2305,49 @@ void ARGBShuffleRow_RELAXEDSIMD(const uint8_t* src_argb,
 #endif  // HAS_ARGBSHUFFLEROW_RELAXEDSIMD
 #endif  // HAS_ARGBSHUFFLEROW_WASMSIMD || HAS_ARGBSHUFFLEROW_RELAXEDSIMD
 
+#if defined(HAS_AR64SHUFFLEROW_WASMSIMD) || \
+    defined(HAS_AR64SHUFFLEROW_RELAXEDSIMD)
+template <bool kRelaxed>
+static inline void AR64ShuffleRow_Wasm(const uint8_t* src_ar64,
+                                       uint8_t* dst_ar64,
+                                       const uint8_t* shuffler,
+                                       int width) {
+  v128_t shuf = wasm_v128_load(shuffler);
+  while (width >= 4) {
+    asm("" : "+r"(src_ar64), "+r"(dst_ar64));
+    v128_t s0 = wasm_v128_load(src_ar64);
+    v128_t s1 = wasm_v128_load(src_ar64 + 16);
+    wasm_v128_store(dst_ar64, WasmSwizzle<kRelaxed>(s0, shuf));
+    wasm_v128_store(dst_ar64 + 16, WasmSwizzle<kRelaxed>(s1, shuf));
+    src_ar64 += 32;
+    dst_ar64 += 32;
+    width -= 4;
+  }
+  if (width > 0) {
+    v128_t s0 = wasm_v128_load(src_ar64);
+    wasm_v128_store(dst_ar64, WasmSwizzle<kRelaxed>(s0, shuf));
+  }
+}
+
+#ifdef HAS_AR64SHUFFLEROW_WASMSIMD
+void AR64ShuffleRow_WASMSIMD(const uint8_t* src_ar64,
+                             uint8_t* dst_ar64,
+                             const uint8_t* shuffler,
+                             int width) {
+  AR64ShuffleRow_Wasm<false>(src_ar64, dst_ar64, shuffler, width);
+}
+#endif  // HAS_AR64SHUFFLEROW_WASMSIMD
+
+#ifdef HAS_AR64SHUFFLEROW_RELAXEDSIMD
+void AR64ShuffleRow_RELAXEDSIMD(const uint8_t* src_ar64,
+                                uint8_t* dst_ar64,
+                                const uint8_t* shuffler,
+                                int width) {
+  AR64ShuffleRow_Wasm<true>(src_ar64, dst_ar64, shuffler, width);
+}
+#endif  // HAS_AR64SHUFFLEROW_RELAXEDSIMD
+#endif  // HAS_AR64SHUFFLEROW_WASMSIMD || HAS_AR64SHUFFLEROW_RELAXEDSIMD
+
 #ifdef HAS_COPYROW_WASMSIMD
 void CopyRow_WASMSIMD(const uint8_t* src, uint8_t* dst, int count) {
   do {

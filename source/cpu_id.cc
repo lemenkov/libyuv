@@ -493,7 +493,17 @@ LIBYUV_API SAFEBUFFERS int WasmCpuCaps(void) {
   return flag;
 }
 
+static int detected_cpu_info_ = 0;
+
 static SAFEBUFFERS int GetCpuFlags(void) {
+#ifdef __ATOMIC_RELAXED
+  int cached_info = __atomic_load_n(&detected_cpu_info_, __ATOMIC_RELAXED);
+#else
+  int cached_info = detected_cpu_info_;
+#endif
+  if (cached_info) {
+    return cached_info;
+  }
   int cpu_info = 0;
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \
     (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
@@ -640,12 +650,26 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 #endif
 #endif  // __hexagon__
   cpu_info |= kCpuInitialized;
+#ifdef __ATOMIC_RELAXED
+  __atomic_store_n(&detected_cpu_info_, cpu_info, __ATOMIC_RELAXED);
+#else
+  detected_cpu_info_ = cpu_info;
+#endif
   return cpu_info;
 }
 
 // Note that use of this function is not thread safe.
 LIBYUV_API
 int MaskCpuFlags(int enable_flags) {
+  if (enable_flags == 0) {
+#ifdef __ATOMIC_RELAXED
+    __atomic_store_n(&detected_cpu_info_, 0, __ATOMIC_RELAXED);
+#else
+    detected_cpu_info_ = 0;
+#endif
+    SetCpuFlags(0);
+    return 0;
+  }
   int cpu_info = GetCpuFlags() & enable_flags;
   SetCpuFlags(cpu_info);
   return cpu_info;

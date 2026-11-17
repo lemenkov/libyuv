@@ -1684,25 +1684,76 @@ void YUY2ToNVUVRow_NEON(const uint8_t* src_yuy2,
   );
 }
 
+void AR64ShuffleRow_NEON(const uint8_t* src_ar64,
+                         uint8_t* dst_ar64,
+                         const uint8_t* shuffler,
+                         int width) {
+  asm volatile(
+      "vld1.8      {q4}, [%3]                    \n"  // shuffler
+      "subs        %2, %2, #4                    \n"
+      "blt         2f                            \n"
+
+      "1:          \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 4 pixels.
+      "subs        %2, %2, #4                    \n"  // 4 processed per loop
+      "vtbl.8      d4, {d0, d1}, d8              \n"
+      "vtbl.8      d5, {d0, d1}, d9              \n"
+      "vtbl.8      d6, {d2, d3}, d8              \n"
+      "vtbl.8      d7, {d2, d3}, d9              \n"
+      "vst1.8      {q2, q3}, [%1]!               \n"  // store 4.
+      "bge         1b                            \n"
+
+      "2:          \n"
+      "adds        %2, %2, #4                    \n"
+      "ble         99f                           \n"
+      "vld1.8      {q0}, [%0]!                   \n"  // load 2 pixels.
+      "vtbl.8      d4, {d0, d1}, d8              \n"
+      "vtbl.8      d5, {d0, d1}, d9              \n"
+      "vst1.8      {q2}, [%1]!                   \n"  // store 2.
+
+      "99:         \n"
+      : "+r"(src_ar64),                               // %0
+        "+r"(dst_ar64),                               // %1
+        "+r"(width)                                   // %2
+      : "r"(shuffler)                                 // %3
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q4"  // Clobber List
+  );
+}
+
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_NEON(const uint8_t* src_argb,
                          uint8_t* dst_argb,
                          const uint8_t* shuffler,
                          int width) {
   asm volatile(
-      "vld1.8      {q2}, [%3]                    \n"  // shuffler
+      "vld1.8      {q4}, [%3]                    \n"  // shuffler
+      "subs        %2, %2, #8                    \n"
+      "blt         2f                            \n"
+
       "1:          \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  // load 8 pixels.
+      "subs        %2, %2, #8                    \n"  // 8 processed per loop
+      "vtbl.8      d4, {d0, d1}, d8              \n"
+      "vtbl.8      d5, {d0, d1}, d9              \n"
+      "vtbl.8      d6, {d2, d3}, d8              \n"
+      "vtbl.8      d7, {d2, d3}, d9              \n"
+      "vst1.8      {q2, q3}, [%1]!               \n"  // store 8.
+      "bge         1b                            \n"
+
+      "2:          \n"
+      "adds        %2, %2, #8                    \n"
+      "ble         99f                           \n"
       "vld1.8      {q0}, [%0]!                   \n"  // load 4 pixels.
-      "subs        %2, %2, #4                    \n"  // 4 processed per loop
-      "vtbl.8      d2, {d0, d1}, d4              \n"  // look up 2 first pixels
-      "vtbl.8      d3, {d0, d1}, d5              \n"  // look up 2 next pixels
-      "vst1.8      {q1}, [%1]!                   \n"  // store 4.
-      "bgt         1b                            \n"
-      : "+r"(src_argb),                   // %0
-        "+r"(dst_argb),                   // %1
-        "+r"(width)                       // %2
-      : "r"(shuffler)                     // %3
-      : "cc", "memory", "q0", "q1", "q2"  // Clobber List
+      "vtbl.8      d4, {d0, d1}, d8              \n"
+      "vtbl.8      d5, {d0, d1}, d9              \n"
+      "vst1.8      {q2}, [%1]!                   \n"  // store 4.
+
+      "99:         \n"
+      : "+r"(src_argb),                               // %0
+        "+r"(dst_argb),                               // %1
+        "+r"(width)                                   // %2
+      : "r"(shuffler)                                 // %3
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q4"  // Clobber List
   );
 }
 
@@ -4656,72 +4707,6 @@ void ARGBLumaColorTableRow_NEON(const uint8_t* src_argb,
       : "r"(luma),       // %5
         "r"(lumacoeff)   // %6
       : "memory", "cc", "q0", "q1", "q2", "q4");
-}
-
-void ARGBAffineRow_NEON(const uint8_t* src_argb,
-                        int src_argb_stride,
-                        uint8_t* dst_argb,
-                        const float* uv_dudv,
-                        int width) {
-  uint32_t off0, off1;
-  asm volatile(
-      "vld1.32     {d4, d5}, [%5]                \n"  // d4=[u,v], d5=[du,dv]
-      "vmov        d12, d5                       \n"  // d12=[du,dv]
-      "vdup.32     d10, %4                       \n"  // [stride, stride]
-      "vmov.i32    d11, #4                       \n"  // [4, 4]
-      "vtrn.32     d11, d10                      \n"  // q5=[4, stride, 4,
-                                                      // stride]
-      "subs        %1, %1, #4                    \n"
-      "blt         2f                            \n"
-      "vmov        d13, d12                      \n"  // q6=[du, dv, du, dv]
-      "vadd.f32    q4, q6, q6                    \n"  // 2 * [du, dv, du, dv]
-      "vadd.f32    d5, d4, d12                   \n"  // [u+du, v+dv]
-      "vadd.f32    q3, q2, q4                    \n"  // [u+2du, v+2dv, u+3du,
-                                                      // v+3dv]
-      "vadd.f32    q4, q4, q4                    \n"  // 4 * [du, dv, du, dv]
-      "1:                                        \n"
-      "vcvt.s32.f32 q0, q2                       \n"
-      "vcvt.s32.f32 q1, q3                       \n"
-      "vadd.f32    q2, q2, q4                    \n"
-      "vadd.f32    q3, q3, q4                    \n"
-      "vmul.i32    q0, q0, q5                    \n"
-      "vmul.i32    q1, q1, q5                    \n"
-      "vpadd.i32   d14, d0, d1                   \n"
-      "vpadd.i32   d15, d2, d3                   \n"
-      "vmov        %2, %3, d14                   \n"
-      "ldr         %2, [%6, %2]                  \n"
-      "ldr         %3, [%6, %3]                  \n"
-      "str         %2, [%0], #4                  \n"
-      "str         %3, [%0], #4                  \n"
-      "vmov        %2, %3, d15                   \n"
-      "ldr         %2, [%6, %2]                  \n"
-      "ldr         %3, [%6, %3]                  \n"
-      "str         %2, [%0], #4                  \n"
-      "str         %3, [%0], #4                  \n"
-      "subs        %1, %1, #4                    \n"
-      "bge         1b                            \n"
-      "2:                                        \n"
-      "adds        %1, %1, #4                    \n"
-      "beq         4f                            \n"
-      "3:                                        \n"
-      "vcvt.s32.f32 d0, d4                       \n"
-      "vadd.f32    d4, d4, d12                   \n"
-      "vmul.i32    d0, d0, d10                   \n"
-      "vpadd.i32   d0, d0, d0                    \n"
-      "vmov.32     %2, d0[0]                     \n"
-      "ldr         %2, [%6, %2]                  \n"
-      "str         %2, [%0], #4                  \n"
-      "subs        %1, %1, #1                    \n"
-      "bgt         3b                            \n"
-      "4:                                        \n"
-      : "+r"(dst_argb),        // %0
-        "+r"(width),           // %1
-        "=&r"(off0),           // %2
-        "=&r"(off1)            // %3
-      : "r"(src_argb_stride),  // %4
-        "r"(uv_dudv),          // %5
-        "r"(src_argb)          // %6
-      : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
 }
 
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..

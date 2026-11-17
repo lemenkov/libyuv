@@ -411,6 +411,9 @@ void TransposeWxH_ACEV1(const uint8_t* src,
                         int dst_stride,
                         int width,
                         int height) {
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   const uint8_t* src2;
   const uint8_t* src3;
   uint8_t* dst2;
@@ -513,6 +516,9 @@ void TransposeUVWxH_ACEV1(const uint8_t* src,
                           int dst_stride_b,
                           int width,
                           int height) {
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   const uint8_t* src2;
   const uint8_t* src3;
   uint8_t* dst2_a;
@@ -1246,6 +1252,9 @@ void TransposeWxH_16_ACEV1(const uint16_t* src,
                            int dst_stride,
                            int width,
                            int height) {
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   const uint16_t* src2;
   const uint16_t* src3;
   uint16_t* dst2;
@@ -2032,6 +2041,9 @@ void TransposeWxH_32_ACEV1(const uint8_t* src,
                            int dst_stride,
                            int width,
                            int height) {
+  if (width <= 0 || height <= 0) {
+    return;
+  }
   const uint8_t* src2;
   const uint8_t* src3;
   uint8_t* dst2;

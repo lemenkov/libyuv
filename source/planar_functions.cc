@@ -6525,7 +6525,7 @@ int ARGBShuffle(const uint8_t* src_argb,
   int y;
   void (*ARGBShuffleRow)(const uint8_t* src_argb, uint8_t* dst_argb,
                          const uint8_t* shuffler, int width) = ARGBShuffleRow_C;
-  if (!src_argb || !dst_argb || width <= 0 || height == 0 ||
+  if (!src_argb || !dst_argb || !shuffler || width <= 0 || height == 0 ||
       height == INT_MIN) {
     return -1;
   }
@@ -6571,6 +6571,16 @@ int ARGBShuffle(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBSHUFFLEROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBShuffleRow = ARGBShuffleRow_SVE2;
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBShuffleRow = ARGBShuffleRow_SME;
+  }
+#endif
 #if defined(HAS_ARGBSHUFFLEROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     ARGBShuffleRow = ARGBShuffleRow_Any_LSX;
@@ -6608,6 +6618,11 @@ int ARGBShuffle(const uint8_t* src_argb,
     ARGBShuffleRow = ARGBShuffleRow_RVV;
   }
 #endif
+#if defined(HAS_ARGBSHUFFLEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    ARGBShuffleRow = ARGBShuffleRow_HVX;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBShuffleRow(src_argb, dst_argb, shuffler, width);
@@ -6629,7 +6644,7 @@ int AR64Shuffle(const uint16_t* src_ar64,
   int y;
   void (*AR64ShuffleRow)(const uint8_t* src_ar64, uint8_t* dst_ar64,
                          const uint8_t* shuffler, int width) = AR64ShuffleRow_C;
-  if (!src_ar64 || !dst_ar64 || width <= 0 || height == 0 ||
+  if (!src_ar64 || !dst_ar64 || !shuffler || width <= 0 || height == 0 ||
       height == INT_MIN) {
     return -1;
   }
@@ -6646,77 +6661,91 @@ int AR64Shuffle(const uint16_t* src_ar64,
     height = 1;
     src_stride_ar64 = dst_stride_ar64 = 0;
   }
-  // Assembly versions can be reused if it's implemented with shuffle.
-#if defined(HAS_ARGBSHUFFLEROW_SSSE3)
+#if defined(HAS_AR64SHUFFLEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      AR64ShuffleRow = ARGBShuffleRow_SSSE3;
+    AR64ShuffleRow = AR64ShuffleRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      AR64ShuffleRow = AR64ShuffleRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_ARGBSHUFFLEROW_AVX2)
+#if defined(HAS_AR64SHUFFLEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      AR64ShuffleRow = ARGBShuffleRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBSHUFFLEROW_AVX512BW)
-  if (TestCpuFlag(kCpuHasAVX512BW)) {
-    AR64ShuffleRow = ARGBShuffleRow_AVX512BW;
-  }
-#endif
-#if defined(HAS_ARGBSHUFFLEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
-      AR64ShuffleRow = ARGBShuffleRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_ARGBSHUFFLEROW_LSX)
-  if (TestCpuFlag(kCpuHasLSX)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_LSX;
-    if (IS_ALIGNED(width, 4)) {
-      AR64ShuffleRow = ARGBShuffleRow_LSX;
-    }
-  }
-#endif
-#if defined(HAS_ARGBSHUFFLEROW_LASX)
-  if (TestCpuFlag(kCpuHasLASX)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_LASX;
+    AR64ShuffleRow = AR64ShuffleRow_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
-      AR64ShuffleRow = ARGBShuffleRow_LASX;
+      AR64ShuffleRow = AR64ShuffleRow_AVX2;
     }
   }
 #endif
-#if defined(HAS_ARGBSHUFFLEROW_WASMSIMD)
+#if defined(HAS_AR64SHUFFLEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    AR64ShuffleRow = AR64ShuffleRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AR64ShuffleRow = AR64ShuffleRow_Any_NEON;
+    if (IS_ALIGNED(width, 2)) {
+      AR64ShuffleRow = AR64ShuffleRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    AR64ShuffleRow = AR64ShuffleRow_SVE2;
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    AR64ShuffleRow = AR64ShuffleRow_SME;
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_LSX)
+  if (TestCpuFlag(kCpuHasLSX)) {
+    AR64ShuffleRow = AR64ShuffleRow_Any_LSX;
+    if (IS_ALIGNED(width, 2)) {
+      AR64ShuffleRow = AR64ShuffleRow_LSX;
+    }
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_LASX)
+  if (TestCpuFlag(kCpuHasLASX)) {
+    AR64ShuffleRow = AR64ShuffleRow_Any_LASX;
+    if (IS_ALIGNED(width, 4)) {
+      AR64ShuffleRow = AR64ShuffleRow_LASX;
+    }
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_WASMSIMD;
-    if (IS_ALIGNED(width, 4)) {
-      AR64ShuffleRow = ARGBShuffleRow_WASMSIMD;
+    AR64ShuffleRow = AR64ShuffleRow_Any_WASMSIMD;
+    if (IS_ALIGNED(width, 2)) {
+      AR64ShuffleRow = AR64ShuffleRow_WASMSIMD;
     }
   }
 #endif
-#if defined(HAS_ARGBSHUFFLEROW_RELAXEDSIMD)
+#if defined(HAS_AR64SHUFFLEROW_RELAXEDSIMD)
   if (TestCpuFlag(kCpuHasRELAXEDSIMD)) {
-    AR64ShuffleRow = ARGBShuffleRow_Any_RELAXEDSIMD;
-    if (IS_ALIGNED(width, 4)) {
-      AR64ShuffleRow = ARGBShuffleRow_RELAXEDSIMD;
+    AR64ShuffleRow = AR64ShuffleRow_Any_RELAXEDSIMD;
+    if (IS_ALIGNED(width, 2)) {
+      AR64ShuffleRow = AR64ShuffleRow_RELAXEDSIMD;
     }
   }
 #endif
-#if defined(HAS_ARGBSHUFFLEROW_RVV)
+#if defined(HAS_AR64SHUFFLEROW_RVV)
   if (TestCpuFlag(kCpuHasRVV)) {
-    AR64ShuffleRow = ARGBShuffleRow_RVV;
+    AR64ShuffleRow = AR64ShuffleRow_RVV;
+  }
+#endif
+#if defined(HAS_AR64SHUFFLEROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    AR64ShuffleRow = AR64ShuffleRow_HVX;
   }
 #endif
 
   for (y = 0; y < height; ++y) {
-    AR64ShuffleRow((uint8_t*)(src_ar64), (uint8_t*)(dst_ar64), shuffler,
-                   width * 2);
+    AR64ShuffleRow((const uint8_t*)src_ar64, (uint8_t*)dst_ar64, shuffler,
+                   width);
     src_ar64 += src_stride_ar64;
     dst_ar64 += dst_stride_ar64;
   }

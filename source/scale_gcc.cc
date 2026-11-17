@@ -3123,6 +3123,9 @@ void ScaleUVFilterCols_AVX2(uint8_t* dst_uv,
   int n = dst_width & ~7;
   int r = dst_width & 7;
   if (n > 0) {
+    SIMD_ALIGNED(int32_t xi_buf[8]);
+    int32_t* xi_ptr = xi_buf;
+    intptr_t tmp;
     int loop_n = n;
     asm volatile(
         "vbroadcasti128 %[kShufUV],%%ymm4          \n"
@@ -3138,12 +3141,47 @@ void ScaleUVFilterCols_AVX2(uint8_t* dst_uv,
         LABELALIGN
         "1:          \n"
         "vpsrad      $0x10,%%ymm2,%%ymm0           \n"
-        "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-        "vpgatherdd  %%ymm7,(%[src],%%ymm0,2),%%ymm1 \n"
+        "vmovdqa     %%ymm0,(%[xi])                \n"
         "vpsrlw      $0x9,%%ymm2,%%ymm7            \n"
         "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
         "vpshufb     %%ymm5,%%ymm7,%%ymm7          \n"
         "vpxor       %%ymm6,%%ymm7,%%ymm7          \n"
+#if defined(__x86_64__)
+        "movslq      0x00(%[xi]),%q[tmp]           \n"
+        "vmovd       0x00(%[src],%q[tmp],2),%%xmm1 \n"
+        "movslq      0x04(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x1,0x00(%[src],%q[tmp],2),%%xmm1,%%xmm1 \n"
+        "movslq      0x08(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x2,0x00(%[src],%q[tmp],2),%%xmm1,%%xmm1 \n"
+        "movslq      0x0c(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x3,0x00(%[src],%q[tmp],2),%%xmm1,%%xmm1 \n"
+        "movslq      0x10(%[xi]),%q[tmp]           \n"
+        "vmovd       0x00(%[src],%q[tmp],2),%%xmm0 \n"
+        "movslq      0x14(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x1,0x00(%[src],%q[tmp],2),%%xmm0,%%xmm0 \n"
+        "movslq      0x18(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x2,0x00(%[src],%q[tmp],2),%%xmm0,%%xmm0 \n"
+        "movslq      0x1c(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x3,0x00(%[src],%q[tmp],2),%%xmm0,%%xmm0 \n"
+#else
+        "mov         0x00(%[xi]),%[tmp]            \n"
+        "vmovd       0x00(%[src],%[tmp],2),%%xmm1  \n"
+        "mov         0x04(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x1,0x00(%[src],%[tmp],2),%%xmm1,%%xmm1 \n"
+        "mov         0x08(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x2,0x00(%[src],%[tmp],2),%%xmm1,%%xmm1 \n"
+        "mov         0x0c(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x3,0x00(%[src],%[tmp],2),%%xmm1,%%xmm1 \n"
+        "mov         0x10(%[xi]),%[tmp]            \n"
+        "vmovd       0x00(%[src],%[tmp],2),%%xmm0  \n"
+        "mov         0x14(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x1,0x00(%[src],%[tmp],2),%%xmm0,%%xmm0 \n"
+        "mov         0x18(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x2,0x00(%[src],%[tmp],2),%%xmm0,%%xmm0 \n"
+        "mov         0x1c(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x3,0x00(%[src],%[tmp],2),%%xmm0,%%xmm0 \n"
+#endif
+        "vinserti128 $0x1,%%xmm0,%%ymm1,%%ymm1     \n"
         "vpshufb     %%ymm4,%%ymm1,%%ymm0          \n"
         "vpcmpeqw    %%ymm1,%%ymm1,%%ymm1          \n"
         "vpsrlw      $0x8,%%ymm1,%%ymm1            \n"  // 0x00ff
@@ -3162,8 +3200,8 @@ void ScaleUVFilterCols_AVX2(uint8_t* dst_uv,
         "subl        $0x8,%[n]                     \n"
         "jg          1b                            \n"
         "vzeroupper  \n"
-        : [dst] "+r"(dst_uv), [n] "+rm"(loop_n)
-        : [src] "r"(src_uv), [x] "m"(x), [dx] "m"(dx),
+        : [dst] "+r"(dst_uv), [n] "+rm"(loop_n), [tmp] "=&r"(tmp)
+        : [src] "r"(src_uv), [xi] "r"(xi_ptr), [x] "m"(x), [dx] "m"(dx),
           [kStep] "m"(kStep0_7_UVFilter), [kShufUV] "m"(kShuffleColUV),
           [kShufFrac] "m"(kShuffleFracUV)
         : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
@@ -3642,34 +3680,38 @@ void ScaleARGBRowDown2Box_AVX512BW(const uint8_t* src_argb,
 #endif  // HAS_SCALEARGBROWDOWN2_AVX512BW
 
 #ifdef HAS_SCALEARGBROWDOWNEVEN_AVX2
-static const int32_t kStep0_7_Even[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-
 // Reads 8 pixels at a time.
 void ScaleARGBRowDownEven_AVX2(const uint8_t* src_argb,
                                ptrdiff_t src_stride,
                                int src_stepx,
                                uint8_t* dst_argb,
                                int dst_width) {
-  ptrdiff_t src_stepx_x32 = (ptrdiff_t)src_stepx * 32;
+  ptrdiff_t step = (ptrdiff_t)src_stepx * 4;
   (void)src_stride;
   asm volatile(
-      "vpbroadcastd %[stepx],%%ymm2              \n"
-      "vpmulld     %[kStep],%%ymm2,%%ymm2        \n"
-
       LABELALIGN
       "1:          \n"
-      "vpcmpeqd    %%ymm3,%%ymm3,%%ymm3          \n"
-      "vpgatherdd  %%ymm3,(%[src],%%ymm2,4),%%ymm0 \n"
-      "add         %[step32],%[src]              \n"
+      "vmovd       (%[src]),%%xmm0               \n"
+      "vpinsrd     $0x1,(%[src],%[step],1),%%xmm0,%%xmm0 \n"
+      "lea         (%[src],%[step],2),%[src]     \n"
+      "vpinsrd     $0x2,(%[src]),%%xmm0,%%xmm0   \n"
+      "vpinsrd     $0x3,(%[src],%[step],1),%%xmm0,%%xmm0 \n"
+      "lea         (%[src],%[step],2),%[src]     \n"
+      "vmovd       (%[src]),%%xmm1               \n"
+      "vpinsrd     $0x1,(%[src],%[step],1),%%xmm1,%%xmm1 \n"
+      "lea         (%[src],%[step],2),%[src]     \n"
+      "vpinsrd     $0x2,(%[src]),%%xmm1,%%xmm1   \n"
+      "vpinsrd     $0x3,(%[src],%[step],1),%%xmm1,%%xmm1 \n"
+      "lea         (%[src],%[step],2),%[src]     \n"
+      "vinserti128 $0x1,%%xmm1,%%ymm0,%%ymm0     \n"
       "vmovdqu     %%ymm0,(%[dst])               \n"
       "lea         0x20(%[dst]),%[dst]           \n"
-      "sub         $0x8,%[width]                 \n"
+      "subl        $0x8,%[width]                 \n"
       "jg          1b                            \n"
       "vzeroupper  \n"
       : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [width] "+rm"(dst_width)
-      : [step32] "r"(src_stepx_x32), [stepx] "m"(src_stepx),
-        [kStep] "m"(kStep0_7_Even)
-      : "memory", "cc", "xmm0", "xmm2", "xmm3");
+      : [step] "r"(step)
+      : "memory", "cc", "xmm0", "xmm1");
 }
 
 // Blends eight 2x2 to 8x1.
@@ -3679,62 +3721,73 @@ void ScaleARGBRowDownEvenBox_AVX2(const uint8_t* src_argb,
                                   uint8_t* dst_argb,
                                   int dst_width) {
   const uint8_t* row1 = src_argb + src_stride;
-  ptrdiff_t step4_bytes = (ptrdiff_t)src_stepx * 16;
-  asm volatile(
-      "vmovd       %[stepx],%%xmm4               \n"
-      "vpshufd     $0x0,%%xmm4,%%xmm4            \n"
-      "vpmulld     %[kStep],%%xmm4,%%xmm4        \n"
-      "vpxor       %%ymm7,%%ymm7,%%ymm7          \n"
+  ptrdiff_t step = (ptrdiff_t)src_stepx * 4;
+  asm volatile("vpxor       %%ymm7,%%ymm7,%%ymm7          \n"
 
-      LABELALIGN
-      "1:          \n"
-      "vpcmpeqd    %%ymm5,%%ymm5,%%ymm5          \n"
-      "vpgatherdq  %%ymm5,(%[row0],%%xmm4,4),%%ymm0 \n"
-      "vpcmpeqd    %%ymm5,%%ymm5,%%ymm5          \n"
-      "vpgatherdq  %%ymm5,(%[row1],%%xmm4,4),%%ymm2 \n"
-      "add         %[step4],%[row0]              \n"
-      "add         %[step4],%[row1]              \n"
-      "vpcmpeqd    %%ymm5,%%ymm5,%%ymm5          \n"
-      "vpgatherdq  %%ymm5,(%[row0],%%xmm4,4),%%ymm1 \n"
-      "vpcmpeqd    %%ymm5,%%ymm5,%%ymm5          \n"
-      "vpgatherdq  %%ymm5,(%[row1],%%xmm4,4),%%ymm3 \n"
-      "add         %[step4],%[row0]              \n"
-      "add         %[step4],%[row1]              \n"
-      "vshufps     $0x88,%%ymm1,%%ymm0,%%ymm5    \n"
-      "vshufps     $0xdd,%%ymm1,%%ymm0,%%ymm0    \n"
-      "vshufps     $0x88,%%ymm3,%%ymm2,%%ymm6    \n"
-      "vshufps     $0xdd,%%ymm3,%%ymm2,%%ymm2    \n"
-      "vpunpcklbw  %%ymm7,%%ymm5,%%ymm1          \n"
-      "vpunpcklbw  %%ymm7,%%ymm0,%%ymm3          \n"
-      "vpaddw      %%ymm3,%%ymm1,%%ymm1          \n"
-      "vpunpcklbw  %%ymm7,%%ymm6,%%ymm3          \n"
-      "vpaddw      %%ymm3,%%ymm1,%%ymm1          \n"
-      "vpunpcklbw  %%ymm7,%%ymm2,%%ymm3          \n"
-      "vpaddw      %%ymm3,%%ymm1,%%ymm1          \n"
-      "vpsrlw      $0x1,%%ymm1,%%ymm1            \n"
-      "vpavgw      %%ymm7,%%ymm1,%%ymm1          \n"
-      "vpunpckhbw  %%ymm7,%%ymm5,%%ymm5          \n"
-      "vpunpckhbw  %%ymm7,%%ymm0,%%ymm0          \n"
-      "vpaddw      %%ymm0,%%ymm5,%%ymm5          \n"
-      "vpunpckhbw  %%ymm7,%%ymm6,%%ymm6          \n"
-      "vpaddw      %%ymm6,%%ymm5,%%ymm5          \n"
-      "vpunpckhbw  %%ymm7,%%ymm2,%%ymm2          \n"
-      "vpaddw      %%ymm2,%%ymm5,%%ymm5          \n"
-      "vpsrlw      $0x1,%%ymm5,%%ymm5            \n"
-      "vpavgw      %%ymm7,%%ymm5,%%ymm5          \n"
-      "vpackuswb   %%ymm5,%%ymm1,%%ymm0          \n"
-      "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
-      "vmovdqu     %%ymm0,(%[dst])               \n"
-      "lea         0x20(%[dst]),%[dst]           \n"
-      "subl        $0x8,%[width]                 \n"
-      "jg          1b                            \n"
-      "vzeroupper  \n"
-      : [row0] "+r"(src_argb), [row1] "+r"(row1), [dst] "+r"(dst_argb),
-        [width] "+rm"(dst_width)
-      : [step4] "r"(step4_bytes), [stepx] "m"(src_stepx),
-        [kStep] "m"(kStep0_7_Even)
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+               LABELALIGN
+               "1:          \n"
+               "vmovq       (%[row0]),%%xmm0              \n"
+               "vmovhps     (%[row0],%[step],1),%%xmm0,%%xmm0 \n"
+               "lea         (%[row0],%[step],2),%[row0]   \n"
+               "vmovq       (%[row0]),%%xmm5              \n"
+               "vmovhps     (%[row0],%[step],1),%%xmm5,%%xmm5 \n"
+               "lea         (%[row0],%[step],2),%[row0]   \n"
+               "vinserti128 $0x1,%%xmm5,%%ymm0,%%ymm0     \n"
+               "vmovq       (%[row1]),%%xmm2              \n"
+               "vmovhps     (%[row1],%[step],1),%%xmm2,%%xmm2 \n"
+               "lea         (%[row1],%[step],2),%[row1]   \n"
+               "vmovq       (%[row1]),%%xmm5              \n"
+               "vmovhps     (%[row1],%[step],1),%%xmm5,%%xmm5 \n"
+               "lea         (%[row1],%[step],2),%[row1]   \n"
+               "vinserti128 $0x1,%%xmm5,%%ymm2,%%ymm2     \n"
+               "vmovq       (%[row0]),%%xmm1              \n"
+               "vmovhps     (%[row0],%[step],1),%%xmm1,%%xmm1 \n"
+               "lea         (%[row0],%[step],2),%[row0]   \n"
+               "vmovq       (%[row0]),%%xmm5              \n"
+               "vmovhps     (%[row0],%[step],1),%%xmm5,%%xmm5 \n"
+               "lea         (%[row0],%[step],2),%[row0]   \n"
+               "vinserti128 $0x1,%%xmm5,%%ymm1,%%ymm1     \n"
+               "vmovq       (%[row1]),%%xmm3              \n"
+               "vmovhps     (%[row1],%[step],1),%%xmm3,%%xmm3 \n"
+               "lea         (%[row1],%[step],2),%[row1]   \n"
+               "vmovq       (%[row1]),%%xmm5              \n"
+               "vmovhps     (%[row1],%[step],1),%%xmm5,%%xmm5 \n"
+               "lea         (%[row1],%[step],2),%[row1]   \n"
+               "vinserti128 $0x1,%%xmm5,%%ymm3,%%ymm3     \n"
+               "vshufps     $0x88,%%ymm1,%%ymm0,%%ymm5    \n"
+               "vshufps     $0xdd,%%ymm1,%%ymm0,%%ymm0    \n"
+               "vshufps     $0x88,%%ymm3,%%ymm2,%%ymm6    \n"
+               "vshufps     $0xdd,%%ymm3,%%ymm2,%%ymm2    \n"
+               "vpunpcklbw  %%ymm7,%%ymm5,%%ymm1          \n"
+               "vpunpcklbw  %%ymm7,%%ymm0,%%ymm3          \n"
+               "vpaddw      %%ymm3,%%ymm1,%%ymm1          \n"
+               "vpunpcklbw  %%ymm7,%%ymm6,%%ymm3          \n"
+               "vpaddw      %%ymm3,%%ymm1,%%ymm1          \n"
+               "vpunpcklbw  %%ymm7,%%ymm2,%%ymm3          \n"
+               "vpaddw      %%ymm3,%%ymm1,%%ymm1          \n"
+               "vpsrlw      $0x1,%%ymm1,%%ymm1            \n"
+               "vpavgw      %%ymm7,%%ymm1,%%ymm1          \n"
+               "vpunpckhbw  %%ymm7,%%ymm5,%%ymm5          \n"
+               "vpunpckhbw  %%ymm7,%%ymm0,%%ymm0          \n"
+               "vpaddw      %%ymm0,%%ymm5,%%ymm5          \n"
+               "vpunpckhbw  %%ymm7,%%ymm6,%%ymm6          \n"
+               "vpaddw      %%ymm6,%%ymm5,%%ymm5          \n"
+               "vpunpckhbw  %%ymm7,%%ymm2,%%ymm2          \n"
+               "vpaddw      %%ymm2,%%ymm5,%%ymm5          \n"
+               "vpsrlw      $0x1,%%ymm5,%%ymm5            \n"
+               "vpavgw      %%ymm7,%%ymm5,%%ymm5          \n"
+               "vpackuswb   %%ymm5,%%ymm1,%%ymm0          \n"
+               "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+               "vmovdqu     %%ymm0,(%[dst])               \n"
+               "lea         0x20(%[dst]),%[dst]           \n"
+               "subl        $0x8,%[width]                 \n"
+               "jg          1b                            \n"
+               "vzeroupper  \n"
+               : [row0] "+r"(src_argb), [row1] "+r"(row1), [dst] "+r"(dst_argb),
+                 [width] "+m"(dst_width)
+               : [step] "r"(step)
+               : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6",
+                 "xmm7");
 }
 #endif  // HAS_SCALEARGBROWDOWNEVEN_AVX2
 
@@ -3749,6 +3802,9 @@ void ScaleARGBCols_AVX2(uint8_t* dst_argb,
   int n = dst_width & ~7;
   int r = dst_width & 7;
   if (n > 0) {
+    SIMD_ALIGNED(int32_t xi_buf[8]);
+    int32_t* xi_ptr = xi_buf;
+    intptr_t tmp;
     int loop_n = n;
     asm volatile(
         "vpbroadcastd %[x],%%ymm2                  \n"
@@ -3761,17 +3817,52 @@ void ScaleARGBCols_AVX2(uint8_t* dst_argb,
         "1:          \n"
         "vpsrad      $0x10,%%ymm2,%%ymm0           \n"
         "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
-        "vpcmpeqd    %%ymm4,%%ymm4,%%ymm4          \n"
-        "vpgatherdd  %%ymm4,(%[src],%%ymm0,4),%%ymm1 \n"
+        "vmovdqa     %%ymm0,(%[xi])                \n"
+#if defined(__x86_64__)
+        "movslq      0x00(%[xi]),%q[tmp]           \n"
+        "vmovd       0x00(%[src],%q[tmp],4),%%xmm1 \n"
+        "movslq      0x04(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x1,0x00(%[src],%q[tmp],4),%%xmm1,%%xmm1 \n"
+        "movslq      0x08(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x2,0x00(%[src],%q[tmp],4),%%xmm1,%%xmm1 \n"
+        "movslq      0x0c(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x3,0x00(%[src],%q[tmp],4),%%xmm1,%%xmm1 \n"
+        "movslq      0x10(%[xi]),%q[tmp]           \n"
+        "vmovd       0x00(%[src],%q[tmp],4),%%xmm0 \n"
+        "movslq      0x14(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x1,0x00(%[src],%q[tmp],4),%%xmm0,%%xmm0 \n"
+        "movslq      0x18(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x2,0x00(%[src],%q[tmp],4),%%xmm0,%%xmm0 \n"
+        "movslq      0x1c(%[xi]),%q[tmp]           \n"
+        "vpinsrd     $0x3,0x00(%[src],%q[tmp],4),%%xmm0,%%xmm0 \n"
+#else
+        "mov         0x00(%[xi]),%[tmp]            \n"
+        "vmovd       0x00(%[src],%[tmp],4),%%xmm1  \n"
+        "mov         0x04(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x1,0x00(%[src],%[tmp],4),%%xmm1,%%xmm1 \n"
+        "mov         0x08(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x2,0x00(%[src],%[tmp],4),%%xmm1,%%xmm1 \n"
+        "mov         0x0c(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x3,0x00(%[src],%[tmp],4),%%xmm1,%%xmm1 \n"
+        "mov         0x10(%[xi]),%[tmp]            \n"
+        "vmovd       0x00(%[src],%[tmp],4),%%xmm0  \n"
+        "mov         0x14(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x1,0x00(%[src],%[tmp],4),%%xmm0,%%xmm0 \n"
+        "mov         0x18(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x2,0x00(%[src],%[tmp],4),%%xmm0,%%xmm0 \n"
+        "mov         0x1c(%[xi]),%[tmp]            \n"
+        "vpinsrd     $0x3,0x00(%[src],%[tmp],4),%%xmm0,%%xmm0 \n"
+#endif
+        "vinserti128 $0x1,%%xmm0,%%ymm1,%%ymm1     \n"
         "vmovdqu     %%ymm1,(%[dst])               \n"
         "lea         0x20(%[dst]),%[dst]           \n"
         "subl        $0x8,%[n]                     \n"
         "jg          1b                            \n"
         "vzeroupper  \n"
-        : [dst] "+r"(dst_argb), [n] "+rm"(loop_n)
-        : [src] "r"(src_argb), [x] "m"(x), [dx] "m"(dx),
+        : [dst] "+r"(dst_argb), [n] "+rm"(loop_n), [tmp] "=&r"(tmp)
+        : [src] "r"(src_argb), [xi] "r"(xi_ptr), [x] "m"(x), [dx] "m"(dx),
           [kStep] "m"(kStep0_7_Cols)
-        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4");
+        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
     x = (int)((uint32_t)x + (uint32_t)n * (uint32_t)dx);
   }
   for (int j = 0; j < r; ++j) {
@@ -3839,6 +3930,9 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
   int n = dst_width & ~3;
   int r = dst_width & 3;
   if (n > 0) {
+    SIMD_ALIGNED(int32_t xi_buf[4]);
+    int32_t* xi_ptr = xi_buf;
+    intptr_t tmp;
     int loop_n = n;
     asm volatile(
         "vbroadcasti128 %[kShufARGB],%%ymm4        \n"
@@ -3856,10 +3950,29 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
         LABELALIGN
         "1:          \n"
         "vpsrad      $0x10,%%xmm2,%%xmm1           \n"
-        "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-        "vpgatherdq  %%ymm7,(%[src],%%xmm1,4),%%ymm0 \n"
+        "vmovdqa     %%xmm1,(%[xi])                \n"
         "vpsrlw      $0x9,%%xmm2,%%xmm1            \n"
         "vpaddd      %%xmm3,%%xmm2,%%xmm2          \n"
+#if defined(__x86_64__)
+        "movslq      0x00(%[xi]),%q[tmp]           \n"
+        "vmovq       0x00(%[src],%q[tmp],4),%%xmm0 \n"
+        "movslq      0x04(%[xi]),%q[tmp]           \n"
+        "vmovhps     0x00(%[src],%q[tmp],4),%%xmm0,%%xmm0 \n"
+        "movslq      0x08(%[xi]),%q[tmp]           \n"
+        "vmovq       0x00(%[src],%q[tmp],4),%%xmm7 \n"
+        "movslq      0x0c(%[xi]),%q[tmp]           \n"
+        "vmovhps     0x00(%[src],%q[tmp],4),%%xmm7,%%xmm7 \n"
+#else
+        "mov         0x00(%[xi]),%[tmp]            \n"
+        "vmovq       0x00(%[src],%[tmp],4),%%xmm0  \n"
+        "mov         0x04(%[xi]),%[tmp]            \n"
+        "vmovhps     0x00(%[src],%[tmp],4),%%xmm0,%%xmm0 \n"
+        "mov         0x08(%[xi]),%[tmp]            \n"
+        "vmovq       0x00(%[src],%[tmp],4),%%xmm7  \n"
+        "mov         0x0c(%[xi]),%[tmp]            \n"
+        "vmovhps     0x00(%[src],%[tmp],4),%%xmm7,%%xmm7 \n"
+#endif
+        "vinserti128 $0x1,%%xmm7,%%ymm0,%%ymm0     \n"
         "vinserti128 $0x1,%%xmm1,%%ymm1,%%ymm1     \n"
         "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
         "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"
@@ -3873,8 +3986,8 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
         "subl        $0x4,%[n]                     \n"
         "jg          1b                            \n"
         "vzeroupper  \n"
-        : [dst] "+r"(dst_argb), [n] "+rm"(loop_n)
-        : [src] "r"(src_argb), [x] "m"(x), [dx] "m"(dx),
+        : [dst] "+r"(dst_argb), [n] "+rm"(loop_n), [tmp] "=&r"(tmp)
+        : [src] "r"(src_argb), [xi] "r"(xi_ptr), [x] "m"(x), [dx] "m"(dx),
           [kStep] "m"(kStep0_3_ARGB), [kShufARGB] "m"(kShuffleColARGB),
           [kShufFrac] "m"(kShuffleFractionsAVX2)
         : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",

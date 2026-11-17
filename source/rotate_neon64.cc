@@ -324,17 +324,27 @@ void TransposeWx4_32_NEON(const uint8_t* src,
 
       // Main loop transpose 4x4. Read a column, write a row.
       "1:                                          \n"
-      "ldp         s0, s1, [%0]                    \n"
-      "ldp         s2, s3, [%0, #8]                \n"
+      "ldr         q0, [%0]                        \n"
+      "ldr         q1, [%1]                        \n"
+      "ldr         q2, [%2]                        \n"
+      "ldr         q3, [%3]                        \n"
       "add         %0, %0, %9                      \n"
-      "ld4         {v0.s, v1.s, v2.s, v3.s}[1], [%1], %9 \n"
-      "ld4         {v0.s, v1.s, v2.s, v3.s}[2], [%2], %9 \n"
-      "ld4         {v0.s, v1.s, v2.s, v3.s}[3], [%3], %9 \n"
+      "add         %1, %1, %9                      \n"
+      "add         %2, %2, %9                      \n"
+      "add         %3, %3, %9                      \n"
       "subs        %w8, %w8, #4                    \n"
-      "st1         {v0.4s}, [%4], 16               \n"
-      "st1         {v1.4s}, [%5], 16               \n"
-      "st1         {v2.4s}, [%6], 16               \n"
-      "st1         {v3.4s}, [%7], 16               \n"
+      "trn1        v4.4s, v0.4s, v1.4s             \n"
+      "trn2        v5.4s, v0.4s, v1.4s             \n"
+      "trn1        v6.4s, v2.4s, v3.4s             \n"
+      "trn2        v7.4s, v2.4s, v3.4s             \n"
+      "trn1        v0.2d, v4.2d, v6.2d             \n"
+      "trn1        v1.2d, v5.2d, v7.2d             \n"
+      "trn2        v2.2d, v4.2d, v6.2d             \n"
+      "trn2        v3.2d, v5.2d, v7.2d             \n"
+      "str         q0, [%4], #16                   \n"
+      "str         q1, [%5], #16                   \n"
+      "str         q2, [%6], #16                   \n"
+      "str         q3, [%7], #16                   \n"
       "b.ge        1b                              \n"
 
       "2:                                          \n"
@@ -381,7 +391,7 @@ void TransposeWx4_32_NEON(const uint8_t* src,
         "+r"(dst3),  // %7
         "+r"(width)  // %8
       : "r"(s * 4)   // %9
-      : "memory", "cc", "v0", "v1", "v2", "v3");
+      : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
 void TransposeWxH_32_NEON(const uint8_t* src,
@@ -463,13 +473,21 @@ void TransposeWxH_32_NEON(const uint8_t* src,
         "subs        %w6, %w6, #4                    \n"
         "b.lt        2f                              \n"
         "1:                                          \n"
-        "ld2         {v0.s, v1.s}[0], [%0], %7       \n"
-        "ld2         {v0.s, v1.s}[1], [%1], %7       \n"
-        "ld2         {v0.s, v1.s}[2], [%2], %7       \n"
-        "ld2         {v0.s, v1.s}[3], [%3], %7       \n"
+        "ldr         d0, [%0]                        \n"
+        "ldr         d1, [%1]                        \n"
+        "ldr         d2, [%2]                        \n"
+        "ldr         d3, [%3]                        \n"
+        "add         %0, %0, %7                      \n"
+        "add         %1, %1, %7                      \n"
+        "add         %2, %2, %7                      \n"
+        "add         %3, %3, %7                      \n"
         "subs        %w6, %w6, #4                    \n"
-        "st1         {v0.4s}, [%4], 16               \n"
-        "st1         {v1.4s}, [%5], 16               \n"
+        "ins         v0.d[1], v2.d[0]                \n"
+        "ins         v1.d[1], v3.d[0]                \n"
+        "trn1        v2.4s, v0.4s, v1.4s             \n"
+        "trn2        v3.4s, v0.4s, v1.4s             \n"
+        "str         q2, [%4], #16                   \n"
+        "str         q3, [%5], #16                   \n"
         "b.ge        1b                              \n"
         "2:                                          \n"
         "adds        %w6, %w6, #4                    \n"
@@ -501,7 +519,7 @@ void TransposeWxH_32_NEON(const uint8_t* src,
           "+r"(dst1),   // %5
           "+r"(height)  // %6
         : "r"(s * 4)    // %7
-        : "memory", "cc", "v0", "v1");
+        : "memory", "cc", "v0", "v1", "v2", "v3");
   } else if (width == 1) {
     const ptrdiff_t s = src_stride;
     const uint8_t* src1 = src + s;

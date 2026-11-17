@@ -1998,6 +1998,21 @@ ANY11P(ARGBShuffleRow_Any_LSX, ARGBShuffleRow_LSX, const uint8_t*, 4, 4, 3)
 #ifdef HAS_ARGBSHUFFLEROW_LASX
 ANY11P(ARGBShuffleRow_Any_LASX, ARGBShuffleRow_LASX, const uint8_t*, 4, 4, 7)
 #endif
+#ifdef HAS_AR64SHUFFLEROW_SSSE3
+ANY11P(AR64ShuffleRow_Any_SSSE3, AR64ShuffleRow_SSSE3, const uint8_t*, 8, 8, 3)
+#endif
+#ifdef HAS_AR64SHUFFLEROW_AVX2
+ANY11P(AR64ShuffleRow_Any_AVX2, AR64ShuffleRow_AVX2, const uint8_t*, 8, 8, 7)
+#endif
+#ifdef HAS_AR64SHUFFLEROW_NEON
+ANY11P(AR64ShuffleRow_Any_NEON, AR64ShuffleRow_NEON, const uint8_t*, 8, 8, 1)
+#endif
+#ifdef HAS_AR64SHUFFLEROW_LSX
+ANY11P(AR64ShuffleRow_Any_LSX, AR64ShuffleRow_LSX, const uint8_t*, 8, 8, 1)
+#endif
+#ifdef HAS_AR64SHUFFLEROW_LASX
+ANY11P(AR64ShuffleRow_Any_LASX, AR64ShuffleRow_LASX, const uint8_t*, 8, 8, 3)
+#endif
 #if defined(HAS_ARGBTORGB565DITHERROW_WASMSIMD)
 ANY11P(ARGBToRGB565DitherRow_Any_WASMSIMD,
        ARGBToRGB565DitherRow_WASMSIMD,
@@ -2013,6 +2028,14 @@ ANY11P(ARGBShuffleRow_Any_WASMSIMD,
        4,
        4,
        3)
+#endif
+#ifdef HAS_AR64SHUFFLEROW_WASMSIMD
+ANY11P(AR64ShuffleRow_Any_WASMSIMD,
+       AR64ShuffleRow_WASMSIMD,
+       const uint8_t*,
+       8,
+       8,
+       1)
 #endif
 #ifdef HAS_ARGBORROW_SSE2
 ANY11P(ARGBOrRow_Any_SSE2, ARGBOrRow_SSE2, const uint32_t, 4, 4, 3)
@@ -2111,6 +2134,14 @@ ANY11P(ARGBShuffleRow_Any_RELAXEDSIMD,
        4,
        4,
        3)
+#endif
+#ifdef HAS_AR64SHUFFLEROW_RELAXEDSIMD
+ANY11P(AR64ShuffleRow_Any_RELAXEDSIMD,
+       AR64ShuffleRow_RELAXEDSIMD,
+       const uint8_t*,
+       8,
+       8,
+       1)
 #endif
 #ifdef HAS_ARGBPOLYNOMIALROW_WASMSIMD
 ANY11P(ARGBPolynomialRow_Any_WASMSIMD,

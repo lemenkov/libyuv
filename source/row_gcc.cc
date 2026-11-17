@@ -14438,84 +14438,6 @@ void CumulativeSumToAverageRow_AVX2(const int32_t* topleft,
 }
 #endif  // HAS_CUMULATIVESUMTOAVERAGEROW_AVX2
 
-#ifdef HAS_ARGBAFFINEROW_AVX2
-static const float kAffineRamp[8] = {0.0f, 1.0f, 2.0f, 3.0f,
-                                     4.0f, 5.0f, 6.0f, 7.0f};
-static const float kAffineStep8 = 8.0f;
-// Copy ARGB pixels from source image with slope to a row of destination.
-LIBYUV_API
-void ARGBAffineRow_AVX2(const uint8_t* src_argb,
-                        int src_argb_stride,
-                        uint8_t* dst_argb,
-                        const float* src_dudv,
-                        int width) {
-  asm volatile(
-      "vbroadcastss (%[uv]),%%ymm2               \n"
-      "vbroadcastss 0x04(%[uv]),%%ymm3           \n"
-      "vbroadcastss 0x08(%[uv]),%%ymm4           \n"
-      "vbroadcastss 0x0c(%[uv]),%%ymm5           \n"
-      "vmovups     %[ramp],%%ymm0                \n"
-      "vmulps      %%ymm0,%%ymm4,%%ymm1          \n"
-      "vaddps      %%ymm1,%%ymm2,%%ymm2          \n"
-      "vmulps      %%ymm0,%%ymm5,%%ymm1          \n"
-      "vaddps      %%ymm1,%%ymm3,%%ymm3          \n"
-      "vbroadcastss %[step8],%%ymm0              \n"
-      "vmulps      %%ymm0,%%ymm4,%%ymm4          \n"
-      "vmulps      %%ymm0,%%ymm5,%%ymm5          \n"
-      "vpbroadcastd %[stride],%%ymm6             \n"
-      "sub         $0x8,%[width]                 \n"
-      "jl          2f                            \n"
-
-      LABELALIGN
-      "1:                                        \n"
-      "vcvttps2dq  %%ymm2,%%ymm0                 \n"
-      "vcvttps2dq  %%ymm3,%%ymm1                 \n"
-      "vpslld      $2,%%ymm0,%%ymm0              \n"
-      "vpmulld     %%ymm6,%%ymm1,%%ymm1          \n"
-      "vpaddd      %%ymm1,%%ymm0,%%ymm0          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[src],%%ymm0,1),%%ymm1\n"
-      "vaddps      %%ymm4,%%ymm2,%%ymm2          \n"
-      "vaddps      %%ymm5,%%ymm3,%%ymm3          \n"
-      "vmovdqu     %%ymm1,(%[dst])               \n"
-      "lea         0x20(%[dst]),%[dst]           \n"
-      "sub         $0x8,%[width]                 \n"
-      "jge         1b                            \n"
-
-      "2:                                        \n"
-      "add         $0x8,%[width]                 \n"
-      "jle         99f                           \n"
-      "vmovss      0x08(%[uv]),%%xmm4            \n"
-      "vmovss      0x0c(%[uv]),%%xmm5            \n"
-
-      // 1 pixel remainder loop.
-      LABELALIGN
-      "3:                                        \n"
-      "vcvttps2dq  %%xmm2,%%xmm0                 \n"
-      "vcvttps2dq  %%xmm3,%%xmm1                 \n"
-      "vpslld      $2,%%xmm0,%%xmm0              \n"
-      "vpmulld     %%xmm6,%%xmm1,%%xmm1          \n"
-      "vpaddd      %%xmm1,%%xmm0,%%xmm0          \n"
-      "vpcmpeqd    %%xmm7,%%xmm7,%%xmm7          \n"
-      "vpsrldq     $12,%%xmm7,%%xmm7             \n"
-      "vpgatherdd  %%xmm7,0(%[src],%%xmm0,1),%%xmm1\n"
-      "vaddss      %%xmm4,%%xmm2,%%xmm2          \n"
-      "vaddss      %%xmm5,%%xmm3,%%xmm3          \n"
-      "vmovd       %%xmm1,(%[dst])               \n"
-      "lea         0x04(%[dst]),%[dst]           \n"
-      "sub         $0x1,%[width]                 \n"
-      "jg          3b                            \n"
-
-      "99:                                       \n"
-      "vzeroupper                                \n"
-      : [dst] "+r"(dst_argb), [width] "+r"(width)
-      : [src] "r"(src_argb), [uv] "r"(src_dudv), [stride] "m"(src_argb_stride),
-        [ramp] "m"(kAffineRamp), [step8] "m"(kAffineStep8)
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
-        "xmm6", "xmm7");
-}
-#endif  // HAS_ARGBAFFINEROW_AVX2
-
 #ifdef HAS_INTERPOLATEROW_AVX2
 // Bilinear filter 32x2 -> 32x1
 void InterpolateRow_AVX2(uint8_t* dst_ptr,
@@ -14795,6 +14717,112 @@ void InterpolateRow_16_AVX2(uint16_t* dst_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_16_AVX2
 
+#ifdef HAS_AR64SHUFFLEROW_SSSE3
+void AR64ShuffleRow_SSSE3(const uint8_t* src_ar64,
+                          uint8_t* dst_ar64,
+                          const uint8_t* shuffler,
+                          int width) {
+  asm volatile("movdqu      (%3),%%xmm5                   \n"
+
+               LABELALIGN
+               "1:          \n"
+               "movdqu      (%0),%%xmm0                   \n"
+               "movdqu      0x10(%0),%%xmm1               \n"
+               "lea         0x20(%0),%0                   \n"
+               "pshufb      %%xmm5,%%xmm0                 \n"
+               "pshufb      %%xmm5,%%xmm1                 \n"
+               "movdqu      %%xmm0,(%1)                   \n"
+               "movdqu      %%xmm1,0x10(%1)               \n"
+               "lea         0x20(%1),%1                   \n"
+               "sub         $0x4,%2                       \n"
+               "jg          1b                            \n"
+               : "+r"(src_ar64),  // %0
+                 "+r"(dst_ar64),  // %1
+                 "+r"(width)      // %2
+               : "r"(shuffler)    // %3
+               : "memory", "cc", "xmm0", "xmm1", "xmm5");
+}
+#endif  // HAS_AR64SHUFFLEROW_SSSE3
+
+#ifdef HAS_AR64SHUFFLEROW_AVX2
+void AR64ShuffleRow_AVX2(const uint8_t* src_ar64,
+                         uint8_t* dst_ar64,
+                         const uint8_t* shuffler,
+                         int width) {
+  asm volatile("vbroadcasti128 (%3),%%ymm5                \n"
+
+               LABELALIGN
+               "1:          \n"
+               "vmovdqu     (%0),%%ymm0                   \n"
+               "vmovdqu     0x20(%0),%%ymm1               \n"
+               "lea         0x40(%0),%0                   \n"
+               "vpshufb     %%ymm5,%%ymm0,%%ymm0          \n"
+               "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+               "vmovdqu     %%ymm0,(%1)                   \n"
+               "vmovdqu     %%ymm1,0x20(%1)               \n"
+               "lea         0x40(%1),%1                   \n"
+               "sub         $0x8,%2                       \n"
+               "jg          1b                            \n"
+               "vzeroupper  \n"
+               : "+r"(src_ar64),  // %0
+                 "+r"(dst_ar64),  // %1
+                 "+r"(width)      // %2
+               : "r"(shuffler)    // %3
+               : "memory", "cc", "xmm0", "xmm1", "xmm5");
+}
+#endif  // HAS_AR64SHUFFLEROW_AVX2
+
+#ifdef HAS_AR64SHUFFLEROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void AR64ShuffleRow_AVX512BW(const uint8_t* src_ar64,
+                             uint8_t* dst_ar64,
+                             const uint8_t* shuffler,
+                             int width) {
+  uintptr_t temp;
+  asm volatile(
+      "vbroadcasti32x4 (%[shuffler]),%%zmm5     \n"
+      "sub         $0x10,%2                      \n"
+      "jl          2f                            \n"
+
+      LABELALIGN
+      "1:          \n"
+      "vmovdqu8    (%0),%%zmm0                   \n"
+      "vmovdqu8    0x40(%0),%%zmm1               \n"
+      "lea         0x80(%0),%0                   \n"
+      "vpshufb     %%zmm5,%%zmm0,%%zmm0          \n"
+      "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
+      "vmovdqu8    %%zmm0,(%1)                   \n"
+      "vmovdqu8    %%zmm1,0x40(%1)               \n"
+      "lea         0x80(%1),%1                   \n"
+      "sub         $0x10,%2                      \n"
+      "jge         1b                            \n"
+
+      "2:          \n"
+      "add         $0x10,%2                      \n"
+      "jle         99f                           \n"
+      "mov         $-1,%[temp]                   \n"
+      "bzhi        %q2,%[temp],%[temp]           \n"
+      "kmovw       %k[temp],%%k1                 \n"
+      "kshiftrw    $8,%%k1,%%k2                  \n"
+
+      "vmovdqu64   (%0),%%zmm0%{%%k1%}%{z%}      \n"
+      "vmovdqu64   0x40(%0),%%zmm1%{%%k2%}%{z%}  \n"
+      "vpshufb     %%zmm5,%%zmm0,%%zmm0          \n"
+      "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
+      "vmovdqu64   %%zmm0,(%1)%{%%k1%}           \n"
+      "vmovdqu64   %%zmm1,0x40(%1)%{%%k2%}       \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : "+r"(src_ar64),           // %0
+        "+r"(dst_ar64),           // %1
+        "+r"(width),              // %2
+        [temp] "=&r"(temp)        // %[temp]
+      : [shuffler] "r"(shuffler)  // %[shuffler]
+      : "memory", "cc", "xmm0", "xmm1", "xmm5", "k1", "k2");
+}
+#endif  // HAS_AR64SHUFFLEROW_AVX512BW
+
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_SSSE3(const uint8_t* src_argb,
@@ -14885,6 +14913,7 @@ void ARGBShuffleRow_AVX512BW(const uint8_t* src_argb,
       "bzhi        %q2,%[temp],%[temp]           \n"
       "kmovd       %k[temp],%%k1                 \n"
       "kshiftrd    $16,%%k1,%%k2                 \n"
+
       "vmovdqu32   (%0),%%zmm0%{%%k1%}%{z%}      \n"
       "vmovdqu32   0x40(%0),%%zmm1%{%%k2%}%{z%}  \n"
       "vpshufb     %%zmm5,%%zmm0,%%zmm0          \n"
@@ -15754,96 +15783,66 @@ void GaussCol_F32_AVX2(const float* src0,
 void ARGBColorTableRow_AVX2(uint8_t* dst_argb,
                             const uint8_t* table_argb,
                             int width) {
+#if defined(__x86_64__)
+  uint64_t c0, c1, c2, c3;
   asm volatile(
-      "vpcmpeqd    %%ymm6,%%ymm6,%%ymm6          \n"
-      "vpsrld      $24,%%ymm6,%%ymm6             \n"  // 0x000000ff
-      "sub         $0x8,%[width]                 \n"
+      "subl        $0x2,%[width]                 \n"
       "jl          2f                            \n"
 
       LABELALIGN
       "1:                                        \n"
-      "vmovdqu     (%[dst]),%%ymm0               \n"
-      "vpand       %%ymm6,%%ymm0,%%ymm1          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm2\n"
-      "vpand       %%ymm6,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $8,%%ymm0,%%ymm1              \n"
-      "vpand       %%ymm6,%%ymm1,%%ymm1          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm3\n"
-      "vpslld      $8,%%ymm6,%%ymm4              \n"
-      "vpand       %%ymm4,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm3,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $16,%%ymm0,%%ymm1             \n"
-      "vpand       %%ymm6,%%ymm1,%%ymm1          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm3\n"
-      "vpslld      $16,%%ymm6,%%ymm4             \n"
-      "vpand       %%ymm4,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm3,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $24,%%ymm0,%%ymm1             \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm3\n"
-      "vpslld      $24,%%ymm6,%%ymm4             \n"
-      "vpand       %%ymm4,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm3,%%ymm2,%%ymm2          \n"
-
-      "vmovdqu     %%ymm2,(%[dst])               \n"
-      "lea         0x20(%[dst]),%[dst]           \n"
-      "sub         $0x8,%[width]                 \n"
+      "movzbl      0(%[dst]),%k[c0]              \n"
+      "movzbl      1(%[dst]),%k[c1]              \n"
+      "movzbl      2(%[dst]),%k[c2]              \n"
+      "movzbl      3(%[dst]),%k[c3]              \n"
+      "movzbl      0(%[table],%[c0],4),%k[c0]    \n"
+      "movzbl      1(%[table],%[c1],4),%k[c1]    \n"
+      "movzbl      2(%[table],%[c2],4),%k[c2]    \n"
+      "movzbl      3(%[table],%[c3],4),%k[c3]    \n"
+      "movb        %b[c0],0(%[dst])              \n"
+      "movb        %b[c1],1(%[dst])              \n"
+      "movb        %b[c2],2(%[dst])              \n"
+      "movb        %b[c3],3(%[dst])              \n"
+      "movzbl      4(%[dst]),%k[c0]              \n"
+      "movzbl      5(%[dst]),%k[c1]              \n"
+      "movzbl      6(%[dst]),%k[c2]              \n"
+      "movzbl      7(%[dst]),%k[c3]              \n"
+      "movzbl      0(%[table],%[c0],4),%k[c0]    \n"
+      "movzbl      1(%[table],%[c1],4),%k[c1]    \n"
+      "movzbl      2(%[table],%[c2],4),%k[c2]    \n"
+      "movzbl      3(%[table],%[c3],4),%k[c3]    \n"
+      "movb        %b[c0],4(%[dst])              \n"
+      "movb        %b[c1],5(%[dst])              \n"
+      "movb        %b[c2],6(%[dst])              \n"
+      "movb        %b[c3],7(%[dst])              \n"
+      "addq        $0x8,%[dst]                   \n"
+      "subl        $0x2,%[width]                 \n"
       "jge         1b                            \n"
 
       "2:                                        \n"
-      "add         $0x8,%[width]                 \n"
+      "addl        $0x2,%[width]                 \n"
       "jle         99f                           \n"
-      "vpcmpeqd    %%xmm5,%%xmm5,%%xmm5          \n"
-      "vpsrldq     $12,%%xmm5,%%xmm5             \n"
-
-      LABELALIGN
-      "3:                                        \n"
-      "vmovd       (%[dst]),%%xmm0               \n"
-      "vpand       %%xmm6,%%xmm0,%%xmm1          \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm2\n"
-      "vpand       %%xmm6,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $8,%%xmm0,%%xmm1              \n"
-      "vpand       %%xmm6,%%xmm1,%%xmm1          \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm3\n"
-      "vpslld      $8,%%xmm6,%%xmm4              \n"
-      "vpand       %%xmm4,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm3,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $16,%%xmm0,%%xmm1             \n"
-      "vpand       %%xmm6,%%xmm1,%%xmm1          \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm3\n"
-      "vpslld      $16,%%xmm6,%%xmm4             \n"
-      "vpand       %%xmm4,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm3,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $24,%%xmm0,%%xmm1             \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm3\n"
-      "vpslld      $24,%%xmm6,%%xmm4             \n"
-      "vpand       %%xmm4,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm3,%%xmm2,%%xmm2          \n"
-
-      "vmovd       %%xmm2,(%[dst])               \n"
-      "lea         0x04(%[dst]),%[dst]           \n"
-      "sub         $0x1,%[width]                 \n"
-      "jg          3b                            \n"
+      "movzbl      0(%[dst]),%k[c0]              \n"
+      "movzbl      1(%[dst]),%k[c1]              \n"
+      "movzbl      2(%[dst]),%k[c2]              \n"
+      "movzbl      3(%[dst]),%k[c3]              \n"
+      "movzbl      0(%[table],%[c0],4),%k[c0]    \n"
+      "movzbl      1(%[table],%[c1],4),%k[c1]    \n"
+      "movzbl      2(%[table],%[c2],4),%k[c2]    \n"
+      "movzbl      3(%[table],%[c3],4),%k[c3]    \n"
+      "movb        %b[c0],0(%[dst])              \n"
+      "movb        %b[c1],1(%[dst])              \n"
+      "movb        %b[c2],2(%[dst])              \n"
+      "movb        %b[c3],3(%[dst])              \n"
 
       "99:                                       \n"
-      "vzeroupper                                \n"
-      : [dst] "+r"(dst_argb), [width] "+r"(width)
+      : [dst] "+r"(dst_argb), [width] "+r"(width), [c0] "=&r"(c0),
+        [c1] "=&r"(c1), [c2] "=&r"(c2), [c3] "=&r"(c3)
       : [table] "r"(table_argb)
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
-        "xmm6", "xmm7");
+      : "memory", "cc");
+#else
+  ARGBColorTableRow_C(dst_argb, table_argb, width);
+#endif
 }
 #endif  // HAS_ARGBCOLORTABLEROW_AVX2
 
@@ -15852,90 +15851,57 @@ void ARGBColorTableRow_AVX2(uint8_t* dst_argb,
 void RGBColorTableRow_AVX2(uint8_t* dst_argb,
                            const uint8_t* table_argb,
                            int width) {
+#if defined(__x86_64__)
+  uint64_t c0, c1, c2;
   asm volatile(
-      "vpcmpeqd    %%ymm6,%%ymm6,%%ymm6          \n"
-      "vpsrld      $24,%%ymm6,%%ymm6             \n"  // 0x000000ff
-      "sub         $0x8,%[width]                 \n"
+      "subl        $0x2,%[width]                 \n"
       "jl          2f                            \n"
 
       LABELALIGN
       "1:                                        \n"
-      "vmovdqu     (%[dst]),%%ymm0               \n"
-      "vpand       %%ymm6,%%ymm0,%%ymm1          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm2\n"
-      "vpand       %%ymm6,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $8,%%ymm0,%%ymm1              \n"
-      "vpand       %%ymm6,%%ymm1,%%ymm1          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm3\n"
-      "vpslld      $8,%%ymm6,%%ymm4              \n"
-      "vpand       %%ymm4,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm3,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $16,%%ymm0,%%ymm1             \n"
-      "vpand       %%ymm6,%%ymm1,%%ymm1          \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[table],%%ymm1,4),%%ymm3\n"
-      "vpslld      $16,%%ymm6,%%ymm4             \n"
-      "vpand       %%ymm4,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm3,%%ymm2,%%ymm2          \n"
-
-      "vpslld      $24,%%ymm6,%%ymm4             \n"
-      "vpand       %%ymm4,%%ymm0,%%ymm0          \n"
-      "vpor        %%ymm0,%%ymm2,%%ymm2          \n"
-
-      "vmovdqu     %%ymm2,(%[dst])               \n"
-      "lea         0x20(%[dst]),%[dst]           \n"
-      "sub         $0x8,%[width]                 \n"
+      "movzbl      0(%[dst]),%k[c0]              \n"
+      "movzbl      1(%[dst]),%k[c1]              \n"
+      "movzbl      2(%[dst]),%k[c2]              \n"
+      "movzbl      0(%[table],%[c0],4),%k[c0]    \n"
+      "movzbl      1(%[table],%[c1],4),%k[c1]    \n"
+      "movzbl      2(%[table],%[c2],4),%k[c2]    \n"
+      "movb        %b[c0],0(%[dst])              \n"
+      "movb        %b[c1],1(%[dst])              \n"
+      "movb        %b[c2],2(%[dst])              \n"
+      "movzbl      4(%[dst]),%k[c0]              \n"
+      "movzbl      5(%[dst]),%k[c1]              \n"
+      "movzbl      6(%[dst]),%k[c2]              \n"
+      "movzbl      0(%[table],%[c0],4),%k[c0]    \n"
+      "movzbl      1(%[table],%[c1],4),%k[c1]    \n"
+      "movzbl      2(%[table],%[c2],4),%k[c2]    \n"
+      "movb        %b[c0],4(%[dst])              \n"
+      "movb        %b[c1],5(%[dst])              \n"
+      "movb        %b[c2],6(%[dst])              \n"
+      "addq        $0x8,%[dst]                   \n"
+      "subl        $0x2,%[width]                 \n"
       "jge         1b                            \n"
 
       "2:                                        \n"
-      "add         $0x8,%[width]                 \n"
+      "addl        $0x2,%[width]                 \n"
       "jle         99f                           \n"
-      "vpcmpeqd    %%xmm5,%%xmm5,%%xmm5          \n"
-      "vpsrldq     $12,%%xmm5,%%xmm5             \n"
-
-      LABELALIGN
-      "3:                                        \n"
-      "vmovd       (%[dst]),%%xmm0               \n"
-      "vpand       %%xmm6,%%xmm0,%%xmm1          \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm2\n"
-      "vpand       %%xmm6,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $8,%%xmm0,%%xmm1              \n"
-      "vpand       %%xmm6,%%xmm1,%%xmm1          \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm3\n"
-      "vpslld      $8,%%xmm6,%%xmm4              \n"
-      "vpand       %%xmm4,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm3,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $16,%%xmm0,%%xmm1             \n"
-      "vpand       %%xmm6,%%xmm1,%%xmm1          \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[table],%%xmm1,4),%%xmm3\n"
-      "vpslld      $16,%%xmm6,%%xmm4             \n"
-      "vpand       %%xmm4,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm3,%%xmm2,%%xmm2          \n"
-
-      "vpslld      $24,%%xmm6,%%xmm4             \n"
-      "vpand       %%xmm4,%%xmm0,%%xmm0          \n"
-      "vpor        %%xmm0,%%xmm2,%%xmm2          \n"
-
-      "vmovd       %%xmm2,(%[dst])               \n"
-      "lea         0x04(%[dst]),%[dst]           \n"
-      "sub         $0x1,%[width]                 \n"
-      "jg          3b                            \n"
+      "movzbl      0(%[dst]),%k[c0]              \n"
+      "movzbl      1(%[dst]),%k[c1]              \n"
+      "movzbl      2(%[dst]),%k[c2]              \n"
+      "movzbl      0(%[table],%[c0],4),%k[c0]    \n"
+      "movzbl      1(%[table],%[c1],4),%k[c1]    \n"
+      "movzbl      2(%[table],%[c2],4),%k[c2]    \n"
+      "movb        %b[c0],0(%[dst])              \n"
+      "movb        %b[c1],1(%[dst])              \n"
+      "movb        %b[c2],2(%[dst])              \n"
 
       "99:                                       \n"
-      "vzeroupper                                \n"
-      : [dst] "+r"(dst_argb), [width] "+r"(width)
+      : [dst] "+r"(dst_argb), [width] "+r"(width), [c0] "=&r"(c0),
+        [c1] "=&r"(c1), [c2] "=&r"(c2)
       : [table] "r"(table_argb)
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
-        "xmm6", "xmm7");
+      : "memory", "cc");
+#else
+  RGBColorTableRow_C(dst_argb, table_argb, width);
+#endif
 }
 #endif  // HAS_RGBCOLORTABLEROW_AVX2
 
@@ -15946,209 +15912,49 @@ void ARGBLumaColorTableRow_AVX2(const uint8_t* src_argb,
                                 int width,
                                 const uint8_t* luma,
                                 uint32_t lumacoeff) {
-  uint32_t c_br = lumacoeff & 0x00ff00ffu;
-  uint32_t c_ga = (lumacoeff >> 8) & 0x000000ffu;
-  asm volatile(
-      "vpcmpeqd    %%ymm6,%%ymm6,%%ymm6          \n"
-      "vpsrld      $24,%%ymm6,%%ymm6             \n"  // 0x000000ff
-#if defined(__x86_64__)
-      "vpbroadcastd %[c_br],%%ymm8               \n"
-      "vpbroadcastd %[c_ga],%%ymm9               \n"
-      "vpsrld      $1,%%ymm6,%%ymm10             \n"
-      "vpslld      $8,%%ymm10,%%ymm10            \n"  // 0x00007f00
-      "vpsrld      $6,%%ymm6,%%ymm11             \n"
-      "vpslld      $3,%%ymm11,%%ymm11            \n"  // 0x00000018
-#endif
-      "subl        $0x8,%[width]                 \n"
-      "jl          2f                            \n"
-
-      LABELALIGN
-      "1:                                        \n"
-      "vmovdqu     (%[src]),%%ymm0               \n"
-      "lea         0x20(%[src]),%[src]           \n"
-      "vpsllw      $8,%%ymm0,%%ymm1              \n"
-      "vpsrlw      $8,%%ymm1,%%ymm1              \n"  // [B, R]
-      "vpsrlw      $8,%%ymm0,%%ymm2              \n"  // [G, A]
-#if defined(__x86_64__)
-      "vpmaddwd    %%ymm8,%%ymm1,%%ymm1          \n"
-      "vpmaddwd    %%ymm9,%%ymm2,%%ymm2          \n"
-      "vpaddd      %%ymm2,%%ymm1,%%ymm1          \n"
-      "vpand       %%ymm10,%%ymm1,%%ymm1         \n"
-#else
-      "vpbroadcastd %[c_br],%%ymm3               \n"
-      "vpmaddwd    %%ymm3,%%ymm1,%%ymm1          \n"
-      "vpbroadcastd %[c_ga],%%ymm3               \n"
-      "vpmaddwd    %%ymm3,%%ymm2,%%ymm2          \n"
-      "vpaddd      %%ymm2,%%ymm1,%%ymm1          \n"
-      "vpsrld      $1,%%ymm6,%%ymm3              \n"
-      "vpslld      $8,%%ymm3,%%ymm3              \n"
-      "vpand       %%ymm3,%%ymm1,%%ymm1          \n"
-#endif
-
-      "vpand       %%ymm6,%%ymm0,%%ymm3          \n"
-      "vpor        %%ymm1,%%ymm3,%%ymm3          \n"
-      "vpsrld      $2,%%ymm3,%%ymm3              \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[luma],%%ymm3,4),%%ymm2\n"
-#if defined(__x86_64__)
-      "vpslld      $3,%%ymm0,%%ymm4              \n"
-      "vpand       %%ymm11,%%ymm4,%%ymm4         \n"
-#else
-      "vpslld      $30,%%ymm0,%%ymm4             \n"
-      "vpsrld      $27,%%ymm4,%%ymm4             \n"
-#endif
-      "vpsrlvd     %%ymm4,%%ymm2,%%ymm2          \n"
-      "vpand       %%ymm6,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $8,%%ymm0,%%ymm3              \n"
-      "vpand       %%ymm6,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm1,%%ymm3,%%ymm3          \n"
-      "vpsrld      $2,%%ymm3,%%ymm3              \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[luma],%%ymm3,4),%%ymm5\n"
-#if defined(__x86_64__)
-      "vpsrld      $5,%%ymm0,%%ymm4              \n"
-      "vpand       %%ymm11,%%ymm4,%%ymm4         \n"
-#else
-      "vpslld      $22,%%ymm0,%%ymm4             \n"
-      "vpsrld      $30,%%ymm4,%%ymm4             \n"
-      "vpslld      $3,%%ymm4,%%ymm4              \n"
-#endif
-      "vpsrlvd     %%ymm4,%%ymm5,%%ymm5          \n"
-      "vpand       %%ymm6,%%ymm5,%%ymm5          \n"
-      "vpslld      $8,%%ymm5,%%ymm5              \n"
-      "vpor        %%ymm5,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $16,%%ymm0,%%ymm3             \n"
-      "vpand       %%ymm6,%%ymm3,%%ymm3          \n"
-      "vpor        %%ymm1,%%ymm3,%%ymm3          \n"
-      "vpsrld      $2,%%ymm3,%%ymm3              \n"
-      "vpcmpeqd    %%ymm7,%%ymm7,%%ymm7          \n"
-      "vpgatherdd  %%ymm7,0(%[luma],%%ymm3,4),%%ymm5\n"
-#if defined(__x86_64__)
-      "vpsrld      $13,%%ymm0,%%ymm4             \n"
-      "vpand       %%ymm11,%%ymm4,%%ymm4         \n"
-#else
-      "vpslld      $14,%%ymm0,%%ymm4             \n"
-      "vpsrld      $30,%%ymm4,%%ymm4             \n"
-      "vpslld      $3,%%ymm4,%%ymm4              \n"
-#endif
-      "vpsrlvd     %%ymm4,%%ymm5,%%ymm5          \n"
-      "vpand       %%ymm6,%%ymm5,%%ymm5          \n"
-      "vpslld      $16,%%ymm5,%%ymm5             \n"
-      "vpor        %%ymm5,%%ymm2,%%ymm2          \n"
-
-      "vpsrld      $24,%%ymm0,%%ymm0             \n"
-      "vpslld      $24,%%ymm0,%%ymm0             \n"
-      "vpor        %%ymm0,%%ymm2,%%ymm2          \n"
-
-      "vmovdqu     %%ymm2,(%[dst])               \n"
-      "lea         0x20(%[dst]),%[dst]           \n"
-      "subl        $0x8,%[width]                 \n"
-      "jge         1b                            \n"
-
-      "2:                                        \n"
-      "addl        $0x8,%[width]                 \n"
-      "jle         99f                           \n"
-      "vpcmpeqd    %%xmm5,%%xmm5,%%xmm5          \n"
-      "vpsrldq     $12,%%xmm5,%%xmm5             \n"
-
-      LABELALIGN
-      "3:                                        \n"
-      "vmovd       (%[src]),%%xmm0               \n"
-      "lea         0x04(%[src]),%[src]           \n"
-      "vpsllw      $8,%%xmm0,%%xmm1              \n"
-      "vpsrlw      $8,%%xmm1,%%xmm1              \n"
-      "vpsrlw      $8,%%xmm0,%%xmm2              \n"
-#if defined(__x86_64__)
-      "vpmaddwd    %%xmm8,%%xmm1,%%xmm1          \n"
-      "vpmaddwd    %%xmm9,%%xmm2,%%xmm2          \n"
-      "vpaddd      %%xmm2,%%xmm1,%%xmm1          \n"
-      "vpand       %%xmm10,%%xmm1,%%xmm1         \n"
-#else
-      "vpbroadcastd %[c_br],%%xmm3               \n"
-      "vpmaddwd    %%xmm3,%%xmm1,%%xmm1          \n"
-      "vpbroadcastd %[c_ga],%%xmm3               \n"
-      "vpmaddwd    %%xmm3,%%xmm2,%%xmm2          \n"
-      "vpaddd      %%xmm2,%%xmm1,%%xmm1          \n"
-      "vpsrld      $1,%%xmm6,%%xmm3              \n"
-      "vpslld      $8,%%xmm3,%%xmm3              \n"
-      "vpand       %%xmm3,%%xmm1,%%xmm1          \n"
-#endif
-
-      "vpand       %%xmm6,%%xmm0,%%xmm3          \n"
-      "vpor        %%xmm1,%%xmm3,%%xmm3          \n"
-      "vpsrld      $2,%%xmm3,%%xmm3              \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[luma],%%xmm3,4),%%xmm2\n"
-#if defined(__x86_64__)
-      "vpslld      $3,%%xmm0,%%xmm4              \n"
-      "vpand       %%xmm11,%%xmm4,%%xmm4         \n"
-#else
-      "vpslld      $30,%%xmm0,%%xmm4             \n"
-      "vpsrld      $27,%%xmm4,%%xmm4             \n"
-#endif
-      "vpsrlvd     %%xmm4,%%xmm2,%%xmm2          \n"
-      "vpand       %%xmm6,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $8,%%xmm0,%%xmm3              \n"
-      "vpand       %%xmm6,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm1,%%xmm3,%%xmm3          \n"
-      "vpsrld      $2,%%xmm3,%%xmm3              \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[luma],%%xmm3,4),%%xmm4\n"
-#if defined(__x86_64__)
-      "vpsrld      $5,%%xmm0,%%xmm3              \n"
-      "vpand       %%xmm11,%%xmm3,%%xmm3         \n"
-#else
-      "vpslld      $22,%%xmm0,%%xmm3             \n"
-      "vpsrld      $30,%%xmm3,%%xmm3             \n"
-      "vpslld      $3,%%xmm3,%%xmm3              \n"
-#endif
-      "vpsrlvd     %%xmm3,%%xmm4,%%xmm4          \n"
-      "vpand       %%xmm6,%%xmm4,%%xmm4          \n"
-      "vpslld      $8,%%xmm4,%%xmm4              \n"
-      "vpor        %%xmm4,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $16,%%xmm0,%%xmm3             \n"
-      "vpand       %%xmm6,%%xmm3,%%xmm3          \n"
-      "vpor        %%xmm1,%%xmm3,%%xmm3          \n"
-      "vpsrld      $2,%%xmm3,%%xmm3              \n"
-      "vmovdqa     %%xmm5,%%xmm7                 \n"
-      "vpgatherdd  %%xmm7,0(%[luma],%%xmm3,4),%%xmm4\n"
-#if defined(__x86_64__)
-      "vpsrld      $13,%%xmm0,%%xmm3             \n"
-      "vpand       %%xmm11,%%xmm3,%%xmm3         \n"
-#else
-      "vpslld      $14,%%xmm0,%%xmm3             \n"
-      "vpsrld      $30,%%xmm3,%%xmm3             \n"
-      "vpslld      $3,%%xmm3,%%xmm3              \n"
-#endif
-      "vpsrlvd     %%xmm3,%%xmm4,%%xmm4          \n"
-      "vpand       %%xmm6,%%xmm4,%%xmm4          \n"
-      "vpslld      $16,%%xmm4,%%xmm4             \n"
-      "vpor        %%xmm4,%%xmm2,%%xmm2          \n"
-
-      "vpsrld      $24,%%xmm0,%%xmm0             \n"
-      "vpslld      $24,%%xmm0,%%xmm0             \n"
-      "vpor        %%xmm0,%%xmm2,%%xmm2          \n"
-
-      "vmovd       %%xmm2,(%[dst])               \n"
-      "lea         0x04(%[dst]),%[dst]           \n"
-      "subl        $0x1,%[width]                 \n"
-      "jg          3b                            \n"
-
-      "99:                                       \n"
-      "vzeroupper                                \n"
-      : [src] "+r"(src_argb), [dst] "+r"(dst_argb), [width] "+rm"(width)
-      : [luma] "r"(luma), [c_br] "m"(c_br), [c_ga] "m"(c_ga)
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7"
-#if defined(__x86_64__)
-        ,
-        "xmm8", "xmm9", "xmm10", "xmm11"
-#endif
-  );
+  if (width >= 8) {
+    SIMD_ALIGNED(uint32_t y_buf[8]);
+    uint32_t c_br = lumacoeff & 0x00ff00ffu;
+    uint32_t c_ga = (lumacoeff >> 8) & 0x000000ffu;
+    while (width >= 8) {
+      asm volatile(
+          "vpcmpeqd    %%ymm3,%%ymm3,%%ymm3          \n"
+          "vpsrlw      $8,%%ymm3,%%ymm3              \n"  // 0x00ff
+          "vmovdqu     (%[src]),%%ymm0               \n"
+          "vpand       %%ymm3,%%ymm0,%%ymm1          \n"  // [B, R]
+          "vpsrlw      $8,%%ymm0,%%ymm2              \n"  // [G, A]
+          "vpbroadcastd %[c_br],%%ymm0               \n"
+          "vpmaddwd    %%ymm0,%%ymm1,%%ymm1          \n"
+          "vpbroadcastd %[c_ga],%%ymm0               \n"
+          "vpmaddwd    %%ymm0,%%ymm2,%%ymm2          \n"
+          "vpaddd      %%ymm2,%%ymm1,%%ymm1          \n"
+          "vpsrld      $17,%%ymm3,%%ymm3             \n"
+          "vpslld      $8,%%ymm3,%%ymm3              \n"  // 0x00007f00
+          "vpand       %%ymm3,%%ymm1,%%ymm1          \n"
+          "vmovdqa     %%ymm1,(%[y_buf])             \n"
+          "vzeroupper                                \n"
+          :
+          : [src] "r"(src_argb), [y_buf] "r"(y_buf), [c_br] "m"(c_br),
+            [c_ga] "m"(c_ga)
+          : "memory", "xmm0", "xmm1", "xmm2", "xmm3");
+      for (int k = 0; k < 8; ++k) {
+        const uint8_t* luma_row = luma + y_buf[k];
+        uint32_t p;
+        __builtin_memcpy(&p, src_argb, 4);
+        uint32_t out = (uint32_t)luma_row[p & 0xff] |
+                       ((uint32_t)luma_row[(p >> 8) & 0xff] << 8) |
+                       ((uint32_t)luma_row[(p >> 16) & 0xff] << 16) |
+                       (p & 0xff000000u);
+        __builtin_memcpy(dst_argb, &out, 4);
+        src_argb += 4;
+        dst_argb += 4;
+      }
+      width -= 8;
+    }
+  }
+  if (width > 0) {
+    ARGBLumaColorTableRow_C(src_argb, dst_argb, width, luma, lumacoeff);
+  }
 }
 #endif  // HAS_ARGBLUMACOLORTABLEROW_AVX2
 

@@ -1882,8 +1882,11 @@ void ScaleSlope(int src_width,
     } else if (dst_width <= Abs(src_width)) {
       *dx = FixedDiv(Abs(src_width), dst_width);
       *x = CENTERSTART(*dx, -32768);  // Subtract 0.5 (32768) to center filter.
-    } else if (src_width > 1 && dst_width > 1) {
+    } else if (Abs(src_width) > 1 && dst_width > 1) {
       *dx = FixedDiv1(Abs(src_width), dst_width);
+      *x = 0;
+    } else {
+      *dx = 0;
       *x = 0;
     }
     if (dst_height == 1 && src_height >= 32768) {
@@ -1895,6 +1898,9 @@ void ScaleSlope(int src_width,
     } else if (src_height > 1 && dst_height > 1) {
       *dy = FixedDiv1(src_height, dst_height);
       *y = 0;
+    } else {
+      *dy = 0;
+      *y = 0;
     }
   } else if (filtering == kFilterLinear) {
     // Scale step for bilinear sampling renders last pixel once for upsample.
@@ -1904,8 +1910,11 @@ void ScaleSlope(int src_width,
     } else if (dst_width <= Abs(src_width)) {
       *dx = FixedDiv(Abs(src_width), dst_width);
       *x = CENTERSTART(*dx, -32768);  // Subtract 0.5 (32768) to center filter.
-    } else if (src_width > 1 && dst_width > 1) {
+    } else if (Abs(src_width) > 1 && dst_width > 1) {
       *dx = FixedDiv1(Abs(src_width), dst_width);
+      *x = 0;
+    } else {
+      *dx = 0;
       *x = 0;
     }
     if (dst_height == 1 && src_height >= 32768) {

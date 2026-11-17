@@ -2013,7 +2013,6 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
   int r = dst_width & 15;
   if (n > 0) {
     SIMD_ALIGNED(int32_t xi_buf[16]);
-    SIMD_ALIGNED(uint16_t pix_buf[16]);
     __m512i vx = _mm512_add_epi32(
         _mm512_set1_epi32(x),
         _mm512_mullo_epi32(
@@ -2032,10 +2031,22 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
       __m256i weights =
           _mm256_xor_si256(_mm256_or_si256(f, _mm256_slli_epi16(f, 8)),
                            mask_7f);
-      for (int k = 0; k < 16; ++k) {
-        pix_buf[k] = LoadU16(src_ptr + xi_buf[k]);
-      }
-      __m256i pix = _mm256_load_si256((const __m256i*)pix_buf);
+      __m256i pix = _mm256_setr_epi16((short)LoadU16(src_ptr + xi_buf[0]),
+                                      (short)LoadU16(src_ptr + xi_buf[1]),
+                                      (short)LoadU16(src_ptr + xi_buf[2]),
+                                      (short)LoadU16(src_ptr + xi_buf[3]),
+                                      (short)LoadU16(src_ptr + xi_buf[4]),
+                                      (short)LoadU16(src_ptr + xi_buf[5]),
+                                      (short)LoadU16(src_ptr + xi_buf[6]),
+                                      (short)LoadU16(src_ptr + xi_buf[7]),
+                                      (short)LoadU16(src_ptr + xi_buf[8]),
+                                      (short)LoadU16(src_ptr + xi_buf[9]),
+                                      (short)LoadU16(src_ptr + xi_buf[10]),
+                                      (short)LoadU16(src_ptr + xi_buf[11]),
+                                      (short)LoadU16(src_ptr + xi_buf[12]),
+                                      (short)LoadU16(src_ptr + xi_buf[13]),
+                                      (short)LoadU16(src_ptr + xi_buf[14]),
+                                      (short)LoadU16(src_ptr + xi_buf[15]));
       __m256i a = _mm256_and_si256(pix, mask_ff);
       __m256i res = _mm256_srli_epi16(
           _mm256_add_epi16(_mm256_add_epi16(_mm256_maddubs_epi16(pix, weights),
@@ -2142,7 +2153,6 @@ void ScaleUVFilterCols_AVX512BW(uint8_t* dst_uv,
   int r = dst_width & 15;
   if (n > 0) {
     SIMD_ALIGNED(int32_t xi_buf[16]);
-    SIMD_ALIGNED(uint32_t pix_buf[16]);
     const __m512i shuf_uv = _mm512_broadcast_i32x4(
         _mm_loadu_si128((const __m128i*)&kShuffleColUV));
     const __m512i shuf_frac = _mm512_broadcast_i32x4(
@@ -2161,11 +2171,24 @@ void ScaleUVFilterCols_AVX512BW(uint8_t* dst_uv,
       __m512i weights = _mm512_xor_si512(
           _mm512_shuffle_epi8(_mm512_srli_epi16(vx, 9), shuf_frac), mask_7f);
       vx = _mm512_add_epi32(vx, vdx16);
-      for (int k = 0; k < 16; ++k) {
-        pix_buf[k] = LoadU32(src_uv + (ptrdiff_t)xi_buf[k] * 2);
-      }
-      __m512i pix = _mm512_shuffle_epi8(
-          _mm512_loadu_si512((const __m512i*)pix_buf), shuf_uv);
+      __m512i raw =
+          _mm512_setr_epi32((int)LoadU32(src_uv + (ptrdiff_t)xi_buf[0] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[1] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[2] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[3] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[4] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[5] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[6] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[7] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[8] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[9] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[10] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[11] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[12] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[13] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[14] * 2),
+                            (int)LoadU32(src_uv + (ptrdiff_t)xi_buf[15] * 2));
+      __m512i pix = _mm512_shuffle_epi8(raw, shuf_uv);
       __m512i a = _mm512_and_si512(pix, mask_ff);
       __m512i res = _mm512_srli_epi16(
           _mm512_add_epi16(_mm512_add_epi16(_mm512_maddubs_epi16(pix, weights),

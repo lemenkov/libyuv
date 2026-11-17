@@ -1436,7 +1436,7 @@ int I010ToNV12(const uint16_t* src_y,
 #if defined(HAS_CONVERT16TO8ROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     Convert16To8Row = Convert16To8Row_Any_LSX;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       Convert16To8Row = Convert16To8Row_LSX;
     }
   }
@@ -1444,7 +1444,7 @@ int I010ToNV12(const uint16_t* src_y,
 #if defined(HAS_CONVERT16TO8ROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     Convert16To8Row = Convert16To8Row_Any_LASX;
-    if (IS_ALIGNED(width, 32)) {
+    if (IS_ALIGNED(halfwidth, 32)) {
       Convert16To8Row = Convert16To8Row_LASX;
     }
   }
@@ -4832,7 +4832,7 @@ int UYVYToI420(const uint8_t* src_uyvy,
     UYVYToUVRow = UYVYToUVRow_SME;
   }
 #endif
-#if defined(HAS_UYVYTOYROW_LSX)
+#if defined(HAS_UYVYTOYROW_LSX) && defined(HAS_UYVYTOUVROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
     UYVYToYRow = UYVYToYRow_Any_LSX;
     UYVYToUVRow = UYVYToUVRow_Any_LSX;
@@ -4842,7 +4842,7 @@ int UYVYToI420(const uint8_t* src_uyvy,
     }
   }
 #endif
-#if defined(HAS_UYVYTOYROW_LASX)
+#if defined(HAS_UYVYTOYROW_LASX) && defined(HAS_UYVYTOUVROW_LASX)
   if (TestCpuFlag(kCpuHasLASX)) {
     UYVYToYRow = UYVYToYRow_Any_LASX;
     UYVYToUVRow = UYVYToUVRow_Any_LASX;

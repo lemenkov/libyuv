@@ -75,8 +75,6 @@ For other planar YUV formats (I444, I422, I411, I400, NV16, NV24), the planar fu
 
 Same as I420, but implementation is less optimized - reads columns and writes rows.
 
-Rotate by 90, or any angle, can be achieved using ARGBAffine.
-
 # Mirror - Horizontal Flip
 
 Mirror functions for horizontally flipping an image, which can be useful for 'self view' of a webcam.

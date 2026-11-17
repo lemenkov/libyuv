@@ -744,6 +744,24 @@ void ARGBAlphaBlendRow_SVE2(const uint8_t* src_argb0,
 }
 #endif  // HAS_ARGBALPHABLENDROW_SVE2
 
+#ifdef HAS_ARGBSHUFFLEROW_SVE2
+void ARGBShuffleRow_SVE2(const uint8_t* src_argb,
+                         uint8_t* dst_argb,
+                         const uint8_t* shuffler,
+                         int width) {
+  ARGBShuffleRow_SVE_SC(src_argb, dst_argb, shuffler, width);
+}
+#endif  // HAS_ARGBSHUFFLEROW_SVE2
+
+#ifdef HAS_AR64SHUFFLEROW_SVE2
+void AR64ShuffleRow_SVE2(const uint8_t* src_ar64,
+                         uint8_t* dst_ar64,
+                         const uint8_t* shuffler,
+                         int width) {
+  AR64ShuffleRow_SVE_SC(src_ar64, dst_ar64, shuffler, width);
+}
+#endif  // HAS_AR64SHUFFLEROW_SVE2
+
 #if defined(__clang__)
 #pragma clang attribute pop
 #elif defined(__GNUC__)

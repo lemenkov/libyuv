@@ -1216,6 +1216,24 @@ void HalfBoxUVRow_16_Odd_SME(const uint16_t* src_uv,
       (uint16_t)(((uint32_t)src_uv[1] + src_uv[src_stride_uv + 1] + 1u) >> 1);
 }
 
+#ifdef HAS_ARGBSHUFFLEROW_SME
+__arm_locally_streaming void ARGBShuffleRow_SME(const uint8_t* src_argb,
+                                                uint8_t* dst_argb,
+                                                const uint8_t* shuffler,
+                                                int width) {
+  ARGBShuffleRow_SVE_SC(src_argb, dst_argb, shuffler, width);
+}
+#endif  // HAS_ARGBSHUFFLEROW_SME
+
+#ifdef HAS_AR64SHUFFLEROW_SME
+__arm_locally_streaming void AR64ShuffleRow_SME(const uint8_t* src_ar64,
+                                                uint8_t* dst_ar64,
+                                                const uint8_t* shuffler,
+                                                int width) {
+  AR64ShuffleRow_SVE_SC(src_ar64, dst_ar64, shuffler, width);
+}
+#endif  // HAS_AR64SHUFFLEROW_SME
+
 #if defined(__clang__)
 #pragma clang attribute pop
 #elif defined(__GNUC__)
