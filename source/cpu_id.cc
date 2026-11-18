@@ -514,7 +514,6 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_einfo7[4] = {0, 0, 0, 0};
   int cpu_info1d[4] = {0, 0, 0, 0};
   int cpu_einfo1d_2[4] = {0, 0, 0, 0};
-  int cpu_einfo1e[4] = {0, 0, 0, 0};
   int cpu_info24[4] = {0, 0, 0, 0};
   int cpu_einfo24_1[4] = {0, 0, 0, 0};
   int cpu_info21[4] = {0, 0, 0, 0};
@@ -542,9 +541,6 @@ static SAFEBUFFERS int GetCpuFlags(void) {
       CpuId(0x1d, 2, cpu_einfo1d_2);
     }
   }
-  if (cpu_info0[0] >= 0x1e) {
-    CpuId(0x1e, 1, cpu_einfo1e);
-  }
   if (cpu_info0[0] >= 0x21) {
     CpuId(0x21, 0, cpu_info21);
   }
@@ -569,8 +565,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
                 ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
                 ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0) |
                 ((cpu_einfo7[0] & 0x00000010) ? kCpuHasAVXVNNI : 0) |
-                ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0) |
-                ((cpu_einfo7[3] & 0x00200000) ? kCpuHasAPX : 0);
+                ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0);
 
     // Detect AVX512bw / AVX10 (512-bit vector support)
     int has_avx512 = (cpu_info7[1] & 0x00010000) ||
@@ -585,10 +580,10 @@ static SAFEBUFFERS int GetCpuFlags(void) {
           ((cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0) |
           ((cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0) |
           ((cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0) |
+          ((cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0) |
           ((cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0) |
           ((has_tile && (cpu_info7[3] & 0x02000000)) ? kCpuHasAMXINT8 : 0) |
-          ((cpu_amdinfo21[0] & 0x00800000) ? kCpuHasAVX512BMM : 0) |
-          ((cpu_einfo1e[0] & 0x00000040) ? kCpuHasAMXTF32 : 0);
+          ((cpu_amdinfo21[0] & 0x00800000) ? kCpuHasAVX512BMM : 0);
       if (cpu_info0[0] >= 0x24 && (cpu_einfo7[3] & 0x00080000)) {
         cpu_info |= ((cpu_info24[1] & 0xFF) >= 2) ? kCpuHasAVX10_2 : 0;
         if (has_tile && (GetXCR0() & 0x001000e6) == 0x001000e6 &&

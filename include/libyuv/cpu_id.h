@@ -56,14 +56,13 @@ static const int kCpuHasAVX512VL = 0x80000;
 static const int kCpuHasAVX512VNNI = 0x100000;
 static const int kCpuHasAVX512VBMI = 0x200000;
 static const int kCpuHasAVX512VBMI2 = 0x400000;
-static const int kCpuHasAPX = 0x800000;
+static const int kCpuHasAVX512VBITALG = 0x800000;  // Deprecated.
 static const int kCpuHasAVX10 = 0x1000000;
 static const int kCpuHasAVX10_2 = 0x2000000;
 static const int kCpuHasAVXVNNI = 0x4000000;
 static const int kCpuHasAVXVNNIINT8 = 0x8000000;
 static const int kCpuHasAMXINT8 = 0x10000000;
 static const int kCpuHasAVX512BMM = 0x20000000;
-static const int kCpuHasAMXTF32 = 0x40000000;
 static const int kCpuHasACEV1 = 0x80000000;  // NOLINT
 
 // These flags are only valid on LOONGARCH processors.
