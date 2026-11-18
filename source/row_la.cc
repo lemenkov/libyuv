@@ -4614,6 +4614,401 @@ void SplitXRGBRow_LSX(const uint8_t* src_argb,
 }
 #endif  // HAS_SPLITXRGBROW_LSX
 
+#if defined(HAS_SPLITRGBROW_LSX) || defined(HAS_SPLITRGBROW_LASX)
+// Shuffle tables for RGB24 to planar. Each channel takes 2 shuffles: A
+// gathers from the first 32 bytes, B appends from the last 16 bytes.
+// Tables are repeated in both 128 bit lanes for LASX.
+static const ulvec8 kSplitRGBShufR0 = {
+    0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 0, 0, 0, 0, 0,
+    0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 0, 0, 0, 0, 0};
+static const ulvec8 kSplitRGBShufR1 = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 20, 23, 26, 29,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 20, 23, 26, 29};
+static const ulvec8 kSplitRGBShufG0 = {
+    1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 0, 0, 0, 0, 0,
+    1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 0, 0, 0, 0, 0};
+static const ulvec8 kSplitRGBShufG1 = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 21, 24, 27, 30,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 21, 24, 27, 30};
+static const ulvec8 kSplitRGBShufB0 = {
+    2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 0, 0, 0, 0, 0, 0,
+    2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 0, 0, 0, 0, 0, 0};
+static const ulvec8 kSplitRGBShufB1 = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 19, 22, 25, 28, 31,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 19, 22, 25, 28, 31};
+#endif  // HAS_SPLITRGBROW_LSX || HAS_SPLITRGBROW_LASX
+
+#ifdef HAS_SPLITRGBROW_LSX
+void SplitRGBRow_LSX(const uint8_t* src_rgb,
+                     uint8_t* dst_r,
+                     uint8_t* dst_g,
+                     uint8_t* dst_b,
+                     int width) {
+  asm volatile(
+      "vld              $vr6, %[shr0], 0               \n"
+      "vld              $vr7, %[shr1], 0               \n"
+      "vld              $vr8, %[shg0], 0               \n"
+      "vld              $vr9, %[shg1], 0               \n"
+      "vld              $vr10, %[shb0], 0              \n"
+      "vld              $vr11, %[shb1], 0              \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[src], 0                \n"
+      "vld              $vr1, %[src], 16               \n"
+      "vld              $vr2, %[src], 32               \n"
+      "vshuf.b          $vr3, $vr1, $vr0, $vr6         \n"
+      "vshuf.b          $vr4, $vr1, $vr0, $vr8         \n"
+      "vshuf.b          $vr5, $vr1, $vr0, $vr10        \n"
+      "vshuf.b          $vr3, $vr2, $vr3, $vr7         \n"
+      "vshuf.b          $vr4, $vr2, $vr4, $vr9         \n"
+      "vshuf.b          $vr5, $vr2, $vr5, $vr11        \n"
+      "vst              $vr3, %[dr], 0                 \n"
+      "vst              $vr4, %[dg], 0                 \n"
+      "vst              $vr5, %[db], 0                 \n"
+      "addi.d           %[src], %[src], 48             \n"
+      "addi.d           %[dr], %[dr], 16               \n"
+      "addi.d           %[dg], %[dg], 16               \n"
+      "addi.d           %[db], %[db], 16               \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [src] "+r"(src_rgb),           // %[src]
+        [dr] "+r"(dst_r),              // %[dr]
+        [dg] "+r"(dst_g),              // %[dg]
+        [db] "+r"(dst_b),              // %[db]
+        [cnt] "+r"(width)              // %[cnt]
+      : [shr0] "r"(&kSplitRGBShufR0),  // %[shr0]
+        [shr1] "r"(&kSplitRGBShufR1),  // %[shr1]
+        [shg0] "r"(&kSplitRGBShufG0),  // %[shg0]
+        [shg1] "r"(&kSplitRGBShufG1),  // %[shg1]
+        [shb0] "r"(&kSplitRGBShufB0),  // %[shb0]
+        [shb1] "r"(&kSplitRGBShufB1)   // %[shb1]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11");
+}
+#endif  // HAS_SPLITRGBROW_LSX
+
+#if defined(HAS_MERGERGBROW_LSX) || defined(HAS_MERGERGBROW_LASX)
+// Shuffle tables for planar to RGB24. Each 16 bytes of output takes 2
+// shuffles: A interleaves R and G, B inserts B.
+// Tables are repeated in both 128 bit lanes for LASX.
+static const ulvec8 kMergeRGBShuf0A = {0, 16, 0,  1, 17, 0, 2,  18, 0, 3,  19,
+                                       0, 4,  20, 0, 5,  0, 16, 0,  1, 17, 0,
+                                       2, 18, 0,  3, 19, 0, 4,  20, 0, 5};
+static const ulvec8 kMergeRGBShuf0B = {
+    0, 1, 16, 3, 4, 17, 6, 7, 18, 9, 10, 19, 12, 13, 20, 15,
+    0, 1, 16, 3, 4, 17, 6, 7, 18, 9, 10, 19, 12, 13, 20, 15};
+static const ulvec8 kMergeRGBShuf1A = {21, 0,  6, 22, 0,  7,  23, 0, 8,  24, 0,
+                                       9,  25, 0, 10, 26, 21, 0,  6, 22, 0,  7,
+                                       23, 0,  8, 24, 0,  9,  25, 0, 10, 26};
+static const ulvec8 kMergeRGBShuf1B = {
+    0, 21, 2, 3, 22, 5, 6, 23, 8, 9, 24, 11, 12, 25, 14, 15,
+    0, 21, 2, 3, 22, 5, 6, 23, 8, 9, 24, 11, 12, 25, 14, 15};
+static const ulvec8 kMergeRGBShuf2A = {
+    0, 11, 27, 0, 12, 28, 0, 13, 29, 0, 14, 30, 0, 15, 31, 0,
+    0, 11, 27, 0, 12, 28, 0, 13, 29, 0, 14, 30, 0, 15, 31, 0};
+static const ulvec8 kMergeRGBShuf2B = {
+    26, 1, 2, 27, 4, 5, 28, 7, 8, 29, 10, 11, 30, 13, 14, 31,
+    26, 1, 2, 27, 4, 5, 28, 7, 8, 29, 10, 11, 30, 13, 14, 31};
+#endif  // HAS_MERGERGBROW_LSX || HAS_MERGERGBROW_LASX
+
+#ifdef HAS_MERGERGBROW_LSX
+void MergeRGBRow_LSX(const uint8_t* src_r,
+                     const uint8_t* src_g,
+                     const uint8_t* src_b,
+                     uint8_t* dst_rgb,
+                     int width) {
+  asm volatile(
+      "vld              $vr6, %[sh0a], 0               \n"
+      "vld              $vr7, %[sh0b], 0               \n"
+      "vld              $vr8, %[sh1a], 0               \n"
+      "vld              $vr9, %[sh1b], 0               \n"
+      "vld              $vr10, %[sh2a], 0              \n"
+      "vld              $vr11, %[sh2b], 0              \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[sr], 0                 \n"
+      "vld              $vr1, %[sg], 0                 \n"
+      "vld              $vr2, %[sb], 0                 \n"
+      "vshuf.b          $vr3, $vr1, $vr0, $vr6         \n"
+      "vshuf.b          $vr4, $vr1, $vr0, $vr8         \n"
+      "vshuf.b          $vr5, $vr1, $vr0, $vr10        \n"
+      "vshuf.b          $vr3, $vr2, $vr3, $vr7         \n"
+      "vshuf.b          $vr4, $vr2, $vr4, $vr9         \n"
+      "vshuf.b          $vr5, $vr2, $vr5, $vr11        \n"
+      "vst              $vr3, %[dst], 0                \n"
+      "vst              $vr4, %[dst], 16               \n"
+      "vst              $vr5, %[dst], 32               \n"
+      "addi.d           %[sr], %[sr], 16               \n"
+      "addi.d           %[sg], %[sg], 16               \n"
+      "addi.d           %[sb], %[sb], 16               \n"
+      "addi.d           %[dst], %[dst], 48             \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sr] "+r"(src_r),              // %[sr]
+        [sg] "+r"(src_g),              // %[sg]
+        [sb] "+r"(src_b),              // %[sb]
+        [dst] "+r"(dst_rgb),           // %[dst]
+        [cnt] "+r"(width)              // %[cnt]
+      : [sh0a] "r"(&kMergeRGBShuf0A),  // %[sh0a]
+        [sh0b] "r"(&kMergeRGBShuf0B),  // %[sh0b]
+        [sh1a] "r"(&kMergeRGBShuf1A),  // %[sh1a]
+        [sh1b] "r"(&kMergeRGBShuf1B),  // %[sh1b]
+        [sh2a] "r"(&kMergeRGBShuf2A),  // %[sh2a]
+        [sh2b] "r"(&kMergeRGBShuf2B)   // %[sh2b]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9", "$vr10", "$vr11");
+}
+#endif  // HAS_MERGERGBROW_LSX
+
+#ifdef HAS_MERGEAR64ROW_LSX
+void MergeAR64Row_LSX(const uint16_t* src_r,
+                      const uint16_t* src_g,
+                      const uint16_t* src_b,
+                      const uint16_t* src_a,
+                      uint16_t* dst_ar64,
+                      int depth,
+                      int width) {
+  int shift = 16 - depth;
+  int max = (1 << depth) - 1;
+  asm volatile(
+      "vreplgr2vr.h     $vr8, %[max]                   \n"
+      "vreplgr2vr.h     $vr9, %[shf]                   \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[sb], 0                 \n"
+      "vld              $vr1, %[sg], 0                 \n"
+      "vld              $vr2, %[sr], 0                 \n"
+      "vld              $vr3, %[sa], 0                 \n"
+      "vmin.hu          $vr0, $vr0, $vr8               \n"
+      "vmin.hu          $vr1, $vr1, $vr8               \n"
+      "vmin.hu          $vr2, $vr2, $vr8               \n"
+      "vmin.hu          $vr3, $vr3, $vr8               \n"
+      "vsll.h           $vr0, $vr0, $vr9               \n"
+      "vsll.h           $vr1, $vr1, $vr9               \n"
+      "vsll.h           $vr2, $vr2, $vr9               \n"
+      "vsll.h           $vr3, $vr3, $vr9               \n"
+      "vilvl.h          $vr4, $vr1, $vr0               \n"
+      "vilvh.h          $vr5, $vr1, $vr0               \n"
+      "vilvl.h          $vr6, $vr3, $vr2               \n"
+      "vilvh.h          $vr7, $vr3, $vr2               \n"
+      "vilvl.w          $vr0, $vr6, $vr4               \n"
+      "vilvh.w          $vr1, $vr6, $vr4               \n"
+      "vilvl.w          $vr2, $vr7, $vr5               \n"
+      "vilvh.w          $vr3, $vr7, $vr5               \n"
+      "vst              $vr0, %[dst], 0                \n"
+      "vst              $vr1, %[dst], 16               \n"
+      "vst              $vr2, %[dst], 32               \n"
+      "vst              $vr3, %[dst], 48               \n"
+      "addi.d           %[sb], %[sb], 16               \n"
+      "addi.d           %[sg], %[sg], 16               \n"
+      "addi.d           %[sr], %[sr], 16               \n"
+      "addi.d           %[sa], %[sa], 16               \n"
+      "addi.d           %[dst], %[dst], 64             \n"
+      "addi.d           %[cnt], %[cnt], -8             \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [sa] "+r"(src_a),      // %[sa]
+        [dst] "+r"(dst_ar64),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [max] "r"(max),        // %[max]
+        [shf] "r"(shift)       // %[shf]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9");
+}
+#endif  // HAS_MERGEAR64ROW_LSX
+
+#ifdef HAS_MERGEXR64ROW_LSX
+void MergeXR64Row_LSX(const uint16_t* src_r,
+                      const uint16_t* src_g,
+                      const uint16_t* src_b,
+                      uint16_t* dst_ar64,
+                      int depth,
+                      int width) {
+  int shift = 16 - depth;
+  int max = (1 << depth) - 1;
+  asm volatile(
+      "vreplgr2vr.h     $vr8, %[max]                   \n"
+      "vreplgr2vr.h     $vr9, %[shf]                   \n"
+      "vldi             $vr3, 0xff                     \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[sb], 0                 \n"
+      "vld              $vr1, %[sg], 0                 \n"
+      "vld              $vr2, %[sr], 0                 \n"
+      "vmin.hu          $vr0, $vr0, $vr8               \n"
+      "vmin.hu          $vr1, $vr1, $vr8               \n"
+      "vmin.hu          $vr2, $vr2, $vr8               \n"
+      "vsll.h           $vr0, $vr0, $vr9               \n"
+      "vsll.h           $vr1, $vr1, $vr9               \n"
+      "vsll.h           $vr2, $vr2, $vr9               \n"
+      "vilvl.h          $vr4, $vr1, $vr0               \n"
+      "vilvh.h          $vr5, $vr1, $vr0               \n"
+      "vilvl.h          $vr6, $vr3, $vr2               \n"
+      "vilvh.h          $vr7, $vr3, $vr2               \n"
+      "vilvl.w          $vr0, $vr6, $vr4               \n"
+      "vilvh.w          $vr1, $vr6, $vr4               \n"
+      "vilvl.w          $vr2, $vr7, $vr5               \n"
+      "vilvh.w          $vr7, $vr7, $vr5               \n"
+      "vst              $vr0, %[dst], 0                \n"
+      "vst              $vr1, %[dst], 16               \n"
+      "vst              $vr2, %[dst], 32               \n"
+      "vst              $vr7, %[dst], 48               \n"
+      "addi.d           %[sb], %[sb], 16               \n"
+      "addi.d           %[sg], %[sg], 16               \n"
+      "addi.d           %[sr], %[sr], 16               \n"
+      "addi.d           %[dst], %[dst], 64             \n"
+      "addi.d           %[cnt], %[cnt], -8             \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [dst] "+r"(dst_ar64),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [max] "r"(max),        // %[max]
+        [shf] "r"(shift)       // %[shf]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6",
+        "$vr7", "$vr8", "$vr9");
+}
+#endif  // HAS_MERGEXR64ROW_LSX
+
+#ifdef HAS_MERGEXR30ROW_LSX
+void MergeXR30Row_LSX(const uint16_t* src_r,
+                      const uint16_t* src_g,
+                      const uint16_t* src_b,
+                      uint8_t* dst_ar30,
+                      int depth,
+                      int width) {
+  int shift = depth - 10;
+  asm volatile(
+      "vreplgr2vr.h     $vr4, %[shf]                   \n"
+      "vldi             $vr6, 0xff                     \n"
+      "vsrli.h          $vr5, $vr6, 6                  \n"  // 1023
+      "vslli.h          $vr6, $vr6, 14                 \n"  // 0xc000
+
+      "1:                                              \n"
+      "vld              $vr0, %[sb], 0                 \n"
+      "vld              $vr1, %[sg], 0                 \n"
+      "vld              $vr2, %[sr], 0                 \n"
+      "vsrl.h           $vr0, $vr0, $vr4               \n"
+      "vsrl.h           $vr1, $vr1, $vr4               \n"
+      "vsrl.h           $vr2, $vr2, $vr4               \n"
+      "vmin.hu          $vr0, $vr0, $vr5               \n"
+      "vmin.hu          $vr1, $vr1, $vr5               \n"
+      "vmin.hu          $vr2, $vr2, $vr5               \n"
+      "vslli.h          $vr3, $vr1, 10                 \n"
+      "vsrli.h          $vr1, $vr1, 6                  \n"
+      "vslli.h          $vr2, $vr2, 4                  \n"
+      "vor.v            $vr0, $vr0, $vr3               \n"  // B | G << 10
+      "vor.v            $vr1, $vr1, $vr2               \n"  // G >> 6 | R << 4
+      "vor.v            $vr1, $vr1, $vr6               \n"  // A
+      "vilvl.h          $vr2, $vr1, $vr0               \n"
+      "vilvh.h          $vr3, $vr1, $vr0               \n"
+      "vst              $vr2, %[dst], 0                \n"
+      "vst              $vr3, %[dst], 16               \n"
+      "addi.d           %[sb], %[sb], 16               \n"
+      "addi.d           %[sg], %[sg], 16               \n"
+      "addi.d           %[sr], %[sr], 16               \n"
+      "addi.d           %[dst], %[dst], 32             \n"
+      "addi.d           %[cnt], %[cnt], -8             \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [dst] "+r"(dst_ar30),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [shf] "r"(shift)       // %[shf]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_MERGEXR30ROW_LSX
+
+#ifdef HAS_MERGEARGB16TO8ROW_LSX
+void MergeARGB16To8Row_LSX(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           const uint16_t* src_a,
+                           uint8_t* dst_argb,
+                           int depth,
+                           int width) {
+  int shift = depth - 8;
+  asm volatile(
+      "vreplgr2vr.h     $vr6, %[shf]                   \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[sb], 0                 \n"
+      "vld              $vr1, %[sg], 0                 \n"
+      "vld              $vr2, %[sr], 0                 \n"
+      "vld              $vr3, %[sa], 0                 \n"
+      "vssrln.bu.h      $vr0, $vr0, $vr6               \n"
+      "vssrln.bu.h      $vr1, $vr1, $vr6               \n"
+      "vssrln.bu.h      $vr2, $vr2, $vr6               \n"
+      "vssrln.bu.h      $vr3, $vr3, $vr6               \n"
+      "vilvl.b          $vr4, $vr1, $vr0               \n"
+      "vilvl.b          $vr5, $vr3, $vr2               \n"
+      "vilvl.h          $vr0, $vr5, $vr4               \n"
+      "vilvh.h          $vr1, $vr5, $vr4               \n"
+      "vst              $vr0, %[dst], 0                \n"
+      "vst              $vr1, %[dst], 16               \n"
+      "addi.d           %[sb], %[sb], 16               \n"
+      "addi.d           %[sg], %[sg], 16               \n"
+      "addi.d           %[sr], %[sr], 16               \n"
+      "addi.d           %[sa], %[sa], 16               \n"
+      "addi.d           %[dst], %[dst], 32             \n"
+      "addi.d           %[cnt], %[cnt], -8             \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [sa] "+r"(src_a),      // %[sa]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [shf] "r"(shift)       // %[shf]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_MERGEARGB16TO8ROW_LSX
+
+#ifdef HAS_MERGEXRGB16TO8ROW_LSX
+void MergeXRGB16To8Row_LSX(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint8_t* dst_argb,
+                           int depth,
+                           int width) {
+  int shift = depth - 8;
+  asm volatile(
+      "vreplgr2vr.h     $vr6, %[shf]                   \n"
+      "vldi             $vr3, 0xff                     \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[sb], 0                 \n"
+      "vld              $vr1, %[sg], 0                 \n"
+      "vld              $vr2, %[sr], 0                 \n"
+      "vssrln.bu.h      $vr0, $vr0, $vr6               \n"
+      "vssrln.bu.h      $vr1, $vr1, $vr6               \n"
+      "vssrln.bu.h      $vr2, $vr2, $vr6               \n"
+      "vilvl.b          $vr4, $vr1, $vr0               \n"
+      "vilvl.b          $vr5, $vr3, $vr2               \n"
+      "vilvl.h          $vr0, $vr5, $vr4               \n"
+      "vilvh.h          $vr1, $vr5, $vr4               \n"
+      "vst              $vr0, %[dst], 0                \n"
+      "vst              $vr1, %[dst], 16               \n"
+      "addi.d           %[sb], %[sb], 16               \n"
+      "addi.d           %[sg], %[sg], 16               \n"
+      "addi.d           %[sr], %[sr], 16               \n"
+      "addi.d           %[dst], %[dst], 32             \n"
+      "addi.d           %[cnt], %[cnt], -8             \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [shf] "r"(shift)       // %[shf]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4", "$vr5", "$vr6");
+}
+#endif  // HAS_MERGEXRGB16TO8ROW_LSX
+
 #ifdef HAS_RGB24MIRRORROW_LSX
 static const uvec8 kRGB24MirrorShuf0 = {13, 14, 15, 10, 11, 12, 7, 8,
                                         9,  4,  5,  6,  1,  2,  3, 30};
@@ -10027,6 +10422,383 @@ void SplitXRGBRow_LASX(const uint8_t* src_argb,
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
 }
 #endif  // HAS_SPLITXRGBROW_LASX
+
+#ifdef HAS_SPLITRGBROW_LASX
+void SplitRGBRow_LASX(const uint8_t* src_rgb,
+                      uint8_t* dst_r,
+                      uint8_t* dst_g,
+                      uint8_t* dst_b,
+                      int width) {
+  asm volatile(
+      "xvld             $xr6, %[shr0], 0               \n"
+      "xvld             $xr7, %[shr1], 0               \n"
+      "xvld             $xr8, %[shg0], 0               \n"
+      "xvld             $xr9, %[shg1], 0               \n"
+      "xvld             $xr10, %[shb0], 0              \n"
+      "xvld             $xr11, %[shb1], 0              \n"
+
+      "1:                                              \n"
+      "xvld             $xr0, %[src], 0                \n"
+      "xvld             $xr1, %[src], 32               \n"
+      "xvld             $xr2, %[src], 64               \n"
+      // Arrange so each 128 bit lane holds 16 pixels across 3 registers.
+      "xvori.b          $xr3, $xr0, 0                  \n"
+      "xvpermi.q        $xr3, $xr1, 0x12               \n"  // 0..15, 48..63
+      "xvpermi.q        $xr0, $xr2, 0x03               \n"  // 16..31, 64..79
+      "xvpermi.q        $xr1, $xr2, 0x12               \n"  // 32..47, 80..95
+      "xvshuf.b         $xr2, $xr0, $xr3, $xr6         \n"
+      "xvshuf.b         $xr4, $xr0, $xr3, $xr8         \n"
+      "xvshuf.b         $xr5, $xr0, $xr3, $xr10        \n"
+      "xvshuf.b         $xr2, $xr1, $xr2, $xr7         \n"
+      "xvshuf.b         $xr4, $xr1, $xr4, $xr9         \n"
+      "xvshuf.b         $xr5, $xr1, $xr5, $xr11        \n"
+      "xvst             $xr2, %[dr], 0                 \n"
+      "xvst             $xr4, %[dg], 0                 \n"
+      "xvst             $xr5, %[db], 0                 \n"
+      "addi.d           %[src], %[src], 96             \n"
+      "addi.d           %[dr], %[dr], 32               \n"
+      "addi.d           %[dg], %[dg], 32               \n"
+      "addi.d           %[db], %[db], 32               \n"
+      "addi.d           %[cnt], %[cnt], -32            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [src] "+r"(src_rgb),           // %[src]
+        [dr] "+r"(dst_r),              // %[dr]
+        [dg] "+r"(dst_g),              // %[dg]
+        [db] "+r"(dst_b),              // %[db]
+        [cnt] "+r"(width)              // %[cnt]
+      : [shr0] "r"(&kSplitRGBShufR0),  // %[shr0]
+        [shr1] "r"(&kSplitRGBShufR1),  // %[shr1]
+        [shg0] "r"(&kSplitRGBShufG0),  // %[shg0]
+        [shg1] "r"(&kSplitRGBShufG1),  // %[shg1]
+        [shb0] "r"(&kSplitRGBShufB0),  // %[shb0]
+        [shb1] "r"(&kSplitRGBShufB1)   // %[shb1]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11");
+}
+#endif  // HAS_SPLITRGBROW_LASX
+
+#ifdef HAS_MERGERGBROW_LASX
+void MergeRGBRow_LASX(const uint8_t* src_r,
+                      const uint8_t* src_g,
+                      const uint8_t* src_b,
+                      uint8_t* dst_rgb,
+                      int width) {
+  asm volatile(
+      "xvld             $xr6, %[sh0a], 0               \n"
+      "xvld             $xr7, %[sh0b], 0               \n"
+      "xvld             $xr8, %[sh1a], 0               \n"
+      "xvld             $xr9, %[sh1b], 0               \n"
+      "xvld             $xr10, %[sh2a], 0              \n"
+      "xvld             $xr11, %[sh2b], 0              \n"
+
+      "1:                                              \n"
+      "xvld             $xr0, %[sr], 0                 \n"
+      "xvld             $xr1, %[sg], 0                 \n"
+      "xvld             $xr2, %[sb], 0                 \n"
+      "xvshuf.b         $xr3, $xr1, $xr0, $xr6         \n"
+      "xvshuf.b         $xr4, $xr1, $xr0, $xr8         \n"
+      "xvshuf.b         $xr5, $xr1, $xr0, $xr10        \n"
+      "xvshuf.b         $xr3, $xr2, $xr3, $xr7         \n"  // 0..15, 48..63
+      "xvshuf.b         $xr4, $xr2, $xr4, $xr9         \n"  // 16..31, 64..79
+      "xvshuf.b         $xr5, $xr2, $xr5, $xr11        \n"  // 32..47, 80..95
+      "xvori.b          $xr0, $xr3, 0                  \n"
+      "xvpermi.q        $xr0, $xr4, 0x02               \n"  // 0..31
+      "xvpermi.q        $xr3, $xr5, 0x30               \n"  // 32..63
+      "xvpermi.q        $xr4, $xr5, 0x13               \n"  // 64..95
+      "xvst             $xr0, %[dst], 0                \n"
+      "xvst             $xr3, %[dst], 32               \n"
+      "xvst             $xr4, %[dst], 64               \n"
+      "addi.d           %[sr], %[sr], 32               \n"
+      "addi.d           %[sg], %[sg], 32               \n"
+      "addi.d           %[sb], %[sb], 32               \n"
+      "addi.d           %[dst], %[dst], 96             \n"
+      "addi.d           %[cnt], %[cnt], -32            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sr] "+r"(src_r),              // %[sr]
+        [sg] "+r"(src_g),              // %[sg]
+        [sb] "+r"(src_b),              // %[sb]
+        [dst] "+r"(dst_rgb),           // %[dst]
+        [cnt] "+r"(width)              // %[cnt]
+      : [sh0a] "r"(&kMergeRGBShuf0A),  // %[sh0a]
+        [sh0b] "r"(&kMergeRGBShuf0B),  // %[sh0b]
+        [sh1a] "r"(&kMergeRGBShuf1A),  // %[sh1a]
+        [sh1b] "r"(&kMergeRGBShuf1B),  // %[sh1b]
+        [sh2a] "r"(&kMergeRGBShuf2A),  // %[sh2a]
+        [sh2b] "r"(&kMergeRGBShuf2B)   // %[sh2b]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10", "$xr11");
+}
+#endif  // HAS_MERGERGBROW_LASX
+
+#ifdef HAS_MERGEAR64ROW_LASX
+void MergeAR64Row_LASX(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       const uint16_t* src_a,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width) {
+  int shift = 16 - depth;
+  int max = (1 << depth) - 1;
+  asm volatile(
+      "xvreplgr2vr.h    $xr8, %[max]                   \n"
+      "xvreplgr2vr.h    $xr9, %[shf]                   \n"
+
+      "1:                                              \n"
+      "xvld             $xr0, %[sb], 0                 \n"
+      "xvld             $xr1, %[sg], 0                 \n"
+      "xvld             $xr2, %[sr], 0                 \n"
+      "xvld             $xr3, %[sa], 0                 \n"
+      "xvmin.hu         $xr0, $xr0, $xr8               \n"
+      "xvmin.hu         $xr1, $xr1, $xr8               \n"
+      "xvmin.hu         $xr2, $xr2, $xr8               \n"
+      "xvmin.hu         $xr3, $xr3, $xr8               \n"
+      "xvsll.h          $xr0, $xr0, $xr9               \n"
+      "xvsll.h          $xr1, $xr1, $xr9               \n"
+      "xvsll.h          $xr2, $xr2, $xr9               \n"
+      "xvsll.h          $xr3, $xr3, $xr9               \n"
+      "xvilvl.h         $xr4, $xr1, $xr0               \n"
+      "xvilvh.h         $xr5, $xr1, $xr0               \n"
+      "xvilvl.h         $xr6, $xr3, $xr2               \n"
+      "xvilvh.h         $xr7, $xr3, $xr2               \n"
+      "xvilvl.w         $xr0, $xr6, $xr4               \n"  // 0,1, 8,9
+      "xvilvh.w         $xr1, $xr6, $xr4               \n"  // 2,3, 10,11
+      "xvilvl.w         $xr2, $xr7, $xr5               \n"  // 4,5, 12,13
+      "xvilvh.w         $xr3, $xr7, $xr5               \n"  // 6,7, 14,15
+      "xvori.b          $xr4, $xr0, 0                  \n"
+      "xvori.b          $xr5, $xr2, 0                  \n"
+      "xvpermi.q        $xr4, $xr1, 0x02               \n"  // 0..3
+      "xvpermi.q        $xr5, $xr3, 0x02               \n"  // 4..7
+      "xvpermi.q        $xr1, $xr0, 0x31               \n"  // 8..11
+      "xvpermi.q        $xr3, $xr2, 0x31               \n"  // 12..15
+      "xvst             $xr4, %[dst], 0                \n"
+      "xvst             $xr5, %[dst], 32               \n"
+      "xvst             $xr1, %[dst], 64               \n"
+      "xvst             $xr3, %[dst], 96               \n"
+      "addi.d           %[sb], %[sb], 32               \n"
+      "addi.d           %[sg], %[sg], 32               \n"
+      "addi.d           %[sr], %[sr], 32               \n"
+      "addi.d           %[sa], %[sa], 32               \n"
+      "addi.d           %[dst], %[dst], 128            \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [sa] "+r"(src_a),      // %[sa]
+        [dst] "+r"(dst_ar64),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [max] "r"(max),        // %[max]
+        [shf] "r"(shift)       // %[shf]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9");
+}
+#endif  // HAS_MERGEAR64ROW_LASX
+
+#ifdef HAS_MERGEXR64ROW_LASX
+void MergeXR64Row_LASX(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint16_t* dst_ar64,
+                       int depth,
+                       int width) {
+  int shift = 16 - depth;
+  int max = (1 << depth) - 1;
+  asm volatile(
+      "xvreplgr2vr.h    $xr8, %[max]                   \n"
+      "xvreplgr2vr.h    $xr9, %[shf]                   \n"
+      "xvldi            $xr10, 0xff                    \n"
+
+      "1:                                              \n"
+      "xvld             $xr0, %[sb], 0                 \n"
+      "xvld             $xr1, %[sg], 0                 \n"
+      "xvld             $xr2, %[sr], 0                 \n"
+      "xvmin.hu         $xr0, $xr0, $xr8               \n"
+      "xvmin.hu         $xr1, $xr1, $xr8               \n"
+      "xvmin.hu         $xr2, $xr2, $xr8               \n"
+      "xvsll.h          $xr0, $xr0, $xr9               \n"
+      "xvsll.h          $xr1, $xr1, $xr9               \n"
+      "xvsll.h          $xr2, $xr2, $xr9               \n"
+      "xvilvl.h         $xr4, $xr1, $xr0               \n"
+      "xvilvh.h         $xr5, $xr1, $xr0               \n"
+      "xvilvl.h         $xr6, $xr10, $xr2              \n"
+      "xvilvh.h         $xr7, $xr10, $xr2              \n"
+      "xvilvl.w         $xr0, $xr6, $xr4               \n"  // 0,1, 8,9
+      "xvilvh.w         $xr1, $xr6, $xr4               \n"  // 2,3, 10,11
+      "xvilvl.w         $xr2, $xr7, $xr5               \n"  // 4,5, 12,13
+      "xvilvh.w         $xr3, $xr7, $xr5               \n"  // 6,7, 14,15
+      "xvori.b          $xr4, $xr0, 0                  \n"
+      "xvori.b          $xr5, $xr2, 0                  \n"
+      "xvpermi.q        $xr4, $xr1, 0x02               \n"  // 0..3
+      "xvpermi.q        $xr5, $xr3, 0x02               \n"  // 4..7
+      "xvpermi.q        $xr1, $xr0, 0x31               \n"  // 8..11
+      "xvpermi.q        $xr3, $xr2, 0x31               \n"  // 12..15
+      "xvst             $xr4, %[dst], 0                \n"
+      "xvst             $xr5, %[dst], 32               \n"
+      "xvst             $xr1, %[dst], 64               \n"
+      "xvst             $xr3, %[dst], 96               \n"
+      "addi.d           %[sb], %[sb], 32               \n"
+      "addi.d           %[sg], %[sg], 32               \n"
+      "addi.d           %[sr], %[sr], 32               \n"
+      "addi.d           %[dst], %[dst], 128            \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [dst] "+r"(dst_ar64),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [max] "r"(max),        // %[max]
+        [shf] "r"(shift)       // %[shf]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6",
+        "$xr7", "$xr8", "$xr9", "$xr10");
+}
+#endif  // HAS_MERGEXR64ROW_LASX
+
+#ifdef HAS_MERGEXR30ROW_LASX
+void MergeXR30Row_LASX(const uint16_t* src_r,
+                       const uint16_t* src_g,
+                       const uint16_t* src_b,
+                       uint8_t* dst_ar30,
+                       int depth,
+                       int width) {
+  int shift = depth - 10;
+  asm volatile(
+      "xvreplgr2vr.h    $xr4, %[shf]                   \n"
+      "xvldi            $xr6, 0xff                     \n"
+      "xvsrli.h         $xr5, $xr6, 6                  \n"  // 1023
+      "xvslli.h         $xr6, $xr6, 14                 \n"  // 0xc000
+
+      "1:                                              \n"
+      "xvld             $xr0, %[sb], 0                 \n"
+      "xvld             $xr1, %[sg], 0                 \n"
+      "xvld             $xr2, %[sr], 0                 \n"
+      "xvsrl.h          $xr0, $xr0, $xr4               \n"
+      "xvsrl.h          $xr1, $xr1, $xr4               \n"
+      "xvsrl.h          $xr2, $xr2, $xr4               \n"
+      "xvmin.hu         $xr0, $xr0, $xr5               \n"
+      "xvmin.hu         $xr1, $xr1, $xr5               \n"
+      "xvmin.hu         $xr2, $xr2, $xr5               \n"
+      "xvslli.h         $xr3, $xr1, 10                 \n"
+      "xvsrli.h         $xr1, $xr1, 6                  \n"
+      "xvslli.h         $xr2, $xr2, 4                  \n"
+      "xvor.v           $xr0, $xr0, $xr3               \n"  // B | G << 10
+      "xvor.v           $xr1, $xr1, $xr2               \n"  // G >> 6 | R << 4
+      "xvor.v           $xr1, $xr1, $xr6               \n"  // A
+      "xvilvl.h         $xr2, $xr1, $xr0               \n"  // 0..3, 8..11
+      "xvilvh.h         $xr3, $xr1, $xr0               \n"  // 4..7, 12..15
+      "xvori.b          $xr0, $xr2, 0                  \n"
+      "xvpermi.q        $xr0, $xr3, 0x02               \n"  // 0..7
+      "xvpermi.q        $xr3, $xr2, 0x31               \n"  // 8..15
+      "xvst             $xr0, %[dst], 0                \n"
+      "xvst             $xr3, %[dst], 32               \n"
+      "addi.d           %[sb], %[sb], 32               \n"
+      "addi.d           %[sg], %[sg], 32               \n"
+      "addi.d           %[sr], %[sr], 32               \n"
+      "addi.d           %[dst], %[dst], 64             \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [dst] "+r"(dst_ar30),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [shf] "r"(shift)       // %[shf]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_MERGEXR30ROW_LASX
+
+#ifdef HAS_MERGEARGB16TO8ROW_LASX
+void MergeARGB16To8Row_LASX(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            const uint16_t* src_a,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width) {
+  int shift = depth - 8;
+  asm volatile(
+      "xvreplgr2vr.h    $xr6, %[shf]                   \n"
+
+      "1:                                              \n"
+      "xvld             $xr0, %[sb], 0                 \n"
+      "xvld             $xr1, %[sg], 0                 \n"
+      "xvld             $xr2, %[sr], 0                 \n"
+      "xvld             $xr3, %[sa], 0                 \n"
+      "xvssrln.bu.h     $xr0, $xr0, $xr6               \n"
+      "xvssrln.bu.h     $xr1, $xr1, $xr6               \n"
+      "xvssrln.bu.h     $xr2, $xr2, $xr6               \n"
+      "xvssrln.bu.h     $xr3, $xr3, $xr6               \n"
+      "xvilvl.b         $xr4, $xr1, $xr0               \n"
+      "xvilvl.b         $xr5, $xr3, $xr2               \n"
+      "xvilvl.h         $xr0, $xr5, $xr4               \n"  // 0..3, 8..11
+      "xvilvh.h         $xr1, $xr5, $xr4               \n"  // 4..7, 12..15
+      "xvori.b          $xr2, $xr0, 0                  \n"
+      "xvpermi.q        $xr2, $xr1, 0x02               \n"  // 0..7
+      "xvpermi.q        $xr1, $xr0, 0x31               \n"  // 8..15
+      "xvst             $xr2, %[dst], 0                \n"
+      "xvst             $xr1, %[dst], 32               \n"
+      "addi.d           %[sb], %[sb], 32               \n"
+      "addi.d           %[sg], %[sg], 32               \n"
+      "addi.d           %[sr], %[sr], 32               \n"
+      "addi.d           %[sa], %[sa], 32               \n"
+      "addi.d           %[dst], %[dst], 64             \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [sa] "+r"(src_a),      // %[sa]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [shf] "r"(shift)       // %[shf]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_MERGEARGB16TO8ROW_LASX
+
+#ifdef HAS_MERGEXRGB16TO8ROW_LASX
+void MergeXRGB16To8Row_LASX(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width) {
+  int shift = depth - 8;
+  asm volatile(
+      "xvreplgr2vr.h    $xr6, %[shf]                   \n"
+      "xvldi            $xr3, 0xff                     \n"
+
+      "1:                                              \n"
+      "xvld             $xr0, %[sb], 0                 \n"
+      "xvld             $xr1, %[sg], 0                 \n"
+      "xvld             $xr2, %[sr], 0                 \n"
+      "xvssrln.bu.h     $xr0, $xr0, $xr6               \n"
+      "xvssrln.bu.h     $xr1, $xr1, $xr6               \n"
+      "xvssrln.bu.h     $xr2, $xr2, $xr6               \n"
+      "xvilvl.b         $xr4, $xr1, $xr0               \n"
+      "xvilvl.b         $xr5, $xr3, $xr2               \n"
+      "xvilvl.h         $xr0, $xr5, $xr4               \n"  // 0..3, 8..11
+      "xvilvh.h         $xr1, $xr5, $xr4               \n"  // 4..7, 12..15
+      "xvori.b          $xr2, $xr0, 0                  \n"
+      "xvpermi.q        $xr2, $xr1, 0x02               \n"  // 0..7
+      "xvpermi.q        $xr1, $xr0, 0x31               \n"  // 8..15
+      "xvst             $xr2, %[dst], 0                \n"
+      "xvst             $xr1, %[dst], 32               \n"
+      "addi.d           %[sb], %[sb], 32               \n"
+      "addi.d           %[sg], %[sg], 32               \n"
+      "addi.d           %[sr], %[sr], 32               \n"
+      "addi.d           %[dst], %[dst], 64             \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [sb] "+r"(src_b),      // %[sb]
+        [sg] "+r"(src_g),      // %[sg]
+        [sr] "+r"(src_r),      // %[sr]
+        [dst] "+r"(dst_argb),  // %[dst]
+        [cnt] "+r"(width)      // %[cnt]
+      : [shf] "r"(shift)       // %[shf]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5", "$xr6");
+}
+#endif  // HAS_MERGEXRGB16TO8ROW_LASX
 
 #ifdef HAS_RGB24MIRRORROW_LASX
 static const uvec8 kRGB24MirrorShuf0_LASX = {13, 14, 15, 10, 11, 12, 7, 8,

@@ -3863,6 +3863,12 @@ static int Px10ToI420(const uint16_t* src_y,
       }
     }
 #endif
+#if defined(HAS_SPLITUVROW_16_AVX512BW)
+    if (TestCpuFlag(kCpuHasAVX512BW | kCpuHasAVX512VL) ==
+        (kCpuHasAVX512BW | kCpuHasAVX512VL)) {
+      SplitUVRow_16 = SplitUVRow_16_AVX512BW;
+    }
+#endif
 #if defined(HAS_SPLITUVROW_16_NEON)
     if (TestCpuFlag(kCpuHasNEON)) {
       SplitUVRow_16 = SplitUVRow_16_Any_NEON;

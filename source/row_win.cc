@@ -4421,54 +4421,6 @@ void AR30ToAB30Row_AVX512BW(const uint8_t* src_ar30,
 }
 #endif  // HAS_AR30TOAB30ROW_AVX512BW
 
-#ifdef HAS_MERGEXR30ROW_10_AVX512BW
-LIBYUV_TARGET_AVX512BW
-void MergeXR30Row_10_AVX512BW(const uint16_t* src_r,
-                              const uint16_t* src_g,
-                              const uint16_t* src_b,
-                              uint8_t* dst_ar30,
-                              int depth,
-                              int width) {
-  (void)depth;
-  const __m512i max10 = _mm512_set1_epi32(1023);
-  const __m512i alpha = _mm512_set1_epi32((int)0xc0000000u);
-  while (width >= 16) {
-    __m512i r = _mm512_min_epu32(
-        _mm512_cvtepu16_epi32(_mm256_loadu_si256((const __m256i*)src_r)),
-        max10);
-    __m512i g = _mm512_min_epu32(
-        _mm512_cvtepu16_epi32(_mm256_loadu_si256((const __m256i*)src_g)),
-        max10);
-    __m512i b = _mm512_min_epu32(
-        _mm512_cvtepu16_epi32(_mm256_loadu_si256((const __m256i*)src_b)),
-        max10);
-    src_r += 16;
-    src_g += 16;
-    src_b += 16;
-    __m512i out = _mm512_or_si512(
-        _mm512_or_si512(_mm512_slli_epi32(r, 20), _mm512_slli_epi32(g, 10)),
-        _mm512_or_si512(b, alpha));
-    _mm512_storeu_si512((__m512i*)dst_ar30, out);
-    dst_ar30 += 64;
-    width -= 16;
-  }
-  if (width > 0) {
-    __mmask16 k = (__mmask16)((1u << width) - 1u);
-    __m512i r = _mm512_min_epu32(
-        _mm512_cvtepu16_epi32(_mm256_maskz_loadu_epi16(k, src_r)), max10);
-    __m512i g = _mm512_min_epu32(
-        _mm512_cvtepu16_epi32(_mm256_maskz_loadu_epi16(k, src_g)), max10);
-    __m512i b = _mm512_min_epu32(
-        _mm512_cvtepu16_epi32(_mm256_maskz_loadu_epi16(k, src_b)), max10);
-    __m512i out = _mm512_or_si512(
-        _mm512_or_si512(_mm512_slli_epi32(r, 20), _mm512_slli_epi32(g, 10)),
-        _mm512_or_si512(b, alpha));
-    _mm512_mask_storeu_epi32(dst_ar30, k, out);
-  }
-  _mm256_zeroupper();
-}
-#endif  // HAS_MERGEXR30ROW_10_AVX512BW
-
 #if defined(HAS_ARGBTOAR30ROW_AVX512BW) || defined(HAS_ABGRTOAR30ROW_AVX512BW)
 static const uint8_t kShuffleRB30_Win[16] = {128u, 0u,  128u, 2u, 128u, 4u,
                                              128u, 6u,  128u, 8u, 128u, 10u,
@@ -4621,6 +4573,530 @@ void MergeRGBRow_AVX512VBMI(const uint8_t* src_r,
   _mm256_zeroupper();
 }
 #endif  // HAS_MERGERGBROW_AVX512VBMI
+
+#ifdef HAS_SPLITUVROW_16_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void SplitUVRow_16_AVX512BW(const uint16_t* src_uv,
+                            uint16_t* dst_u,
+                            uint16_t* dst_v,
+                            int depth,
+                            int width) {
+  const __m512i shift = _mm512_set1_epi16((short)(16 - depth));
+  const __m512i shuf = _mm512_broadcast_i32x4(
+      _mm_setr_epi8(0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15));
+  const __m512i perm_u = _mm512_setr_epi64(0, 2, 4, 6, 8, 10, 12, 14);
+  const __m512i perm_v = _mm512_setr_epi64(1, 3, 5, 7, 9, 11, 13, 15);
+  while (width >= 32) {
+    __m512i uv0 = _mm512_loadu_si512((const __m512i*)src_uv);
+    __m512i uv1 = _mm512_loadu_si512((const __m512i*)(src_uv + 32));
+    src_uv += 64;
+    uv0 = _mm512_shuffle_epi8(_mm512_srlv_epi16(uv0, shift), shuf);
+    uv1 = _mm512_shuffle_epi8(_mm512_srlv_epi16(uv1, shift), shuf);
+    _mm512_storeu_si512((__m512i*)dst_u,
+                        _mm512_permutex2var_epi64(uv0, perm_u, uv1));
+    _mm512_storeu_si512((__m512i*)dst_v,
+                        _mm512_permutex2var_epi64(uv0, perm_v, uv1));
+    dst_u += 32;
+    dst_v += 32;
+    width -= 32;
+  }
+  if (width > 0) {
+    const __mmask32 k = (__mmask32)((1u << width) - 1u);
+    const __mmask64 k_in = (1ull << (width * 2)) - 1ull;
+    __m512i uv0 = _mm512_maskz_loadu_epi16((__mmask32)k_in, src_uv);
+    __m512i uv1 =
+        _mm512_maskz_loadu_epi16((__mmask32)(k_in >> 32), src_uv + 32);
+    uv0 = _mm512_shuffle_epi8(_mm512_srlv_epi16(uv0, shift), shuf);
+    uv1 = _mm512_shuffle_epi8(_mm512_srlv_epi16(uv1, shift), shuf);
+    _mm512_mask_storeu_epi16(dst_u, k,
+                             _mm512_permutex2var_epi64(uv0, perm_u, uv1));
+    _mm512_mask_storeu_epi16(dst_v, k,
+                             _mm512_permutex2var_epi64(uv0, perm_v, uv1));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_SPLITUVROW_16_AVX512BW
+
+#ifdef HAS_SPLITRGBROW_AVX512VBMI
+LIBYUV_TARGET_AVX512VBMI
+void SplitRGBRow_AVX512VBMI(const uint8_t* src_rgb,
+                            uint8_t* dst_r,
+                            uint8_t* dst_g,
+                            uint8_t* dst_b,
+                            int width) {
+  // Index of R in 3 vectors of RGB: 3 * i.  G and B are this plus 1 and 2.
+  static const uint8_t kPermSplitRGB[64] = {
+      0,   3,   6,   9,   12,  15,  18,  21,  24,  27,  30,  33,  36,
+      39,  42,  45,  48,  51,  54,  57,  60,  63,  66,  69,  72,  75,
+      78,  81,  84,  87,  90,  93,  96,  99,  102, 105, 108, 111, 114,
+      117, 120, 123, 126, 129, 132, 135, 138, 141, 144, 147, 150, 153,
+      156, 159, 162, 165, 168, 171, 174, 177, 180, 183, 186, 189};
+  // Bytes that come from the third vector.
+  const __mmask64 k_rg = 0xfffff80000000000ull;
+  const __mmask64 k_b = 0xfffffc0000000000ull;
+  const __m512i perm_r = _mm512_loadu_si512((const __m512i*)kPermSplitRGB);
+  const __m512i perm_g = _mm512_add_epi8(perm_r, _mm512_set1_epi8(1));
+  const __m512i perm_b = _mm512_add_epi8(perm_r, _mm512_set1_epi8(2));
+  while (width > 0) {
+    __m512i rgb0;
+    __m512i rgb1;
+    __m512i rgb2;
+    __mmask64 k = ~0ull;
+    if (width >= 64) {
+      rgb0 = _mm512_loadu_si512((const __m512i*)src_rgb);
+      rgb1 = _mm512_loadu_si512((const __m512i*)(src_rgb + 64));
+      rgb2 = _mm512_loadu_si512((const __m512i*)(src_rgb + 128));
+    } else {
+      k = RGB24MirrorMask(width);
+      rgb0 = _mm512_maskz_loadu_epi8(RGB24MirrorMask(width * 3), src_rgb);
+      rgb1 = _mm512_maskz_loadu_epi8(RGB24MirrorMask(width * 3 - 64),
+                                     src_rgb + 64);
+      rgb2 = _mm512_maskz_loadu_epi8(RGB24MirrorMask(width * 3 - 128),
+                                     src_rgb + 128);
+    }
+    _mm512_mask_storeu_epi8(
+        dst_r, k,
+        MaskPermutexvarEpi8(_mm512_permutex2var_epi8(rgb0, perm_r, rgb1), k_rg,
+                            perm_r, rgb2));
+    _mm512_mask_storeu_epi8(
+        dst_g, k,
+        MaskPermutexvarEpi8(_mm512_permutex2var_epi8(rgb0, perm_g, rgb1), k_rg,
+                            perm_g, rgb2));
+    _mm512_mask_storeu_epi8(
+        dst_b, k,
+        MaskPermutexvarEpi8(_mm512_permutex2var_epi8(rgb0, perm_b, rgb1), k_b,
+                            perm_b, rgb2));
+    src_rgb += 192;
+    dst_r += 64;
+    dst_g += 64;
+    dst_b += 64;
+    width -= 64;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_SPLITRGBROW_AVX512VBMI
+
+#if defined(HAS_SPLITARGBROW_AVX512BW) || defined(HAS_SPLITXRGBROW_AVX512BW)
+// Split up to 32 ARGB.  dst_a may be NULL.
+LIBYUV_TARGET_AVX512BW
+static inline void SplitARGB32_AVX512BW(__m512i argb0,
+                                        __m512i argb1,
+                                        uint8_t* dst_r,
+                                        uint8_t* dst_g,
+                                        uint8_t* dst_b,
+                                        uint8_t* dst_a,
+                                        __mmask32 k) {
+  const __m512i shuf = _mm512_broadcast_i32x4(
+      _mm_setr_epi8(0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15));
+  const __m512i perm_bg = _mm512_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28, 1, 5,
+                                            9, 13, 17, 21, 25, 29);
+  const __m512i perm_ra = _mm512_setr_epi32(2, 6, 10, 14, 18, 22, 26, 30, 3, 7,
+                                            11, 15, 19, 23, 27, 31);
+  argb0 = _mm512_shuffle_epi8(argb0, shuf);
+  argb1 = _mm512_shuffle_epi8(argb1, shuf);
+  const __m512i bg = _mm512_permutex2var_epi32(argb0, perm_bg, argb1);
+  const __m512i ra = _mm512_permutex2var_epi32(argb0, perm_ra, argb1);
+  _mm256_mask_storeu_epi8(dst_b, k, _mm512_castsi512_si256(bg));
+  _mm256_mask_storeu_epi8(dst_g, k, _mm512_extracti64x4_epi64(bg, 1));
+  _mm256_mask_storeu_epi8(dst_r, k, _mm512_castsi512_si256(ra));
+  if (dst_a) {
+    _mm256_mask_storeu_epi8(dst_a, k, _mm512_extracti64x4_epi64(ra, 1));
+  }
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline void SplitARGBOrXRGBRow_AVX512BW(const uint8_t* src_argb,
+                                               uint8_t* dst_r,
+                                               uint8_t* dst_g,
+                                               uint8_t* dst_b,
+                                               uint8_t* dst_a,
+                                               int width) {
+  while (width >= 32) {
+    SplitARGB32_AVX512BW(_mm512_loadu_si512((const __m512i*)src_argb),
+                         _mm512_loadu_si512((const __m512i*)(src_argb + 64)),
+                         dst_r, dst_g, dst_b, dst_a, 0xffffffffu);
+    src_argb += 128;
+    dst_r += 32;
+    dst_g += 32;
+    dst_b += 32;
+    if (dst_a) {
+      dst_a += 32;
+    }
+    width -= 32;
+  }
+  if (width > 0) {
+    const __mmask32 k = (__mmask32)((1u << width) - 1u);
+    SplitARGB32_AVX512BW(
+        _mm512_maskz_loadu_epi32((__mmask16)k, src_argb),
+        _mm512_maskz_loadu_epi32((__mmask16)(k >> 16), src_argb + 64), dst_r,
+        dst_g, dst_b, dst_a, k);
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_SPLITARGBROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void SplitARGBRow_AVX512BW(const uint8_t* src_argb,
+                           uint8_t* dst_r,
+                           uint8_t* dst_g,
+                           uint8_t* dst_b,
+                           uint8_t* dst_a,
+                           int width) {
+  SplitARGBOrXRGBRow_AVX512BW(src_argb, dst_r, dst_g, dst_b, dst_a, width);
+}
+#endif  // HAS_SPLITARGBROW_AVX512BW
+
+#ifdef HAS_SPLITXRGBROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void SplitXRGBRow_AVX512BW(const uint8_t* src_argb,
+                           uint8_t* dst_r,
+                           uint8_t* dst_g,
+                           uint8_t* dst_b,
+                           int width) {
+  SplitARGBOrXRGBRow_AVX512BW(src_argb, dst_r, dst_g, dst_b, NULL, width);
+}
+#endif  // HAS_SPLITXRGBROW_AVX512BW
+
+#if defined(HAS_MERGEARGBROW_AVX512VBMI) || defined(HAS_MERGEXRGBROW_AVX512VBMI)
+// Merge up to 32 pixels: B,G in the halves of bg and R,A in the halves of ra.
+LIBYUV_TARGET_AVX512VBMI
+static inline void MergeARGB32_AVX512VBMI(__m512i bg,
+                                          __m512i ra,
+                                          __m512i alpha,
+                                          uint8_t* dst_argb,
+                                          __mmask32 k) {
+  // Interleave 2 planes of 32 bytes.  Lanes are transposed so in-lane unpacks
+  // produce pixels in order.
+#define MERGEARGB_PERM(i) i, i + 32, i + 1, i + 33, i + 2, i + 34, i + 3, i + 35
+  static const uint8_t kPermMergeARGB[64] = {
+      MERGEARGB_PERM(0),  MERGEARGB_PERM(16), MERGEARGB_PERM(4),
+      MERGEARGB_PERM(20), MERGEARGB_PERM(8),  MERGEARGB_PERM(24),
+      MERGEARGB_PERM(12), MERGEARGB_PERM(28)};
+#undef MERGEARGB_PERM
+  const __m512i perm = _mm512_loadu_si512((const __m512i*)kPermMergeARGB);
+  bg = PermutexvarEpi8(perm, bg);
+  ra = _mm512_or_si512(PermutexvarEpi8(perm, ra), alpha);
+  _mm512_mask_storeu_epi32(dst_argb, (__mmask16)k,
+                           _mm512_unpacklo_epi16(bg, ra));
+  _mm512_mask_storeu_epi32(dst_argb + 64, (__mmask16)(k >> 16),
+                           _mm512_unpackhi_epi16(bg, ra));
+}
+
+// src_a may be NULL for opaque.
+LIBYUV_TARGET_AVX512VBMI
+static inline void MergeARGBOrXRGBRow_AVX512VBMI(const uint8_t* src_r,
+                                                 const uint8_t* src_g,
+                                                 const uint8_t* src_b,
+                                                 const uint8_t* src_a,
+                                                 uint8_t* dst_argb,
+                                                 int width) {
+  const __m512i alpha =
+      src_a ? _mm512_setzero_si512() : _mm512_set1_epi16((short)0xff00);
+  while (width >= 32) {
+    const __m512i bg = _mm512_inserti64x4(
+        _mm512_zextsi256_si512(_mm256_loadu_si256((const __m256i*)src_b)),
+        _mm256_loadu_si256((const __m256i*)src_g), 1);
+    __m512i ra =
+        _mm512_zextsi256_si512(_mm256_loadu_si256((const __m256i*)src_r));
+    if (src_a) {
+      ra = _mm512_inserti64x4(ra, _mm256_loadu_si256((const __m256i*)src_a), 1);
+      src_a += 32;
+    }
+    MergeARGB32_AVX512VBMI(bg, ra, alpha, dst_argb, 0xffffffffu);
+    src_r += 32;
+    src_g += 32;
+    src_b += 32;
+    dst_argb += 128;
+    width -= 32;
+  }
+  if (width > 0) {
+    const __mmask32 k = (__mmask32)((1u << width) - 1u);
+    const __m512i bg = _mm512_inserti64x4(
+        _mm512_zextsi256_si512(_mm256_maskz_loadu_epi8(k, src_b)),
+        _mm256_maskz_loadu_epi8(k, src_g), 1);
+    __m512i ra = _mm512_zextsi256_si512(_mm256_maskz_loadu_epi8(k, src_r));
+    if (src_a) {
+      ra = _mm512_inserti64x4(ra, _mm256_maskz_loadu_epi8(k, src_a), 1);
+    }
+    MergeARGB32_AVX512VBMI(bg, ra, alpha, dst_argb, k);
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_MERGEARGBROW_AVX512VBMI
+LIBYUV_TARGET_AVX512VBMI
+void MergeARGBRow_AVX512VBMI(const uint8_t* src_r,
+                             const uint8_t* src_g,
+                             const uint8_t* src_b,
+                             const uint8_t* src_a,
+                             uint8_t* dst_argb,
+                             int width) {
+  MergeARGBOrXRGBRow_AVX512VBMI(src_r, src_g, src_b, src_a, dst_argb, width);
+}
+#endif  // HAS_MERGEARGBROW_AVX512VBMI
+
+#ifdef HAS_MERGEXRGBROW_AVX512VBMI
+LIBYUV_TARGET_AVX512VBMI
+void MergeXRGBRow_AVX512VBMI(const uint8_t* src_r,
+                             const uint8_t* src_g,
+                             const uint8_t* src_b,
+                             uint8_t* dst_argb,
+                             int width) {
+  MergeARGBOrXRGBRow_AVX512VBMI(src_r, src_g, src_b, NULL, dst_argb, width);
+}
+#endif  // HAS_MERGEXRGBROW_AVX512VBMI
+
+#if defined(HAS_MERGEAR64ROW_AVX512BW) || defined(HAS_MERGEXR64ROW_AVX512BW)
+// Merge up to 32 pixels.  src_a may be NULL for opaque.  A constant k of all
+// ones makes the masking fold away.
+LIBYUV_TARGET_AVX512BW
+static inline void MergeAR64_32_AVX512BW(const uint16_t* src_r,
+                                         const uint16_t* src_g,
+                                         const uint16_t* src_b,
+                                         const uint16_t* src_a,
+                                         uint16_t* dst_ar64,
+                                         __m512i max,
+                                         __m512i shift,
+                                         __mmask32 k) {
+  // Transpose dwords so in-lane unpacks produce pixels in order.
+  const __m512i perm =
+      _mm512_setr_epi32(0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15);
+  __m512i b = PermutexvarEpi32(perm, _mm512_maskz_loadu_epi16(k, src_b));
+  __m512i g = PermutexvarEpi32(perm, _mm512_maskz_loadu_epi16(k, src_g));
+  __m512i r = PermutexvarEpi32(perm, _mm512_maskz_loadu_epi16(k, src_r));
+  __m512i a = _mm512_set1_epi16(-1);
+  b = _mm512_sllv_epi16(_mm512_min_epu16(b, max), shift);
+  g = _mm512_sllv_epi16(_mm512_min_epu16(g, max), shift);
+  r = _mm512_sllv_epi16(_mm512_min_epu16(r, max), shift);
+  if (src_a) {
+    a = PermutexvarEpi32(perm, _mm512_maskz_loadu_epi16(k, src_a));
+    a = _mm512_sllv_epi16(_mm512_min_epu16(a, max), shift);
+  }
+  const __m512i bg_lo = _mm512_unpacklo_epi16(b, g);
+  const __m512i bg_hi = _mm512_unpackhi_epi16(b, g);
+  const __m512i ra_lo = _mm512_unpacklo_epi16(r, a);
+  const __m512i ra_hi = _mm512_unpackhi_epi16(r, a);
+  _mm512_mask_storeu_epi64(dst_ar64, (__mmask8)k,
+                           _mm512_unpacklo_epi32(bg_lo, ra_lo));
+  _mm512_mask_storeu_epi64(dst_ar64 + 32, (__mmask8)(k >> 8),
+                           _mm512_unpackhi_epi32(bg_lo, ra_lo));
+  _mm512_mask_storeu_epi64(dst_ar64 + 64, (__mmask8)(k >> 16),
+                           _mm512_unpacklo_epi32(bg_hi, ra_hi));
+  _mm512_mask_storeu_epi64(dst_ar64 + 96, (__mmask8)(k >> 24),
+                           _mm512_unpackhi_epi32(bg_hi, ra_hi));
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline void MergeAR64OrXR64Row_AVX512BW(const uint16_t* src_r,
+                                               const uint16_t* src_g,
+                                               const uint16_t* src_b,
+                                               const uint16_t* src_a,
+                                               uint16_t* dst_ar64,
+                                               int depth,
+                                               int width) {
+  const __m512i shift = _mm512_set1_epi16((short)(16 - depth));
+  const __m512i max = _mm512_set1_epi16((short)((1 << depth) - 1));
+  while (width >= 32) {
+    MergeAR64_32_AVX512BW(src_r, src_g, src_b, src_a, dst_ar64, max, shift,
+                          0xffffffffu);
+    src_r += 32;
+    src_g += 32;
+    src_b += 32;
+    if (src_a) {
+      src_a += 32;
+    }
+    dst_ar64 += 128;
+    width -= 32;
+  }
+  if (width > 0) {
+    MergeAR64_32_AVX512BW(src_r, src_g, src_b, src_a, dst_ar64, max, shift,
+                          (__mmask32)((1u << width) - 1u));
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_MERGEAR64ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void MergeAR64Row_AVX512BW(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           const uint16_t* src_a,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width) {
+  MergeAR64OrXR64Row_AVX512BW(src_r, src_g, src_b, src_a, dst_ar64, depth,
+                              width);
+}
+#endif  // HAS_MERGEAR64ROW_AVX512BW
+
+#ifdef HAS_MERGEXR64ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void MergeXR64Row_AVX512BW(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width) {
+  MergeAR64OrXR64Row_AVX512BW(src_r, src_g, src_b, NULL, dst_ar64, depth,
+                              width);
+}
+#endif  // HAS_MERGEXR64ROW_AVX512BW
+
+#if defined(HAS_MERGEARGB16TO8ROW_AVX512BW) || \
+    defined(HAS_MERGEXRGB16TO8ROW_AVX512BW) || \
+    defined(HAS_MERGEXR30ROW_AVX512BW) || defined(HAS_MERGEUVROW_16_AVX512BW)
+// Interleave words of up to 32 pixels and write them as 32 bit pixels.
+LIBYUV_TARGET_AVX512BW
+static inline void MergeWords32_AVX512BW(__m512i lo,
+                                         __m512i hi,
+                                         void* dst,
+                                         __mmask32 k) {
+  // Transpose qwords so in-lane unpacks produce pixels in order.
+  const __m512i perm = _mm512_setr_epi64(0, 4, 1, 5, 2, 6, 3, 7);
+  lo = PermutexvarEpi64(perm, lo);
+  hi = PermutexvarEpi64(perm, hi);
+  _mm512_mask_storeu_epi32(dst, (__mmask16)k, _mm512_unpacklo_epi16(lo, hi));
+  _mm512_mask_storeu_epi32((uint8_t*)dst + 64, (__mmask16)(k >> 16),
+                           _mm512_unpackhi_epi16(lo, hi));
+}
+#endif
+
+#if defined(HAS_MERGEARGB16TO8ROW_AVX512BW) || \
+    defined(HAS_MERGEXRGB16TO8ROW_AVX512BW)
+// Merge up to 32 pixels.  src_a may be NULL for opaque.
+LIBYUV_TARGET_AVX512BW
+static inline void MergeARGB16To8_32_AVX512BW(const uint16_t* src_r,
+                                              const uint16_t* src_g,
+                                              const uint16_t* src_b,
+                                              const uint16_t* src_a,
+                                              uint8_t* dst_argb,
+                                              __m512i shift,
+                                              __mmask32 k) {
+  const __m512i max = _mm512_set1_epi16(255);
+  __m512i b = _mm512_maskz_loadu_epi16(k, src_b);
+  __m512i g = _mm512_maskz_loadu_epi16(k, src_g);
+  __m512i r = _mm512_maskz_loadu_epi16(k, src_r);
+  __m512i a = max;
+  b = _mm512_min_epu16(_mm512_srlv_epi16(b, shift), max);
+  g = _mm512_min_epu16(_mm512_srlv_epi16(g, shift), max);
+  r = _mm512_min_epu16(_mm512_srlv_epi16(r, shift), max);
+  if (src_a) {
+    a = _mm512_maskz_loadu_epi16(k, src_a);
+    a = _mm512_min_epu16(_mm512_srlv_epi16(a, shift), max);
+  }
+  MergeWords32_AVX512BW(_mm512_or_si512(b, _mm512_slli_epi16(g, 8)),
+                        _mm512_or_si512(r, _mm512_slli_epi16(a, 8)), dst_argb,
+                        k);
+}
+
+LIBYUV_TARGET_AVX512BW
+static inline void MergeARGBOrXRGB16To8Row_AVX512BW(const uint16_t* src_r,
+                                                    const uint16_t* src_g,
+                                                    const uint16_t* src_b,
+                                                    const uint16_t* src_a,
+                                                    uint8_t* dst_argb,
+                                                    int depth,
+                                                    int width) {
+  const __m512i shift = _mm512_set1_epi16((short)(depth - 8));
+  while (width >= 32) {
+    MergeARGB16To8_32_AVX512BW(src_r, src_g, src_b, src_a, dst_argb, shift,
+                               0xffffffffu);
+    src_r += 32;
+    src_g += 32;
+    src_b += 32;
+    if (src_a) {
+      src_a += 32;
+    }
+    dst_argb += 128;
+    width -= 32;
+  }
+  if (width > 0) {
+    MergeARGB16To8_32_AVX512BW(src_r, src_g, src_b, src_a, dst_argb, shift,
+                               (__mmask32)((1u << width) - 1u));
+  }
+  _mm256_zeroupper();
+}
+#endif
+
+#ifdef HAS_MERGEARGB16TO8ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void MergeARGB16To8Row_AVX512BW(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                const uint16_t* src_a,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width) {
+  MergeARGBOrXRGB16To8Row_AVX512BW(src_r, src_g, src_b, src_a, dst_argb, depth,
+                                   width);
+}
+#endif  // HAS_MERGEARGB16TO8ROW_AVX512BW
+
+#ifdef HAS_MERGEXRGB16TO8ROW_AVX512BW
+LIBYUV_TARGET_AVX512BW
+void MergeXRGB16To8Row_AVX512BW(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width) {
+  MergeARGBOrXRGB16To8Row_AVX512BW(src_r, src_g, src_b, NULL, dst_argb, depth,
+                                   width);
+}
+#endif  // HAS_MERGEXRGB16TO8ROW_AVX512BW
+
+#ifdef HAS_MERGEXR30ROW_AVX512BW
+// Merge up to 32 pixels.
+LIBYUV_TARGET_AVX512BW
+static inline void MergeXR30_32_AVX512BW(const uint16_t* src_r,
+                                         const uint16_t* src_g,
+                                         const uint16_t* src_b,
+                                         uint8_t* dst_ar30,
+                                         __m512i shift,
+                                         __mmask32 k) {
+  const __m512i max = _mm512_set1_epi16(1023);
+  const __m512i alpha = _mm512_set1_epi16((short)0xc000);
+  __m512i r = _mm512_maskz_loadu_epi16(k, src_r);
+  __m512i g = _mm512_maskz_loadu_epi16(k, src_g);
+  __m512i b = _mm512_maskz_loadu_epi16(k, src_b);
+  r = _mm512_min_epu16(_mm512_srlv_epi16(r, shift), max);
+  g = _mm512_min_epu16(_mm512_srlv_epi16(g, shift), max);
+  b = _mm512_min_epu16(_mm512_srlv_epi16(b, shift), max);
+  // AR30 is 2 words: B | G << 10 and G >> 6 | R << 4 | alpha.
+  MergeWords32_AVX512BW(
+      _mm512_or_si512(b, _mm512_slli_epi16(g, 10)),
+      _mm512_or_si512(
+          _mm512_or_si512(_mm512_srli_epi16(g, 6), _mm512_slli_epi16(r, 4)),
+          alpha),
+      dst_ar30, k);
+}
+
+LIBYUV_TARGET_AVX512BW
+void MergeXR30Row_AVX512BW(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint8_t* dst_ar30,
+                           int depth,
+                           int width) {
+  const __m512i shift = _mm512_set1_epi16((short)(depth - 10));
+  while (width >= 32) {
+    MergeXR30_32_AVX512BW(src_r, src_g, src_b, dst_ar30, shift, 0xffffffffu);
+    src_r += 32;
+    src_g += 32;
+    src_b += 32;
+    dst_ar30 += 128;
+    width -= 32;
+  }
+  if (width > 0) {
+    MergeXR30_32_AVX512BW(src_r, src_g, src_b, dst_ar30, shift,
+                          (__mmask32)((1u << width) - 1u));
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_MERGEXR30ROW_AVX512BW
 
 #ifdef HAS_RAWTORGBAROW_AVX512VBMI
 LIBYUV_TARGET_AVX512VBMI
@@ -6804,28 +7280,23 @@ void MergeUVRow_16_AVX512BW(const uint16_t* src_u,
                             uint16_t* dst_uv,
                             int depth,
                             int width) {
-  const __m128i sh_u = _mm_cvtsi32_si128(16 - depth);
-  const __m128i sh_v = _mm_cvtsi32_si128(32 - depth);
-  while (width >= 16) {
-    __m512i u32 =
-        _mm512_cvtepu16_epi32(_mm256_loadu_si256((const __m256i*)src_u));
-    __m512i v32 =
-        _mm512_cvtepu16_epi32(_mm256_loadu_si256((const __m256i*)src_v));
-    src_u += 16;
-    src_v += 16;
-    u32 = _mm512_sll_epi16(u32, sh_u);
-    v32 = _mm512_sll_epi32(v32, sh_v);
-    _mm512_storeu_si512((__m512i*)dst_uv, _mm512_or_si512(u32, v32));
-    dst_uv += 32;
-    width -= 16;
+  const __m512i shift = _mm512_set1_epi16((short)(16 - depth));
+  while (width >= 32) {
+    const __m512i u = _mm512_loadu_si512((const __m512i*)src_u);
+    const __m512i v = _mm512_loadu_si512((const __m512i*)src_v);
+    MergeWords32_AVX512BW(_mm512_sllv_epi16(u, shift),
+                          _mm512_sllv_epi16(v, shift), dst_uv, 0xffffffffu);
+    src_u += 32;
+    src_v += 32;
+    dst_uv += 64;
+    width -= 32;
   }
   if (width > 0) {
-    __mmask16 k = (__mmask16)((1u << width) - 1u);
-    __m512i u32 = _mm512_cvtepu16_epi32(_mm256_maskz_loadu_epi16(k, src_u));
-    __m512i v32 = _mm512_cvtepu16_epi32(_mm256_maskz_loadu_epi16(k, src_v));
-    u32 = _mm512_sll_epi16(u32, sh_u);
-    v32 = _mm512_sll_epi32(v32, sh_v);
-    _mm512_mask_storeu_epi32(dst_uv, k, _mm512_or_si512(u32, v32));
+    const __mmask32 k = (__mmask32)((1u << width) - 1u);
+    const __m512i u = _mm512_maskz_loadu_epi16(k, src_u);
+    const __m512i v = _mm512_maskz_loadu_epi16(k, src_v);
+    MergeWords32_AVX512BW(_mm512_sllv_epi16(u, shift),
+                          _mm512_sllv_epi16(v, shift), dst_uv, k);
   }
   _mm256_zeroupper();
 }

@@ -284,6 +284,22 @@ ANY41PT(MergeAR64Row_Any_AVX2, MergeAR64Row_AVX2, uint16_t, 2, uint16_t, 8, 15)
 #ifdef HAS_MERGEAR64ROW_NEON
 ANY41PT(MergeAR64Row_Any_NEON, MergeAR64Row_NEON, uint16_t, 2, uint16_t, 8, 7)
 #endif
+#ifdef HAS_MERGEAR64ROW_LSX
+ANY41PT(MergeAR64Row_Any_LSX, MergeAR64Row_LSX, uint16_t, 2, uint16_t, 8, 7)
+#endif
+#ifdef HAS_MERGEAR64ROW_LASX
+ANY41PT(MergeAR64Row_Any_LASX, MergeAR64Row_LASX, uint16_t, 2, uint16_t, 8, 15)
+#endif
+
+#ifdef HAS_MERGEAR64ROW_WASMSIMD
+ANY41PT(MergeAR64Row_Any_WASMSIMD,
+        MergeAR64Row_WASMSIMD,
+        uint16_t,
+        2,
+        uint16_t,
+        8,
+        7)
+#endif
 
 #ifdef HAS_MERGEARGB16TO8ROW_AVX2
 ANY41PT(MergeARGB16To8Row_Any_AVX2,
@@ -298,6 +314,34 @@ ANY41PT(MergeARGB16To8Row_Any_AVX2,
 #ifdef HAS_MERGEARGB16TO8ROW_NEON
 ANY41PT(MergeARGB16To8Row_Any_NEON,
         MergeARGB16To8Row_NEON,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        7)
+#endif
+#ifdef HAS_MERGEARGB16TO8ROW_LSX
+ANY41PT(MergeARGB16To8Row_Any_LSX,
+        MergeARGB16To8Row_LSX,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        7)
+#endif
+#ifdef HAS_MERGEARGB16TO8ROW_LASX
+ANY41PT(MergeARGB16To8Row_Any_LASX,
+        MergeARGB16To8Row_LASX,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        15)
+#endif
+
+#ifdef HAS_MERGEARGB16TO8ROW_WASMSIMD
+ANY41PT(MergeARGB16To8Row_Any_WASMSIMD,
+        MergeARGB16To8Row_WASMSIMD,
         uint16_t,
         2,
         uint8_t,
@@ -337,6 +381,12 @@ ANY31(MergeRGBRow_Any_AVX2, MergeRGBRow_AVX2, 0, 0, 3, 31)
 #endif
 #ifdef HAS_MERGERGBROW_NEON
 ANY31(MergeRGBRow_Any_NEON, MergeRGBRow_NEON, 0, 0, 3, 15)
+#endif
+#ifdef HAS_MERGERGBROW_LSX
+ANY31(MergeRGBRow_Any_LSX, MergeRGBRow_LSX, 0, 0, 3, 15)
+#endif
+#ifdef HAS_MERGERGBROW_LASX
+ANY31(MergeRGBRow_Any_LASX, MergeRGBRow_LASX, 0, 0, 3, 31)
 #endif
 #ifdef HAS_MERGEXRGBROW_SSE2
 ANY31(MergeXRGBRow_Any_SSE2, MergeXRGBRow_SSE2, 0, 0, 4, 7)
@@ -723,9 +773,25 @@ ANY31PT(MergeXR30Row_Any_AVX2, MergeXR30Row_AVX2, uint16_t, 2, uint8_t, 4, 15)
 #endif
 
 #ifdef HAS_MERGEXR30ROW_NEON
-ANY31PT(MergeXR30Row_Any_NEON, MergeXR30Row_NEON, uint16_t, 2, uint8_t, 4, 3)
+ANY31PT(MergeXR30Row_Any_NEON, MergeXR30Row_NEON, uint16_t, 2, uint8_t, 4, 7)
 ANY31PT(MergeXR30Row_10_Any_NEON,
         MergeXR30Row_10_NEON,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        7)
+#endif
+#ifdef HAS_MERGEXR30ROW_LSX
+ANY31PT(MergeXR30Row_Any_LSX, MergeXR30Row_LSX, uint16_t, 2, uint8_t, 4, 7)
+#endif
+#ifdef HAS_MERGEXR30ROW_LASX
+ANY31PT(MergeXR30Row_Any_LASX, MergeXR30Row_LASX, uint16_t, 2, uint8_t, 4, 15)
+#endif
+
+#ifdef HAS_MERGEXR30ROW_WASMSIMD
+ANY31PT(MergeXR30Row_Any_WASMSIMD,
+        MergeXR30Row_WASMSIMD,
         uint16_t,
         2,
         uint8_t,
@@ -739,6 +805,22 @@ ANY31PT(MergeXR64Row_Any_AVX2, MergeXR64Row_AVX2, uint16_t, 2, uint16_t, 8, 15)
 
 #ifdef HAS_MERGEXR64ROW_NEON
 ANY31PT(MergeXR64Row_Any_NEON, MergeXR64Row_NEON, uint16_t, 2, uint16_t, 8, 7)
+#endif
+#ifdef HAS_MERGEXR64ROW_LSX
+ANY31PT(MergeXR64Row_Any_LSX, MergeXR64Row_LSX, uint16_t, 2, uint16_t, 8, 7)
+#endif
+#ifdef HAS_MERGEXR64ROW_LASX
+ANY31PT(MergeXR64Row_Any_LASX, MergeXR64Row_LASX, uint16_t, 2, uint16_t, 8, 15)
+#endif
+
+#ifdef HAS_MERGEXR64ROW_WASMSIMD
+ANY31PT(MergeXR64Row_Any_WASMSIMD,
+        MergeXR64Row_WASMSIMD,
+        uint16_t,
+        2,
+        uint16_t,
+        8,
+        7)
 #endif
 
 #ifdef HAS_MERGEXRGB16TO8ROW_AVX2
@@ -754,6 +836,34 @@ ANY31PT(MergeXRGB16To8Row_Any_AVX2,
 #ifdef HAS_MERGEXRGB16TO8ROW_NEON
 ANY31PT(MergeXRGB16To8Row_Any_NEON,
         MergeXRGB16To8Row_NEON,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        7)
+#endif
+#ifdef HAS_MERGEXRGB16TO8ROW_LSX
+ANY31PT(MergeXRGB16To8Row_Any_LSX,
+        MergeXRGB16To8Row_LSX,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        7)
+#endif
+#ifdef HAS_MERGEXRGB16TO8ROW_LASX
+ANY31PT(MergeXRGB16To8Row_Any_LASX,
+        MergeXRGB16To8Row_LASX,
+        uint16_t,
+        2,
+        uint8_t,
+        4,
+        15)
+#endif
+
+#ifdef HAS_MERGEXRGB16TO8ROW_WASMSIMD
+ANY31PT(MergeXRGB16To8Row_Any_WASMSIMD,
+        MergeXRGB16To8Row_WASMSIMD,
         uint16_t,
         2,
         uint8_t,
@@ -3925,6 +4035,12 @@ ANY13(SplitRGBRow_Any_AVX2, SplitRGBRow_AVX2, 3, 31)
 #endif
 #ifdef HAS_SPLITRGBROW_NEON
 ANY13(SplitRGBRow_Any_NEON, SplitRGBRow_NEON, 3, 15)
+#endif
+#ifdef HAS_SPLITRGBROW_LSX
+ANY13(SplitRGBRow_Any_LSX, SplitRGBRow_LSX, 3, 15)
+#endif
+#ifdef HAS_SPLITRGBROW_LASX
+ANY13(SplitRGBRow_Any_LASX, SplitRGBRow_LASX, 3, 31)
 #endif
 #ifdef HAS_SPLITXRGBROW_SSE2
 ANY13(SplitXRGBRow_Any_SSE2, SplitXRGBRow_SSE2, 4, 7)

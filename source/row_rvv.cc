@@ -1643,8 +1643,8 @@ void MergeUVRow_RVV(const uint8_t* src_u,
       "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
       "vle8.v      v0, (%[src_u])                \n"
       "vle8.v      v4, (%[src_v])                \n"
-      "vwaddu.vx   v8, v0, zero                  \n"
-      "vwmaccu.vx  v8, %[c256], v4               \n"
+      "vwaddu.vv   v8, v0, v4                    \n"
+      "vwmaccu.vx  v8, %[c255], v4               \n"
       "slli        %[vl2], %[vl], 1              \n"
       "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
       "vse8.v      v8, (%[dst_uv])               \n"
@@ -1659,10 +1659,372 @@ void MergeUVRow_RVV(const uint8_t* src_u,
         [w] "+r"(width),        // %[w]
         [vl] "=&r"(vl),         // %[vl]
         [vl2] "=&r"(vl2)        // %[vl2]
-      : [c256] "r"(256)         // %[c256]
+      : [c255] "r"(255)         // %[c255]
       : "memory", RVV_VL_CLOBBER "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
         "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
 #endif
+}
+#endif
+
+#ifdef HAS_MERGEUVROW_16_RVV
+void MergeUVRow_16_RVV(const uint16_t* src_u,
+                       const uint16_t* src_v,
+                       uint16_t* dst_uv,
+                       int depth,
+                       int width) {
+  size_t w = (size_t)width;
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v8, (%[src_u])                \n"
+      "vle16.v     v12, (%[src_v])               \n"
+      "vsll.vx     v8, v8, %[shift]              \n"
+      "vsll.vx     v12, v12, %[shift]            \n"
+      "vsseg2e16.v v8, (%[dst_uv])               \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_u], %[src_u], %[vl]     \n"
+      "add         %[src_v], %[src_v], %[vl]     \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[dst_uv], %[dst_uv], %[vl]   \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_u] "+r"(src_u),     // %[src_u]
+        [src_v] "+r"(src_v),     // %[src_v]
+        [dst_uv] "+r"(dst_uv),   // %[dst_uv]
+        [w] "+r"(w),             // %[w]
+        [vl] "=&r"(vl)           // %[vl]
+      : [shift] "r"(16 - depth)  // %[shift]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15");
+#else
+  size_t vl2;
+  // Interleave by widening: u + v * 65536 = (u + v) + v * 0xffff.
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v0, (%[src_u])                \n"
+      "vle16.v     v4, (%[src_v])                \n"
+      "vsll.vx     v0, v0, %[shift]              \n"
+      "vsll.vx     v4, v4, %[shift]              \n"
+      "vwaddu.vv   v8, v0, v4                    \n"
+      "vwmaccu.vx  v8, %[cffff], v4              \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e16, m8, ta, ma \n"
+      "vse16.v     v8, (%[dst_uv])               \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src_u], %[src_u], %[vl2]    \n"
+      "add         %[src_v], %[src_v], %[vl2]    \n"
+      "slli        %[vl2], %[vl2], 1             \n"
+      "add         %[dst_uv], %[dst_uv], %[vl2]  \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_u] "+r"(src_u),      // %[src_u]
+        [src_v] "+r"(src_v),      // %[src_v]
+        [dst_uv] "+r"(dst_uv),    // %[dst_uv]
+        [w] "+r"(w),              // %[w]
+        [vl] "=&r"(vl),           // %[vl]
+        [vl2] "=&r"(vl2)          // %[vl2]
+      : [shift] "r"(16 - depth),  // %[shift]
+        [cffff] "r"(0xffff)       // %[cffff]
+      : "memory", RVV_VL_CLOBBER "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+        "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+#endif
+}
+#endif
+
+#ifdef HAS_MERGEXR30ROW_RVV
+void MergeXR30Row_RVV(const uint16_t* src_r,
+                      const uint16_t* src_g,
+                      const uint16_t* src_b,
+                      uint8_t* dst_ar30,
+                      int depth,
+                      int width) {
+  size_t w = (size_t)width;
+  size_t vl;
+  // AR30 is built as two 16 bit halves:
+  //   low  = b | g << 10
+  //   high = g >> 6 | r << 4 | 0xc000
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v8, (%[src_b])                \n"
+      "vle16.v     v12, (%[src_g])               \n"
+      "vle16.v     v16, (%[src_r])               \n"
+      "vsrl.vx     v8, v8, %[shift]              \n"
+      "vsrl.vx     v12, v12, %[shift]            \n"
+      "vsrl.vx     v16, v16, %[shift]            \n"
+      "vminu.vx    v8, v8, %[c1023]              \n"
+      "vminu.vx    v12, v12, %[c1023]            \n"
+      "vminu.vx    v16, v16, %[c1023]            \n"
+      "vsll.vi     v20, v12, 10                  \n"
+      "vsrl.vi     v12, v12, 6                   \n"
+      "vsll.vi     v16, v16, 4                   \n"
+      "vor.vv      v8, v8, v20                   \n"
+      "vor.vv      v12, v12, v16                 \n"
+      "vor.vx      v12, v12, %[cc000]            \n"
+      "vsseg2e16.v v8, (%[dst_ar30])             \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_r], %[src_r], %[vl]     \n"
+      "add         %[src_g], %[src_g], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[dst_ar30], %[dst_ar30], %[vl]\n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_r] "+r"(src_r),        // %[src_r]
+        [src_g] "+r"(src_g),        // %[src_g]
+        [src_b] "+r"(src_b),        // %[src_b]
+        [dst_ar30] "+r"(dst_ar30),  // %[dst_ar30]
+        [w] "+r"(w),                // %[w]
+        [vl] "=&r"(vl)              // %[vl]
+      : [shift] "r"(depth - 10),    // %[shift]
+        [c1023] "r"(1023),          // %[c1023]
+        [cc000] "r"(0xc000)         // %[cc000]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+#else
+  size_t vl2;
+  // Interleave by widening: low + high * 65536 = (low + high) + high * 0xffff.
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v8, (%[src_b])                \n"
+      "vle16.v     v12, (%[src_g])               \n"
+      "vle16.v     v16, (%[src_r])               \n"
+      "vsrl.vx     v8, v8, %[shift]              \n"
+      "vsrl.vx     v12, v12, %[shift]            \n"
+      "vsrl.vx     v16, v16, %[shift]            \n"
+      "vminu.vx    v8, v8, %[c1023]              \n"
+      "vminu.vx    v12, v12, %[c1023]            \n"
+      "vminu.vx    v16, v16, %[c1023]            \n"
+      "vsll.vi     v20, v12, 10                  \n"
+      "vsrl.vi     v12, v12, 6                   \n"
+      "vsll.vi     v16, v16, 4                   \n"
+      "vor.vv      v8, v8, v20                   \n"
+      "vor.vv      v12, v12, v16                 \n"
+      "vor.vx      v12, v12, %[cc000]            \n"
+      "vwaddu.vv   v24, v8, v12                  \n"
+      "vwmaccu.vx  v24, %[cffff], v12            \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e16, m8, ta, ma \n"
+      "vse16.v     v24, (%[dst_ar30])            \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src_r], %[src_r], %[vl2]    \n"
+      "add         %[src_g], %[src_g], %[vl2]    \n"
+      "add         %[src_b], %[src_b], %[vl2]    \n"
+      "slli        %[vl2], %[vl2], 1             \n"
+      "add         %[dst_ar30], %[dst_ar30], %[vl2]\n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_r] "+r"(src_r),        // %[src_r]
+        [src_g] "+r"(src_g),        // %[src_g]
+        [src_b] "+r"(src_b),        // %[src_b]
+        [dst_ar30] "+r"(dst_ar30),  // %[dst_ar30]
+        [w] "+r"(w),                // %[w]
+        [vl] "=&r"(vl),             // %[vl]
+        [vl2] "=&r"(vl2)            // %[vl2]
+      : [shift] "r"(depth - 10),    // %[shift]
+        [c1023] "r"(1023),          // %[c1023]
+        [cc000] "r"(0xc000),        // %[cc000]
+        [cffff] "r"(0xffff)         // %[cffff]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
+        "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+#endif
+}
+#endif
+
+#ifdef HAS_MERGEAR64ROW_RVV
+void MergeAR64Row_RVV(const uint16_t* src_r,
+                      const uint16_t* src_g,
+                      const uint16_t* src_b,
+                      const uint16_t* src_a,
+                      uint16_t* dst_ar64,
+                      int depth,
+                      int width) {
+  size_t w = (size_t)width;
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m2, ta, ma  \n"
+      "vle16.v     v8, (%[src_b])                \n"
+      "vle16.v     v10, (%[src_g])               \n"
+      "vle16.v     v12, (%[src_r])               \n"
+      "vle16.v     v14, (%[src_a])               \n"
+      "vminu.vx    v8, v8, %[max]                \n"
+      "vminu.vx    v10, v10, %[max]              \n"
+      "vminu.vx    v12, v12, %[max]              \n"
+      "vminu.vx    v14, v14, %[max]              \n"
+      "vsll.vx     v8, v8, %[shift]              \n"
+      "vsll.vx     v10, v10, %[shift]            \n"
+      "vsll.vx     v12, v12, %[shift]            \n"
+      "vsll.vx     v14, v14, %[shift]            \n"
+      "vsseg4e16.v v8, (%[dst_ar64])             \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_r], %[src_r], %[vl]     \n"
+      "add         %[src_g], %[src_g], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "add         %[src_a], %[src_a], %[vl]     \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[dst_ar64], %[dst_ar64], %[vl]\n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_r] "+r"(src_r),         // %[src_r]
+        [src_g] "+r"(src_g),         // %[src_g]
+        [src_b] "+r"(src_b),         // %[src_b]
+        [src_a] "+r"(src_a),         // %[src_a]
+        [dst_ar64] "+r"(dst_ar64),   // %[dst_ar64]
+        [w] "+r"(w),                 // %[w]
+        [vl] "=&r"(vl)               // %[vl]
+      : [shift] "r"(16 - depth),     // %[shift]
+        [max] "r"((1 << depth) - 1)  // %[max]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15");
+}
+#endif
+
+#ifdef HAS_MERGEXR64ROW_RVV
+void MergeXR64Row_RVV(const uint16_t* src_r,
+                      const uint16_t* src_g,
+                      const uint16_t* src_b,
+                      uint16_t* dst_ar64,
+                      int depth,
+                      int width) {
+  size_t w = (size_t)width;
+  size_t vl;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e16, m2, ta, ma  \n"
+      "vmv.v.i     v14, -1                       \n"
+
+      "1:                                        \n"
+      "vle16.v     v8, (%[src_b])                \n"
+      "vle16.v     v10, (%[src_g])               \n"
+      "vle16.v     v12, (%[src_r])               \n"
+      "vminu.vx    v8, v8, %[max]                \n"
+      "vminu.vx    v10, v10, %[max]              \n"
+      "vminu.vx    v12, v12, %[max]              \n"
+      "vsll.vx     v8, v8, %[shift]              \n"
+      "vsll.vx     v10, v10, %[shift]            \n"
+      "vsll.vx     v12, v12, %[shift]            \n"
+      "vsseg4e16.v v8, (%[dst_ar64])             \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_r], %[src_r], %[vl]     \n"
+      "add         %[src_g], %[src_g], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[dst_ar64], %[dst_ar64], %[vl]\n"
+      "vsetvli     %[vl], %[w], e16, m2, ta, ma  \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src_r] "+r"(src_r),         // %[src_r]
+        [src_g] "+r"(src_g),         // %[src_g]
+        [src_b] "+r"(src_b),         // %[src_b]
+        [dst_ar64] "+r"(dst_ar64),   // %[dst_ar64]
+        [w] "+r"(w),                 // %[w]
+        [vl] "=&r"(vl)               // %[vl]
+      : [shift] "r"(16 - depth),     // %[shift]
+        [max] "r"((1 << depth) - 1)  // %[max]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15");
+}
+#endif
+
+#ifdef HAS_MERGEARGB16TO8ROW_RVV
+// vnclipu shifts right and saturates to 8 bits. vxrm is set to round-down
+// (truncate) to match the C version and restored on exit.
+void MergeARGB16To8Row_RVV(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           const uint16_t* src_a,
+                           uint8_t* dst_argb,
+                           int depth,
+                           int width) {
+  size_t w = (size_t)width;
+  size_t vl, vxrm;
+  asm volatile(
+      "csrr        %[vxrm], vxrm                 \n"
+      "csrwi       vxrm, 2                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vle16.v     v16, (%[src_b])               \n"
+      "vle16.v     v20, (%[src_g])               \n"
+      "vle16.v     v24, (%[src_r])               \n"
+      "vle16.v     v28, (%[src_a])               \n"
+      "vnclipu.wx  v8, v16, %[shift]             \n"
+      "vnclipu.wx  v10, v20, %[shift]            \n"
+      "vnclipu.wx  v12, v24, %[shift]            \n"
+      "vnclipu.wx  v14, v28, %[shift]            \n"
+      "vsseg4e8.v  v8, (%[dst_argb])             \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_r], %[src_r], %[vl]     \n"
+      "add         %[src_g], %[src_g], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "add         %[src_a], %[src_a], %[vl]     \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[dst_argb], %[dst_argb], %[vl]\n"
+      "bgtz        %[w], 1b                      \n"
+      "csrw        vxrm, %[vxrm]                 \n"
+      : [src_r] "+r"(src_r),        // %[src_r]
+        [src_g] "+r"(src_g),        // %[src_g]
+        [src_b] "+r"(src_b),        // %[src_b]
+        [src_a] "+r"(src_a),        // %[src_a]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
+        [w] "+r"(w),                // %[w]
+        [vl] "=&r"(vl),             // %[vl]
+        [vxrm] "=&r"(vxrm)          // %[vxrm]
+      : [shift] "r"(depth - 8)      // %[shift]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
+        "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+}
+#endif
+
+#ifdef HAS_MERGEXRGB16TO8ROW_RVV
+void MergeXRGB16To8Row_RVV(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint8_t* dst_argb,
+                           int depth,
+                           int width) {
+  size_t w = (size_t)width;
+  size_t vl, vxrm;
+  asm volatile(
+      "csrr        %[vxrm], vxrm                 \n"
+      "csrwi       vxrm, 2                       \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vmv.v.i     v14, -1                       \n"
+
+      "1:                                        \n"
+      "vle16.v     v16, (%[src_b])               \n"
+      "vle16.v     v20, (%[src_g])               \n"
+      "vle16.v     v24, (%[src_r])               \n"
+      "vnclipu.wx  v8, v16, %[shift]             \n"
+      "vnclipu.wx  v10, v20, %[shift]            \n"
+      "vnclipu.wx  v12, v24, %[shift]            \n"
+      "vsseg4e8.v  v8, (%[dst_argb])             \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src_r], %[src_r], %[vl]     \n"
+      "add         %[src_g], %[src_g], %[vl]     \n"
+      "add         %[src_b], %[src_b], %[vl]     \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[dst_argb], %[dst_argb], %[vl]\n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "bgtz        %[w], 1b                      \n"
+      "csrw        vxrm, %[vxrm]                 \n"
+      : [src_r] "+r"(src_r),        // %[src_r]
+        [src_g] "+r"(src_g),        // %[src_g]
+        [src_b] "+r"(src_b),        // %[src_b]
+        [dst_argb] "+r"(dst_argb),  // %[dst_argb]
+        [w] "+r"(w),                // %[w]
+        [vl] "=&r"(vl),             // %[vl]
+        [vxrm] "=&r"(vxrm)          // %[vxrm]
+      : [shift] "r"(depth - 8)      // %[shift]
+      : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
+        "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24",
+        "v25", "v26", "v27");
 }
 #endif
 
@@ -2260,8 +2622,8 @@ void HalfUVRow_RVV(const uint8_t* src_u,
       "vle8.v      v12, (%[src_v])               \n"
       "vle8.v      v20, (%[src_v1])              \n"
       "vaaddu.vv   v12, v12, v20                 \n"
-      "vwaddu.vx   v16, v8, zero                 \n"
-      "vwmaccu.vx  v16, %[c256], v12             \n"
+      "vwaddu.vv   v16, v8, v12                  \n"
+      "vwmaccu.vx  v16, %[c255], v12             \n"
       "slli        %[vl2], %[vl], 1              \n"
       "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
       "vse8.v      v16, (%[dst_uv])              \n"
@@ -2280,7 +2642,7 @@ void HalfUVRow_RVV(const uint8_t* src_u,
         [w] "+r"(width),        // %[w]
         [vl] "=&r"(vl),         // %[vl]
         [vl2] "=&r"(vl2)        // %[vl2]
-      : [c256] "r"(256)         // %[c256]
+      : [c255] "r"(255)         // %[c255]
       : "memory", RVV_VL_CLOBBER "v8", "v9", "v10", "v11", "v12", "v13", "v14",
         "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 #endif

@@ -896,6 +896,11 @@ static int I4xxToPxxx(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_16_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MergeUVRow_16 = MergeUVRow_16_RVV;
+  }
+#endif
 #if defined(HAS_MERGEUVROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     MergeUVRow_16 = MergeUVRow_16_SME;

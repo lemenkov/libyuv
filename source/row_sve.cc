@@ -762,6 +762,18 @@ void AR64ShuffleRow_SVE2(const uint8_t* src_ar64,
 }
 #endif  // HAS_AR64SHUFFLEROW_SVE2
 
+#ifdef HAS_MERGEARGB16TO8ROW_SVE2
+void MergeARGB16To8Row_SVE2(const uint16_t* src_r,
+                            const uint16_t* src_g,
+                            const uint16_t* src_b,
+                            const uint16_t* src_a,
+                            uint8_t* dst_argb,
+                            int depth,
+                            int width) {
+  MergeARGB16To8Row_SVE_SC(src_r, src_g, src_b, src_a, dst_argb, depth, width);
+}
+#endif  // HAS_MERGEARGB16TO8ROW_SVE2
+
 #if defined(__clang__)
 #pragma clang attribute pop
 #elif defined(__GNUC__)

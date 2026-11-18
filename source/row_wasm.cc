@@ -1285,11 +1285,11 @@ void MergeUVRow_16_WASMSIMD(const uint16_t* src_u,
                             uint16_t* dst_uv,
                             int depth,
                             int width) {
-  int shift = 16 - depth;
+  v128_t mul = SplatConst16(1 << (16 - depth));
   do {
     asm("" : "+r"(dst_uv));
-    v128_t u = wasm_i16x8_shl(wasm_v128_load(src_u), shift);
-    v128_t v = wasm_i16x8_shl(wasm_v128_load(src_v), shift);
+    v128_t u = wasm_i16x8_mul(wasm_v128_load(src_u), mul);
+    v128_t v = wasm_i16x8_mul(wasm_v128_load(src_v), mul);
     v128_t uv0 = wasm_i16x8_shuffle(u, v, 0, 8, 1, 9, 2, 10, 3, 11);
     v128_t uv1 = wasm_i16x8_shuffle(u, v, 4, 12, 5, 13, 6, 14, 7, 15);
     wasm_v128_store(dst_uv, uv0);
@@ -1620,6 +1620,199 @@ void MergeXRGBRow_WASMSIMD(const uint8_t* src_r,
   } while (width > 0);
 }
 #endif  // HAS_MERGEXRGBROW_WASMSIMD
+
+#ifdef HAS_MERGEAR64ROW_WASMSIMD
+void MergeAR64Row_WASMSIMD(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           const uint16_t* src_a,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width) {
+  // Multiply by a power of 2 instead of a variable shift left; V8 does not
+  // hoist the shift count setup out of the loop.
+  v128_t mul = SplatConst16(1 << (16 - depth));
+  v128_t max = SplatConst16((1 << depth) - 1);
+  do {
+    asm("" : "+r"(dst_ar64));
+    v128_t r = wasm_u16x8_min(wasm_v128_load(src_r), max);
+    v128_t g = wasm_u16x8_min(wasm_v128_load(src_g), max);
+    v128_t b = wasm_u16x8_min(wasm_v128_load(src_b), max);
+    v128_t a = wasm_u16x8_min(wasm_v128_load(src_a), max);
+    r = wasm_i16x8_mul(r, mul);
+    g = wasm_i16x8_mul(g, mul);
+    b = wasm_i16x8_mul(b, mul);
+    a = wasm_i16x8_mul(a, mul);
+    v128_t bg0 = wasm_i16x8_shuffle(b, g, 0, 8, 1, 9, 2, 10, 3, 11);
+    v128_t bg1 = wasm_i16x8_shuffle(b, g, 4, 12, 5, 13, 6, 14, 7, 15);
+    v128_t ra0 = wasm_i16x8_shuffle(r, a, 0, 8, 1, 9, 2, 10, 3, 11);
+    v128_t ra1 = wasm_i16x8_shuffle(r, a, 4, 12, 5, 13, 6, 14, 7, 15);
+    wasm_v128_store(dst_ar64, wasm_i32x4_shuffle(bg0, ra0, 0, 4, 1, 5));
+    wasm_v128_store(dst_ar64 + 8, wasm_i32x4_shuffle(bg0, ra0, 2, 6, 3, 7));
+    wasm_v128_store(dst_ar64 + 16, wasm_i32x4_shuffle(bg1, ra1, 0, 4, 1, 5));
+    wasm_v128_store(dst_ar64 + 24, wasm_i32x4_shuffle(bg1, ra1, 2, 6, 3, 7));
+    src_r += 8;
+    src_g += 8;
+    src_b += 8;
+    src_a += 8;
+    dst_ar64 += 32;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_MERGEAR64ROW_WASMSIMD
+
+#ifdef HAS_MERGEXR64ROW_WASMSIMD
+void MergeXR64Row_WASMSIMD(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint16_t* dst_ar64,
+                           int depth,
+                           int width) {
+  // Multiply by a power of 2 instead of a variable shift left; V8 does not
+  // hoist the shift count setup out of the loop.
+  v128_t mul = SplatConst16(1 << (16 - depth));
+  v128_t max = SplatConst16((1 << depth) - 1);
+  v128_t a = SplatConst16(0xffff);
+  do {
+    asm("" : "+r"(dst_ar64));
+    v128_t r = wasm_u16x8_min(wasm_v128_load(src_r), max);
+    v128_t g = wasm_u16x8_min(wasm_v128_load(src_g), max);
+    v128_t b = wasm_u16x8_min(wasm_v128_load(src_b), max);
+    r = wasm_i16x8_mul(r, mul);
+    g = wasm_i16x8_mul(g, mul);
+    b = wasm_i16x8_mul(b, mul);
+    v128_t bg0 = wasm_i16x8_shuffle(b, g, 0, 8, 1, 9, 2, 10, 3, 11);
+    v128_t bg1 = wasm_i16x8_shuffle(b, g, 4, 12, 5, 13, 6, 14, 7, 15);
+    v128_t ra0 = wasm_i16x8_shuffle(r, a, 0, 8, 1, 9, 2, 10, 3, 11);
+    v128_t ra1 = wasm_i16x8_shuffle(r, a, 4, 12, 5, 13, 6, 14, 7, 15);
+    wasm_v128_store(dst_ar64, wasm_i32x4_shuffle(bg0, ra0, 0, 4, 1, 5));
+    wasm_v128_store(dst_ar64 + 8, wasm_i32x4_shuffle(bg0, ra0, 2, 6, 3, 7));
+    wasm_v128_store(dst_ar64 + 16, wasm_i32x4_shuffle(bg1, ra1, 0, 4, 1, 5));
+    wasm_v128_store(dst_ar64 + 24, wasm_i32x4_shuffle(bg1, ra1, 2, 6, 3, 7));
+    src_r += 8;
+    src_g += 8;
+    src_b += 8;
+    dst_ar64 += 32;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_MERGEXR64ROW_WASMSIMD
+
+#ifdef HAS_MERGEXR30ROW_WASMSIMD
+void MergeXR30Row_WASMSIMD(const uint16_t* src_r,
+                           const uint16_t* src_g,
+                           const uint16_t* src_b,
+                           uint8_t* dst_ar30,
+                           int depth,
+                           int width) {
+  // Clamp to depth bits, then multiply by a power of 2 to left justify in
+  // 16 bits. The 10 bit result is the upper 10 bits, so only constant shifts
+  // are needed.
+  v128_t max = SplatConst16((1 << depth) - 1);
+  v128_t mul = SplatConst16(1 << (16 - depth));
+  v128_t mask = SplatConst16(0xffc0);
+  v128_t alpha = SplatConst16(0xc000);
+  do {
+    asm("" : "+r"(dst_ar30));
+    v128_t r = wasm_u16x8_min(wasm_v128_load(src_r), max);
+    v128_t g = wasm_u16x8_min(wasm_v128_load(src_g), max);
+    v128_t b = wasm_u16x8_min(wasm_v128_load(src_b), max);
+    r = wasm_v128_and(wasm_i16x8_mul(r, mul), mask);
+    g = wasm_v128_and(wasm_i16x8_mul(g, mul), mask);
+    b = wasm_i16x8_mul(b, mul);
+    // Low 16 bits: B and low 6 bits of G.
+    v128_t lo = wasm_v128_or(wasm_u16x8_shr(b, 6), wasm_i16x8_shl(g, 4));
+    // High 16 bits: high 4 bits of G, R and 2 bits of alpha.
+    v128_t hi = wasm_v128_or(wasm_v128_or(wasm_u16x8_shr(g, 12), alpha),
+                             wasm_u16x8_shr(r, 2));
+    wasm_v128_store(dst_ar30,
+                    wasm_i16x8_shuffle(lo, hi, 0, 8, 1, 9, 2, 10, 3, 11));
+    wasm_v128_store(dst_ar30 + 16,
+                    wasm_i16x8_shuffle(lo, hi, 4, 12, 5, 13, 6, 14, 7, 15));
+    src_r += 8;
+    src_g += 8;
+    src_b += 8;
+    dst_ar30 += 32;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_MERGEXR30ROW_WASMSIMD
+
+#ifdef HAS_MERGEARGB16TO8ROW_WASMSIMD
+void MergeARGB16To8Row_WASMSIMD(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                const uint16_t* src_a,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width) {
+  // Clamp to depth bits, then multiply by a power of 2 to left justify in
+  // 16 bits. The 8 bit result is the upper byte, so only constant shifts are
+  // needed.
+  v128_t max = SplatConst16((1 << depth) - 1);
+  v128_t mul = SplatConst16(1 << (16 - depth));
+  v128_t mask = SplatConst16(0xff00);
+  do {
+    asm("" : "+r"(dst_argb));
+    v128_t r = wasm_u16x8_min(wasm_v128_load(src_r), max);
+    v128_t g = wasm_u16x8_min(wasm_v128_load(src_g), max);
+    v128_t b = wasm_u16x8_min(wasm_v128_load(src_b), max);
+    v128_t a = wasm_u16x8_min(wasm_v128_load(src_a), max);
+    r = wasm_u16x8_shr(wasm_i16x8_mul(r, mul), 8);
+    g = wasm_v128_and(wasm_i16x8_mul(g, mul), mask);
+    b = wasm_u16x8_shr(wasm_i16x8_mul(b, mul), 8);
+    a = wasm_v128_and(wasm_i16x8_mul(a, mul), mask);
+    v128_t bg = wasm_v128_or(b, g);
+    v128_t ra = wasm_v128_or(r, a);
+    wasm_v128_store(dst_argb,
+                    wasm_i16x8_shuffle(bg, ra, 0, 8, 1, 9, 2, 10, 3, 11));
+    wasm_v128_store(dst_argb + 16,
+                    wasm_i16x8_shuffle(bg, ra, 4, 12, 5, 13, 6, 14, 7, 15));
+    src_r += 8;
+    src_g += 8;
+    src_b += 8;
+    src_a += 8;
+    dst_argb += 32;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_MERGEARGB16TO8ROW_WASMSIMD
+
+#ifdef HAS_MERGEXRGB16TO8ROW_WASMSIMD
+void MergeXRGB16To8Row_WASMSIMD(const uint16_t* src_r,
+                                const uint16_t* src_g,
+                                const uint16_t* src_b,
+                                uint8_t* dst_argb,
+                                int depth,
+                                int width) {
+  // Clamp to depth bits, then multiply by a power of 2 to left justify in
+  // 16 bits. The 8 bit result is the upper byte, so only constant shifts are
+  // needed.
+  v128_t max = SplatConst16((1 << depth) - 1);
+  v128_t mul = SplatConst16(1 << (16 - depth));
+  v128_t alpha = SplatConst16(0xff00);
+  do {
+    asm("" : "+r"(dst_argb));
+    v128_t r = wasm_u16x8_min(wasm_v128_load(src_r), max);
+    v128_t g = wasm_u16x8_min(wasm_v128_load(src_g), max);
+    v128_t b = wasm_u16x8_min(wasm_v128_load(src_b), max);
+    r = wasm_u16x8_shr(wasm_i16x8_mul(r, mul), 8);
+    g = wasm_v128_and(wasm_i16x8_mul(g, mul), alpha);
+    b = wasm_u16x8_shr(wasm_i16x8_mul(b, mul), 8);
+    v128_t bg = wasm_v128_or(b, g);
+    v128_t ra = wasm_v128_or(r, alpha);
+    wasm_v128_store(dst_argb,
+                    wasm_i16x8_shuffle(bg, ra, 0, 8, 1, 9, 2, 10, 3, 11));
+    wasm_v128_store(dst_argb + 16,
+                    wasm_i16x8_shuffle(bg, ra, 4, 12, 5, 13, 6, 14, 7, 15));
+    src_r += 8;
+    src_g += 8;
+    src_b += 8;
+    dst_argb += 32;
+    width -= 8;
+  } while (width > 0);
+}
+#endif  // HAS_MERGEXRGB16TO8ROW_WASMSIMD
 
 #if defined(HAS_MIRRORROW_WASMSIMD) || defined(HAS_MIRRORROW_RELAXEDSIMD)
 static const uint8_t kShuffleMirror[16] = {15, 14, 13, 12, 11, 10, 9, 8,

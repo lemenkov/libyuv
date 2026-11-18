@@ -4770,6 +4770,68 @@ static inline void AR64ShuffleRow_SVE_SC(const uint8_t* src_ar64,
       : "memory", "cc", "z0", "z1", "z2", "z3", "p0", "p1");
 }
 
+static inline void MergeARGB16To8Row_SVE_SC(const uint16_t* src_r,
+                                            const uint16_t* src_g,
+                                            const uint16_t* src_b,
+                                            const uint16_t* src_a,
+                                            uint8_t* dst_argb,
+                                            int depth,
+                                            int width) STREAMING_COMPATIBLE {
+  // Shift is 8 - depth, +8 so the result is in the top half of each lane.
+  int shift = 16 - depth;
+  int vl;
+  asm volatile(
+      "cnth    %x[vl]                                   \n"
+      "mov     z31.h, %w[shift]                         \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "b.lt    2f                                       \n"
+
+      "ptrue   p0.h                                     \n"
+      "1:                                               \n"
+      "ld1h    {z0.h}, p0/z, [%[src_b]]                 \n"
+      "ld1h    {z1.h}, p0/z, [%[src_g]]                 \n"
+      "ld1h    {z2.h}, p0/z, [%[src_r]]                 \n"
+      "ld1h    {z3.h}, p0/z, [%[src_a]]                 \n"
+      "incb    %[src_b]                                 \n"
+      "incb    %[src_g]                                 \n"
+      "incb    %[src_r]                                 \n"
+      "incb    %[src_a]                                 \n"
+      "uqshl   z0.h, p0/m, z0.h, z31.h                  \n"
+      "uqshl   z1.h, p0/m, z1.h, z31.h                  \n"
+      "uqshl   z2.h, p0/m, z2.h, z31.h                  \n"
+      "uqshl   z3.h, p0/m, z3.h, z31.h                  \n"
+      "trn2    z0.b, z0.b, z1.b                         \n"
+      "trn2    z1.b, z2.b, z3.b                         \n"
+      "subs    %w[width], %w[width], %w[vl]             \n"
+      "st2h    {z0.h, z1.h}, p0, [%[dst_argb]]          \n"
+      "incb    %[dst_argb], all, mul #2                 \n"
+      "b.ge    1b                                       \n"
+
+      "2:                                               \n"
+      "adds    %w[width], %w[width], %w[vl]             \n"
+      "b.eq    99f                                      \n"
+
+      "whilelt p0.h, wzr, %w[width]                     \n"
+      "ld1h    {z0.h}, p0/z, [%[src_b]]                 \n"
+      "ld1h    {z1.h}, p0/z, [%[src_g]]                 \n"
+      "ld1h    {z2.h}, p0/z, [%[src_r]]                 \n"
+      "ld1h    {z3.h}, p0/z, [%[src_a]]                 \n"
+      "uqshl   z0.h, p0/m, z0.h, z31.h                  \n"
+      "uqshl   z1.h, p0/m, z1.h, z31.h                  \n"
+      "uqshl   z2.h, p0/m, z2.h, z31.h                  \n"
+      "uqshl   z3.h, p0/m, z3.h, z31.h                  \n"
+      "trn2    z0.b, z0.b, z1.b                         \n"
+      "trn2    z1.b, z2.b, z3.b                         \n"
+      "st2h    {z0.h, z1.h}, p0, [%[dst_argb]]          \n"
+
+      "99:                                              \n"
+      : [src_r] "+r"(src_r), [src_g] "+r"(src_g), [src_b] "+r"(src_b),
+        [src_a] "+r"(src_a), [dst_argb] "+r"(dst_argb), [width] "+r"(width),
+        [vl] "=&r"(vl)
+      : [shift] "r"(shift)
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z31", "p0");
+}
+
 #endif  // (!defined(LIBYUV_DISABLE_SVE) || (!defined(LIBYUV_DISABLE_SME) &&
         // (defined(CLANG_HAS_SME) || defined(GCC_HAS_SME)))) &&
         // defined(__aarch64__)
