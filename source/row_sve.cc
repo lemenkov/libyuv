@@ -774,6 +774,41 @@ void MergeARGB16To8Row_SVE2(const uint16_t* src_r,
 }
 #endif  // HAS_MERGEARGB16TO8ROW_SVE2
 
+#ifdef HAS_MIRRORROW_SVE2
+void MirrorRow_SVE2(const uint8_t* src, uint8_t* dst, int width) {
+  MirrorRow_SVE_SC(src, dst, width);
+}
+#endif  // HAS_MIRRORROW_SVE2
+
+#ifdef HAS_MIRRORUVROW_SVE2
+void MirrorUVRow_SVE2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  MirrorUVRow_SVE_SC(src_uv, dst_uv, width);
+}
+#endif  // HAS_MIRRORUVROW_SVE2
+
+#ifdef HAS_MIRRORSPLITUVROW_SVE2
+void MirrorSplitUVRow_SVE2(const uint8_t* src_uv,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
+  MirrorSplitUVRow_SVE_SC(src_uv, dst_u, dst_v, width);
+}
+#endif  // HAS_MIRRORSPLITUVROW_SVE2
+
+#ifdef HAS_ARGBMIRRORROW_SVE2
+void ARGBMirrorRow_SVE2(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
+  ARGBMirrorRow_SVE_SC(src_argb, dst_argb, width);
+}
+#endif  // HAS_ARGBMIRRORROW_SVE2
+
+#ifdef HAS_RGB24MIRRORROW_SVE2
+void RGB24MirrorRow_SVE2(const uint8_t* src_rgb24,
+                         uint8_t* dst_rgb24,
+                         int width) {
+  RGB24MirrorRow_SVE_SC(src_rgb24, dst_rgb24, width);
+}
+#endif  // HAS_RGB24MIRRORROW_SVE2
+
 #if defined(__clang__)
 #pragma clang attribute pop
 #elif defined(__GNUC__)

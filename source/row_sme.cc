@@ -1234,6 +1234,47 @@ __arm_locally_streaming void AR64ShuffleRow_SME(const uint8_t* src_ar64,
 }
 #endif  // HAS_AR64SHUFFLEROW_SME
 
+#ifdef HAS_MIRRORROW_SME
+__arm_locally_streaming void MirrorRow_SME(const uint8_t* src,
+                                           uint8_t* dst,
+                                           int width) {
+  MirrorRow_SVE_SC(src, dst, width);
+}
+#endif  // HAS_MIRRORROW_SME
+
+#ifdef HAS_MIRRORUVROW_SME
+__arm_locally_streaming void MirrorUVRow_SME(const uint8_t* src_uv,
+                                             uint8_t* dst_uv,
+                                             int width) {
+  MirrorUVRow_SVE_SC(src_uv, dst_uv, width);
+}
+#endif  // HAS_MIRRORUVROW_SME
+
+#ifdef HAS_MIRRORSPLITUVROW_SME
+__arm_locally_streaming void MirrorSplitUVRow_SME(const uint8_t* src_uv,
+                                                  uint8_t* dst_u,
+                                                  uint8_t* dst_v,
+                                                  int width) {
+  MirrorSplitUVRow_SVE_SC(src_uv, dst_u, dst_v, width);
+}
+#endif  // HAS_MIRRORSPLITUVROW_SME
+
+#ifdef HAS_ARGBMIRRORROW_SME
+__arm_locally_streaming void ARGBMirrorRow_SME(const uint8_t* src_argb,
+                                               uint8_t* dst_argb,
+                                               int width) {
+  ARGBMirrorRow_SVE_SC(src_argb, dst_argb, width);
+}
+#endif  // HAS_ARGBMIRRORROW_SME
+
+#ifdef HAS_RGB24MIRRORROW_SME
+__arm_locally_streaming void RGB24MirrorRow_SME(const uint8_t* src_rgb24,
+                                                uint8_t* dst_rgb24,
+                                                int width) {
+  RGB24MirrorRow_SVE_SC(src_rgb24, dst_rgb24, width);
+}
+#endif  // HAS_RGB24MIRRORROW_SME
+
 #if defined(__clang__)
 #pragma clang attribute pop
 #elif defined(__GNUC__)

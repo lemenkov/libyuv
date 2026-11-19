@@ -3038,6 +3038,56 @@ void MergeRGBRow_HVX(const uint8_t* src_r,
   }
 }
 
+void RGB24MirrorRow_HVX(const uint8_t* src_rgb24,
+                        uint8_t* dst_rgb24,
+                        int width) {
+  HVX_Vector v_exp = vloada(kRGB24ToARGBCtrl);
+  HVX_Vector v_rgb_mask = Q6_V_vsplat_R(0x00FFFFFFu);
+  HVX_Vector v_rev = Q6_Vb_vsplat_R(0x7C);
+  HVX_Vector v_pack0 = vloada(kARGBToRGB24Ctrl0);
+  HVX_Vector v_pack1 = vloada(kARGBToRGB24Ctrl96);
+  HVX_Vector v_pack2 = vloada(kARGBToRGB24Ctrl64);
+  HVX_Vector v_pack3 = vloada(kARGBToRGB24Ctrl32);
+  HVX_VectorPred q96 = Q6_Q_vsetq_R(96);
+  HVX_VectorPred q64 = Q6_Q_vsetq_R(64);
+  HVX_VectorPred q32 = Q6_Q_vsetq_R(32);
+  src_rgb24 += (ptrdiff_t)width * 3;
+  while (width >= 128) {
+    src_rgb24 -= 384;
+    HVX_Vector s3 = Q6_V_vdelta_VV(
+        ExpandRGB24ToARGB_HVX(src_rgb24 + 288, 32, v_exp, v_rgb_mask), v_rev);
+    HVX_Vector s2 = Q6_V_vdelta_VV(
+        ExpandRGB24ToARGB_HVX(src_rgb24 + 192, 32, v_exp, v_rgb_mask), v_rev);
+    HVX_Vector s1 = Q6_V_vdelta_VV(
+        ExpandRGB24ToARGB_HVX(src_rgb24 + 96, 32, v_exp, v_rgb_mask), v_rev);
+    HVX_Vector s0 = Q6_V_vdelta_VV(
+        ExpandRGB24ToARGB_HVX(src_rgb24, 32, v_exp, v_rgb_mask), v_rev);
+    HVX_Vector p0 = Q6_V_vrdelta_VV(s3, v_pack0);
+    HVX_Vector p1 = Q6_V_vrdelta_VV(s2, v_pack1);
+    HVX_Vector p2 = Q6_V_vrdelta_VV(s1, v_pack2);
+    HVX_Vector p3 = Q6_V_vrdelta_VV(s0, v_pack3);
+    vstoreu(dst_rgb24, Q6_V_vmux_QVV(q96, p0, p1));
+    vstoreu(dst_rgb24 + 128, Q6_V_vmux_QVV(q64, p1, p2));
+    vstoreu(dst_rgb24 + 256, Q6_V_vmux_QVV(q32, p2, p3));
+    dst_rgb24 += 384;
+    width -= 128;
+  }
+  while (width > 0) {
+    int w = width >= 32 ? 32 : width;
+    int bytes = w * 3;
+    src_rgb24 -= bytes;
+    HVX_Vector s = Q6_V_vdelta_VV(
+        ExpandRGB24ToARGB_HVX(src_rgb24, w, v_exp, v_rgb_mask), v_rev);
+    if (w < 32) {
+      s = Q6_V_valign_VVR(s, s, (32 - w) * 4);
+    }
+    HVX_Vector p = Q6_V_vrdelta_VV(s, v_pack0);
+    vstoreu_partial(dst_rgb24, p, bytes);
+    dst_rgb24 += bytes;
+    width -= w;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

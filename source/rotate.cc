@@ -245,6 +245,16 @@ void RotatePlane180(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MirrorRow = MirrorRow_SVE2;
+  }
+#endif
+#if defined(HAS_MIRRORROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MirrorRow = MirrorRow_SME;
+  }
+#endif
 #if defined(HAS_MIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     MirrorRow = MirrorRow_Any_SSSE3;
@@ -301,6 +311,11 @@ void RotatePlane180(const uint8_t* src,
 #if defined(HAS_MIRRORROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     MirrorRow = MirrorRow_HVX;
+  }
+#endif
+#if defined(HAS_MIRRORROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MirrorRow = MirrorRow_RVV;
   }
 #endif
 #if defined(HAS_COPYROW_SSE2)
@@ -601,6 +616,16 @@ void SplitRotateUV180(const uint8_t* src,
     }
   }
 #endif
+#if defined(HAS_MIRRORSPLITUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_MIRRORSPLITUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_SME;
+  }
+#endif
 #if defined(HAS_MIRRORSPLITUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     MirrorSplitUVRow = MirrorSplitUVRow_Any_SSSE3;
@@ -657,6 +682,11 @@ void SplitRotateUV180(const uint8_t* src,
 #if defined(HAS_MIRRORSPLITUVROW_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     MirrorSplitUVRow = MirrorSplitUVRow_HVX;
+  }
+#endif
+#if defined(HAS_MIRRORSPLITUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_RVV;
   }
 #endif
 

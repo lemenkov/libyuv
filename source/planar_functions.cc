@@ -3658,6 +3658,16 @@ void MirrorPlane(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_MIRRORROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MirrorRow = MirrorRow_SVE2;
+  }
+#endif
+#if defined(HAS_MIRRORROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MirrorRow = MirrorRow_SME;
+  }
+#endif
 #if defined(HAS_MIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     MirrorRow = MirrorRow_Any_SSSE3;
@@ -3716,6 +3726,11 @@ void MirrorPlane(const uint8_t* src_y,
     MirrorRow = MirrorRow_HVX;
   }
 #endif
+#if defined(HAS_MIRRORROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    MirrorRow = MirrorRow_RVV;
+  }
+#endif
 
   // Mirror plane
   for (y = 0; y < height; ++y) {
@@ -3751,6 +3766,18 @@ void MirrorPlane_16(const uint16_t* src_y,
     if (IS_ALIGNED(width, 16)) {
       MirrorRow_16 = MirrorRow_16_NEON;
     }
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MirrorRow_16 = reinterpret_cast<void (*)(const uint16_t*, uint16_t*, int)>(
+        MirrorUVRow_SVE2);
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MirrorRow_16 = reinterpret_cast<void (*)(const uint16_t*, uint16_t*, int)>(
+        MirrorUVRow_SME);
   }
 #endif
 #if defined(HAS_MIRRORUVROW_SSSE3)
@@ -3870,6 +3897,16 @@ void MirrorUVPlane(const uint8_t* src_uv,
     if (IS_ALIGNED(width, 32)) {
       MirrorUVRow = MirrorUVRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    MirrorUVRow = MirrorUVRow_SVE2;
+  }
+#endif
+#if defined(HAS_MIRRORUVROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    MirrorUVRow = MirrorUVRow_SME;
   }
 #endif
 #if defined(HAS_MIRRORUVROW_SSSE3)
@@ -4077,6 +4114,16 @@ int ARGBMirror(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBMIRRORROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    ARGBMirrorRow = ARGBMirrorRow_SVE2;
+  }
+#endif
+#if defined(HAS_ARGBMIRRORROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    ARGBMirrorRow = ARGBMirrorRow_SME;
+  }
+#endif
 #if defined(HAS_ARGBMIRRORROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBMirrorRow = ARGBMirrorRow_Any_SSE2;
@@ -4171,6 +4218,16 @@ int RGB24Mirror(const uint8_t* src_rgb24,
     }
   }
 #endif
+#if defined(HAS_RGB24MIRRORROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    RGB24MirrorRow = RGB24MirrorRow_SVE2;
+  }
+#endif
+#if defined(HAS_RGB24MIRRORROW_SME)
+  if (TestCpuFlag(kCpuHasSME)) {
+    RGB24MirrorRow = RGB24MirrorRow_SME;
+  }
+#endif
 #if defined(HAS_RGB24MIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     RGB24MirrorRow = RGB24MirrorRow_Any_SSSE3;
@@ -4222,6 +4279,16 @@ int RGB24Mirror(const uint8_t* src_rgb24,
     if (IS_ALIGNED(width, 32)) {
       RGB24MirrorRow = RGB24MirrorRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_RGB24MIRRORROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    RGB24MirrorRow = RGB24MirrorRow_RVV;
+  }
+#endif
+#if defined(HAS_RGB24MIRRORROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    RGB24MirrorRow = RGB24MirrorRow_HVX;
   }
 #endif
 

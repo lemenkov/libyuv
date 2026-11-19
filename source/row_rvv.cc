@@ -4022,6 +4022,9 @@ void HalfWidthRow_16To8_Odd_RVV(const uint16_t* src_uv,
 void ARGBMirrorRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
   int vl;
   ptrdiff_t byte_vl;
+  if (width <= 0) {
+    return;
+  }
   src += (ptrdiff_t)width * 4;
   asm volatile(
       "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
@@ -4032,14 +4035,16 @@ void ARGBMirrorRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
       "addi        %[vl], %[vl], 1               \n"
       "sub         %[w], %[w], %[vl]             \n"
       "bltz        %[w], 2f                      \n"
-      "1:                                        \n"
       "sub         %[src], %[src], %[byte_vl]    \n"
+      "1:                                        \n"
       "vle32.v     v8, (%[src])                  \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "sub         %[w], %[w], %[vl]             \n"
       "vrgather.vv v0, v8, v16                   \n"
       "vse32.v     v0, (%[dst])                  \n"
       "add         %[dst], %[dst], %[byte_vl]    \n"
-      "sub         %[w], %[w], %[vl]             \n"
       "bgez        %[w], 1b                      \n"
+      "add         %[src], %[src], %[byte_vl]    \n"
       "2:                                        \n"
       "add         %[w], %[w], %[vl]             \n"
       "beqz        %[w], 3f                      \n"
@@ -4186,6 +4191,9 @@ void AR64ShuffleRow_RVV(const uint8_t* src_ar64,
 void MirrorUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   int vl;
   ptrdiff_t byte_vl;
+  if (width <= 0) {
+    return;
+  }
   src_uv += (ptrdiff_t)width * 2;
   asm volatile(
       "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
@@ -4196,14 +4204,16 @@ void MirrorUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
       "addi        %[vl], %[vl], 1               \n"
       "sub         %[w], %[w], %[vl]             \n"
       "bltz        %[w], 2f                      \n"
-      "1:                                        \n"
       "sub         %[src], %[src], %[byte_vl]    \n"
+      "1:                                        \n"
       "vle16.v     v8, (%[src])                  \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "sub         %[w], %[w], %[vl]             \n"
       "vrgather.vv v0, v8, v16                   \n"
       "vse16.v     v0, (%[dst])                  \n"
       "add         %[dst], %[dst], %[byte_vl]    \n"
-      "sub         %[w], %[w], %[vl]             \n"
       "bgez        %[w], 1b                      \n"
+      "add         %[src], %[src], %[byte_vl]    \n"
       "2:                                        \n"
       "add         %[w], %[w], %[vl]             \n"
       "beqz        %[w], 3f                      \n"
@@ -4228,6 +4238,185 @@ void MirrorUVRow_RVV(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
         "v17", "v18", "v19", "v20", "v21", "v22", "v23");
 }
 #endif  // HAS_MIRRORUVROW_RVV
+
+#ifdef HAS_MIRRORROW_RVV
+void MirrorRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
+  int vl;
+  if (width <= 0) {
+    return;
+  }
+  src += width;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vsetvli     zero, %[vl], e16, m8, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "addi        %[vl], %[vl], -1              \n"
+      "vrsub.vx    v16, v16, %[vl]               \n"
+      "addi        %[vl], %[vl], 1               \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "bltz        %[w], 2f                      \n"
+      "sub         %[src], %[src], %[vl]         \n"
+      "1:                                        \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "sub         %[src], %[src], %[vl]         \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vse8.v      v0, (%[dst])                  \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgez        %[w], 1b                      \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "2:                                        \n"
+      "add         %[w], %[w], %[vl]             \n"
+      "beqz        %[w], 3f                      \n"
+      "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "addi        %[vl], %[vl], -1              \n"
+      "vrsub.vx    v16, v16, %[vl]               \n"
+      "addi        %[vl], %[vl], 1               \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "sub         %[src], %[src], %[vl]         \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vse8.v      v0, (%[dst])                  \n"
+      "3:                                        \n"
+      : [src] "+r"(src),  // %[src]
+        [dst] "+r"(dst),  // %[dst]
+        [w] "+r"(width),  // %[w]
+        [vl] "=&r"(vl)    // %[vl]
+      :
+      : RVV_VL_CLOBBER "vtype", "memory", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#endif  // HAS_MIRRORROW_RVV
+
+#ifdef HAS_MIRRORSPLITUVROW_RVV
+void MirrorSplitUVRow_RVV(const uint8_t* src_uv,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width) {
+  int vl;
+  ptrdiff_t byte_vl;
+  if (width <= 0) {
+    return;
+  }
+  src_uv += (ptrdiff_t)width * 2;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vsetvli     zero, %[vl], e16, m8, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "addi        %[vl], %[vl], -1              \n"
+      "vrsub.vx    v16, v16, %[vl]               \n"
+      "addi        %[vl], %[vl], 1               \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "slli        %[byte_vl], %[vl], 1          \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "bltz        %[w], 2f                      \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "1:                                        \n"
+      "vlseg2e8.v  v8, (%[src])                  \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vrgatherei16.vv v4, v12, v16              \n"
+      "vse8.v      v0, (%[dst_u])                \n"
+      "vse8.v      v4, (%[dst_v])                \n"
+      "add         %[dst_u], %[dst_u], %[vl]     \n"
+      "add         %[dst_v], %[dst_v], %[vl]     \n"
+      "bgez        %[w], 1b                      \n"
+      "add         %[src], %[src], %[byte_vl]    \n"
+      "2:                                        \n"
+      "add         %[w], %[w], %[vl]             \n"
+      "beqz        %[w], 3f                      \n"
+      "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "addi        %[vl], %[vl], -1              \n"
+      "vrsub.vx    v16, v16, %[vl]               \n"
+      "addi        %[vl], %[vl], 1               \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "slli        %[byte_vl], %[vl], 1          \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "vlseg2e8.v  v8, (%[src])                  \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vrgatherei16.vv v4, v12, v16              \n"
+      "vse8.v      v0, (%[dst_u])                \n"
+      "vse8.v      v4, (%[dst_v])                \n"
+      "3:                                        \n"
+      : [src] "+r"(src_uv),       // %[src]
+        [dst_u] "+r"(dst_u),      // %[dst_u]
+        [dst_v] "+r"(dst_v),      // %[dst_v]
+        [w] "+r"(width),          // %[w]
+        [vl] "=&r"(vl),           // %[vl]
+        [byte_vl] "=&r"(byte_vl)  // %[byte_vl]
+      :
+      : RVV_VL_CLOBBER "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
+        "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+}
+#endif  // HAS_MIRRORSPLITUVROW_RVV
+
+#ifdef HAS_RGB24MIRRORROW_RVV
+void RGB24MirrorRow_RVV(const uint8_t* src_rgb24,
+                        uint8_t* dst_rgb24,
+                        int width) {
+  int vl;
+  ptrdiff_t byte_vl;
+  if (width <= 0) {
+    return;
+  }
+  src_rgb24 += (ptrdiff_t)width * 3;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vsetvli     zero, %[vl], e16, m4, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "addi        %[vl], %[vl], -1              \n"
+      "vrsub.vx    v16, v16, %[vl]               \n"
+      "addi        %[vl], %[vl], 1               \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "slli        %[byte_vl], %[vl], 1          \n"
+      "add         %[byte_vl], %[byte_vl], %[vl] \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "bltz        %[w], 2f                      \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "1:                                        \n"
+      "vlseg3e8.v  v8, (%[src])                  \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vrgatherei16.vv v2, v10, v16              \n"
+      "vrgatherei16.vv v4, v12, v16              \n"
+      "vsseg3e8.v  v0, (%[dst])                  \n"
+      "add         %[dst], %[dst], %[byte_vl]    \n"
+      "bgez        %[w], 1b                      \n"
+      "add         %[src], %[src], %[byte_vl]    \n"
+      "2:                                        \n"
+      "add         %[w], %[w], %[vl]             \n"
+      "beqz        %[w], 3f                      \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vid.v       v16                           \n"
+      "addi        %[vl], %[vl], -1              \n"
+      "vrsub.vx    v16, v16, %[vl]               \n"
+      "addi        %[vl], %[vl], 1               \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "slli        %[byte_vl], %[vl], 1          \n"
+      "add         %[byte_vl], %[byte_vl], %[vl] \n"
+      "sub         %[src], %[src], %[byte_vl]    \n"
+      "vlseg3e8.v  v8, (%[src])                  \n"
+      "vrgatherei16.vv v0, v8, v16               \n"
+      "vrgatherei16.vv v2, v10, v16              \n"
+      "vrgatherei16.vv v4, v12, v16              \n"
+      "vsseg3e8.v  v0, (%[dst])                  \n"
+      "3:                                        \n"
+      : [src] "+r"(src_rgb24),    // %[src]
+        [dst] "+r"(dst_rgb24),    // %[dst]
+        [w] "+r"(width),          // %[w]
+        [vl] "=&r"(vl),           // %[vl]
+        [byte_vl] "=&r"(byte_vl)  // %[byte_vl]
+      :
+      : RVV_VL_CLOBBER "vtype", "memory", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v8", "v9", "v10", "v11", "v12", "v13", "v16", "v17", "v18", "v19");
+}
+#endif  // HAS_RGB24MIRRORROW_RVV
 
 #ifdef HAS_SSIM4X4ROW_RVV
 #define SSIM4X4_LOAD_RVV(ptr_a, ptr_b)          \
