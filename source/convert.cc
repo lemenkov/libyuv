@@ -4735,6 +4735,12 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     YUY2ToUVRow = YUY2ToUVRow_HVX;
   }
 #endif
+#if defined(HAS_YUY2TOYROW_RVV) && defined(HAS_YUY2TOUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    YUY2ToYRow = YUY2ToYRow_RVV;
+    YUY2ToUVRow = YUY2ToUVRow_RVV;
+  }
+#endif
 #if defined(HAS_YUY2TOYROW_WASMSIMD) && defined(HAS_YUY2TOUVROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     YUY2ToYRow = YUY2ToYRow_Any_WASMSIMD;
@@ -4864,6 +4870,12 @@ int UYVYToI420(const uint8_t* src_uyvy,
     UYVYToUVRow = UYVYToUVRow_HVX;
   }
 #endif
+#if defined(HAS_UYVYTOYROW_RVV) && defined(HAS_UYVYTOUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    UYVYToYRow = UYVYToYRow_RVV;
+    UYVYToUVRow = UYVYToUVRow_RVV;
+  }
+#endif
 #if defined(HAS_UYVYTOYROW_WASMSIMD) && defined(HAS_UYVYTOUVROW_WASMSIMD)
   if (TestCpuFlag(kCpuHasWASMSIMD)) {
     UYVYToYRow = UYVYToYRow_Any_WASMSIMD;
@@ -4972,6 +4984,18 @@ int AYUVToNV12(const uint8_t* src_ayuv,
       AYUVToYRow = AYUVToYRow_LASX;
       AYUVToUVRow = AYUVToUVRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_AYUVTOYROW_HVX) && defined(HAS_AYUVTOUVROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    AYUVToYRow = AYUVToYRow_HVX;
+    AYUVToUVRow = AYUVToUVRow_HVX;
+  }
+#endif
+#if defined(HAS_AYUVTOYROW_RVV) && defined(HAS_AYUVTOUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    AYUVToYRow = AYUVToYRow_RVV;
+    AYUVToUVRow = AYUVToUVRow_RVV;
   }
 #endif
 #if defined(HAS_AYUVTOYROW_WASMSIMD) && defined(HAS_AYUVTOUVROW_WASMSIMD)
@@ -5089,6 +5113,18 @@ int AYUVToNV21(const uint8_t* src_ayuv,
       AYUVToYRow = AYUVToYRow_LASX;
       AYUVToVURow = AYUVToVURow_LASX;
     }
+  }
+#endif
+#if defined(HAS_AYUVTOYROW_HVX) && defined(HAS_AYUVTOVUROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    AYUVToYRow = AYUVToYRow_HVX;
+    AYUVToVURow = AYUVToVURow_HVX;
+  }
+#endif
+#if defined(HAS_AYUVTOYROW_RVV) && defined(HAS_AYUVTOVUROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    AYUVToYRow = AYUVToYRow_RVV;
+    AYUVToVURow = AYUVToVURow_RVV;
   }
 #endif
 #if defined(HAS_AYUVTOYROW_WASMSIMD) && defined(HAS_AYUVTOVUROW_WASMSIMD)

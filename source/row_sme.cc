@@ -588,6 +588,12 @@ __arm_locally_streaming void CopyRow_SME(const uint8_t* src,
   CopyRow_SVE_SC(src, dst, width);
 }
 
+__arm_locally_streaming void CopyRow_16_SME(const uint16_t* src,
+                                            uint16_t* dst,
+                                            int count) {
+  CopyRow_SVE_SC((const uint8_t*)src, (uint8_t*)dst, count * 2);
+}
+
 __arm_locally_streaming void HalfRow_SME(const uint8_t* src_ptr,
                                          ptrdiff_t src_stride,
                                          uint8_t* dst_ptr,

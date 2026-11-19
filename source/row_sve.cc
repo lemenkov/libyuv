@@ -446,6 +446,10 @@ void CopyRow_SVE2(const uint8_t* src, uint8_t* dst, int width) {
   CopyRow_SVE_SC(src, dst, width);
 }
 
+void CopyRow_16_SVE2(const uint16_t* src, uint16_t* dst, int count) {
+  CopyRow_SVE_SC((const uint8_t*)src, (uint8_t*)dst, count * 2);
+}
+
 void HalfRow_SVE2(const uint8_t* src_ptr,
                   ptrdiff_t src_stride,
                   uint8_t* dst_ptr,

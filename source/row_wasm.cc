@@ -5618,26 +5618,36 @@ void HalfFloatRow_WASMSIMD(const uint16_t* src,
                            uint16_t* dst,
                            float scale,
                            int width) {
-  v128_t vmult = wasm_f32x4_splat(1.9259299444e-34f * scale);
+  v128_t vscale = wasm_f32x4_splat(scale);
+  v128_t vbias =
+      wasm_f32x4_splat(1.9259299444e-34f);  // 2^-112, see HalfFloatRow_C
   do {
     asm("" : "+r"(src), "+r"(dst));
     v128_t s0 = wasm_v128_load(src);
     v128_t s1 = wasm_v128_load(src + 8);
     v128_t f0 = wasm_u32x4_shr(
-        wasm_f32x4_mul(
-            wasm_f32x4_convert_u32x4(wasm_u32x4_extend_low_u16x8(s0)), vmult),
+        wasm_f32x4_mul(wasm_f32x4_mul(wasm_f32x4_convert_u32x4(
+                                          wasm_u32x4_extend_low_u16x8(s0)),
+                                      vscale),
+                       vbias),
         13);
     v128_t f1 = wasm_u32x4_shr(
-        wasm_f32x4_mul(
-            wasm_f32x4_convert_u32x4(wasm_u32x4_extend_high_u16x8(s0)), vmult),
+        wasm_f32x4_mul(wasm_f32x4_mul(wasm_f32x4_convert_u32x4(
+                                          wasm_u32x4_extend_high_u16x8(s0)),
+                                      vscale),
+                       vbias),
         13);
     v128_t f2 = wasm_u32x4_shr(
-        wasm_f32x4_mul(
-            wasm_f32x4_convert_u32x4(wasm_u32x4_extend_low_u16x8(s1)), vmult),
+        wasm_f32x4_mul(wasm_f32x4_mul(wasm_f32x4_convert_u32x4(
+                                          wasm_u32x4_extend_low_u16x8(s1)),
+                                      vscale),
+                       vbias),
         13);
     v128_t f3 = wasm_u32x4_shr(
-        wasm_f32x4_mul(
-            wasm_f32x4_convert_u32x4(wasm_u32x4_extend_high_u16x8(s1)), vmult),
+        wasm_f32x4_mul(wasm_f32x4_mul(wasm_f32x4_convert_u32x4(
+                                          wasm_u32x4_extend_high_u16x8(s1)),
+                                      vscale),
+                       vbias),
         13);
     wasm_v128_store(dst, wasm_i16x8_shuffle(f0, f1, 0, 2, 4, 6, 8, 10, 12, 14));
     wasm_v128_store(dst + 8,

@@ -1201,21 +1201,28 @@ void InterpolateRow_16_HVX(uint16_t* dst_ptr,
   uint32_t y0_32 = ((uint32_t)y0_fraction << 16) | (uint32_t)y0_fraction;
   uint32_t y1_32 = ((uint32_t)y1_fraction << 16) | (uint32_t)y1_fraction;
   HVX_Vector v128 = Q6_V_vsplat_R(128);
-  while (width > 0) {
-    int w = width >= 64 ? 64 : width;
-    int bytes = w * 2;
+  while (width >= 64) {
+    HVX_Vector s0 = vloadu(src_ptr);
+    HVX_Vector s1 = vloadu(src_ptr1);
+    HVX_VectorPair p = Q6_Wuw_vmpy_VuhRuh(s0, y0_32);
+    p = Q6_Wuw_vmpyacc_WuwVuhRuh(p, s1, y1_32);
+    HVX_Vector lo = Q6_Vuw_vlsr_VuwR(Q6_Vw_vadd_VwVw(Q6_V_lo_W(p), v128), 8);
+    HVX_Vector hi = Q6_Vuw_vlsr_VuwR(Q6_Vw_vadd_VwVw(Q6_V_hi_W(p), v128), 8);
+    vstoreu(dst_ptr, Q6_Vh_vshuffe_VhVh(hi, lo));
+    src_ptr += 64;
+    src_ptr1 += 64;
+    dst_ptr += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    int bytes = width * 2;
     HVX_Vector s0 = vloadu_partial_zero(src_ptr, bytes);
     HVX_Vector s1 = vloadu_partial_zero(src_ptr1, bytes);
     HVX_VectorPair p = Q6_Wuw_vmpy_VuhRuh(s0, y0_32);
     p = Q6_Wuw_vmpyacc_WuwVuhRuh(p, s1, y1_32);
     HVX_Vector lo = Q6_Vuw_vlsr_VuwR(Q6_Vw_vadd_VwVw(Q6_V_lo_W(p), v128), 8);
     HVX_Vector hi = Q6_Vuw_vlsr_VuwR(Q6_Vw_vadd_VwVw(Q6_V_hi_W(p), v128), 8);
-    HVX_Vector out = Q6_Vh_vshuffe_VhVh(hi, lo);
-    vstoreu_partial(dst_ptr, out, bytes);
-    src_ptr += 64;
-    src_ptr1 += 64;
-    dst_ptr += 64;
-    width -= 64;
+    vstoreu_partial(dst_ptr, Q6_Vh_vshuffe_VhVh(hi, lo), bytes);
   }
 }
 
@@ -1504,19 +1511,21 @@ void ARGBExtractAlphaRow_HVX(const uint8_t* src_argb,
 }
 
 void ARGBCopyAlphaRow_HVX(const uint8_t* src, uint8_t* dst, int width) {
-  HVX_Vector v_rgb_mask = Q6_V_vsplat_R(0x00FFFFFFu);
-  HVX_Vector v_a_mask = Q6_V_vsplat_R(0xFF000000u);
+  HVX_VectorPred q_alpha =
+      Q6_Q_vcmp_gt_VubVub(Q6_V_vsplat_R(0x01000000u), Q6_V_vzero());
   int bytes = width * 4;
-  while (bytes > 0) {
-    int b_cnt = bytes >= 128 ? 128 : bytes;
-    HVX_Vector s = vloadu_partial_zero(src, b_cnt);
-    HVX_Vector d = vloadu_partial_zero(dst, b_cnt);
-    HVX_Vector out =
-        Q6_V_vor_VV(Q6_V_vand_VV(d, v_rgb_mask), Q6_V_vand_VV(s, v_a_mask));
-    vstoreu_partial(dst, out, b_cnt);
+  while (bytes >= 128) {
+    HVX_Vector s = vloadu(src);
+    HVX_Vector d = vloadu(dst);
+    vstoreu(dst, Q6_V_vmux_QVV(q_alpha, s, d));
     src += 128;
     dst += 128;
     bytes -= 128;
+  }
+  if (bytes > 0) {
+    HVX_Vector s = vloadu_partial_zero(src, bytes);
+    HVX_Vector d = vloadu_partial_zero(dst, bytes);
+    vstoreu_partial(dst, Q6_V_vmux_QVV(q_alpha, s, d), bytes);
   }
 }
 
@@ -1619,16 +1628,22 @@ void Convert8To8Row_HVX(const uint8_t* src_y,
                         int width) {
   uint32_t scale32 = (uint32_t)(uint8_t)scale * 0x01010101u;
   HVX_Vector vbias = Q6_Vb_vsplat_R(bias);
-  while (width > 0) {
-    int w = width >= 128 ? 128 : width;
-    HVX_Vector s = vloadu_partial_zero(src_y, w);
+  while (width >= 128) {
+    HVX_Vector s = vloadu(src_y);
     HVX_VectorPair p = Q6_Wuh_vmpy_VubRub(s, scale32);
     HVX_Vector out =
         Q6_Vb_vadd_VbVb(Q6_Vb_vshuffo_VbVb(Q6_V_hi_W(p), Q6_V_lo_W(p)), vbias);
-    vstoreu_partial(dst_y, out, w);
+    vstoreu(dst_y, out);
     src_y += 128;
     dst_y += 128;
     width -= 128;
+  }
+  if (width > 0) {
+    HVX_Vector s = vloadu_partial_zero(src_y, width);
+    HVX_VectorPair p = Q6_Wuh_vmpy_VubRub(s, scale32);
+    HVX_Vector out =
+        Q6_Vb_vadd_VbVb(Q6_Vb_vshuffo_VbVb(Q6_V_hi_W(p), Q6_V_lo_W(p)), vbias);
+    vstoreu_partial(dst_y, out, width);
   }
 }
 
@@ -1654,23 +1669,27 @@ void DivideRow_16_HVX(const uint16_t* src_y,
                       uint16_t* dst_y,
                       int scale,
                       int width) {
-  if (scale == 65536) {  // Divide by 1, so do memcpy.
+  if (scale == 65536) {  // Divide by 1, so do copy.
     if (src_y != dst_y) {
-      memcpy(dst_y, src_y, (size_t)width * 2);
+      CopyRow_16_HVX(src_y, dst_y, width);
     }
     return;
   }
   uint32_t scale32 = ((uint32_t)(uint16_t)scale << 16) | (uint16_t)scale;
-  while (width > 0) {
-    int w = width >= 64 ? 64 : width;
-    int bytes = w * 2;
-    HVX_Vector s = vloadu_partial_zero(src_y, bytes);
+  while (width >= 64) {
+    HVX_Vector s = vloadu(src_y);
     HVX_VectorPair p = Q6_Wuw_vmpy_VuhRuh(s, scale32);
-    HVX_Vector out = Q6_Vh_vshuffo_VhVh(Q6_V_hi_W(p), Q6_V_lo_W(p));
-    vstoreu_partial(dst_y, out, bytes);
+    vstoreu(dst_y, Q6_Vh_vshuffo_VhVh(Q6_V_hi_W(p), Q6_V_lo_W(p)));
     src_y += 64;
     dst_y += 64;
     width -= 64;
+  }
+  if (width > 0) {
+    int bytes = width * 2;
+    HVX_Vector s = vloadu_partial_zero(src_y, bytes);
+    HVX_VectorPair p = Q6_Wuw_vmpy_VuhRuh(s, scale32);
+    vstoreu_partial(dst_y, Q6_Vh_vshuffo_VhVh(Q6_V_hi_W(p), Q6_V_lo_W(p)),
+                    bytes);
   }
 }
 
@@ -1790,19 +1809,22 @@ void HalfWidthRow_16To8_Odd_HVX(const uint16_t* src_uv,
 }
 
 void YUY2ToYRow_HVX(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
-  while (width > 0) {
-    int w = width >= 128 ? 128 : width;
-    int src_bytes = w * 2;
+  while (width >= 128) {
+    HVX_Vector s0 = vloadu(src_yuy2);
+    HVX_Vector s1 = vloadu(src_yuy2 + 128);
+    vstoreu(dst_y, Q6_V_lo_W(Q6_W_vdeal_VVR(s1, s0, -1)));
+    src_yuy2 += 256;
+    dst_y += 128;
+    width -= 128;
+  }
+  if (width > 0) {
+    int src_bytes = width * 2;
     HVX_Vector s0 =
         vloadu_partial_zero(src_yuy2, src_bytes > 128 ? 128 : src_bytes);
     HVX_Vector s1 = src_bytes > 128
                         ? vloadu_partial_zero(src_yuy2 + 128, src_bytes - 128)
                         : Q6_V_vzero();
-    HVX_VectorPair d = Q6_W_vdeal_VVR(s1, s0, -1);
-    vstoreu_partial(dst_y, Q6_V_lo_W(d), w);
-    src_yuy2 += 256;
-    dst_y += 128;
-    width -= 128;
+    vstoreu_partial(dst_y, Q6_V_lo_W(Q6_W_vdeal_VVR(s1, s0, -1)), width);
   }
 }
 
@@ -1811,22 +1833,43 @@ void YUY2ToUV422Row_HVX(const uint8_t* src_yuy2,
                         uint8_t* dst_v,
                         int width) {
   int uv_width = (width + 1) >> 1;
-  while (uv_width > 0) {
-    int w = uv_width >= 64 ? 64 : uv_width;
-    int src_bytes = w * 4;
+  while (uv_width >= 128) {
+    HVX_Vector s0 = vloadu(src_yuy2);
+    HVX_Vector s1 = vloadu(src_yuy2 + 128);
+    HVX_Vector s2 = vloadu(src_yuy2 + 256);
+    HVX_Vector s3 = vloadu(src_yuy2 + 384);
+    HVX_Vector uv0 = Q6_V_hi_W(Q6_W_vdeal_VVR(s1, s0, -1));
+    HVX_Vector uv1 = Q6_V_hi_W(Q6_W_vdeal_VVR(s3, s2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu(dst_u, Q6_V_lo_W(u_v));
+    vstoreu(dst_v, Q6_V_hi_W(u_v));
+    src_yuy2 += 512;
+    dst_u += 128;
+    dst_v += 128;
+    uv_width -= 128;
+  }
+  if (uv_width > 0) {
+    int src_bytes = uv_width * 4;
     HVX_Vector s0 =
         vloadu_partial_zero(src_yuy2, src_bytes > 128 ? 128 : src_bytes);
-    HVX_Vector s1 = src_bytes > 128
-                        ? vloadu_partial_zero(src_yuy2 + 128, src_bytes - 128)
+    HVX_Vector s1 =
+        src_bytes > 128
+            ? vloadu_partial_zero(src_yuy2 + 128,
+                                  src_bytes > 256 ? 128 : src_bytes - 128)
+            : Q6_V_vzero();
+    HVX_Vector s2 =
+        src_bytes > 256
+            ? vloadu_partial_zero(src_yuy2 + 256,
+                                  src_bytes > 384 ? 128 : src_bytes - 256)
+            : Q6_V_vzero();
+    HVX_Vector s3 = src_bytes > 384
+                        ? vloadu_partial_zero(src_yuy2 + 384, src_bytes - 384)
                         : Q6_V_vzero();
-    HVX_Vector uv = Q6_V_hi_W(Q6_W_vdeal_VVR(s1, s0, -1));
-    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv, uv, -1);
-    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), w);
-    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), w);
-    src_yuy2 += 256;
-    dst_u += 64;
-    dst_v += 64;
-    uv_width -= 64;
+    HVX_Vector uv0 = Q6_V_hi_W(Q6_W_vdeal_VVR(s1, s0, -1));
+    HVX_Vector uv1 = Q6_V_hi_W(Q6_W_vdeal_VVR(s3, s2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), uv_width);
+    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), uv_width);
   }
 }
 
@@ -1837,47 +1880,76 @@ void YUY2ToUVRow_HVX(const uint8_t* src_yuy2,
                      int width) {
   const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
   int uv_width = (width + 1) >> 1;
-  while (uv_width > 0) {
-    int w = uv_width >= 64 ? 64 : uv_width;
-    int src_bytes = w * 4;
+  while (uv_width >= 128) {
+    HVX_Vector a0 =
+        Q6_Vub_vavg_VubVub_rnd(vloadu(src_yuy2), vloadu(src_yuy2_1));
+    HVX_Vector a1 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_yuy2 + 128),
+                                           vloadu(src_yuy2_1 + 128));
+    HVX_Vector a2 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_yuy2 + 256),
+                                           vloadu(src_yuy2_1 + 256));
+    HVX_Vector a3 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_yuy2 + 384),
+                                           vloadu(src_yuy2_1 + 384));
+    HVX_Vector uv0 = Q6_V_hi_W(Q6_W_vdeal_VVR(a1, a0, -1));
+    HVX_Vector uv1 = Q6_V_hi_W(Q6_W_vdeal_VVR(a3, a2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu(dst_u, Q6_V_lo_W(u_v));
+    vstoreu(dst_v, Q6_V_hi_W(u_v));
+    src_yuy2 += 512;
+    src_yuy2_1 += 512;
+    dst_u += 128;
+    dst_v += 128;
+    uv_width -= 128;
+  }
+  if (uv_width > 0) {
+    int src_bytes = uv_width * 4;
     HVX_Vector s0 =
         vloadu_partial_zero(src_yuy2, src_bytes > 128 ? 128 : src_bytes);
-    HVX_Vector s1 = src_bytes > 128
-                        ? vloadu_partial_zero(src_yuy2 + 128, src_bytes - 128)
-                        : Q6_V_vzero();
     HVX_Vector t0 =
         vloadu_partial_zero(src_yuy2_1, src_bytes > 128 ? 128 : src_bytes);
-    HVX_Vector t1 = src_bytes > 128
-                        ? vloadu_partial_zero(src_yuy2_1 + 128, src_bytes - 128)
-                        : Q6_V_vzero();
     HVX_Vector a0 = Q6_Vub_vavg_VubVub_rnd(s0, t0);
-    HVX_Vector a1 = Q6_Vub_vavg_VubVub_rnd(s1, t1);
-    HVX_Vector uv = Q6_V_hi_W(Q6_W_vdeal_VVR(a1, a0, -1));
-    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv, uv, -1);
-    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), w);
-    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), w);
-    src_yuy2 += 256;
-    src_yuy2_1 += 256;
-    dst_u += 64;
-    dst_v += 64;
-    uv_width -= 64;
+    HVX_Vector a1 = Q6_V_vzero();
+    HVX_Vector a2 = Q6_V_vzero();
+    HVX_Vector a3 = Q6_V_vzero();
+    if (src_bytes > 128) {
+      int n = src_bytes > 256 ? 128 : src_bytes - 128;
+      a1 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_yuy2 + 128, n),
+                                  vloadu_partial_zero(src_yuy2_1 + 128, n));
+    }
+    if (src_bytes > 256) {
+      int n = src_bytes > 384 ? 128 : src_bytes - 256;
+      a2 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_yuy2 + 256, n),
+                                  vloadu_partial_zero(src_yuy2_1 + 256, n));
+    }
+    if (src_bytes > 384) {
+      int n = src_bytes - 384;
+      a3 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_yuy2 + 384, n),
+                                  vloadu_partial_zero(src_yuy2_1 + 384, n));
+    }
+    HVX_Vector uv0 = Q6_V_hi_W(Q6_W_vdeal_VVR(a1, a0, -1));
+    HVX_Vector uv1 = Q6_V_hi_W(Q6_W_vdeal_VVR(a3, a2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), uv_width);
+    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), uv_width);
   }
 }
 
 void UYVYToYRow_HVX(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
-  while (width > 0) {
-    int w = width >= 128 ? 128 : width;
-    int src_bytes = w * 2;
+  while (width >= 128) {
+    HVX_Vector s0 = vloadu(src_uyvy);
+    HVX_Vector s1 = vloadu(src_uyvy + 128);
+    vstoreu(dst_y, Q6_V_hi_W(Q6_W_vdeal_VVR(s1, s0, -1)));
+    src_uyvy += 256;
+    dst_y += 128;
+    width -= 128;
+  }
+  if (width > 0) {
+    int src_bytes = width * 2;
     HVX_Vector s0 =
         vloadu_partial_zero(src_uyvy, src_bytes > 128 ? 128 : src_bytes);
     HVX_Vector s1 = src_bytes > 128
                         ? vloadu_partial_zero(src_uyvy + 128, src_bytes - 128)
                         : Q6_V_vzero();
-    HVX_VectorPair d = Q6_W_vdeal_VVR(s1, s0, -1);
-    vstoreu_partial(dst_y, Q6_V_hi_W(d), w);
-    src_uyvy += 256;
-    dst_y += 128;
-    width -= 128;
+    vstoreu_partial(dst_y, Q6_V_hi_W(Q6_W_vdeal_VVR(s1, s0, -1)), width);
   }
 }
 
@@ -1886,22 +1958,43 @@ void UYVYToUV422Row_HVX(const uint8_t* src_uyvy,
                         uint8_t* dst_v,
                         int width) {
   int uv_width = (width + 1) >> 1;
-  while (uv_width > 0) {
-    int w = uv_width >= 64 ? 64 : uv_width;
-    int src_bytes = w * 4;
+  while (uv_width >= 128) {
+    HVX_Vector s0 = vloadu(src_uyvy);
+    HVX_Vector s1 = vloadu(src_uyvy + 128);
+    HVX_Vector s2 = vloadu(src_uyvy + 256);
+    HVX_Vector s3 = vloadu(src_uyvy + 384);
+    HVX_Vector uv0 = Q6_V_lo_W(Q6_W_vdeal_VVR(s1, s0, -1));
+    HVX_Vector uv1 = Q6_V_lo_W(Q6_W_vdeal_VVR(s3, s2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu(dst_u, Q6_V_lo_W(u_v));
+    vstoreu(dst_v, Q6_V_hi_W(u_v));
+    src_uyvy += 512;
+    dst_u += 128;
+    dst_v += 128;
+    uv_width -= 128;
+  }
+  if (uv_width > 0) {
+    int src_bytes = uv_width * 4;
     HVX_Vector s0 =
         vloadu_partial_zero(src_uyvy, src_bytes > 128 ? 128 : src_bytes);
-    HVX_Vector s1 = src_bytes > 128
-                        ? vloadu_partial_zero(src_uyvy + 128, src_bytes - 128)
+    HVX_Vector s1 =
+        src_bytes > 128
+            ? vloadu_partial_zero(src_uyvy + 128,
+                                  src_bytes > 256 ? 128 : src_bytes - 128)
+            : Q6_V_vzero();
+    HVX_Vector s2 =
+        src_bytes > 256
+            ? vloadu_partial_zero(src_uyvy + 256,
+                                  src_bytes > 384 ? 128 : src_bytes - 256)
+            : Q6_V_vzero();
+    HVX_Vector s3 = src_bytes > 384
+                        ? vloadu_partial_zero(src_uyvy + 384, src_bytes - 384)
                         : Q6_V_vzero();
-    HVX_Vector uv = Q6_V_lo_W(Q6_W_vdeal_VVR(s1, s0, -1));
-    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv, uv, -1);
-    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), w);
-    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), w);
-    src_uyvy += 256;
-    dst_u += 64;
-    dst_v += 64;
-    uv_width -= 64;
+    HVX_Vector uv0 = Q6_V_lo_W(Q6_W_vdeal_VVR(s1, s0, -1));
+    HVX_Vector uv1 = Q6_V_lo_W(Q6_W_vdeal_VVR(s3, s2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), uv_width);
+    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), uv_width);
   }
 }
 
@@ -1912,30 +2005,56 @@ void UYVYToUVRow_HVX(const uint8_t* src_uyvy,
                      int width) {
   const uint8_t* src_uyvy_1 = src_uyvy + src_stride_uyvy;
   int uv_width = (width + 1) >> 1;
-  while (uv_width > 0) {
-    int w = uv_width >= 64 ? 64 : uv_width;
-    int src_bytes = w * 4;
+  while (uv_width >= 128) {
+    HVX_Vector a0 =
+        Q6_Vub_vavg_VubVub_rnd(vloadu(src_uyvy), vloadu(src_uyvy_1));
+    HVX_Vector a1 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_uyvy + 128),
+                                           vloadu(src_uyvy_1 + 128));
+    HVX_Vector a2 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_uyvy + 256),
+                                           vloadu(src_uyvy_1 + 256));
+    HVX_Vector a3 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_uyvy + 384),
+                                           vloadu(src_uyvy_1 + 384));
+    HVX_Vector uv0 = Q6_V_lo_W(Q6_W_vdeal_VVR(a1, a0, -1));
+    HVX_Vector uv1 = Q6_V_lo_W(Q6_W_vdeal_VVR(a3, a2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu(dst_u, Q6_V_lo_W(u_v));
+    vstoreu(dst_v, Q6_V_hi_W(u_v));
+    src_uyvy += 512;
+    src_uyvy_1 += 512;
+    dst_u += 128;
+    dst_v += 128;
+    uv_width -= 128;
+  }
+  if (uv_width > 0) {
+    int src_bytes = uv_width * 4;
     HVX_Vector s0 =
         vloadu_partial_zero(src_uyvy, src_bytes > 128 ? 128 : src_bytes);
-    HVX_Vector s1 = src_bytes > 128
-                        ? vloadu_partial_zero(src_uyvy + 128, src_bytes - 128)
-                        : Q6_V_vzero();
     HVX_Vector t0 =
         vloadu_partial_zero(src_uyvy_1, src_bytes > 128 ? 128 : src_bytes);
-    HVX_Vector t1 = src_bytes > 128
-                        ? vloadu_partial_zero(src_uyvy_1 + 128, src_bytes - 128)
-                        : Q6_V_vzero();
     HVX_Vector a0 = Q6_Vub_vavg_VubVub_rnd(s0, t0);
-    HVX_Vector a1 = Q6_Vub_vavg_VubVub_rnd(s1, t1);
-    HVX_Vector uv = Q6_V_lo_W(Q6_W_vdeal_VVR(a1, a0, -1));
-    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv, uv, -1);
-    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), w);
-    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), w);
-    src_uyvy += 256;
-    src_uyvy_1 += 256;
-    dst_u += 64;
-    dst_v += 64;
-    uv_width -= 64;
+    HVX_Vector a1 = Q6_V_vzero();
+    HVX_Vector a2 = Q6_V_vzero();
+    HVX_Vector a3 = Q6_V_vzero();
+    if (src_bytes > 128) {
+      int n = src_bytes > 256 ? 128 : src_bytes - 128;
+      a1 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_uyvy + 128, n),
+                                  vloadu_partial_zero(src_uyvy_1 + 128, n));
+    }
+    if (src_bytes > 256) {
+      int n = src_bytes > 384 ? 128 : src_bytes - 256;
+      a2 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_uyvy + 256, n),
+                                  vloadu_partial_zero(src_uyvy_1 + 256, n));
+    }
+    if (src_bytes > 384) {
+      int n = src_bytes - 384;
+      a3 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_uyvy + 384, n),
+                                  vloadu_partial_zero(src_uyvy_1 + 384, n));
+    }
+    HVX_Vector uv0 = Q6_V_lo_W(Q6_W_vdeal_VVR(a1, a0, -1));
+    HVX_Vector uv1 = Q6_V_lo_W(Q6_W_vdeal_VVR(a3, a2, -1));
+    HVX_VectorPair u_v = Q6_W_vdeal_VVR(uv1, uv0, -1);
+    vstoreu_partial(dst_u, Q6_V_lo_W(u_v), uv_width);
+    vstoreu_partial(dst_v, Q6_V_hi_W(u_v), uv_width);
   }
 }
 
@@ -3087,6 +3206,651 @@ void RGB24MirrorRow_HVX(const uint8_t* src_rgb24,
     width -= w;
   }
 }
+
+void HalfMergeUVRow_HVX(const uint8_t* src_u,
+                        int src_stride_u,
+                        const uint8_t* src_v,
+                        int src_stride_v,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
+  const int32_t kOnes = 0x01010101;
+  HVX_Vector vtwo = Q6_Vh_vsplat_R(2);
+  int pairs = width >> 1;
+  while (pairs >= 64) {
+    HVX_Vector su = Q6_Vh_vdmpy_VubRb(vloadu(src_u), kOnes);
+    su = Q6_Vh_vdmpyacc_VhVubRb(su, vloadu(src_u1), kOnes);
+    su = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(su, vtwo), 2);
+    HVX_Vector sv = Q6_Vh_vdmpy_VubRb(vloadu(src_v), kOnes);
+    sv = Q6_Vh_vdmpyacc_VhVubRb(sv, vloadu(src_v1), kOnes);
+    sv = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sv, vtwo), 2);
+    vstoreu(dst_uv, Q6_Vb_vshuffe_VbVb(sv, su));
+    src_u += 128;
+    src_u1 += 128;
+    src_v += 128;
+    src_v1 += 128;
+    dst_uv += 128;
+    pairs -= 64;
+  }
+  if (pairs > 0) {
+    int n = pairs * 2;
+    HVX_Vector su = Q6_Vh_vdmpy_VubRb(vloadu_partial_zero(src_u, n), kOnes);
+    su = Q6_Vh_vdmpyacc_VhVubRb(su, vloadu_partial_zero(src_u1, n), kOnes);
+    su = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(su, vtwo), 2);
+    HVX_Vector sv = Q6_Vh_vdmpy_VubRb(vloadu_partial_zero(src_v, n), kOnes);
+    sv = Q6_Vh_vdmpyacc_VhVubRb(sv, vloadu_partial_zero(src_v1, n), kOnes);
+    sv = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sv, vtwo), 2);
+    vstoreu_partial(dst_uv, Q6_Vb_vshuffe_VbVb(sv, su), n);
+    src_u += n;
+    src_u1 += n;
+    src_v += n;
+    src_v1 += n;
+    dst_uv += n;
+  }
+  if (width & 1) {
+    dst_uv[0] = (uint8_t)((src_u[0] + src_u1[0] + 1) >> 1);
+    dst_uv[1] = (uint8_t)((src_v[0] + src_v1[0] + 1) >> 1);
+  }
+}
+
+void YUY2ToNVUVRow_HVX(const uint8_t* src_yuy2,
+                       int src_stride_yuy2,
+                       uint8_t* dst_uv,
+                       int width) {
+  const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
+  int uv_bytes = ((width + 1) >> 1) * 2;
+  while (uv_bytes >= 128) {
+    HVX_Vector a0 =
+        Q6_Vub_vavg_VubVub_rnd(vloadu(src_yuy2), vloadu(src_yuy2_1));
+    HVX_Vector a1 = Q6_Vub_vavg_VubVub_rnd(vloadu(src_yuy2 + 128),
+                                           vloadu(src_yuy2_1 + 128));
+    vstoreu(dst_uv, Q6_V_hi_W(Q6_W_vdeal_VVR(a1, a0, -1)));
+    src_yuy2 += 256;
+    src_yuy2_1 += 256;
+    dst_uv += 128;
+    uv_bytes -= 128;
+  }
+  if (uv_bytes > 0) {
+    int src_bytes = uv_bytes * 2;
+    int n0 = src_bytes > 128 ? 128 : src_bytes;
+    HVX_Vector a0 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_yuy2, n0),
+                                           vloadu_partial_zero(src_yuy2_1, n0));
+    HVX_Vector a1 = Q6_V_vzero();
+    if (src_bytes > 128) {
+      int n1 = src_bytes - 128;
+      a1 = Q6_Vub_vavg_VubVub_rnd(vloadu_partial_zero(src_yuy2 + 128, n1),
+                                  vloadu_partial_zero(src_yuy2_1 + 128, n1));
+    }
+    vstoreu_partial(dst_uv, Q6_V_hi_W(Q6_W_vdeal_VVR(a1, a0, -1)), uv_bytes);
+  }
+}
+
+void AYUVToYRow_HVX(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
+  while (width >= 128) {
+    HVX_Vector s0 = vloadu(src_ayuv);
+    HVX_Vector s1 = vloadu(src_ayuv + 128);
+    HVX_Vector s2 = vloadu(src_ayuv + 256);
+    HVX_Vector s3 = vloadu(src_ayuv + 384);
+    HVX_VectorPair p01 = Q6_W_vdeal_VVR(s1, s0, -1);
+    HVX_VectorPair p23 = Q6_W_vdeal_VVR(s3, s2, -1);
+    HVX_VectorPair vy = Q6_W_vdeal_VVR(Q6_V_lo_W(p23), Q6_V_lo_W(p01), -1);
+    vstoreu(dst_y, Q6_V_hi_W(vy));
+    src_ayuv += 512;
+    dst_y += 128;
+    width -= 128;
+  }
+  if (width > 0) {
+    int src_bytes = width * 4;
+    HVX_Vector s0 =
+        vloadu_partial_zero(src_ayuv, src_bytes > 128 ? 128 : src_bytes);
+    HVX_Vector s1 =
+        src_bytes > 128
+            ? vloadu_partial_zero(src_ayuv + 128,
+                                  src_bytes > 256 ? 128 : src_bytes - 128)
+            : Q6_V_vzero();
+    HVX_Vector s2 =
+        src_bytes > 256
+            ? vloadu_partial_zero(src_ayuv + 256,
+                                  src_bytes > 384 ? 128 : src_bytes - 256)
+            : Q6_V_vzero();
+    HVX_Vector s3 = src_bytes > 384
+                        ? vloadu_partial_zero(src_ayuv + 384, src_bytes - 384)
+                        : Q6_V_vzero();
+    HVX_VectorPair p01 = Q6_W_vdeal_VVR(s1, s0, -1);
+    HVX_VectorPair p23 = Q6_W_vdeal_VVR(s3, s2, -1);
+    HVX_VectorPair vy = Q6_W_vdeal_VVR(Q6_V_lo_W(p23), Q6_V_lo_W(p01), -1);
+    vstoreu_partial(dst_y, Q6_V_hi_W(vy), width);
+  }
+}
+
+static __inline void AYUVToUVOrVURow_HVX(const uint8_t* src_ayuv,
+                                         int src_stride_ayuv,
+                                         uint8_t* dst_uv,
+                                         int width,
+                                         int swap_uv) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  const int32_t kOnes = 0x01010101;
+  HVX_Vector vtwo = Q6_Vh_vsplat_R(2);
+  int pairs = width >> 1;
+  while (pairs >= 64) {
+    HVX_Vector vu0a =
+        Q6_V_lo_W(Q6_W_vdeal_VVR(vloadu(src_ayuv + 128), vloadu(src_ayuv), -2));
+    HVX_Vector vu0b = Q6_V_lo_W(
+        Q6_W_vdeal_VVR(vloadu(src_ayuv + 384), vloadu(src_ayuv + 256), -2));
+    HVX_VectorPair r0 = Q6_W_vdeal_VVR(vu0b, vu0a, -1);
+    HVX_Vector vu1a = Q6_V_lo_W(
+        Q6_W_vdeal_VVR(vloadu(src_ayuv1 + 128), vloadu(src_ayuv1), -2));
+    HVX_Vector vu1b = Q6_V_lo_W(
+        Q6_W_vdeal_VVR(vloadu(src_ayuv1 + 384), vloadu(src_ayuv1 + 256), -2));
+    HVX_VectorPair r1 = Q6_W_vdeal_VVR(vu1b, vu1a, -1);
+    HVX_Vector sv = Q6_Vh_vdmpy_VubRb(Q6_V_lo_W(r0), kOnes);
+    sv = Q6_Vh_vdmpyacc_VhVubRb(sv, Q6_V_lo_W(r1), kOnes);
+    sv = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sv, vtwo), 2);
+    HVX_Vector su = Q6_Vh_vdmpy_VubRb(Q6_V_hi_W(r0), kOnes);
+    su = Q6_Vh_vdmpyacc_VhVubRb(su, Q6_V_hi_W(r1), kOnes);
+    su = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(su, vtwo), 2);
+    vstoreu(dst_uv,
+            swap_uv ? Q6_Vb_vshuffe_VbVb(sv, su) : Q6_Vb_vshuffe_VbVb(su, sv));
+    src_ayuv += 512;
+    src_ayuv1 += 512;
+    dst_uv += 128;
+    pairs -= 64;
+  }
+  if (pairs > 0) {
+    int src_bytes = pairs * 8;
+    int dst_bytes = pairs * 2;
+    int n0 = src_bytes > 128 ? 128 : src_bytes;
+    int n1 = src_bytes > 128 ? (src_bytes > 256 ? 128 : src_bytes - 128) : 0;
+    int n2 = src_bytes > 256 ? (src_bytes > 384 ? 128 : src_bytes - 256) : 0;
+    int n3 = src_bytes > 384 ? src_bytes - 384 : 0;
+    HVX_Vector vu0a =
+        Q6_V_lo_W(Q6_W_vdeal_VVR(vloadu_partial_zero(src_ayuv + 128, n1),
+                                 vloadu_partial_zero(src_ayuv, n0), -2));
+    HVX_Vector vu0b =
+        Q6_V_lo_W(Q6_W_vdeal_VVR(vloadu_partial_zero(src_ayuv + 384, n3),
+                                 vloadu_partial_zero(src_ayuv + 256, n2), -2));
+    HVX_VectorPair r0 = Q6_W_vdeal_VVR(vu0b, vu0a, -1);
+    HVX_Vector vu1a =
+        Q6_V_lo_W(Q6_W_vdeal_VVR(vloadu_partial_zero(src_ayuv1 + 128, n1),
+                                 vloadu_partial_zero(src_ayuv1, n0), -2));
+    HVX_Vector vu1b =
+        Q6_V_lo_W(Q6_W_vdeal_VVR(vloadu_partial_zero(src_ayuv1 + 384, n3),
+                                 vloadu_partial_zero(src_ayuv1 + 256, n2), -2));
+    HVX_VectorPair r1 = Q6_W_vdeal_VVR(vu1b, vu1a, -1);
+    HVX_Vector sv = Q6_Vh_vdmpy_VubRb(Q6_V_lo_W(r0), kOnes);
+    sv = Q6_Vh_vdmpyacc_VhVubRb(sv, Q6_V_lo_W(r1), kOnes);
+    sv = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(sv, vtwo), 2);
+    HVX_Vector su = Q6_Vh_vdmpy_VubRb(Q6_V_hi_W(r0), kOnes);
+    su = Q6_Vh_vdmpyacc_VhVubRb(su, Q6_V_hi_W(r1), kOnes);
+    su = Q6_Vh_vasr_VhR(Q6_Vh_vadd_VhVh(su, vtwo), 2);
+    vstoreu_partial(
+        dst_uv,
+        swap_uv ? Q6_Vb_vshuffe_VbVb(sv, su) : Q6_Vb_vshuffe_VbVb(su, sv),
+        dst_bytes);
+    src_ayuv += src_bytes;
+    src_ayuv1 += src_bytes;
+    dst_uv += dst_bytes;
+  }
+  if (width & 1) {
+    if (swap_uv) {
+      dst_uv[0] = (uint8_t)((src_ayuv[1] + src_ayuv1[1] + 1) >> 1);
+      dst_uv[1] = (uint8_t)((src_ayuv[0] + src_ayuv1[0] + 1) >> 1);
+    } else {
+      dst_uv[0] = (uint8_t)((src_ayuv[0] + src_ayuv1[0] + 1) >> 1);
+      dst_uv[1] = (uint8_t)((src_ayuv[1] + src_ayuv1[1] + 1) >> 1);
+    }
+  }
+}
+
+void AYUVToUVRow_HVX(const uint8_t* src_ayuv,
+                     int src_stride_ayuv,
+                     uint8_t* dst_uv,
+                     int width) {
+  AYUVToUVOrVURow_HVX(src_ayuv, src_stride_ayuv, dst_uv, width, 1);
+}
+
+void AYUVToVURow_HVX(const uint8_t* src_ayuv,
+                     int src_stride_ayuv,
+                     uint8_t* dst_vu,
+                     int width) {
+  AYUVToUVOrVURow_HVX(src_ayuv, src_stride_ayuv, dst_vu, width, 0);
+}
+
+void I422ToYUY2Row_HVX(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_frame,
+                       int width) {
+  int pairs = width >> 1;
+  while (pairs >= 128) {
+    HVX_Vector y0 = vloadu(src_y);
+    HVX_Vector y1 = vloadu(src_y + 128);
+    HVX_Vector u = vloadu(src_u);
+    HVX_Vector v = vloadu(src_v);
+    HVX_VectorPair uv = Q6_W_vshuff_VVR(v, u, -1);
+    HVX_VectorPair p01 = Q6_W_vshuff_VVR(Q6_V_lo_W(uv), y0, -1);
+    HVX_VectorPair p23 = Q6_W_vshuff_VVR(Q6_V_hi_W(uv), y1, -1);
+    vstoreu(dst_frame, Q6_V_lo_W(p01));
+    vstoreu(dst_frame + 128, Q6_V_hi_W(p01));
+    vstoreu(dst_frame + 256, Q6_V_lo_W(p23));
+    vstoreu(dst_frame + 384, Q6_V_hi_W(p23));
+    src_y += 256;
+    src_u += 128;
+    src_v += 128;
+    dst_frame += 512;
+    pairs -= 128;
+  }
+  if (pairs > 0) {
+    int y_bytes = pairs * 2;
+    int dst_bytes = pairs * 4;
+    HVX_Vector y0 = vloadu_partial_zero(src_y, y_bytes > 128 ? 128 : y_bytes);
+    HVX_Vector y1 = y_bytes > 128
+                        ? vloadu_partial_zero(src_y + 128, y_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_Vector u = vloadu_partial_zero(src_u, pairs);
+    HVX_Vector v = vloadu_partial_zero(src_v, pairs);
+    HVX_VectorPair uv = Q6_W_vshuff_VVR(v, u, -1);
+    HVX_VectorPair p01 = Q6_W_vshuff_VVR(Q6_V_lo_W(uv), y0, -1);
+    HVX_VectorPair p23 = Q6_W_vshuff_VVR(Q6_V_hi_W(uv), y1, -1);
+    vstoreu_partial(dst_frame, Q6_V_lo_W(p01),
+                    dst_bytes > 128 ? 128 : dst_bytes);
+    if (dst_bytes > 128) {
+      vstoreu_partial(dst_frame + 128, Q6_V_hi_W(p01),
+                      dst_bytes > 256 ? 128 : dst_bytes - 128);
+    }
+    if (dst_bytes > 256) {
+      vstoreu_partial(dst_frame + 256, Q6_V_lo_W(p23),
+                      dst_bytes > 384 ? 128 : dst_bytes - 256);
+    }
+    if (dst_bytes > 384) {
+      vstoreu_partial(dst_frame + 384, Q6_V_hi_W(p23), dst_bytes - 384);
+    }
+    src_y += y_bytes;
+    src_u += pairs;
+    src_v += pairs;
+    dst_frame += dst_bytes;
+  }
+  if (width & 1) {
+    dst_frame[0] = src_y[0];
+    dst_frame[1] = src_u[0];
+    dst_frame[2] = 0;
+    dst_frame[3] = src_v[0];
+  }
+}
+
+void I422ToUYVYRow_HVX(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_frame,
+                       int width) {
+  int pairs = width >> 1;
+  while (pairs >= 128) {
+    HVX_Vector y0 = vloadu(src_y);
+    HVX_Vector y1 = vloadu(src_y + 128);
+    HVX_Vector u = vloadu(src_u);
+    HVX_Vector v = vloadu(src_v);
+    HVX_VectorPair uv = Q6_W_vshuff_VVR(v, u, -1);
+    HVX_VectorPair p01 = Q6_W_vshuff_VVR(y0, Q6_V_lo_W(uv), -1);
+    HVX_VectorPair p23 = Q6_W_vshuff_VVR(y1, Q6_V_hi_W(uv), -1);
+    vstoreu(dst_frame, Q6_V_lo_W(p01));
+    vstoreu(dst_frame + 128, Q6_V_hi_W(p01));
+    vstoreu(dst_frame + 256, Q6_V_lo_W(p23));
+    vstoreu(dst_frame + 384, Q6_V_hi_W(p23));
+    src_y += 256;
+    src_u += 128;
+    src_v += 128;
+    dst_frame += 512;
+    pairs -= 128;
+  }
+  if (pairs > 0) {
+    int y_bytes = pairs * 2;
+    int dst_bytes = pairs * 4;
+    HVX_Vector y0 = vloadu_partial_zero(src_y, y_bytes > 128 ? 128 : y_bytes);
+    HVX_Vector y1 = y_bytes > 128
+                        ? vloadu_partial_zero(src_y + 128, y_bytes - 128)
+                        : Q6_V_vzero();
+    HVX_Vector u = vloadu_partial_zero(src_u, pairs);
+    HVX_Vector v = vloadu_partial_zero(src_v, pairs);
+    HVX_VectorPair uv = Q6_W_vshuff_VVR(v, u, -1);
+    HVX_VectorPair p01 = Q6_W_vshuff_VVR(y0, Q6_V_lo_W(uv), -1);
+    HVX_VectorPair p23 = Q6_W_vshuff_VVR(y1, Q6_V_hi_W(uv), -1);
+    vstoreu_partial(dst_frame, Q6_V_lo_W(p01),
+                    dst_bytes > 128 ? 128 : dst_bytes);
+    if (dst_bytes > 128) {
+      vstoreu_partial(dst_frame + 128, Q6_V_hi_W(p01),
+                      dst_bytes > 256 ? 128 : dst_bytes - 128);
+    }
+    if (dst_bytes > 256) {
+      vstoreu_partial(dst_frame + 256, Q6_V_lo_W(p23),
+                      dst_bytes > 384 ? 128 : dst_bytes - 256);
+    }
+    if (dst_bytes > 384) {
+      vstoreu_partial(dst_frame + 384, Q6_V_hi_W(p23), dst_bytes - 384);
+    }
+    src_y += y_bytes;
+    src_u += pairs;
+    src_v += pairs;
+    dst_frame += dst_bytes;
+  }
+  if (width & 1) {
+    dst_frame[0] = src_u[0];
+    dst_frame[1] = src_y[0];
+    dst_frame[2] = src_v[0];
+    dst_frame[3] = 0;
+  }
+}
+
+#if defined(HAS_HALFFLOATROW_HVX) || defined(HAS_BYTETOFLOATROW_HVX)
+#if defined(__HVX_ARCH__) && __HVX_ARCH__ < 81
+// Exact IEEE-754 float32 product of uint16_t values (in uint32_t lanes) by a
+// normal finite float scale (1 <= exp_s <= 238), avoiding the 1-ULP rounding
+// error of pre-v81 qf32 multiply instructions.
+static __inline HVX_Vector hvx_u16_mul_scale_f32_exact(HVX_Vector u32,
+                                                       HVX_Vector vm_hi,
+                                                       HVX_Vector vm_lo,
+                                                       HVX_Vector vexp_base,
+                                                       HVX_Vector vsign) {
+  const HVX_Vector vzero = Q6_V_vzero();
+  const HVX_Vector vone = Q6_V_vsplat_R(1);
+  const HVX_Vector v7 = Q6_V_vsplat_R(7);
+  const HVX_Vector v8 = Q6_V_vsplat_R(8);
+  const HVX_Vector v24 = Q6_V_vsplat_R(24);
+  const HVX_Vector v0x80 = Q6_V_vsplat_R(0x80);
+  const HVX_Vector v0xff = Q6_V_vsplat_R(0xff);
+  HVX_Vector hi = Q6_Vw_vmpyie_VwVuh(vm_hi, u32);
+  HVX_Vector lo = Q6_Vw_vmpyie_VwVuh(vm_lo, u32);
+  HVX_Vector p_hi = Q6_Vw_vadd_VwVw(hi, Q6_Vuw_vlsr_VuwR(lo, 8));
+  HVX_Vector p_lo = Q6_V_vand_VV(lo, v0xff);
+  HVX_Vector lz = Q6_Vuw_vcl0_Vuw(p_hi);
+  HVX_Vector top = Q6_Vw_vasl_VwVw(p_hi, lz);
+  HVX_VectorPred lz_ge_8 = Q6_Q_vcmp_gt_VwVw(lz, v7);
+  HVX_Vector lo_in =
+      Q6_V_vmux_QVV(lz_ge_8, Q6_Vw_vasl_VwVw(p_lo, Q6_Vw_vsub_VwVw(lz, v8)),
+                    Q6_Vw_vasr_VwVw(p_lo, Q6_Vw_vsub_VwVw(v8, lz)));
+  HVX_Vector lo_out = Q6_V_vmux_QVV(
+      lz_ge_8, vzero, Q6_Vw_vasl_VwVw(p_lo, Q6_Vw_vadd_VwVw(v24, lz)));
+  HVX_Vector norm = Q6_V_vor_VV(top, lo_in);
+  HVX_Vector mant24 = Q6_Vuw_vlsr_VuwR(norm, 8);
+  HVX_Vector has_lo =
+      Q6_V_vmux_QVV(Q6_Q_vcmp_eq_VwVw(lo_out, vzero), vzero, vone);
+  HVX_Vector rem = Q6_V_vor_VV(Q6_V_vand_VV(norm, v0xff), has_lo);
+  HVX_VectorPred round_up = Q6_Q_vcmp_gt_VuwVuw(
+      Q6_Vw_vadd_VwVw(rem, Q6_V_vand_VV(mant24, vone)), v0x80);
+  HVX_Vector mant =
+      Q6_Vw_vadd_VwVw(mant24, Q6_V_vmux_QVV(round_up, vone, vzero));
+  HVX_Vector exp_bits = Q6_Vw_vasl_VwR(Q6_Vw_vsub_VwVw(vexp_base, lz), 23);
+  HVX_Vector f32_abs = Q6_Vw_vadd_VwVw(exp_bits, mant);
+  HVX_VectorPred is_zero = Q6_Q_vcmp_eq_VwVw(u32, vzero);
+  return Q6_V_vor_VV(Q6_V_vmux_QVV(is_zero, vzero, f32_abs), vsign);
+}
+#endif
+#endif
+
+#ifdef HAS_HALFFLOATROW_HVX
+#if defined(__HVX_ARCH__) && __HVX_ARCH__ >= 81
+static __inline HVX_Vector hvx_f32_to_f16_bits(HVX_Vector u32,
+                                               HVX_Vector vscale,
+                                               HVX_Vector v_min_norm,
+                                               HVX_Vector v_exp_bias) {
+  // Multiply in normal float32 range, then bias exponent without producing
+  // float32 subnormals (which HVX flushes to zero). For x < 2^-14, adding
+  // 2^-14 aligns x to ULP 2^-37 == 2^-149 / 2^-112 before >> 13.
+  HVX_Vector x = Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(u32), vscale);
+  HVX_VectorPred is_sub = Q6_Q_vcmp_gt_VuwVuw(v_min_norm, x);
+  HVX_Vector norm = Q6_Vw_vsub_VwVw(x, v_exp_bias);
+  HVX_Vector sub =
+      Q6_Vw_vsub_VwVw(Q6_Vsf_vadd_VsfVsf(x, v_min_norm), v_min_norm);
+  HVX_Vector res = Q6_V_vmux_QVV(is_sub, sub, norm);
+  return Q6_Vuw_vlsr_VuwR(res, 13);
+}
+#else
+static __inline HVX_Vector hvx_f32_to_f16_bits_exact(HVX_Vector x) {
+  const HVX_Vector vzero = Q6_V_vzero();
+  const HVX_Vector vone = Q6_V_vsplat_R(1);
+  const HVX_Vector v24 = Q6_V_vsplat_R(24);
+  const HVX_Vector v32 = Q6_V_vsplat_R(32);
+  const HVX_Vector v113 = Q6_V_vsplat_R(113);
+  const HVX_Vector v_min_norm = Q6_V_vsplat_R(0x38800000u);  // 2^-14
+  const HVX_Vector v_exp_bias = Q6_V_vsplat_R(0x38000000u);  // 112 << 23
+  const HVX_Vector v_mant_mask = Q6_V_vsplat_R(0x007fffffu);
+  const HVX_Vector v_hidden = Q6_V_vsplat_R(0x00800000u);
+  const HVX_Vector v_half = Q6_V_vsplat_R(0x80000000u);
+  HVX_VectorPred is_zero = Q6_Q_vcmp_eq_VwVw(x, vzero);
+  HVX_VectorPred is_sub = Q6_Q_vcmp_gt_VuwVuw(v_min_norm, x);
+  HVX_Vector norm_fp16 = Q6_Vuw_vlsr_VuwR(Q6_Vw_vsub_VwVw(x, v_exp_bias), 13);
+  HVX_Vector exp_e = Q6_Vuw_vlsr_VuwR(x, 23);
+  HVX_Vector shift = Q6_Vw_vsub_VwVw(v113, exp_e);
+  HVX_Vector sig = Q6_V_vor_VV(Q6_V_vand_VV(x, v_mant_mask), v_hidden);
+  HVX_Vector q = Q6_Vw_vasr_VwVw(sig, shift);
+  HVX_Vector rem = Q6_Vw_vasl_VwVw(sig, Q6_Vw_vsub_VwVw(v32, shift));
+  HVX_VectorPred gt_half = Q6_Q_vcmp_gt_VuwVuw(rem, v_half);
+  HVX_VectorPred eq_half = Q6_Q_vcmp_eq_VwVw(rem, v_half);
+  HVX_VectorPred q_odd = Q6_Q_vcmp_eq_VwVw(Q6_V_vand_VV(q, vone), vone);
+  HVX_VectorPred sub_ru = Q6_Q_or_QQ(gt_half, Q6_Q_and_QQ(eq_half, q_odd));
+  HVX_Vector sub_f32 = Q6_Vw_vadd_VwVw(q, Q6_V_vmux_QVV(sub_ru, vone, vzero));
+  HVX_VectorPred shift_ok = Q6_Q_vcmp_gt_VwVw(v24, shift);
+  HVX_Vector sub_fp16 =
+      Q6_V_vmux_QVV(shift_ok, Q6_Vuw_vlsr_VuwR(sub_f32, 13), vzero);
+  return Q6_V_vmux_QVV(is_zero, vzero,
+                       Q6_V_vmux_QVV(is_sub, sub_fp16, norm_fp16));
+}
+#endif
+
+void HalfFloatRow_HVX(const uint16_t* src,
+                      uint16_t* dst,
+                      float scale,
+                      int width) {
+  uint32_t scale_bits;
+  memcpy(&scale_bits, &scale, sizeof(scale_bits));
+#if defined(__HVX_ARCH__) && __HVX_ARCH__ >= 81
+  HVX_Vector vscale = Q6_V_vsplat_R(scale_bits);
+  HVX_Vector v_min_norm = Q6_V_vsplat_R(0x38800000u);  // 2^-14
+  HVX_Vector v_exp_bias = Q6_V_vsplat_R(0x38000000u);  // 112 << 23
+  while (width >= 64) {
+    HVX_VectorPair u = Q6_Wuw_vunpack_Vuh(vloadu(src));
+    HVX_Vector lo =
+        hvx_f32_to_f16_bits(Q6_V_lo_W(u), vscale, v_min_norm, v_exp_bias);
+    HVX_Vector hi =
+        hvx_f32_to_f16_bits(Q6_V_hi_W(u), vscale, v_min_norm, v_exp_bias);
+    vstoreu(dst, Q6_Vh_vpacke_VwVw(hi, lo));
+    src += 64;
+    dst += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    int bytes = width * 2;
+    HVX_VectorPair u = Q6_Wuw_vunpack_Vuh(vloadu_partial_zero(src, bytes));
+    HVX_Vector lo =
+        hvx_f32_to_f16_bits(Q6_V_lo_W(u), vscale, v_min_norm, v_exp_bias);
+    HVX_Vector hi =
+        hvx_f32_to_f16_bits(Q6_V_hi_W(u), vscale, v_min_norm, v_exp_bias);
+    vstoreu_partial(dst, Q6_Vh_vpacke_VwVw(hi, lo), bytes);
+  }
+#else
+  int exp_s = (int)((scale_bits >> 23) & 0xffu);
+  if ((scale_bits & 0x80000000u) || exp_s < 1 || exp_s > 238) {
+    HalfFloatRow_C(src, dst, scale, width);
+    return;
+  }
+  uint32_t m = (scale_bits & 0x007fffffu) | 0x00800000u;
+  HVX_Vector vm_hi = Q6_V_vsplat_R(m >> 8);
+  HVX_Vector vm_lo = Q6_V_vsplat_R(m & 0xffu);
+  HVX_Vector vexp_base = Q6_V_vsplat_R(exp_s + 15);
+  HVX_Vector vsign = Q6_V_vzero();
+  while (width >= 64) {
+    HVX_VectorPair u = Q6_Wuw_vunpack_Vuh(vloadu(src));
+    HVX_Vector lo = hvx_f32_to_f16_bits_exact(hvx_u16_mul_scale_f32_exact(
+        Q6_V_lo_W(u), vm_hi, vm_lo, vexp_base, vsign));
+    HVX_Vector hi = hvx_f32_to_f16_bits_exact(hvx_u16_mul_scale_f32_exact(
+        Q6_V_hi_W(u), vm_hi, vm_lo, vexp_base, vsign));
+    vstoreu(dst, Q6_Vh_vpacke_VwVw(hi, lo));
+    src += 64;
+    dst += 64;
+    width -= 64;
+  }
+  if (width > 0) {
+    int bytes = width * 2;
+    HVX_VectorPair u = Q6_Wuw_vunpack_Vuh(vloadu_partial_zero(src, bytes));
+    HVX_Vector lo = hvx_f32_to_f16_bits_exact(hvx_u16_mul_scale_f32_exact(
+        Q6_V_lo_W(u), vm_hi, vm_lo, vexp_base, vsign));
+    HVX_Vector hi = hvx_f32_to_f16_bits_exact(hvx_u16_mul_scale_f32_exact(
+        Q6_V_hi_W(u), vm_hi, vm_lo, vexp_base, vsign));
+    vstoreu_partial(dst, Q6_Vh_vpacke_VwVw(hi, lo), bytes);
+  }
+#endif
+}
+#endif  // HAS_HALFFLOATROW_HVX
+
+#ifdef HAS_BYTETOFLOATROW_HVX
+void ByteToFloatRow_HVX(const uint8_t* src,
+                        float* dst,
+                        float scale,
+                        int width) {
+  uint32_t scale_bits;
+  memcpy(&scale_bits, &scale, sizeof(scale_bits));
+  uint8_t* dst_b = (uint8_t*)dst;
+#if defined(__HVX_ARCH__) && __HVX_ARCH__ >= 81
+  HVX_Vector vscale = Q6_V_vsplat_R(scale_bits);
+  while (width >= 128) {
+    HVX_VectorPair h = Q6_Wuh_vunpack_Vub(vloadu(src));
+    HVX_VectorPair w01 = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h));
+    HVX_VectorPair w23 = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+    HVX_Vector f0 =
+        Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_lo_W(w01)), vscale);
+    HVX_Vector f1 =
+        Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_hi_W(w01)), vscale);
+    HVX_Vector f2 =
+        Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_lo_W(w23)), vscale);
+    HVX_Vector f3 =
+        Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_hi_W(w23)), vscale);
+    vstoreu(dst_b, f0);
+    vstoreu(dst_b + 128, f1);
+    vstoreu(dst_b + 256, f2);
+    vstoreu(dst_b + 384, f3);
+    src += 128;
+    dst_b += 512;
+    width -= 128;
+  }
+  if (width > 0) {
+    int dst_bytes = width * 4;
+    HVX_VectorPair h = Q6_Wuh_vunpack_Vub(vloadu_partial_zero(src, width));
+    HVX_VectorPair w01 = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h));
+    HVX_Vector f0 =
+        Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_lo_W(w01)), vscale);
+    vstoreu_partial(dst_b, f0, dst_bytes > 128 ? 128 : dst_bytes);
+    if (dst_bytes > 128) {
+      HVX_Vector f1 =
+          Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_hi_W(w01)), vscale);
+      vstoreu_partial(dst_b + 128, f1, dst_bytes > 256 ? 128 : dst_bytes - 128);
+    }
+    if (dst_bytes > 256) {
+      HVX_VectorPair w23 = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+      HVX_Vector f2 =
+          Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_lo_W(w23)), vscale);
+      vstoreu_partial(dst_b + 256, f2, dst_bytes > 384 ? 128 : dst_bytes - 256);
+      if (dst_bytes > 384) {
+        HVX_Vector f3 =
+            Q6_Vsf_vmpy_VsfVsf(Q6_Vsf_equals_Vw(Q6_V_hi_W(w23)), vscale);
+        vstoreu_partial(dst_b + 384, f3, dst_bytes - 384);
+      }
+    }
+  }
+#else
+#if defined(__HVX_ARCH__) && __HVX_ARCH__ >= 73
+  if (scale_bits == 0x3f800000u) {
+    while (width >= 128) {
+      HVX_VectorPair h = Q6_Wuh_vunpack_Vub(vloadu(src));
+      HVX_VectorPair w01 = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h));
+      HVX_VectorPair w23 = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+      vstoreu(dst_b, Q6_Vsf_equals_Vw(Q6_V_lo_W(w01)));
+      vstoreu(dst_b + 128, Q6_Vsf_equals_Vw(Q6_V_hi_W(w01)));
+      vstoreu(dst_b + 256, Q6_Vsf_equals_Vw(Q6_V_lo_W(w23)));
+      vstoreu(dst_b + 384, Q6_Vsf_equals_Vw(Q6_V_hi_W(w23)));
+      src += 128;
+      dst_b += 512;
+      width -= 128;
+    }
+    if (width > 0) {
+      int dst_bytes = width * 4;
+      HVX_VectorPair h = Q6_Wuh_vunpack_Vub(vloadu_partial_zero(src, width));
+      HVX_VectorPair w01 = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h));
+      vstoreu_partial(dst_b, Q6_Vsf_equals_Vw(Q6_V_lo_W(w01)),
+                      dst_bytes > 128 ? 128 : dst_bytes);
+      if (dst_bytes > 128) {
+        vstoreu_partial(dst_b + 128, Q6_Vsf_equals_Vw(Q6_V_hi_W(w01)),
+                        dst_bytes > 256 ? 128 : dst_bytes - 128);
+      }
+      if (dst_bytes > 256) {
+        HVX_VectorPair w23 = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+        vstoreu_partial(dst_b + 256, Q6_Vsf_equals_Vw(Q6_V_lo_W(w23)),
+                        dst_bytes > 384 ? 128 : dst_bytes - 256);
+        if (dst_bytes > 384) {
+          vstoreu_partial(dst_b + 384, Q6_Vsf_equals_Vw(Q6_V_hi_W(w23)),
+                          dst_bytes - 384);
+        }
+      }
+    }
+    return;
+  }
+#endif
+  int exp_s = (int)((scale_bits >> 23) & 0xffu);
+  if (exp_s < 1 || exp_s > 246) {
+    ByteToFloatRow_C(src, dst, scale, width);
+    return;
+  }
+  uint32_t m = (scale_bits & 0x007fffffu) | 0x00800000u;
+  HVX_Vector vm_hi = Q6_V_vsplat_R(m >> 8);
+  HVX_Vector vm_lo = Q6_V_vsplat_R(m & 0xffu);
+  HVX_Vector vexp_base = Q6_V_vsplat_R(exp_s + 15);
+  HVX_Vector vsign = Q6_V_vsplat_R(scale_bits & 0x80000000u);
+  while (width >= 128) {
+    HVX_VectorPair h = Q6_Wuh_vunpack_Vub(vloadu(src));
+    HVX_VectorPair w01 = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h));
+    HVX_VectorPair w23 = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+    vstoreu(dst_b, hvx_u16_mul_scale_f32_exact(Q6_V_lo_W(w01), vm_hi, vm_lo,
+                                               vexp_base, vsign));
+    vstoreu(dst_b + 128, hvx_u16_mul_scale_f32_exact(Q6_V_hi_W(w01), vm_hi,
+                                                     vm_lo, vexp_base, vsign));
+    vstoreu(dst_b + 256, hvx_u16_mul_scale_f32_exact(Q6_V_lo_W(w23), vm_hi,
+                                                     vm_lo, vexp_base, vsign));
+    vstoreu(dst_b + 384, hvx_u16_mul_scale_f32_exact(Q6_V_hi_W(w23), vm_hi,
+                                                     vm_lo, vexp_base, vsign));
+    src += 128;
+    dst_b += 512;
+    width -= 128;
+  }
+  if (width > 0) {
+    int dst_bytes = width * 4;
+    HVX_VectorPair h = Q6_Wuh_vunpack_Vub(vloadu_partial_zero(src, width));
+    HVX_VectorPair w01 = Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h));
+    vstoreu_partial(dst_b,
+                    hvx_u16_mul_scale_f32_exact(Q6_V_lo_W(w01), vm_hi, vm_lo,
+                                                vexp_base, vsign),
+                    dst_bytes > 128 ? 128 : dst_bytes);
+    if (dst_bytes > 128) {
+      vstoreu_partial(dst_b + 128,
+                      hvx_u16_mul_scale_f32_exact(Q6_V_hi_W(w01), vm_hi, vm_lo,
+                                                  vexp_base, vsign),
+                      dst_bytes > 256 ? 128 : dst_bytes - 128);
+    }
+    if (dst_bytes > 256) {
+      HVX_VectorPair w23 = Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+      vstoreu_partial(dst_b + 256,
+                      hvx_u16_mul_scale_f32_exact(Q6_V_lo_W(w23), vm_hi, vm_lo,
+                                                  vexp_base, vsign),
+                      dst_bytes > 384 ? 128 : dst_bytes - 256);
+      if (dst_bytes > 384) {
+        vstoreu_partial(dst_b + 384,
+                        hvx_u16_mul_scale_f32_exact(Q6_V_hi_W(w23), vm_hi,
+                                                    vm_lo, vexp_base, vsign),
+                        dst_bytes - 384);
+      }
+    }
+  }
+#endif
+}
+#endif  // HAS_BYTETOFLOATROW_HVX
 
 #ifdef __cplusplus
 }  // extern "C"

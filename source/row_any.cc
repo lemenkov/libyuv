@@ -2874,6 +2874,12 @@ ANY11P16(HalfFloatRow_Any_LSX, HalfFloatRow_LSX, uint16_t, uint16_t, 2, 2, 7)
 #ifdef HAS_HALFFLOATROW_LASX
 ANY11P16(HalfFloatRow_Any_LASX, HalfFloatRow_LASX, uint16_t, uint16_t, 2, 2, 15)
 #endif
+#ifdef HAS_BYTETOFLOATROW_LSX
+ANY11P16(ByteToFloatRow_Any_LSX, ByteToFloatRow_LSX, uint8_t, float, 1, 4, 7)
+#endif
+#ifdef HAS_BYTETOFLOATROW_LASX
+ANY11P16(ByteToFloatRow_Any_LASX, ByteToFloatRow_LASX, uint8_t, float, 1, 4, 15)
+#endif
 #ifdef HAS_HALFFLOATROW_WASMSIMD
 ANY11P16(HalfFloatRow_Any_WASMSIMD,
          HalfFloatRow_WASMSIMD,

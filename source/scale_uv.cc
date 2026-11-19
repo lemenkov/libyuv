@@ -1046,6 +1046,11 @@ static int ScaleUVBilinearDown_16(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_16_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    InterpolateRow = InterpolateRow_16_SVE2;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     InterpolateRow = InterpolateRow_16_SME;
@@ -1054,6 +1059,11 @@ static int ScaleUVBilinearDown_16(int src_width,
 #if defined(HAS_INTERPOLATEROW_16_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     InterpolateRow = InterpolateRow_16_HVX;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_16_RVV;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_16_WASMSIMD)
@@ -1369,6 +1379,11 @@ static int ScaleUVBilinearUp_16(int src_width,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_16_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    InterpolateRow = InterpolateRow_16_SVE2;
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_16_SME)
   if (TestCpuFlag(kCpuHasSME)) {
     InterpolateRow = InterpolateRow_16_SME;
@@ -1377,6 +1392,11 @@ static int ScaleUVBilinearUp_16(int src_width,
 #if defined(HAS_INTERPOLATEROW_16_HVX)
   if (TestCpuFlag(kCpuHasHVX)) {
     InterpolateRow = InterpolateRow_16_HVX;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    InterpolateRow = InterpolateRow_16_RVV;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_16_WASMSIMD)

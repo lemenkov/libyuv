@@ -2541,6 +2541,40 @@ void HalfFloatRow_LSX(const uint16_t* src,
 }
 #endif  // HAS_HALFFLOATROW_LSX
 
+#ifdef HAS_BYTETOFLOATROW_LSX
+void ByteToFloatRow_LSX(const uint8_t* src,
+                        float* dst,
+                        float scale,
+                        int width) {
+  uint32_t scale_bits;
+  memcpy(&scale_bits, &scale, sizeof(scale_bits));
+  asm volatile(
+      "vreplgr2vr.w     $vr3, %[scale]                 \n"
+      "vldi             $vr4, 0                        \n"
+
+      "1:                                              \n"
+      "vldrepl.d        $vr0, %[src], 0                \n"
+      "vilvl.b          $vr0, $vr4, $vr0               \n"
+      "vilvl.h          $vr1, $vr4, $vr0               \n"
+      "vilvh.h          $vr2, $vr4, $vr0               \n"
+      "vffint.s.wu      $vr1, $vr1                     \n"
+      "vffint.s.wu      $vr2, $vr2                     \n"
+      "vfmul.s          $vr1, $vr1, $vr3               \n"
+      "vfmul.s          $vr2, $vr2, $vr3               \n"
+      "vst              $vr1, %[dst], 0                \n"
+      "vst              $vr2, %[dst], 16               \n"
+      "addi.d           %[src], %[src], 8              \n"
+      "addi.d           %[dst], %[dst], 32             \n"
+      "addi.d           %[cnt], %[cnt], -8             \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [src] "+r"(src),         // %[src]
+        [dst] "+r"(dst),         // %[dst]
+        [cnt] "+r"(width)        // %[cnt]
+      : [scale] "r"(scale_bits)  // %[scale]
+      : "memory", "$vr0", "$vr1", "$vr2", "$vr3", "$vr4");
+}
+#endif  // HAS_BYTETOFLOATROW_LSX
+
 #ifdef HAS_ARGBTOYMATRIXROW_LSX
 void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
                           uint8_t* dst_y,
@@ -5414,12 +5448,11 @@ void I422ToYUY2Row_LASX(const uint8_t* src_y,
       "xvilvl.b         $xr3, $xr2, $xr1               \n"
       "xvilvl.b         $xr4, $xr3, $xr0               \n"
       "xvilvh.b         $xr5, $xr3, $xr0               \n"
-      "vst              $vr4, %[dst], 0                \n"
-      "xvpermi.q        $xr31, $xr4, 0x01              \n"
-      "vst              $vr31, %[dst], 32              \n"
-      "vst              $vr5, %[dst], 16               \n"
-      "xvpermi.q        $xr31, $xr5, 0x01              \n"
-      "vst              $vr31, %[dst], 48              \n"
+      "xvor.v           $xr31, $xr4, $xr4              \n"
+      "xvpermi.q        $xr31, $xr5, 0x02              \n"
+      "xvpermi.q        $xr4, $xr5, 0x13               \n"
+      "xvst             $xr31, %[dst], 0               \n"
+      "xvst             $xr4, %[dst], 32               \n"
       "addi.d           %[sy], %[sy], 32               \n"
       "addi.d           %[su], %[su], 16               \n"
       "addi.d           %[sv], %[sv], 16               \n"
@@ -5452,12 +5485,11 @@ void I422ToUYVYRow_LASX(const uint8_t* src_y,
       "xvilvl.b         $xr3, $xr2, $xr1               \n"
       "xvilvl.b         $xr4, $xr0, $xr3               \n"
       "xvilvh.b         $xr5, $xr0, $xr3               \n"
-      "vst              $vr4, %[dst], 0                \n"
-      "xvpermi.q        $xr31, $xr4, 0x01              \n"
-      "vst              $vr31, %[dst], 32              \n"
-      "vst              $vr5, %[dst], 16               \n"
-      "xvpermi.q        $xr31, $xr5, 0x01              \n"
-      "vst              $vr31, %[dst], 48              \n"
+      "xvor.v           $xr31, $xr4, $xr4              \n"
+      "xvpermi.q        $xr31, $xr5, 0x02              \n"
+      "xvpermi.q        $xr4, $xr5, 0x13               \n"
+      "xvst             $xr31, %[dst], 0               \n"
+      "xvst             $xr4, %[dst], 32               \n"
       "addi.d           %[sy], %[sy], 32               \n"
       "addi.d           %[su], %[su], 16               \n"
       "addi.d           %[sv], %[sv], 16               \n"
@@ -5478,13 +5510,10 @@ void I422ToUYVYRow_LASX(const uint8_t* src_y,
 void YUY2ToYRow_LASX(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
   asm volatile(
       "1:                                              \n"
-      "vld              $vr0, %[src], 0                \n"
-      "vld              $vr31, %[src], 32              \n"
-      "xvpermi.q        $xr0, $xr31, 0x02              \n"
-      "vld              $vr1, %[src], 16               \n"
-      "vld              $vr31, %[src], 48              \n"
-      "xvpermi.q        $xr1, $xr31, 0x02              \n"
+      "xvld             $xr0, %[src], 0                \n"
+      "xvld             $xr1, %[src], 32               \n"
       "xvpickev.b       $xr2, $xr1, $xr0               \n"
+      "xvpermi.d        $xr2, $xr2, 0xd8               \n"
       "xvst             $xr2, %[dst], 0                \n"
       "addi.d           %[src], %[src], 64             \n"
       "addi.d           %[dst], %[dst], 32             \n"
@@ -5494,7 +5523,7 @@ void YUY2ToYRow_LASX(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
         [dst] "+r"(dst_y),     // %[dst]
         [cnt] "+r"(width)      // %[cnt]
       :
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr31");
+      : "memory", "$xr0", "$xr1", "$xr2");
 }
 #endif  // HAS_YUY2TOYROW_LASX
 
@@ -5502,13 +5531,10 @@ void YUY2ToYRow_LASX(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
 void UYVYToYRow_LASX(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
   asm volatile(
       "1:                                              \n"
-      "vld              $vr0, %[src], 0                \n"
-      "vld              $vr31, %[src], 32              \n"
-      "xvpermi.q        $xr0, $xr31, 0x02              \n"
-      "vld              $vr1, %[src], 16               \n"
-      "vld              $vr31, %[src], 48              \n"
-      "xvpermi.q        $xr1, $xr31, 0x02              \n"
+      "xvld             $xr0, %[src], 0                \n"
+      "xvld             $xr1, %[src], 32               \n"
       "xvpickod.b       $xr2, $xr1, $xr0               \n"
+      "xvpermi.d        $xr2, $xr2, 0xd8               \n"
       "xvst             $xr2, %[dst], 0                \n"
       "addi.d           %[src], %[src], 64             \n"
       "addi.d           %[dst], %[dst], 32             \n"
@@ -5518,7 +5544,7 @@ void UYVYToYRow_LASX(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
         [dst] "+r"(dst_y),     // %[dst]
         [cnt] "+r"(width)      // %[cnt]
       :
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr31");
+      : "memory", "$xr0", "$xr1", "$xr2");
 }
 #endif  // HAS_UYVYTOYROW_LASX
 
@@ -5529,19 +5555,16 @@ void YUY2ToUV422Row_LASX(const uint8_t* src_yuy2,
                          int width) {
   asm volatile(
       "1:                                              \n"
-      "vld              $vr0, %[src], 0                \n"
-      "vld              $vr31, %[src], 32              \n"
-      "xvpermi.q        $xr0, $xr31, 0x02              \n"
-      "vld              $vr1, %[src], 16               \n"
-      "vld              $vr31, %[src], 48              \n"
-      "xvpermi.q        $xr1, $xr31, 0x02              \n"
+      "xvld             $xr0, %[src], 0                \n"
+      "xvld             $xr1, %[src], 32               \n"
       "xvpickod.b       $xr2, $xr1, $xr0               \n"
+      "xvpermi.d        $xr2, $xr2, 0xd8               \n"
       "xvpickev.b       $xr3, $xr2, $xr2               \n"
       "xvpickod.b       $xr4, $xr2, $xr2               \n"
-      "xvpermi.d        $xr31, $xr3, 0xd8              \n"
-      "vst              $vr31, %[du], 0                \n"
-      "xvpermi.d        $xr31, $xr4, 0xd8              \n"
-      "vst              $vr31, %[dv], 0                \n"
+      "xvpermi.d        $xr3, $xr3, 0xd8               \n"
+      "vst              $vr3, %[du], 0                 \n"
+      "xvpermi.d        $xr4, $xr4, 0xd8               \n"
+      "vst              $vr4, %[dv], 0                 \n"
       "addi.d           %[src], %[src], 64             \n"
       "addi.d           %[du], %[du], 16               \n"
       "addi.d           %[dv], %[dv], 16               \n"
@@ -5552,7 +5575,7 @@ void YUY2ToUV422Row_LASX(const uint8_t* src_yuy2,
         [dv] "+r"(dst_v),      // %[dv]
         [cnt] "+r"(width)      // %[cnt]
       :
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr31");
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
 }
 #endif  // HAS_YUY2TOUV422ROW_LASX
 
@@ -5563,19 +5586,16 @@ void UYVYToUV422Row_LASX(const uint8_t* src_uyvy,
                          int width) {
   asm volatile(
       "1:                                              \n"
-      "vld              $vr0, %[src], 0                \n"
-      "vld              $vr31, %[src], 32              \n"
-      "xvpermi.q        $xr0, $xr31, 0x02              \n"
-      "vld              $vr1, %[src], 16               \n"
-      "vld              $vr31, %[src], 48              \n"
-      "xvpermi.q        $xr1, $xr31, 0x02              \n"
+      "xvld             $xr0, %[src], 0                \n"
+      "xvld             $xr1, %[src], 32               \n"
       "xvpickev.b       $xr2, $xr1, $xr0               \n"
+      "xvpermi.d        $xr2, $xr2, 0xd8               \n"
       "xvpickev.b       $xr3, $xr2, $xr2               \n"
       "xvpickod.b       $xr4, $xr2, $xr2               \n"
-      "xvpermi.d        $xr31, $xr3, 0xd8              \n"
-      "vst              $vr31, %[du], 0                \n"
-      "xvpermi.d        $xr31, $xr4, 0xd8              \n"
-      "vst              $vr31, %[dv], 0                \n"
+      "xvpermi.d        $xr3, $xr3, 0xd8               \n"
+      "vst              $vr3, %[du], 0                 \n"
+      "xvpermi.d        $xr4, $xr4, 0xd8               \n"
+      "vst              $vr4, %[dv], 0                 \n"
       "addi.d           %[src], %[src], 64             \n"
       "addi.d           %[du], %[du], 16               \n"
       "addi.d           %[dv], %[dv], 16               \n"
@@ -5586,7 +5606,7 @@ void UYVYToUV422Row_LASX(const uint8_t* src_uyvy,
         [dv] "+r"(dst_v),      // %[dv]
         [cnt] "+r"(width)      // %[cnt]
       :
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr31");
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
 }
 #endif  // HAS_UYVYTOUV422ROW_LASX
 
@@ -5599,27 +5619,20 @@ void YUY2ToUVRow_LASX(const uint8_t* src_yuy2,
   const uint8_t* next_yuy2 = src_yuy2 + src_stride_yuy2;
   asm volatile(
       "1:                                              \n"
-      "vld              $vr0, %[s0], 0                 \n"
-      "vld              $vr31, %[s0], 32               \n"
-      "xvpermi.q        $xr0, $xr31, 0x02              \n"
-      "vld              $vr1, %[s0], 16                \n"
-      "vld              $vr31, %[s0], 48               \n"
-      "xvpermi.q        $xr1, $xr31, 0x02              \n"
-      "vld              $vr2, %[s1], 0                 \n"
-      "vld              $vr31, %[s1], 32               \n"
-      "xvpermi.q        $xr2, $xr31, 0x02              \n"
-      "vld              $vr3, %[s1], 16                \n"
-      "vld              $vr31, %[s1], 48               \n"
-      "xvpermi.q        $xr3, $xr31, 0x02              \n"
+      "xvld             $xr0, %[s0], 0                 \n"
+      "xvld             $xr1, %[s0], 32                \n"
+      "xvld             $xr2, %[s1], 0                 \n"
+      "xvld             $xr3, %[s1], 32                \n"
       "xvpickod.b       $xr0, $xr1, $xr0               \n"
       "xvpickod.b       $xr2, $xr3, $xr2               \n"
       "xvavgr.bu        $xr0, $xr0, $xr2               \n"
+      "xvpermi.d        $xr0, $xr0, 0xd8               \n"
       "xvpickev.b       $xr1, $xr0, $xr0               \n"
       "xvpickod.b       $xr2, $xr0, $xr0               \n"
-      "xvpermi.d        $xr31, $xr1, 0xd8              \n"
-      "vst              $vr31, %[du], 0                \n"
-      "xvpermi.d        $xr31, $xr2, 0xd8              \n"
-      "vst              $vr31, %[dv], 0                \n"
+      "xvpermi.d        $xr1, $xr1, 0xd8               \n"
+      "vst              $vr1, %[du], 0                 \n"
+      "xvpermi.d        $xr2, $xr2, 0xd8               \n"
+      "vst              $vr2, %[dv], 0                 \n"
       "addi.d           %[s0], %[s0], 64               \n"
       "addi.d           %[s1], %[s1], 64               \n"
       "addi.d           %[du], %[du], 16               \n"
@@ -5632,7 +5645,7 @@ void YUY2ToUVRow_LASX(const uint8_t* src_yuy2,
         [dv] "+r"(dst_v),      // %[dv]
         [cnt] "+r"(width)      // %[cnt]
       :
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr31");
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
 }
 #endif  // HAS_YUY2TOUVROW_LASX
 
@@ -5645,27 +5658,20 @@ void UYVYToUVRow_LASX(const uint8_t* src_uyvy,
   const uint8_t* next_uyvy = src_uyvy + src_stride_uyvy;
   asm volatile(
       "1:                                              \n"
-      "vld              $vr0, %[s0], 0                 \n"
-      "vld              $vr31, %[s0], 32               \n"
-      "xvpermi.q        $xr0, $xr31, 0x02              \n"
-      "vld              $vr1, %[s0], 16                \n"
-      "vld              $vr31, %[s0], 48               \n"
-      "xvpermi.q        $xr1, $xr31, 0x02              \n"
-      "vld              $vr2, %[s1], 0                 \n"
-      "vld              $vr31, %[s1], 32               \n"
-      "xvpermi.q        $xr2, $xr31, 0x02              \n"
-      "vld              $vr3, %[s1], 16                \n"
-      "vld              $vr31, %[s1], 48               \n"
-      "xvpermi.q        $xr3, $xr31, 0x02              \n"
+      "xvld             $xr0, %[s0], 0                 \n"
+      "xvld             $xr1, %[s0], 32                \n"
+      "xvld             $xr2, %[s1], 0                 \n"
+      "xvld             $xr3, %[s1], 32                \n"
       "xvpickev.b       $xr0, $xr1, $xr0               \n"
       "xvpickev.b       $xr2, $xr3, $xr2               \n"
       "xvavgr.bu        $xr0, $xr0, $xr2               \n"
+      "xvpermi.d        $xr0, $xr0, 0xd8               \n"
       "xvpickev.b       $xr1, $xr0, $xr0               \n"
       "xvpickod.b       $xr2, $xr0, $xr0               \n"
-      "xvpermi.d        $xr31, $xr1, 0xd8              \n"
-      "vst              $vr31, %[du], 0                \n"
-      "xvpermi.d        $xr31, $xr2, 0xd8              \n"
-      "vst              $vr31, %[dv], 0                \n"
+      "xvpermi.d        $xr1, $xr1, 0xd8               \n"
+      "vst              $vr1, %[du], 0                 \n"
+      "xvpermi.d        $xr2, $xr2, 0xd8               \n"
+      "vst              $vr2, %[dv], 0                 \n"
       "addi.d           %[s0], %[s0], 64               \n"
       "addi.d           %[s1], %[s1], 64               \n"
       "addi.d           %[du], %[du], 16               \n"
@@ -5678,7 +5684,7 @@ void UYVYToUVRow_LASX(const uint8_t* src_uyvy,
         [dv] "+r"(dst_v),      // %[dv]
         [cnt] "+r"(width)      // %[cnt]
       :
-      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr31");
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3");
 }
 #endif  // HAS_UYVYTOUVROW_LASX
 
@@ -7922,6 +7928,42 @@ void HalfFloatRow_LASX(const uint16_t* src,
       : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4", "$xr5");
 }
 #endif  // HAS_HALFFLOATROW_LASX
+
+#ifdef HAS_BYTETOFLOATROW_LASX
+void ByteToFloatRow_LASX(const uint8_t* src,
+                         float* dst,
+                         float scale,
+                         int width) {
+  uint32_t scale_bits;
+  memcpy(&scale_bits, &scale, sizeof(scale_bits));
+  asm volatile(
+      "xvreplgr2vr.w    $xr3, %[scale]                 \n"
+      "xvldi            $xr4, 0                        \n"
+
+      "1:                                              \n"
+      "vld              $vr0, %[src], 0                \n"
+      "xvpermi.d        $xr0, $xr0, 0xd8               \n"
+      "xvilvl.b         $xr0, $xr4, $xr0               \n"
+      "xvpermi.d        $xr0, $xr0, 0xd8               \n"
+      "xvilvl.h         $xr1, $xr4, $xr0               \n"
+      "xvilvh.h         $xr2, $xr4, $xr0               \n"
+      "xvffint.s.wu     $xr1, $xr1                     \n"
+      "xvffint.s.wu     $xr2, $xr2                     \n"
+      "xvfmul.s         $xr1, $xr1, $xr3               \n"
+      "xvfmul.s         $xr2, $xr2, $xr3               \n"
+      "xvst             $xr1, %[dst], 0                \n"
+      "xvst             $xr2, %[dst], 32               \n"
+      "addi.d           %[src], %[src], 16             \n"
+      "addi.d           %[dst], %[dst], 64             \n"
+      "addi.d           %[cnt], %[cnt], -16            \n"
+      "bnez             %[cnt], 1b                     \n"
+      : [src] "+r"(src),         // %[src]
+        [dst] "+r"(dst),         // %[dst]
+        [cnt] "+r"(width)        // %[cnt]
+      : [scale] "r"(scale_bits)  // %[scale]
+      : "memory", "$xr0", "$xr1", "$xr2", "$xr3", "$xr4");
+}
+#endif  // HAS_BYTETOFLOATROW_LASX
 
 #ifdef HAS_ARGBTOYMATRIXROW_LASX
 void ARGBToYMatrixRow_LASX(const uint8_t* src_argb,

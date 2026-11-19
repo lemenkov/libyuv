@@ -4852,6 +4852,1132 @@ uint32_t HashDjb2_RVV(const uint8_t* src, int count, uint32_t seed) {
 }
 #endif  // HAS_HASHDJB2_RVV
 
+#ifdef HAS_COPYROW_16_RVV
+void CopyRow_16_RVV(const uint16_t* src, uint16_t* dst, int count) {
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
+      "vle16.v     v8, (%[src])                  \n"
+      "vse16.v     v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src),  // %[src]
+        [dst] "+r"(dst),  // %[dst]
+        [w] "+r"(count),  // %[w]
+        [vl] "=&r"(vl)    // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+}
+#endif  // HAS_COPYROW_16_RVV
+
+#ifdef HAS_SETROW_RVV
+void SetRow_RVV(uint8_t* dst, uint8_t v8, int width) {
+  size_t vl;
+  asm volatile(
+      "vsetvli     %[vl], %[w], e8, m8, ta, ma   \n"
+      "vmv.v.x     v8, %[v8]                     \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m8, ta, ma   \n"
+      "vse8.v      v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [dst] "+r"(dst),  // %[dst]
+        [w] "+r"(width),  // %[w]
+        [vl] "=&r"(vl)    // %[vl]
+      : [v8] "r"(v8)      // %[v8]
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+}
+#endif  // HAS_SETROW_RVV
+
+#ifdef HAS_ARGBCOPYALPHAROW_RVV
+void ARGBCopyAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
+      "vle32.v     v8, (%[src])                  \n"
+      "vle32.v     v16, (%[dst])                 \n"
+      "vand.vx     v8, v8, %[amask]              \n"
+      "vand.vx     v16, v16, %[rgbmask]          \n"
+      "vor.vv      v8, v8, v16                   \n"
+      "vse32.v     v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src),            // %[src]
+        [dst] "+r"(dst),            // %[dst]
+        [w] "+r"(width),            // %[w]
+        [vl] "=&r"(vl)              // %[vl]
+      : [amask] "r"(0xff000000u),   // %[amask]
+        [rgbmask] "r"(0x00ffffffu)  // %[rgbmask]
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22",
+        "v23");
+}
+#endif  // HAS_ARGBCOPYALPHAROW_RVV
+
+#ifdef HAS_DIVIDEROW_16_RVV
+void DivideRow_16_RVV(const uint16_t* src_y,
+                      uint16_t* dst_y,
+                      int scale,
+                      int width) {
+  if (scale == 65536) {  // Divide by 1, so do copy.
+    if (src_y != dst_y) {
+      CopyRow_16_RVV(src_y, dst_y, width);
+    }
+    return;
+  }
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m8, ta, ma  \n"
+      "vle16.v     v8, (%[src])                  \n"
+      "vmulhu.vx   v8, v8, %[scale]              \n"
+      "vse16.v     v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_y),  // %[src]
+        [dst] "+r"(dst_y),  // %[dst]
+        [w] "+r"(width),    // %[w]
+        [vl] "=&r"(vl)      // %[vl]
+      : [scale] "r"(scale)  // %[scale]
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+}
+#endif  // HAS_DIVIDEROW_16_RVV
+
+#ifdef HAS_CONVERT8TO8ROW_RVV
+void Convert8To8Row_RVV(const uint8_t* src_y,
+                        uint8_t* dst_y,
+                        int scale,
+                        int bias,
+                        int width) {
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m8, ta, ma   \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vmulhu.vx   v8, v8, %[scale]              \n"
+      "vadd.vx     v8, v8, %[bias]               \n"
+      "vse8.v      v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_y),   // %[src]
+        [dst] "+r"(dst_y),   // %[dst]
+        [w] "+r"(width),     // %[w]
+        [vl] "=&r"(vl)       // %[vl]
+      : [scale] "r"(scale),  // %[scale]
+        [bias] "r"(bias)     // %[bias]
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+}
+#endif  // HAS_CONVERT8TO8ROW_RVV
+
+#ifdef HAS_HALFMERGEUVROW_RVV
+void HalfMergeUVRow_RVV(const uint8_t* src_u,
+                        int src_stride_u,
+                        const uint8_t* src_v,
+                        int src_stride_v,
+                        uint8_t* dst_uv,
+                        int width) {
+  const uint8_t* src_u1 = src_u + src_stride_u;
+  const uint8_t* src_v1 = src_v + src_stride_v;
+  int pairs = width >> 1;
+  if (pairs > 0) {
+    size_t vl;
+    size_t vl2;
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
+        "vle8.v      v8, (%[su])                   \n"
+        "vle8.v      v16, (%[su1])                 \n"
+        "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+        "vnsrl.wi    v0, v8, 0                     \n"
+        "vnsrl.wi    v4, v8, 8                     \n"
+        "vwaddu.vx   v8, v0, %[c2]                 \n"
+        "vwaddu.wv   v8, v8, v4                    \n"
+        "vnsrl.wi    v0, v16, 0                    \n"
+        "vnsrl.wi    v4, v16, 8                    \n"
+        "vwaddu.wv   v8, v8, v0                    \n"
+        "vwaddu.wv   v8, v8, v4                    \n"
+        "vnsrl.wi    v24, v8, 2                    \n"
+        "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
+        "vle8.v      v8, (%[sv])                   \n"
+        "vle8.v      v16, (%[sv1])                 \n"
+        "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+        "vnsrl.wi    v0, v8, 0                     \n"
+        "vnsrl.wi    v4, v8, 8                     \n"
+        "vwaddu.vx   v8, v0, %[c2]                 \n"
+        "vwaddu.wv   v8, v8, v4                    \n"
+        "vnsrl.wi    v0, v16, 0                    \n"
+        "vnsrl.wi    v4, v16, 8                    \n"
+        "vwaddu.wv   v8, v8, v0                    \n"
+        "vwaddu.wv   v8, v8, v4                    \n"
+        "vnsrl.wi    v28, v8, 2                    \n"
+#if defined(LIBYUV_USE_VLSEG)
+        "vsseg2e8.v  v24, (%[dst])                 \n"
+#else
+        "vwaddu.vv   v8, v24, v28                  \n"
+        "vwmaccu.vx  v8, %[c255], v28              \n"
+        "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
+        "vse8.v      v8, (%[dst])                  \n"
+#endif
+        "sub         %[w], %[w], %[vl]             \n"
+        "add         %[su], %[su], %[vl2]          \n"
+        "add         %[su1], %[su1], %[vl2]        \n"
+        "add         %[sv], %[sv], %[vl2]          \n"
+        "add         %[sv1], %[sv1], %[vl2]        \n"
+        "add         %[dst], %[dst], %[vl2]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [su] "+r"(src_u),    // %[su]
+          [su1] "+r"(src_u1),  // %[su1]
+          [sv] "+r"(src_v),    // %[sv]
+          [sv1] "+r"(src_v1),  // %[sv1]
+          [dst] "+r"(dst_uv),  // %[dst]
+          [w] "+r"(pairs),     // %[w]
+          [vl] "=&r"(vl),      // %[vl]
+          [vl2] "=&r"(vl2)     // %[vl2]
+        : [c2] "r"(2)          // %[c2]
+#if !defined(LIBYUV_USE_VLSEG)
+          ,
+          [c255] "r"(255)  // %[c255]
+#endif
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4", "v5",
+          "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+          "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25",
+          "v26", "v27", "v28", "v29", "v30", "v31");
+  }
+  if (width & 1) {
+    dst_uv[0] = (uint8_t)((src_u[0] + src_u1[0] + 1) >> 1);
+    dst_uv[1] = (uint8_t)((src_v[0] + src_v1[0] + 1) >> 1);
+  }
+}
+#endif  // HAS_HALFMERGEUVROW_RVV
+
+#ifdef HAS_YUY2TOYROW_RVV
+void YUY2ToYRow_RVV(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vlseg2e8.v  v8, (%[src])                  \n"
+      "vse8.v      v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_yuy2),  // %[src]
+        [dst] "+r"(dst_y),     // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+#else
+  size_t vl2;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "vnsrl.wi    v0, v8, 0                     \n"
+      "vse8.v      v0, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl2]        \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_yuy2),  // %[src]
+        [dst] "+r"(dst_y),     // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl),        // %[vl]
+        [vl2] "=&r"(vl2)       // %[vl2]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15");
+#endif
+}
+#endif  // HAS_YUY2TOYROW_RVV
+
+#ifdef HAS_UYVYTOYROW_RVV
+void UYVYToYRow_RVV(const uint8_t* src_uyvy, uint8_t* dst_y, int width) {
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vlseg2e8.v  v8, (%[src])                  \n"
+      "vse8.v      v12, (%[dst])                 \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_uyvy),  // %[src]
+        [dst] "+r"(dst_y),     // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+#else
+  size_t vl2;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "vnsrl.wi    v0, v8, 8                     \n"
+      "vse8.v      v0, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl2]        \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_uyvy),  // %[src]
+        [dst] "+r"(dst_y),     // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl),        // %[vl]
+        [vl2] "=&r"(vl2)       // %[vl2]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15");
+#endif
+}
+#endif  // HAS_UYVYTOYROW_RVV
+
+#ifdef HAS_YUY2TONVUVROW_RVV
+void YUY2ToNVUVRow_RVV(const uint8_t* src_yuy2,
+                       int src_stride_yuy2,
+                       uint8_t* dst_uv,
+                       int width) {
+  const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
+  int uv_bytes = ((width + 1) >> 1) * 2;
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "vlseg2e8.v  v8, (%[src0])                 \n"
+      "vlseg2e8.v  v16, (%[src1])                \n"
+      "vaaddu.vv   v12, v12, v20                 \n"
+      "vse8.v      v12, (%[dst])                 \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src0], %[src0], %[vl]       \n"
+      "add         %[src1], %[src1], %[vl]       \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src0] "+r"(src_yuy2),    // %[src0]
+        [src1] "+r"(src_yuy2_1),  // %[src1]
+        [dst] "+r"(dst_uv),       // %[dst]
+        [w] "+r"(uv_bytes),       // %[w]
+        [vl] "=&r"(vl)            // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22",
+        "v23");
+#else
+  size_t vl2;
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m4, ta, ma   \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src0])                 \n"
+      "vle8.v      v16, (%[src1])                \n"
+      "vaaddu.vv   v8, v8, v16                   \n"
+      "vsetvli     zero, %[vl], e8, m4, ta, ma   \n"
+      "vnsrl.wi    v0, v8, 8                     \n"
+      "vse8.v      v0, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src0], %[src0], %[vl2]      \n"
+      "add         %[src1], %[src1], %[vl2]      \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src0] "+r"(src_yuy2),    // %[src0]
+        [src1] "+r"(src_yuy2_1),  // %[src1]
+        [dst] "+r"(dst_uv),       // %[dst]
+        [w] "+r"(uv_bytes),       // %[w]
+        [vl] "=&r"(vl),           // %[vl]
+        [vl2] "=&r"(vl2)          // %[vl2]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23");
+#endif
+}
+#endif  // HAS_YUY2TONVUVROW_RVV
+
+#ifdef HAS_YUY2TOUV422ROW_RVV
+void YUY2ToUV422Row_RVV(const uint8_t* src_yuy2,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  int uv_width = (width + 1) >> 1;
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vlseg4e8.v  v8, (%[src])                  \n"
+      "vse8.v      v10, (%[du])                  \n"
+      "vse8.v      v14, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_yuy2),  // %[src]
+        [du] "+r"(dst_u),      // %[du]
+        [dv] "+r"(dst_v),      // %[dv]
+        [w] "+r"(uv_width),    // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+#else
+  size_t vl2;
+  size_t vl4;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "slli        %[vl4], %[vl], 2              \n"
+      "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+      "vnsrl.wi    v0, v8, 8                     \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "vnsrl.wi    v16, v0, 0                    \n"
+      "vnsrl.wi    v18, v0, 8                    \n"
+      "vse8.v      v16, (%[du])                  \n"
+      "vse8.v      v18, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl4]        \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_yuy2),  // %[src]
+        [du] "+r"(dst_u),      // %[du]
+        [dv] "+r"(dst_v),      // %[dv]
+        [w] "+r"(uv_width),    // %[w]
+        [vl] "=&r"(vl),        // %[vl]
+        [vl2] "=&r"(vl2),      // %[vl2]
+        [vl4] "=&r"(vl4)       // %[vl4]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19");
+#endif
+}
+#endif  // HAS_YUY2TOUV422ROW_RVV
+
+#ifdef HAS_UYVYTOUV422ROW_RVV
+void UYVYToUV422Row_RVV(const uint8_t* src_uyvy,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width) {
+  int uv_width = (width + 1) >> 1;
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vlseg4e8.v  v8, (%[src])                  \n"
+      "vse8.v      v8, (%[du])                   \n"
+      "vse8.v      v12, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_uyvy),  // %[src]
+        [du] "+r"(dst_u),      // %[du]
+        [dv] "+r"(dst_v),      // %[dv]
+        [w] "+r"(uv_width),    // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+#else
+  size_t vl2;
+  size_t vl4;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "slli        %[vl4], %[vl], 2              \n"
+      "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+      "vnsrl.wi    v0, v8, 0                     \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "vnsrl.wi    v16, v0, 0                    \n"
+      "vnsrl.wi    v18, v0, 8                    \n"
+      "vse8.v      v16, (%[du])                  \n"
+      "vse8.v      v18, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl4]        \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_uyvy),  // %[src]
+        [du] "+r"(dst_u),      // %[du]
+        [dv] "+r"(dst_v),      // %[dv]
+        [w] "+r"(uv_width),    // %[w]
+        [vl] "=&r"(vl),        // %[vl]
+        [vl2] "=&r"(vl2),      // %[vl2]
+        [vl4] "=&r"(vl4)       // %[vl4]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19");
+#endif
+}
+#endif  // HAS_UYVYTOUV422ROW_RVV
+
+#ifdef HAS_YUY2TOUVROW_RVV
+void YUY2ToUVRow_RVV(const uint8_t* src_yuy2,
+                     int src_stride_yuy2,
+                     uint8_t* dst_u,
+                     uint8_t* dst_v,
+                     int width) {
+  const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
+  int uv_width = (width + 1) >> 1;
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vlseg4e8.v  v8, (%[src0])                 \n"
+      "vlseg4e8.v  v16, (%[src1])                \n"
+      "vaaddu.vv   v10, v10, v18                 \n"
+      "vaaddu.vv   v14, v14, v22                 \n"
+      "vse8.v      v10, (%[du])                  \n"
+      "vse8.v      v14, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[src0], %[src0], %[vl]       \n"
+      "add         %[src1], %[src1], %[vl]       \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src0] "+r"(src_yuy2),    // %[src0]
+        [src1] "+r"(src_yuy2_1),  // %[src1]
+        [du] "+r"(dst_u),         // %[du]
+        [dv] "+r"(dst_v),         // %[dv]
+        [w] "+r"(uv_width),       // %[w]
+        [vl] "=&r"(vl)            // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22",
+        "v23");
+#else
+  size_t vl2;
+  size_t vl4;
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "slli        %[vl4], %[vl], 2              \n"
+      "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src0])                 \n"
+      "vle8.v      v16, (%[src1])                \n"
+      "vaaddu.vv   v8, v8, v16                   \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+      "vnsrl.wi    v0, v8, 8                     \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "vnsrl.wi    v16, v0, 0                    \n"
+      "vnsrl.wi    v18, v0, 8                    \n"
+      "vse8.v      v16, (%[du])                  \n"
+      "vse8.v      v18, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src0], %[src0], %[vl4]      \n"
+      "add         %[src1], %[src1], %[vl4]      \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src0] "+r"(src_yuy2),    // %[src0]
+        [src1] "+r"(src_yuy2_1),  // %[src1]
+        [du] "+r"(dst_u),         // %[du]
+        [dv] "+r"(dst_v),         // %[dv]
+        [w] "+r"(uv_width),       // %[w]
+        [vl] "=&r"(vl),           // %[vl]
+        [vl2] "=&r"(vl2),         // %[vl2]
+        [vl4] "=&r"(vl4)          // %[vl4]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23");
+#endif
+}
+#endif  // HAS_YUY2TOUVROW_RVV
+
+#ifdef HAS_UYVYTOUVROW_RVV
+void UYVYToUVRow_RVV(const uint8_t* src_uyvy,
+                     int src_stride_uyvy,
+                     uint8_t* dst_u,
+                     uint8_t* dst_v,
+                     int width) {
+  const uint8_t* src_uyvy_1 = src_uyvy + src_stride_uyvy;
+  int uv_width = (width + 1) >> 1;
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vlseg4e8.v  v8, (%[src0])                 \n"
+      "vlseg4e8.v  v16, (%[src1])                \n"
+      "vaaddu.vv   v8, v8, v16                   \n"
+      "vaaddu.vv   v12, v12, v20                 \n"
+      "vse8.v      v8, (%[du])                   \n"
+      "vse8.v      v12, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[src0], %[src0], %[vl]       \n"
+      "add         %[src1], %[src1], %[vl]       \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src0] "+r"(src_uyvy),    // %[src0]
+        [src1] "+r"(src_uyvy_1),  // %[src1]
+        [du] "+r"(dst_u),         // %[du]
+        [dv] "+r"(dst_v),         // %[dv]
+        [w] "+r"(uv_width),       // %[w]
+        [vl] "=&r"(vl)            // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22",
+        "v23");
+#else
+  size_t vl2;
+  size_t vl4;
+  asm volatile(
+      "csrwi       vxrm, 0                       \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "slli        %[vl4], %[vl], 2              \n"
+      "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src0])                 \n"
+      "vle8.v      v16, (%[src1])                \n"
+      "vaaddu.vv   v8, v8, v16                   \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+      "vnsrl.wi    v0, v8, 0                     \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "vnsrl.wi    v16, v0, 0                    \n"
+      "vnsrl.wi    v18, v0, 8                    \n"
+      "vse8.v      v16, (%[du])                  \n"
+      "vse8.v      v18, (%[dv])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src0], %[src0], %[vl4]      \n"
+      "add         %[src1], %[src1], %[vl4]      \n"
+      "add         %[du], %[du], %[vl]           \n"
+      "add         %[dv], %[dv], %[vl]           \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src0] "+r"(src_uyvy),    // %[src0]
+        [src1] "+r"(src_uyvy_1),  // %[src1]
+        [du] "+r"(dst_u),         // %[du]
+        [dv] "+r"(dst_v),         // %[dv]
+        [w] "+r"(uv_width),       // %[w]
+        [vl] "=&r"(vl),           // %[vl]
+        [vl2] "=&r"(vl2),         // %[vl2]
+        [vl4] "=&r"(vl4)          // %[vl4]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23");
+#endif
+}
+#endif  // HAS_UYVYTOUVROW_RVV
+
+#ifdef HAS_AYUVTOYROW_RVV
+void AYUVToYRow_RVV(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
+  size_t vl;
+#if defined(LIBYUV_USE_VLSEG)
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "vlseg4e8.v  v8, (%[src])                  \n"
+      "vse8.v      v12, (%[dst])                 \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_ayuv),  // %[src]
+        [dst] "+r"(dst_y),     // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl)         // %[vl]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v8", "v9", "v10", "v11", "v12",
+        "v13", "v14", "v15");
+#else
+  size_t vl2;
+  size_t vl4;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+      "slli        %[vl4], %[vl], 2              \n"
+      "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+      "vle8.v      v8, (%[src])                  \n"
+      "slli        %[vl2], %[vl], 1              \n"
+      "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+      "vnsrl.wi    v0, v8, 0                     \n"
+      "vsetvli     zero, %[vl], e8, m2, ta, ma   \n"
+      "vnsrl.wi    v16, v0, 8                    \n"
+      "vse8.v      v16, (%[dst])                 \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl4]        \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src_ayuv),  // %[src]
+        [dst] "+r"(dst_y),     // %[dst]
+        [w] "+r"(width),       // %[w]
+        [vl] "=&r"(vl),        // %[vl]
+        [vl2] "=&r"(vl2),      // %[vl2]
+        [vl4] "=&r"(vl4)       // %[vl4]
+      :
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17");
+#endif
+}
+#endif  // HAS_AYUVTOYROW_RVV
+
+#ifdef HAS_AYUVTOUVROW_RVV
+void AYUVToUVRow_RVV(const uint8_t* src_ayuv,
+                     int src_stride_ayuv,
+                     uint8_t* dst_uv,
+                     int width) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  int pairs = width >> 1;
+  if (pairs > 0) {
+    size_t vl;
+    size_t vl2;
+    size_t vl8;
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m1, ta, ma   \n"
+        "slli        %[vl8], %[vl], 3              \n"
+        "vsetvli     zero, %[vl8], e8, m8, ta, ma  \n"
+        "vle8.v      v8, (%[s0])                   \n"
+        "vle8.v      v16, (%[s1])                  \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "vsetvli     zero, %[vl2], e16, m4, ta, ma \n"
+        "vnsrl.wi    v0, v8, 0                     \n"
+        "vnsrl.wi    v4, v16, 0                    \n"
+        "vsetvli     zero, %[vl], e16, m2, ta, ma  \n"
+        "vnsrl.wi    v24, v0, 0                    \n"
+        "vnsrl.wi    v26, v0, 16                   \n"
+        "vnsrl.wi    v28, v4, 0                    \n"
+        "vnsrl.wi    v30, v4, 16                   \n"
+        "vsetvli     zero, %[vl2], e8, m2, ta, ma  \n"
+        "vwaddu.vx   v8, v24, %[c2]                \n"
+        "vwaddu.wv   v8, v8, v26                   \n"
+        "vwaddu.wv   v8, v8, v28                   \n"
+        "vwaddu.wv   v8, v8, v30                   \n"
+        "vnsrl.wi    v0, v8, 2                     \n"
+        "vsetvli     zero, %[vl], e16, m2, ta, ma  \n"
+        "vsrl.vi     v2, v0, 8                     \n"
+        "vsll.vi     v0, v0, 8                     \n"
+        "vor.vv      v0, v0, v2                    \n"
+        "vsetvli     zero, %[vl2], e8, m2, ta, ma  \n"
+        "vse8.v      v0, (%[dst])                  \n"
+        "sub         %[w], %[w], %[vl]             \n"
+        "add         %[s0], %[s0], %[vl8]          \n"
+        "add         %[s1], %[s1], %[vl8]          \n"
+        "add         %[dst], %[dst], %[vl2]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [s0] "+r"(src_ayuv),   // %[s0]
+          [s1] "+r"(src_ayuv1),  // %[s1]
+          [dst] "+r"(dst_uv),    // %[dst]
+          [w] "+r"(pairs),       // %[w]
+          [vl] "=&r"(vl),        // %[vl]
+          [vl2] "=&r"(vl2),      // %[vl2]
+          [vl8] "=&r"(vl8)       // %[vl8]
+        : [c2] "r"(2)            // %[c2]
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4", "v5",
+          "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+          "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25",
+          "v26", "v27", "v28", "v29", "v30", "v31");
+  }
+  if (width & 1) {
+    dst_uv[0] = (uint8_t)((src_ayuv[1] + src_ayuv1[1] + 1) >> 1);
+    dst_uv[1] = (uint8_t)((src_ayuv[0] + src_ayuv1[0] + 1) >> 1);
+  }
+}
+#endif  // HAS_AYUVTOUVROW_RVV
+
+#ifdef HAS_AYUVTOVUROW_RVV
+void AYUVToVURow_RVV(const uint8_t* src_ayuv,
+                     int src_stride_ayuv,
+                     uint8_t* dst_vu,
+                     int width) {
+  const uint8_t* src_ayuv1 = src_ayuv + src_stride_ayuv;
+  int pairs = width >> 1;
+  if (pairs > 0) {
+    size_t vl;
+    size_t vl2;
+    size_t vl8;
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m1, ta, ma   \n"
+        "slli        %[vl8], %[vl], 3              \n"
+        "vsetvli     zero, %[vl8], e8, m8, ta, ma  \n"
+        "vle8.v      v8, (%[s0])                   \n"
+        "vle8.v      v16, (%[s1])                  \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "vsetvli     zero, %[vl2], e16, m4, ta, ma \n"
+        "vnsrl.wi    v0, v8, 0                     \n"
+        "vnsrl.wi    v4, v16, 0                    \n"
+        "vsetvli     zero, %[vl], e16, m2, ta, ma  \n"
+        "vnsrl.wi    v24, v0, 0                    \n"
+        "vnsrl.wi    v26, v0, 16                   \n"
+        "vnsrl.wi    v28, v4, 0                    \n"
+        "vnsrl.wi    v30, v4, 16                   \n"
+        "vsetvli     zero, %[vl2], e8, m2, ta, ma  \n"
+        "vwaddu.vx   v8, v24, %[c2]                \n"
+        "vwaddu.wv   v8, v8, v26                   \n"
+        "vwaddu.wv   v8, v8, v28                   \n"
+        "vwaddu.wv   v8, v8, v30                   \n"
+        "vnsrl.wi    v0, v8, 2                     \n"
+        "vse8.v      v0, (%[dst])                  \n"
+        "sub         %[w], %[w], %[vl]             \n"
+        "add         %[s0], %[s0], %[vl8]          \n"
+        "add         %[s1], %[s1], %[vl8]          \n"
+        "add         %[dst], %[dst], %[vl2]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [s0] "+r"(src_ayuv),   // %[s0]
+          [s1] "+r"(src_ayuv1),  // %[s1]
+          [dst] "+r"(dst_vu),    // %[dst]
+          [w] "+r"(pairs),       // %[w]
+          [vl] "=&r"(vl),        // %[vl]
+          [vl2] "=&r"(vl2),      // %[vl2]
+          [vl8] "=&r"(vl8)       // %[vl8]
+        : [c2] "r"(2)            // %[c2]
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4", "v5",
+          "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+          "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25",
+          "v26", "v27", "v28", "v29", "v30", "v31");
+  }
+  if (width & 1) {
+    dst_vu[0] = (uint8_t)((src_ayuv[0] + src_ayuv1[0] + 1) >> 1);
+    dst_vu[1] = (uint8_t)((src_ayuv[1] + src_ayuv1[1] + 1) >> 1);
+  }
+}
+#endif  // HAS_AYUVTOVUROW_RVV
+
+#ifdef HAS_I422TOYUY2ROW_RVV
+void I422ToYUY2Row_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_frame,
+                       int width) {
+  int pairs = width >> 1;
+  if (pairs > 0) {
+    size_t vl;
+    size_t vl2;
+    size_t vl4;
+#if defined(LIBYUV_USE_VLSEG)
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+        "vlseg2e8.v  v0, (%[sy])                   \n"
+        "vmv2r.v     v8, v0                        \n"
+        "vle8.v      v10, (%[su])                  \n"
+        "vmv2r.v     v12, v2                       \n"
+        "vle8.v      v14, (%[sv])                  \n"
+        "vsseg4e8.v  v8, (%[dst])                  \n"
+        "sub         %[w], %[w], %[vl]             \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "slli        %[vl4], %[vl], 2              \n"
+        "add         %[sy], %[sy], %[vl2]          \n"
+        "add         %[su], %[su], %[vl]           \n"
+        "add         %[sv], %[sv], %[vl]           \n"
+        "add         %[dst], %[dst], %[vl4]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [sy] "+r"(src_y),       // %[sy]
+          [su] "+r"(src_u),       // %[su]
+          [sv] "+r"(src_v),       // %[sv]
+          [dst] "+r"(dst_frame),  // %[dst]
+          [w] "+r"(pairs),        // %[w]
+          [vl] "=&r"(vl),         // %[vl]
+          [vl2] "=&r"(vl2),       // %[vl2]
+          [vl4] "=&r"(vl4)        // %[vl4]
+        :
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+          "v10", "v11", "v12", "v13", "v14", "v15");
+#else
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+        "vle8.v      v0, (%[su])                   \n"
+        "vle8.v      v2, (%[sv])                   \n"
+        "vwaddu.vv   v4, v0, v2                    \n"
+        "vwmaccu.vx  v4, %[c255], v2               \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+        "vle8.v      v16, (%[sy])                  \n"
+        "vwaddu.vv   v8, v16, v4                   \n"
+        "vwmaccu.vx  v8, %[c255], v4               \n"
+        "slli        %[vl4], %[vl], 2              \n"
+        "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+        "vse8.v      v8, (%[dst])                  \n"
+        "sub         %[w], %[w], %[vl]             \n"
+        "add         %[sy], %[sy], %[vl2]          \n"
+        "add         %[su], %[su], %[vl]           \n"
+        "add         %[sv], %[sv], %[vl]           \n"
+        "add         %[dst], %[dst], %[vl4]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [sy] "+r"(src_y),       // %[sy]
+          [su] "+r"(src_u),       // %[su]
+          [sv] "+r"(src_v),       // %[sv]
+          [dst] "+r"(dst_frame),  // %[dst]
+          [w] "+r"(pairs),        // %[w]
+          [vl] "=&r"(vl),         // %[vl]
+          [vl2] "=&r"(vl2),       // %[vl2]
+          [vl4] "=&r"(vl4)        // %[vl4]
+        : [c255] "r"(255)         // %[c255]
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4", "v5",
+          "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+          "v16", "v17", "v18", "v19");
+#endif
+  }
+  if (width & 1) {
+    dst_frame[0] = src_y[0];
+    dst_frame[1] = src_u[0];
+    dst_frame[2] = 0;
+    dst_frame[3] = src_v[0];
+  }
+}
+#endif  // HAS_I422TOYUY2ROW_RVV
+
+#ifdef HAS_I422TOUYVYROW_RVV
+void I422ToUYVYRow_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_frame,
+                       int width) {
+  int pairs = width >> 1;
+  if (pairs > 0) {
+    size_t vl;
+    size_t vl2;
+    size_t vl4;
+#if defined(LIBYUV_USE_VLSEG)
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+        "vlseg2e8.v  v0, (%[sy])                   \n"
+        "vle8.v      v8, (%[su])                   \n"
+        "vmv2r.v     v10, v0                       \n"
+        "vle8.v      v12, (%[sv])                  \n"
+        "vmv2r.v     v14, v2                       \n"
+        "vsseg4e8.v  v8, (%[dst])                  \n"
+        "sub         %[w], %[w], %[vl]             \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "slli        %[vl4], %[vl], 2              \n"
+        "add         %[sy], %[sy], %[vl2]          \n"
+        "add         %[su], %[su], %[vl]           \n"
+        "add         %[sv], %[sv], %[vl]           \n"
+        "add         %[dst], %[dst], %[vl4]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [sy] "+r"(src_y),       // %[sy]
+          [su] "+r"(src_u),       // %[su]
+          [sv] "+r"(src_v),       // %[sv]
+          [dst] "+r"(dst_frame),  // %[dst]
+          [w] "+r"(pairs),        // %[w]
+          [vl] "=&r"(vl),         // %[vl]
+          [vl2] "=&r"(vl2),       // %[vl2]
+          [vl4] "=&r"(vl4)        // %[vl4]
+        :
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+          "v10", "v11", "v12", "v13", "v14", "v15");
+#else
+    asm volatile(
+        "1:                                        \n"
+        "vsetvli     %[vl], %[w], e8, m2, ta, ma   \n"
+        "vle8.v      v0, (%[su])                   \n"
+        "vle8.v      v2, (%[sv])                   \n"
+        "vwaddu.vv   v4, v0, v2                    \n"
+        "vwmaccu.vx  v4, %[c255], v2               \n"
+        "slli        %[vl2], %[vl], 1              \n"
+        "vsetvli     zero, %[vl2], e8, m4, ta, ma  \n"
+        "vle8.v      v16, (%[sy])                  \n"
+        "vwaddu.vv   v8, v4, v16                   \n"
+        "vwmaccu.vx  v8, %[c255], v16              \n"
+        "slli        %[vl4], %[vl], 2              \n"
+        "vsetvli     zero, %[vl4], e8, m8, ta, ma  \n"
+        "vse8.v      v8, (%[dst])                  \n"
+        "sub         %[w], %[w], %[vl]             \n"
+        "add         %[sy], %[sy], %[vl2]          \n"
+        "add         %[su], %[su], %[vl]           \n"
+        "add         %[sv], %[sv], %[vl]           \n"
+        "add         %[dst], %[dst], %[vl4]        \n"
+        "bgtz        %[w], 1b                      \n"
+        : [sy] "+r"(src_y),       // %[sy]
+          [su] "+r"(src_u),       // %[su]
+          [sv] "+r"(src_v),       // %[sv]
+          [dst] "+r"(dst_frame),  // %[dst]
+          [w] "+r"(pairs),        // %[w]
+          [vl] "=&r"(vl),         // %[vl]
+          [vl2] "=&r"(vl2),       // %[vl2]
+          [vl4] "=&r"(vl4)        // %[vl4]
+        : [c255] "r"(255)         // %[c255]
+        : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4", "v5",
+          "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+          "v16", "v17", "v18", "v19");
+#endif
+  }
+  if (width & 1) {
+    dst_frame[0] = src_u[0];
+    dst_frame[1] = src_y[0];
+    dst_frame[2] = src_v[0];
+    dst_frame[3] = 0;
+  }
+}
+#endif  // HAS_I422TOUYVYROW_RVV
+
+#ifdef HAS_INTERPOLATEROW_16_RVV
+void InterpolateRow_16_RVV(uint16_t* dst_ptr,
+                           const uint16_t* src_ptr,
+                           ptrdiff_t src_stride,
+                           int width,
+                           int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16_t* src_ptr1 = src_ptr + src_stride;
+  assert(source_y_fraction >= 0);
+  assert(source_y_fraction < 256);
+  if (y1_fraction == 0) {
+    CopyRow_16_RVV(src_ptr, dst_ptr, width);
+    return;
+  }
+  if (y1_fraction == 128) {
+    HalfRow_16_RVV(src_ptr, src_stride, dst_ptr, width);
+    return;
+  }
+  size_t vl;
+  asm volatile(
+      "vsetvli     zero, %[w], e32, m8, ta, ma   \n"
+      "vmv.v.x     v16, %[c128]                  \n"
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v0, (%[src0])                 \n"
+      "vmv8r.v     v8, v16                       \n"
+      "vwmaccu.vx  v8, %[y0], v0                 \n"
+      "vle16.v     v0, (%[src1])                 \n"
+      "vwmaccu.vx  v8, %[y1], v0                 \n"
+      "vnsrl.wi    v0, v8, 8                     \n"
+      "vse16.v     v0, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src0], %[src0], %[vl]       \n"
+      "add         %[src1], %[src1], %[vl]       \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [dst] "+r"(dst_ptr),    // %[dst]
+        [src0] "+r"(src_ptr),   // %[src0]
+        [src1] "+r"(src_ptr1),  // %[src1]
+        [w] "+r"(width),        // %[w]
+        [vl] "=&r"(vl)          // %[vl]
+      : [y0] "r"(y0_fraction),  // %[y0]
+        [y1] "r"(y1_fraction),  // %[y1]
+        [c128] "r"(128)         // %[c128]
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23");
+}
+#endif  // HAS_INTERPOLATEROW_16_RVV
+
+#ifdef HAS_HALFFLOATROW_RVV
+void HalfFloatRow_RVV(const uint16_t* src,
+                      uint16_t* dst,
+                      float scale,
+                      int width) {
+  const float kScaleBias = 1.9259299444e-34f;  // 2^-112, see HalfFloatRow_C
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e16, m4, ta, ma  \n"
+      "vle16.v     v0, (%[src])                  \n"
+      "vfwcvt.f.xu.v v8, v0                      \n"
+      "vsetvli     zero, zero, e32, m8, ta, ma   \n"
+      "vfmul.vf    v8, v8, %[scale]              \n"
+      "vfmul.vf    v8, v8, %[bias]               \n"
+      "vsetvli     zero, zero, e16, m4, ta, ma   \n"
+      "vnsrl.wi    v0, v8, 13                    \n"
+      "vse16.v     v0, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "slli        %[vl], %[vl], 1               \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src),        // %[src]
+        [dst] "+r"(dst),        // %[dst]
+        [w] "+r"(width),        // %[w]
+        [vl] "=&r"(vl)          // %[vl]
+      : [scale] "f"(scale),     // %[scale]
+        [bias] "f"(kScaleBias)  // %[bias]
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15");
+}
+#endif  // HAS_HALFFLOATROW_RVV
+
+#ifdef HAS_BYTETOFLOATROW_RVV
+void ByteToFloatRow_RVV(const uint8_t* src,
+                        float* dst,
+                        float scale,
+                        int width) {
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[w], e32, m8, ta, ma  \n"
+      "vle8.v      v0, (%[src])                  \n"
+      "vzext.vf4   v8, v0                        \n"
+      "vfcvt.f.xu.v v8, v8                       \n"
+      "vfmul.vf    v8, v8, %[scale]              \n"
+      "vse32.v     v8, (%[dst])                  \n"
+      "sub         %[w], %[w], %[vl]             \n"
+      "add         %[src], %[src], %[vl]         \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "bgtz        %[w], 1b                      \n"
+      : [src] "+r"(src),    // %[src]
+        [dst] "+r"(dst),    // %[dst]
+        [w] "+r"(width),    // %[w]
+        [vl] "=&r"(vl)      // %[vl]
+      : [scale] "f"(scale)  // %[scale]
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v8", "v9", "v10", "v11",
+        "v12", "v13", "v14", "v15");
+}
+#endif  // HAS_BYTETOFLOATROW_RVV
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

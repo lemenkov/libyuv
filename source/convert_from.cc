@@ -390,6 +390,11 @@ int I422ToYUY2(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOYUY2ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToYUY2Row = I422ToYUY2Row_AVX512BW;
+  }
+#endif
 #if defined(HAS_I422TOYUY2ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToYUY2Row = I422ToYUY2Row_Any_NEON;
@@ -412,6 +417,16 @@ int I422ToYUY2(const uint8_t* src_y,
     if (IS_ALIGNED(width, 32)) {
       I422ToYUY2Row = I422ToYUY2Row_LASX;
     }
+  }
+#endif
+#if defined(HAS_I422TOYUY2ROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    I422ToYUY2Row = I422ToYUY2Row_HVX;
+  }
+#endif
+#if defined(HAS_I422TOYUY2ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I422ToYUY2Row = I422ToYUY2Row_RVV;
   }
 #endif
 #if defined(HAS_I422TOYUY2ROW_WASMSIMD)
@@ -474,6 +489,11 @@ int I420ToYUY2(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOYUY2ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToYUY2Row = I422ToYUY2Row_AVX512BW;
+  }
+#endif
 #if defined(HAS_I422TOYUY2ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToYUY2Row = I422ToYUY2Row_Any_NEON;
@@ -496,6 +516,16 @@ int I420ToYUY2(const uint8_t* src_y,
     if (IS_ALIGNED(width, 32)) {
       I422ToYUY2Row = I422ToYUY2Row_LASX;
     }
+  }
+#endif
+#if defined(HAS_I422TOYUY2ROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    I422ToYUY2Row = I422ToYUY2Row_HVX;
+  }
+#endif
+#if defined(HAS_I422TOYUY2ROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I422ToYUY2Row = I422ToYUY2Row_RVV;
   }
 #endif
 #if defined(HAS_I422TOYUY2ROW_WASMSIMD)
@@ -571,6 +601,11 @@ int I422ToUYVY(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOUYVYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToUYVYRow = I422ToUYVYRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_I422TOUYVYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToUYVYRow = I422ToUYVYRow_Any_NEON;
@@ -593,6 +628,16 @@ int I422ToUYVY(const uint8_t* src_y,
     if (IS_ALIGNED(width, 32)) {
       I422ToUYVYRow = I422ToUYVYRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    I422ToUYVYRow = I422ToUYVYRow_HVX;
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I422ToUYVYRow = I422ToUYVYRow_RVV;
   }
 #endif
 #if defined(HAS_I422TOUYVYROW_WASMSIMD)
@@ -655,6 +700,11 @@ int I420ToUYVY(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOUYVYROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToUYVYRow = I422ToUYVYRow_AVX512BW;
+  }
+#endif
 #if defined(HAS_I422TOUYVYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToUYVYRow = I422ToUYVYRow_Any_NEON;
@@ -677,6 +727,16 @@ int I420ToUYVY(const uint8_t* src_y,
     if (IS_ALIGNED(width, 32)) {
       I422ToUYVYRow = I422ToUYVYRow_LASX;
     }
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_HVX)
+  if (TestCpuFlag(kCpuHasHVX)) {
+    I422ToUYVYRow = I422ToUYVYRow_HVX;
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    I422ToUYVYRow = I422ToUYVYRow_RVV;
   }
 #endif
 #if defined(HAS_I422TOUYVYROW_WASMSIMD)

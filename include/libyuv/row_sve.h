@@ -3745,6 +3745,15 @@ static inline void HalfMergeUVRow_SVE_SC(const uint8_t* src_u,
                                          int width) STREAMING_COMPATIBLE {
   const uint8_t* src_u1 = src_u + src_stride_u;
   const uint8_t* src_v1 = src_v + src_stride_v;
+  int even_width = width & ~1;
+  if (width & 1) {
+    dst_uv[even_width] = (src_u[even_width] + src_u1[even_width] + 1) >> 1;
+    dst_uv[even_width + 1] = (src_v[even_width] + src_v1[even_width] + 1) >> 1;
+  }
+  width = even_width;
+  if (width == 0) {
+    return;
+  }
   int vl;
   asm volatile(
       "cntb     %x[vl]                                  \n"
@@ -4174,6 +4183,7 @@ static inline void YUY2ToUVRow_SVE_SC(const uint8_t* src_yuy2,
                                       int width) STREAMING_COMPATIBLE {
   const uint8_t* src_yuy2_1 = src_yuy2 + src_stride_yuy2;
   int vl;
+  int vl2;
   int vl_half;
   int width_half;
   if (src_stride_yuy2 == 0) {
@@ -4181,13 +4191,41 @@ static inline void YUY2ToUVRow_SVE_SC(const uint8_t* src_yuy2,
   }
   asm volatile(
       "cntb     %x[vl]                                  \n"
-      "lsr      %w[vl_half], %w[vl], #1                 \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      "lsl      %w[vl2], %w[vl], #1                     \n"
+      "subs     %w[width], %w[width], %w[vl2]           \n"
       "b.lt     2f                                      \n"
 
       "ptrue    p0.b                                    \n"
-      "whilelt  p1.b, wzr, %w[vl_half]                  \n"
       "1:                                               \n"
+      "ld2b     {z0.b, z1.b}, p0/z, [%[src_yuy2]]       \n"
+      "ld2b     {z2.b, z3.b}, p0/z, [%[src_yuy2], #2, mul vl] \n"
+      "ld2b     {z4.b, z5.b}, p0/z, [%[src_yuy2_1]]     \n"
+      "ld2b     {z6.b, z7.b}, p0/z, [%[src_yuy2_1], #2, mul vl] \n"
+      "incb     %[src_yuy2], all, mul #4                \n"
+      "incb     %[src_yuy2_1], all, mul #4              \n"
+      "urhadd   z1.b, p0/m, z1.b, z5.b                  \n"
+      "urhadd   z3.b, p0/m, z3.b, z7.b                  \n"
+      "uzp1     z0.b, z1.b, z3.b                        \n"
+      "uzp2     z2.b, z1.b, z3.b                        \n"
+      "subs     %w[width], %w[width], %w[vl2]           \n"
+      "st1b     {z0.b}, p0, [%[dst_u]]                  \n"
+      "st1b     {z2.b}, p0, [%[dst_v]]                  \n"
+      "incb     %[dst_u]                                \n"
+      "incb     %[dst_v]                                \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl2]           \n"
+      "b.eq     99f                                     \n"
+      "lsr      %w[vl_half], %w[vl], #1                 \n"
+
+      "3:                                               \n"
+      "add      %w[width_half], %w[width], #1           \n"
+      "lsr      %w[width_half], %w[width_half], #1      \n"
+      "cmp      %w[width_half], %w[vl_half]             \n"
+      "csel     %w[width_half], %w[vl_half], %w[width_half], gt \n"
+      "whilelt  p1.b, wzr, %w[width_half]               \n"
+      "zip1     p0.b, p1.b, p1.b                        \n"
       "ld2b     {z0.b, z1.b}, p0/z, [%[src_yuy2]]       \n"
       "ld2b     {z4.b, z5.b}, p0/z, [%[src_yuy2_1]]     \n"
       "incb     %[src_yuy2], all, mul #2                \n"
@@ -4195,28 +4233,13 @@ static inline void YUY2ToUVRow_SVE_SC(const uint8_t* src_yuy2,
       "urhadd   z1.b, p0/m, z1.b, z5.b                  \n"
       "uzp1     z0.b, z1.b, z1.b                        \n"
       "uzp2     z2.b, z1.b, z1.b                        \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
       "st1b     {z0.b}, p1, [%[dst_u]]                  \n"
       "st1b     {z2.b}, p1, [%[dst_v]]                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.le     99f                                     \n"
       "add      %[dst_u], %[dst_u], %x[vl_half]         \n"
       "add      %[dst_v], %[dst_v], %x[vl_half]         \n"
-      "b.ge     1b                                      \n"
-
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
-
-      "add      %w[width_half], %w[width], #1           \n"
-      "lsr      %w[width_half], %w[width_half], #1      \n"
-      "whilelt  p1.b, wzr, %w[width_half]               \n"
-      "zip1     p0.b, p1.b, p1.b                        \n"
-      "ld2b     {z0.b, z1.b}, p0/z, [%[src_yuy2]]       \n"
-      "ld2b     {z4.b, z5.b}, p0/z, [%[src_yuy2_1]]     \n"
-      "urhadd   z1.b, p0/m, z1.b, z5.b                  \n"
-      "uzp1     z0.b, z1.b, z1.b                        \n"
-      "uzp2     z2.b, z1.b, z1.b                        \n"
-      "st1b     {z0.b}, p1, [%[dst_u]]                  \n"
-      "st1b     {z2.b}, p1, [%[dst_v]]                  \n"
+      "b        3b                                      \n"
 
       "99:                                              \n"
       : [src_yuy2] "+r"(src_yuy2),      // %[src_yuy2]
@@ -4225,10 +4248,12 @@ static inline void YUY2ToUVRow_SVE_SC(const uint8_t* src_yuy2,
         [dst_v] "+r"(dst_v),            // %[dst_v]
         [width] "+r"(width),            // %[width]
         [vl] "=&r"(vl),                 // %[vl]
+        [vl2] "=&r"(vl2),               // %[vl2]
         [vl_half] "=&r"(vl_half),       // %[vl_half]
         [width_half] "=&r"(width_half)  // %[width_half]
       :
-      : "memory", "cc", "z0", "z1", "z2", "z4", "z5", "p0", "p1");
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
+        "p1");
 }
 
 static inline void UYVYToUVRow_SVE_SC(const uint8_t* src_uyvy,
@@ -4238,6 +4263,7 @@ static inline void UYVYToUVRow_SVE_SC(const uint8_t* src_uyvy,
                                       int width) STREAMING_COMPATIBLE {
   const uint8_t* src_uyvy_1 = src_uyvy + src_stride_uyvy;
   int vl;
+  int vl2;
   int vl_half;
   int width_half;
   if (src_stride_uyvy == 0) {
@@ -4245,13 +4271,41 @@ static inline void UYVYToUVRow_SVE_SC(const uint8_t* src_uyvy,
   }
   asm volatile(
       "cntb     %x[vl]                                  \n"
-      "lsr      %w[vl_half], %w[vl], #1                 \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
+      "lsl      %w[vl2], %w[vl], #1                     \n"
+      "subs     %w[width], %w[width], %w[vl2]           \n"
       "b.lt     2f                                      \n"
 
       "ptrue    p0.b                                    \n"
-      "whilelt  p1.b, wzr, %w[vl_half]                  \n"
       "1:                                               \n"
+      "ld2b     {z0.b, z1.b}, p0/z, [%[src_uyvy]]       \n"
+      "ld2b     {z2.b, z3.b}, p0/z, [%[src_uyvy], #2, mul vl] \n"
+      "ld2b     {z4.b, z5.b}, p0/z, [%[src_uyvy_1]]     \n"
+      "ld2b     {z6.b, z7.b}, p0/z, [%[src_uyvy_1], #2, mul vl] \n"
+      "incb     %[src_uyvy], all, mul #4                \n"
+      "incb     %[src_uyvy_1], all, mul #4              \n"
+      "urhadd   z0.b, p0/m, z0.b, z4.b                  \n"
+      "urhadd   z2.b, p0/m, z2.b, z6.b                  \n"
+      "uzp1     z1.b, z0.b, z2.b                        \n"
+      "uzp2     z3.b, z0.b, z2.b                        \n"
+      "subs     %w[width], %w[width], %w[vl2]           \n"
+      "st1b     {z1.b}, p0, [%[dst_u]]                  \n"
+      "st1b     {z3.b}, p0, [%[dst_v]]                  \n"
+      "incb     %[dst_u]                                \n"
+      "incb     %[dst_v]                                \n"
+      "b.ge     1b                                      \n"
+
+      "2:                                               \n"
+      "adds     %w[width], %w[width], %w[vl2]           \n"
+      "b.eq     99f                                     \n"
+      "lsr      %w[vl_half], %w[vl], #1                 \n"
+
+      "3:                                               \n"
+      "add      %w[width_half], %w[width], #1           \n"
+      "lsr      %w[width_half], %w[width_half], #1      \n"
+      "cmp      %w[width_half], %w[vl_half]             \n"
+      "csel     %w[width_half], %w[vl_half], %w[width_half], gt \n"
+      "whilelt  p1.b, wzr, %w[width_half]               \n"
+      "zip1     p0.b, p1.b, p1.b                        \n"
       "ld2b     {z0.b, z1.b}, p0/z, [%[src_uyvy]]       \n"
       "ld2b     {z4.b, z5.b}, p0/z, [%[src_uyvy_1]]     \n"
       "incb     %[src_uyvy], all, mul #2                \n"
@@ -4259,28 +4313,13 @@ static inline void UYVYToUVRow_SVE_SC(const uint8_t* src_uyvy,
       "urhadd   z0.b, p0/m, z0.b, z4.b                  \n"
       "uzp1     z1.b, z0.b, z0.b                        \n"
       "uzp2     z2.b, z0.b, z0.b                        \n"
-      "subs     %w[width], %w[width], %w[vl]            \n"
       "st1b     {z1.b}, p1, [%[dst_u]]                  \n"
       "st1b     {z2.b}, p1, [%[dst_v]]                  \n"
+      "subs     %w[width], %w[width], %w[vl]            \n"
+      "b.le     99f                                     \n"
       "add      %[dst_u], %[dst_u], %x[vl_half]         \n"
       "add      %[dst_v], %[dst_v], %x[vl_half]         \n"
-      "b.ge     1b                                      \n"
-
-      "2:                                               \n"
-      "adds     %w[width], %w[width], %w[vl]            \n"
-      "b.eq     99f                                     \n"
-
-      "add      %w[width_half], %w[width], #1           \n"
-      "lsr      %w[width_half], %w[width_half], #1      \n"
-      "whilelt  p1.b, wzr, %w[width_half]               \n"
-      "zip1     p0.b, p1.b, p1.b                        \n"
-      "ld2b     {z0.b, z1.b}, p0/z, [%[src_uyvy]]       \n"
-      "ld2b     {z4.b, z5.b}, p0/z, [%[src_uyvy_1]]     \n"
-      "urhadd   z0.b, p0/m, z0.b, z4.b                  \n"
-      "uzp1     z1.b, z0.b, z0.b                        \n"
-      "uzp2     z2.b, z0.b, z0.b                        \n"
-      "st1b     {z1.b}, p1, [%[dst_u]]                  \n"
-      "st1b     {z2.b}, p1, [%[dst_v]]                  \n"
+      "b        3b                                      \n"
 
       "99:                                              \n"
       : [src_uyvy] "+r"(src_uyvy),      // %[src_uyvy]
@@ -4289,10 +4328,12 @@ static inline void UYVYToUVRow_SVE_SC(const uint8_t* src_uyvy,
         [dst_v] "+r"(dst_v),            // %[dst_v]
         [width] "+r"(width),            // %[width]
         [vl] "=&r"(vl),                 // %[vl]
+        [vl2] "=&r"(vl2),               // %[vl2]
         [vl_half] "=&r"(vl_half),       // %[vl_half]
         [width_half] "=&r"(width_half)  // %[width_half]
       :
-      : "memory", "cc", "z0", "z1", "z2", "z4", "z5", "p0", "p1");
+      : "memory", "cc", "z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7", "p0",
+        "p1");
 }
 
 static inline void HalfBoxRow_SVE_SC(const uint8_t* src_ptr,
