@@ -108,6 +108,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN2_AVX512BW
 #define HAS_SCALEARGBROWDOWN2_AVX512BW
 #define HAS_SCALEFILTERCOLS_AVX512BW
+#define HAS_SCALEFILTERCOLS_AVX512VBMI
 #define HAS_SCALEARGBFILTERCOLS_AVX512BW
 #define HAS_SCALEUVFILTERCOLS_AVX512BW
 #endif
@@ -1033,6 +1034,11 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
                               int dst_width,
                               int x,
                               int dx);
+void ScaleFilterCols_AVX512VBMI(uint8_t* dst_ptr,
+                                const uint8_t* src_ptr,
+                                int dst_width,
+                                int x,
+                                int dx);
 void ScaleUVFilterCols_AVX2(uint8_t* dst_uv,
                             const uint8_t* src_uv,
                             int dst_width,

@@ -5188,6 +5188,11 @@ static int RAWToNVMatrix(const uint8_t* src_raw,
     RGBToYMatrixRow = RGBToYMatrixRow_AVX512BW;
   }
 #endif
+#if defined(HAS_RGBTOYMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    RGBToYMatrixRow = RGBToYMatrixRow_AVX512VNNIVBMI;
+  }
+#endif
 #if defined(HAS_RGBTOYMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RGBToYMatrixRow = RGBToYMatrixRow_Any_NEON;
@@ -5266,6 +5271,11 @@ static int RAWToNVMatrix(const uint8_t* src_raw,
 #if defined(HAS_RGBTOUVMATRIXROW_AVX512BW)
   if (TestCpuFlag(kCpuHasAVX512BW)) {
     RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512BW;
+  }
+#endif
+#if defined(HAS_RGBTOUVMATRIXROW_AVX512VNNIVBMI)
+  if (TestCpuFlag(kCpuHasAVX512VNNI) && TestCpuFlag(kCpuHasAVX512VBMI)) {
+    RGBToUVMatrixRow = RGBToUVMatrixRow_AVX512VNNIVBMI;
   }
 #endif
 #if defined(HAS_RGBTOUVMATRIXROW_NEON)

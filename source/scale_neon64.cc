@@ -1107,6 +1107,82 @@ void ScaleFilterCols_NEON(uint8_t* dst_ptr,
                           int dst_width,
                           int x,
                           int dx) {
+  if (dst_width >= 16 && dx > 0 && dx <= 0x20000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      int max_valid_end = (int)(x_last >> 16) + 2;
+      int64_t limit = ((int64_t)(max_valid_end - 31) << 16) - 1;
+      if ((int64_t)x <= limit) {
+        int64_t max_iters = (limit - (int64_t)x) / (16LL * dx) + 1;
+        int fast_iters = dst_width >> 4;
+        if (max_iters < fast_iters) {
+          fast_iters = (int)max_iters;
+        }
+        if (fast_iters > 0) {
+          static const int32_t kStep0_3[4] = {0, 1, 2, 3};
+          int iters = fast_iters;
+          int dx16 = dx << 4;
+          int64_t tmp_offset;
+          const uint8_t* tmp_ptr;
+          asm volatile(
+              "dup         v24.4s, %w[x]                 \n"
+              "dup         v28.4s, %w[dx]                \n"
+              "ld1         {v0.4s}, [%[kStep]]           \n"
+              "shl         v1.4s, v28.4s, #2             \n"  // 4 * dx
+              "mul         v0.4s, v0.4s, v28.4s          \n"
+              "add         v24.4s, v24.4s, v0.4s         \n"  // x + [0..3]*dx
+              "add         v25.4s, v24.4s, v1.4s         \n"  // x + [4..7]*dx
+              "add         v26.4s, v25.4s, v1.4s         \n"  // x + [8..11]*dx
+              "add         v27.4s, v26.4s, v1.4s         \n"  // x + [12..15]*dx
+              "shl         v28.4s, v28.4s, #4            \n"  // 16 * dx
+              "movi        v29.16b, #1                   \n"
+
+              "1:          \n"
+              "asr         %w[tmp_offset], %w[x], #16    \n"
+              "add         %[tmp_ptr], %[src_ptr], %w[tmp_offset], sxtw \n"
+              "add         %w[x], %w[x], %w[dx16]        \n"
+              "ldp         q0, q1, [%[tmp_ptr]]          \n"
+              "uzp2        v2.8h, v24.8h, v25.8h         \n"  // xi[0..7]
+              "uzp2        v3.8h, v26.8h, v27.8h         \n"  // xi[8..15]
+              "uzp1        v6.8h, v24.8h, v25.8h         \n"  // xf[0..7]
+              "uzp1        v7.8h, v26.8h, v27.8h         \n"  // xf[8..15]
+              "add         v24.4s, v24.4s, v28.4s        \n"
+              "add         v25.4s, v25.4s, v28.4s        \n"
+              "add         v26.4s, v26.4s, v28.4s        \n"
+              "add         v27.4s, v27.4s, v28.4s        \n"
+              "dup         v4.8h, v2.h[0]                \n"     // base
+              "sub         v2.8h, v2.8h, v4.8h           \n"     // rel_a[0..7]
+              "sub         v3.8h, v3.8h, v4.8h           \n"     // rel_a[8..15]
+              "uzp1        v2.16b, v2.16b, v3.16b        \n"     // rel_a[0..15]
+              "add         v3.16b, v2.16b, v29.16b       \n"     // rel_b[0..15]
+              "tbl         v4.16b, {v0.16b, v1.16b}, v2.16b \n"  // a[0..15]
+              "tbl         v5.16b, {v0.16b, v1.16b}, v3.16b \n"  // b[0..15]
+              "ushr        v6.8h, v6.8h, #9              \n"     // frac[0..7]
+              "ushr        v7.8h, v7.8h, #9              \n"     // frac[8..15]
+              "usubl       v16.8h, v5.8b, v4.8b          \n"     // b - a (lo)
+              "usubl2      v17.8h, v5.16b, v4.16b        \n"     // b - a (hi)
+              "mul         v16.8h, v16.8h, v6.8h         \n"
+              "mul         v17.8h, v17.8h, v7.8h         \n"
+              "srshr       v16.8h, v16.8h, #7            \n"
+              "srshr       v17.8h, v17.8h, #7            \n"
+              "uaddw       v16.8h, v16.8h, v4.8b         \n"
+              "uaddw2      v17.8h, v17.8h, v4.16b        \n"
+              "xtn         v4.8b, v16.8h                 \n"
+              "xtn2        v4.16b, v17.8h                \n"
+              "str         q4, [%[dst_ptr]], #16         \n"
+              "subs        %w[iters], %w[iters], #1      \n"
+              "b.gt        1b                            \n"
+              : [dst_ptr] "+r"(dst_ptr), [iters] "+r"(iters), [x] "+r"(x),
+                [tmp_offset] "=&r"(tmp_offset), [tmp_ptr] "=&r"(tmp_ptr)
+              : [src_ptr] "r"(src_ptr), [dx] "r"(dx), [dx16] "r"(dx16),
+                [kStep] "r"(kStep0_3)
+              : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                "v16", "v17", "v24", "v25", "v26", "v27", "v28", "v29");
+          dst_width -= fast_iters * 16;
+        }
+      }
+    }
+  }
   if (dst_width >= 8) {
     int dx_offset[4] = {0, 1, 2, 3};
     int64_t tmp_offset;

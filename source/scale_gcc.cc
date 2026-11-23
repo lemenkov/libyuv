@@ -2878,6 +2878,10 @@ void ScaleAddCols2_AVX512BW(int dst_width,
 
 #ifdef HAS_SCALEFILTERCOLS_AVX2
 static const int32_t kStep0_7_Filter[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+#if defined(__x86_64__)
+static const int32_t kStep0_15_PrePerm_Filter[16] = {
+    0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15};
+#endif
 static const uvec8 kShufFracCols = {0,   0,   4,   4,   8,   8,   12,  12,
                                     128, 128, 128, 128, 128, 128, 128, 128};
 
@@ -2887,9 +2891,253 @@ void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
                           int dst_width,
                           int x,
                           int dx) {
+#if defined(__x86_64__)
+  if (dst_width >= 8 && dx > 0 && dx <= 0x48000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      int max_valid_end = (int)(x_last >> 16) + 2;
+      int64_t limit = ((int64_t)(max_valid_end - 15) << 16) - 1;
+      if (dx <= 0x20000 && dst_width >= 16) {
+        int64_t first_x8 = (int64_t)x + 8LL * dx;
+        if (first_x8 <= limit) {
+          int64_t max_iters = (limit - first_x8) / (16LL * dx) + 1;
+          int fast_iters = dst_width >> 4;
+          if (max_iters < fast_iters) {
+            fast_iters = (int)max_iters;
+          }
+          if (fast_iters > 0) {
+            int iters = fast_iters;
+            int x8 = (int)first_x8;
+            int dx16 = dx << 4;
+            intptr_t tmp0, tmp1;
+            asm volatile(
+                "vmovd       %k[x],%%xmm2                  \n"
+                "vpbroadcastd %%xmm2,%%ymm2                \n"
+                "vmovd       %k[dx],%%xmm4                 \n"
+                "vpbroadcastd %%xmm4,%%ymm4                \n"
+                "vpmulld     0x00(%[kStep]),%%ymm4,%%ymm0  \n"
+                "vpmulld     0x20(%[kStep]),%%ymm4,%%ymm1  \n"
+                "vpaddd      %%ymm1,%%ymm2,%%ymm3          \n"
+                "vpaddd      %%ymm0,%%ymm2,%%ymm2          \n"
+                "vpslld      $0x4,%%ymm4,%%ymm4            \n"  // 16 * dx
+                "vpcmpeqb    %%ymm6,%%ymm6,%%ymm6          \n"
+                "vpsrlw      $0xf,%%ymm6,%%ymm5            \n"
+                "vpsllw      $0x8,%%ymm5,%%ymm5            \n"  // 0x0100
+                "vpsrlw      $0xf,%%ymm6,%%ymm12           \n"
+                "vpsllw      $0x6,%%ymm12,%%ymm12          \n"  // 0x0040
+                "vpsrld      $25,%%ymm6,%%ymm13            \n"  // 0x0000007f
+                "vpsrlw      $0x8,%%ymm6,%%ymm7            \n"  // 0x00ff
+                "vpsrlw      $0x9,%%ymm6,%%ymm6            \n"  // 0x007f
+
+                LABELALIGN
+                "1:          \n"
+                "movslq      %k[x],%q[tmp0]                \n"
+                "sar         $0x10,%q[tmp0]                \n"
+                "movslq      %k[x8],%q[tmp1]               \n"
+                "sar         $0x10,%q[tmp1]                \n"
+                "addl        %k[dx16],%k[x]                \n"
+                "addl        %k[dx16],%k[x8]               \n"
+                "vpsrld      $0x10,%%ymm2,%%ymm8           \n"
+                "vpsrld      $0x10,%%ymm3,%%ymm9           \n"
+                "vpshufd     $0x0,%%ymm8,%%ymm10           \n"
+                "vpsubd      %%ymm10,%%ymm8,%%ymm8         \n"
+                "vpsubd      %%ymm10,%%ymm9,%%ymm9         \n"
+                "vpackusdw   %%ymm9,%%ymm8,%%ymm8          \n"
+                "vpsllw      $0x8,%%ymm8,%%ymm9            \n"
+                "vpor        %%ymm9,%%ymm8,%%ymm8          \n"
+                "vpaddb      %%ymm5,%%ymm8,%%ymm8          \n"
+                "vpsrld      $0x9,%%ymm2,%%ymm10           \n"
+                "vpsrld      $0x9,%%ymm3,%%ymm11           \n"
+                "vpaddd      %%ymm4,%%ymm2,%%ymm2          \n"
+                "vpaddd      %%ymm4,%%ymm3,%%ymm3          \n"
+                "vpand       %%ymm13,%%ymm10,%%ymm10       \n"
+                "vpand       %%ymm13,%%ymm11,%%ymm11       \n"
+                "vpackusdw   %%ymm11,%%ymm10,%%ymm10       \n"
+                "vpsllw      $0x8,%%ymm10,%%ymm11          \n"
+                "vpor        %%ymm11,%%ymm10,%%ymm10       \n"
+                "vpxor       %%ymm6,%%ymm10,%%ymm10        \n"
+                "vmovdqu     (%[src],%q[tmp0],1),%%xmm0    \n"
+                "vinserti128 $0x1,(%[src],%q[tmp1],1),%%ymm0,%%ymm0 \n"
+                "vpshufb     %%ymm8,%%ymm0,%%ymm0          \n"
+                "vpand       %%ymm7,%%ymm0,%%ymm1          \n"
+                "vpmaddubsw  %%ymm10,%%ymm0,%%ymm0         \n"
+                "vpaddw      %%ymm1,%%ymm0,%%ymm0          \n"
+                "vpaddw      %%ymm12,%%ymm0,%%ymm0         \n"
+                "vpsrlw      $0x7,%%ymm0,%%ymm0            \n"
+                "vpackuswb   %%ymm0,%%ymm0,%%ymm0          \n"
+                "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+                "vmovdqu     %%xmm0,(%[dst])               \n"
+                "lea         0x10(%[dst]),%[dst]           \n"
+                "subl        $0x1,%[iters]                 \n"
+                "jg          1b                            \n"
+
+                "vzeroupper  \n"
+                : [dst] "+r"(dst_ptr), [iters] "+r"(iters), [x] "+r"(x),
+                  [x8] "+r"(x8), [tmp0] "=&r"(tmp0), [tmp1] "=&r"(tmp1)
+                : [src] "r"(src_ptr), [dx] "r"(dx), [dx16] "r"(dx16),
+                  [kStep] "r"(kStep0_15_PrePerm_Filter)
+                : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+                  "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm11",
+                  "xmm12", "xmm13");
+            dst_width -= fast_iters * 16;
+          }
+        }
+      } else if (dx > 0x20000) {
+        int64_t first_x4 = (int64_t)x + 4LL * dx;
+        if (first_x4 <= limit) {
+          int64_t max_iters = (limit - first_x4) / (8LL * dx) + 1;
+          int fast_iters = dst_width >> 3;
+          if (max_iters < fast_iters) {
+            fast_iters = (int)max_iters;
+          }
+          if (fast_iters > 0) {
+            int iters = fast_iters;
+            int x4 = (int)first_x4;
+            int dx8 = dx << 3;
+            intptr_t tmp0, tmp1;
+            asm volatile(
+                "vmovd       %k[x],%%xmm2                  \n"
+                "vpbroadcastd %%xmm2,%%ymm2                \n"
+                "vmovd       %k[dx],%%xmm3                 \n"
+                "vpbroadcastd %%xmm3,%%ymm3                \n"
+                "vpmulld     %[kStep],%%ymm3,%%ymm0        \n"
+                "vpaddd      %%ymm0,%%ymm2,%%ymm2          \n"
+                "vpslld      $0x3,%%ymm3,%%ymm3            \n"  // 8 * dx
+                "vbroadcasti128 %[kShufFrac],%%ymm4        \n"
+                "vpcmpeqb    %%ymm6,%%ymm6,%%ymm6          \n"
+                "vpsrlw      $0xf,%%ymm6,%%ymm5            \n"
+                "vpsllw      $0x8,%%ymm5,%%ymm5            \n"  // 0x0100
+                "vpsrlw      $0xf,%%xmm6,%%xmm10           \n"
+                "vpsllw      $0x6,%%xmm10,%%xmm10          \n"  // 0x0040
+                "vpsrlw      $0x8,%%xmm6,%%xmm7            \n"  // 0x00ff
+                "vpsrlw      $0x9,%%xmm6,%%xmm6            \n"  // 0x007f
+
+                LABELALIGN
+                "1:          \n"
+                "movslq      %k[x],%q[tmp0]                \n"
+                "sar         $0x10,%q[tmp0]                \n"
+                "movslq      %k[x4],%q[tmp1]               \n"
+                "sar         $0x10,%q[tmp1]                \n"
+                "addl        %k[dx8],%k[x]                 \n"
+                "addl        %k[dx8],%k[x4]                \n"
+                "vpsrld      $0x10,%%ymm2,%%ymm8           \n"
+                "vpshufd     $0x0,%%ymm8,%%ymm9            \n"
+                "vpsubd      %%ymm9,%%ymm8,%%ymm8          \n"
+                "vpshufb     %%ymm4,%%ymm8,%%ymm8          \n"
+                "vpaddb      %%ymm5,%%ymm8,%%ymm8          \n"
+                "vpsrlw      $0x9,%%ymm2,%%ymm1            \n"
+                "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
+                "vpshufb     %%ymm4,%%ymm1,%%ymm1          \n"
+                "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
+                "vpxor       %%xmm6,%%xmm1,%%xmm1          \n"
+                "vmovdqu     (%[src],%q[tmp0],1),%%xmm0    \n"
+                "vinserti128 $0x1,(%[src],%q[tmp1],1),%%ymm0,%%ymm0 \n"
+                "vpshufb     %%ymm8,%%ymm0,%%ymm0          \n"
+                "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+                "vpand       %%xmm7,%%xmm0,%%xmm11         \n"
+                "vpmaddubsw  %%xmm1,%%xmm0,%%xmm0          \n"
+                "vpaddw      %%xmm11,%%xmm0,%%xmm0         \n"
+                "vpaddw      %%xmm10,%%xmm0,%%xmm0         \n"
+                "vpsrlw      $0x7,%%xmm0,%%xmm0            \n"
+                "vpackuswb   %%xmm0,%%xmm0,%%xmm0          \n"
+                "vmovq       %%xmm0,(%[dst])               \n"
+                "lea         0x8(%[dst]),%[dst]            \n"
+                "subl        $0x1,%[iters]                 \n"
+                "jg          1b                            \n"
+
+                "vzeroupper  \n"
+                : [dst] "+r"(dst_ptr), [iters] "+r"(iters), [x] "+r"(x),
+                  [x4] "+r"(x4), [tmp0] "=&r"(tmp0), [tmp1] "=&r"(tmp1)
+                : [src] "r"(src_ptr), [dx] "r"(dx), [dx8] "r"(dx8),
+                  [kStep] "m"(kStep0_7_Filter), [kShufFrac] "m"(kShufFracCols)
+                : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4",
+                  "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm11");
+            dst_width -= fast_iters * 8;
+          }
+        }
+      }
+    }
+  }
+#endif
   int n = dst_width & ~7;
   int r = dst_width & 7;
   if (n > 0) {
+#if defined(__x86_64__)
+    uintptr_t tmp;
+    int loop_n = n;
+    asm volatile(
+        "vmovd       %k[x],%%xmm2                  \n"
+        "vpbroadcastd %%xmm2,%%ymm2                \n"
+        "vmovd       %k[dx],%%xmm3                 \n"
+        "vpbroadcastd %%xmm3,%%ymm3                \n"
+        "vpmulld     %[kStep],%%ymm3,%%ymm0        \n"
+        "vpaddd      %%ymm0,%%ymm2,%%ymm2          \n"
+        "vpslld      $0x3,%%ymm3,%%ymm3            \n"
+        "vbroadcasti128 %[kShufFrac],%%ymm5        \n"
+        "vpcmpeqb    %%xmm6,%%xmm6,%%xmm6          \n"
+        "vpsrlw      $0x8,%%xmm6,%%xmm7            \n"  // 0x00ff
+        "vpsrlw      $0xf,%%xmm6,%%xmm8            \n"
+        "vpsllw      $0x6,%%xmm8,%%xmm8            \n"  // 0x0040
+        "vpsrlw      $0x9,%%xmm6,%%xmm6            \n"  // 0x007f
+
+        LABELALIGN
+        "1:          \n"
+        "vpsrlw      $0x9,%%ymm2,%%ymm1            \n"
+        "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
+        "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+        "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
+        "vpxor       %%xmm6,%%xmm1,%%xmm1          \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "movzwl      (%[src],%q[tmp],1),%k[tmp]    \n"
+        "vmovd       %k[tmp],%%xmm0                \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x1,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x2,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x3,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x4,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x5,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x6,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrw     $0x7,(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
+        "vpand       %%xmm7,%%xmm0,%%xmm4          \n"
+        "vpmaddubsw  %%xmm1,%%xmm0,%%xmm0          \n"
+        "vpaddw      %%xmm4,%%xmm0,%%xmm0          \n"
+        "vpaddw      %%xmm8,%%xmm0,%%xmm0          \n"
+        "vpsrlw      $0x7,%%xmm0,%%xmm0            \n"
+        "vpackuswb   %%xmm0,%%xmm0,%%xmm0          \n"
+        "vmovq       %%xmm0,(%[dst])               \n"
+        "lea         0x8(%[dst]),%[dst]            \n"
+        "subl        $0x8,%[n]                     \n"
+        "jg          1b                            \n"
+
+        "vzeroupper  \n"
+        : [dst] "+r"(dst_ptr), [n] "+rm"(loop_n), [x] "+r"(x), [tmp] "=&r"(tmp)
+        : [src] "r"(src_ptr), [dx] "r"(dx), [kStep] "m"(kStep0_7_Filter),
+          [kShufFrac] "m"(kShufFracCols)
+        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+          "xmm6", "xmm7", "xmm8");
+#else
     SIMD_ALIGNED(int32_t xi_buf[8]);
     int32_t* xi_ptr = xi_buf;
     uintptr_t tmp;
@@ -2914,24 +3162,6 @@ void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
         "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
         "vpermq      $0xd8,%%ymm1,%%ymm1           \n"
         "vpxor       %%xmm6,%%xmm1,%%xmm1          \n"
-#if defined(__x86_64__)
-        "movslq      0x00(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x0,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x04(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x1,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x08(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x2,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x0c(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x3,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x10(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x4,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x14(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x5,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x18(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x6,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-        "movslq      0x1c(%[xi]),%q[tmp]           \n"
-        "vpinsrw     $0x7,0x00(%[src],%q[tmp],1),%%xmm0,%%xmm0 \n"
-#else
         "mov         0x00(%[xi]),%[tmp]            \n"
         "vpinsrw     $0x0,0x00(%[src],%[tmp],1),%%xmm0,%%xmm0 \n"
         "mov         0x04(%[xi]),%[tmp]            \n"
@@ -2948,7 +3178,6 @@ void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
         "vpinsrw     $0x6,0x00(%[src],%[tmp],1),%%xmm0,%%xmm0 \n"
         "mov         0x1c(%[xi]),%[tmp]            \n"
         "vpinsrw     $0x7,0x00(%[src],%[tmp],1),%%xmm0,%%xmm0 \n"
-#endif
         "vpand       %%xmm7,%%xmm0,%%xmm4          \n"
         "vpmaddubsw  %%xmm1,%%xmm0,%%xmm0          \n"
         "vpaddw      %%xmm4,%%xmm0,%%xmm0          \n"
@@ -2968,6 +3197,7 @@ void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
         : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
           "xmm6", "xmm7");
     x = (int)((uint32_t)x + (uint32_t)n * (uint32_t)dx);
+#endif
   }
   for (int j = 0; j < r; ++j) {
     int xi = x >> 16;
@@ -2989,6 +3219,12 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
                               int dst_width,
                               int x,
                               int dx) {
+#if defined(HAS_SCALEFILTERCOLS_AVX2)
+  if (dst_width >= 8 && x >= 0 && dx > 0 && dx <= 0x40000) {
+    ScaleFilterCols_AVX2(dst_ptr, src_ptr, dst_width, x, dx);
+    return;
+  }
+#endif
   int n = dst_width & ~15;
   int r = dst_width & 15;
   if (n > 0) {
@@ -3107,6 +3343,297 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
   }
 }
 #endif  // HAS_SCALEFILTERCOLS_AVX512BW
+
+#ifdef HAS_SCALEFILTERCOLS_AVX512VBMI
+LIBYUV_TARGET_AVX512VBMI
+void ScaleFilterCols_AVX512VBMI(uint8_t* dst_ptr,
+                                const uint8_t* src_ptr,
+                                int dst_width,
+                                int x,
+                                int dx) {
+  if (dst_width <= 0) {
+    return;
+  }
+  int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+  if (dx <= 0 || dx > 0x40000 || x < 0 || x_last >= 0x7f000000LL) {
+    ScaleFilterCols_AVX512BW(dst_ptr, src_ptr, dst_width, x, dx);
+    return;
+  }
+  int max_valid_end = (int)(x_last >> 16) + 2;
+  int dx32 = dx << 5;
+  intptr_t base, tmp, mask;
+  if (dx <= 0x20000) {
+    // 1-ZMM (64-byte) gather via vpermb, 32 pixels/iter.
+    asm volatile(
+        "vpbroadcastd %k[x],%%zmm2                 \n"
+        "vpbroadcastd %k[dx],%%zmm4                \n"
+        "vpmulld     %[kStep],%%zmm4,%%zmm0        \n"
+        "vpaddd      %%zmm0,%%zmm2,%%zmm2          \n"  // vx[0..15]
+        "vpslld      $0x4,%%zmm4,%%zmm0            \n"  // 16 * dx
+        "vpaddd      %%zmm0,%%zmm2,%%zmm3          \n"  // vx[16..31]
+        "vpslld      $0x5,%%zmm4,%%zmm4            \n"  // 32 * dx
+        "vpternlogd  $0xff,%%zmm6,%%zmm6,%%zmm6    \n"
+        "vpsrlw      $0xf,%%zmm6,%%zmm5            \n"
+        "vpsllw      $0x8,%%zmm5,%%zmm5            \n"  // 0x0100
+        "vpsrlw      $0xf,%%zmm6,%%zmm16           \n"
+        "vpsllw      $0x6,%%zmm16,%%zmm16          \n"  // 0x0040
+        "vpsrlw      $0x8,%%zmm6,%%zmm7            \n"  // 0x00ff
+        "vpsrlw      $0x9,%%zmm6,%%zmm6            \n"  // 0x007f
+
+        LABELALIGN
+        "1:          \n"
+        "cmp         $0x20,%k[w]                   \n"
+        "jl          2f                            \n"
+        "movslq      %k[x],%q[base]                \n"
+        "sar         $0x10,%q[base]                \n"
+        "lea         0x40(%q[base]),%q[tmp]        \n"
+        "cmp         %k[max_end],%k[tmp]           \n"
+        "jg          2f                            \n"
+        "addl        %k[dx32],%k[x]                \n"
+        "vmovdqu8    (%[src],%q[base],1),%%zmm0    \n"
+        "vpbroadcastd %k[base],%%zmm10             \n"
+        "vpsrld      $0x10,%%zmm2,%%zmm8           \n"
+        "vpsrld      $0x10,%%zmm3,%%zmm9           \n"
+        "vpsubd      %%zmm10,%%zmm8,%%zmm8         \n"
+        "vpsubd      %%zmm10,%%zmm9,%%zmm9         \n"
+        "vpmovdw     %%zmm8,%%ymm8                 \n"
+        "vpmovdw     %%zmm9,%%ymm9                 \n"
+        "vinserti64x4 $0x1,%%ymm9,%%zmm8,%%zmm8    \n"
+        "vpsllw      $0x8,%%zmm8,%%zmm9            \n"
+        "vpord       %%zmm9,%%zmm8,%%zmm8          \n"
+        "vpaddb      %%zmm5,%%zmm8,%%zmm8          \n"  // [r, r+1] pairs
+        "vpsrlw      $0x9,%%zmm2,%%zmm12           \n"
+        "vpsrlw      $0x9,%%zmm3,%%zmm13           \n"
+        "vpaddd      %%zmm4,%%zmm2,%%zmm2          \n"
+        "vpaddd      %%zmm4,%%zmm3,%%zmm3          \n"
+        "vpmovdw     %%zmm12,%%ymm12               \n"
+        "vpmovdw     %%zmm13,%%ymm13               \n"
+        "vinserti64x4 $0x1,%%ymm13,%%zmm12,%%zmm12 \n"
+        "vpsllw      $0x8,%%zmm12,%%zmm13          \n"
+        "vpternlogd  $0x56,%%zmm6,%%zmm13,%%zmm12  \n"  // [0x7f^f, f]
+        "vpermb      %%zmm0,%%zmm8,%%zmm0          \n"
+        "vpandd      %%zmm7,%%zmm0,%%zmm1          \n"  // a
+        "vpmaddubsw  %%zmm12,%%zmm0,%%zmm0         \n"
+        "vpaddw      %%zmm1,%%zmm0,%%zmm0          \n"
+        "vpaddw      %%zmm16,%%zmm0,%%zmm0         \n"
+        "vpsrlw      $0x7,%%zmm0,%%zmm0            \n"
+        "vpmovwb     %%zmm0,(%[dst])               \n"
+        "lea         0x20(%[dst]),%[dst]           \n"
+        "subl        $0x20,%k[w]                   \n"
+        "jg          1b                            \n"
+        "jmp         99f                           \n"
+
+        // Masked tail loop (up to 32 pixels/iter, stays within max_end).
+        LABELALIGN
+        "2:          \n"
+        "test        %k[w],%k[w]                   \n"
+        "jle         99f                           \n"
+        "movslq      %k[x],%q[base]                \n"
+        "sar         $0x10,%q[base]                \n"
+        "addl        %k[dx32],%k[x]                \n"
+        "mov         %k[max_end],%k[tmp]           \n"
+        "sub         %k[base],%k[tmp]              \n"
+        "mov         $0x40,%k[mask]                \n"
+        "cmp         %k[mask],%k[tmp]              \n"
+        "cmovg       %k[mask],%k[tmp]              \n"
+        "mov         $-1,%q[mask]                  \n"
+        "bzhi        %q[tmp],%q[mask],%q[mask]     \n"
+        "kmovq       %q[mask],%%k1                 \n"
+
+        "vmovdqu8    (%[src],%q[base],1),%%zmm0%{%%k1%}%{z%} \n"
+        "vpbroadcastd %k[base],%%zmm10             \n"
+        "vpsrld      $0x10,%%zmm2,%%zmm8           \n"
+        "vpsrld      $0x10,%%zmm3,%%zmm9           \n"
+        "vpsubd      %%zmm10,%%zmm8,%%zmm8         \n"
+        "vpsubd      %%zmm10,%%zmm9,%%zmm9         \n"
+        "vpmovdw     %%zmm8,%%ymm8                 \n"
+        "vpmovdw     %%zmm9,%%ymm9                 \n"
+        "vinserti64x4 $0x1,%%ymm9,%%zmm8,%%zmm8    \n"
+        "vpsllw      $0x8,%%zmm8,%%zmm9            \n"
+        "vpord       %%zmm9,%%zmm8,%%zmm8          \n"
+        "vpaddb      %%zmm5,%%zmm8,%%zmm8          \n"
+        "vpsrlw      $0x9,%%zmm2,%%zmm12           \n"
+        "vpsrlw      $0x9,%%zmm3,%%zmm13           \n"
+        "vpaddd      %%zmm4,%%zmm2,%%zmm2          \n"
+        "vpaddd      %%zmm4,%%zmm3,%%zmm3          \n"
+        "vpmovdw     %%zmm12,%%ymm12               \n"
+        "vpmovdw     %%zmm13,%%ymm13               \n"
+        "vinserti64x4 $0x1,%%ymm13,%%zmm12,%%zmm12 \n"
+        "vpsllw      $0x8,%%zmm12,%%zmm13          \n"
+        "vpternlogd  $0x56,%%zmm6,%%zmm13,%%zmm12  \n"
+        "vpermb      %%zmm0,%%zmm8,%%zmm0          \n"
+        "vpandd      %%zmm7,%%zmm0,%%zmm1          \n"
+        "vpmaddubsw  %%zmm12,%%zmm0,%%zmm0         \n"
+        "vpaddw      %%zmm1,%%zmm0,%%zmm0          \n"
+        "vpaddw      %%zmm16,%%zmm0,%%zmm0         \n"
+        "vpsrlw      $0x7,%%zmm0,%%zmm0            \n"
+
+        "mov         $0x20,%k[tmp]                 \n"
+        "cmp         %k[tmp],%k[w]                 \n"
+        "cmovl       %k[w],%k[tmp]                 \n"
+        "mov         $-1,%k[mask]                  \n"
+        "bzhi        %k[tmp],%k[mask],%k[mask]     \n"
+        "kmovd       %k[mask],%%k3                 \n"
+
+        "vpmovwb     %%zmm0,(%[dst])%{%%k3%}       \n"
+        "lea         0x20(%[dst]),%[dst]           \n"
+        "subl        $0x20,%k[w]                   \n"
+        "jg          2b                            \n"
+
+        "99:         \n"
+        "vzeroupper  \n"
+        : [dst] "+r"(dst_ptr), [w] "+r"(dst_width), [x] "+r"(x),
+          [base] "=&r"(base), [tmp] "=&r"(tmp), [mask] "=&r"(mask)
+        : [src] "r"(src_ptr), [dx] "r"(dx), [dx32] "r"(dx32),
+          [max_end] "r"(max_valid_end), [kStep] "m"(kStep0_15_Filter)
+        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+          "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm12", "xmm13", "xmm16",
+          "k1", "k3");
+    return;
+  }
+
+  // 0x20000 < dx <= 0x40000: 2-ZMM (128-byte) gather via vpermi2b, 32 px/iter.
+  intptr_t avail2;
+  asm volatile(
+      "vpbroadcastd %k[x],%%zmm2                 \n"
+      "vpbroadcastd %k[dx],%%zmm4                \n"
+      "vpmulld     %[kStep],%%zmm4,%%zmm0        \n"
+      "vpaddd      %%zmm0,%%zmm2,%%zmm2          \n"  // vx[0..15]
+      "vpslld      $0x4,%%zmm4,%%zmm0            \n"  // 16 * dx
+      "vpaddd      %%zmm0,%%zmm2,%%zmm3          \n"  // vx[16..31]
+      "vpslld      $0x5,%%zmm4,%%zmm4            \n"  // 32 * dx
+      "vpternlogd  $0xff,%%zmm6,%%zmm6,%%zmm6    \n"
+      "vpsrlw      $0xf,%%zmm6,%%zmm5            \n"
+      "vpsllw      $0x8,%%zmm5,%%zmm5            \n"  // 0x0100
+      "vpsrlw      $0xf,%%zmm6,%%zmm16           \n"
+      "vpsllw      $0x6,%%zmm16,%%zmm16          \n"  // 0x0040
+      "vpsrlw      $0x8,%%zmm6,%%zmm7            \n"  // 0x00ff
+      "vpsrlw      $0x9,%%zmm6,%%zmm6            \n"  // 0x007f
+
+      LABELALIGN
+      "1:          \n"
+      "cmp         $0x20,%k[w]                   \n"
+      "jl          2f                            \n"
+      "movslq      %k[x],%q[base]                \n"
+      "sar         $0x10,%q[base]                \n"
+      "lea         0x80(%q[base]),%q[tmp]        \n"
+      "cmp         %k[max_end],%k[tmp]           \n"
+      "jg          2f                            \n"
+      "addl        %k[dx32],%k[x]                \n"
+      "vmovdqu8    (%[src],%q[base],1),%%zmm0    \n"
+      "vmovdqu8    0x40(%[src],%q[base],1),%%zmm1 \n"
+      "vpbroadcastd %k[base],%%zmm10             \n"
+      "vpsrld      $0x10,%%zmm2,%%zmm8           \n"
+      "vpsrld      $0x10,%%zmm3,%%zmm9           \n"
+      "vpsubd      %%zmm10,%%zmm8,%%zmm8         \n"
+      "vpsubd      %%zmm10,%%zmm9,%%zmm9         \n"
+      "vpmovdw     %%zmm8,%%ymm8                 \n"
+      "vpmovdw     %%zmm9,%%ymm9                 \n"
+      "vinserti64x4 $0x1,%%ymm9,%%zmm8,%%zmm8    \n"
+      "vpsllw      $0x8,%%zmm8,%%zmm9            \n"
+      "vpord       %%zmm9,%%zmm8,%%zmm8          \n"
+      "vpaddb      %%zmm5,%%zmm8,%%zmm8          \n"  // [r, r+1] pairs
+      "vpermi2b    %%zmm1,%%zmm0,%%zmm8          \n"  // gathered pairs
+      "vpsrlw      $0x9,%%zmm2,%%zmm12           \n"
+      "vpsrlw      $0x9,%%zmm3,%%zmm13           \n"
+      "vpaddd      %%zmm4,%%zmm2,%%zmm2          \n"
+      "vpaddd      %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpmovdw     %%zmm12,%%ymm12               \n"
+      "vpmovdw     %%zmm13,%%ymm13               \n"
+      "vinserti64x4 $0x1,%%ymm13,%%zmm12,%%zmm12 \n"
+      "vpsllw      $0x8,%%zmm12,%%zmm13          \n"
+      "vpternlogd  $0x56,%%zmm6,%%zmm13,%%zmm12  \n"  // [0x7f^f, f]
+      "vpandd      %%zmm7,%%zmm8,%%zmm1          \n"  // a
+      "vpmaddubsw  %%zmm12,%%zmm8,%%zmm8         \n"
+      "vpaddw      %%zmm1,%%zmm8,%%zmm8          \n"
+      "vpaddw      %%zmm16,%%zmm8,%%zmm8         \n"
+      "vpsrlw      $0x7,%%zmm8,%%zmm8            \n"
+      "vpmovwb     %%zmm8,(%[dst])               \n"
+      "lea         0x20(%[dst]),%[dst]           \n"
+      "subl        $0x20,%k[w]                   \n"
+      "jg          1b                            \n"
+      "jmp         99f                           \n"
+
+      // Masked tail loop (up to 32 pixels/iter, stays within max_end).
+      LABELALIGN
+      "2:          \n"
+      "test        %k[w],%k[w]                   \n"
+      "jle         99f                           \n"
+      "movslq      %k[x],%q[base]                \n"
+      "sar         $0x10,%q[base]                \n"
+      "addl        %k[dx32],%k[x]                \n"
+      "mov         %k[max_end],%k[tmp]           \n"
+      "sub         %k[base],%k[tmp]              \n"  // avail
+      "lea         -0x40(%q[tmp]),%q[avail2]     \n"  // avail - 64
+      "mov         $0x40,%k[mask]                \n"
+      "cmp         %k[mask],%k[tmp]              \n"
+      "cmovg       %k[mask],%k[tmp]              \n"
+      "mov         $-1,%q[mask]                  \n"
+      "bzhi        %q[tmp],%q[mask],%q[mask]     \n"
+      "kmovq       %q[mask],%%k1                 \n"
+      "xor         %k[tmp],%k[tmp]               \n"
+      "test        %k[avail2],%k[avail2]         \n"
+      "cmovl       %k[tmp],%k[avail2]            \n"
+      "mov         $0x40,%k[tmp]                 \n"
+      "cmp         %k[tmp],%k[avail2]            \n"
+      "cmovg       %k[tmp],%k[avail2]            \n"
+      "mov         $-1,%q[mask]                  \n"
+      "bzhi        %q[avail2],%q[mask],%q[mask]  \n"
+      "kmovq       %q[mask],%%k2                 \n"
+
+      "vmovdqu8    (%[src],%q[base],1),%%zmm0%{%%k1%}%{z%} \n"
+      "vmovdqu8    0x40(%[src],%q[base],1),%%zmm1%{%%k2%}%{z%} \n"
+      "vpbroadcastd %k[base],%%zmm10             \n"
+      "vpsrld      $0x10,%%zmm2,%%zmm8           \n"
+      "vpsrld      $0x10,%%zmm3,%%zmm9           \n"
+      "vpsubd      %%zmm10,%%zmm8,%%zmm8         \n"
+      "vpsubd      %%zmm10,%%zmm9,%%zmm9         \n"
+      "vpmovdw     %%zmm8,%%ymm8                 \n"
+      "vpmovdw     %%zmm9,%%ymm9                 \n"
+      "vinserti64x4 $0x1,%%ymm9,%%zmm8,%%zmm8    \n"
+      "vpsllw      $0x8,%%zmm8,%%zmm9            \n"
+      "vpord       %%zmm9,%%zmm8,%%zmm8          \n"
+      "vpaddb      %%zmm5,%%zmm8,%%zmm8          \n"
+      "vpermi2b    %%zmm1,%%zmm0,%%zmm8          \n"
+      "vpsrlw      $0x9,%%zmm2,%%zmm12           \n"
+      "vpsrlw      $0x9,%%zmm3,%%zmm13           \n"
+      "vpaddd      %%zmm4,%%zmm2,%%zmm2          \n"
+      "vpaddd      %%zmm4,%%zmm3,%%zmm3          \n"
+      "vpmovdw     %%zmm12,%%ymm12               \n"
+      "vpmovdw     %%zmm13,%%ymm13               \n"
+      "vinserti64x4 $0x1,%%ymm13,%%zmm12,%%zmm12 \n"
+      "vpsllw      $0x8,%%zmm12,%%zmm13          \n"
+      "vpternlogd  $0x56,%%zmm6,%%zmm13,%%zmm12  \n"
+      "vpandd      %%zmm7,%%zmm8,%%zmm1          \n"
+      "vpmaddubsw  %%zmm12,%%zmm8,%%zmm8         \n"
+      "vpaddw      %%zmm1,%%zmm8,%%zmm8          \n"
+      "vpaddw      %%zmm16,%%zmm8,%%zmm8         \n"
+      "vpsrlw      $0x7,%%zmm8,%%zmm8            \n"
+
+      "mov         $0x20,%k[tmp]                 \n"
+      "cmp         %k[tmp],%k[w]                 \n"
+      "cmovl       %k[w],%k[tmp]                 \n"
+      "mov         $-1,%k[mask]                  \n"
+      "bzhi        %k[tmp],%k[mask],%k[mask]     \n"
+      "kmovd       %k[mask],%%k3                 \n"
+
+      "vpmovwb     %%zmm8,(%[dst])%{%%k3%}       \n"
+      "lea         0x20(%[dst]),%[dst]           \n"
+      "subl        $0x20,%k[w]                   \n"
+      "jg          2b                            \n"
+
+      "99:         \n"
+      "vzeroupper  \n"
+      : [dst] "+r"(dst_ptr), [w] "+r"(dst_width), [x] "+r"(x),
+        [base] "=&r"(base), [tmp] "=&r"(tmp), [mask] "=&r"(mask),
+        [avail2] "=&r"(avail2)
+      : [src] "r"(src_ptr), [dx] "r"(dx), [dx32] "r"(dx32),
+        [max_end] "r"(max_valid_end), [kStep] "m"(kStep0_15_Filter)
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7", "xmm8", "xmm9", "xmm10", "xmm12", "xmm13", "xmm16", "k1", "k2",
+        "k3");
+}
+#endif  // HAS_SCALEFILTERCOLS_AVX512VBMI
 
 #ifdef HAS_SCALEUVFILTERCOLS_AVX2
 static const int32_t kStep0_7_UVFilter[8] = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -3927,9 +4454,157 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
                               int dst_width,
                               int x,
                               int dx) {
+#if defined(__x86_64__)
+  if (dst_width >= 8 && dx > 0 && dx <= 0x20000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      int max_valid_end = (int)(x_last >> 16) + 2;
+      int64_t limit = ((int64_t)(max_valid_end - 7) << 16) - 1;
+      int64_t first_x4 = (int64_t)x + 4LL * dx;
+      if (first_x4 <= limit) {
+        int64_t max_iters = (limit - first_x4) / (8LL * dx) + 1;
+        int fast_iters = dst_width >> 3;
+        if (max_iters < fast_iters) {
+          fast_iters = (int)max_iters;
+        }
+        if (fast_iters > 0) {
+          static const int32_t kStep0_7_ARGB[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+          static const uvec8 kShufFracLo = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+                                            4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u};
+          static const uvec8 kShufFracHi = {8u,  8u,  8u,  8u,  8u,  8u,
+                                            8u,  8u,  12u, 12u, 12u, 12u,
+                                            12u, 12u, 12u, 12u};
+          int iters = fast_iters;
+          int x4 = (int)first_x4;
+          int dx8 = dx << 3;
+          intptr_t tmp0, tmp1;
+          asm volatile(
+              "vbroadcasti128 %[kShufLo],%%ymm4          \n"
+              "vbroadcasti128 %[kShufHi],%%ymm5          \n"
+              "vmovd       %k[x],%%xmm2                  \n"
+              "vpbroadcastd %%xmm2,%%ymm2                \n"
+              "vmovd       %k[dx],%%xmm3                 \n"
+              "vpbroadcastd %%xmm3,%%ymm3                \n"
+              "vpmulld     %[kStep8],%%ymm3,%%ymm0       \n"
+              "vpaddd      %%ymm0,%%ymm2,%%ymm2          \n"
+              "vpslld      $0x3,%%ymm3,%%ymm3            \n"  // 8 * dx
+              "vpcmpeqb    %%ymm6,%%ymm6,%%ymm6          \n"
+              "vpsrld      $0x1f,%%ymm6,%%ymm10          \n"  // 1 (int32)
+              "vpsrlw      $0x9,%%ymm6,%%ymm6            \n"  // 0x007f
+
+              LABELALIGN
+              "1:          \n"
+              "movslq      %k[x],%q[tmp0]                \n"
+              "sar         $0x10,%q[tmp0]                \n"
+              "movslq      %k[x4],%q[tmp1]               \n"
+              "sar         $0x10,%q[tmp1]                \n"
+              "addl        %k[dx8],%k[x]                 \n"
+              "addl        %k[dx8],%k[x4]                \n"
+              "vpsrld      $0x10,%%ymm2,%%ymm8           \n"
+              "vpshufd     $0x0,%%ymm8,%%ymm9            \n"
+              "vpsubd      %%ymm9,%%ymm8,%%ymm8          \n"
+              "vpaddd      %%ymm10,%%ymm8,%%ymm9         \n"
+              "vperm2i128  $0x20,%%ymm9,%%ymm8,%%ymm11   \n"
+              "vperm2i128  $0x31,%%ymm9,%%ymm8,%%ymm8    \n"
+              "vmovdqu     (%[src],%q[tmp0],4),%%ymm0    \n"
+              "vmovdqu     (%[src],%q[tmp1],4),%%ymm1    \n"
+              "vpermd      %%ymm0,%%ymm11,%%ymm0         \n"
+              "vpermd      %%ymm1,%%ymm8,%%ymm1          \n"
+              "vperm2i128  $0x20,%%ymm1,%%ymm0,%%ymm8    \n"  // a[0..7]
+              "vperm2i128  $0x31,%%ymm1,%%ymm0,%%ymm9    \n"  // b[0..7]
+              "vpsrlw      $0x9,%%ymm2,%%ymm1            \n"
+              "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
+              "vpshufb     %%ymm4,%%ymm1,%%ymm0          \n"
+              "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+              "vpxor       %%ymm6,%%ymm0,%%ymm0          \n"
+              "vpxor       %%ymm6,%%ymm1,%%ymm1          \n"
+              "vpunpcklbw  %%ymm9,%%ymm8,%%ymm7          \n"
+              "vpunpckhbw  %%ymm9,%%ymm8,%%ymm8          \n"
+              "vpmaddubsw  %%ymm0,%%ymm7,%%ymm7          \n"
+              "vpmaddubsw  %%ymm1,%%ymm8,%%ymm8          \n"
+              "vpsrlw      $0x7,%%ymm7,%%ymm7            \n"
+              "vpsrlw      $0x7,%%ymm8,%%ymm8            \n"
+              "vpackuswb   %%ymm8,%%ymm7,%%ymm7          \n"
+              "vmovdqu     %%ymm7,(%[dst])               \n"
+              "lea         0x20(%[dst]),%[dst]           \n"
+              "subl        $0x1,%[iters]                 \n"
+              "jg          1b                            \n"
+
+              "vzeroupper  \n"
+              : [dst] "+r"(dst_argb), [iters] "+r"(iters), [x] "+r"(x),
+                [x4] "+r"(x4), [tmp0] "=&r"(tmp0), [tmp1] "=&r"(tmp1)
+              : [src] "r"(src_argb), [dx] "r"(dx), [dx8] "r"(dx8),
+                [kStep8] "m"(kStep0_7_ARGB), [kShufLo] "m"(kShufFracLo),
+                [kShufHi] "m"(kShufFracHi)
+              : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+                "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm11");
+          dst_width -= fast_iters * 8;
+        }
+      }
+    }
+  }
+#endif
   int n = dst_width & ~3;
   int r = dst_width & 3;
   if (n > 0) {
+#if defined(__x86_64__)
+    intptr_t tmp;
+    int loop_n = n;
+    asm volatile(
+        "vbroadcasti128 %[kShufARGB],%%ymm4        \n"
+        "vmovdqu     %[kShufFrac],%%ymm5           \n"
+        "vmovd       %k[x],%%xmm2                  \n"
+        "vpshufd     $0x0,%%xmm2,%%xmm2            \n"
+        "vmovd       %k[dx],%%xmm3                 \n"
+        "vpshufd     $0x0,%%xmm3,%%xmm3            \n"
+        "vpmulld     %[kStep],%%xmm3,%%xmm0        \n"
+        "vpaddd      %%xmm0,%%xmm2,%%xmm2          \n"
+        "vpslld      $0x2,%%xmm3,%%xmm3            \n"
+        "vpcmpeqb    %%ymm6,%%ymm6,%%ymm6          \n"
+        "vpsrlw      $0x9,%%ymm6,%%ymm6            \n"
+
+        LABELALIGN
+        "1:          \n"
+        "vpsrlw      $0x9,%%xmm2,%%xmm1            \n"
+        "vpaddd      %%xmm3,%%xmm2,%%xmm2          \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vmovq       (%[src],%q[tmp],4),%%xmm0     \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrq     $0x1,(%[src],%q[tmp],4),%%xmm0,%%xmm0 \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vmovq       (%[src],%q[tmp],4),%%xmm7     \n"
+        "movslq      %k[x],%q[tmp]                 \n"
+        "sar         $0x10,%q[tmp]                 \n"
+        "addl        %k[dx],%k[x]                  \n"
+        "vpinsrq     $0x1,(%[src],%q[tmp],4),%%xmm7,%%xmm7 \n"
+        "vinserti128 $0x1,%%xmm7,%%ymm0,%%ymm0     \n"
+        "vinserti128 $0x1,%%xmm1,%%ymm1,%%ymm1     \n"
+        "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+        "vpshufb     %%ymm4,%%ymm0,%%ymm0          \n"
+        "vpxor       %%ymm6,%%ymm1,%%ymm1          \n"
+        "vpmaddubsw  %%ymm1,%%ymm0,%%ymm0          \n"
+        "vpsrlw      $0x7,%%ymm0,%%ymm0            \n"
+        "vpackuswb   %%ymm0,%%ymm0,%%ymm0          \n"
+        "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+        "vmovdqu     %%xmm0,(%[dst])               \n"
+        "lea         0x10(%[dst]),%[dst]           \n"
+        "subl        $0x4,%[n]                     \n"
+        "jg          1b                            \n"
+
+        "vzeroupper  \n"
+        : [dst] "+r"(dst_argb), [n] "+rm"(loop_n), [x] "+r"(x), [tmp] "=&r"(tmp)
+        : [src] "r"(src_argb), [dx] "r"(dx), [kStep] "m"(kStep0_3_ARGB),
+          [kShufARGB] "m"(kShuffleColARGB),
+          [kShufFrac] "m"(kShuffleFractionsAVX2)
+        : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+          "xmm6", "xmm7");
+#else
     SIMD_ALIGNED(int32_t xi_buf[4]);
     int32_t* xi_ptr = xi_buf;
     intptr_t tmp;
@@ -3953,16 +4628,6 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
         "vmovdqa     %%xmm1,(%[xi])                \n"
         "vpsrlw      $0x9,%%xmm2,%%xmm1            \n"
         "vpaddd      %%xmm3,%%xmm2,%%xmm2          \n"
-#if defined(__x86_64__)
-        "movslq      0x00(%[xi]),%q[tmp]           \n"
-        "vmovq       0x00(%[src],%q[tmp],4),%%xmm0 \n"
-        "movslq      0x04(%[xi]),%q[tmp]           \n"
-        "vmovhps     0x00(%[src],%q[tmp],4),%%xmm0,%%xmm0 \n"
-        "movslq      0x08(%[xi]),%q[tmp]           \n"
-        "vmovq       0x00(%[src],%q[tmp],4),%%xmm7 \n"
-        "movslq      0x0c(%[xi]),%q[tmp]           \n"
-        "vmovhps     0x00(%[src],%q[tmp],4),%%xmm7,%%xmm7 \n"
-#else
         "mov         0x00(%[xi]),%[tmp]            \n"
         "vmovq       0x00(%[src],%[tmp],4),%%xmm0  \n"
         "mov         0x04(%[xi]),%[tmp]            \n"
@@ -3971,7 +4636,6 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
         "vmovq       0x00(%[src],%[tmp],4),%%xmm7  \n"
         "mov         0x0c(%[xi]),%[tmp]            \n"
         "vmovhps     0x00(%[src],%[tmp],4),%%xmm7,%%xmm7 \n"
-#endif
         "vinserti128 $0x1,%%xmm7,%%ymm0,%%ymm0     \n"
         "vinserti128 $0x1,%%xmm1,%%ymm1,%%ymm1     \n"
         "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
@@ -3993,6 +4657,7 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
         : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
           "xmm6", "xmm7");
     x = (int)((uint32_t)x + (uint32_t)n * (uint32_t)dx);
+#endif
   }
   for (int j = 0; j < r; ++j) {
     ptrdiff_t xi = (ptrdiff_t)(x >> 16) * 4;
@@ -4018,12 +4683,264 @@ static const uvec8 kShuffleFracARGB_AVX512 = {
     0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
     8u, 8u, 8u, 8u, 8u, 8u, 8u, 8u};
 
+static const int32_t kStep0_15_ARGB_AVX512[16] = {0, 1, 2,  3,  4,  5,  6,  7,
+                                                  8, 9, 10, 11, 12, 13, 14, 15};
+static const uvec8 kShuffleFracARGBLo_AVX512 = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+                                                4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u};
+static const uvec8 kShuffleFracARGBHi_AVX512 = {
+    8u, 8u, 8u, 8u, 8u, 8u, 8u, 8u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u};
+
 LIBYUV_TARGET_AVX512BW
 void ScaleARGBFilterCols_AVX512BW(uint8_t* dst_argb,
                                   const uint8_t* src_argb,
                                   int dst_width,
                                   int x,
                                   int dx) {
+  if (dst_width <= 0) {
+    return;
+  }
+  if (dx > 0 && dx <= 0x44000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      int max_valid_end = (int)(x_last >> 16) + 2;
+      if (dx <= 0x20000) {
+        int dx16 = dx << 4;
+        intptr_t base, tmp, mask;
+        asm volatile(
+            "vbroadcasti32x4 %[kShufLo],%%zmm4         \n"
+            "vbroadcasti32x4 %[kShufHi],%%zmm5         \n"
+            "vpbroadcastd %k[x],%%zmm2                 \n"
+            "vpbroadcastd %k[dx],%%zmm3                \n"
+            "vpmulld     %[kStep16],%%zmm3,%%zmm0      \n"
+            "vpaddd      %%zmm0,%%zmm2,%%zmm2          \n"
+            "vpslld      $0x4,%%zmm3,%%zmm3            \n"  // 16 * dx
+            "vpternlogd  $0xff,%%zmm6,%%zmm6,%%zmm6    \n"
+            "vpsrld      $0x1f,%%zmm6,%%zmm10          \n"  // 1 (int32)
+            "vpsrlw      $0x9,%%zmm6,%%zmm6            \n"  // 0x007f
+
+            LABELALIGN
+            "1:          \n"
+            "cmp         $0x10,%k[w]                   \n"
+            "jl          2f                            \n"
+            "movslq      %k[x],%q[base]                \n"
+            "sar         $0x10,%q[base]                \n"
+            "lea         0x20(%q[base]),%q[tmp]        \n"
+            "cmp         %k[max_end],%k[tmp]           \n"
+            "jg          2f                            \n"
+            "addl        %k[dx16],%k[x]                \n"
+            "vmovdqu32   (%[src],%q[base],4),%%zmm0    \n"
+            "vmovdqu32   0x40(%[src],%q[base],4),%%zmm1 \n"
+            "vpsrld      $0x10,%%zmm2,%%zmm8           \n"
+            "vpbroadcastd %k[base],%%zmm9              \n"
+            "vpsubd      %%zmm9,%%zmm8,%%zmm8          \n"
+            "vpaddd      %%zmm10,%%zmm8,%%zmm9         \n"
+            "vpermi2d    %%zmm1,%%zmm0,%%zmm8          \n"  // a[0..15]
+            "vpermi2d    %%zmm1,%%zmm0,%%zmm9          \n"  // b[0..15]
+            "vpsrlw      $0x9,%%zmm2,%%zmm1            \n"
+            "vpaddd      %%zmm3,%%zmm2,%%zmm2          \n"
+            "vpshufb     %%zmm4,%%zmm1,%%zmm0          \n"
+            "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
+            "vpxord      %%zmm6,%%zmm0,%%zmm0          \n"
+            "vpxord      %%zmm6,%%zmm1,%%zmm1          \n"
+            "vpunpcklbw  %%zmm9,%%zmm8,%%zmm7          \n"
+            "vpunpckhbw  %%zmm9,%%zmm8,%%zmm8          \n"
+            "vpmaddubsw  %%zmm0,%%zmm7,%%zmm7          \n"
+            "vpmaddubsw  %%zmm1,%%zmm8,%%zmm8          \n"
+            "vpsrlw      $0x7,%%zmm7,%%zmm7            \n"
+            "vpsrlw      $0x7,%%zmm8,%%zmm8            \n"
+            "vpackuswb   %%zmm8,%%zmm7,%%zmm7          \n"
+            "vmovdqu32   %%zmm7,(%[dst])               \n"
+            "lea         0x40(%[dst]),%[dst]           \n"
+            "subl        $0x10,%k[w]                   \n"
+            "jg          1b                            \n"
+            "jmp         99f                           \n"
+
+            // Masked tail loop (up to 16 pixels/iter, stays within max_end).
+            LABELALIGN
+            "2:          \n"
+            "test        %k[w],%k[w]                   \n"
+            "jle         99f                           \n"
+            "movslq      %k[x],%q[base]                \n"
+            "sar         $0x10,%q[base]                \n"
+            "addl        %k[dx16],%k[x]                \n"
+            "mov         %k[max_end],%k[tmp]           \n"
+            "sub         %k[base],%k[tmp]              \n"
+            "mov         $0x20,%k[mask]                \n"
+            "cmp         %k[mask],%k[tmp]              \n"
+            "cmovg       %k[mask],%k[tmp]              \n"
+            "mov         $-1,%q[mask]                  \n"
+            "bzhi        %q[tmp],%q[mask],%q[mask]     \n"
+            "kmovw       %k[mask],%%k1                 \n"
+            "shr         $0x10,%q[mask]                \n"
+            "kmovw       %k[mask],%%k2                 \n"
+
+            "vmovdqu32   (%[src],%q[base],4),%%zmm0%{%%k1%}%{z%} \n"
+            "vmovdqu32   0x40(%[src],%q[base],4),%%zmm1%{%%k2%}%{z%} \n"
+            "vpsrld      $0x10,%%zmm2,%%zmm8           \n"
+            "vpbroadcastd %k[base],%%zmm9              \n"
+            "vpsubd      %%zmm9,%%zmm8,%%zmm8          \n"
+            "vpaddd      %%zmm10,%%zmm8,%%zmm9         \n"
+            "vpermi2d    %%zmm1,%%zmm0,%%zmm8          \n"
+            "vpermi2d    %%zmm1,%%zmm0,%%zmm9          \n"
+            "vpsrlw      $0x9,%%zmm2,%%zmm1            \n"
+            "vpaddd      %%zmm3,%%zmm2,%%zmm2          \n"
+            "vpshufb     %%zmm4,%%zmm1,%%zmm0          \n"
+            "vpshufb     %%zmm5,%%zmm1,%%zmm1          \n"
+            "vpxord      %%zmm6,%%zmm0,%%zmm0          \n"
+            "vpxord      %%zmm6,%%zmm1,%%zmm1          \n"
+            "vpunpcklbw  %%zmm9,%%zmm8,%%zmm7          \n"
+            "vpunpckhbw  %%zmm9,%%zmm8,%%zmm8          \n"
+            "vpmaddubsw  %%zmm0,%%zmm7,%%zmm7          \n"
+            "vpmaddubsw  %%zmm1,%%zmm8,%%zmm8          \n"
+            "vpsrlw      $0x7,%%zmm7,%%zmm7            \n"
+            "vpsrlw      $0x7,%%zmm8,%%zmm8            \n"
+            "vpackuswb   %%zmm8,%%zmm7,%%zmm7          \n"
+
+            "mov         $0x10,%k[tmp]                 \n"
+            "cmp         %k[tmp],%k[w]                 \n"
+            "cmovl       %k[w],%k[tmp]                 \n"
+            "mov         $-1,%k[mask]                  \n"
+            "bzhi        %k[tmp],%k[mask],%k[mask]     \n"
+            "kmovw       %k[mask],%%k3                 \n"
+
+            "vmovdqu32   %%zmm7,(%[dst])%{%%k3%}       \n"
+            "lea         0x40(%[dst]),%[dst]           \n"
+            "subl        $0x10,%k[w]                   \n"
+            "jg          2b                            \n"
+
+            "99:         \n"
+            "vzeroupper  \n"
+            : [dst] "+r"(dst_argb), [w] "+r"(dst_width), [x] "+r"(x),
+              [base] "=&r"(base), [tmp] "=&r"(tmp), [mask] "=&r"(mask)
+            : [src] "r"(src_argb), [dx] "r"(dx), [dx16] "r"(dx16),
+              [max_end] "r"(max_valid_end),
+              [kStep16] "m"(kStep0_15_ARGB_AVX512),
+              [kShufLo] "m"(kShuffleFracARGBLo_AVX512),
+              [kShufHi] "m"(kShuffleFracARGBHi_AVX512)
+            : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+              "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "k1", "k2", "k3");
+        return;
+      }
+      // 0x20000 < dx <= 0x44000: 8 ARGB pixels/iter from 2 ZMMs (1x vpermi2d).
+      int dx8 = dx << 3;
+      intptr_t base, tmp, mask;
+      asm volatile(
+          "vbroadcasti128 %[kShufLo],%%ymm4          \n"
+          "vbroadcasti128 %[kShufHi],%%ymm5          \n"
+          "vpbroadcastd %k[x],%%ymm2                 \n"
+          "vpbroadcastd %k[dx],%%ymm3                \n"
+          "vpmulld     %[kStep8],%%ymm3,%%ymm0       \n"
+          "vpaddd      %%ymm0,%%ymm2,%%ymm2          \n"
+          "vpslld      $0x3,%%ymm3,%%ymm3            \n"  // 8 * dx
+          "vpcmpeqb    %%ymm6,%%ymm6,%%ymm6          \n"
+          "vpsrld      $0x1f,%%ymm6,%%ymm10          \n"  // 1 (int32)
+          "vpsrlw      $0x9,%%ymm6,%%ymm6            \n"  // 0x007f
+
+          LABELALIGN
+          "1:          \n"
+          "cmp         $0x8,%k[w]                    \n"
+          "jl          2f                            \n"
+          "movslq      %k[x],%q[base]                \n"
+          "sar         $0x10,%q[base]                \n"
+          "lea         0x20(%q[base]),%q[tmp]        \n"
+          "cmp         %k[max_end],%k[tmp]           \n"
+          "jg          2f                            \n"
+          "addl        %k[dx8],%k[x]                 \n"
+          "vmovdqu32   (%[src],%q[base],4),%%zmm0    \n"
+          "vmovdqu32   0x40(%[src],%q[base],4),%%zmm1 \n"
+          "vpsrld      $0x10,%%ymm2,%%ymm8           \n"
+          "vpbroadcastd %k[base],%%ymm9              \n"
+          "vpsubd      %%ymm9,%%ymm8,%%ymm8          \n"
+          "vpaddd      %%ymm10,%%ymm8,%%ymm9         \n"
+          "vinserti64x4 $0x1,%%ymm9,%%zmm8,%%zmm8    \n"
+          "vpermi2d    %%zmm1,%%zmm0,%%zmm8          \n"  // [a0..7 | b0..7]
+          "vextracti64x4 $0x1,%%zmm8,%%ymm9          \n"  // b[0..7]
+          "vpsrlw      $0x9,%%ymm2,%%ymm1            \n"
+          "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
+          "vpshufb     %%ymm4,%%ymm1,%%ymm0          \n"
+          "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+          "vpxor       %%ymm6,%%ymm0,%%ymm0          \n"
+          "vpxor       %%ymm6,%%ymm1,%%ymm1          \n"
+          "vpunpcklbw  %%ymm9,%%ymm8,%%ymm7          \n"
+          "vpunpckhbw  %%ymm9,%%ymm8,%%ymm8          \n"
+          "vpmaddubsw  %%ymm0,%%ymm7,%%ymm7          \n"
+          "vpmaddubsw  %%ymm1,%%ymm8,%%ymm8          \n"
+          "vpsrlw      $0x7,%%ymm7,%%ymm7            \n"
+          "vpsrlw      $0x7,%%ymm8,%%ymm8            \n"
+          "vpackuswb   %%ymm8,%%ymm7,%%ymm7          \n"
+          "vmovdqu     %%ymm7,(%[dst])               \n"
+          "lea         0x20(%[dst]),%[dst]           \n"
+          "subl        $0x8,%k[w]                    \n"
+          "jg          1b                            \n"
+          "jmp         99f                           \n"
+
+          // Masked tail loop (up to 8 pixels/iter, stays within max_end).
+          LABELALIGN
+          "2:          \n"
+          "test        %k[w],%k[w]                   \n"
+          "jle         99f                           \n"
+          "movslq      %k[x],%q[base]                \n"
+          "sar         $0x10,%q[base]                \n"
+          "addl        %k[dx8],%k[x]                 \n"
+          "mov         %k[max_end],%k[tmp]           \n"
+          "sub         %k[base],%k[tmp]              \n"
+          "mov         $0x20,%k[mask]                \n"
+          "cmp         %k[mask],%k[tmp]              \n"
+          "cmovg       %k[mask],%k[tmp]              \n"
+          "mov         $-1,%q[mask]                  \n"
+          "bzhi        %q[tmp],%q[mask],%q[mask]     \n"
+          "kmovw       %k[mask],%%k1                 \n"
+          "shr         $0x10,%q[mask]                \n"
+          "kmovw       %k[mask],%%k2                 \n"
+
+          "vmovdqu32   (%[src],%q[base],4),%%zmm0%{%%k1%}%{z%} \n"
+          "vmovdqu32   0x40(%[src],%q[base],4),%%zmm1%{%%k2%}%{z%} \n"
+          "vpsrld      $0x10,%%ymm2,%%ymm8           \n"
+          "vpbroadcastd %k[base],%%ymm9              \n"
+          "vpsubd      %%ymm9,%%ymm8,%%ymm8          \n"
+          "vpaddd      %%ymm10,%%ymm8,%%ymm9         \n"
+          "vinserti64x4 $0x1,%%ymm9,%%zmm8,%%zmm8    \n"
+          "vpermi2d    %%zmm1,%%zmm0,%%zmm8          \n"
+          "vextracti64x4 $0x1,%%zmm8,%%ymm9          \n"
+          "vpsrlw      $0x9,%%ymm2,%%ymm1            \n"
+          "vpaddd      %%ymm3,%%ymm2,%%ymm2          \n"
+          "vpshufb     %%ymm4,%%ymm1,%%ymm0          \n"
+          "vpshufb     %%ymm5,%%ymm1,%%ymm1          \n"
+          "vpxor       %%ymm6,%%ymm0,%%ymm0          \n"
+          "vpxor       %%ymm6,%%ymm1,%%ymm1          \n"
+          "vpunpcklbw  %%ymm9,%%ymm8,%%ymm7          \n"
+          "vpunpckhbw  %%ymm9,%%ymm8,%%ymm8          \n"
+          "vpmaddubsw  %%ymm0,%%ymm7,%%ymm7          \n"
+          "vpmaddubsw  %%ymm1,%%ymm8,%%ymm8          \n"
+          "vpsrlw      $0x7,%%ymm7,%%ymm7            \n"
+          "vpsrlw      $0x7,%%ymm8,%%ymm8            \n"
+          "vpackuswb   %%ymm8,%%ymm7,%%ymm7          \n"
+
+          "mov         $0x8,%k[tmp]                  \n"
+          "cmp         %k[tmp],%k[w]                 \n"
+          "cmovl       %k[w],%k[tmp]                 \n"
+          "mov         $-1,%k[mask]                  \n"
+          "bzhi        %k[tmp],%k[mask],%k[mask]     \n"
+          "kmovw       %k[mask],%%k3                 \n"
+
+          "vmovdqu32   %%ymm7,(%[dst])%{%%k3%}       \n"
+          "lea         0x20(%[dst]),%[dst]           \n"
+          "subl        $0x8,%k[w]                    \n"
+          "jg          2b                            \n"
+
+          "99:         \n"
+          "vzeroupper  \n"
+          : [dst] "+r"(dst_argb), [w] "+r"(dst_width), [x] "+r"(x),
+            [base] "=&r"(base), [tmp] "=&r"(tmp), [mask] "=&r"(mask)
+          : [src] "r"(src_argb), [dx] "r"(dx), [dx8] "r"(dx8),
+            [max_end] "r"(max_valid_end), [kStep8] "m"(kStep0_7_ARGB_AVX512),
+            [kShufLo] "m"(kShuffleFracARGBLo_AVX512),
+            [kShufHi] "m"(kShuffleFracARGBHi_AVX512)
+          : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+            "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "k1", "k2", "k3");
+      return;
+    }
+  }
   int n = dst_width & ~7;
   int r = dst_width & 7;
   if (n > 0) {

@@ -1548,6 +1548,63 @@ static const uint8_t kPackEvenBytes[64] = {
 // propagation relies only on standard C memory/array semantics rather than
 // target-specific LLVM intrinsic modeling. In non-MSan builds, call the native
 // AVX-512 intrinsic directly.
+LIBYUV_TARGET_AVX512BW
+static inline __m512i Permutex2varEpi32(__m512i a, __m512i idx, __m512i b) {
+#if defined(LIBYUV_MSAN)
+  uint32_t a_arr[16];
+  uint32_t b_arr[16];
+  uint32_t idx_arr[16];
+  uint32_t out_arr[16];
+  _mm512_storeu_si512((__m512i*)a_arr, a);
+  _mm512_storeu_si512((__m512i*)b_arr, b);
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  for (int i = 0; i < 16; ++i) {
+    uint32_t s = idx_arr[i] & 31;
+    out_arr[i] = (s < 16) ? a_arr[s] : b_arr[s - 16];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutex2var_epi32(a, idx, b);
+#endif
+}
+
+LIBYUV_TARGET_AVX512VBMI
+static inline __m512i PermutexvarEpi8(__m512i idx, __m512i v) {
+#if defined(LIBYUV_MSAN)
+  uint8_t idx_arr[64];
+  uint8_t v_arr[64];
+  uint8_t out_arr[64];
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  _mm512_storeu_si512((__m512i*)v_arr, v);
+  for (int i = 0; i < 64; ++i) {
+    out_arr[i] = v_arr[idx_arr[i] & 63];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutexvar_epi8(idx, v);
+#endif
+}
+
+LIBYUV_TARGET_AVX512VBMI
+static inline __m512i Permutex2varEpi8(__m512i a, __m512i idx, __m512i b) {
+#if defined(LIBYUV_MSAN)
+  uint8_t a_arr[64];
+  uint8_t b_arr[64];
+  uint8_t idx_arr[64];
+  uint8_t out_arr[64];
+  _mm512_storeu_si512((__m512i*)a_arr, a);
+  _mm512_storeu_si512((__m512i*)b_arr, b);
+  _mm512_storeu_si512((__m512i*)idx_arr, idx);
+  for (int i = 0; i < 64; ++i) {
+    uint8_t s = idx_arr[i] & 127;
+    out_arr[i] = (s < 64) ? a_arr[s] : b_arr[s - 64];
+  }
+  return _mm512_loadu_si512((const __m512i*)out_arr);
+#else
+  return _mm512_permutex2var_epi8(a, idx, b);
+#endif
+}
+
 LIBYUV_TARGET_AVX512VBMI
 static inline __m512i MaskPermutexvarEpi32(__m512i src,
                                            __mmask16 k,
@@ -1939,6 +1996,8 @@ void ScaleRowUp2_Bilinear_16_AVX2(const uint16_t* src_ptr,
 
 #ifdef HAS_SCALEFILTERCOLS_AVX2
 static const int32_t kStep0_7_Filter[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+static const int32_t kStep0_15_PrePerm_Filter[16] = {
+    0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15};
 static const uvec8 kShufFracCols = {0,   0,   4,   4,   8,   8,   12,  12,
                                     128, 128, 128, 128, 128, 128, 128, 128};
 
@@ -1948,6 +2007,140 @@ void ScaleFilterCols_AVX2(uint8_t* dst_ptr,
                           int dst_width,
                           int x,
                           int dx) {
+  if (dst_width >= 8 && dx > 0 && dx <= 0x48000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      int max_valid_end = (int)(x_last >> 16) + 2;
+      int64_t limit = ((int64_t)(max_valid_end - 15) << 16) - 1;
+      if (dx <= 0x20000 && dst_width >= 16) {
+        int64_t first_x8 = (int64_t)x + 8LL * dx;
+        if (first_x8 <= limit) {
+          int64_t max_iters = (limit - first_x8) / (16LL * dx) + 1;
+          int fast_iters = dst_width >> 4;
+          if (max_iters < fast_iters) {
+            fast_iters = (int)max_iters;
+          }
+          if (fast_iters > 0) {
+            const __m256i vdx = _mm256_set1_epi32(dx);
+            const __m256i vdx16 = _mm256_slli_epi32(vdx, 4);
+            __m256i vx0 = _mm256_add_epi32(
+                _mm256_set1_epi32(x),
+                _mm256_mullo_epi32(
+                    vdx, _mm256_loadu_si256(
+                             (const __m256i*)kStep0_15_PrePerm_Filter)));
+            __m256i vx1 = _mm256_add_epi32(
+                _mm256_set1_epi32(x),
+                _mm256_mullo_epi32(
+                    vdx, _mm256_loadu_si256(
+                             (const __m256i*)(kStep0_15_PrePerm_Filter + 8))));
+            const __m256i add_hi1 = _mm256_set1_epi16(0x0100);
+            const __m256i mask_7f32 = _mm256_set1_epi32(0x0000007f);
+            const __m256i mask_7f = _mm256_set1_epi16(0x007f);
+            const __m256i mask_ff = _mm256_set1_epi16(0x00ff);
+            const __m256i round_40 = _mm256_set1_epi16(0x0040);
+            int x8 = (int)first_x8;
+            int dx16 = dx << 4;
+            for (int it = 0; it < fast_iters; ++it) {
+              ptrdiff_t base0 = (ptrdiff_t)(x >> 16);
+              ptrdiff_t base8 = (ptrdiff_t)(x8 >> 16);
+              x += dx16;
+              x8 += dx16;
+              __m256i xi0 = _mm256_srli_epi32(vx0, 16);
+              __m256i xi1 = _mm256_srli_epi32(vx1, 16);
+              __m256i vbase = _mm256_shuffle_epi32(xi0, 0x00);
+              __m256i rel = _mm256_packus_epi32(_mm256_sub_epi32(xi0, vbase),
+                                                _mm256_sub_epi32(xi1, vbase));
+              __m256i idx = _mm256_add_epi8(
+                  _mm256_or_si256(rel, _mm256_slli_epi16(rel, 8)), add_hi1);
+              __m256i f0 =
+                  _mm256_and_si256(_mm256_srli_epi32(vx0, 9), mask_7f32);
+              __m256i f1 =
+                  _mm256_and_si256(_mm256_srli_epi32(vx1, 9), mask_7f32);
+              vx0 = _mm256_add_epi32(vx0, vdx16);
+              vx1 = _mm256_add_epi32(vx1, vdx16);
+              __m256i f = _mm256_packus_epi32(f0, f1);
+              __m256i w = _mm256_xor_si256(
+                  _mm256_or_si256(f, _mm256_slli_epi16(f, 8)), mask_7f);
+              __m256i s = _mm256_inserti128_si256(
+                  _mm256_castsi128_si256(
+                      _mm_loadu_si128((const __m128i*)(src_ptr + base0))),
+                  _mm_loadu_si128((const __m128i*)(src_ptr + base8)), 1);
+              __m256i pix = _mm256_shuffle_epi8(s, idx);
+              __m256i a = _mm256_and_si256(pix, mask_ff);
+              __m256i res = _mm256_srli_epi16(
+                  _mm256_add_epi16(
+                      _mm256_add_epi16(_mm256_maddubs_epi16(pix, w), a),
+                      round_40),
+                  7);
+              res =
+                  _mm256_permute4x64_epi64(_mm256_packus_epi16(res, res), 0xd8);
+              _mm_storeu_si128((__m128i*)dst_ptr, _mm256_castsi256_si128(res));
+              dst_ptr += 16;
+            }
+            dst_width -= fast_iters * 16;
+          }
+        }
+      } else if (dx > 0x20000) {
+        int64_t first_x4 = (int64_t)x + 4LL * dx;
+        if (first_x4 <= limit) {
+          int64_t max_iters = (limit - first_x4) / (8LL * dx) + 1;
+          int fast_iters = dst_width >> 3;
+          if (max_iters < fast_iters) {
+            fast_iters = (int)max_iters;
+          }
+          if (fast_iters > 0) {
+            __m256i vx = _mm256_add_epi32(
+                _mm256_set1_epi32(x),
+                _mm256_mullo_epi32(
+                    _mm256_set1_epi32(dx),
+                    _mm256_loadu_si256((const __m256i*)kStep0_7_Filter)));
+            const __m256i vdx8 = _mm256_slli_epi32(_mm256_set1_epi32(dx), 3);
+            const __m256i shuf_frac = _mm256_broadcastsi128_si256(
+                _mm_loadu_si128((const __m128i*)&kShufFracCols));
+            const __m256i add_hi1 = _mm256_set1_epi16(0x0100);
+            const __m128i mask_7f = _mm_set1_epi16(0x007f);
+            const __m128i mask_ff = _mm_set1_epi16(0x00ff);
+            const __m128i round_40 = _mm_set1_epi16(0x0040);
+            int x4 = (int)first_x4;
+            int dx8 = dx << 3;
+            for (int it = 0; it < fast_iters; ++it) {
+              ptrdiff_t base0 = (ptrdiff_t)(x >> 16);
+              ptrdiff_t base4 = (ptrdiff_t)(x4 >> 16);
+              x += dx8;
+              x4 += dx8;
+              __m256i xi = _mm256_srli_epi32(vx, 16);
+              __m256i rel =
+                  _mm256_sub_epi32(xi, _mm256_shuffle_epi32(xi, 0x00));
+              __m256i idx =
+                  _mm256_add_epi8(_mm256_shuffle_epi8(rel, shuf_frac), add_hi1);
+              __m256i f256 = _mm256_permute4x64_epi64(
+                  _mm256_shuffle_epi8(_mm256_srli_epi16(vx, 9), shuf_frac),
+                  0xd8);
+              vx = _mm256_add_epi32(vx, vdx8);
+              __m128i weights =
+                  _mm_xor_si128(_mm256_castsi256_si128(f256), mask_7f);
+              __m256i s = _mm256_inserti128_si256(
+                  _mm256_castsi128_si256(
+                      _mm_loadu_si128((const __m128i*)(src_ptr + base0))),
+                  _mm_loadu_si128((const __m128i*)(src_ptr + base4)), 1);
+              __m256i pix256 =
+                  _mm256_permute4x64_epi64(_mm256_shuffle_epi8(s, idx), 0xd8);
+              __m128i pix = _mm256_castsi256_si128(pix256);
+              __m128i a = _mm_and_si128(pix, mask_ff);
+              __m128i res = _mm_srli_epi16(
+                  _mm_add_epi16(
+                      _mm_add_epi16(_mm_maddubs_epi16(pix, weights), a),
+                      round_40),
+                  7);
+              _mm_storel_epi64((__m128i*)dst_ptr, _mm_packus_epi16(res, res));
+              dst_ptr += 8;
+            }
+            dst_width -= fast_iters * 8;
+          }
+        }
+      }
+    }
+  }
   int n = dst_width & ~7;
   int r = dst_width & 7;
   if (n > 0) {
@@ -2009,6 +2202,12 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
                               int dst_width,
                               int x,
                               int dx) {
+#if defined(HAS_SCALEFILTERCOLS_AVX2)
+  if (dst_width >= 8 && x >= 0 && dx > 0 && dx <= 0x40000) {
+    ScaleFilterCols_AVX2(dst_ptr, src_ptr, dst_width, x, dx);
+    return;
+  }
+#endif
   int n = dst_width & ~15;
   int r = dst_width & 15;
   if (n > 0) {
@@ -2067,6 +2266,179 @@ void ScaleFilterCols_AVX512BW(uint8_t* dst_ptr,
   }
 }
 #endif  // HAS_SCALEFILTERCOLS_AVX512BW
+
+#ifdef HAS_SCALEFILTERCOLS_AVX512VBMI
+LIBYUV_TARGET_AVX512VBMI
+void ScaleFilterCols_AVX512VBMI(uint8_t* dst_ptr,
+                                const uint8_t* src_ptr,
+                                int dst_width,
+                                int x,
+                                int dx) {
+  if (dst_width <= 0) {
+    return;
+  }
+  int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+  if (dx <= 0 || dx > 0x40000 || x < 0 || x_last >= 0x7f000000LL) {
+    ScaleFilterCols_AVX512BW(dst_ptr, src_ptr, dst_width, x, dx);
+    return;
+  }
+  const int max_valid_end = (int)(x_last >> 16) + 2;
+  const __m512i vdx = _mm512_set1_epi32(dx);
+  const __m512i vdx16 = _mm512_slli_epi32(vdx, 4);
+  const __m512i vdx32 = _mm512_slli_epi32(vdx, 5);
+  __m512i vx0 = _mm512_add_epi32(
+      _mm512_set1_epi32(x),
+      _mm512_mullo_epi32(vdx,
+                         _mm512_loadu_si512((const __m512i*)kStep0_15_Filter)));
+  __m512i vx1 = _mm512_add_epi32(vx0, vdx16);
+  const __m512i add_hi1 = _mm512_set1_epi16(0x0100);
+  const __m512i mask_7f = _mm512_set1_epi16(0x007f);
+  const __m512i mask_ff = _mm512_set1_epi16(0x00ff);
+  const __m512i round_40 = _mm512_set1_epi16(0x0040);
+  const int dx32 = dx << 5;
+
+  if (dx <= 0x20000) {
+    while (dst_width >= 32) {
+      int base = x >> 16;
+      if (base + 64 > max_valid_end) {
+        break;
+      }
+      x += dx32;
+      __m512i vbase = _mm512_set1_epi32(base);
+      __m256i r0 = _mm512_cvtepi32_epi16(
+          _mm512_sub_epi32(_mm512_srli_epi32(vx0, 16), vbase));
+      __m256i r1 = _mm512_cvtepi32_epi16(
+          _mm512_sub_epi32(_mm512_srli_epi32(vx1, 16), vbase));
+      __m512i rel = _mm512_inserti64x4(_mm512_castsi256_si512(r0), r1, 1);
+      __m512i idx = _mm512_add_epi8(
+          _mm512_or_si512(rel, _mm512_slli_epi16(rel, 8)), add_hi1);
+      __m256i f0 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx0, 9));
+      __m256i f1 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx1, 9));
+      vx0 = _mm512_add_epi32(vx0, vdx32);
+      vx1 = _mm512_add_epi32(vx1, vdx32);
+      __m512i f = _mm512_inserti64x4(_mm512_castsi256_si512(f0), f1, 1);
+      __m512i w = _mm512_xor_si512(_mm512_or_si512(f, _mm512_slli_epi16(f, 8)),
+                                   mask_7f);
+      __m512i src = _mm512_loadu_si512((const __m512i*)(src_ptr + base));
+      __m512i pix = PermutexvarEpi8(idx, src);
+      __m512i a = _mm512_and_si512(pix, mask_ff);
+      __m512i res = _mm512_srli_epi16(
+          _mm512_add_epi16(_mm512_add_epi16(_mm512_maddubs_epi16(pix, w), a),
+                           round_40),
+          7);
+      _mm256_storeu_si256((__m256i*)dst_ptr, _mm512_cvtepi16_epi8(res));
+      dst_ptr += 32;
+      dst_width -= 32;
+    }
+    while (dst_width > 0) {
+      int base = x >> 16;
+      int avail = max_valid_end - base;
+      __mmask64 km = (avail >= 64) ? ~0ULL : ((1ULL << avail) - 1);
+      int n_out = (dst_width >= 32) ? 32 : dst_width;
+      __mmask32 kout = (n_out >= 32) ? 0xffffffffU : ((1U << n_out) - 1);
+      x += dx32;
+      __m512i vbase = _mm512_set1_epi32(base);
+      __m256i r0 = _mm512_cvtepi32_epi16(
+          _mm512_sub_epi32(_mm512_srli_epi32(vx0, 16), vbase));
+      __m256i r1 = _mm512_cvtepi32_epi16(
+          _mm512_sub_epi32(_mm512_srli_epi32(vx1, 16), vbase));
+      __m512i rel = _mm512_inserti64x4(_mm512_castsi256_si512(r0), r1, 1);
+      __m512i idx = _mm512_add_epi8(
+          _mm512_or_si512(rel, _mm512_slli_epi16(rel, 8)), add_hi1);
+      __m256i f0 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx0, 9));
+      __m256i f1 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx1, 9));
+      vx0 = _mm512_add_epi32(vx0, vdx32);
+      vx1 = _mm512_add_epi32(vx1, vdx32);
+      __m512i f = _mm512_inserti64x4(_mm512_castsi256_si512(f0), f1, 1);
+      __m512i w = _mm512_xor_si512(_mm512_or_si512(f, _mm512_slli_epi16(f, 8)),
+                                   mask_7f);
+      __m512i src = _mm512_maskz_loadu_epi8(km, src_ptr + base);
+      __m512i pix = PermutexvarEpi8(idx, src);
+      __m512i a = _mm512_and_si512(pix, mask_ff);
+      __m512i res = _mm512_srli_epi16(
+          _mm512_add_epi16(_mm512_add_epi16(_mm512_maddubs_epi16(pix, w), a),
+                           round_40),
+          7);
+      _mm256_mask_storeu_epi8(dst_ptr, kout, _mm512_cvtepi16_epi8(res));
+      dst_ptr += 32;
+      dst_width -= 32;
+    }
+    return;
+  }
+
+  // 0x20000 < dx <= 0x40000: 2-ZMM (128-byte) gather via vpermi2b.
+  while (dst_width >= 32) {
+    int base = x >> 16;
+    if (base + 128 > max_valid_end) {
+      break;
+    }
+    x += dx32;
+    __m512i vbase = _mm512_set1_epi32(base);
+    __m256i r0 = _mm512_cvtepi32_epi16(
+        _mm512_sub_epi32(_mm512_srli_epi32(vx0, 16), vbase));
+    __m256i r1 = _mm512_cvtepi32_epi16(
+        _mm512_sub_epi32(_mm512_srli_epi32(vx1, 16), vbase));
+    __m512i rel = _mm512_inserti64x4(_mm512_castsi256_si512(r0), r1, 1);
+    __m512i idx = _mm512_add_epi8(
+        _mm512_or_si512(rel, _mm512_slli_epi16(rel, 8)), add_hi1);
+    __m256i f0 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx0, 9));
+    __m256i f1 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx1, 9));
+    vx0 = _mm512_add_epi32(vx0, vdx32);
+    vx1 = _mm512_add_epi32(vx1, vdx32);
+    __m512i f = _mm512_inserti64x4(_mm512_castsi256_si512(f0), f1, 1);
+    __m512i w =
+        _mm512_xor_si512(_mm512_or_si512(f, _mm512_slli_epi16(f, 8)), mask_7f);
+    __m512i s0 = _mm512_loadu_si512((const __m512i*)(src_ptr + base));
+    __m512i s1 = _mm512_loadu_si512((const __m512i*)(src_ptr + base + 64));
+    __m512i pix = Permutex2varEpi8(s0, idx, s1);
+    __m512i a = _mm512_and_si512(pix, mask_ff);
+    __m512i res = _mm512_srli_epi16(
+        _mm512_add_epi16(_mm512_add_epi16(_mm512_maddubs_epi16(pix, w), a),
+                         round_40),
+        7);
+    _mm256_storeu_si256((__m256i*)dst_ptr, _mm512_cvtepi16_epi8(res));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+  while (dst_width > 0) {
+    int base = x >> 16;
+    int avail = max_valid_end - base;
+    __mmask64 k0 = (avail >= 64) ? ~0ULL : ((1ULL << avail) - 1);
+    __mmask64 k1 =
+        (avail <= 64) ? 0ULL
+                      : ((avail >= 128) ? ~0ULL : ((1ULL << (avail - 64)) - 1));
+    int n_out = (dst_width >= 32) ? 32 : dst_width;
+    __mmask32 kout = (n_out >= 32) ? 0xffffffffU : ((1U << n_out) - 1);
+    x += dx32;
+    __m512i vbase = _mm512_set1_epi32(base);
+    __m256i r0 = _mm512_cvtepi32_epi16(
+        _mm512_sub_epi32(_mm512_srli_epi32(vx0, 16), vbase));
+    __m256i r1 = _mm512_cvtepi32_epi16(
+        _mm512_sub_epi32(_mm512_srli_epi32(vx1, 16), vbase));
+    __m512i rel = _mm512_inserti64x4(_mm512_castsi256_si512(r0), r1, 1);
+    __m512i idx = _mm512_add_epi8(
+        _mm512_or_si512(rel, _mm512_slli_epi16(rel, 8)), add_hi1);
+    __m256i f0 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx0, 9));
+    __m256i f1 = _mm512_cvtepi32_epi16(_mm512_srli_epi16(vx1, 9));
+    vx0 = _mm512_add_epi32(vx0, vdx32);
+    vx1 = _mm512_add_epi32(vx1, vdx32);
+    __m512i f = _mm512_inserti64x4(_mm512_castsi256_si512(f0), f1, 1);
+    __m512i w =
+        _mm512_xor_si512(_mm512_or_si512(f, _mm512_slli_epi16(f, 8)), mask_7f);
+    __m512i s0 = _mm512_maskz_loadu_epi8(k0, src_ptr + base);
+    __m512i s1 = _mm512_maskz_loadu_epi8(k1, src_ptr + base + 64);
+    __m512i pix = Permutex2varEpi8(s0, idx, s1);
+    __m512i a = _mm512_and_si512(pix, mask_ff);
+    __m512i res = _mm512_srli_epi16(
+        _mm512_add_epi16(_mm512_add_epi16(_mm512_maddubs_epi16(pix, w), a),
+                         round_40),
+        7);
+    _mm256_mask_storeu_epi8(dst_ptr, kout, _mm512_cvtepi16_epi8(res));
+    dst_ptr += 32;
+    dst_width -= 32;
+  }
+}
+#endif  // HAS_SCALEFILTERCOLS_AVX512VBMI
 
 #ifdef HAS_SCALEUVFILTERCOLS_AVX2
 static const int32_t kStep0_7_UVFilter[8] = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -2629,6 +3001,77 @@ void ScaleARGBFilterCols_AVX2(uint8_t* dst_argb,
                               int dst_width,
                               int x,
                               int dx) {
+  if (dst_width >= 8 && dx > 0 && dx <= 0x20000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      int max_valid_end = (int)(x_last >> 16) + 2;
+      int64_t limit = ((int64_t)(max_valid_end - 7) << 16) - 1;
+      int64_t first_x4 = (int64_t)x + 4LL * dx;
+      if (first_x4 <= limit) {
+        int64_t max_iters = (limit - first_x4) / (8LL * dx) + 1;
+        int fast_iters = dst_width >> 3;
+        if (max_iters < fast_iters) {
+          fast_iters = (int)max_iters;
+        }
+        if (fast_iters > 0) {
+          static const int32_t kStep0_7_ARGB[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+          static const uvec8 kShufFracLo = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+                                            4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u};
+          static const uvec8 kShufFracHi = {8u,  8u,  8u,  8u,  8u,  8u,
+                                            8u,  8u,  12u, 12u, 12u, 12u,
+                                            12u, 12u, 12u, 12u};
+          const __m256i shuf_lo = _mm256_broadcastsi128_si256(
+              _mm_loadu_si128((const __m128i*)&kShufFracLo));
+          const __m256i shuf_hi = _mm256_broadcastsi128_si256(
+              _mm_loadu_si128((const __m128i*)&kShufFracHi));
+          const __m256i mask_7f = _mm256_set1_epi16(0x007f);
+          const __m256i one32 = _mm256_set1_epi32(1);
+          const __m256i vdx = _mm256_set1_epi32(dx);
+          const __m256i vdx8 = _mm256_slli_epi32(vdx, 3);
+          __m256i vx = _mm256_add_epi32(
+              _mm256_set1_epi32(x),
+              _mm256_mullo_epi32(
+                  vdx, _mm256_loadu_si256((const __m256i*)kStep0_7_ARGB)));
+          int x4 = (int)first_x4;
+          const int dx8 = dx << 3;
+          for (int it = 0; it < fast_iters; ++it) {
+            ptrdiff_t base0 = (ptrdiff_t)(x >> 16);
+            ptrdiff_t base4 = (ptrdiff_t)(x4 >> 16);
+            x += dx8;
+            x4 += dx8;
+            __m256i xi = _mm256_srli_epi32(vx, 16);
+            __m256i rel_a =
+                _mm256_sub_epi32(xi, _mm256_shuffle_epi32(xi, 0x00));
+            __m256i rel_b = _mm256_add_epi32(rel_a, one32);
+            __m256i idx0 = _mm256_permute2x128_si256(rel_a, rel_b, 0x20);
+            __m256i idx1 = _mm256_permute2x128_si256(rel_a, rel_b, 0x31);
+            __m256i s0 =
+                _mm256_loadu_si256((const __m256i*)(src_argb + base0 * 4));
+            __m256i s1 =
+                _mm256_loadu_si256((const __m256i*)(src_argb + base4 * 4));
+            __m256i ab0 = _mm256_permutevar8x32_epi32(s0, idx0);
+            __m256i ab1 = _mm256_permutevar8x32_epi32(s1, idx1);
+            __m256i va = _mm256_permute2x128_si256(ab0, ab1, 0x20);
+            __m256i vb = _mm256_permute2x128_si256(ab0, ab1, 0x31);
+            __m256i f = _mm256_srli_epi16(vx, 9);
+            vx = _mm256_add_epi32(vx, vdx8);
+            __m256i w_lo =
+                _mm256_xor_si256(_mm256_shuffle_epi8(f, shuf_lo), mask_7f);
+            __m256i w_hi =
+                _mm256_xor_si256(_mm256_shuffle_epi8(f, shuf_hi), mask_7f);
+            __m256i lo = _mm256_srli_epi16(
+                _mm256_maddubs_epi16(_mm256_unpacklo_epi8(va, vb), w_lo), 7);
+            __m256i hi = _mm256_srli_epi16(
+                _mm256_maddubs_epi16(_mm256_unpackhi_epi8(va, vb), w_hi), 7);
+            _mm256_storeu_si256((__m256i*)dst_argb,
+                                _mm256_packus_epi16(lo, hi));
+            dst_argb += 32;
+          }
+          dst_width -= fast_iters * 8;
+        }
+      }
+    }
+  }
   int n = dst_width & ~3;
   int r = dst_width & 3;
   if (n > 0) {
@@ -2687,12 +3130,194 @@ static const uvec8 kShuffleFracARGB_AVX512 = {
     0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
     8u, 8u, 8u, 8u, 8u, 8u, 8u, 8u};
 
+static const int32_t kStep0_15_ARGB_AVX512[16] = {0, 1, 2,  3,  4,  5,  6,  7,
+                                                  8, 9, 10, 11, 12, 13, 14, 15};
+static const uvec8 kShuffleFracARGBLo_AVX512 = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+                                                4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u};
+static const uvec8 kShuffleFracARGBHi_AVX512 = {
+    8u, 8u, 8u, 8u, 8u, 8u, 8u, 8u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u};
+
 LIBYUV_TARGET_AVX512BW
 void ScaleARGBFilterCols_AVX512BW(uint8_t* dst_argb,
                                   const uint8_t* src_argb,
                                   int dst_width,
                                   int x,
                                   int dx) {
+  if (dst_width <= 0) {
+    return;
+  }
+  if (dx > 0 && dx <= 0x44000 && x >= 0) {
+    int64_t x_last = (int64_t)x + (int64_t)(dst_width - 1) * (int64_t)dx;
+    if (x_last < 0x7f000000LL) {
+      const int max_valid_end = (int)(x_last >> 16) + 2;
+      if (dx <= 0x20000) {
+        const __m512i shuf_lo = _mm512_broadcast_i32x4(
+            _mm_loadu_si128((const __m128i*)&kShuffleFracARGBLo_AVX512));
+        const __m512i shuf_hi = _mm512_broadcast_i32x4(
+            _mm_loadu_si128((const __m128i*)&kShuffleFracARGBHi_AVX512));
+        const __m512i mask_7f = _mm512_set1_epi16(0x007f);
+        const __m512i one32 = _mm512_set1_epi32(1);
+        const __m512i vdx = _mm512_set1_epi32(dx);
+        const __m512i vdx16 = _mm512_slli_epi32(vdx, 4);
+        __m512i vx = _mm512_add_epi32(
+            _mm512_set1_epi32(x),
+            _mm512_mullo_epi32(vdx, _mm512_loadu_si512((
+                                        const __m512i*)kStep0_15_ARGB_AVX512)));
+        const int dx16 = dx << 4;
+        while (dst_width >= 16) {
+          int base = x >> 16;
+          if (base + 32 > max_valid_end) {
+            break;
+          }
+          x += dx16;
+          __m512i s0 = _mm512_loadu_si512(
+              (const __m512i*)(src_argb + (ptrdiff_t)base * 4));
+          __m512i s1 = _mm512_loadu_si512(
+              (const __m512i*)(src_argb + (ptrdiff_t)(base + 16) * 4));
+          __m512i rel_a = _mm512_sub_epi32(_mm512_srli_epi32(vx, 16),
+                                           _mm512_set1_epi32(base));
+          __m512i rel_b = _mm512_add_epi32(rel_a, one32);
+          __m512i va = Permutex2varEpi32(s0, rel_a, s1);
+          __m512i vb = Permutex2varEpi32(s0, rel_b, s1);
+          __m512i f = _mm512_srli_epi16(vx, 9);
+          vx = _mm512_add_epi32(vx, vdx16);
+          __m512i w_lo =
+              _mm512_xor_si512(_mm512_shuffle_epi8(f, shuf_lo), mask_7f);
+          __m512i w_hi =
+              _mm512_xor_si512(_mm512_shuffle_epi8(f, shuf_hi), mask_7f);
+          __m512i lo = _mm512_srli_epi16(
+              _mm512_maddubs_epi16(_mm512_unpacklo_epi8(va, vb), w_lo), 7);
+          __m512i hi = _mm512_srli_epi16(
+              _mm512_maddubs_epi16(_mm512_unpackhi_epi8(va, vb), w_hi), 7);
+          _mm512_storeu_si512((__m512i*)dst_argb, _mm512_packus_epi16(lo, hi));
+          dst_argb += 64;
+          dst_width -= 16;
+        }
+        while (dst_width > 0) {
+          int base = x >> 16;
+          int avail = max_valid_end - base;
+          if (avail > 32) {
+            avail = 32;
+          }
+          uint64_t m = (avail == 32) ? 0xffffffffULL : ((1ULL << avail) - 1);
+          __mmask16 k0 = (__mmask16)m;
+          __mmask16 k1 = (__mmask16)(m >> 16);
+          int n_out = (dst_width >= 16) ? 16 : dst_width;
+          __mmask16 kout =
+              (n_out >= 16) ? 0xffffU : (__mmask16)((1U << n_out) - 1);
+          x += dx16;
+          __m512i s0 =
+              _mm512_maskz_loadu_epi32(k0, src_argb + (ptrdiff_t)base * 4);
+          __m512i s1 = _mm512_maskz_loadu_epi32(
+              k1, src_argb + (ptrdiff_t)(base + 16) * 4);
+          __m512i rel_a = _mm512_sub_epi32(_mm512_srli_epi32(vx, 16),
+                                           _mm512_set1_epi32(base));
+          __m512i rel_b = _mm512_add_epi32(rel_a, one32);
+          __m512i va = Permutex2varEpi32(s0, rel_a, s1);
+          __m512i vb = Permutex2varEpi32(s0, rel_b, s1);
+          __m512i f = _mm512_srli_epi16(vx, 9);
+          vx = _mm512_add_epi32(vx, vdx16);
+          __m512i w_lo =
+              _mm512_xor_si512(_mm512_shuffle_epi8(f, shuf_lo), mask_7f);
+          __m512i w_hi =
+              _mm512_xor_si512(_mm512_shuffle_epi8(f, shuf_hi), mask_7f);
+          __m512i lo = _mm512_srli_epi16(
+              _mm512_maddubs_epi16(_mm512_unpacklo_epi8(va, vb), w_lo), 7);
+          __m512i hi = _mm512_srli_epi16(
+              _mm512_maddubs_epi16(_mm512_unpackhi_epi8(va, vb), w_hi), 7);
+          _mm512_mask_storeu_epi32(dst_argb, kout, _mm512_packus_epi16(lo, hi));
+          dst_argb += 64;
+          dst_width -= 16;
+        }
+        return;
+      }
+      // 0x20000 < dx <= 0x44000: 8 ARGB pixels/iter from 2 ZMMs.
+      const __m256i shuf_lo = _mm256_broadcastsi128_si256(
+          _mm_loadu_si128((const __m128i*)&kShuffleFracARGBLo_AVX512));
+      const __m256i shuf_hi = _mm256_broadcastsi128_si256(
+          _mm_loadu_si128((const __m128i*)&kShuffleFracARGBHi_AVX512));
+      const __m256i mask_7f = _mm256_set1_epi16(0x007f);
+      const __m256i one32 = _mm256_set1_epi32(1);
+      const __m256i vdx = _mm256_set1_epi32(dx);
+      const __m256i vdx8 = _mm256_slli_epi32(vdx, 3);
+      __m256i vx = _mm256_add_epi32(
+          _mm256_set1_epi32(x),
+          _mm256_mullo_epi32(
+              vdx, _mm256_loadu_si256((const __m256i*)kStep0_7_ARGB_AVX512)));
+      const int dx8 = dx << 3;
+      while (dst_width >= 8) {
+        int base = x >> 16;
+        if (base + 32 > max_valid_end) {
+          break;
+        }
+        x += dx8;
+        __m512i s0 = _mm512_loadu_si512(
+            (const __m512i*)(src_argb + (ptrdiff_t)base * 4));
+        __m512i s1 = _mm512_loadu_si512(
+            (const __m512i*)(src_argb + (ptrdiff_t)(base + 16) * 4));
+        __m256i rel_a = _mm256_sub_epi32(_mm256_srli_epi32(vx, 16),
+                                         _mm256_set1_epi32(base));
+        __m256i rel_b = _mm256_add_epi32(rel_a, one32);
+        __m512i idx =
+            _mm512_inserti64x4(_mm512_castsi256_si512(rel_a), rel_b, 1);
+        __m512i ab = Permutex2varEpi32(s0, idx, s1);
+        __m256i va = _mm512_castsi512_si256(ab);
+        __m256i vb = _mm512_extracti64x4_epi64(ab, 1);
+        __m256i f = _mm256_srli_epi16(vx, 9);
+        vx = _mm256_add_epi32(vx, vdx8);
+        __m256i w_lo =
+            _mm256_xor_si256(_mm256_shuffle_epi8(f, shuf_lo), mask_7f);
+        __m256i w_hi =
+            _mm256_xor_si256(_mm256_shuffle_epi8(f, shuf_hi), mask_7f);
+        __m256i lo = _mm256_srli_epi16(
+            _mm256_maddubs_epi16(_mm256_unpacklo_epi8(va, vb), w_lo), 7);
+        __m256i hi = _mm256_srli_epi16(
+            _mm256_maddubs_epi16(_mm256_unpackhi_epi8(va, vb), w_hi), 7);
+        _mm256_storeu_si256((__m256i*)dst_argb, _mm256_packus_epi16(lo, hi));
+        dst_argb += 32;
+        dst_width -= 8;
+      }
+      while (dst_width > 0) {
+        int base = x >> 16;
+        int avail = max_valid_end - base;
+        if (avail > 32) {
+          avail = 32;
+        }
+        uint64_t m = (avail == 32) ? 0xffffffffULL : ((1ULL << avail) - 1);
+        __mmask16 k0 = (__mmask16)m;
+        __mmask16 k1 = (__mmask16)(m >> 16);
+        int n_out = (dst_width >= 8) ? 8 : dst_width;
+        __mmask8 kout = (n_out >= 8) ? 0xffU : (__mmask8)((1U << n_out) - 1);
+        x += dx8;
+        __m512i s0 =
+            _mm512_maskz_loadu_epi32(k0, src_argb + (ptrdiff_t)base * 4);
+        __m512i s1 =
+            _mm512_maskz_loadu_epi32(k1, src_argb + (ptrdiff_t)(base + 16) * 4);
+        __m256i rel_a = _mm256_sub_epi32(_mm256_srli_epi32(vx, 16),
+                                         _mm256_set1_epi32(base));
+        __m256i rel_b = _mm256_add_epi32(rel_a, one32);
+        __m512i idx =
+            _mm512_inserti64x4(_mm512_castsi256_si512(rel_a), rel_b, 1);
+        __m512i ab = Permutex2varEpi32(s0, idx, s1);
+        __m256i va = _mm512_castsi512_si256(ab);
+        __m256i vb = _mm512_extracti64x4_epi64(ab, 1);
+        __m256i f = _mm256_srli_epi16(vx, 9);
+        vx = _mm256_add_epi32(vx, vdx8);
+        __m256i w_lo =
+            _mm256_xor_si256(_mm256_shuffle_epi8(f, shuf_lo), mask_7f);
+        __m256i w_hi =
+            _mm256_xor_si256(_mm256_shuffle_epi8(f, shuf_hi), mask_7f);
+        __m256i lo = _mm256_srli_epi16(
+            _mm256_maddubs_epi16(_mm256_unpacklo_epi8(va, vb), w_lo), 7);
+        __m256i hi = _mm256_srli_epi16(
+            _mm256_maddubs_epi16(_mm256_unpackhi_epi8(va, vb), w_hi), 7);
+        _mm256_mask_storeu_epi32(dst_argb, kout, _mm256_packus_epi16(lo, hi));
+        dst_argb += 32;
+        dst_width -= 8;
+      }
+      return;
+    }
+  }
   int n = dst_width & ~7;
   int r = dst_width & 7;
   if (n > 0) {

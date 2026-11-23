@@ -569,6 +569,9 @@ extern "C" {
 #define HAS_ARGBTOYMATRIXROW_AVX512VNNIVBMI
 #define HAS_ARGBTOUV444MATRIXROW_AVX512VNNIVBMI
 #define HAS_ARGBTOUVMATRIXROW_AVX512VNNIVBMI
+#define HAS_RGBTOYMATRIXROW_AVX512VNNIVBMI
+#define HAS_RGBTOUV444MATRIXROW_AVX512VNNIVBMI
+#define HAS_RGBTOUVMATRIXROW_AVX512VNNIVBMI
 #define HAS_I422TOARGBROW_AVX512BW
 #define HAS_ARGB1555TOARGBROW_AVX512BW
 #define HAS_ARGBCOLORMATRIXROW_AVX512VNNI
@@ -745,6 +748,9 @@ extern "C" {
 #define HAS_ARGBTOYMATRIXROW_AVX512VNNIVBMI
 #define HAS_ARGBTOUV444MATRIXROW_AVX512VNNIVBMI
 #define HAS_ARGBTOUVMATRIXROW_AVX512VNNIVBMI
+#define HAS_RGBTOYMATRIXROW_AVX512VNNIVBMI
+#define HAS_RGBTOUV444MATRIXROW_AVX512VNNIVBMI
+#define HAS_RGBTOUVMATRIXROW_AVX512VNNIVBMI
 #define HAS_ARGB1555TOARGBROW_AVX512BW
 #define HAS_ARGBCOLORMATRIXROW_AVX512VNNI
 #define HAS_ARGBSEPIAROW_AVX512VNNI
@@ -1434,6 +1440,8 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_RVV
 #define HAS_CONVERT8TO16ROW_RVV
 #define HAS_COPYROW_RVV
+#define HAS_COMPUTECUMULATIVESUMROW_RVV
+#define HAS_CUMULATIVESUMTOAVERAGEROW_RVV
 #define HAS_HALFROW_RVV
 #define HAS_HALFROW_16_RVV
 #define HAS_HALFWIDTHROW_RVV
@@ -2892,6 +2900,12 @@ void RGBToUVMatrixRow_AVX512BW(const uint8_t* src_rgb,
                                uint8_t* dst_v,
                                int width,
                                const struct ArgbConstants* c);
+void RGBToUVMatrixRow_AVX512VNNIVBMI(const uint8_t* src_rgb,
+                                     int src_stride_rgb,
+                                     uint8_t* dst_u,
+                                     uint8_t* dst_v,
+                                     int width,
+                                     const struct ArgbConstants* c);
 void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
                             int src_stride_argb,
                             uint8_t* dst_u,
@@ -3269,6 +3283,10 @@ void RGBToYMatrixRow_AVX512BW(const uint8_t* src_rgb,
                               uint8_t* dst_y,
                               int width,
                               const struct ArgbConstants* c);
+void RGBToYMatrixRow_AVX512VNNIVBMI(const uint8_t* src_rgb,
+                                    uint8_t* dst_y,
+                                    int width,
+                                    const struct ArgbConstants* c);
 
 void ARGBToYMatrixRow_Any_NEON_DotProd(const uint8_t* src_argb,
                                        uint8_t* dst_y,
@@ -3331,6 +3349,11 @@ void RGBToUV444MatrixRow_AVX512BW(const uint8_t* src_rgb,
                                   uint8_t* dst_v,
                                   int width,
                                   const struct ArgbConstants* c);
+void RGBToUV444MatrixRow_AVX512VNNIVBMI(const uint8_t* src_rgb,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width,
+                                        const struct ArgbConstants* c);
 void RGBToUVMatrixRow_SSSE3(const uint8_t* src_rgb,
                             int src_stride_rgb,
                             uint8_t* dst_u,
@@ -9707,6 +9730,16 @@ void ComputeCumulativeSumRow_AVX2(const uint8_t* row,
                                   int32_t* cumsum,
                                   const int32_t* previous_cumsum,
                                   int width);
+void CumulativeSumToAverageRow_RVV(const int32_t* topleft,
+                                   const int32_t* botleft,
+                                   int width,
+                                   int area,
+                                   uint8_t* dst,
+                                   int count);
+void ComputeCumulativeSumRow_RVV(const uint8_t* row,
+                                 int32_t* cumsum,
+                                 const int32_t* previous_cumsum,
+                                 int width);
 void CumulativeSumToAverageRow_NEON(const int32_t* topleft,
                                     const int32_t* botleft,
                                     int width,

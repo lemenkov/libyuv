@@ -6451,6 +6451,11 @@ int ARGBComputeCumulativeSum(const uint8_t* src_argb,
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_NEON;
   }
 #endif
+#if defined(HAS_COMPUTECUMULATIVESUMROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_RVV;
+  }
+#endif
 
   memset(dst_cumsum, 0, width * sizeof(dst_cumsum[0]) * 4);  // 4 int per pixel.
   for (y = 0; y < height; ++y) {
@@ -6515,6 +6520,12 @@ int ARGBBlur(const uint8_t* src_argb,
   if (TestCpuFlag(kCpuHasNEON)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_NEON;
     CumulativeSumToAverageRow = CumulativeSumToAverageRow_NEON;
+  }
+#endif
+#if defined(HAS_CUMULATIVESUMTOAVERAGEROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_RVV;
+    CumulativeSumToAverageRow = CumulativeSumToAverageRow_RVV;
   }
 #endif
   // Compute enough CumulativeSum for first row to be blurred. After this

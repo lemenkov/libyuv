@@ -1300,6 +1300,11 @@ static int ScalePlaneBilinearDown(int src_width,
     ScaleFilterCols = ScaleFilterCols_AVX512BW;
   }
 #endif
+#if defined(HAS_SCALEFILTERCOLS_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_AVX512VBMI;
+  }
+#endif
 #if defined(HAS_SCALEFILTERCOLS_NEON)
   if (TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_NEON;
@@ -1581,6 +1586,11 @@ static int ScalePlaneBilinearUp(int src_width,
 #if defined(HAS_SCALEFILTERCOLS_AVX512BW)
   if (filtering && TestCpuFlag(kCpuHasAVX512BW) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_AVX512BW;
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_AVX512VBMI)
+  if (filtering && TestCpuFlag(kCpuHasAVX512VBMI) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_AVX512VBMI;
   }
 #endif
 #if defined(HAS_SCALEFILTERCOLS_NEON)

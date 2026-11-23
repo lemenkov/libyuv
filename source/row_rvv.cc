@@ -5978,6 +5978,121 @@ void ByteToFloatRow_RVV(const uint8_t* src,
 }
 #endif  // HAS_BYTETOFLOATROW_RVV
 
+#ifdef HAS_COMPUTECUMULATIVESUMROW_RVV
+void ComputeCumulativeSumRow_RVV(const uint8_t* row,
+                                 int32_t* cumsum,
+                                 const int32_t* previous_cumsum,
+                                 int width) {
+  int rem = width;
+  asm volatile(
+      "vsetivli    zero, 16, e32, m4, ta, ma     \n"
+      "vmv.v.i     v0, 0                         \n"  // running sum [S x4]
+      "li          t0, 4                         \n"
+      "blt         %[w], t0, 2f                  \n"
+
+      // 4 pixel loop (16 int32 elements per step, works for VLEN >= 128).
+      "1:                                        \n"
+      "vle8.v      v4, (%[row])                  \n"
+      "addi        %[row], %[row], 16            \n"
+      "vzext.vf4   v8, v4                        \n"  // [p0, p1, p2, p3]
+      "vmv.v.i     v12, 0                        \n"
+      "vslideup.vi v12, v8, 4                    \n"
+      "vadd.vv     v8, v8, v12                   \n"  // [p0, p01, p12, p23]
+      "vmv.v.i     v12, 0                        \n"
+      "vslideup.vi v12, v8, 8                    \n"
+      "vadd.vv     v8, v8, v12                   \n"  // [p0, p01, p012, p0123]
+      "vadd.vv     v16, v8, v0                   \n"
+      "vle32.v     v12, (%[prev])                \n"
+      "addi        %[prev], %[prev], 64          \n"
+      "vadd.vv     v16, v16, v12                 \n"
+      "vse32.v     v16, (%[cumsum])              \n"
+      "addi        %[cumsum], %[cumsum], 64      \n"
+      "vslidedown.vi v12, v8, 12                 \n"  // [p0123, ...]
+      "vmv.v.v     v16, v12                      \n"
+      "vslideup.vi v12, v16, 4                   \n"  // [p0123, p0123, ...]
+      "vmv.v.v     v16, v12                      \n"
+      "vslideup.vi v12, v16, 8                   \n"  // [p0123 x4]
+      "vadd.vv     v0, v0, v12                   \n"
+      "addi        %[w], %[w], -4                \n"
+      "bge         %[w], t0, 1b                  \n"
+
+      // 1 pixel tail loop (v0[0..3] holds current 4-channel running sum).
+      "2:                                        \n"
+      "blez        %[w], 3f                      \n"
+      "vsetivli    zero, 4, e32, m1, ta, ma      \n"
+
+      "20:                                       \n"
+      "vle8.v      v4, (%[row])                  \n"
+      "addi        %[row], %[row], 4             \n"
+      "vzext.vf4   v8, v4                        \n"
+      "vadd.vv     v0, v0, v8                    \n"
+      "vle32.v     v12, (%[prev])                \n"
+      "addi        %[prev], %[prev], 16          \n"
+      "vadd.vv     v12, v0, v12                  \n"
+      "vse32.v     v12, (%[cumsum])              \n"
+      "addi        %[cumsum], %[cumsum], 16      \n"
+      "addi        %[w], %[w], -1                \n"
+      "bgtz        %[w], 20b                     \n"
+
+      "3:                                        \n"
+      : [row] "+r"(row), [cumsum] "+r"(cumsum), [prev] "+r"(previous_cumsum),
+        [w] "+r"(rem)
+      :
+      : "memory", "t0", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4",
+        "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",
+        "v18", "v19");
+}
+#endif  // HAS_COMPUTECUMULATIVESUMROW_RVV
+
+#ifdef HAS_CUMULATIVESUMTOAVERAGEROW_RVV
+void CumulativeSumToAverageRow_RVV(const int32_t* topleft,
+                                   const int32_t* botleft,
+                                   int width,
+                                   int area,
+                                   uint8_t* dst,
+                                   int count) {
+  if (count <= 0) {
+    return;
+  }
+  const int32_t* topright = topleft + width;
+  const int32_t* botright = botleft + width;
+  float ooa = 1.0f / static_cast<float>(area);
+  size_t n = static_cast<size_t>(count) * 4;
+  size_t vl;
+  asm volatile(
+      "1:                                        \n"
+      "vsetvli     %[vl], %[n], e32, m4, ta, ma  \n"
+      "vle32.v     v0, (%[tl])                   \n"
+      "vle32.v     v4, (%[tr])                   \n"
+      "vsub.vv     v0, v0, v4                    \n"
+      "vle32.v     v4, (%[bl])                   \n"
+      "vsub.vv     v0, v0, v4                    \n"
+      "vle32.v     v4, (%[br])                   \n"
+      "vadd.vv     v0, v0, v4                    \n"
+      "vfcvt.f.xu.v v0, v0                       \n"
+      "vfmul.vf    v0, v0, %[ooa]                \n"
+      "vfcvt.rtz.xu.f.v v0, v0                   \n"
+      "vsetvli     zero, %[vl], e16, m2, ta, ma  \n"
+      "vnclipu.wi  v4, v0, 0                     \n"
+      "vsetvli     zero, %[vl], e8, m1, ta, ma   \n"
+      "vnclipu.wi  v8, v4, 0                     \n"
+      "vse8.v      v8, (%[dst])                  \n"
+      "sub         %[n], %[n], %[vl]             \n"
+      "add         %[dst], %[dst], %[vl]         \n"
+      "slli        %[vl], %[vl], 2               \n"
+      "add         %[tl], %[tl], %[vl]           \n"
+      "add         %[tr], %[tr], %[vl]           \n"
+      "add         %[bl], %[bl], %[vl]           \n"
+      "add         %[br], %[br], %[vl]           \n"
+      "bgtz        %[n], 1b                      \n"
+      : [tl] "+r"(topleft), [tr] "+r"(topright), [bl] "+r"(botleft),
+        [br] "+r"(botright), [dst] "+r"(dst), [n] "+r"(n), [vl] "=&r"(vl)
+      : [ooa] "f"(ooa)
+      : "memory", RVV_VL_CLOBBER "vtype", "v0", "v1", "v2", "v3", "v4", "v5",
+        "v6", "v7", "v8");
+}
+#endif  // HAS_CUMULATIVESUMTOAVERAGEROW_RVV
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
