@@ -237,7 +237,7 @@ def get_os_dimensions(os):
     if os == "android":
         return {"device_type": "walleye"}
     if os == "ios" or os == "mac":
-        return {"os": "Mac-15", "cpu": "arm64"}
+        return {"os": "Mac", "cpu": "arm64"}
     elif os == "win":
         return {"os": "Windows-10", "cores": "8", "cpu": "x86-64"}
     elif os == "linux":
