@@ -5387,21 +5387,12 @@ void HalfMergeUVRow_NEON(const uint8_t* src_u,
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
-#if defined(_WIN32)
-// Windows ARM64 SEH unwind info fails to evaluate function length in debug
-// builds (/Od) when inline asm contains .p2align directives.
-#define LOOPALIGN
-#else
-#define LOOPALIGN ".p2align    4                             \n"
-#endif
-
 void HalfRow_NEON(const uint8_t* src_uv,
                   ptrdiff_t src_uv_stride,
                   uint8_t* dst_uv,
                   int width) {
   const uint8_t* src_uv1 = src_uv + src_uv_stride;
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"
@@ -5426,7 +5417,6 @@ void HalfRow_16_NEON(const uint16_t* src_uv,
                      int width) {
   const uint16_t* src_uv1 = src_uv + src_uv_stride;
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"
@@ -5447,7 +5437,6 @@ void HalfRow_16_NEON(const uint16_t* src_uv,
 
 void HalfWidthRow_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%0], #32             \n"
@@ -5472,7 +5461,6 @@ void HalfWidthRow_16_NEON(const uint16_t* src_ptr,
                           uint16_t* dst_ptr,
                           int width) {
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%0], #32             \n"
@@ -5495,7 +5483,6 @@ void HalfWidthRow_16_NEON(const uint16_t* src_ptr,
 
 void HalfWidthUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%0], #32             \n"
@@ -5520,7 +5507,6 @@ void HalfWidthUVRow_16_NEON(const uint16_t* src_uv,
                             uint16_t* dst_uv,
                             int width) {
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%0], #32             \n"
@@ -5547,7 +5533,6 @@ void HalfBoxRow_NEON(const uint8_t* src_ptr,
                      int width) {
   const uint8_t* src_ptr1 = src_ptr + src_stride;
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"
@@ -5576,7 +5561,6 @@ void HalfBoxRow_16_NEON(const uint16_t* src_ptr,
                         int width) {
   const uint16_t* src_ptr1 = src_ptr + src_stride;
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"
@@ -5605,7 +5589,6 @@ void HalfBoxUVRow_NEON(const uint8_t* src_uv,
                        int width) {
   const uint8_t* src_uv1 = src_uv + src_stride_uv;
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"
@@ -5636,7 +5619,6 @@ void HalfBoxUVRow_16_NEON(const uint16_t* src_uv,
                           int width) {
   const uint16_t* src_uv1 = src_uv + src_stride_uv;
   asm volatile(
-      LOOPALIGN
       "1:                                        \n"
       "ldp         q0, q1, [%0], #32             \n"
       "ldp         q2, q3, [%1], #32             \n"

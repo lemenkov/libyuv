@@ -3209,9 +3209,7 @@ void HalfWidthRow_16To8_Odd_NEON(const uint16_t* src_uv,
     src_uv += (ptrdiff_t)n * 2;
     dst_uv += n;
   }
-  const uint16_t* src_uv1 = src_uv + src_uv_stride;
-  uint32_t avg = (uint32_t)src_uv[0] + (uint32_t)src_uv1[0] + 1u;
-  dst_uv[0] = (uint8_t)((avg * (uint32_t)scale) >> 17);
+  HalfWidthRow_16To8_Odd_C(src_uv, src_uv_stride, dst_uv, scale, 1);
 }
 #endif
 #ifdef HAS_HALFWIDTHROW_16TO8_WASMSIMD

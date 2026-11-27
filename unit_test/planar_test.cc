@@ -7246,6 +7246,14 @@ TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Odd_Opt) {
 
   for (ptrdiff_t stride : {ptrdiff_t{0}, ptrdiff_t{kMaxPixels * 2}}) {
     for (int width = 1; width <= 129; ++width) {
+      // The last column is averaged vertically.  Make it out of range for
+      // the scale so the result must clamp to 255.
+      uint16_t* last0 = src_pixels + (width - 1) * 2;
+      uint16_t* last1 = last0 + stride;
+      const uint16_t save0 = *last0;
+      const uint16_t save1 = *last1;
+      *last0 = 1024 + (fastrand() & 0x7fff);
+      *last1 = 1024 + (fastrand() & 0x7fff);
       memset(dst_pixels_opt, 0, kMaxPixels);
       memset(dst_pixels_c, 1, kMaxPixels);
       HalfWidthRow_16To8_Odd_C(src_pixels, stride, dst_pixels_c, 16384, width);
@@ -7309,6 +7317,9 @@ TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Odd_Opt) {
       }
       ASSERT_EQ(0, memcmp(dst_pixels_c, dst_pixels_opt, width))
           << "stride=" << stride << " width=" << width;
+      EXPECT_EQ(255, dst_pixels_c[width - 1]);
+      *last1 = save1;
+      *last0 = save0;
     }
   }
 
